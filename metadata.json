@@ -1,0 +1,8 @@
+{
+  "name": "Remix Micro CMS V2",
+  "description": "Lightweight multi-tenant MicroCMS and SaaS e-commerce platform for Indonesian MSMEs (UMKM).",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
