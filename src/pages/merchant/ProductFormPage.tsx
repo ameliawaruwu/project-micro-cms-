@@ -328,19 +328,19 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Column: Media & Product Image (Device Only) (5 cols) */}
         <div className="lg:col-span-5 h-full flex flex-col">
-          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-[#E5E0DD] shadow-2xs h-full flex flex-col justify-between space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
-                <h3 className="text-sm font-bold text-[#241A1A] flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-[#66000E]" />
-                  <span>Foto Produk</span>
-                </h3>
-              </div>
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-[#E5E0DD] shadow-2xs h-full flex flex-col space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
+              <h3 className="text-sm font-bold text-[#241A1A] flex items-center gap-2">
+                <Camera className="w-4 h-4 text-[#66000E]" />
+                <span>Foto Produk</span>
+              </h3>
+            </div>
 
-              {/* Photo Preview or Interactive Dropzone */}
+            {/* Photo Preview or Interactive Dropzone - Flexibly fills the height without empty gap */}
+            <div className="flex-1 flex flex-col min-h-[260px]">
               {currentPreviewImage ? (
-                <div className="space-y-3">
-                  <div className="relative aspect-square rounded-2xl overflow-hidden bg-[#FAF7F7] border-2 border-[#E5E0DD] group">
+                <div className="flex-1 flex flex-col justify-between space-y-3">
+                  <div className="relative flex-1 min-h-[220px] rounded-2xl overflow-hidden bg-[#FAF7F7] border-2 border-[#E5E0DD] group">
                     <img
                       src={currentPreviewImage}
                       alt="Preview Produk"
@@ -354,7 +354,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                   </div>
 
                   {/* Device Action Buttons */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -380,7 +380,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`aspect-square rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center p-6 text-center group ${
+                  className={`flex-1 min-h-[250px] rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center p-6 text-center group ${
                     isDragging
                       ? 'border-[#66000E] bg-[#F9EDEF] scale-[0.99]'
                       : 'border-[#D1C9C5] hover:border-[#66000E] bg-[#FAF7F7] hover:bg-[#FDFBFB]'
@@ -402,7 +402,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
             </div>
 
             {/* Bottom Gallery Thumbnail Row (Replaces grey notice box) */}
-            <div className="pt-2 border-t border-[#E5E0DD] space-y-2">
+            <div className="pt-3 border-t border-[#E5E0DD] space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#241A1A]">
                   Daftar Foto Produk ({images.length}/5)
