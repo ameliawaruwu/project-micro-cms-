@@ -121,8 +121,16 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
         if (onNavigateTab) onNavigateTab('pengaturan');
         onClose();
         break;
+      case 'payments':
+        if (onNavigateTab) onNavigateTab('pembayaran');
+        onClose();
+        break;
+      case 'shipping':
+        if (onNavigateTab) onNavigateTab('pengiriman');
+        onClose();
+        break;
       case 'integrations':
-        if (onNavigateTab) onNavigateTab('integrasi');
+        if (onNavigateTab) onNavigateTab('pembayaran');
         onClose();
         break;
       case 'withdraw':

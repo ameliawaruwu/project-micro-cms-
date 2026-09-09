@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wallet, Save, Share2, Phone, MapPin } from 'lucide-react';
+import { Wallet, Save, Share2, Phone, MapPin, Crown, Zap } from 'lucide-react';
 import { Store } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -9,6 +9,7 @@ interface SettingsPageProps {
   onUpdateStore: (updated: Store) => void;
   onOpenWithdraw: () => void;
   onOpenShareModal: () => void;
+  onOpenUpgradePlan?: () => void;
   onShowNotification: (msg: string) => void;
 }
 
@@ -17,6 +18,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onUpdateStore,
   onOpenWithdraw,
   onOpenShareModal,
+  onOpenUpgradePlan,
   onShowNotification,
 }) => {
   const { t } = useLanguage();
@@ -101,13 +103,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1.5">
-                Slogan / Tagline Singkat
+                Tagline Singkat
               </label>
               <input
                 type="text"
-                placeholder="Contoh: Batik Tulis Asli Pekalongan dengan Motif Khas Klasik"
                 value={formData.tagline}
                 onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
+                placeholder="Contoh: Kemeja & Kain Tradisional Berkualitas"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
               />
             </div>
@@ -118,9 +120,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               </label>
               <textarea
                 rows={3}
-                placeholder="Ceritakan sejarah dan dedikasi produk toko Anda..."
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Ceritakan tentang produk dan brand Anda..."
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
               />
             </div>
@@ -135,7 +137,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   <input
                     type="tel"
                     required
-                    placeholder="081234567890"
                     value={formData.phoneWhatsApp}
                     onChange={(e) => setFormData({ ...formData, phoneWhatsApp: e.target.value })}
                     className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
@@ -145,13 +146,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1.5">
-                  Kota / Kabupaten Asal Toko
+                  Kota / Wilayah Asal Toko
                 </label>
                 <div className="relative">
                   <MapPin className="w-4 h-4 text-[#777777] absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="Pekalongan, Jawa Tengah"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
@@ -163,7 +163,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="pt-3 border-t border-[#EAEAEA] flex justify-end">
               <button
                 type="submit"
-                className="px-6 py-2.5 min-h-[44px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs flex items-center gap-2 shadow-xs transition cursor-pointer"
+                className="px-6 py-2.5 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs flex items-center gap-2 shadow-xs transition cursor-pointer"
               >
                 <Save className="w-4 h-4" />
                 <span>Simpan Pengaturan</span>
@@ -172,18 +172,58 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </form>
         </div>
 
-        {/* Right 1 Col: Wallet & QR Code */}
+        {/* Right 1 Col: Subscription Plan & Wallet & QR Code */}
         <div className="space-y-6">
-          {/* Wallet Card */}
-          <div className="bg-white rounded-3xl p-6 border border-[#EAEAEA] shadow-xs space-y-4">
+          
+          {/* 1. Subscription Plan Card */}
+          <div className="bg-white rounded-3xl p-6 border-2 border-[#66000E] shadow-xs space-y-4 relative overflow-hidden text-left">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-base">
+                <Crown className="w-5 h-5 text-[#66000E]" />
+                <span>Paket Langganan</span>
+              </div>
+              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#F5E8EA] text-[#66000E] uppercase border border-[#E8DDDE]">
+                {store.plan === 'premium' ? 'Pro / Premium' : store.plan === 'starter' ? 'Starter' : 'Free'}
+              </span>
+            </div>
+
+            <div className="p-3.5 bg-[#FAF7F7] rounded-2xl border border-[#E8DDDE] space-y-1 text-xs text-[#5F5652]">
+              <div className="flex items-center justify-between font-bold text-[#241A1A]">
+                <span>Status Paket:</span>
+                <span className="text-emerald-700">Aktif</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Katalog Produk:</span>
+                <span className="font-semibold">{store.plan === 'premium' ? 'Unlimited' : store.plan === 'starter' ? '100 Produk' : '25 Produk'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Biaya Transaksi:</span>
+                <span className="font-semibold">{store.plan === 'premium' ? '1%' : store.plan === 'starter' ? '1.5%' : '2%'}</span>
+              </div>
+            </div>
+
+            {onOpenUpgradePlan && (
+              <button
+                type="button"
+                onClick={onOpenUpgradePlan}
+                className="w-full py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Upgrade / Ubah Paket</span>
+              </button>
+            )}
+          </div>
+
+          {/* 2. Wallet Card */}
+          <div className="bg-white rounded-3xl p-6 border border-[#EAEAEA] shadow-xs space-y-4 text-left">
             <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-base">
-              <Wallet className="w-5 h-5 text-[#9A0602]" />
+              <Wallet className="w-5 h-5 text-[#66000E]" />
               <span>Dompet Saldo UMKM</span>
             </div>
 
-            <div className="p-4 bg-[#F7F7F7] rounded-2xl border border-[#EAEAEA] space-y-1">
+            <div className="p-4 bg-[#FAF7F7] rounded-2xl border border-[#E8DDDE] space-y-1">
               <span className="text-xs text-[#777777] font-semibold block">Saldo Aktif Siap Ditarik</span>
-              <span className="text-2xl font-bold text-[#1F1F1F] block">
+              <span className="text-2xl font-bold text-[#66000E] block">
                 {formatRupiah(store.balance)}
               </span>
               <p className="text-[11px] text-[#555555]">
@@ -192,37 +232,39 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
 
             <button
+              type="button"
               onClick={onOpenWithdraw}
-              className="w-full py-3 min-h-[44px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+              className="w-full py-3 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
             >
               Tarik Dana ke Rekening Bank
             </button>
           </div>
 
-          {/* Store QR Card */}
+          {/* 3. Store QR Card */}
           <div className="bg-white rounded-3xl p-6 border border-[#EAEAEA] shadow-xs text-center space-y-3">
             <h3 className="font-semibold text-xs text-[#777777] uppercase tracking-wider">
               QR Code Etalase Toko
             </h3>
-            <div className="w-32 h-32 mx-auto bg-[#F7F7F7] p-2.5 rounded-2xl border border-[#EAEAEA] flex items-center justify-center">
+            <div className="w-32 h-32 mx-auto bg-[#FAF7F7] p-2.5 rounded-2xl border border-[#E8DDDE] flex items-center justify-center">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`https://kroombox.id/${store.slug}`)}&color=9a0602`}
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`https://kroombox.id/${store.slug}`)}&color=66000e`}
                 alt="QR Code Toko"
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
             <button
+              type="button"
               onClick={onOpenShareModal}
-              className="text-xs font-semibold text-[#9A0602] hover:underline flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
+              className="text-xs font-semibold text-[#66000E] hover:underline flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>Bagikan Link & QR Toko</span>
             </button>
           </div>
+
         </div>
       </div>
     </div>
   );
 };
-

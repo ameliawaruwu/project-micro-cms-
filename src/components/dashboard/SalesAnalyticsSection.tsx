@@ -5,13 +5,13 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { TimeFilter, SalesAnalytics } from '../../types';
+import { TimeFilter, SalesAnalytics, MerchantTab } from '../../types';
 import { merchantService } from '../../services/merchantService';
 import { formatRupiah } from '../../utils/formatters';
 
 interface SalesAnalyticsSectionProps {
   storeId: string;
-  onNavigateTab?: (tab: 'beranda' | 'produk' | 'pesanan' | 'integrasi' | 'pengaturan') => void;
+  onNavigateTab?: (tab: MerchantTab) => void;
 }
 
 export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({

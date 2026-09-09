@@ -23,15 +23,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onNavigateLanding,
   onSuccess,
 }) => {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
-  const [email, setEmail] = useState('andhikagonzales@gmail.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const fillAdminCredentials = () => {
+    setEmail('admin@kroombox.id');
+    setPassword('admin123');
+    setError(null);
+  };
+
+  const fillMerchantCredentials = () => {
+    setEmail('andhika@gmail.com');
+    setPassword('password123');
+    setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,13 +76,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     try {
       setGoogleLoading(true);
       setError(null);
-      await login('google.merchant@kroombox.id', 'google-auth');
-      setIsSuccess(true);
-      setTimeout(() => {
-        if (onSuccess) onSuccess();
-      }, 350);
+      await loginWithGoogle();
     } catch {
-      setError('Gagal masuk dengan Google. Silakan coba beberapa saat lagi.');
+      setError('Gagal menghubungkan ke Google. Pastikan Google Provider sudah diaktifkan di Supabase.');
     } finally {
       setGoogleLoading(false);
     }
@@ -123,32 +131,40 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           id="login-form-container"
           className="w-full max-w-md md:max-w-[400px] bg-white rounded-t-[36px] md:rounded-none shadow-[0_-12px_40px_rgba(0,0,0,0.3)] md:shadow-none border-t border-white/60 md:border-none px-6 sm:px-8 md:px-0 pt-10 md:pt-0 pb-8 md:pb-0 flex flex-col justify-center my-0 md:my-auto"
         >
-          {/* DESKTOP TOP BRAND BADGE & LANGUAGE SWITCHER (md+) */}
-          <div className="hidden md:flex items-center justify-between gap-3 mb-6">
-            <button
-              type="button"
-              onClick={onNavigateLanding}
-              className="group inline-flex items-center gap-3 focus:outline-none text-left cursor-pointer"
-              title={t('auth_back_to_home', 'Kembali ke Beranda')}
-            >
-              <div className="relative flex items-center justify-center">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FFA940] to-[#FFC53D] shadow-sm flex items-center justify-center text-[#5C0D20] font-black text-lg transition-transform group-hover:scale-105">
-                  K
-                </div>
-                <div className="absolute -inset-1 rounded-full bg-[#FFA940]/25 blur-xs pointer-events-none" />
-              </div>
-
-              <div className="flex flex-col">
-                <span className="font-bold text-xl text-[#1A1110] tracking-tight group-hover:text-[#66000E] transition-colors leading-none">
-                  Kroombox
-                </span>
-                <span className="text-[11px] text-[#6B6260] mt-0.5 font-medium tracking-wide">
-                  {t('landing_platform_badge', 'Platform Toko Online UMKM')}
-                </span>
-              </div>
-            </button>
+          {/* DESKTOP TOP BAR: BACK TO HOME & LANGUAGE SWITCHER (md+) */}
+          <div className="hidden md:flex items-center justify-between gap-3 mb-5">
+            {onNavigateLanding && (
+              <button
+                type="button"
+                onClick={onNavigateLanding}
+                className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF7F7] hover:bg-[#F5E8EA] border border-[#E8DDDE] text-xs font-semibold text-[#5F5652] hover:text-[#66000E] transition-all cursor-pointer active:scale-95 shadow-2xs"
+                title={t('auth_back_to_home', 'Kembali ke Beranda')}
+              >
+                <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                <span>{t('auth_back_to_home', 'Kembali ke Beranda')}</span>
+              </button>
+            )}
 
             <LanguageSwitchButton compact />
+          </div>
+
+          {/* DESKTOP BRAND BADGE */}
+          <div className="hidden md:flex items-center gap-3 mb-6">
+            <div className="relative flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FFA940] to-[#FFC53D] shadow-sm flex items-center justify-center text-[#5C0D20] font-black text-lg">
+                K
+              </div>
+              <div className="absolute -inset-1 rounded-full bg-[#FFA940]/25 blur-xs pointer-events-none" />
+            </div>
+
+            <div className="flex flex-col">
+              <span className="font-bold text-xl text-[#1A1110] tracking-tight leading-none">
+                Kroombox
+              </span>
+              <span className="text-[11px] text-[#6B6260] mt-0.5 font-medium tracking-wide">
+                {t('landing_platform_badge', 'Platform Toko Online UMKM')}
+              </span>
+            </div>
           </div>
 
           {/* GREETING HEADING */}
@@ -219,14 +235,30 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7E7E88] hover:text-[#1A1110] transition-colors p-1.5 rounded-full hover:bg-black/5 cursor-pointer focus:outline-none"
                   title={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
-                  aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
+              </div>
+
+              {/* Quick Fill Accounts Chips */}
+              <div className="pt-2">
+                <span className="text-[11px] font-medium text-gray-500 block mb-1.5">Pilih Akun Cepat:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={fillAdminCredentials}
+                    className="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-[11px] font-semibold transition cursor-pointer flex items-center gap-1"
+                  >
+                    <span>👑 Super Admin</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={fillMerchantCredentials}
+                    className="px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 text-[11px] font-medium transition cursor-pointer"
+                  >
+                    <span>🏪 Merchant</span>
+                  </button>
+                </div>
               </div>
 
               {/* Forgot Password Link */}

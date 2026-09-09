@@ -83,15 +83,6 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 <span>{t('hero_cta_how', 'Lihat Cara Kerja')}</span>
                 <ChevronRight className="w-3.5 h-3.5 text-[#857C76]" />
               </button>
-
-              <button
-                onClick={onLaunchDemo}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-[#5F5652] hover:text-[#66000E] hover:bg-[#F5E8EA]/50 font-normal text-xs sm:text-sm transition cursor-pointer"
-                title="Buka live demo aplikasi"
-              >
-                <Play className="w-3 h-3 fill-[#66000E] text-[#66000E]" />
-                <span>{t('hero_cta_demo', 'Coba Demo')}</span>
-              </button>
             </div>
 
             {/* 3 Small Trust Indicators */}

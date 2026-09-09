@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Merchant, Store } from '../types';
 import { authService } from '../services/authService';
+import { supabase, signInWithGoogleOAuth } from '../services/supabaseClient';
+
 
 interface AuthContextType {
   user: User | null;
@@ -9,6 +11,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password?: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   registerWithGoogle: (params: {
     googleEmail: string;
     fullName?: string;
@@ -40,17 +43,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    try {
-      const current = authService.getCurrentUser();
-      setUser(current.user);
-      setMerchant(current.merchant);
-      setStore(current.store);
-    } catch (e) {
-      console.error('Auth initialization error:', e);
-    } finally {
-      setIsLoading(false);
-    }
+    const initAuth = async () => {
+      try {
+        // 1. Check local session
+        const current = authService.getCurrentUser();
+        if (current.user) {
+          setUser(current.user);
+          setMerchant(current.merchant);
+          setStore(current.store);
+        }
+
+        // 2. Check Supabase OAuth session (if redirected from Google)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user && session.user.email) {
+          const googleUser = session.user;
+          const userMeta = googleUser.user_metadata || {};
+          const googleEmail = googleUser.email;
+          const fullName = userMeta.full_name || userMeta.name || googleEmail.split('@')[0];
+          const avatarUrl = userMeta.avatar_url || userMeta.picture;
+
+          // Register or Login merchant with Google account
+          const data = await authService.registerWithGoogle({
+            googleEmail,
+            fullName,
+            avatarUrl,
+          });
+
+          setUser(data.user);
+          setMerchant(data.merchant);
+          setStore(data.store);
+        }
+      } catch (e) {
+        console.error('Auth initialization error:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
   }, []);
+
+  const loginWithGoogle = async () => {
+    setIsLoading(true);
+    try {
+      await signInWithGoogleOAuth();
+    } catch (err) {
+      setIsLoading(false);
+      throw err;
+    }
+  };
 
   const login = async (email: string, password?: string) => {
     setIsLoading(true);
@@ -136,6 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         isLoading,
         login,
+        loginWithGoogle,
         registerWithGoogle,
         register,
         forgotPassword,

@@ -12,6 +12,7 @@ import {
   Save,
   Maximize2,
   Minimize2,
+  Sparkles,
 } from 'lucide-react';
 import { Store } from '../../types';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
@@ -25,6 +26,7 @@ interface EditorTopBarProps {
   onReset: () => void;
   onOpenStorefront: () => void;
   onBack: () => void;
+  onOpenWizard?: () => void;
   activePreset?: string;
   onApplyPreset?: (presetId: string) => void;
   isSaving?: boolean;
@@ -45,6 +47,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   onReset,
   onOpenStorefront,
   onBack,
+  onOpenWizard,
   isSaving = false,
   canUndo = false,
   canRedo = false,
@@ -86,12 +89,18 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           )}
         </div>
 
-        {/* Page Switcher Pill Dropdown */}
-        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-[#FAF7F7] hover:bg-[#F2ECE9] border border-[#E5E0DD] rounded-lg text-xs font-semibold text-[#241A1A] transition cursor-pointer">
-          <Layers className="w-3.5 h-3.5 text-[#706866]" />
-          <span>{t('sections_heading', 'Halaman Utama')}</span>
-          <ChevronDown className="w-3 h-3 text-[#706866]" />
-        </div>
+        {/* Wizard / Template Switcher Button */}
+        {onOpenWizard && (
+          <button
+            type="button"
+            onClick={onOpenWizard}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-semibold transition cursor-pointer"
+            title="Ganti Template atau Atur Identitas Toko"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-red-600" />
+            <span>Ganti Template</span>
+          </button>
+        )}
       </div>
 
       {/* CENTER: Viewport Device Switcher (Desktop, Tablet, Mobile) */}

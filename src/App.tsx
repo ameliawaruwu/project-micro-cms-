@@ -41,6 +41,7 @@ import {
   StoreLayoutSettings,
 } from './types';
 import { useAuth } from './contexts/AuthContext';
+import { authService } from './services/authService';
 import { storeService } from './services/storeService';
 import { productService } from './services/productService';
 import { orderService } from './services/orderService';
@@ -63,9 +64,14 @@ import { DeviceSimulatorFrame } from './components/common/DeviceSimulatorFrame';
 import { DashboardPage } from './pages/merchant/DashboardPage';
 import { ProductListPage } from './pages/merchant/ProductListPage';
 import { OrderListPage } from './pages/merchant/OrderListPage';
+import { PaymentListPage } from './pages/merchant/PaymentListPage';
+import { ShippingListPage } from './pages/merchant/ShippingListPage';
 import { IntegrationListPage } from './pages/merchant/IntegrationListPage';
 import { SettingsPage } from './pages/merchant/SettingsPage';
 import { LayoutPage } from './pages/merchant/LayoutPage';
+
+// Admin Pages
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 
 // Auth Pages
 import { LoginPage } from './pages/auth/LoginPage';
@@ -79,6 +85,9 @@ import { ProductDetailModal as MerchantProductDetailModal } from './components/p
 import { ProcessShippingModal } from './components/orders/ProcessShippingModal';
 import { ReceiptModal } from './components/orders/ReceiptModal';
 import { OrderDetailModal } from './components/orders/OrderDetailModal';
+import { MerchantWalletModal } from './components/wallet/MerchantWalletModal';
+import { UpgradePlanModal } from './components/billing/UpgradePlanModal';
+import { StoreLayoutSetupWizard } from './components/layout-editor/StoreLayoutSetupWizard';
 
 // Storefront Components
 import { StoreHeader } from './components/storefront/StoreHeader';
@@ -126,6 +135,7 @@ export default function App() {
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<Order | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+  const [isUpgradePlanModalOpen, setIsUpgradePlanModalOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('500000');
   const [bankAccount, setBankAccount] = useState('BCA - 8920192811');
 
@@ -168,33 +178,15 @@ export default function App() {
       }
 
       let userStores = await storeService.getStoresForUser(user.id);
-      
-      // Auto-heal if user has no store in storeService
-      if (userStores.length === 0) {
-        if (authStore) {
-          const syncedStore = { ...authStore, merchantId: user.id };
-          await storeService.createStore(syncedStore);
-          userStores = [syncedStore];
-        } else {
-          const newStore = await storeService.createStore({
-            merchantId: user.id,
-            name: `Toko ${user.name || 'UMKM'}`,
-            slug: `toko-${user.id.slice(-6)}`,
-            tagline: `Toko Resmi ${user.name || 'UMKM'}`,
-            description: 'Katalog online dan pemesanan praktis via WhatsApp.',
-            logoUrl: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=200&auto=format&fit=crop&q=80',
-            bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-            phoneWhatsApp: user.phoneWhatsApp || '081234567890',
-            city: 'Indonesia',
-            address: 'Pusat Usaha UMKM',
-            category: 'Bisnis UMKM',
-            currency: 'IDR',
-          });
-          userStores = [newStore];
-        }
-      }
-
       setStores(userStores);
+
+      if (userStores.length === 0) {
+        setActiveStore(null);
+        setProducts([]);
+        setOrders([]);
+        setIntegrations([]);
+        return;
+      }
 
       let current: Store | undefined;
       if (targetStoreId) {
@@ -226,9 +218,35 @@ export default function App() {
     }
   };
 
+  // Direct URL routing for buyers/customers (e.g. localhost:3000/?toko=batik-nusantara or ?mode=storefront)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokoParam = params.get('toko') || params.get('store');
+    const modeParam = params.get('mode') || params.get('view');
+
+    if (tokoParam || modeParam === 'storefront') {
+      storeService.getStores().then((all) => {
+        if (tokoParam) {
+          const match = all.find((s) => s.slug === tokoParam || s.id === tokoParam);
+          if (match) {
+            setActiveStore(match);
+          }
+        }
+        setViewMode('storefront-live');
+      });
+    }
+  }, []);
+
   useEffect(() => {
     loadData();
   }, [isAuthenticated, authStore, user?.id, viewMode]);
+
+  // Route Super Admin directly to Admin Dashboard
+  useEffect(() => {
+    if (user?.role === 'admin' && viewMode !== 'admin' && viewMode !== 'storefront' && viewMode !== 'storefront-live') {
+      setViewMode('admin');
+    }
+  }, [user, viewMode]);
 
   // Store Switching
   const handleSelectStore = async (storeId: string) => {
@@ -531,9 +549,15 @@ export default function App() {
         <LoginPage
           onSuccess={() => {
             setAuthView(null);
-            setViewMode('merchant-desktop');
-            loadData();
-            addToast('Berhasil masuk ke Dashboard Toko!');
+            const currentUser = authService.getCurrentUser().user;
+            if (currentUser?.role === 'admin') {
+              setViewMode('admin');
+              addToast('Selamat datang di Super Admin Panel!');
+            } else {
+              setViewMode('merchant-desktop');
+              loadData();
+              addToast('Berhasil masuk ke Dashboard Toko!');
+            }
           }}
           onNavigateRegister={() => setAuthView('register')}
           onNavigateForgotPassword={() => setAuthView('forgot_password')}
@@ -1030,6 +1054,15 @@ export default function App() {
 
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setViewMode('storefront-live')}
+                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer text-xs transition"
+                title="Buka toko penuh tanpa frame simulator"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Layar Penuh</span>
+              </button>
+
+              <button
                 onClick={() => setViewMode('merchant-desktop')}
                 className="px-3 py-1.5 rounded-lg bg-[#FFD358] hover:bg-[#FFB915] text-[#002A45] font-extrabold flex items-center gap-1 shadow-xs cursor-pointer text-xs"
               >
@@ -1039,24 +1072,30 @@ export default function App() {
             </div>
           </div>
 
-          {/* Centered Canvas Container */}
-          <div className="flex-1 flex flex-col items-center justify-start p-2 sm:p-4 md:p-6 overflow-y-auto">
+          {/* Canvas Container */}
+          <div
+            className={`flex-1 flex flex-col items-center justify-start overflow-y-auto ${
+              storefrontDeviceMode === 'desktop'
+                ? 'p-0 w-full bg-[#FAF7F7]'
+                : 'p-3 sm:p-6 bg-[#0D1520]'
+            }`}
+          >
             <div
               className={`w-full transition-all duration-300 mx-auto ${
                 storefrontDeviceMode === 'desktop'
-                  ? 'max-w-7xl'
+                  ? 'w-full max-w-none'
                   : storefrontDeviceMode === 'tablet'
                   ? 'max-w-[768px]'
                   : 'max-w-[390px]'
               }`}
             >
               <div
-                className={`bg-white shadow-2xl transition-all overflow-hidden flex flex-col ${
+                className={`bg-white transition-all overflow-hidden flex flex-col ${
                   storefrontDeviceMode === 'mobile'
                     ? 'rounded-[40px] border-[8px] border-slate-900 ring-1 ring-slate-800 shadow-slate-900/30 min-h-[680px]'
                     : storefrontDeviceMode === 'tablet'
                     ? 'rounded-[28px] border-[8px] border-slate-800 ring-1 ring-slate-700 shadow-slate-900/25 min-h-[680px]'
-                    : 'rounded-2xl border border-[#D5CEC9] shadow-lg min-h-screen'
+                    : 'w-full min-h-screen rounded-none border-0 shadow-none'
                 }`}
               >
                 {/* Device Status Bar */}
@@ -1092,7 +1131,25 @@ export default function App() {
         </div>
       )}
 
-      {/* 2. PUBLIC STOREFRONT PHONE SIMULATOR */}
+      {/* 2. PURE STANDALONE STOREFRONT (100% FULL SCREEN - NO PREVIEW / NO FRAMES) */}
+      {viewMode === 'storefront-live' && (
+        <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative">
+          {/* Subtle Floating Switcher back to Dashboard */}
+          <div className="fixed bottom-4 left-4 z-50">
+            <button
+              onClick={() => setViewMode('merchant-desktop')}
+              className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
+              title="Kembali ke Dashboard Merchant"
+            >
+              <Monitor className="w-3.5 h-3.5" />
+              <span>Dashboard</span>
+            </button>
+          </div>
+          {renderStorefrontContent()}
+        </div>
+      )}
+
+      {/* 3. PUBLIC STOREFRONT PHONE SIMULATOR */}
       {viewMode === 'storefront-phone' && (
         <DeviceSimulatorFrame
           title={`Toko Online ${currentStore.name}`}
@@ -1103,8 +1160,66 @@ export default function App() {
         </DeviceSimulatorFrame>
       )}
 
-      {/* 3. MERCHANT DASHBOARD VIEW (Desktop & Mobile Admin) */}
-      {(viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile') && (
+      {/* 4. SUPER ADMIN DASHBOARD VIEW */}
+      {viewMode === 'admin' && (
+        <AdminDashboardPage
+          onOpenStorefront={(slug) => {
+            const targetStore = stores.find((s) => s.slug === slug);
+            if (targetStore) setActiveStore(targetStore);
+            setViewMode('storefront');
+          }}
+          onLogout={handleLogout}
+        />
+      )}
+
+      {/* 4. ONBOARDING STORE CREATION (IF MERCHANT HAS NO STORE YET) */}
+      {(viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile') && user && user.role !== 'admin' && !activeStore && (
+        <StoreLayoutSetupWizard
+          currentStore={{
+            id: '',
+            merchantId: user.id,
+            name: user.name ? `Toko ${user.name}` : '',
+            slug: user.name ? `toko-${user.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '',
+            tagline: 'Katalog online resmi dan pemesanan praktis via WhatsApp.',
+            description: '',
+            logoUrl: user.avatarUrl,
+            bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+            phoneWhatsApp: user.phoneWhatsApp || '081234567890',
+            city: 'Indonesia',
+            category: 'Kuliner & Minuman',
+            currency: 'IDR',
+          } as Store}
+          onComplete={async (data) => {
+            try {
+              const newStore = await storeService.createStore({
+                merchantId: user.id,
+                name: data.storeUpdates.name || `Toko ${user.name || 'UMKM'}`,
+                slug: data.storeUpdates.slug || `toko-${user.id.slice(-6)}`,
+                tagline: data.storeUpdates.tagline || 'Katalog resmi UMKM.',
+                description: data.storeUpdates.tagline || 'Pusat belanja online praktis dan cepat.',
+                logoUrl: user.avatarUrl || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=200&auto=format&fit=crop&q=80',
+                bannerUrl: data.storeUpdates.bannerUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+                phoneWhatsApp: data.storeUpdates.phoneWhatsApp || user.phoneWhatsApp || '081234567890',
+                city: 'Indonesia',
+                category: data.storeUpdates.category || 'Kuliner & Minuman',
+                currency: 'IDR',
+                layoutSettings: data.layoutSettings,
+              });
+
+              setActiveStore(newStore);
+              setStores([newStore]);
+              setActiveTab('layout');
+              addToast(`🎉 Selamat! Toko "${newStore.name}" berhasil dibuat dan siap diatur.`);
+            } catch (err) {
+              console.error('Error creating store:', err);
+              addToast('Gagal membuat toko. Silakan coba lagi.', 'error');
+            }
+          }}
+        />
+      )}
+
+      {/* 5. MERCHANT DASHBOARD VIEW (Desktop & Mobile Admin) */}
+      {(viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile') && (!user || user.role === 'admin' || !!activeStore) && (
         <div className="flex h-screen w-full max-w-full overflow-hidden bg-[#FAF7F7]">
           {/* Desktop Left Sidebar & Mobile/Tablet Drawer */}
           <Sidebar
@@ -1203,9 +1318,29 @@ export default function App() {
                 />
               )}
 
-              {/* TAB 5: INTEGRASI */}
+              {/* TAB 5: PEMBAYARAN */}
+              {activeTab === 'pembayaran' && (
+                <PaymentListPage
+                  integrations={integrations}
+                  onToggleIntegration={handleToggleIntegration}
+                  onSaveConfig={handleSaveIntegrationConfig}
+                  onShowNotification={addToast}
+                />
+              )}
+
+              {/* TAB 6: PENGIRIMAN */}
+              {activeTab === 'pengiriman' && (
+                <ShippingListPage
+                  integrations={integrations}
+                  onToggleIntegration={handleToggleIntegration}
+                  onSaveConfig={handleSaveIntegrationConfig}
+                  onShowNotification={addToast}
+                />
+              )}
+
+              {/* TAB FALLBACK: INTEGRASI */}
               {activeTab === 'integrasi' && (
-                <IntegrationListPage
+                <PaymentListPage
                   integrations={integrations}
                   onToggleIntegration={handleToggleIntegration}
                   onSaveConfig={handleSaveIntegrationConfig}
@@ -1220,6 +1355,7 @@ export default function App() {
                   onUpdateStore={handleUpdateStore}
                   onOpenWithdraw={() => setWithdrawModalOpen(true)}
                   onOpenShareModal={() => setIsShareModalOpen(true)}
+                  onOpenUpgradePlan={() => setIsUpgradePlanModalOpen(true)}
                   onShowNotification={addToast}
                 />
               )}
@@ -1331,89 +1467,24 @@ export default function App() {
         onOpenStorefront={() => setViewMode('storefront')}
       />
 
-      {/* 9. Withdraw Modal */}
-      {withdrawModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-2 font-extrabold text-base text-[#002A45]">
-                <Wallet className="w-5 h-5 text-emerald-600" />
-                <span>Tarik Dana ke Rekening</span>
-              </div>
-              <button
-                onClick={() => setWithdrawModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
+      {/* 9. Merchant Wallet & Payout Modal */}
+      <MerchantWalletModal
+        isOpen={withdrawModalOpen}
+        onClose={() => setWithdrawModalOpen(false)}
+        store={currentStore}
+        onBalanceUpdated={() => loadData(currentStore.id)}
+      />
 
-            <form onSubmit={handleWithdrawSubmit} className="py-4 space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                  Saldo Tersedia
-                </label>
-                <div className="text-lg font-extrabold text-emerald-700">
-                  {formatRupiah(currentStore.balance)}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                  Jumlah Penarikan (Rp)
-                </label>
-                <input
-                  type="number"
-                  required
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-[#002A45] focus:outline-none focus:ring-2 focus:ring-[#1F4072]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                  Rekening Tujuan
-                </label>
-                <select
-                  value={bankAccount}
-                  onChange={(e) => setBankAccount(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800"
-                >
-                  <option value={`BCA - 8920192811 (${user?.name || 'Rekening Utama'})`}>
-                    BCA - 8920192811 ({user?.name || 'Rekening Utama'})
-                  </option>
-                  <option value={`Mandiri - 137001928381 (${user?.name || 'Rekening Utama'})`}>
-                    Mandiri - 137001928381 ({user?.name || 'Rekening Utama'})
-                  </option>
-                  <option value={`BRI - 0029102938192 (${user?.name || 'Rekening Utama'})`}>
-                    BRI - 0029102938192 ({user?.name || 'Rekening Utama'})
-                  </option>
-                  <option value={`Bank Jago - 1092819283 (${user?.name || 'Rekening Utama'})`}>
-                    Bank Jago - 1092819283 ({user?.name || 'Rekening Utama'})
-                  </option>
-                </select>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setWithdrawModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#FFD358] hover:bg-[#FFB915] text-[#002A45] font-extrabold text-xs shadow-xs cursor-pointer"
-                >
-                  Konfirmasi Tarik Dana
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* 10. Upgrade Plan Modal */}
+      <UpgradePlanModal
+        isOpen={isUpgradePlanModalOpen}
+        onClose={() => setIsUpgradePlanModalOpen(false)}
+        store={currentStore}
+        onPlanUpgraded={async (newPlan) => {
+          await loadData(currentStore.id);
+          addToast(`Toko berhasil di-upgrade ke Paket ${newPlan.toUpperCase()}!`);
+        }}
+      />
 
       {/* Global Toast Notification Container */}
       <Toast toasts={toasts} onDismiss={removeToast} />

@@ -160,6 +160,7 @@ export interface Store {
   category: string;
   currency: string;
   balance: number;
+  plan?: 'free' | 'starter' | 'premium';
   themeColor?: string;
   layoutSettings?: StoreLayoutSettings;
   onboarding: {
@@ -276,8 +277,17 @@ export interface CartItem {
   variantName?: string;
 }
 
-export type ViewMode = 'landing' | 'merchant-desktop' | 'merchant-mobile' | 'storefront' | 'storefront-phone';
-export type MerchantTab = 'beranda' | 'produk' | 'pesanan' | 'layout' | 'integrasi' | 'pengaturan' | 'profil';
+export type ViewMode = 'landing' | 'merchant-desktop' | 'merchant-mobile' | 'storefront' | 'storefront-live' | 'storefront-phone' | 'admin';
+export type MerchantTab =
+  | 'beranda'
+  | 'produk'
+  | 'pesanan'
+  | 'layout'
+  | 'pembayaran'
+  | 'pengiriman'
+  | 'pengaturan'
+  | 'profil'
+  | 'integrasi';
 
 export type TimeFilter = 'Hari Ini' | '7 Hari' | '30 Hari' | 'Tahun Ini';
 
@@ -293,4 +303,66 @@ export interface SalesAnalytics {
     orders: number;
   }[];
 }
+
+export interface WithdrawalRequest {
+  id: string;
+  storeId: string;
+  storeName: string;
+  storeLogo?: string;
+  amount: number;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  processedAt?: string;
+}
+
+export interface WalletTransaction {
+  id: string;
+  storeId: string;
+  type: 'income' | 'withdrawal';
+  title: string;
+  amount: number;
+  referenceId?: string;
+  status: 'completed' | 'pending' | 'rejected';
+  createdAt: string;
+}
+
+export interface AdminPlatformStats {
+  totalStores: number;
+  activeStores: number;
+  totalGmv: number;
+  totalRevenueFee: number;
+  proSubscribers: number;
+  pendingWithdrawalsCount: number;
+  pendingWithdrawalsAmount: number;
+}
+
+export interface PlatformSettings {
+  // Midtrans Payment Gateway
+  midtransEnvironment: 'sandbox' | 'production';
+  midtransMerchantId: string;
+  midtransClientKey: string;
+  midtransServerKey: string;
+
+  // Biteship / RajaOngkir Courier API
+  biteshipEnabled: boolean;
+  biteshipApiKey: string;
+  biteshipOriginCity: string;
+
+  // WhatsApp Gateway API
+  waGatewayEnabled: boolean;
+  waGatewayApiKey: string;
+  waSenderPhone: string;
+
+  // Platform Commission & Payout Rules
+  platformFeePercent: number;
+  payoutMinAmount: number;
+  payoutBankFee: number;
+  autoApprovePayoutUnder: number;
+  maintenanceMode: boolean;
+}
+
+
 

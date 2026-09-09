@@ -1,16 +1,18 @@
 import React from 'react';
-import { Store as StoreType, Order, Product } from '../../types';
+import { Wallet, ArrowUpRight } from 'lucide-react';
+import { Store as StoreType, Order, Product, MerchantTab } from '../../types';
 import { MetricCard } from '../../components/dashboard/MetricCard';
 import { SalesAnalyticsSection } from '../../components/dashboard/SalesAnalyticsSection';
 import { StockAlertCard } from '../../components/dashboard/StockAlertCard';
 import { RecentOrdersSection } from '../../components/dashboard/RecentOrdersSection';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { formatRupiah } from '../../utils/formatters';
 
 interface DashboardPageProps {
   store: StoreType;
   orders: Order[];
   products: Product[];
-  onNavigateTab: (tab: 'beranda' | 'produk' | 'pesanan' | 'integrasi' | 'pengaturan') => void;
+  onNavigateTab: (tab: MerchantTab) => void;
   onOpenAddProduct?: () => void;
   onOpenStorefront?: () => void;
   onOpenShareStore?: () => void;
@@ -23,6 +25,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   orders,
   products,
   onNavigateTab,
+  onOpenWithdraw,
   onSelectOrder,
 }) => {
   const { t } = useLanguage();
@@ -61,7 +64,34 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </div>
 
-      {/* 2. 4 Core Metric Cards */}
+      {/* 2. Quick Store Wallet Banner */}
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8DDDE] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#66000E]/30 transition">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold shadow-2xs shrink-0">
+            <Wallet className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-xs text-[#706866] font-medium block">Saldo Toko Aktif (Siap Ditarik)</span>
+            <p className="text-xl sm:text-2xl font-black text-[#66000E] tracking-tight">
+              {formatRupiah(store.balance || 0)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {onOpenWithdraw && (
+            <button
+              onClick={onOpenWithdraw}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <ArrowUpRight className="w-4 h-4" />
+              <span>Dompet & Tarik Dana</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 3. 4 Core Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Metric 1: Orders (Priority 1) */}
         <MetricCard

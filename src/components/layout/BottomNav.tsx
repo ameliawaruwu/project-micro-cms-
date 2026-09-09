@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Package, ShoppingBag, LayoutTemplate, Layers, Settings } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, LayoutTemplate, CreditCard, Truck, Settings } from 'lucide-react';
 import { MerchantTab } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -21,7 +21,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     { id: 'produk', label: t('nav_products', 'Produk'), icon: Package },
     { id: 'pesanan', label: t('nav_orders', 'Pesanan'), icon: ShoppingBag, badge: pendingOrdersCount },
     { id: 'layout', label: t('nav_layout', 'Layout'), icon: LayoutTemplate },
-    { id: 'integrasi', label: t('nav_payments_shipping', 'Bayar & Kirim'), icon: Layers },
+    { id: 'pembayaran', label: t('nav_payment', 'Bayar'), icon: CreditCard },
+    { id: 'pengiriman', label: t('nav_shipping', 'Kirim'), icon: Truck },
     { id: 'pengaturan', label: t('nav_settings', 'Pengaturan'), icon: Settings },
   ];
 

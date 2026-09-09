@@ -16,6 +16,8 @@ export const translations: Translations = {
   nav_orders: { id: 'Pesanan', en: 'Orders' },
   nav_layout: { id: 'Layout Toko', en: 'Store Layout' },
   nav_payments_shipping: { id: 'Pembayaran & Pengiriman', en: 'Payment & Shipping' },
+  nav_payment: { id: 'Pembayaran', en: 'Payment' },
+  nav_shipping: { id: 'Pengiriman', en: 'Shipping' },
   nav_settings: { id: 'Pengaturan', en: 'Settings' },
   nav_logout: { id: 'Keluar (Logout)', en: 'Log Out' },
   nav_view_store: { id: 'Lihat Toko', en: 'View Store' },
@@ -395,6 +397,34 @@ export const useLanguage = (): LanguageContextType => {
 };
 
 /**
+ * Crisp SVG Vector Flags to fix Windows/cross-platform emoji rendering issues
+ */
+const IndonesiaFlagSvg = () => (
+  <svg className="w-3.5 h-3.5 rounded-full overflow-hidden border border-black/10 shrink-0 shadow-2xs" viewBox="0 0 24 24">
+    <rect width="24" height="12" fill="#E11D48" />
+    <rect y="12" width="24" height="12" fill="#FFFFFF" />
+  </svg>
+);
+
+const UkFlagSvg = () => (
+  <svg className="w-3.5 h-3.5 rounded-full overflow-hidden border border-black/10 shrink-0 shadow-2xs" viewBox="0 0 60 30">
+    <clipPath id="lang_uk_clip">
+      <path d="M0,0 v30 h60 v-30 z"/>
+    </clipPath>
+    <clipPath id="lang_uk_cross">
+      <path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/>
+    </clipPath>
+    <g clipPath="url(#lang_uk_clip)">
+      <path d="M0,0 v30 h60 v-30 z" fill="#012169"/>
+      <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" strokeWidth="6"/>
+      <path d="M0,0 L60,30 M60,0 L0,30" clipPath="url(#lang_uk_cross)" stroke="#C8102E" strokeWidth="4"/>
+      <path d="M30,0 v30 M0,15 h60" stroke="#fff" strokeWidth="10"/>
+      <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" strokeWidth="6"/>
+    </g>
+  </svg>
+);
+
+/**
  * Reusable Language Switch Toggle Component
  */
 export const LanguageSwitchButton: React.FC<{
@@ -425,7 +455,7 @@ export const LanguageSwitchButton: React.FC<{
           }`}
           title="Bahasa Indonesia"
         >
-          <span className="text-xs">🇮🇩</span>
+          <IndonesiaFlagSvg />
           <span className={compact ? 'text-[11px]' : 'text-xs'}>ID</span>
         </button>
 
@@ -439,7 +469,7 @@ export const LanguageSwitchButton: React.FC<{
           }`}
           title="English"
         >
-          <span className="text-xs">🇬🇧</span>
+          <UkFlagSvg />
           <span className={compact ? 'text-[11px]' : 'text-xs'}>EN</span>
         </button>
       </div>
@@ -463,7 +493,7 @@ export const LanguageSwitchButton: React.FC<{
           }`}
           title="Bahasa Indonesia"
         >
-          <span className="text-xs">🇮🇩</span>
+          <IndonesiaFlagSvg />
           <span className={compact ? 'text-[11px]' : 'text-xs'}>ID</span>
         </button>
 
@@ -477,7 +507,7 @@ export const LanguageSwitchButton: React.FC<{
           }`}
           title="English"
         >
-          <span className="text-xs">🇬🇧</span>
+          <UkFlagSvg />
           <span className={compact ? 'text-[11px]' : 'text-xs'}>EN</span>
         </button>
       </div>
@@ -500,7 +530,7 @@ export const LanguageSwitchButton: React.FC<{
         }`}
         title="Bahasa Indonesia"
       >
-        <span className="text-xs">🇮🇩</span>
+        <IndonesiaFlagSvg />
         <span className={compact ? 'text-[11px]' : 'text-xs'}>ID</span>
       </button>
 
@@ -514,7 +544,7 @@ export const LanguageSwitchButton: React.FC<{
         }`}
         title="English"
       >
-        <span className="text-xs">🇬🇧</span>
+        <UkFlagSvg />
         <span className={compact ? 'text-[11px]' : 'text-xs'}>EN</span>
       </button>
     </div>

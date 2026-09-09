@@ -17,6 +17,7 @@ import { LeftPanelSections } from '../../components/layout-editor/LeftPanelSecti
 import { CenterPreviewCanvas } from '../../components/layout-editor/CenterPreviewCanvas';
 import { RightPanelSettings } from '../../components/layout-editor/RightPanelSettings';
 import { AddSectionModal } from '../../components/layout-editor/AddSectionModal';
+import { StoreLayoutSetupWizard } from '../../components/layout-editor/StoreLayoutSetupWizard';
 
 interface LayoutPageProps {
   store: Store;
@@ -62,6 +63,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
@@ -84,6 +86,28 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const handleUpdateStore = (updates: Partial<Store>) => {
     setCurrentStore((prev) => ({ ...prev, ...updates }));
     setHasChanges(true);
+  };
+
+  const handleWizardComplete = (data: {
+    storeUpdates: Partial<Store>;
+    layoutSettings: StoreLayoutSettings;
+  }) => {
+    const updated = { ...currentStore, ...data.storeUpdates };
+    setCurrentStore(updated);
+    const newSections = getStoreSections(data.layoutSettings);
+    setSections(newSections);
+    setSelectedSectionKey(newSections.length > 0 ? (newSections[0].key || `${newSections[0].id}-0`) : null);
+    if (data.layoutSettings.primaryAccent) {
+      setPrimaryAccent(data.layoutSettings.primaryAccent);
+    }
+    setHistory([newSections]);
+    setHistoryIndex(0);
+    setHasChanges(false);
+    setIsWizardOpen(false);
+
+    // Persist layout
+    onSaveLayout(data.layoutSettings);
+    onShowNotification(`🎉 Website toko "${updated.name}" berhasil di-generate!`);
   };
 
   // Undo / Redo History Stack
@@ -353,6 +377,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         onReset={handleReset}
         onOpenStorefront={onOpenStorefront}
         onBack={onBack ? onBack : () => onShowNotification('Navigasi kembali')}
+        onOpenWizard={() => setIsWizardOpen(true)}
         activePreset={activePreset}
         onApplyPreset={handleApplyPreset}
         isSaving={isSaving}
@@ -424,6 +449,15 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         onClose={() => setIsAddModalOpen(false)}
         onAddSection={handleAddSection}
       />
+
+      {/* Wizard Modal: Store Identity, Template Selection, and Web Generator */}
+      {isWizardOpen && (
+        <StoreLayoutSetupWizard
+          currentStore={currentStore}
+          onComplete={handleWizardComplete}
+          onCancel={() => setIsWizardOpen(false)}
+        />
+      )}
     </div>
   );
 };

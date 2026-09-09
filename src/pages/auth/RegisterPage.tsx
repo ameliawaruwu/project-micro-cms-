@@ -19,7 +19,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   onNavigateLanding,
   onSuccess,
 }) => {
-  const { registerWithGoogle } = useAuth();
+  const { registerWithGoogle, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
 
   // Form states
@@ -29,12 +29,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
-  const [isGooglePopupOpen, setIsGooglePopupOpen] = useState(false);
-
-  // Quick Google accounts in popup modal
-  const [customGoogleEmail, setCustomGoogleEmail] = useState('fajrialyaya78@gmail.com');
-  const [customFullName, setCustomFullName] = useState('Fajri Al Yaya');
-  const [showCustomGooglePicker, setShowCustomGooglePicker] = useState(false);
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,26 +59,16 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
     }
   };
 
-  const handleQuickGoogleRegister = async (selectedEmail: string, selectedName: string) => {
+  const handleStartGoogleFlow = async () => {
     try {
       setIsGoogleSubmitting(true);
       setError(null);
-      await registerWithGoogle({
-        googleEmail: selectedEmail.trim(),
-        fullName: selectedName.trim(),
-        storeName: storeName.trim() || undefined,
-      });
-      setIsGooglePopupOpen(false);
-      onSuccess();
+      await loginWithGoogle();
     } catch {
-      setError('Gagal mendaftarkan akun dengan Google. Silakan coba beberapa saat lagi.');
+      setError('Gagal menghubungkan ke Google. Pastikan Google Provider sudah aktif di Supabase.');
     } finally {
       setIsGoogleSubmitting(false);
     }
-  };
-
-  const handleStartGoogleFlow = () => {
-    setIsGooglePopupOpen(true);
   };
 
   return (
@@ -132,32 +116,40 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
           id="register-form-container"
           className="w-full max-w-md md:max-w-[400px] bg-white rounded-t-[36px] md:rounded-none shadow-[0_-12px_40px_rgba(0,0,0,0.3)] md:shadow-none border-t border-white/60 md:border-none px-6 sm:px-8 md:px-0 pt-10 md:pt-0 pb-8 md:pb-0 flex flex-col justify-center my-0 md:my-auto"
         >
-          {/* DESKTOP TOP BRAND BADGE & LANGUAGE SWITCHER (md+) */}
-          <div className="hidden md:flex items-center justify-between gap-3 mb-6">
-            <button
-              type="button"
-              onClick={onNavigateLanding || onNavigateLogin}
-              className="group inline-flex items-center gap-3 focus:outline-none text-left cursor-pointer"
-              title={t('auth_back_to_home', 'Kembali ke Beranda')}
-            >
-              <div className="relative flex items-center justify-center">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FFA940] to-[#FFC53D] shadow-sm flex items-center justify-center text-[#5C0D20] font-black text-lg transition-transform group-hover:scale-105">
-                  K
-                </div>
-                <div className="absolute -inset-1 rounded-full bg-[#FFA940]/25 blur-xs pointer-events-none" />
-              </div>
-
-              <div className="flex flex-col">
-                <span className="font-bold text-xl text-[#1A1110] tracking-tight group-hover:text-[#66000E] transition-colors leading-none">
-                  Kroombox
-                </span>
-                <span className="text-[11px] text-[#6B6260] mt-0.5 font-medium tracking-wide">
-                  {t('landing_platform_badge', 'Platform Toko Online UMKM')}
-                </span>
-              </div>
-            </button>
+          {/* DESKTOP TOP BAR: BACK TO HOME & LANGUAGE SWITCHER (md+) */}
+          <div className="hidden md:flex items-center justify-between gap-3 mb-5">
+            {onNavigateLanding && (
+              <button
+                type="button"
+                onClick={onNavigateLanding}
+                className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF7F7] hover:bg-[#F5E8EA] border border-[#E8DDDE] text-xs font-semibold text-[#5F5652] hover:text-[#66000E] transition-all cursor-pointer active:scale-95 shadow-2xs"
+                title={t('auth_back_to_home', 'Kembali ke Beranda')}
+              >
+                <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                <span>{t('auth_back_to_home', 'Kembali ke Beranda')}</span>
+              </button>
+            )}
 
             <LanguageSwitchButton compact />
+          </div>
+
+          {/* DESKTOP BRAND BADGE */}
+          <div className="hidden md:flex items-center gap-3 mb-6">
+            <div className="relative flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FFA940] to-[#FFC53D] shadow-sm flex items-center justify-center text-[#5C0D20] font-black text-lg">
+                K
+              </div>
+              <div className="absolute -inset-1 rounded-full bg-[#FFA940]/25 blur-xs pointer-events-none" />
+            </div>
+
+            <div className="flex flex-col">
+              <span className="font-bold text-xl text-[#1A1110] tracking-tight leading-none">
+                Kroombox
+              </span>
+              <span className="text-[11px] text-[#6B6260] mt-0.5 font-medium tracking-wide">
+                {t('landing_platform_badge', 'Platform Toko Online UMKM')}
+              </span>
+            </div>
           </div>
 
           {/* GREETING HEADING */}
@@ -316,142 +308,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
           </form>
         </div>
       </div>
-
-      {/* ========================================================================= */}
-      {/* GOOGLE ACCOUNT SELECTION MODAL / POPUP                                    */}
-      {/* ========================================================================= */}
-      {isGooglePopupOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-[420px] bg-white rounded-3xl p-6 shadow-2xl border border-[#E6DDDA] animate-in zoom-in-95 duration-200 text-left">
-            {/* Google Brand Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-[#E6DDDA]">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  />
-                </svg>
-                <span className="font-bold text-sm text-[#241A1A]">Pilih Akun Google</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsGooglePopupOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[#6B6260] hover:text-[#241A1A] hover:bg-[#FAF7F7] cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="py-4">
-              <p className="text-xs text-[#6B6260] mb-4">
-                Pilih akun Google untuk melanjutkan pendaftaran ke <strong>Kroombox</strong>:
-              </p>
-
-              {/* Account 1: User's Primary Google Account */}
-              <button
-                type="button"
-                onClick={() => handleQuickGoogleRegister(customGoogleEmail, customFullName)}
-                disabled={isGoogleSubmitting}
-                className="w-full p-3 rounded-2xl border border-[#E6DDDA] hover:border-[#66000E] bg-white hover:bg-[#FAF7F7] flex items-center justify-between gap-3 text-left transition-all cursor-pointer group mb-2.5 shadow-2xs"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-[#66000E] text-white font-bold flex items-center justify-center shrink-0 shadow-xs">
-                    {customFullName.charAt(0)}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-bold text-[#241A1A] group-hover:text-[#66000E] transition-colors truncate">
-                      {customFullName}
-                    </div>
-                    <div className="text-xs text-[#6B6260] truncate">
-                      {customGoogleEmail}
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-[#6B6260] group-hover:text-[#66000E] shrink-0" />
-              </button>
-
-              {/* Account 2: Merchant Store Account */}
-              <button
-                type="button"
-                onClick={() => handleQuickGoogleRegister('merchant.indonesia@gmail.com', 'Merchant UMKM')}
-                disabled={isGoogleSubmitting}
-                className="w-full p-3 rounded-2xl border border-[#E6DDDA] hover:border-[#66000E] bg-white hover:bg-[#FAF7F7] flex items-center justify-between gap-3 text-left transition-all cursor-pointer group mb-2.5 shadow-2xs"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-[#1F4072] text-[#FFD358] font-bold flex items-center justify-center shrink-0 shadow-xs">
-                    M
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-bold text-[#241A1A] group-hover:text-[#66000E] transition-colors truncate">
-                      Merchant UMKM Indonesia
-                    </div>
-                    <div className="text-xs text-[#6B6260] truncate">
-                      merchant.indonesia@gmail.com
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-[#6B6260] group-hover:text-[#66000E] shrink-0" />
-              </button>
-
-              {/* Toggle to type custom Google Email */}
-              {!showCustomGooglePicker ? (
-                <button
-                  type="button"
-                  onClick={() => setShowCustomGooglePicker(true)}
-                  className="w-full py-2.5 text-center text-xs font-semibold text-[#66000E] hover:underline cursor-pointer"
-                >
-                  + Gunakan Akun Google Lainnya
-                </button>
-              ) : (
-                <div className="p-3.5 rounded-2xl bg-[#FAF7F7] border border-[#E6DDDA] space-y-2 mt-2">
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#241A1A]">
-                    Masukkan Email Google Anda
-                  </label>
-                  <input
-                    type="text"
-                    value={customFullName}
-                    onChange={(e) => setCustomFullName(e.target.value)}
-                    placeholder="Nama Anda"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#DCD5D2] bg-white focus:outline-none focus:border-[#66000E]"
-                  />
-                  <input
-                    type="email"
-                    value={customGoogleEmail}
-                    onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                    placeholder="nama@gmail.com"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-[#DCD5D2] bg-white focus:outline-none focus:border-[#66000E]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleQuickGoogleRegister(customGoogleEmail, customFullName)}
-                    className="w-full py-2.5 rounded-xl bg-[#66000E] text-white font-bold text-xs shadow-xs hover:bg-[#801010] cursor-pointer"
-                  >
-                    Daftar dengan Email Ini
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-3 border-t border-[#E6DDDA] flex items-center justify-between text-[11px] text-[#6B6260]">
-              <span>Kebijakan Privasi Google</span>
-              <span>Ketentuan Layanan</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

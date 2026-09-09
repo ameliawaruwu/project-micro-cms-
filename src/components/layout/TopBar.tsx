@@ -96,7 +96,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <div className="pt-2.5 px-1 text-[11px] text-[#706866] space-y-1">
                   <div className="flex items-center justify-between">
                     <span>{t('account_role', 'Peran Akun:')}</span>
-                    <span className="font-medium text-[#241A1A]">{t('store_owner', 'Pemilik Toko')}</span>
+                    <span className="font-medium text-[#241A1A]">{user?.role === 'admin' ? 'Super Admin' : t('store_owner', 'Pemilik Toko')}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>{t('account_status', 'Status Akun:')}</span>

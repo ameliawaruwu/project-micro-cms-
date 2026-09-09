@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Circle, ArrowRight, Sparkles, Store, PackagePlus, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
-import { Store as StoreType } from '../../types';
+import { Store as StoreType, MerchantTab } from '../../types';
 
 interface OnboardingCardProps {
   store: StoreType;
-  onNavigateTab: (tab: 'beranda' | 'produk' | 'pesanan' | 'integrasi' | 'pengaturan') => void;
+  onNavigateTab: (tab: MerchantTab) => void;
   onOpenAddProductModal: () => void;
 }
 
@@ -44,7 +44,7 @@ export const OnboardingCard: React.FC<OnboardingCardProps> = ({
       isDone: store.onboarding?.paymentConnected ?? false,
       icon: CreditCard,
       cta: 'Hubungkan QRIS/Bank',
-      action: () => onNavigateTab('integrasi'),
+      action: () => onNavigateTab('pembayaran'),
     },
   ];
 
