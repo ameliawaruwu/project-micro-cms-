@@ -63,6 +63,7 @@ import { DeviceSimulatorFrame } from './components/common/DeviceSimulatorFrame';
 // Merchant Pages
 import { DashboardPage } from './pages/merchant/DashboardPage';
 import { ProductListPage } from './pages/merchant/ProductListPage';
+import { ProductFormPage } from './pages/merchant/ProductFormPage';
 import { OrderListPage } from './pages/merchant/OrderListPage';
 import { PaymentListPage } from './pages/merchant/PaymentListPage';
 import { ShippingListPage } from './pages/merchant/ShippingListPage';
@@ -80,7 +81,7 @@ import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { LandingPage } from './pages/LandingPage';
 
 // Modals
-import { ProductFormModal } from './components/products/ProductFormModal';
+import { ConfirmDeleteModal } from './components/common/ConfirmDeleteModal';
 import { ProductDetailModal as MerchantProductDetailModal } from './components/products/ProductDetailModal';
 import { ProcessShippingModal } from './components/orders/ProcessShippingModal';
 import { ReceiptModal } from './components/orders/ReceiptModal';
@@ -124,8 +125,10 @@ export default function App() {
   // State: Modals & Drawers
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [productSubView, setProductSubView] = useState<'list' | 'add' | 'edit'>('list');
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const [selectedMerchantProduct, setSelectedMerchantProduct] = useState<Product | null>(null);
   const [selectedStorefrontProduct, setSelectedStorefrontProduct] = useState<Product | null>(null);
   const [isShippingModalOpen, setIsShippingModalOpen] = useState(false);
@@ -307,13 +310,15 @@ export default function App() {
   // Handlers for Products
   const handleOpenAddProduct = () => {
     setProductToEdit(null);
-    setIsProductModalOpen(true);
+    setProductSubView('add');
+    setActiveTab('produk');
   };
 
   const handleOpenEditProduct = (prod: Product) => {
     setSelectedMerchantProduct(null);
     setProductToEdit(prod);
-    setIsProductModalOpen(true);
+    setProductSubView('edit');
+    setActiveTab('produk');
   };
 
   const handleDuplicateProduct = async (prod: Product) => {
@@ -345,19 +350,32 @@ export default function App() {
       setProducts((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
       addToast(`Produk baru "${created.name}" berhasil ditambahkan.`);
     }
-    setIsProductModalOpen(false);
+    setProductSubView('list');
+    setProductToEdit(null);
   };
 
-  const handleDeleteProduct = async (id: string) => {
+  const handleDeleteProduct = (id: string) => {
     const prod = products.find((p) => p.id === id);
-    if (!prod) return;
-    if (confirm(`Apakah Anda yakin ingin menghapus produk "${prod.name}"?`)) {
-      await productService.deleteProduct(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      if (selectedMerchantProduct?.id === id) {
+    if (prod) {
+      setProductToDelete(prod);
+    }
+  };
+
+  const handleConfirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    setIsDeletingProduct(true);
+    try {
+      await productService.deleteProduct(productToDelete.id);
+      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
+      if (selectedMerchantProduct?.id === productToDelete.id) {
         setSelectedMerchantProduct(null);
       }
-      addToast(`Produk "${prod.name}" berhasil dihapus.`);
+      addToast(`Produk "${productToDelete.name}" berhasil dihapus.`);
+      setProductToDelete(null);
+    } catch (err: any) {
+      addToast(`Gagal menghapus produk: ${err.message}`, 'error');
+    } finally {
+      setIsDeletingProduct(false);
     }
   };
 
@@ -1230,7 +1248,10 @@ export default function App() {
             isCollapsed={isSidebarCollapsed}
             isOpenMobile={mobileSidebarOpen}
             onCloseMobile={() => setMobileSidebarOpen(false)}
-            onTabChange={setActiveTab}
+            onTabChange={(tab) => {
+              setActiveTab(tab);
+              if (tab !== 'produk') setProductSubView('list');
+            }}
             onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             onOpenShareModal={() => setIsShareModalOpen(true)}
             onOpenStorefront={() => setViewMode('storefront')}
@@ -1281,16 +1302,29 @@ export default function App() {
 
               {/* TAB 2: PRODUK */}
               {activeTab === 'produk' && (
-                <ProductListPage
-                  products={products}
-                  categories={categories}
-                  onAddProduct={handleOpenAddProduct}
-                  onViewProduct={(p) => setSelectedMerchantProduct(p)}
-                  onEditProduct={handleOpenEditProduct}
-                  onDuplicateProduct={handleDuplicateProduct}
-                  onDeleteProduct={handleDeleteProduct}
-                  onQuickStockChange={handleQuickStockChange}
-                />
+                productSubView === 'list' ? (
+                  <ProductListPage
+                    products={products}
+                    categories={categories}
+                    onAddProduct={handleOpenAddProduct}
+                    onViewProduct={(p) => setSelectedMerchantProduct(p)}
+                    onEditProduct={handleOpenEditProduct}
+                    onDuplicateProduct={handleDuplicateProduct}
+                    onDeleteProduct={handleDeleteProduct}
+                    onQuickStockChange={handleQuickStockChange}
+                    onNavigateDashboard={() => setActiveTab('beranda')}
+                  />
+                ) : (
+                  <ProductFormPage
+                    productToEdit={productToEdit}
+                    categories={categories}
+                    onBack={() => {
+                      setProductSubView('list');
+                      setProductToEdit(null);
+                    }}
+                    onSave={handleSaveProduct}
+                  />
+                )
               )}
 
               {/* TAB 3: PESANAN */}
@@ -1365,7 +1399,10 @@ export default function App() {
             <BottomNav
               activeTab={activeTab}
               pendingOrdersCount={pendingOrdersCount}
-              onTabChange={setActiveTab}
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                if (tab !== 'produk') setProductSubView('list');
+              }}
             />
           </div>
         </div>
@@ -1380,13 +1417,14 @@ export default function App() {
         onShowNotification={addToast}
       />
 
-      {/* 2. Add / Edit Product Modal */}
-      <ProductFormModal
-        isOpen={isProductModalOpen}
-        productToEdit={productToEdit}
-        categories={categories}
-        onClose={() => setIsProductModalOpen(false)}
-        onSave={handleSaveProduct}
+      {/* 2. Custom Alert Dialog: Confirm Delete Product */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(productToDelete)}
+        title="Hapus Produk?"
+        itemName={productToDelete?.name}
+        isDeleting={isDeletingProduct}
+        onConfirm={handleConfirmDeleteProduct}
+        onClose={() => setProductToDelete(null)}
       />
 
       {/* 3. Merchant Product Detail & Management Modal */}

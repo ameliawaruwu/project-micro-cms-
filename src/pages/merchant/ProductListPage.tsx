@@ -3,6 +3,7 @@ import { Product } from '../../types';
 import { ProductTable } from '../../components/products/ProductTable';
 import { ProductMobileCard } from '../../components/products/ProductMobileCard';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
 
 interface ProductListPageProps {
   products: Product[];
@@ -10,9 +11,10 @@ interface ProductListPageProps {
   onAddProduct: () => void;
   onViewProduct: (product: Product) => void;
   onEditProduct: (product: Product) => void;
-  onDuplicateProduct: (product: Product) => void;
+  onDuplicateProduct?: (product: Product) => void;
   onDeleteProduct: (id: string) => void;
   onQuickStockChange: (id: string, delta: number) => void;
+  onNavigateDashboard?: () => void;
 }
 
 export const ProductListPage: React.FC<ProductListPageProps> = ({
@@ -23,6 +25,7 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
   onEditProduct,
   onDeleteProduct,
   onQuickStockChange,
+  onNavigateDashboard,
 }) => {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,9 +54,22 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
   }, [products, searchQuery, selectedCategory]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-[#1F1F1F] tracking-tight">{t('products_title', 'Produk')}</h1>
+    <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: 'Dashboard', onClick: onNavigateDashboard },
+          { label: 'Produk', isActive: true },
+        ]}
+      />
+
+      <div className="pb-1 border-b border-[#E5E0DD]">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight">
+          {t('products_title', 'Produk')}
+        </h1>
+        <p className="text-xs text-[#706866] mt-0.5">
+          Kelola inventaris barang dagangan, harga promo, stok ketersediaan, dan etalase toko online.
+        </p>
       </div>
 
       {/* Desktop Table View */}
@@ -86,4 +102,3 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
     </div>
   );
 };
-

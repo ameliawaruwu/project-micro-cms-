@@ -1,14 +1,26 @@
 -- ============================================================================
--- KROOMBOX (MICRO CMS) - SUPABASE / POSTGRESQL RELATIONAL DATABASE SCHEMA
+-- KROOMBOX (MICRO CMS) - SUPABASE / POSTGRESQL CLEAN DATABASE SCHEMA
 -- ============================================================================
 -- Kompatibel dengan Supabase Database & PostgreSQL 13+
--- Dilengkapi Foreign Key Constraints, Indexes, Cascading Deletes, dan Default Timestamp
--- Jalankan file ini di Supabase SQL Editor jika ingin sinkronisasi tabel cloud
+-- Tanpa Data Dummy Produk (Clean State)
+-- Sudah termasuk perizinan akses publik/anon untuk frontend
 -- ============================================================================
 
--- Ekstensi UUID & pgcrypto (opsional jika menggunakan uuid_generate_v4)
+-- Ekstensi UUID & pgcrypto
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================================================
+-- OPSI RESET TOTAL: HAPUS TABEL LAMA (UNCOMMENT JIKA INGIN BERSIHKAN DARI AWAL)
+-- ============================================================================
+DROP TABLE IF EXISTS order_items CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS wallet_transactions CASCADE;
+DROP TABLE IF EXISTS withdrawals CASCADE;
+DROP TABLE IF EXISTS stores CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS platform_settings CASCADE;
 
 -- ============================================================================
 -- 1. TABEL: USERS (PENGGUNA PLATFORM - ADMIN & MERCHANT)
@@ -73,9 +85,9 @@ CREATE TABLE IF NOT EXISTS products (
     category VARCHAR(128) DEFAULT 'Umum',
     image_url TEXT,
     images JSONB DEFAULT '[]'::jsonb,
-    status VARCHAR(32) DEFAULT 'Aktif' CHECK (status IN ('Aktif', 'Nonaktif', 'Draft')),
+    status VARCHAR(32) DEFAULT 'Aktif' CHECK (status IN ('Aktif', 'Nonaktif', 'Draft', 'Habis', 'Tersedia')),
     sku VARCHAR(64),
-    weight_grams INTEGER DEFAULT 500,
+    weight_grams INTEGER DEFAULT 250,
     variants JSONB DEFAULT '[]'::jsonb,
     dimensions JSONB DEFAULT '{"length": 10, "width": 10, "height": 10}'::jsonb,
     seo_title VARCHAR(255),
@@ -100,21 +112,18 @@ CREATE TABLE IF NOT EXISTS orders (
     customer_name VARCHAR(255) NOT NULL,
     customer_phone VARCHAR(32) NOT NULL,
     customer_email VARCHAR(255),
-    customer_address TEXT NOT NULL,
-    customer_city VARCHAR(128) NOT NULL,
-    customer_province VARCHAR(128),
-    customer_district VARCHAR(128),
-    customer_postal_code VARCHAR(16),
-    subtotal BIGINT NOT NULL DEFAULT 0,
+    shipping_address TEXT NOT NULL,
+    shipping_city VARCHAR(128) NOT NULL,
+    shipping_courier VARCHAR(64) NOT NULL,
+    shipping_service VARCHAR(64) NOT NULL,
     shipping_cost BIGINT NOT NULL DEFAULT 0,
-    discount BIGINT NOT NULL DEFAULT 0,
-    grand_total BIGINT NOT NULL DEFAULT 0,
-    payment_method VARCHAR(64) NOT NULL DEFAULT 'QRIS',
-    payment_status VARCHAR(64) NOT NULL DEFAULT 'Belum Dibayar' CHECK (payment_status IN ('Sudah Dibayar', 'Belum Dibayar', 'Gagal')),
-    courier VARCHAR(64) NOT NULL DEFAULT 'J&T',
-    courier_service VARCHAR(128),
-    resi_number VARCHAR(128),
-    shipping_status VARCHAR(64) NOT NULL DEFAULT 'Baru' CHECK (shipping_status IN ('Baru', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan')),
+    tracking_number VARCHAR(128),
+    total_amount BIGINT NOT NULL CHECK (total_amount >= 0),
+    payment_method VARCHAR(64) NOT NULL,
+    payment_status VARCHAR(32) NOT NULL DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'paid', 'expired', 'refunded')),
+    order_status VARCHAR(32) NOT NULL DEFAULT 'pending' CHECK (order_status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled')),
+    paid_at TIMESTAMP WITH TIME ZONE,
+    shipped_at TIMESTAMP WITH TIME ZONE,
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -122,11 +131,10 @@ CREATE TABLE IF NOT EXISTS orders (
 
 CREATE INDEX IF NOT EXISTS idx_orders_store_id ON orders(store_id);
 CREATE INDEX IF NOT EXISTS idx_orders_order_number ON orders(order_number);
-CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status);
-CREATE INDEX IF NOT EXISTS idx_orders_shipping_status ON orders(shipping_status);
+CREATE INDEX IF NOT EXISTS idx_orders_order_status ON orders(order_status);
 
 -- ============================================================================
--- 5. TABEL: ORDER_ITEMS (RINCIAN BARANG PESANAN)
+-- 5. TABEL: ORDER_ITEMS (RINCIAN PRODUK DALAM PESANAN)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS order_items (
     id VARCHAR(64) PRIMARY KEY DEFAULT 'itm_' || replace(gen_random_uuid()::text, '-', ''),
@@ -134,17 +142,16 @@ CREATE TABLE IF NOT EXISTS order_items (
     product_id VARCHAR(64) REFERENCES products(id) ON DELETE SET NULL,
     product_name VARCHAR(255) NOT NULL,
     product_image TEXT,
-    price BIGINT NOT NULL,
+    price BIGINT NOT NULL CHECK (price >= 0),
     quantity INTEGER NOT NULL CHECK (quantity > 0),
-    subtotal BIGINT NOT NULL,
-    variant_name VARCHAR(128)
+    subtotal BIGINT NOT NULL CHECK (subtotal >= 0),
+    variant_info VARCHAR(128)
 );
 
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
-CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
 
 -- ============================================================================
--- 6. TABEL: WITHDRAWALS (PENCAIRAN DANA MERCHANT KE BANK)
+-- 6. TABEL: WITHDRAWALS (PENARIKAN DANA OLEH MERCHANT)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS withdrawals (
     id VARCHAR(64) PRIMARY KEY DEFAULT 'wd_' || replace(gen_random_uuid()::text, '-', ''),
@@ -203,7 +210,7 @@ CREATE TABLE IF NOT EXISTS platform_settings (
 );
 
 -- ============================================================================
--- DATA AWAL (SEED DATA DEFAULT)
+-- DATA INISIALISASI DASAR (AKUN & TOKO - TANPA PRODUK DUMMY)
 -- ============================================================================
 INSERT INTO platform_settings (id) VALUES ('global_config') ON CONFLICT (id) DO NOTHING;
 
@@ -212,12 +219,27 @@ INSERT INTO users (id, email, password_hash, name, phone, role) VALUES
 ('usr-andhika-1', 'andhika@gmail.com', 'password123', 'Andhika Pratama', '081298765432', 'merchant')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO stores (id, user_id, name, slug, tagline, description, logo_url, banner_url, phone_whatsapp, city, province, address, category, plan, balance) VALUES
-('store-andhika', 'usr-andhika-1', 'Toko Batik Nusantara', 'batik-nusantara', 'Koleksi Batik Tulis & Cap Asli Indonesia', 'Pusat belanja batik tulis dan cap warisan nusantara berkualitas tinggi.', 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=100&auto=format&fit=crop&q=80', 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1200&auto=format&fit=crop&q=80', '6281298765432', 'Jakarta Selatan', 'DKI Jakarta', 'Jl. Kemang Raya No. 42', 'Fashion & Pakaian', 'starter', 1450000)
+INSERT INTO stores (id, user_id, name, slug, tagline, description, phone_whatsapp, city, province, address, category, plan, balance) VALUES
+('store-andhika', 'usr-andhika-1', 'Toko Andhika', 'toko-andhika', 'Toko Online Andhika', 'Pusat belanja produk berkualitas', '6281298765432', 'Jakarta Selatan', 'DKI Jakarta', 'Jl. Kemang Raya No. 42', 'Fashion & Retail', 'starter', 0)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO products (id, store_id, name, slug, description, price, original_price, stock, category, image_url, status, weight_grams, is_featured) VALUES
-('prd-andhika-1', 'store-andhika', 'Kemeja Batik Tulis Sutra Parang', 'kemeja-batik-tulis-sutra-parang', 'Kemeja batik tulis halus motif parang dengan furing premium lembut.', 450000, 520000, 24, 'Kemeja', 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80', 'Aktif', 500, true),
-('prd-andhika-2', 'store-andhika', 'Kain Batik Cap Kawung Indigo', 'kain-batik-cap-kawung-indigo', 'Kain katun prima halus pewarnaan alami indigo cocok untuk kebaya dan kemeja.', 185000, 210000, 40, 'Kain Batik', 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=600&auto=format&fit=crop&q=80', 'Aktif', 400, true),
-('prd-andhika-3', 'store-andhika', 'Dress Batik Modern Flora', 'dress-batik-modern-flora', 'Dress batik wanita siluet A-line elegan untuk pesta dan kasual.', 320000, 360000, 18, 'Dress & Wanita', 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=600&auto=format&fit=crop&q=80', 'Aktif', 600, false)
-ON CONFLICT (id) DO NOTHING;
+-- ============================================================================
+-- KONFIGURASI PERIZINAN ROW LEVEL SECURITY (RLS) UNTUK FRONTEND
+-- ============================================================================
+ALTER TABLE IF EXISTS products DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS stores DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS order_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS platform_settings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS wallet_transactions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS withdrawals DISABLE ROW LEVEL SECURITY;
+
+GRANT ALL ON TABLE products TO anon, authenticated, service_role;
+GRANT ALL ON TABLE stores TO anon, authenticated, service_role;
+GRANT ALL ON TABLE orders TO anon, authenticated, service_role;
+GRANT ALL ON TABLE order_items TO anon, authenticated, service_role;
+GRANT ALL ON TABLE users TO anon, authenticated, service_role;
+GRANT ALL ON TABLE platform_settings TO anon, authenticated, service_role;
+GRANT ALL ON TABLE wallet_transactions TO anon, authenticated, service_role;
+GRANT ALL ON TABLE withdrawals TO anon, authenticated, service_role;
