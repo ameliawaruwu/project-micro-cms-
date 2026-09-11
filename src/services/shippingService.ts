@@ -4,6 +4,7 @@ import {
   CreateShipmentPayload,
   CreateShipmentResult,
   ShippingBranch,
+  AvailableCourier,
 } from '../types';
 import { supabase } from './supabaseClient';
 import { branchService } from './branchService';
@@ -50,6 +51,73 @@ export const INDONESIAN_CITIES: CityOption[] = [
 export const shippingService = {
   getCities(): CityOption[] {
     return INDONESIAN_CITIES;
+  },
+
+  /**
+   * Panggil Supabase Edge Function 'get-available-couriers' untuk mengambil daftar ekspedisi Biteship
+   */
+  async getAvailableCouriers(): Promise<AvailableCourier[]> {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-available-couriers');
+      if (!error && data?.success && Array.isArray(data.couriers) && data.couriers.length > 0) {
+        return data.couriers;
+      }
+    } catch (err) {
+      console.warn('[Supabase Edge Function] get-available-couriers fallback:', err);
+    }
+
+    return [
+      {
+        courier_name: 'J&T Express',
+        courier_code: 'jnt',
+        courier_service_name: 'EZ Regular',
+        courier_service_code: 'ez',
+        available_for_drop_off: true,
+        available_for_pickup: true,
+        tier: 'standard',
+        description: 'Layanan reguler dengan jaringan jemput & antar terluas',
+      },
+      {
+        courier_name: 'SiCepat Ekspres',
+        courier_code: 'sicepat',
+        courier_service_name: 'SIUNTUNG / Reguler',
+        courier_service_code: 'siuntung',
+        available_for_drop_off: true,
+        available_for_pickup: true,
+        tier: 'standard',
+        description: 'Pick-up cepat kurir ke gudang tanpa minimum paket',
+      },
+      {
+        courier_name: 'JNE Logistics',
+        courier_code: 'jne',
+        courier_service_name: 'REG (Reguler)',
+        courier_service_code: 'reg',
+        available_for_drop_off: true,
+        available_for_pickup: true,
+        tier: 'standard',
+        description: 'Jaringan gerai drop counter terbanyak hingga pelosok kecamatan',
+      },
+      {
+        courier_name: 'Anteraja',
+        courier_code: 'anteraja',
+        courier_service_name: 'Regular Service',
+        courier_service_code: 'reg',
+        available_for_drop_off: true,
+        available_for_pickup: true,
+        tier: 'standard',
+        description: 'Layanan pengiriman terpercaya dengan jemput kurir Satria',
+      },
+      {
+        courier_name: 'GoSend',
+        courier_code: 'gosend',
+        courier_service_name: 'Instant Motor',
+        courier_service_code: 'instant',
+        available_for_drop_off: false,
+        available_for_pickup: true,
+        tier: 'instant',
+        description: 'Driver motor jemput dan antar langsung hari ini',
+      },
+    ];
   },
 
   /**

@@ -13,15 +13,21 @@ import {
   ExternalLink,
   Copy,
   Check,
-  Download,
   AlertCircle,
-  FileText,
+  SlidersHorizontal,
+  Info,
 } from 'lucide-react';
-import { Order, ShippingBranch, ShippingMethod, CreateShipmentResult } from '../../types';
+import {
+  Order,
+  ShippingBranch,
+  ShippingMethod,
+  CreateShipmentResult,
+  AvailableCourier,
+  CourierType,
+} from '../../types';
 import { branchService } from '../../services/branchService';
 import { shippingService } from '../../services/shippingService';
 import { orderService } from '../../services/orderService';
-import { formatRupiah, formatDateIndo } from '../../utils/formatters';
 
 interface ShippingModalProps {
   order: Order | null;
@@ -42,6 +48,11 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
   const [branches, setBranches] = useState<ShippingBranch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<ShippingBranch | null>(null);
 
+  // Dynamic Couriers from Biteship API
+  const [availableCouriers, setAvailableCouriers] = useState<AvailableCourier[]>([]);
+  const [selectedCourier, setSelectedCourier] = useState<AvailableCourier | null>(null);
+  const [isLoadingCouriers, setIsLoadingCouriers] = useState(false);
+
   // Pickup Scheduling state
   const [pickupDate, setPickupDate] = useState<string>(
     new Date().toISOString().split('T')[0]
@@ -54,35 +65,85 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
   const [isCopiedResi, setIsCopiedResi] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Load branches
+  // Load branches & available couriers
   useEffect(() => {
     if (!isOpen || !order) return;
 
-    const loadOrigin = async () => {
+    const loadInitialData = async () => {
+      setIsLoadingCouriers(true);
       try {
+        // 1. Load branches
         const branchList = await branchService.getBranches(order.storeId);
         setBranches(branchList);
 
-        // Cari cabang yang cocok dengan order.originBranchId atau default
-        const match =
+        const matchBranch =
           (order.originBranchId && branchList.find((b) => b.id === order.originBranchId)) ||
           branchList.find((b) => b.isDefault) ||
           branchList[0];
 
-        setSelectedBranch(match || null);
+        setSelectedBranch(matchBranch || null);
+
+        // 2. Load available couriers from Biteship API
+        const couriers = await shippingService.getAvailableCouriers();
+        setAvailableCouriers(couriers);
+
+        // Match courier from order or default to first
+        const orderCourierCode = (order.courierCode || order.courier || 'jnt').toLowerCase();
+        let matchedCourier = couriers.find((c) => {
+          const cCode = c.courier_code.toLowerCase();
+          const cName = c.courier_name.toLowerCase();
+          return (
+            cCode === orderCourierCode ||
+            cName.includes(orderCourierCode) ||
+            orderCourierCode.includes(cCode)
+          );
+        });
+
+        if (!matchedCourier) {
+          matchedCourier = couriers[0];
+        }
+
+        setSelectedCourier(matchedCourier || null);
+
+        // Validasi method pengiriman yang didukung oleh kurir
+        if (matchedCourier) {
+          if (!matchedCourier.available_for_drop_off && matchedCourier.available_for_pickup) {
+            setDeliveryType('pickup');
+          } else if (!matchedCourier.available_for_pickup && matchedCourier.available_for_drop_off) {
+            setDeliveryType('drop_off');
+          } else {
+            setDeliveryType(order.shippingMethod || 'drop_off');
+          }
+        }
       } catch (err) {
-        console.error('Failed to load branches:', err);
+        console.error('Failed to load initial fulfillment data:', err);
+      } finally {
+        setIsLoadingCouriers(false);
       }
     };
 
-    // Reset state jika order baru dibuka
     setShipmentResult(null);
     setErrorMsg('');
-    setDeliveryType(order?.shippingMethod || 'drop_off');
-    loadOrigin();
+    loadInitialData();
   }, [isOpen, order]);
 
   if (!isOpen || !order) return null;
+
+  // Nama kurir dinamis
+  const dynamicCourierName = selectedCourier?.courier_name || order.courier || 'Ekspedisi';
+  const dynamicServiceName = selectedCourier?.courier_service_name || order.courierService || 'Reguler';
+
+  const handleCourierSelect = (c: AvailableCourier) => {
+    setSelectedCourier(c);
+    // Auto-adjust delivery type jika metode saat ini tidak didukung oleh kurir baru
+    if (deliveryType === 'drop_off' && !c.available_for_drop_off) {
+      setDeliveryType('pickup');
+      onShowNotification(`${c.courier_name} hanya mendukung metode Pick-up (Kurir Jemput).`);
+    } else if (deliveryType === 'pickup' && !c.available_for_pickup) {
+      setDeliveryType('drop_off');
+      onShowNotification(`${c.courier_name} hanya mendukung metode Drop-off (Antar ke Counter).`);
+    }
+  };
 
   const handleCopyResi = () => {
     const resi = shipmentResult?.tracking_number || order.resiNumber;
@@ -103,22 +164,45 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
           ? `${pickupDate}T${pickupTimeSlot.slice(0, 2)}:00:00Z`
           : undefined;
 
-      // 1. Panggil Edge Function create-shipment
+      const courierCodeToSend = (
+        selectedCourier?.courier_code ||
+        order.courierCode ||
+        order.courier ||
+        'jnt'
+      ).toLowerCase();
+
+      const courierServiceToSend = (
+        selectedCourier?.courier_service_code ||
+        order.courierService ||
+        'ez'
+      ).toLowerCase();
+
+      // 1. Panggil Edge Function create-shipment dengan kurir dinamis
       const result = await shippingService.createShipment({
         order_id: order.id,
         delivery_type: deliveryType,
         pickup_time: pickupTimeIso,
         origin_branch_id: selectedBranch?.id,
+        courier_code: courierCodeToSend,
+        courier_service: courierServiceToSend,
       });
 
       setShipmentResult(result);
 
+      // Mapping nama kurir untuk order state
+      let mappedCourierType: CourierType = 'J&T';
+      if (courierCodeToSend.includes('jne')) mappedCourierType = 'JNE';
+      else if (courierCodeToSend.includes('sicepat')) mappedCourierType = 'SiCepat';
+      else if (courierCodeToSend.includes('gosend')) mappedCourierType = 'GoSend';
+
       // 2. Update order di local / database
       const updated = await orderService.processShipmentWithBiteship({
         orderId: order.id,
-        courier: order.courier,
-        courierCode: order.courierCode || order.courier.toLowerCase(),
-        courierService: order.courierService,
+        courier: mappedCourierType,
+        courierCode: courierCodeToSend,
+        courierService: selectedCourier
+          ? `${selectedCourier.courier_name} ${selectedCourier.courier_service_name}`
+          : order.courierService,
         trackingNumber: result.tracking_number,
         shippingLabelUrl: result.shipping_label_url,
         shippingMethod: deliveryType,
@@ -151,7 +235,7 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
       id="modal-shipping-fulfillment"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs font-sans"
     >
-      <div className="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-200 overflow-hidden">
+      <div className="bg-white rounded-3xl max-w-xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-200 overflow-hidden">
         {/* Header Shopee Style */}
         <div className="p-4 sm:p-5 border-b border-[#EAEAEA] flex items-center justify-between bg-[#FDFBFB]">
           <div className="flex items-center gap-2.5">
@@ -196,15 +280,17 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
                 <h4 className="font-bold text-sm text-[#1F1F1F]">Pengiriman Berhasil Diatur!</h4>
                 <p className="text-[#555555] text-xs mt-0.5">
                   {deliveryType === 'pickup'
-                    ? 'Kurir akan menjemput paket sesuai jadwal ke alamat gudang asal Anda.'
-                    : 'Paket siap diantar ke gerai/counter kurir terdekat.'}
+                    ? `Kurir ${dynamicCourierName} akan menjemput paket sesuai jadwal ke alamat gudang asal Anda.`
+                    : `Paket siap diantar ke counter gerai ${dynamicCourierName} terdekat.`}
                 </p>
               </div>
 
               {/* Box Nomor Resi */}
-              <div className="p-4 bg-white rounded-xl border border-[#EAEAEA] shadow-2xs space-y-2">
+              <div className="p-4 bg-white rounded-xl border border-[#EAEAEA] shadow-2xs space-y-2 text-left">
                 <div className="flex items-center justify-between text-[#777777]">
-                  <span className="text-[11px] font-semibold">Nomor Resi / AWB ({order.courier})</span>
+                  <span className="text-[11px] font-semibold">
+                    Nomor Resi / AWB ({dynamicCourierName} - {dynamicServiceName})
+                  </span>
                   <span className="text-[10px] uppercase font-bold bg-[#FFF1F0] text-[#9A0602] px-2 py-0.5 rounded">
                     Biteship Verified
                   </span>
@@ -299,7 +385,57 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
                 </div>
               </div>
 
-              {/* 2. Ringkasan Tujuan Pembeli */}
+              {/* 2. Pilihan Kurir Ekspedisi Dinamis (Biteship API) */}
+              <div className="space-y-2 p-3.5 bg-white rounded-2xl border border-[#EAEAEA]">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[#1F1F1F] flex items-center gap-1.5">
+                    <Truck className="w-3.5 h-3.5 text-[#9A0602]" />
+                    <span>Ekspedisi Pengiriman</span>
+                  </label>
+                  <span className="text-[11px] text-[#777777]">
+                    Kurir Pilihan: <strong className="text-[#1F1F1F]">{dynamicCourierName}</strong>
+                  </span>
+                </div>
+
+                {/* Courier Select Dropdown */}
+                <select
+                  value={selectedCourier?.courier_code || ''}
+                  onChange={(e) => {
+                    const c = availableCouriers.find((item) => item.courier_code === e.target.value);
+                    if (c) handleCourierSelect(c);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] cursor-pointer"
+                >
+                  {availableCouriers.map((c) => (
+                    <option key={`${c.courier_code}-${c.courier_service_code}`} value={c.courier_code}>
+                      {c.courier_name} - {c.courier_service_name} ({c.available_for_drop_off && c.available_for_pickup ? 'Drop-off & Pick-up' : c.available_for_drop_off ? 'Hanya Drop-off' : 'Hanya Pick-up'})
+                    </option>
+                  ))}
+                </select>
+
+                {/* Quick Selection Pills */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  {availableCouriers.slice(0, 5).map((c) => {
+                    const isSelected = selectedCourier?.courier_code === c.courier_code;
+                    return (
+                      <button
+                        key={c.courier_code}
+                        type="button"
+                        onClick={() => handleCourierSelect(c)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer border ${
+                          isSelected
+                            ? 'bg-[#FFF1F0] text-[#9A0602] border-[#FECDCA] shadow-2xs'
+                            : 'bg-white text-[#555555] border-[#EAEAEA] hover:bg-[#F7F7F7]'
+                        }`}
+                      >
+                        {c.courier_name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3. Ringkasan Tujuan Pembeli */}
               <div className="p-3 bg-white rounded-xl border border-[#EAEAEA] flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-[#9A0602] shrink-0 mt-0.5" />
                 <div className="min-w-0">
@@ -309,87 +445,109 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
                 </div>
               </div>
 
-              {/* 3. Pilihan Tab Metode: Drop-off vs Pick-up (Ala Shopee) */}
+              {/* 4. Pilihan Tab Metode: Drop-off vs Pick-up (Dinamis Sesuai Kurir) */}
               <div>
                 <label className="block text-xs font-bold text-[#1F1F1F] mb-2">
-                  Metode Pengiriman Paket
+                  Metode Penyerahan Paket
                 </label>
 
                 <div className="grid grid-cols-2 gap-2.5">
                   {/* Option 1: Drop Off */}
-                  <div
-                    onClick={() => setDeliveryType('drop_off')}
-                    className={`p-3 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
-                      deliveryType === 'drop_off'
-                        ? 'border-[#9A0602] bg-[#FFF1F0]'
-                        : 'border-[#EAEAEA] bg-white hover:border-[#CCCCCC]'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-xs text-[#1F1F1F]">Antar ke Counter</span>
-                        <div
-                          className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
-                            deliveryType === 'drop_off'
-                              ? 'border-[#9A0602] bg-[#9A0602]'
-                              : 'border-[#CCCCCC]'
-                          }`}
-                        >
-                          {deliveryType === 'drop_off' && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
-                          )}
+                  {(() => {
+                    const isDropOffAllowed = selectedCourier ? selectedCourier.available_for_drop_off : true;
+                    return (
+                      <div
+                        onClick={() => {
+                          if (isDropOffAllowed) setDeliveryType('drop_off');
+                        }}
+                        className={`p-3 rounded-2xl border-2 transition flex flex-col justify-between ${
+                          !isDropOffAllowed
+                            ? 'opacity-40 bg-[#FAFAFA] border-[#EAEAEA] cursor-not-allowed'
+                            : deliveryType === 'drop_off'
+                            ? 'border-[#9A0602] bg-[#FFF1F0] cursor-pointer'
+                            : 'border-[#EAEAEA] bg-white hover:border-[#CCCCCC] cursor-pointer'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-xs text-[#1F1F1F]">Antar ke Counter</span>
+                            <div
+                              className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
+                                deliveryType === 'drop_off' && isDropOffAllowed
+                                  ? 'border-[#9A0602] bg-[#9A0602]'
+                                  : 'border-[#CCCCCC]'
+                              }`}
+                            >
+                              {deliveryType === 'drop_off' && isDropOffAllowed && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-semibold text-[#9A0602] bg-white px-1.5 py-0.2 rounded border border-[#FECDCA] inline-block mb-1">
+                            Drop-off
+                          </span>
+                          <p className="text-[11px] text-[#555555] leading-snug">
+                            {isDropOffAllowed
+                              ? `Antar paket langsung ke gerai ${dynamicCourierName} terdekat tanpa perlu menunggu kurir.`
+                              : `Layanan ${dynamicCourierName} tidak mendukung drop-off counter.`}
+                          </p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-semibold text-[#9A0602] bg-white px-1.5 py-0.2 rounded border border-[#FECDCA] inline-block mb-1">
-                        Drop-off
-                      </span>
-                      <p className="text-[11px] text-[#555555] leading-snug">
-                        Antar paket langsung ke gerai {order.courier} terdekat tanpa perlu menunggu kurir.
-                      </p>
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                   {/* Option 2: Pick Up */}
-                  <div
-                    onClick={() => setDeliveryType('pickup')}
-                    className={`p-3 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
-                      deliveryType === 'pickup'
-                        ? 'border-[#9A0602] bg-[#FFF1F0]'
-                        : 'border-[#EAEAEA] bg-white hover:border-[#CCCCCC]'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-xs text-[#1F1F1F]">Pick-up (Kurir Jemput)</span>
-                        <div
-                          className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
-                            deliveryType === 'pickup'
-                              ? 'border-[#9A0602] bg-[#9A0602]'
-                              : 'border-[#CCCCCC]'
-                          }`}
-                        >
-                          {deliveryType === 'pickup' && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
-                          )}
+                  {(() => {
+                    const isPickupAllowed = selectedCourier ? selectedCourier.available_for_pickup : true;
+                    return (
+                      <div
+                        onClick={() => {
+                          if (isPickupAllowed) setDeliveryType('pickup');
+                        }}
+                        className={`p-3 rounded-2xl border-2 transition flex flex-col justify-between ${
+                          !isPickupAllowed
+                            ? 'opacity-40 bg-[#FAFAFA] border-[#EAEAEA] cursor-not-allowed'
+                            : deliveryType === 'pickup'
+                            ? 'border-[#9A0602] bg-[#FFF1F0] cursor-pointer'
+                            : 'border-[#EAEAEA] bg-white hover:border-[#CCCCCC] cursor-pointer'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-xs text-[#1F1F1F]">Pick-up (Kurir Jemput)</span>
+                            <div
+                              className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
+                                deliveryType === 'pickup' && isPickupAllowed
+                                  ? 'border-[#9A0602] bg-[#9A0602]'
+                                  : 'border-[#CCCCCC]'
+                              }`}
+                            >
+                              {deliveryType === 'pickup' && isPickupAllowed && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-semibold text-[#027A48] bg-[#ECFDF3] px-1.5 py-0.2 rounded border border-[#ABEFC6] inline-block mb-1">
+                            Kurir Datang ke Gudang
+                          </span>
+                          <p className="text-[11px] text-[#555555] leading-snug">
+                            {isPickupAllowed
+                              ? `Kurir ${dynamicCourierName} akan datang menjemput paket ke alamat gudang Anda.`
+                              : `Layanan ${dynamicCourierName} tidak mendukung penjemputan paket.`}
+                          </p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-semibold text-[#027A48] bg-[#ECFDF3] px-1.5 py-0.2 rounded border border-[#ABEFC6] inline-block mb-1">
-                        Kurir Datang ke Gudang
-                      </span>
-                      <p className="text-[11px] text-[#555555] leading-snug">
-                        Kurir {order.courier} akan datang menjemput paket ke alamat gudang Anda.
-                      </p>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
               </div>
 
-              {/* 4. Slot Picker jika Memilih Pick-up */}
+              {/* 5. Slot Picker jika Memilih Pick-up */}
               {deliveryType === 'pickup' && (
                 <div className="p-3.5 bg-[#FFF9F9] rounded-2xl border border-[#FECDCA] space-y-3 animate-in fade-in duration-200">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-[#1F1F1F]">
                     <Calendar className="w-4 h-4 text-[#9A0602]" />
-                    <span>Jadwal Penjemputan Kurir</span>
+                    <span>Jadwal Penjemputan Kurir ({dynamicCourierName})</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -423,7 +581,7 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
                   </div>
 
                   <p className="text-[11px] text-[#706866]">
-                    * Pastikan paket sudah selesai dikemas dan siap diserahkan saat kurir tiba.
+                    * Pastikan paket sudah selesai dikemas dan siap diserahkan saat kurir {dynamicCourierName} tiba.
                   </p>
                 </div>
               )}
@@ -450,13 +608,13 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Menerbitkan Resi Biteship...</span>
+                  <span>Menerbitkan Resi {dynamicCourierName}...</span>
                 </>
               ) : (
                 <>
                   <Truck className="w-4 h-4" />
                   <span>
-                    Konfirmasi {deliveryType === 'pickup' ? 'Pick-up' : 'Drop-off'} & Buat Resi
+                    Konfirmasi {deliveryType === 'pickup' ? 'Pick-up' : 'Drop-off'} ({dynamicCourierName}) & Buat Resi
                   </span>
                 </>
               )}

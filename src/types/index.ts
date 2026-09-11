@@ -245,10 +245,23 @@ export interface BiteshipRateOption {
   badge?: string;
 }
 
+export interface AvailableCourier {
+  courier_name: string;
+  courier_code: string;
+  courier_service_name: string;
+  courier_service_code: string;
+  available_for_drop_off: boolean;
+  available_for_pickup: boolean;
+  tier?: string;
+  description?: string;
+}
+
 export interface CreateShipmentPayload {
   order_id: string;
   delivery_type: ShippingMethod;
   pickup_time?: string;
+  courier_code?: string;
+  courier_service?: string;
 }
 
 export interface CreateShipmentResult {

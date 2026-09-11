@@ -13,6 +13,8 @@ interface CreateShipmentRequest {
   delivery_type: 'drop_off' | 'pickup';
   pickup_time?: string; // ISO string e.g. "2026-09-12T10:00:00Z"
   origin_branch_id?: string;
+  courier_code?: string;
+  courier_service?: string;
   notes?: string;
 }
 
@@ -29,7 +31,15 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     const body: CreateShipmentRequest = await req.json();
 
-    const { order_id, delivery_type = 'drop_off', pickup_time, origin_branch_id, notes } = body;
+    const {
+      order_id,
+      delivery_type = 'drop_off',
+      pickup_time,
+      origin_branch_id,
+      courier_code,
+      courier_service,
+      notes,
+    } = body;
 
     if (!order_id) {
       return new Response(
@@ -78,8 +88,9 @@ serve(async (req) => {
     const originAddress = branch?.address || 'Jl. Kemang Raya No. 42';
     const originPostalCode = Number(branch?.postal_code || '12730');
 
-    const courierCode = (order?.courier_code || 'jnt').toLowerCase();
-    const courierService = (order?.courier_service || 'ez').toLowerCase();
+    // Kurir dinamis: ambil dari payload request jika admin memilih kurir lain, atau dari order
+    const courierCode = (courier_code || order?.courier_code || order?.courier || 'jnt').toLowerCase();
+    const courierService = (courier_service || order?.courier_service || 'ez').toLowerCase();
 
     // 3. Panggil API Biteship /orders untuk booking pengiriman & generate AWB
     let trackingNumber = '';
@@ -152,6 +163,8 @@ serve(async (req) => {
       shipping_order_id: waybillId,
       tracking_number: trackingNumber,
       shipping_label_url: shippingLabelUrl,
+      courier_code: courierCode,
+      courier_service: courierService,
       shipping_method: delivery_type,
       shipping_status: 'ready_to_ship',
       order_status: 'processing',
