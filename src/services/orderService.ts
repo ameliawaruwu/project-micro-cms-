@@ -12,15 +12,19 @@ class OrderService {
       return initialOrders;
     }
     try {
+      let modified = false;
       const parsed: Order[] = JSON.parse(data);
       const orderMap = new Map<string, Order>();
       parsed.forEach((o) => {
         if (o && o.id) {
+          if (o.shippingLabelUrl && o.shippingLabelUrl.includes('labels.biteship.com')) {
+            o.shippingLabelUrl = `https://biteship.com/id/tracking/${o.resiNumber || o.trackingNumber || ''}`;
+            modified = true;
+          }
           orderMap.set(o.id, o);
         }
       });
 
-      let modified = false;
       initialOrders.forEach((o) => {
         if (!orderMap.has(o.id)) {
           orderMap.set(o.id, o);

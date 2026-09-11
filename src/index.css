@@ -99,15 +99,15 @@
   background: #66000E;
 }
 
-/* Print styles for Struk / Invoice */
+/* Print styles for Struk / Shipping Label Thermal */
 @media print {
   body * {
     visibility: hidden;
   }
-  #printable-receipt, #printable-receipt * {
+  #printable-receipt, #printable-receipt *, #printable-shipping-label, #printable-shipping-label * {
     visibility: visible;
   }
-  #printable-receipt {
+  #printable-receipt, #printable-shipping-label {
     position: absolute;
     left: 0;
     top: 0;

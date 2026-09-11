@@ -140,8 +140,22 @@ serve(async (req) => {
 
       if (biteshipRes.ok) {
         const biteshipData = await biteshipRes.json();
-        trackingNumber = biteshipData.courier?.tracking_id || biteshipData.courier?.waybill_id || biteshipData.id;
-        shippingLabelUrl = biteshipData.courier?.shipping_label_url || biteshipData.shipping_label_url || `https://api.biteship.com/v1/orders/${biteshipData.id}/label`;
+        trackingNumber =
+          biteshipData.courier?.waybill_id ||
+          biteshipData.courier?.tracking_id ||
+          biteshipData.id;
+
+        // Biteship label link / tracking link
+        shippingLabelUrl =
+          biteshipData.courier?.link ||
+          biteshipData.courier?.tracking_url ||
+          biteshipData.courier?.shipping_label_url ||
+          (biteshipData.id ? `https://api.biteship.com/v1/orders/${biteshipData.id}/shipping_label` : '');
+
+        if (!shippingLabelUrl && trackingNumber) {
+          shippingLabelUrl = `https://biteship.com/id/tracking/${trackingNumber}`;
+        }
+
         waybillId = biteshipData.id;
         isLiveSuccess = true;
       }
@@ -149,13 +163,17 @@ serve(async (req) => {
       console.warn('Biteship API booking error, generating standard shipment fallback:', apiErr);
     }
 
-    // 4. Generate fallback tracking number & label URL jika sandbox offline
+    // 4. Generate fallback tracking number & valid link jika sandbox/offline
     if (!trackingNumber) {
       const prefix = courierCode.toUpperCase().slice(0, 3);
       const randomId = Math.floor(1000000000 + Math.random() * 9000000000);
       trackingNumber = `${prefix}${randomId}`;
-      shippingLabelUrl = `https://labels.biteship.com/labels/${trackingNumber}.pdf`;
+      shippingLabelUrl = `https://biteship.com/id/tracking/${trackingNumber}`;
       waybillId = `btsp_${Date.now()}`;
+    }
+
+    if (!shippingLabelUrl || shippingLabelUrl.includes('labels.biteship.com')) {
+      shippingLabelUrl = `https://biteship.com/id/tracking/${trackingNumber}`;
     }
 
     // 5. Update tabel orders di Supabase

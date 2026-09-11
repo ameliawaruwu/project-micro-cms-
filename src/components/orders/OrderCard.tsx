@@ -197,7 +197,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           {/* Print Thermal Receipt or Shipping Label */}
           {order.shippingLabelUrl ? (
             <a
-              href={order.shippingLabelUrl}
+              href={
+                order.shippingLabelUrl.includes('labels.biteship.com')
+                  ? `https://biteship.com/id/tracking/${order.resiNumber || order.trackingNumber || ''}`
+                  : order.shippingLabelUrl
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 px-2.5 py-2 min-h-[40px] rounded-xl border border-[#FECDCA] bg-[#FFF1F0] text-[#9A0602] hover:bg-[#FEE4E2] font-semibold text-xs transition cursor-pointer"

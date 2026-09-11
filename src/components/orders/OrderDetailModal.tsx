@@ -261,7 +261,11 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
             {order.shippingLabelUrl && (
               <a
-                href={order.shippingLabelUrl}
+                href={
+                  order.shippingLabelUrl.includes('labels.biteship.com')
+                    ? `https://biteship.com/id/tracking/${order.resiNumber || order.trackingNumber || ''}`
+                    : order.shippingLabelUrl
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-3.5 py-2 min-h-[38px] rounded-xl bg-[#FFF1F0] text-[#9A0602] border border-[#FECDCA] font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer hover:bg-[#FEE4E2]"
