@@ -254,6 +254,18 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               <span>Cetak Struk</span>
             </button>
 
+            {order.shippingLabelUrl && (
+              <a
+                href={order.shippingLabelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 min-h-[38px] rounded-xl bg-[#FFF1F0] text-[#9A0602] border border-[#FECDCA] font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer hover:bg-[#FEE4E2]"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Label PDF</span>
+              </a>
+            )}
+
             <a
               href={generateWhatsAppLink(order.customerPhone, waMessage)}
               target="_blank"

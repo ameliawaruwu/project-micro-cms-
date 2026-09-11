@@ -9,6 +9,7 @@ import {
   MapPin,
   CheckCircle2,
   Package,
+  Eye,
 } from 'lucide-react';
 import { Order } from '../../types';
 import { formatRupiah, formatDateIndo, generateWhatsAppLink, generateTrackingLink } from '../../utils/formatters';
@@ -18,6 +19,7 @@ interface OrderCardProps {
   onProcessShipping: (order: Order) => void;
   onPrintReceipt: (order: Order) => void;
   onMarkCompleted?: (orderId: string) => void;
+  onSelectOrder?: (order: Order) => void;
   onShowNotification: (msg: string) => void;
 }
 
@@ -26,6 +28,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   onProcessShipping,
   onPrintReceipt,
   onMarkCompleted,
+  onSelectOrder,
   onShowNotification,
 }) => {
   const [copiedResi, setCopiedResi] = useState(false);
@@ -61,14 +64,24 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     <div className="bg-white rounded-2xl border border-[#EAEAEA] shadow-xs hover:border-[#CCCCCC] transition-all p-4 sm:p-5 flex flex-col gap-4 font-sans">
       {/* Top row: Order Number, Customer, Date, Status */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#EAEAEA]">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-sm sm:text-base text-[#1F1F1F] tracking-tight">
+        <div
+          onClick={() => onSelectOrder && onSelectOrder(order)}
+          className={`flex items-center gap-2 ${onSelectOrder ? 'cursor-pointer group' : ''}`}
+          title={onSelectOrder ? 'Klik untuk melihat detail lengkap & tracking pesanan' : undefined}
+        >
+          <span className="font-bold text-sm sm:text-base text-[#1F1F1F] tracking-tight group-hover:text-[#9A0602] transition">
             #{order.orderNumber}
           </span>
           <span className="text-[#EAEAEA]">•</span>
-          <span className="font-semibold text-xs sm:text-sm text-[#555555]">
+          <span className="font-semibold text-xs sm:text-sm text-[#555555] group-hover:text-[#1F1F1F] transition">
             {order.customerName}
           </span>
+          {onSelectOrder && (
+            <span className="text-[10px] text-[#777777] bg-[#F7F7F7] px-2 py-0.5 rounded-md border border-[#EAEAEA] group-hover:border-[#FECDCA] group-hover:text-[#9A0602] group-hover:bg-[#FFF1F0] transition hidden sm:inline-flex items-center gap-1">
+              <Eye className="w-3 h-3" />
+              <span>Detail</span>
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -200,6 +213,18 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               title="Cetak Struk Thermal / Label"
             >
               <Printer className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Detail & Lacak Button */}
+          {onSelectOrder && (
+            <button
+              onClick={() => onSelectOrder(order)}
+              className="flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-white hover:bg-[#F7F7F7] text-[#1F1F1F] font-semibold text-xs border border-[#EAEAEA] transition cursor-pointer"
+              title="Lihat Detail Lengkap & Tracking"
+            >
+              <Eye className="w-4 h-4 text-[#777777]" />
+              <span className="hidden sm:inline">Detail & Lacak</span>
             </button>
           )}
 

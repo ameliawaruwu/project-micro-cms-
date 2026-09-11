@@ -19,6 +19,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
   onProcessShipping,
   onPrintReceipt,
   onMarkCompleted,
+  onSelectOrder,
   onShowNotification,
 }) => {
   const { t } = useLanguage();
@@ -141,6 +142,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
               onProcessShipping={onProcessShipping}
               onPrintReceipt={onPrintReceipt}
               onMarkCompleted={onMarkCompleted}
+              onSelectOrder={onSelectOrder}
               onShowNotification={onShowNotification}
             />
           ))}
