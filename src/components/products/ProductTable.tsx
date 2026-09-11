@@ -1,5 +1,5 @@
-import React from 'react';
-import { Edit2, Trash2, Plus, Minus, Search, Eye, Image as ImageIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { Edit2, Trash2, Plus, Search, Eye, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { Product } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
 
@@ -20,6 +20,7 @@ interface ProductTableProps {
   onDuplicateProduct?: (product: Product) => void;
   onDeleteProduct: (id: string) => void;
   onQuickStockChange?: (id: string, delta: number) => void;
+  onSyncProducts?: () => Promise<void>;
 }
 
 export const ProductTable: React.FC<ProductTableProps> = ({
@@ -33,7 +34,20 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   onViewProduct,
   onEditProduct,
   onDeleteProduct,
+  onSyncProducts,
 }) => {
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSync = async () => {
+    if (!onSyncProducts || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await onSyncProducts();
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="space-y-4 font-sans">
       {/* Header filter controls */}
@@ -67,14 +81,29 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           </select>
         </div>
 
-        {/* Primary CTA */}
-        <button
-          onClick={onAddProduct}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs sm:text-sm shadow-2xs transition transform active:scale-95 shrink-0 cursor-pointer"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Tambah Produk</span>
-        </button>
+        {/* Action Buttons: Sync & Add */}
+        <div className="flex items-center gap-2">
+          {onSyncProducts && (
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl border border-[#E5E0DD] bg-white hover:bg-[#FAF7F7] text-[#241A1A] font-semibold text-xs sm:text-sm shadow-2xs transition active:scale-95 shrink-0 cursor-pointer"
+              title="Sinkronkan data produk lokal ke database cloud Supabase"
+            >
+              <RefreshCw className={`w-4 h-4 text-[#66000E] ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Sinkron...' : 'Sinkronkan Database'}</span>
+            </button>
+          )}
+
+          {/* Primary CTA */}
+          <button
+            onClick={onAddProduct}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs sm:text-sm shadow-2xs transition transform active:scale-95 shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>Tambah Produk</span>
+          </button>
+        </div>
       </div>
 
       {/* Table Container */}
@@ -208,4 +237,3 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     </div>
   );
 };
-

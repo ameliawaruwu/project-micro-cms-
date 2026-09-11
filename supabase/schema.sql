@@ -71,31 +71,23 @@ CREATE INDEX IF NOT EXISTS idx_stores_user_id ON stores(user_id);
 CREATE INDEX IF NOT EXISTS idx_stores_plan ON stores(plan);
 
 -- ============================================================================
--- 3. TABEL: PRODUCTS (KATALOG PRODUK TOKO)
+-- 3. TABEL: PRODUCTS (KATALOG PRODUK TOKO - 1:1 SESUAI FORM FRONT-END)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS products (
     id VARCHAR(64) PRIMARY KEY DEFAULT 'prd_' || replace(gen_random_uuid()::text, '-', ''),
-    store_id VARCHAR(64) NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL,
-    description TEXT,
-    price BIGINT NOT NULL CHECK (price >= 0),
-    original_price BIGINT CHECK (original_price >= 0),
-    stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
-    category VARCHAR(128) DEFAULT 'Umum',
-    image_url TEXT,
-    images JSONB DEFAULT '[]'::jsonb,
-    status VARCHAR(32) DEFAULT 'Aktif' CHECK (status IN ('Aktif', 'Nonaktif', 'Draft', 'Habis', 'Tersedia')),
-    sku VARCHAR(64),
-    weight_grams INTEGER DEFAULT 250,
-    variants JSONB DEFAULT '[]'::jsonb,
-    dimensions JSONB DEFAULT '{"length": 10, "width": 10, "height": 10}'::jsonb,
-    seo_title VARCHAR(255),
-    seo_description TEXT,
-    is_featured BOOLEAN DEFAULT FALSE,
-    sales_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    store_id VARCHAR(64) NOT NULL DEFAULT 'store-andhika',
+    name VARCHAR(255) NOT NULL,                           -- 1. Nama Produk
+    category VARCHAR(128) DEFAULT 'Umum',                 -- 2. Kategori Produk
+    price BIGINT NOT NULL DEFAULT 0,                      -- 3. Harga Produk (Rp)
+    stock INTEGER NOT NULL DEFAULT 0,                     -- 4. Jumlah Stok
+    sku VARCHAR(64),                                      -- 5. Kode SKU (Opsional)
+    weight_grams INTEGER DEFAULT 250,                     -- 6. Berat Barang (Gram)
+    description TEXT,                                     -- 7. Deskripsi Lengkap Produk
+    image_url TEXT,                                       -- 8. Foto Sampul Utama
+    images JSONB DEFAULT '[]'::jsonb,                     -- 9. Galeri Foto Produk (Maks 5)
+    status VARCHAR(32) DEFAULT 'Aktif',                   -- 10. Status Produk (Aktif / Habis)
+    slug VARCHAR(255),                                    -- Link URL Produk
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_products_store_id ON products(store_id);

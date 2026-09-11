@@ -434,27 +434,19 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                  <div className="grid grid-cols-2 gap-2 text-center pt-1">
                     <div className="p-3 rounded-md bg-gray-50 border border-gray-200">
-                      <span className="text-[10px] font-semibold text-gray-500 uppercase block">Free</span>
+                      <span className="text-[10px] font-semibold text-gray-500 uppercase block">Gratis</span>
                       <span className="text-lg font-bold text-gray-900">
                         {stores.filter((s) => !s.plan || s.plan === 'free').length}
                       </span>
                       <span className="text-[10px] text-gray-400 block">Toko</span>
                     </div>
 
-                    <div className="p-3 rounded-md bg-blue-50/60 border border-blue-100">
-                      <span className="text-[10px] font-semibold text-blue-700 uppercase block">Starter</span>
-                      <span className="text-lg font-bold text-blue-900">
-                        {stores.filter((s) => s.plan === 'starter').length}
-                      </span>
-                      <span className="text-[10px] text-blue-500 block">Toko</span>
-                    </div>
-
                     <div className="p-3 rounded-md bg-red-50/60 border border-red-100">
                       <span className="text-[10px] font-semibold text-red-700 uppercase block">Pro</span>
                       <span className="text-lg font-bold text-red-600">
-                        {stores.filter((s) => s.plan === 'premium').length}
+                        {stores.filter((s) => s.plan === 'premium' || s.plan === 'starter').length}
                       </span>
                       <span className="text-[10px] text-red-500 block">Toko</span>
                     </div>
@@ -468,15 +460,15 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
           {/* TAB 2: KELOLA TOKO */}
           {activeTab === 'stores' && (
-            <div className="space-y-3.5">
+            <div className="space-y-4">
               
-              {/* Filter Bar */}
-              <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
-                <div className="relative flex-1 max-w-sm">
-                  <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              {/* Search & Filter Bar */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="relative flex-1 w-full max-w-sm">
+                  <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="Cari toko, slug, kota..."
+                    placeholder="Cari toko berdasarkan nama, domain, atau pemilik..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-8 pr-3 py-1.5 rounded-md bg-white border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-red-500"
@@ -484,7 +476,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 </div>
 
                 <div className="flex items-center gap-1">
-                  {['all', 'free', 'starter', 'premium'].map((p) => (
+                  {['all', 'free', 'premium'].map((p) => (
                     <button
                       key={p}
                       onClick={() => setFilterPlan(p)}
@@ -494,7 +486,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}
                     >
-                      {p === 'all' ? 'Semua' : p}
+                      {p === 'all' ? 'Semua' : p === 'premium' ? 'Pro' : 'Gratis'}
                     </button>
                   ))}
                 </div>

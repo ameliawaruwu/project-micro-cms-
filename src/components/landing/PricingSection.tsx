@@ -55,7 +55,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                   <div className="w-4.5 h-4.5 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span>Halaman Toko Online Resmi</span>
+                  <span>Halaman Toko Online Mandiri</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4.5 h-4.5 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] flex items-center justify-center shrink-0">
@@ -67,13 +67,19 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                   <div className="w-4.5 h-4.5 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span>Pencatatan & Notifikasi Pesanan Masuk</span>
+                  <span>Pembayaran Otomatis Midtrans (QRIS & VA)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4.5 h-4.5 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span>Beranda Ringkas Penjualan</span>
+                  <span>Cek Ongkir Otomatis (J&T, JNE)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4.5 h-4.5 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span>0% Biaya Komisi (Bebas Potongan Transaksi)</span>
                 </div>
               </div>
             </div>
@@ -108,7 +114,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                 <span className="text-2xl sm:text-3xl font-extrabold text-[#66000E]">Rp99.000</span>
                 <span className="text-xs text-[#857C76] font-normal ml-1">/ bulan</span>
                 <p className="text-xs text-[#5F5652] mt-1 font-normal">
-                  Untuk UMKM yang ingin otomatisasi pesanan dan fitur lengkap tanpa batasan.
+                  Untuk UMKM aktif dengan transaksi rutin yang ingin fitur lengkap tanpa batasan.
                 </p>
               </div>
 
@@ -123,25 +129,31 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                   <div className="w-4.5 h-4.5 rounded-full bg-[#66000E] text-white flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span>Katalog Produk Unlimited</span>
+                  <span>Katalog Produk & Varian Unlimited</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4.5 h-4.5 rounded-full bg-[#66000E] text-white flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span>Integrasi Pembayaran (QRIS & VA)</span>
+                  <span className="font-semibold text-[#66000E]">0% Komisi Transaksi (100% Hasil Milik Anda)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4.5 h-4.5 rounded-full bg-[#66000E] text-white flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span>Integrasi Pengiriman (JNE, J&T, SiCepat)</span>
+                  <span>Bebas Watermark (Brand Toko Sendiri)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4.5 h-4.5 rounded-full bg-[#66000E] text-white flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span>Laporan Analytics & Omset Toko</span>
+                  <span>Full Visual Theme & Layout Builder</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4.5 h-4.5 rounded-full bg-[#66000E] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span>Laporan Analytics & Omset Lengkap</span>
                 </div>
               </div>
             </div>

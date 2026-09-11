@@ -334,9 +334,22 @@ export default function App() {
       imageUrl: prod.imageUrl,
       status: prod.status,
     };
-    const created = await productService.createProduct(activeStore.id, duplicatedData);
+    const res = await productService.createProduct(activeStore.id, duplicatedData);
+    const created = res.product;
     setProducts((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
     addToast(`Produk "${created.name}" berhasil disalin.`);
+  };
+
+  const handleSyncProducts = async () => {
+    if (!activeStore) return;
+    addToast('Menyinkronkan produk ke database Supabase Cloud...');
+    const res = await productService.syncAllLocalToCloud(activeStore.id);
+    if (res.success) {
+      addToast(`Berhasil! ${res.count} produk tersinkron ke database Supabase Cloud.`);
+      await loadData();
+    } else {
+      addToast(`Gagal sinkron: ${res.error}`, 'error');
+    }
   };
 
   const handleSaveProduct = async (data: any) => {
@@ -346,13 +359,19 @@ export default function App() {
       setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       addToast(`Produk "${updated.name}" berhasil diperbarui.`);
     } else {
-      const created = await productService.createProduct(activeStore.id, data);
+      const res = await productService.createProduct(activeStore.id, data);
+      const created = res.product;
       setProducts((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
-      addToast(`Produk baru "${created.name}" berhasil ditambahkan.`);
+      if (res.syncedToCloud) {
+        addToast(`Produk "${created.name}" berhasil disimpan & tersinkron ke Supabase Cloud!`);
+      } else {
+        addToast(`Produk "${created.name}" tersimpan di lokal (Supabase belum tersinkron: ${res.cloudError || 'RLS terkunci'})`, 'info');
+      }
     }
     setProductSubView('list');
     setProductToEdit(null);
   };
+
 
   const handleDeleteProduct = (id: string) => {
     const prod = products.find((p) => p.id === id);
@@ -1313,6 +1332,7 @@ export default function App() {
                     onDeleteProduct={handleDeleteProduct}
                     onQuickStockChange={handleQuickStockChange}
                     onNavigateDashboard={() => setActiveTab('beranda')}
+                    onSyncProducts={handleSyncProducts}
                   />
                 ) : (
                   <ProductFormPage
