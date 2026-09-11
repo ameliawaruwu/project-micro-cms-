@@ -8,7 +8,7 @@ import { BranchManagement } from '../../components/shipping/BranchManagement';
 interface ShippingListPageProps {
   integrations: Integration[];
   onToggleIntegration: (id: string) => void;
-  onSaveConfig: (id: string, config: Record<string, string>) => void;
+  onSaveConfig: (id: string, config: Record<string, any>) => void;
   onShowNotification: (msg: string) => void;
 }
 

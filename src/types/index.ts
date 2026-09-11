@@ -332,6 +332,10 @@ export interface Integration {
     clientKey?: string;
     environment?: 'sandbox' | 'production';
     originCity?: string;
+    // Operational shipping preferences (Biteship Aggregator)
+    enabledServices?: string[];
+    autoInsurance?: boolean;
+    defaultHandoff?: 'pickup' | 'drop_off';
   };
 }
 
