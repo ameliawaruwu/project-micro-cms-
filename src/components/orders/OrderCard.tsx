@@ -185,15 +185,15 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       )}
 
       {/* Bottom Bar: Total & Actions */}
-      <div className="pt-3 border-t border-[#EAEAEA] flex flex-wrap items-center justify-between gap-3">
-        <div>
+      <div className="pt-3 border-t border-[#EAEAEA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center justify-between sm:block">
           <span className="text-[11px] text-[#777777] block font-medium">Total Pembayaran</span>
           <span className="font-bold text-base sm:text-lg text-[#1F1F1F]">
             {formatRupiah(order.grandTotal)}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
           {/* Print Thermal Receipt or Shipping Label */}
           {order.shippingLabelUrl ? (
             <a
@@ -220,11 +220,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           {onSelectOrder && (
             <button
               onClick={() => onSelectOrder(order)}
-              className="flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-white hover:bg-[#F7F7F7] text-[#1F1F1F] font-semibold text-xs border border-[#EAEAEA] transition cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-white hover:bg-[#F7F7F7] text-[#1F1F1F] font-semibold text-xs border border-[#EAEAEA] transition cursor-pointer"
               title="Lihat Detail Lengkap & Tracking"
             >
               <Eye className="w-4 h-4 text-[#777777]" />
-              <span className="hidden sm:inline">Detail & Lacak</span>
+              <span>Detail & Lacak</span>
             </button>
           )}
 
@@ -233,17 +233,17 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             href={generateWhatsAppLink(order.customerPhone, waMessage)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-white hover:bg-[#F7F7F7] text-[#027A48] font-semibold text-xs border border-[#ABEFC6] transition"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-white hover:bg-[#F7F7F7] text-[#027A48] font-semibold text-xs border border-[#ABEFC6] transition"
           >
             <MessageCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Hubungi Pembeli</span>
+            <span>Chat Pembeli</span>
           </a>
 
           {/* Primary Action Button */}
           {order.shippingStatus === 'Baru' || order.shippingStatus === 'Diproses' ? (
             <button
               onClick={() => onProcessShipping(order)}
-              className="flex items-center gap-1.5 px-4 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
             >
               <Send className="w-4 h-4" />
               <span>Atur Pengiriman</span>
@@ -251,13 +251,13 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           ) : (order.shippingStatus === 'Dikirim' || order.shippingStatus === 'ready_to_ship') && onMarkCompleted ? (
             <button
               onClick={() => onMarkCompleted(order.id)}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 min-h-[40px] rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-3.5 py-2.5 min-h-[40px] rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Tandai Selesai</span>
             </button>
           ) : (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#027A48] bg-[#ECFDF3] px-3 py-2 min-h-[40px] rounded-xl border border-[#ABEFC6]">
+            <span className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1 text-xs font-semibold text-[#027A48] bg-[#ECFDF3] px-3 py-2 min-h-[40px] rounded-xl border border-[#ABEFC6]">
               <CheckCircle2 className="w-4 h-4" />
               <span>Pesanan Selesai</span>
             </span>

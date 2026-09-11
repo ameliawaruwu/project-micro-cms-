@@ -80,10 +80,10 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const waMessage = `Halo Kak ${order.customerName}, informasi pesanan #${order.orderNumber} dari toko kami:\nTotal: ${formatRupiah(order.grandTotal)}\nStatus: ${order.shippingStatus}${order.resiNumber ? `\nNo Resi: ${order.resiNumber}` : ''}\n\nTerima kasih!`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs overflow-y-auto font-sans">
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-xl border border-[#EAEAEA] my-8 animate-in fade-in zoom-in duration-150">
-        {/* Top Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#EAEAEA]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/50 backdrop-blur-xs font-sans">
+      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-150 overflow-hidden">
+        {/* Top Header (Pinned) */}
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#EAEAEA] shrink-0 bg-[#FDFBFB]">
           <div>
             <div className="flex items-center gap-2">
               <span className="font-mono font-bold text-base sm:text-lg text-[#1F1F1F]">
@@ -104,35 +104,39 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
           </button>
         </div>
 
-        {/* Timeline Status Stepper */}
-        <div className="py-5 border-b border-[#EAEAEA]">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-[#777777] mb-3">
-            Status Perjalanan Pesanan
-          </h4>
-          <div className="flex items-center justify-between relative">
-            <div className="absolute top-3 left-0 right-0 h-0.5 bg-[#EAEAEA] -z-0" />
-            {steps.map((step, idx) => (
-              <div key={idx} className="flex flex-col items-center text-center relative z-10">
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                    step.completed
-                      ? 'bg-[#9A0602] text-white ring-4 ring-[#FFF1F0]'
-                      : 'bg-[#F7F7F7] text-[#777777] border border-[#EAEAEA] ring-4 ring-white'
-                  }`}
-                >
-                  {step.completed ? <Check className="w-3.5 h-3.5 stroke-[2.5]" /> : idx + 1}
-                </div>
-                <span
-                  className={`text-[10px] font-semibold mt-1.5 max-w-[70px] leading-tight ${
-                    step.completed ? 'text-[#1F1F1F]' : 'text-[#777777]'
-                  }`}
-                >
-                  {step.title}
-                </span>
+        {/* Scrollable Modal Body */}
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs">
+          {/* Timeline Status Stepper (Scrollable on small mobile) */}
+          <div className="pb-4 border-b border-[#EAEAEA]">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#777777] mb-3">
+              Status Perjalanan Pesanan
+            </h4>
+            <div className="overflow-x-auto pb-1 custom-scrollbar">
+              <div className="flex items-center justify-between min-w-[360px] relative px-1">
+                <div className="absolute top-3 left-0 right-0 h-0.5 bg-[#EAEAEA] -z-0" />
+                {steps.map((step, idx) => (
+                  <div key={idx} className="flex flex-col items-center text-center relative z-10">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        step.completed
+                          ? 'bg-[#9A0602] text-white ring-4 ring-[#FFF1F0]'
+                          : 'bg-[#F7F7F7] text-[#777777] border border-[#EAEAEA] ring-4 ring-white'
+                      }`}
+                    >
+                      {step.completed ? <Check className="w-3.5 h-3.5 stroke-[2.5]" /> : idx + 1}
+                    </div>
+                    <span
+                      className={`text-[10px] font-semibold mt-1.5 max-w-[70px] leading-tight ${
+                        step.completed ? 'text-[#1F1F1F]' : 'text-[#777777]'
+                      }`}
+                    >
+                      {step.title}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
-        </div>
 
         {/* Content Details: Items + Customer Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-5 border-b border-[#EAEAEA] text-xs">
@@ -242,10 +246,11 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             </div>
           </div>
         </div>
+        </div>
 
-        {/* Footer Actions */}
-        <div className="pt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+        {/* Footer Actions (Pinned at bottom for mobile) */}
+        <div className="p-3.5 sm:p-5 border-t border-[#EAEAEA] bg-white flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => onPrintReceipt(order)}
               className="px-3.5 py-2 min-h-[38px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
