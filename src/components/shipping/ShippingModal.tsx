@@ -233,7 +233,7 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
   return (
     <div
       id="modal-shipping-fulfillment"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs font-sans"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs font-sans"
     >
       <div className="bg-white rounded-3xl max-w-xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-200 overflow-hidden">
         {/* Header Shopee Style */}

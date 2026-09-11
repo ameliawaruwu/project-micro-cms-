@@ -23,8 +23,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   };
 
   return (
-    <div id="modal-receipt" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs overflow-y-auto font-sans">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-[#EAEAEA] my-6 animate-in fade-in zoom-in duration-200">
+    <div id="modal-receipt" className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs overflow-y-auto font-sans">
+      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-[#EAEAEA] my-6 animate-in fade-in zoom-in duration-200">
         {/* Controls */}
         <div className="flex items-center justify-between pb-4 border-b border-[#EAEAEA] print:hidden">
           <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-base">

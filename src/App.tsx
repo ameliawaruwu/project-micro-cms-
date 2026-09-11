@@ -1459,7 +1459,18 @@ export default function App() {
         }}
       />
 
-      {/* 4. Process Shipping & Resi Modal (Shopee Seller Centre Style) */}
+      {/* 4. Order Detail Modal with Stepper & Info (Base Modal z-50) */}
+      <OrderDetailModal
+        order={selectedOrderDetail}
+        isOpen={Boolean(selectedOrderDetail)}
+        onClose={() => setSelectedOrderDetail(null)}
+        onProcessShipping={handleOpenProcessShipping}
+        onPrintReceipt={handlePrintReceipt}
+        onMarkCompleted={handleMarkCompleted}
+        onShowNotification={addToast}
+      />
+
+      {/* 5. Process Shipping & Resi Modal (z-[70], opens on top) */}
       <ShippingModal
         order={orderToShip}
         isOpen={isShippingModalOpen}
@@ -1470,23 +1481,12 @@ export default function App() {
         onShowNotification={addToast}
       />
 
-      {/* 5. Thermal Receipt & Label Modal */}
+      {/* 6. Thermal Receipt & Label Modal (z-[70], opens on top) */}
       <ReceiptModal
         order={orderToPrint}
         store={currentStore}
         isOpen={isReceiptModalOpen}
         onClose={() => setIsReceiptModalOpen(false)}
-      />
-
-      {/* 6. Order Detail Modal with Stepper & Info */}
-      <OrderDetailModal
-        order={selectedOrderDetail}
-        isOpen={Boolean(selectedOrderDetail)}
-        onClose={() => setSelectedOrderDetail(null)}
-        onProcessShipping={handleOpenProcessShipping}
-        onPrintReceipt={handlePrintReceipt}
-        onMarkCompleted={handleMarkCompleted}
-        onShowNotification={addToast}
       />
 
       {/* 7. Storefront Product Detail Modal */}
