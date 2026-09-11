@@ -83,7 +83,7 @@ import { LandingPage } from './pages/LandingPage';
 // Modals
 import { ConfirmDeleteModal } from './components/common/ConfirmDeleteModal';
 import { ProductDetailModal as MerchantProductDetailModal } from './components/products/ProductDetailModal';
-import { ProcessShippingModal } from './components/orders/ProcessShippingModal';
+import { ShippingModal } from './components/shipping/ShippingModal';
 import { ReceiptModal } from './components/orders/ReceiptModal';
 import { OrderDetailModal } from './components/orders/OrderDetailModal';
 import { MerchantWalletModal } from './components/wallet/MerchantWalletModal';
@@ -1443,12 +1443,15 @@ export default function App() {
         }}
       />
 
-      {/* 4. Process Shipping & Resi Modal */}
-      <ProcessShippingModal
+      {/* 4. Process Shipping & Resi Modal (Shopee Seller Centre Style) */}
+      <ShippingModal
         order={orderToShip}
         isOpen={isShippingModalOpen}
         onClose={() => setIsShippingModalOpen(false)}
-        onConfirmShipping={handleConfirmShipping}
+        onSuccess={(updatedOrder) => {
+          setOrders((prev) => prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o)));
+        }}
+        onShowNotification={addToast}
       />
 
       {/* 5. Thermal Receipt & Label Modal */}

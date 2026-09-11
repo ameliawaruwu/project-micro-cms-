@@ -209,9 +209,55 @@ export interface Product {
 }
 
 export type PaymentStatus = 'Sudah Dibayar' | 'Belum Dibayar' | 'Gagal';
-export type ShippingStatus = 'Baru' | 'Diproses' | 'Dikirim' | 'Selesai' | 'Dibatalkan';
+export type ShippingStatus = 'Baru' | 'Diproses' | 'Dikirim' | 'Selesai' | 'Dibatalkan' | 'ready_to_ship';
 export type CourierType = 'J&T' | 'JNE' | 'SiCepat' | 'GoSend';
+export type ShippingMethod = 'pickup' | 'drop_off';
 export type PaymentMethod = 'QRIS' | 'BCA_VA' | 'MANDIRI_VA' | 'STRIPE' | 'COD';
+
+export interface ShippingBranch {
+  id: string;
+  storeId?: string;
+  branchName: string;
+  picName: string;
+  picPhone: string;
+  address: string;
+  subdistrict?: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  isDefault: boolean;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BiteshipRateOption {
+  courier_name: string;
+  courier_code: string;
+  courier_service_name: string;
+  courier_service_code: string;
+  tier: string;
+  description: string;
+  service_type: string;
+  shipping_type: string;
+  price: number;
+  etd: string;
+  badge?: string;
+}
+
+export interface CreateShipmentPayload {
+  order_id: string;
+  delivery_type: ShippingMethod;
+  pickup_time?: string;
+}
+
+export interface CreateShipmentResult {
+  success: boolean;
+  tracking_number: string;
+  shipping_label_url: string;
+  status: string;
+  message?: string;
+}
 
 export interface OrderItem {
   productId: string;
@@ -243,8 +289,14 @@ export interface Order {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   courier: CourierType;
+  courierCode?: string;
   courierService?: string;
+  originBranchId?: string;
+  shippingMethod?: ShippingMethod;
   resiNumber?: string;
+  trackingNumber?: string;
+  shippingLabelUrl?: string;
+  pickupTime?: string;
   shippingStatus: ShippingStatus;
   createdAt: string;
   shippedAt?: string;

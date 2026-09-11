@@ -196,7 +196,6 @@ CREATE TABLE IF NOT EXISTS platform_settings (
     midtrans_client_key VARCHAR(255) DEFAULT 'SB-Mid-client-8Yp9X1v2wQzL4a7k',
     midtrans_server_key VARCHAR(255) DEFAULT 'SB-Mid-server-zR9u3M2vX8pLk1A0yW4t',
     biteship_enabled BOOLEAN DEFAULT TRUE,
-    biteship_api_key VARCHAR(255) DEFAULT 'biteship_test.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjaGFudElkIjoiNjU0MyJ9',
     biteship_origin_city VARCHAR(128) DEFAULT 'Jakarta Selatan',
     wa_gateway_enabled BOOLEAN DEFAULT TRUE,
     wa_gateway_api_key VARCHAR(255) DEFAULT 'fonnte_token_88921xks9021',
@@ -235,6 +234,86 @@ ALTER TABLE IF EXISTS platform_settings DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS wallet_transactions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS withdrawals DISABLE ROW LEVEL SECURITY;
 
+-- ============================================================================
+-- 9. TABEL: SHIPPING_BRANCHES (CABANG / GUDANG PENGIRIMAN ASAL)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS shipping_branches (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    store_id VARCHAR(64) REFERENCES stores(id) ON DELETE CASCADE,
+    branch_name TEXT NOT NULL,
+    pic_name TEXT NOT NULL,
+    pic_phone TEXT NOT NULL,
+    address TEXT NOT NULL,
+    subdistrict TEXT,
+    city TEXT NOT NULL,
+    province TEXT NOT NULL,
+    postal_code TEXT NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_shipping_branches_store_id ON shipping_branches(store_id);
+CREATE INDEX IF NOT EXISTS idx_shipping_branches_is_default ON shipping_branches(is_default);
+
+-- Modifikasi tabel orders dengan relasi dan atribut logistik
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'origin_branch_id') THEN
+        ALTER TABLE orders ADD COLUMN origin_branch_id UUID REFERENCES shipping_branches(id) ON DELETE SET NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'destination_address') THEN
+        ALTER TABLE orders ADD COLUMN destination_address TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'destination_postal_code') THEN
+        ALTER TABLE orders ADD COLUMN destination_postal_code TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'total_weight') THEN
+        ALTER TABLE orders ADD COLUMN total_weight INTEGER DEFAULT 1000;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'courier_code') THEN
+        ALTER TABLE orders ADD COLUMN courier_code TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'courier_service') THEN
+        ALTER TABLE orders ADD COLUMN courier_service TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'shipping_method') THEN
+        ALTER TABLE orders ADD COLUMN shipping_method TEXT DEFAULT 'drop_off' CHECK (shipping_method IN ('pickup', 'drop_off'));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'shipping_order_id') THEN
+        ALTER TABLE orders ADD COLUMN shipping_order_id TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'shipping_label_url') THEN
+        ALTER TABLE orders ADD COLUMN shipping_label_url TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'pickup_time') THEN
+        ALTER TABLE orders ADD COLUMN pickup_time TIMESTAMP WITH TIME ZONE;
+    END IF;
+END $$;
+
+-- Trigger: 1 Branch Default per Store
+CREATE OR REPLACE FUNCTION set_single_default_branch()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.is_default = TRUE THEN
+        UPDATE shipping_branches
+        SET is_default = FALSE
+        WHERE store_id = NEW.store_id AND id != NEW.id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_single_default_branch ON shipping_branches;
+CREATE TRIGGER trg_single_default_branch
+BEFORE INSERT OR UPDATE OF is_default ON shipping_branches
+FOR EACH ROW
+WHEN (NEW.is_default = TRUE)
+EXECUTE FUNCTION set_single_default_branch();
+
+ALTER TABLE IF EXISTS shipping_branches DISABLE ROW LEVEL SECURITY;
+
 GRANT ALL ON TABLE products TO anon, authenticated, service_role;
 GRANT ALL ON TABLE stores TO anon, authenticated, service_role;
 GRANT ALL ON TABLE orders TO anon, authenticated, service_role;
@@ -243,3 +322,13 @@ GRANT ALL ON TABLE users TO anon, authenticated, service_role;
 GRANT ALL ON TABLE platform_settings TO anon, authenticated, service_role;
 GRANT ALL ON TABLE wallet_transactions TO anon, authenticated, service_role;
 GRANT ALL ON TABLE withdrawals TO anon, authenticated, service_role;
+GRANT ALL ON TABLE shipping_branches TO anon, authenticated, service_role;
+
+-- Data Awal Cabang Gudang
+INSERT INTO shipping_branches (
+    id, store_id, branch_name, pic_name, pic_phone, address, subdistrict, city, province, postal_code, is_default, is_active
+) VALUES 
+('a0000000-0000-0000-0000-000000000001', 'store-andhika', 'Gudang Pusat Jakarta', 'Andhika Pratama', '081298765432', 'Jl. Kemang Raya No. 42, RT 04 / RW 02', 'Bangka, Mampang Prapatan', 'Jakarta Selatan', 'DKI Jakarta', '12730', TRUE, TRUE),
+('a0000000-0000-0000-0000-000000000002', 'store-andhika', 'Cabang Logistik Surabaya', 'Budi Santoso', '081377889900', 'Jl. Rungkut Industri Raya No. 15', 'Kali Rungkut', 'Kota Surabaya', 'Jawa Timur', '60293', FALSE, TRUE)
+ON CONFLICT (id) DO NOTHING;
+

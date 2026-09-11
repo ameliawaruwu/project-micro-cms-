@@ -127,11 +127,48 @@ class OrderService {
       ...orders[index],
       courier,
       resiNumber: autoResi,
+      trackingNumber: autoResi,
       shippingStatus: 'Dikirim',
       shippedAt: new Date().toISOString(),
     };
     this.saveOrders(orders);
     return orders[index];
+  }
+
+  async processShipmentWithBiteship(params: {
+    orderId: string;
+    courier?: CourierType;
+    courierCode?: string;
+    courierService?: string;
+    trackingNumber: string;
+    shippingLabelUrl?: string;
+    shippingMethod?: 'pickup' | 'drop_off';
+    originBranchId?: string;
+    pickupTime?: string;
+  }): Promise<Order> {
+    const orders = this.getStoredOrders();
+    const index = orders.findIndex((o) => o.id === params.orderId);
+    if (index === -1) throw new Error('Pesanan tidak ditemukan');
+
+    const current = orders[index];
+    const updatedOrder: Order = {
+      ...current,
+      courier: params.courier || current.courier,
+      courierCode: params.courierCode || current.courierCode || params.courier?.toLowerCase(),
+      courierService: params.courierService || current.courierService,
+      resiNumber: params.trackingNumber,
+      trackingNumber: params.trackingNumber,
+      shippingLabelUrl: params.shippingLabelUrl || current.shippingLabelUrl,
+      shippingMethod: params.shippingMethod || current.shippingMethod || 'drop_off',
+      originBranchId: params.originBranchId || current.originBranchId,
+      pickupTime: params.pickupTime || current.pickupTime,
+      shippingStatus: 'ready_to_ship',
+      shippedAt: new Date().toISOString(),
+    };
+
+    orders[index] = updatedOrder;
+    this.saveOrders(orders);
+    return updatedOrder;
   }
 
   async getDashboardMetrics(storeId: string): Promise<{

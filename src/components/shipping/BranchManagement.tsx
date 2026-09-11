@@ -1,0 +1,582 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Building2,
+  Plus,
+  Edit2,
+  Trash2,
+  Star,
+  Phone,
+  MapPin,
+  CheckCircle2,
+  XCircle,
+  X,
+  Search,
+  AlertCircle,
+  Warehouse,
+  ArrowUpDown,
+} from 'lucide-react';
+import { ShippingBranch } from '../../types';
+import { branchService } from '../../services/branchService';
+
+interface BranchManagementProps {
+  storeId?: string;
+  onShowNotification: (msg: string) => void;
+}
+
+export const BranchManagement: React.FC<BranchManagementProps> = ({
+  storeId = 'store-andhika',
+  onShowNotification,
+}) => {
+  const [branches, setBranches] = useState<ShippingBranch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBranch, setEditingBranch] = useState<ShippingBranch | null>(null);
+
+  // Form State
+  const [branchName, setBranchName] = useState('');
+  const [picName, setPicName] = useState('');
+  const [picPhone, setPicPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [subdistrict, setSubdistrict] = useState('');
+  const [city, setCity] = useState('');
+  const [province, setProvince] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [isDefault, setIsDefault] = useState(false);
+  const [isActive, setIsActive] = useState(true);
+  const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const loadBranches = async () => {
+    setIsLoading(true);
+    try {
+      const data = await branchService.getBranches(storeId);
+      setBranches(data);
+    } catch (err) {
+      console.error('Failed to load branches:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBranches();
+  }, [storeId]);
+
+  const resetForm = () => {
+    setBranchName('');
+    setPicName('');
+    setPicPhone('');
+    setAddress('');
+    setSubdistrict('');
+    setCity('');
+    setProvince('');
+    setPostalCode('');
+    setIsDefault(false);
+    setIsActive(true);
+    setFormError('');
+    setEditingBranch(null);
+  };
+
+  const handleOpenAddModal = () => {
+    resetForm();
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (branch: ShippingBranch) => {
+    setEditingBranch(branch);
+    setBranchName(branch.branchName);
+    setPicName(branch.picName);
+    setPicPhone(branch.picPhone);
+    setAddress(branch.address);
+    setSubdistrict(branch.subdistrict || '');
+    setCity(branch.city);
+    setProvince(branch.province);
+    setPostalCode(branch.postalCode);
+    setIsDefault(branch.isDefault);
+    setIsActive(branch.isActive);
+    setFormError('');
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+
+    if (!branchName.trim() || !picName.trim() || !picPhone.trim() || !address.trim() || !city.trim() || !postalCode.trim()) {
+      setFormError('Mohon lengkapi semua kolom wajib (*).');
+      return;
+    }
+
+    // Validate postal code format
+    if (!/^\d{5}$/.test(postalCode.trim())) {
+      setFormError('Kode pos harus berupa 5 digit angka.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      if (editingBranch) {
+        await branchService.updateBranch(editingBranch.id, {
+          branchName: branchName.trim(),
+          picName: picName.trim(),
+          picPhone: picPhone.trim(),
+          address: address.trim(),
+          subdistrict: subdistrict.trim(),
+          city: city.trim(),
+          province: province.trim() || 'DKI Jakarta',
+          postalCode: postalCode.trim(),
+          isDefault,
+          isActive,
+        });
+        onShowNotification(`Cabang "${branchName}" berhasil diperbarui.`);
+      } else {
+        await branchService.createBranch({
+          storeId,
+          branchName: branchName.trim(),
+          picName: picName.trim(),
+          picPhone: picPhone.trim(),
+          address: address.trim(),
+          subdistrict: subdistrict.trim(),
+          city: city.trim(),
+          province: province.trim() || 'DKI Jakarta',
+          postalCode: postalCode.trim(),
+          isDefault,
+          isActive,
+        });
+        onShowNotification(`Cabang baru "${branchName}" berhasil ditambahkan.`);
+      }
+
+      setIsModalOpen(false);
+      resetForm();
+      await loadBranches();
+    } catch (err: any) {
+      setFormError(err.message || 'Gagal menyimpan data cabang');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSetDefault = async (branch: ShippingBranch) => {
+    try {
+      await branchService.setDefaultBranch(branch.id, storeId);
+      onShowNotification(`"${branch.branchName}" dijadikan sebagai cabang utama.`);
+      await loadBranches();
+    } catch (err: any) {
+      onShowNotification(err.message || 'Gagal mengubah cabang utama');
+    }
+  };
+
+  const handleToggleActive = async (branch: ShippingBranch) => {
+    try {
+      const updated = await branchService.toggleActiveBranch(branch.id);
+      onShowNotification(
+        `Cabang "${branch.branchName}" ${updated.isActive ? 'diaktifkan' : 'dinonaktifkan'}.`
+      );
+      await loadBranches();
+    } catch (err: any) {
+      onShowNotification(err.message || 'Gagal mengubah status cabang');
+    }
+  };
+
+  const handleDelete = async (branch: ShippingBranch) => {
+    if (branch.isDefault) {
+      alert('Cabang utama tidak dapat dihapus. Silakan jadikan cabang lain sebagai cabang utama terlebih dahulu.');
+      return;
+    }
+
+    if (confirm(`Apakah Anda yakin ingin menghapus cabang "${branch.branchName}"?`)) {
+      try {
+        await branchService.deleteBranch(branch.id);
+        onShowNotification(`Cabang "${branch.branchName}" berhasil dihapus.`);
+        await loadBranches();
+      } catch (err: any) {
+        alert(err.message || 'Gagal menghapus cabang');
+      }
+    }
+  };
+
+  const filteredBranches = branches.filter(
+    (b) =>
+      b.branchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.picName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.postalCode.includes(searchQuery)
+  );
+
+  return (
+    <div className="space-y-4 font-sans text-left">
+      {/* Top Header & Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#EAEAEA] shadow-2xs">
+        <div>
+          <div className="flex items-center gap-2">
+            <Warehouse className="w-5 h-5 text-[#9A0602]" />
+            <h3 className="font-bold text-sm sm:text-base text-[#1F1F1F]">
+              Manajemen Cabang & Gudang Asal
+            </h3>
+          </div>
+          <p className="text-xs text-[#777777] mt-1">
+            Lokasi cabang/gudang digunakan oleh kurir (Biteship) sebagai titik penjemputan (origin) dan dasar kalkulasi ongkir.
+          </p>
+        </div>
+
+        <button
+          onClick={handleOpenAddModal}
+          className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs transition shadow-xs cursor-pointer shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Tambah Cabang / Gudang</span>
+        </button>
+      </div>
+
+      {/* Search & Filter Bar */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-[#777777] absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Cari nama gudang, kota, nama PIC, atau kode pos..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-white rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] placeholder:text-[#999999] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+          />
+        </div>
+        <div className="px-3 py-2 bg-white rounded-xl border border-[#EAEAEA] text-xs font-semibold text-[#555555] whitespace-nowrap">
+          {filteredBranches.length} Cabang
+        </div>
+      </div>
+
+      {/* Branch List */}
+      {isLoading ? (
+        <div className="p-8 text-center bg-white rounded-2xl border border-[#EAEAEA] text-xs text-[#777777]">
+          Memuat data cabang gudang...
+        </div>
+      ) : filteredBranches.length === 0 ? (
+        <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-[#CCCCCC] text-xs text-[#777777] space-y-2">
+          <Warehouse className="w-8 h-8 text-[#CCCCCC] mx-auto" />
+          <p className="font-semibold text-[#1F1F1F]">Tidak ada cabang yang cocok dengan pencarian</p>
+          <p>Tambahkan cabang baru untuk mengaktifkan titik penjemputan logistik.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {filteredBranches.map((branch) => (
+            <div
+              key={branch.id}
+              className={`p-4 rounded-2xl border transition-all bg-white relative flex flex-col justify-between gap-3 ${
+                branch.isDefault
+                  ? 'border-[#9A0602] shadow-xs ring-1 ring-[#9A0602]/20'
+                  : 'border-[#EAEAEA] hover:border-[#CCCCCC]'
+              }`}
+            >
+              {/* Header Card */}
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-[#1F1F1F] flex items-center gap-1.5">
+                      <Building2 className="w-4 h-4 text-[#9A0602]" />
+                      {branch.branchName}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {branch.isDefault && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FFF1F0] text-[#9A0602] border border-[#FECDCA] text-[10px] font-bold">
+                        <Star className="w-3 h-3 fill-[#9A0602]" />
+                        Cabang Utama
+                      </span>
+                    )}
+
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                        branch.isActive
+                          ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]'
+                          : 'bg-[#F7F7F7] text-[#777777] border-[#EAEAEA]'
+                      }`}
+                    >
+                      {branch.isActive ? (
+                        <>
+                          <CheckCircle2 className="w-2.5 h-2.5" /> Aktif
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-2.5 h-2.5" /> Nonaktif
+                        </>
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                {/* PIC Info */}
+                <div className="flex flex-wrap items-center gap-3 text-xs text-[#555555] py-1 border-b border-[#F0F0F0]">
+                  <span className="font-semibold text-[#1F1F1F]">PIC: {branch.picName}</span>
+                  <span className="text-[#CCCCCC]">•</span>
+                  <a
+                    href={`tel:${branch.picPhone}`}
+                    className="flex items-center gap-1 text-[#555555] hover:text-[#9A0602]"
+                  >
+                    <Phone className="w-3 h-3 text-[#777777]" />
+                    <span>{branch.picPhone}</span>
+                  </a>
+                </div>
+
+                {/* Address */}
+                <div className="mt-2 text-xs text-[#555555] space-y-1">
+                  <div className="flex items-start gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#9A0602] shrink-0 mt-0.5" />
+                    <p className="line-clamp-2">{branch.address}</p>
+                  </div>
+                  <div className="pl-5 text-[11px] text-[#777777]">
+                    {branch.subdistrict ? `${branch.subdistrict}, ` : ''}
+                    {branch.city}, {branch.province}
+                    <span className="ml-2 font-mono font-semibold bg-[#F7F7F7] px-1.5 py-0.5 rounded border border-[#EAEAEA]">
+                      Kode Pos: {branch.postalCode}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Bar */}
+              <div className="pt-2.5 border-t border-[#F0F0F0] flex items-center justify-between gap-2">
+                <div>
+                  {!branch.isDefault && (
+                    <button
+                      onClick={() => handleSetDefault(branch)}
+                      className="text-[11px] font-semibold text-[#9A0602] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Star className="w-3 h-3" />
+                      <span>Jadikan Utama</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleToggleActive(branch)}
+                    className="px-2 py-1 rounded-lg text-[11px] font-medium border border-[#EAEAEA] text-[#555555] hover:bg-[#F7F7F7] transition cursor-pointer"
+                  >
+                    {branch.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                  </button>
+
+                  <button
+                    onClick={() => handleOpenEditModal(branch)}
+                    className="p-1.5 rounded-lg border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] transition cursor-pointer"
+                    title="Ubah Cabang"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+
+                  {!branch.isDefault && (
+                    <button
+                      onClick={() => handleDelete(branch)}
+                      className="p-1.5 rounded-lg border border-[#FECDCA] text-[#D92D20] hover:bg-[#FEF3F2] transition cursor-pointer"
+                      title="Hapus Cabang"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* MODAL FORM TAMBAH / EDIT CABANG */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs font-sans">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-[#EAEAEA]">
+              <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-base">
+                <Building2 className="w-5 h-5 text-[#9A0602]" />
+                <span>{editingBranch ? 'Edit Cabang / Gudang' : 'Tambah Cabang / Gudang Asal'}</span>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-1.5 rounded-xl text-[#777777] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="py-4 space-y-3.5 text-xs text-left">
+              {formError && (
+                <div className="p-3 bg-[#FEF3F2] text-[#B42318] border border-[#FECDCA] rounded-xl flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              {/* Nama Cabang */}
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
+                  Nama Cabang / Gudang *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Gudang Pusat Jakarta, Cabang Bandung"
+                  value={branchName}
+                  onChange={(e) => setBranchName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs font-medium text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                />
+              </div>
+
+              {/* PIC Name & Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
+                    Nama Penanggung Jawab (PIC) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nama PIC penyerahan paket"
+                    value={picName}
+                    onChange={(e) => setPicName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
+                    No. Handphone PIC *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="0812xxxxxxxx (untuk kurir)"
+                    value={picPhone}
+                    onChange={(e) => setPicPhone(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                  />
+                </div>
+              </div>
+
+              {/* Alamat Lengkap */}
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
+                  Alamat Lengkap Gudang *
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  placeholder="Nama jalan, nomor gudang/ruko, RT/RW, patokan lokasi..."
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                />
+              </div>
+
+              {/* Wilayah: Subdistrict, Kota, Provinsi, Kode Pos */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
+                    Kecamatan
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Mampang Prapatan"
+                    value={subdistrict}
+                    onChange={(e) => setSubdistrict(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
+                    Kota / Kab *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Jakarta Selatan"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
+                    Kode Pos *
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={5}
+                    required
+                    placeholder="12730"
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, ''))}
+                    className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs font-mono font-bold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                  />
+                </div>
+              </div>
+
+              {/* Provinsi */}
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
+                  Provinsi
+                </label>
+                <input
+                  type="text"
+                  placeholder="DKI Jakarta"
+                  value={province}
+                  onChange={(e) => setProvince(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                />
+              </div>
+
+              {/* Toggles: Jadikan Cabang Utama & Status Aktif */}
+              <div className="pt-2 border-t border-[#F0F0F0] space-y-2">
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isDefault}
+                    onChange={(e) => setIsDefault(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#9A0602] focus:ring-[#9A0602] border-[#CCCCCC]"
+                  />
+                  <div>
+                    <span className="font-semibold text-xs text-[#1F1F1F]">Jadikan Cabang Utama</span>
+                    <p className="text-[11px] text-[#777777]">
+                      Cabang utama otomatis terpilih sebagai origin saat checkout dan perhitungan ongkir pembeli.
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#9A0602] focus:ring-[#9A0602] border-[#CCCCCC]"
+                  />
+                  <div>
+                    <span className="font-semibold text-xs text-[#1F1F1F]">Status Aktif</span>
+                    <p className="text-[11px] text-[#777777]">
+                      Cabang aktif dapat digunakan untuk proses booking pengiriman dan penjemputan paket.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Buttons */}
+              <div className="pt-3 border-t border-[#EAEAEA] flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 min-h-[38px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] font-semibold text-xs transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 min-h-[38px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs transition cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Menyimpan...' : editingBranch ? 'Perbarui Cabang' : 'Simpan Cabang'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

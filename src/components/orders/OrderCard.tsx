@@ -181,14 +181,27 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Print receipt */}
-          <button
-            onClick={() => onPrintReceipt(order)}
-            className="p-2.5 rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] transition cursor-pointer"
-            title="Cetak Struk Thermal / Label"
-          >
-            <Printer className="w-4 h-4" />
-          </button>
+          {/* Print Thermal Receipt or Shipping Label */}
+          {order.shippingLabelUrl ? (
+            <a
+              href={order.shippingLabelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-2.5 py-2 min-h-[40px] rounded-xl border border-[#FECDCA] bg-[#FFF1F0] text-[#9A0602] hover:bg-[#FEE4E2] font-semibold text-xs transition cursor-pointer"
+              title="Cetak Label Pengiriman PDF (Biteship)"
+            >
+              <Printer className="w-4 h-4" />
+              <span className="hidden sm:inline">Label PDF</span>
+            </a>
+          ) : (
+            <button
+              onClick={() => onPrintReceipt(order)}
+              className="p-2.5 rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] transition cursor-pointer"
+              title="Cetak Struk Thermal / Label"
+            >
+              <Printer className="w-4 h-4" />
+            </button>
+          )}
 
           {/* Contact Buyer WhatsApp */}
           <a
@@ -208,9 +221,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               className="flex items-center gap-1.5 px-4 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
             >
               <Send className="w-4 h-4" />
-              <span>Proses Pengiriman</span>
+              <span>Atur Pengiriman</span>
             </button>
-          ) : order.shippingStatus === 'Dikirim' && onMarkCompleted ? (
+          ) : (order.shippingStatus === 'Dikirim' || order.shippingStatus === 'ready_to_ship') && onMarkCompleted ? (
             <button
               onClick={() => onMarkCompleted(order.id)}
               className="flex items-center gap-1.5 px-3.5 py-2.5 min-h-[40px] rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs shadow-xs transition cursor-pointer"

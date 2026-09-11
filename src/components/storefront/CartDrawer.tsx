@@ -24,12 +24,13 @@ import {
   Building2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { CartItem, Store, CourierType, PaymentMethod, Order } from '../../types';
+import { CartItem, Store, CourierType, PaymentMethod, Order, ShippingBranch, BiteshipRateOption } from '../../types';
 import { formatRupiah, generateWhatsAppLink } from '../../utils/formatters';
 import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
 import { shippingService, INDONESIAN_CITIES, ShippingRate } from '../../services/shippingService';
 import { storeService } from '../../services/storeService';
+import { CourierSelector } from '../shipping/CourierSelector';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -55,7 +56,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('Jakarta Selatan');
+  const [postalCode, setPostalCode] = useState('12730');
   const [courier, setCourier] = useState<CourierType>('J&T');
+  const [selectedBranch, setSelectedBranch] = useState<ShippingBranch | null>(null);
+  const [selectedBiteshipRate, setSelectedBiteshipRate] = useState<BiteshipRateOption | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('QRIS');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,8 +86,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   if (!isOpen) return null;
 
   const subtotal = cartService.getTotal(items);
-  const shippingCost = selectedRate ? selectedRate.cost : (items.length > 0 ? 15000 : 0);
-  const grandTotal = subtotal + shippingCost;
+  const activeShippingCost = selectedBiteshipRate
+    ? selectedBiteshipRate.price
+    : selectedRate
+    ? selectedRate.cost
+    : items.length > 0
+    ? 15000
+    : 0;
+  const grandTotal = subtotal + activeShippingCost;
 
   const handleProceedToPayment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,15 +124,22 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         customerPhone: phone.trim(),
         customerAddress: address.trim(),
         customerCity: city,
+        customerPostalCode: postalCode,
+        originBranchId: selectedBranch?.id,
         items: orderItems,
         subtotal,
-        shippingCost,
+        shippingCost: activeShippingCost,
         discount: 0,
         grandTotal,
         paymentMethod,
         paymentStatus: 'Sudah Dibayar',
         courier,
-        courierService: selectedRate ? `${selectedRate.serviceName} (${selectedRate.etd})` : 'Reguler (1-2 Hari)',
+        courierCode: selectedBiteshipRate?.courier_code || 'jnt',
+        courierService: selectedBiteshipRate
+          ? `${selectedBiteshipRate.courier_name} ${selectedBiteshipRate.courier_service_name} (${selectedBiteshipRate.etd})`
+          : selectedRate
+          ? `${selectedRate.serviceName} (${selectedRate.etd})`
+          : 'Reguler (1-2 Hari)',
         shippingStatus: 'Baru',
         notes: notes.trim() || undefined,
       });
@@ -333,26 +350,48 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-red-600" />
-                    <span>Alamat & Ongkir</span>
+                    <span>Alamat & Lokasi Pengiriman</span>
                   </h4>
                   <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.2 rounded border border-gray-200">
                     Berat: {totalWeightGrams}g ({totalWeightKg} kg)
                   </span>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-medium text-gray-600 mb-1">Kota Tujuan *</label>
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-md border border-gray-200 text-xs font-medium text-gray-900 bg-white focus:outline-none focus:border-red-500"
-                  >
-                    {INDONESIAN_CITIES.map((c) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name} ({c.province})
-                      </option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-medium text-gray-600 mb-1">Kota Tujuan *</label>
+                    <select
+                      value={city}
+                      onChange={(e) => {
+                        const selectedCity = e.target.value;
+                        setCity(selectedCity);
+                        const matchCity = INDONESIAN_CITIES.find((c) => c.name === selectedCity);
+                        if (matchCity?.postalCode) {
+                          setPostalCode(matchCity.postalCode);
+                        }
+                      }}
+                      className="w-full px-2.5 py-1.5 rounded-md border border-gray-200 text-xs font-medium text-gray-900 bg-white focus:outline-none focus:border-red-500"
+                    >
+                      {INDONESIAN_CITIES.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name} ({c.province})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-gray-600 mb-1">Kode Pos Tujuan *</label>
+                    <input
+                      type="text"
+                      maxLength={5}
+                      required
+                      placeholder="12730"
+                      value={postalCode}
+                      onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-2.5 py-1.5 rounded-md border border-gray-200 text-xs font-mono font-bold text-gray-900 focus:outline-none focus:border-red-500"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -360,7 +399,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <textarea
                     rows={2}
                     required
-                    placeholder="Jl. Nama Jalan No. XX, RT/RW..."
+                    placeholder="Jl. Nama Jalan No. XX, RT/RW, Kelurahan..."
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className="w-full px-2.5 py-1.5 rounded-md border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-red-500"
@@ -368,48 +407,25 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
               </div>
 
-              {/* Couriers */}
-              <div className="space-y-2 pt-2.5 border-t border-gray-100">
-                <label className="block text-xs font-semibold text-gray-800">Pilih Layanan Kurir</label>
-                
-                <div className="space-y-1.5">
-                  {availableRates.map((rate) => {
-                    const isSelected = courier === rate.courier;
-                    return (
-                      <div
-                        key={rate.courier}
-                        onClick={() => {
-                          setCourier(rate.courier);
-                          setSelectedRate(rate);
-                        }}
-                        className={`p-2.5 rounded-md border transition cursor-pointer flex items-center justify-between ${
-                          isSelected
-                            ? 'border-red-600 bg-red-50/50'
-                            : 'border-gray-200 bg-white hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Truck className={`w-3.5 h-3.5 ${isSelected ? 'text-red-600' : 'text-gray-400'}`} />
-                          <div>
-                            <div className="flex items-center gap-1">
-                              <span className="font-semibold text-xs text-gray-900">{rate.courier} - {rate.serviceName}</span>
-                              {rate.badge && (
-                                <span className="text-[9px] font-semibold bg-red-100 text-red-700 px-1 rounded">
-                                  {rate.badge}
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[10px] text-gray-400">Estimasi: {rate.etd}</span>
-                          </div>
-                        </div>
-
-                        <span className="text-xs font-bold text-gray-900">
-                          {formatRupiah(rate.cost)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+              {/* Dynamic Courier & Warehouse Selector */}
+              <div className="pt-2 border-t border-gray-100">
+                <CourierSelector
+                  storeId={store.id}
+                  destinationPostalCode={postalCode}
+                  weightGrams={totalWeightGrams}
+                  selectedBranchId={selectedBranch?.id}
+                  selectedCourierCode={selectedBiteshipRate?.courier_code}
+                  selectedServiceCode={selectedBiteshipRate?.courier_service_code}
+                  onRateSelect={(rate, branch) => {
+                    setSelectedBiteshipRate(rate);
+                    setSelectedBranch(branch);
+                    if (rate.courier_name.toLowerCase().includes('sicepat')) setCourier('SiCepat');
+                    else if (rate.courier_name.toLowerCase().includes('jne')) setCourier('JNE');
+                    else if (rate.courier_name.toLowerCase().includes('gosend')) setCourier('GoSend');
+                    else setCourier('J&T');
+                  }}
+                  onBranchChange={(branch) => setSelectedBranch(branch)}
+                />
               </div>
 
               {/* Payment Selector */}
@@ -455,7 +471,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
                 <div className="flex items-center justify-between text-gray-500">
                   <span>Ongkir ({courier}):</span>
-                  <span>{formatRupiah(shippingCost)}</span>
+                  <span>{formatRupiah(activeShippingCost)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm font-bold text-gray-900 pt-1 border-t border-gray-200">
                   <span>Total Tagihan:</span>
