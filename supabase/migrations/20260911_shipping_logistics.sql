@@ -130,6 +130,20 @@ INSERT INTO shipping_branches (
     'Jawa Timur',
     '60293',
     FALSE,
-    TRUE
 )
 ON CONFLICT (id) DO NOTHING;
+
+-- 6. Aktifkan Supabase Realtime WebSocket untuk orders & shipping_branches
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE shipping_branches;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;

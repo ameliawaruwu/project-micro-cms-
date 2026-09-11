@@ -1,5 +1,6 @@
 import { Order, ShippingStatus, CourierType, PaymentStatus } from '../types';
 import { initialOrders } from './mockData';
+import { supabase } from './supabaseClient';
 
 const ORDERS_KEY = 'microcms_orders_v1';
 
@@ -195,6 +196,58 @@ class OrderService {
       lowStockCount: 0,
     };
   }
+
+  /**
+   * Berlangganan (Subscribe) perubahan pesanan secara Real-Time via Supabase WebSocket
+   */
+  subscribeToOrderChanges(storeId: string, onUpdate: (updatedOrder: Order) => void): () => void {
+    try {
+      const channel = supabase
+        .channel(`realtime:orders:${storeId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'orders',
+            filter: `store_id=eq.${storeId}`,
+          },
+          (payload: any) => {
+            if (payload?.new && payload.new.id) {
+              const row = payload.new;
+              const stored = this.getStoredOrders();
+              const idx = stored.findIndex((o) => o.id === row.id);
+              if (idx !== -1) {
+                const merged: Order = {
+                  ...stored[idx],
+                  shippingStatus: row.shipping_status || stored[idx].shippingStatus,
+                  resiNumber: row.tracking_number || stored[idx].resiNumber,
+                  trackingNumber: row.tracking_number || stored[idx].trackingNumber,
+                  shippingLabelUrl: row.shipping_label_url || stored[idx].shippingLabelUrl,
+                  shippingMethod: row.shipping_method || stored[idx].shippingMethod,
+                  courierCode: row.courier_code || stored[idx].courierCode,
+                  courierService: row.courier_service || stored[idx].courierService,
+                  pickupTime: row.pickup_time || stored[idx].pickupTime,
+                  shippedAt: row.shipped_at || stored[idx].shippedAt,
+                };
+                stored[idx] = merged;
+                this.saveOrders(stored);
+                onUpdate(merged);
+              }
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (err) {
+      console.warn('Realtime subscription error in orderService:', err);
+      return () => {};
+    }
+  }
 }
 
 export const orderService = new OrderService();
+

@@ -244,6 +244,22 @@ export default function App() {
     loadData();
   }, [isAuthenticated, authStore, user?.id, viewMode]);
 
+  // Real-time synchronization for orders via Supabase WebSocket
+  useEffect(() => {
+    if (!activeStore?.id) return;
+
+    const unsubscribe = orderService.subscribeToOrderChanges(activeStore.id, (updatedOrder) => {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
+      );
+      addToast(`Status pesanan #${updatedOrder.orderNumber} terupdate secara real-time!`, 'info');
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [activeStore?.id]);
+
   // Route Super Admin directly to Admin Dashboard
   useEffect(() => {
     if (user?.role === 'admin' && viewMode !== 'admin' && viewMode !== 'storefront' && viewMode !== 'storefront-live') {

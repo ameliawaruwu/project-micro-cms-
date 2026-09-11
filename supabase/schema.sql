@@ -332,3 +332,18 @@ INSERT INTO shipping_branches (
 ('a0000000-0000-0000-0000-000000000002', 'store-andhika', 'Cabang Logistik Surabaya', 'Budi Santoso', '081377889900', 'Jl. Rungkut Industri Raya No. 15', 'Kali Rungkut', 'Kota Surabaya', 'Jawa Timur', '60293', FALSE, TRUE)
 ON CONFLICT (id) DO NOTHING;
 
+-- 10. AKTIFKAN SUPABASE REALTIME WEBSOCKET
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE shipping_branches;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
