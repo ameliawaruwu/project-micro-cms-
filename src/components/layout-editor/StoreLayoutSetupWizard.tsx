@@ -452,7 +452,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                 </div>
                 <div className={`flex items-center gap-2.5 transition-colors ${generationStage >= 3 ? 'text-emerald-700 font-semibold' : 'text-gray-400'}`}>
                   <CheckCircle2 className={`w-4 h-4 ${generationStage >= 3 ? 'text-emerald-600' : 'text-gray-300'}`} />
-                  <span>Menyinkronkan katalog produk & tombol checkout WhatsApp</span>
+                  <span>Menyinkronkan katalog produk & gateway pembayaran otomatis Midtrans</span>
                 </div>
                 <div className={`flex items-center gap-2.5 transition-colors ${generationStage >= 4 ? 'text-emerald-700 font-semibold' : 'text-gray-400'}`}>
                   <CheckCircle2 className={`w-4 h-4 ${generationStage >= 4 ? 'text-emerald-600' : 'text-gray-300'}`} />

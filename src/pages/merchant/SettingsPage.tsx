@@ -183,7 +183,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 <span>Paket Langganan</span>
               </div>
               <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#F5E8EA] text-[#66000E] uppercase border border-[#E8DDDE]">
-                {store.plan === 'premium' ? 'Pro / Premium' : store.plan === 'starter' ? 'Starter' : 'Free'}
+                {store.plan === 'premium' ? 'Paket Pro' : 'Paket Gratis'}
               </span>
             </div>
 
@@ -194,11 +194,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               </div>
               <div className="flex items-center justify-between">
                 <span>Katalog Produk:</span>
-                <span className="font-semibold">{store.plan === 'premium' ? 'Unlimited' : store.plan === 'starter' ? '100 Produk' : '25 Produk'}</span>
+                <span className="font-semibold">{store.plan === 'premium' ? 'Unlimited' : '25 Produk'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span>Biaya Transaksi:</span>
-                <span className="font-semibold">{store.plan === 'premium' ? '1%' : store.plan === 'starter' ? '1.5%' : '2%'}</span>
+                <span>Komisi Transaksi:</span>
+                <span className="font-semibold text-emerald-700">0% (Bebas Potongan)</span>
               </div>
             </div>
 
