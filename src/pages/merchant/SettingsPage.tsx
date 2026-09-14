@@ -9,7 +9,7 @@ interface SettingsPageProps {
   onUpdateStore: (updated: Store) => void;
   onOpenWithdraw: () => void;
   onOpenShareModal: () => void;
-  onOpenUpgradePlan?: () => void;
+  onNavigateBilling?: () => void;
   onShowNotification: (msg: string) => void;
 }
 
@@ -18,7 +18,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onUpdateStore,
   onOpenWithdraw,
   onOpenShareModal,
-  onOpenUpgradePlan,
+  onNavigateBilling,
   onShowNotification,
 }) => {
   const { t } = useLanguage();
@@ -175,8 +175,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         {/* Right 1 Col: Subscription Plan & Wallet & QR Code */}
         <div className="space-y-6">
           
-          {/* 1. Subscription Plan Card */}
-          <div className="bg-white rounded-3xl p-6 border-2 border-[#66000E] shadow-xs space-y-4 relative overflow-hidden text-left">
+          {/* 1. Subscription Plan Info Card */}
+          <div className="bg-white rounded-3xl p-6 border border-[#EAEAEA] shadow-xs space-y-3.5 relative overflow-hidden text-left">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-base">
                 <Crown className="w-5 h-5 text-[#66000E]" />
@@ -187,29 +187,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               </span>
             </div>
 
-            <div className="p-3.5 bg-[#FAF7F7] rounded-2xl border border-[#E8DDDE] space-y-1 text-xs text-[#5F5652]">
-              <div className="flex items-center justify-between font-bold text-[#241A1A]">
-                <span>Status Paket:</span>
-                <span className="text-emerald-700">Aktif</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Katalog Produk:</span>
-                <span className="font-semibold">{store.plan === 'premium' ? 'Unlimited' : '25 Produk'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Komisi Transaksi:</span>
-                <span className="font-semibold text-emerald-700">0% (Bebas Potongan)</span>
-              </div>
-            </div>
+            <p className="text-xs text-[#777777] leading-relaxed">
+              Pengelolaan paket toko, aktivasi Pro, dan riwayat tagihan sekarang dapat diakses langsung pada menu khusus <strong>Billing Plan</strong> di sidebar.
+            </p>
 
-            {onOpenUpgradePlan && (
+            {onNavigateBilling && (
               <button
                 type="button"
-                onClick={onOpenUpgradePlan}
-                className="w-full py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                onClick={onNavigateBilling}
+                className="w-full py-2.5 rounded-xl bg-[#FAF7F7] hover:bg-[#F5E8EA] border border-[#E5E0DD] text-[#66000E] font-bold text-xs shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Zap className="w-3.5 h-3.5" />
-                <span>Upgrade / Ubah Paket</span>
+                <Crown className="w-3.5 h-3.5" />
+                <span>Buka Menu Billing Plan</span>
               </button>
             )}
           </div>

@@ -33,7 +33,7 @@ function midtransDevPlugin(): Plugin {
                 ? 'https://app.midtrans.com/snap/v1/transactions'
                 : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
 
-            const payload = {
+            const payload: any = {
               transaction_details: {
                 order_id: data.orderId || `ORDER-${Date.now()}`,
                 gross_amount: Math.round(data.grossAmount || 10000),
@@ -44,6 +44,13 @@ function midtransDevPlugin(): Plugin {
                 email: data.customerEmail || 'customer@example.com',
               },
             };
+
+            if (Array.isArray(data.enabledPayments) && data.enabledPayments.length > 0) {
+              payload.enabled_payments = data.enabledPayments.map((p: string) => {
+                if (p === 'mandiri_bill') return 'echannel';
+                return p;
+              });
+            }
 
             const midtransRes = await fetch(apiUrl, {
               method: 'POST',

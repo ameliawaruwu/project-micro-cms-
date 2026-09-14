@@ -67,6 +67,7 @@ import { ProductFormPage } from './pages/merchant/ProductFormPage';
 import { OrderListPage } from './pages/merchant/OrderListPage';
 import { PaymentListPage } from './pages/merchant/PaymentListPage';
 import { ShippingListPage } from './pages/merchant/ShippingListPage';
+import { BillingPage } from './pages/merchant/BillingPage';
 import { IntegrationListPage } from './pages/merchant/IntegrationListPage';
 import { SettingsPage } from './pages/merchant/SettingsPage';
 import { LayoutPage } from './pages/merchant/LayoutPage';
@@ -163,15 +164,25 @@ export default function App() {
   const loadData = async (targetStoreId?: string) => {
     try {
       if (!user) {
+        const params = new URLSearchParams(window.location.search);
+        const tokoParam = params.get('toko') || params.get('store');
         const allStores = await storeService.getStores();
-        const defaultStore = allStores[0] || initialStores[0];
-        setActiveStore(defaultStore);
+        let selectedStore: Store;
+        if (tokoParam) {
+          selectedStore = await storeService.getStoreBySlug(tokoParam);
+        } else {
+          selectedStore = allStores[0] || initialStores[0];
+        }
+
+        setActiveStore(selectedStore);
         setStores(allStores.length > 0 ? allStores : initialStores);
 
-        const storeProducts = await productService.getProductsByStore(defaultStore.id);
-        const storeOrders = await orderService.getOrdersByStore(defaultStore.id);
-        const storeIntegrations = await integrationService.getIntegrations();
-        const initialCart = cartService.getCart(defaultStore.slug);
+        const [storeProducts, storeOrders, storeIntegrations] = await Promise.all([
+          productService.getProductsByStore(selectedStore.id),
+          orderService.getOrdersByStore(selectedStore.id),
+          integrationService.getIntegrations(),
+        ]);
+        const initialCart = cartService.getCart(selectedStore.slug);
 
         setProducts(storeProducts);
         setOrders(storeOrders);
@@ -206,9 +217,11 @@ export default function App() {
       setActiveStore(finalStore || null);
 
       if (finalStore) {
-        const storeProducts = await productService.getProductsByStore(finalStore.id);
-        const storeOrders = await orderService.getOrdersByStore(finalStore.id);
-        const storeIntegrations = await integrationService.getIntegrations();
+        const [storeProducts, storeOrders, storeIntegrations] = await Promise.all([
+          productService.getProductsByStore(finalStore.id),
+          orderService.getOrdersByStore(finalStore.id),
+          integrationService.getIntegrations(),
+        ]);
         const initialCart = cartService.getCart(finalStore.slug);
 
         setProducts(storeProducts);
@@ -221,28 +234,33 @@ export default function App() {
     }
   };
 
-  // Direct URL routing for buyers/customers (e.g. localhost:3000/?toko=batik-nusantara or ?mode=storefront)
+  // Direct URL routing for buyers/customers (e.g. localhost:3000/?toko=toko-andhikagonzales or ?mode=storefront)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokoParam = params.get('toko') || params.get('store');
     const modeParam = params.get('mode') || params.get('view');
 
     if (tokoParam || modeParam === 'storefront') {
-      storeService.getStores().then((all) => {
-        if (tokoParam) {
-          const match = all.find((s) => s.slug === tokoParam || s.id === tokoParam);
-          if (match) {
-            setActiveStore(match);
-          }
+      setViewMode('storefront-live');
+      storeService.getStoreBySlug(tokoParam || '').then(async (targetStore) => {
+        if (targetStore) {
+          setActiveStore(targetStore);
+          const [storeProducts, storeOrders] = await Promise.all([
+            productService.getProductsByStore(targetStore.id),
+            orderService.getOrdersByStore(targetStore.id),
+          ]);
+          const initialCart = cartService.getCart(targetStore.slug);
+          setProducts(storeProducts);
+          setOrders(storeOrders);
+          setCartItems(initialCart);
         }
-        setViewMode('storefront-live');
       });
     }
   }, []);
 
   useEffect(() => {
     loadData();
-  }, [isAuthenticated, authStore, user?.id, viewMode]);
+  }, [isAuthenticated, authStore, user?.id]);
 
   // Route Super Admin directly to Admin Dashboard
   useEffect(() => {
@@ -1200,6 +1218,7 @@ export default function App() {
       {/* 4. SUPER ADMIN DASHBOARD VIEW */}
       {viewMode === 'admin' && (
         <AdminDashboardPage
+          currentUser={user}
           onOpenStorefront={(slug) => {
             const targetStore = stores.find((s) => s.slug === slug);
             if (targetStore) setActiveStore(targetStore);
@@ -1374,12 +1393,7 @@ export default function App() {
 
               {/* TAB 5: PEMBAYARAN */}
               {activeTab === 'pembayaran' && (
-                <PaymentListPage
-                  integrations={integrations}
-                  onToggleIntegration={handleToggleIntegration}
-                  onSaveConfig={handleSaveIntegrationConfig}
-                  onShowNotification={addToast}
-                />
+                <PaymentListPage onShowNotification={addToast} />
               )}
 
               {/* TAB 6: PENGIRIMAN */}
@@ -1394,22 +1408,26 @@ export default function App() {
 
               {/* TAB FALLBACK: INTEGRASI */}
               {activeTab === 'integrasi' && (
-                <PaymentListPage
-                  integrations={integrations}
-                  onToggleIntegration={handleToggleIntegration}
-                  onSaveConfig={handleSaveIntegrationConfig}
+                <PaymentListPage onShowNotification={addToast} />
+              )}
+
+              {/* TAB 7: BILLING PLAN / LANGGANAN */}
+              {activeTab === 'billing' && (
+                <BillingPage
+                  store={currentStore}
+                  onUpdateStore={handleUpdateStore}
                   onShowNotification={addToast}
                 />
               )}
 
-              {/* TAB 6: PENGATURAN / PROFIL TOKO */}
+              {/* TAB 8: PENGATURAN / PROFIL TOKO */}
               {activeTab === 'pengaturan' && (
                 <SettingsPage
                   store={currentStore}
                   onUpdateStore={handleUpdateStore}
                   onOpenWithdraw={() => setWithdrawModalOpen(true)}
                   onOpenShareModal={() => setIsShareModalOpen(true)}
-                  onOpenUpgradePlan={() => setIsUpgradePlanModalOpen(true)}
+                  onNavigateBilling={() => setActiveTab('billing')}
                   onShowNotification={addToast}
                 />
               )}

@@ -96,9 +96,32 @@ class StoreService {
     return stores.find((s) => s.id === id);
   }
 
-  async getStoreBySlug(slug: string): Promise<Store | undefined> {
+  async getStoreBySlug(slug: string): Promise<Store> {
     const stores = this.getStoredStores();
-    return stores.find((s) => s.slug.toLowerCase() === slug.toLowerCase()) || stores[0];
+    if (!slug) return stores[0] || initialStores[0];
+
+    const clean = slug.toLowerCase().trim();
+    // 1. Exact slug or ID match
+    const exact = stores.find((s) => s.slug?.toLowerCase() === clean || s.id?.toLowerCase() === clean);
+    if (exact) return exact;
+
+    // 2. Fuzzy match (e.g. 'toko-andhikagonzales' vs 'store-andhika' or 'toko-andhika')
+    const fuzzy = stores.find((s) => {
+      const sSlug = (s.slug || '').toLowerCase();
+      const sId = (s.id || '').toLowerCase();
+      const sName = (s.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanSimple = clean.replace(/[^a-z0-9]/g, '');
+      return (
+        sSlug.includes(clean) ||
+        clean.includes(sSlug) ||
+        sId.includes(clean) ||
+        clean.includes(sId) ||
+        sName.includes(cleanSimple) ||
+        cleanSimple.includes(sName)
+      );
+    });
+
+    return fuzzy || stores[0] || initialStores[0];
   }
 
   async getActiveStore(userId?: string): Promise<Store | undefined> {

@@ -1,6 +1,7 @@
 import { WithdrawalRequest, WalletTransaction } from '../types';
 import { adminService } from './adminService';
 import { storeService } from './storeService';
+import { supabase } from './supabaseClient';
 
 const TRANSACTIONS_KEY = 'microcms_wallet_transactions_v1';
 
@@ -122,6 +123,26 @@ class WalletService {
 
     localStorage.setItem('microcms_admin_withdrawals_v1', JSON.stringify([newWithdrawal, ...allWithdrawals]));
 
+    // Sync to Supabase withdrawals table
+    try {
+      await supabase.from('withdrawals').insert([
+        {
+          id: newWithdrawal.id,
+          store_id: newWithdrawal.storeId,
+          store_name: newWithdrawal.storeName,
+          store_logo: newWithdrawal.storeLogo,
+          amount: newWithdrawal.amount,
+          bank_name: newWithdrawal.bankName,
+          account_number: newWithdrawal.accountNumber,
+          account_holder: newWithdrawal.accountHolder,
+          status: 'pending',
+          requested_at: newWithdrawal.requestedAt,
+        },
+      ]);
+    } catch (err) {
+      console.warn('Failed to insert withdrawal to Supabase:', err);
+    }
+
     // 5. Record in Wallet Transaction History
     const allTxs = this.getStoredTransactions();
     const newTx: WalletTransaction = {
@@ -135,6 +156,24 @@ class WalletService {
       createdAt: new Date().toISOString(),
     };
     this.saveTransactions([newTx, ...allTxs]);
+
+    // Sync to Supabase wallet_transactions table
+    try {
+      await supabase.from('wallet_transactions').insert([
+        {
+          id: newTx.id,
+          store_id: newTx.storeId,
+          type: newTx.type,
+          title: newTx.title,
+          amount: newTx.amount,
+          reference_id: newTx.referenceId,
+          status: 'pending',
+          created_at: newTx.createdAt,
+        },
+      ]);
+    } catch (err) {
+      console.warn('Failed to insert wallet_transaction to Supabase:', err);
+    }
 
     return { success: true, message: 'Permohonan penarikan dana berhasil diajukan dan sedang diproses admin!' };
   }

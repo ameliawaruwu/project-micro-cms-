@@ -211,7 +211,7 @@ export interface Product {
 export type PaymentStatus = 'Sudah Dibayar' | 'Belum Dibayar' | 'Gagal';
 export type ShippingStatus = 'Baru' | 'Diproses' | 'Dikirim' | 'Selesai' | 'Dibatalkan';
 export type CourierType = 'J&T' | 'JNE' | 'SiCepat' | 'GoSend';
-export type PaymentMethod = 'QRIS' | 'BCA_VA' | 'MANDIRI_VA' | 'STRIPE' | 'COD';
+export type PaymentMethod = 'QRIS' | 'BCA_VA' | 'MANDIRI_VA' | 'STRIPE' | 'COD' | string;
 
 export interface OrderItem {
   productId: string;
@@ -285,6 +285,7 @@ export type MerchantTab =
   | 'layout'
   | 'pembayaran'
   | 'pengiriman'
+  | 'billing'
   | 'pengaturan'
   | 'profil'
   | 'integrasi';
@@ -364,5 +365,32 @@ export interface PlatformSettings {
   maintenanceMode: boolean;
 }
 
+export interface BillingPlan {
+  id: string;
+  name: string;
+  slug: string;
+  tagline: string;
+  priceMonthly: number;
+  priceYearly: number;
+  features: string[];
+  isActive: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
-
+export interface BillingSubscription {
+  id: string;
+  storeId: string;
+  storeName?: string;
+  planId: string;
+  planName: string;
+  cycle: 'monthly' | 'yearly';
+  amount: number;
+  status: 'paid' | 'pending' | 'expired' | 'failed';
+  paymentMethod: string;
+  invoiceNumber: string;
+  paidAt: string;
+  expiresAt?: string;
+  createdAt: string;
+}

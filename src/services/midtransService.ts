@@ -1,11 +1,12 @@
 // Service to communicate with Midtrans Snap API and Popup
 
-interface SnapTransactionParams {
+export interface SnapTransactionParams {
   orderId: string;
   grossAmount: number;
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
+  enabledPayments?: string[];
   items?: Array<{
     id: string;
     price: number;
@@ -14,7 +15,7 @@ interface SnapTransactionParams {
   }>;
 }
 
-interface SnapResult {
+export interface SnapResult {
   status_code?: string;
   status_message?: string;
   transaction_id?: string;

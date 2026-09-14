@@ -202,7 +202,48 @@ CREATE TABLE IF NOT EXISTS platform_settings (
 );
 
 -- ============================================================================
--- DATA INISIALISASI DASAR (AKUN & TOKO - TANPA PRODUK DUMMY)
+-- 9. TABEL: BILLING_PLANS (MASTER PAKET LANGGANAN SUPER ADMIN)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS billing_plans (
+    id VARCHAR(64) PRIMARY KEY DEFAULT 'plan_' || replace(gen_random_uuid()::text, '-', ''),
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(64) UNIQUE NOT NULL,
+    tagline TEXT,
+    price_monthly BIGINT NOT NULL DEFAULT 0,
+    price_yearly BIGINT NOT NULL DEFAULT 0,
+    features JSONB NOT NULL DEFAULT '[]'::jsonb,
+    is_active BOOLEAN DEFAULT TRUE,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_billing_plans_slug ON billing_plans(slug);
+CREATE INDEX IF NOT EXISTS idx_billing_plans_active ON billing_plans(is_active);
+
+-- ============================================================================
+-- 10. TABEL: STORE_SUBSCRIPTIONS (RIWAYAT TRANSAKSI & INVOICE LANGGANAN)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS store_subscriptions (
+    id VARCHAR(64) PRIMARY KEY DEFAULT 'sub_' || replace(gen_random_uuid()::text, '-', ''),
+    store_id VARCHAR(64) REFERENCES stores(id) ON DELETE CASCADE,
+    plan_id VARCHAR(64) REFERENCES billing_plans(id) ON DELETE SET NULL,
+    plan_name VARCHAR(255) NOT NULL,
+    cycle VARCHAR(32) NOT NULL DEFAULT 'monthly' CHECK (cycle IN ('monthly', 'yearly')),
+    amount BIGINT NOT NULL DEFAULT 0,
+    status VARCHAR(32) NOT NULL DEFAULT 'paid' CHECK (status IN ('paid', 'pending', 'expired', 'failed')),
+    payment_method VARCHAR(64) DEFAULT 'Midtrans (QRIS & VA)',
+    invoice_number VARCHAR(64) UNIQUE NOT NULL,
+    paid_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_store_subscriptions_store_id ON store_subscriptions(store_id);
+CREATE INDEX IF NOT EXISTS idx_store_subscriptions_status ON store_subscriptions(status);
+
+-- ============================================================================
+-- DATA INISIALISASI DASAR (AKUN, TOKO, & MASTER BILLING PLANS)
 -- ============================================================================
 INSERT INTO platform_settings (id) VALUES ('global_config') ON CONFLICT (id) DO NOTHING;
 
@@ -213,6 +254,12 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO stores (id, user_id, name, slug, tagline, description, phone_whatsapp, city, province, address, category, plan, balance) VALUES
 ('store-andhika', 'usr-andhika-1', 'Toko Andhika', 'toko-andhika', 'Toko Online Andhika', 'Pusat belanja produk berkualitas', '6281298765432', 'Jakarta Selatan', 'DKI Jakarta', 'Jl. Kemang Raya No. 42', 'Fashion & Retail', 'starter', 0)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO billing_plans (id, name, slug, tagline, price_monthly, price_yearly, features, is_active, sort_order) VALUES
+('plan_free', 'Starter (Gratis)', 'free', 'Cocok untuk toko baru yang mulai berjualan online', 0, 0, '["Katalog produk hingga 25 item", "Checkout otomatis via Midtrans (QRIS & VA)", "Cek ongkir otomatis ekspedisi (J&T, JNE)", "Watermark resmi Kroombox di footer toko"]'::jsonb, true, 1),
+('plan_pro', 'Pro UMKM', 'premium', 'Fitur lengkap tanpa batas untuk meningkatkan omset toko', 99000, 950000, '["Unlimited katalog produk & varian", "Bebas watermark (white-label brand sendiri)", "Semua metode pembayaran Midtrans (QRIS, VA Bank, Kartu Kredit)", "Visual layout builder & kustomisasi banner toko", "Cetak label pengiriman thermal massal", "Laporan analitik penjualan & omset real-time", "Prioritas bantuan customer support"]'::jsonb, true, 2),
+('plan_scaleup', 'Bisnis Scale-Up', 'business', 'Untuk bisnis UMKM berkembang dengan tim & cabang', 249000, 2400000, '["Semua fitur paket Pro UMKM", "Akses multi-staf pengelola toko (hingga 5 admin)", "Dukungan custom domain toko (.com / .id)", "Notifikasi otomatis WhatsApp bot ke pembeli", "Dedicated Account Manager 24/7"]'::jsonb, true, 3)
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
@@ -226,6 +273,8 @@ ALTER TABLE IF EXISTS users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS platform_settings DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS wallet_transactions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS withdrawals DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS billing_plans DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS store_subscriptions DISABLE ROW LEVEL SECURITY;
 
 GRANT ALL ON TABLE products TO anon, authenticated, service_role;
 GRANT ALL ON TABLE stores TO anon, authenticated, service_role;
@@ -235,3 +284,5 @@ GRANT ALL ON TABLE users TO anon, authenticated, service_role;
 GRANT ALL ON TABLE platform_settings TO anon, authenticated, service_role;
 GRANT ALL ON TABLE wallet_transactions TO anon, authenticated, service_role;
 GRANT ALL ON TABLE withdrawals TO anon, authenticated, service_role;
+GRANT ALL ON TABLE billing_plans TO anon, authenticated, service_role;
+GRANT ALL ON TABLE store_subscriptions TO anon, authenticated, service_role;

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Edit2, Trash2, Plus, Search, Eye, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import React from 'react';
+import { Edit2, Trash2, Plus, Search, Eye, Image as ImageIcon } from 'lucide-react';
 import { Product } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
 
@@ -34,19 +34,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   onViewProduct,
   onEditProduct,
   onDeleteProduct,
-  onSyncProducts,
 }) => {
-  const [isSyncing, setIsSyncing] = useState(false);
-
-  const handleSync = async () => {
-    if (!onSyncProducts || isSyncing) return;
-    setIsSyncing(true);
-    try {
-      await onSyncProducts();
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   return (
     <div className="space-y-4 font-sans">
@@ -81,29 +69,14 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           </select>
         </div>
 
-        {/* Action Buttons: Sync & Add */}
-        <div className="flex items-center gap-2">
-          {onSyncProducts && (
-            <button
-              onClick={handleSync}
-              disabled={isSyncing}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl border border-[#E5E0DD] bg-white hover:bg-[#FAF7F7] text-[#241A1A] font-semibold text-xs sm:text-sm shadow-2xs transition active:scale-95 shrink-0 cursor-pointer"
-              title="Sinkronkan data produk lokal ke database cloud Supabase"
-            >
-              <RefreshCw className={`w-4 h-4 text-[#66000E] ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Sinkron...' : 'Sinkronkan Database'}</span>
-            </button>
-          )}
-
-          {/* Primary CTA */}
-          <button
-            onClick={onAddProduct}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs sm:text-sm shadow-2xs transition transform active:scale-95 shrink-0 cursor-pointer"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Tambah Produk</span>
-          </button>
-        </div>
+        {/* Primary CTA */}
+        <button
+          onClick={onAddProduct}
+          className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs sm:text-sm shadow-2xs transition transform active:scale-95 shrink-0 cursor-pointer"
+        >
+          <Plus className="w-4 h-4 stroke-[2.5]" />
+          <span>Tambah Produk</span>
+        </button>
       </div>
 
       {/* Table Container */}
@@ -117,13 +90,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             <p className="text-xs text-[#706866] mt-1 max-w-sm mx-auto font-normal">
               Tambahkan produk dagangan Anda agar etalase toko online dapat langsung dikunjungi pelanggan.
             </p>
-            <button
-              onClick={onAddProduct}
-              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs transition cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Tambah Produk Pertama</span>
-            </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
