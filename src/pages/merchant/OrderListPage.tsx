@@ -69,9 +69,9 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
   }, [orders, activeStatus, searchQuery, paymentFilter, courierFilter]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8">
+    <div className="space-y-3.5 sm:space-y-5 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8">
       <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-[#1F1F1F] tracking-tight">{t('orders_title', 'Daftar Pesanan Masuk')}</h1>
+        <h1 className="text-lg sm:text-2xl font-bold text-[#1F1F1F] tracking-tight">{t('orders_title', 'Daftar Pesanan Masuk')}</h1>
       </div>
 
       {/* Filter Tabs */}
@@ -82,15 +82,15 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
       />
 
       {/* Search and Secondary Filters */}
-      <div className="bg-white p-4 rounded-2xl border border-[#EAEAEA] shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-[#EAEAEA] shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-[#777777] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#777777] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder={t('search_orders_placeholder', 'Cari nomor pesanan, nama pembeli, nomor WA, atau resi...')}
+            placeholder={t('search_orders_placeholder', 'Cari nomor pesanan, nama pembeli, atau resi...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#EAEAEA] bg-[#F7F7F7] text-xs sm:text-sm text-[#1F1F1F] placeholder:text-[#777777] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] focus:bg-white transition"
+            className="w-full pl-9 pr-3 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border border-[#EAEAEA] bg-[#F9F9F9] text-xs sm:text-sm text-[#1F1F1F] placeholder:text-[#999999] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] focus:bg-white transition"
           />
         </div>
 
@@ -100,9 +100,9 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
             aria-label="Filter metode pembayaran"
-            className="w-full sm:w-auto py-2.5 px-2.5 sm:px-3 rounded-xl border border-[#EAEAEA] bg-white text-xs font-normal text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] truncate"
+            className="w-full sm:w-auto py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] truncate"
           >
-            <option value="all">{t('all_payments', 'Semua Pembayaran')}</option>
+            <option value="all">{t('all_payments', 'Semua Bayar')}</option>
             <option value="QRIS">QRIS Instant</option>
             <option value="VA">Virtual Account</option>
             <option value="Transfer">Transfer Bank</option>
@@ -113,7 +113,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
             value={courierFilter}
             onChange={(e) => setCourierFilter(e.target.value)}
             aria-label="Filter kurir ekspedisi"
-            className="w-full sm:w-auto py-2.5 px-2.5 sm:px-3 rounded-xl border border-[#EAEAEA] bg-white text-xs font-normal text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] truncate"
+            className="w-full sm:w-auto py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] truncate"
           >
             <option value="all">{t('all_couriers', 'Semua Kurir')}</option>
             <option value="J&T">J&T Express</option>

@@ -138,12 +138,12 @@ export const OrderFilterTabs: React.FC<OrderFilterTabsProps> = ({
   };
 
   return (
-    <div className="w-full font-sans space-y-2">
+    <div className="w-full font-sans">
       {/* Sleek Segmented Dock Container */}
-      <div className="relative p-1.5 rounded-2xl bg-[#F8F9FA] border border-[#EAEAEA] shadow-2xs">
+      <div className="relative p-1 sm:p-1.5 rounded-xl sm:rounded-2xl bg-[#F8F9FA] border border-[#EAEAEA] shadow-2xs">
         <div
           ref={containerRef}
-          className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-0.5 custom-scrollbar scroll-smooth"
+          className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth"
         >
           {tabs.map((tab) => {
             const isActive = activeStatus === tab.id;
@@ -155,26 +155,26 @@ export const OrderFilterTabs: React.FC<OrderFilterTabsProps> = ({
                 type="button"
                 onClick={(e) => handleTabClick(tab.id, e)}
                 title={`Filter pesanan: ${tab.label} (${tab.count})`}
-                className={`group relative flex items-center gap-2 px-3.5 sm:px-4 py-2 min-h-[42px] rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 ease-out shrink-0 cursor-pointer select-none active:scale-[0.97] ${
+                className={`group relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 ease-out shrink-0 cursor-pointer select-none active:scale-[0.97] ${
                   isActive
-                    ? `bg-gradient-to-r ${tab.activeGradient} text-white ${tab.activeGlow} scale-[1.02] ring-2 ring-white/60 font-bold z-10`
-                    : `bg-white text-[#555555] hover:bg-white/95 border border-[#EAEAEA] hover:-translate-y-0.5 hover:shadow-xs ${tab.accentHover}`
+                    ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-xs font-bold z-10`
+                    : `bg-white text-[#555555] hover:bg-white/95 border border-[#EAEAEA] ${tab.accentHover}`
                 }`}
               >
                 {/* Micro-interaction: Animated Alert Dot on New Orders */}
                 {tab.hasAlertBadge && !isActive && (
-                  <span className="absolute -top-1 -right-1 flex h-3 w-3 z-20 pointer-events-none">
+                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 z-20 pointer-events-none">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#EF4444] opacity-80" />
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#DC2626] border-2 border-white" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#DC2626] border-2 border-white" />
                   </span>
                 )}
 
-                {/* Status Icon with Dynamic Micro-Animation on Hover */}
+                {/* Status Icon */}
                 <span
                   className={`transition-transform duration-300 ${
                     isActive
-                      ? 'scale-110'
-                      : 'group-hover:scale-115 group-hover:rotate-3'
+                      ? 'scale-105'
+                      : 'group-hover:scale-110'
                   }`}
                 >
                   <Icon
@@ -185,14 +185,14 @@ export const OrderFilterTabs: React.FC<OrderFilterTabsProps> = ({
                 </span>
 
                 {/* Tab Label */}
-                <span className="tracking-tight">{tab.label}</span>
+                <span className="tracking-tight text-[11px] sm:text-xs">{tab.label}</span>
 
                 {/* Interactive Counter Badge */}
                 <span
-                  className={`text-[11px] min-w-[20px] h-5 px-1.5 rounded-full font-mono font-bold flex items-center justify-center border transition-all duration-200 ${
+                  className={`text-[10px] sm:text-[11px] min-w-[18px] sm:min-w-[20px] h-4.5 sm:h-5 px-1 sm:px-1.5 rounded-full font-mono font-bold flex items-center justify-center border transition-all duration-200 ${
                     isActive
                       ? tab.badgeActive
-                      : `${tab.badgeInactive} ${tab.badgeHover} group-hover:scale-105`
+                      : `${tab.badgeInactive} ${tab.badgeHover}`
                   }`}
                 >
                   {tab.count}
@@ -201,12 +201,12 @@ export const OrderFilterTabs: React.FC<OrderFilterTabsProps> = ({
             );
           })}
 
-          {/* Quick Clear Filter Button (Appears only when a specific filter is active) */}
+          {/* Quick Clear Filter Button */}
           {activeStatus !== 'Semua' && (
             <button
               type="button"
               onClick={() => onSelectStatus('Semua')}
-              className="flex items-center gap-1.5 px-3 py-2 min-h-[42px] rounded-xl text-xs font-semibold text-[#777777] hover:text-[#9A0602] hover:bg-white border border-dashed border-[#D4D4D8] hover:border-[#9A0602]/50 whitespace-nowrap transition-all duration-200 shrink-0 cursor-pointer ml-auto active:scale-95 group"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold text-[#777777] hover:text-[#9A0602] hover:bg-white border border-dashed border-[#D4D4D8] hover:border-[#9A0602]/50 whitespace-nowrap transition-all duration-200 shrink-0 cursor-pointer ml-auto active:scale-95 group"
               title="Reset ke Semua Pesanan"
             >
               <RotateCcw className="w-3 h-3 text-[#777777] group-hover:text-[#9A0602] group-hover:-rotate-90 transition-transform duration-300" />
@@ -215,7 +215,6 @@ export const OrderFilterTabs: React.FC<OrderFilterTabsProps> = ({
           )}
         </div>
       </div>
-
     </div>
   );
 };
