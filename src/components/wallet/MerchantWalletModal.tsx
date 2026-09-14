@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Building2,
   ChevronRight,
+  ChevronDown,
   ShieldCheck,
   CreditCard,
   RefreshCw,
@@ -25,12 +26,19 @@ interface MerchantWalletModalProps {
 }
 
 const POPULAR_BANKS = [
-  { id: 'BCA', name: 'BCA' },
-  { id: 'Mandiri', name: 'Mandiri' },
-  { id: 'BRI', name: 'BRI' },
-  { id: 'BNI', name: 'BNI' },
-  { id: 'Jago', name: 'Bank Jago' },
+  { id: 'BCA', name: 'BCA (Bank Central Asia)' },
+  { id: 'Mandiri', name: 'Bank Mandiri' },
+  { id: 'BRI', name: 'BRI (Bank Rakyat Indonesia)' },
+  { id: 'BNI', name: 'BNI (Bank Negara Indonesia)' },
+  { id: 'BSI', name: 'Bank Syariah Indonesia (BSI)' },
+  { id: 'CIMB', name: 'Bank CIMB Niaga' },
+  { id: 'Permata', name: 'Bank Permata' },
+  { id: 'Danamon', name: 'Bank Danamon' },
+  { id: 'Bank Jago', name: 'Bank Jago' },
   { id: 'SeaBank', name: 'SeaBank' },
+  { id: 'Blu', name: 'Blu by BCA Digital' },
+  { id: 'Allo Bank', name: 'Allo Bank' },
+  { id: 'Bank Lainnya', name: 'Bank Lainnya' },
 ];
 
 export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
@@ -217,22 +225,24 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
               {/* Bank Selection */}
               <div>
                 <label className="block text-xs font-semibold text-gray-800 mb-1">Pilih Bank Tujuan</label>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                  {POPULAR_BANKS.map((b) => (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => setBankName(b.id)}
-                      className={`p-1.5 rounded-md text-xs font-medium border flex flex-col items-center justify-center transition cursor-pointer ${
-                        bankName === b.id
-                          ? 'border-red-600 bg-red-50 text-red-700 font-semibold'
-                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Building2 className="w-3 h-3 mb-0.5 text-gray-500" />
-                      <span className="text-[10px]">{b.name}</span>
-                    </button>
-                  ))}
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <Building2 className="w-3.5 h-3.5" />
+                  </div>
+                  <select
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    className="w-full pl-8.5 pr-8 py-2 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 appearance-none transition cursor-pointer shadow-2xs"
+                  >
+                    {POPULAR_BANKS.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </div>
                 </div>
               </div>
 

@@ -15,6 +15,7 @@ import { storeService } from '../../services/storeService';
 import { midtransService } from '../../services/midtransService';
 import { billingPlanService } from '../../services/billingPlanService';
 import { formatRupiah } from '../../utils/formatters';
+import { BillingInvoiceModal } from '../../components/billing/BillingInvoiceModal';
 
 interface BillingPageProps {
   store: StoreType;
@@ -52,6 +53,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<BillingPlan | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [viewingInvoice, setViewingInvoice] = useState<InvoiceItem | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'qris' | 'bca_va'>('qris');
   const [isProcessing, setIsProcessing] = useState(false);
   const [invoices, setInvoices] = useState<InvoiceItem[]>(() => {
@@ -186,7 +188,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left max-w-5xl">
+    <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left w-full">
       {/* 1. Clean Page Header */}
       <div className="pb-3 border-b border-[#E5E0DD] flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
@@ -387,8 +389,9 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                       <td className="py-3 px-3 text-right">
                         <button
                           type="button"
-                          onClick={() => alert(`Mengunduh Invoice ${inv.id} (Format PDF)...`)}
+                          onClick={() => setViewingInvoice(inv)}
                           className="text-[#66000E] hover:underline font-semibold flex items-center gap-1 ml-auto cursor-pointer"
+                          title="Lihat & Unduh Bukti Invoice Resmi"
                         >
                           <Download className="w-3.5 h-3.5" />
                           <span>Download</span>
@@ -501,6 +504,14 @@ export const BillingPage: React.FC<BillingPageProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal Bukti Resmi Invoice Langganan */}
+      <BillingInvoiceModal
+        invoice={viewingInvoice}
+        store={store}
+        isOpen={Boolean(viewingInvoice)}
+        onClose={() => setViewingInvoice(null)}
+      />
     </div>
   );
 };

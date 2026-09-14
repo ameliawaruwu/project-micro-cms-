@@ -216,7 +216,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left max-w-5xl">
+    <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left w-full">
       {/* 1. Page Title */}
       <div className="pb-3 border-b border-[#E5E0DD]">
         <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
