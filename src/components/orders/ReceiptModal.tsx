@@ -126,43 +126,43 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           </div>
 
           {/* Format Selector Tabs */}
-          <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#EDEDED] rounded-xl text-xs font-semibold">
+          <div className="grid grid-cols-3 gap-1 p-1 bg-[#EDEDED] rounded-xl text-[10px] sm:text-xs font-semibold">
             <button
               type="button"
               onClick={() => setFormat('shipping_label')}
-              className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              className={`py-1.5 px-1 sm:px-2 rounded-lg flex items-center justify-center gap-1 sm:gap-1.5 transition cursor-pointer ${
                 format === 'shipping_label'
                   ? 'bg-white text-[#9A0602] shadow-xs font-bold'
                   : 'text-[#555555] hover:text-[#1F1F1F]'
               }`}
             >
-              <Tag className="w-3.5 h-3.5" />
+              <Tag className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
               <span className="truncate">{t('format_shipping_label', 'Label Resi (Paket)')}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setFormat('invoice_a4')}
-              className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              className={`py-1.5 px-1 sm:px-2 rounded-lg flex items-center justify-center gap-1 sm:gap-1.5 transition cursor-pointer ${
                 format === 'invoice_a4'
                   ? 'bg-white text-[#9A0602] shadow-xs font-bold'
                   : 'text-[#555555] hover:text-[#1F1F1F]'
               }`}
             >
-              <FileText className="w-3.5 h-3.5" />
+              <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
               <span className="truncate">{t('format_invoice_a4', 'Faktur Resmi (A4)')}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setFormat('thermal_receipt')}
-              className={`py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              className={`py-1.5 px-1 sm:px-2 rounded-lg flex items-center justify-center gap-1 sm:gap-1.5 transition cursor-pointer ${
                 format === 'thermal_receipt'
                   ? 'bg-white text-[#9A0602] shadow-xs font-bold'
                   : 'text-[#555555] hover:text-[#1F1F1F]'
               }`}
             >
-              <Receipt className="w-3.5 h-3.5" />
+              <Receipt className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
               <span className="truncate">{t('format_thermal_pos', 'Struk Kasir (80mm)')}</span>
             </button>
           </div>
@@ -517,17 +517,17 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         </div>
 
         {/* Action Footer Buttons */}
-        <div className="p-3 sm:p-4 border-t border-[#EAEAEA] bg-white flex items-center justify-between gap-3 print:hidden shrink-0">
+        <div className="p-3 sm:p-4 border-t border-[#EAEAEA] bg-white flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 print:hidden shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 min-h-[38px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] font-semibold text-xs hover:bg-[#F7F7F7] transition cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2.5 min-h-[40px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] font-semibold text-xs hover:bg-[#F7F7F7] transition cursor-pointer text-center"
           >
             {t('close', 'Tutup')}
           </button>
 
           <button
             onClick={handlePrint}
-            className="px-5 py-2 min-h-[38px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer text-center"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>

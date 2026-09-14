@@ -405,8 +405,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             </div>
 
             {/* Stepper Timeline Bar with Interactive Nodes & Filled Progress Line */}
-            <div className="overflow-x-auto pt-4 pb-2.5 px-2 custom-scrollbar">
-              <div className="grid grid-cols-5 min-w-[540px] relative">
+            <div className="overflow-x-auto pt-4 pb-2.5 px-2 custom-scrollbar touch-pan-x">
+              <div className="grid grid-cols-5 min-w-[460px] sm:min-w-[520px] relative">
                 {/* 1. Inactive Background Track Line running from 10% to 90% */}
                 <div className="absolute top-5 left-[10%] right-[10%] h-1 bg-[#EAEAEA] rounded-full -translate-y-1/2" />
 
@@ -465,7 +465,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       {/* Step Labels */}
                       <div className="mt-2.5 flex flex-col items-center">
                         <span
-                          className={`text-[11px] font-bold leading-tight px-1.5 py-0.5 rounded-md transition-colors ${
+                          className={`text-[10px] sm:text-[11px] font-bold leading-tight px-1.5 py-0.5 rounded-md transition-colors text-center break-words max-w-[85px] sm:max-w-none ${
                             isSelected
                               ? 'text-[#9A0602] bg-[#FFF1F0]'
                               : step.completed || step.active
@@ -1148,35 +1148,35 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-3.5 sm:p-4 border-t border-[#EAEAEA] bg-white flex flex-wrap items-center justify-between gap-2.5 shrink-0">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="p-3.5 sm:p-4 border-t border-[#EAEAEA] bg-white flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => onPrintReceipt(order)}
-              className="px-3.5 py-2 min-h-[38px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
+              className="w-full sm:w-auto justify-center px-3.5 py-2.5 min-h-[40px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak Label & Struk</span>
+              <span>Cetak Struk</span>
             </button>
 
             <a
               href={generateWhatsAppLink(order.customerPhone, waMessage)}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3.5 py-2 min-h-[38px] rounded-xl bg-white hover:bg-[#F7F7F7] text-[#027A48] border border-[#ABEFC6] font-semibold text-xs flex items-center gap-1.5 transition"
+              className="w-full sm:w-auto justify-center px-3.5 py-2.5 min-h-[40px] rounded-xl bg-white hover:bg-[#F7F7F7] text-[#027A48] border border-[#ABEFC6] font-semibold text-xs flex items-center gap-1.5 transition"
             >
               <MessageCircle className="w-4 h-4" />
-              <span>Chat WhatsApp</span>
+              <span>WhatsApp</span>
             </a>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center w-full sm:w-auto">
             {order.shippingStatus === 'Baru' || order.shippingStatus === 'Diproses' ? (
               <button
                 onClick={() => {
                   onClose();
                   onProcessShipping(order);
                 }}
-                className="px-5 py-2.5 min-h-[38px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs flex items-center gap-1.5 transition cursor-pointer"
+                className="w-full sm:w-auto justify-center px-5 py-2.5 min-h-[42px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs flex items-center gap-1.5 transition cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 <span>Proses Pengiriman</span>
@@ -1187,7 +1187,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   onMarkCompleted(order.id);
                   onClose();
                 }}
-                className="px-4 py-2.5 min-h-[38px] rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs shadow-xs flex items-center gap-1.5 transition cursor-pointer"
+                className="w-full sm:w-auto justify-center px-4 py-2.5 min-h-[42px] rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs shadow-xs flex items-center gap-1.5 transition cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Tandai Selesai</span>

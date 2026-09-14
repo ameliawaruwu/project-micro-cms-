@@ -94,13 +94,13 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
           {/* Payment Method Filter */}
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
             aria-label="Filter metode pembayaran"
-            className="py-2.5 px-3 rounded-xl border border-[#EAEAEA] bg-white text-xs font-normal text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+            className="w-full sm:w-auto py-2.5 px-2.5 sm:px-3 rounded-xl border border-[#EAEAEA] bg-white text-xs font-normal text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] truncate"
           >
             <option value="all">{t('all_payments', 'Semua Pembayaran')}</option>
             <option value="QRIS">QRIS Instant</option>
@@ -113,7 +113,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
             value={courierFilter}
             onChange={(e) => setCourierFilter(e.target.value)}
             aria-label="Filter kurir ekspedisi"
-            className="py-2.5 px-3 rounded-xl border border-[#EAEAEA] bg-white text-xs font-normal text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+            className="w-full sm:w-auto py-2.5 px-2.5 sm:px-3 rounded-xl border border-[#EAEAEA] bg-white text-xs font-normal text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] truncate"
           >
             <option value="all">{t('all_couriers', 'Semua Kurir')}</option>
             <option value="J&T">J&T Express</option>

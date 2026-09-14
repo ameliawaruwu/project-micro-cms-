@@ -47,28 +47,28 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
       </div>
 
       {/* Subtab Navigation */}
-      <div className="flex items-center gap-2 border-b border-[#EAEAEA] pb-1">
+      <div className="flex items-center gap-2 border-b border-[#EAEAEA] pb-1 overflow-x-auto no-scrollbar scroll-smooth">
         <button
           onClick={() => setActiveSubTab('branches')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer ${
+          className={`flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer whitespace-nowrap shrink-0 ${
             activeSubTab === 'branches'
               ? 'bg-[#9A0602] text-white shadow-xs'
               : 'text-[#555555] hover:bg-[#F7F7F7] hover:text-[#1F1F1F]'
           }`}
         >
-          <Warehouse className="w-4 h-4" />
+          <Warehouse className="w-4 h-4 shrink-0" />
           <span>{t('tab_branches', 'Cabang & Gudang Asal')}</span>
         </button>
 
         <button
           onClick={() => setActiveSubTab('couriers')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer ${
+          className={`flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer whitespace-nowrap shrink-0 ${
             activeSubTab === 'couriers'
               ? 'bg-[#9A0602] text-white shadow-xs'
               : 'text-[#555555] hover:bg-[#F7F7F7] hover:text-[#1F1F1F]'
           }`}
         >
-          <Truck className="w-4 h-4" />
+          <Truck className="w-4 h-4 shrink-0" />
           <span>{t('tab_couriers', 'Pilihan Kurir & Ekspedisi')}</span>
         </button>
       </div>

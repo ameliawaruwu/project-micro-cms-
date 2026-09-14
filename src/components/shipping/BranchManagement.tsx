@@ -224,7 +224,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
 
         <button
           onClick={handleOpenAddModal}
-          className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs transition shadow-xs cursor-pointer shrink-0"
+          className="flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs transition shadow-xs cursor-pointer w-full sm:w-auto shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>{t('branch_add_button', 'Tambah Cabang / Gudang')}</span>
@@ -389,9 +389,10 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
 
       {/* MODAL FORM TAMBAH / EDIT CABANG */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs font-poppins">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-[#EAEAEA]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs font-poppins">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 sm:p-6 pb-3 sm:pb-4 border-b border-[#EAEAEA] shrink-0">
               <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-base">
                 <Building2 className="w-5 h-5 text-[#9A0602]" />
                 <span>
@@ -408,7 +409,8 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="py-4 space-y-3.5 text-xs text-left">
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-3.5 text-xs text-left">
               {formError && (
                 <div className="p-3 bg-[#FEF3F2] text-[#B42318] border border-[#FECDCA] rounded-xl flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -476,8 +478,8 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                 />
               </div>
 
-              {/* Wilayah: Subdistrict, Kota, Provinsi, Kode Pos */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {/* Wilayah: Subdistrict & Kota */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
                     {t('branch_form_subdistrict', 'Kecamatan')}
@@ -503,6 +505,22 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                     className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
                   />
                 </div>
+              </div>
+
+              {/* Provinsi & Kode Pos */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
+                    {t('branch_form_province', 'Provinsi')}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="DKI Jakarta"
+                    value={province}
+                    onChange={(e) => setProvince(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                  />
+                </div>
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
                     {t('branch_form_postal_code', 'Kode Pos')} *
@@ -517,20 +535,6 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                     className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs font-mono font-bold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
                   />
                 </div>
-              </div>
-
-              {/* Provinsi */}
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                  {t('branch_form_province', 'Provinsi')}
-                </label>
-                <input
-                  type="text"
-                  placeholder="DKI Jakarta"
-                  value={province}
-                  onChange={(e) => setProvince(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
-                />
               </div>
 
               {/* Toggles: Jadikan Cabang Utama & Status Aktif */}
@@ -570,19 +574,19 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                 </label>
               </div>
 
-              {/* Buttons */}
-              <div className="pt-3 border-t border-[#EAEAEA] flex items-center justify-end gap-2.5">
+              {/* Footer Buttons */}
+              <div className="pt-3 border-t border-[#EAEAEA] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 min-h-[38px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] font-semibold text-xs transition cursor-pointer"
+                  className="px-4 py-2.5 min-h-[40px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] font-semibold text-xs transition cursor-pointer text-center"
                 >
                   {t('branch_form_cancel', 'Batal')}
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 min-h-[38px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs transition cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs transition cursor-pointer disabled:opacity-50 text-center"
                 >
                   {isSubmitting
                     ? t('branch_form_saving', 'Menyimpan...')
