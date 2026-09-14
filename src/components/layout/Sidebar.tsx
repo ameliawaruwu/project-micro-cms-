@@ -115,6 +115,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               key={item.id}
               onClick={() => handleItemClick(item.id)}
               className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-colors group relative cursor-pointer ${
+                item.id === 'pesanan' || item.id === 'pengiriman' ? 'font-poppins' : ''
+              } ${
                 isActive
                   ? 'bg-red-50 text-red-700 font-semibold'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -231,11 +233,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         {sidebarContent}
 
-        {/* Collapse Button */}
+        {/* Collapse Button (Centered Vertically) */}
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="absolute -right-3 top-12 w-6 h-6 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-gray-900 shadow-xs flex items-center justify-center transition cursor-pointer z-30 focus:outline-none"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-gray-900 shadow-sm hover:shadow flex items-center justify-center transition-all cursor-pointer z-30 focus:outline-none hover:scale-105"
           title={isCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
         >
           {isCollapsed ? (

@@ -95,6 +95,41 @@ export const initialStores: Store[] = [
 export const initialProducts: Product[] = [];
 
 export const initialOrders: Order[] = [
+  // Order Baru untuk Uji Coba Pengiriman - Telkom University Bandung
+  {
+    id: 'ord-utiy-telkom-2026',
+    storeId: 'store-andhika',
+    orderNumber: 'KB-9901',
+    customerName: 'utiy',
+    customerPhone: '081223344556',
+    customerEmail: 'utiy@telkomuniversity.ac.id',
+    customerAddress: 'Gedung Asrama Putri / Gedung Pelangi, Telkom University, Jl. Telekomunikasi No. 1, Terusan Buahbatu, Sukapura, Kec. Dayeuhkolot',
+    customerCity: 'Kab. Bandung, Jawa Barat',
+    customerPostalCode: '40257',
+    items: [
+      {
+        productId: 'prod-andhika-101',
+        productName: 'Kemeja Batik Tulis Modern Heritage Lengan Panjang',
+        productImage: 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=800&auto=format&fit=crop&q=80',
+        price: 185000,
+        quantity: 1,
+        subtotal: 185000,
+        variantName: 'Size M',
+      },
+    ],
+    subtotal: 185000,
+    shippingCost: 14000,
+    discount: 0,
+    grandTotal: 199000,
+    paymentMethod: 'QRIS',
+    paymentStatus: 'Sudah Dibayar',
+    courier: 'J&T',
+    courierService: 'EZ Regular (1-2 Hari)',
+    resiNumber: '',
+    shippingStatus: 'Baru',
+    createdAt: new Date().toISOString(),
+    notes: 'Kirim ke pos satpam / lobi asrama Telkom University. Tolong hubungi nomor WA sebelum sampai.',
+  },
   // Store 0 - Toko Andhikagonzales Orders
   {
     id: 'ord-andhika-101',

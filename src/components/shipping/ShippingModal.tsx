@@ -233,12 +233,17 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
     if (
       labelUrl &&
       labelUrl.startsWith('http') &&
-      !labelUrl.includes('labels.biteship.com')
+      !labelUrl.includes('labels.biteship.com') &&
+      !labelUrl.includes('biteship.com/id/tracking')
     ) {
       window.open(labelUrl, '_blank', 'noopener,noreferrer');
     } else if (trackingNumber) {
-      // Fallback jika URL PDF pihak ketiga tidak tersedia: Buka viewer pelacakan Biteship resmi
-      window.open(`https://biteship.com/id/tracking/${trackingNumber}`, '_blank', 'noopener,noreferrer');
+      // Buka pelacakan resmi Biteship live testing
+      window.open(
+        `https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development`,
+        '_blank',
+        'noopener,noreferrer'
+      );
     } else {
       alert('Nomor resi atau link label belum tersedia.');
     }

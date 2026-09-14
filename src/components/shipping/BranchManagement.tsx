@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ShippingBranch } from '../../types';
 import { branchService } from '../../services/branchService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface BranchManagementProps {
   storeId?: string;
@@ -27,6 +28,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
   storeId = 'store-andhika',
   onShowNotification,
 }) => {
+  const { t } = useLanguage();
   const [branches, setBranches] = useState<ShippingBranch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,7 +112,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
 
     // Validate postal code format
     if (!/^\d{5}$/.test(postalCode.trim())) {
-      setFormError('Kode pos harus berupa 5 digit angka.');
+      setFormError(t('branch_postal_required', 'Kode pos harus berupa 5 digit angka.'));
       return;
     }
 
@@ -129,7 +131,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
           isDefault,
           isActive,
         });
-        onShowNotification(`Cabang "${branchName}" berhasil diperbarui.`);
+        onShowNotification(t('branch_updated_success', `Cabang "${branchName}" berhasil diperbarui.`));
       } else {
         await branchService.createBranch({
           storeId,
@@ -144,14 +146,14 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
           isDefault,
           isActive,
         });
-        onShowNotification(`Cabang baru "${branchName}" berhasil ditambahkan.`);
+        onShowNotification(t('branch_created_success', `Cabang baru "${branchName}" berhasil ditambahkan.`));
       }
 
       setIsModalOpen(false);
       resetForm();
       await loadBranches();
     } catch (err: any) {
-      setFormError(err.message || 'Gagal menyimpan data cabang');
+      setFormError(err.message || t('branch_status_error', 'Gagal menyimpan data cabang'));
     } finally {
       setIsSubmitting(false);
     }
@@ -160,22 +162,22 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
   const handleSetDefault = async (branch: ShippingBranch) => {
     try {
       await branchService.setDefaultBranch(branch.id, storeId);
-      onShowNotification(`"${branch.branchName}" dijadikan sebagai cabang utama.`);
+      onShowNotification(
+        t('branch_default_updated', '"{name}" sekarang menjadi cabang utama.').replace('{name}', branch.branchName)
+      );
       await loadBranches();
     } catch (err: any) {
-      onShowNotification(err.message || 'Gagal mengubah cabang utama');
+      onShowNotification(err.message || t('branch_default_error', 'Gagal mengubah cabang utama'));
     }
   };
 
   const handleToggleActive = async (branch: ShippingBranch) => {
     try {
-      const updated = await branchService.toggleActiveBranch(branch.id);
-      onShowNotification(
-        `Cabang "${branch.branchName}" ${updated.isActive ? 'diaktifkan' : 'dinonaktifkan'}.`
-      );
+      await branchService.toggleActiveBranch(branch.id);
+      onShowNotification(t('branch_status_updated', 'Status cabang berhasil diperbarui.'));
       await loadBranches();
     } catch (err: any) {
-      onShowNotification(err.message || 'Gagal mengubah status cabang');
+      onShowNotification(err.message || t('branch_status_error', 'Gagal mengubah status cabang'));
     }
   };
 
@@ -185,13 +187,16 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
       return;
     }
 
-    if (confirm(`Apakah Anda yakin ingin menghapus cabang "${branch.branchName}"?`)) {
+    const confirmMsg = t('branch_delete_confirm', 'Apakah Anda yakin ingin menghapus cabang "{name}"?').replace('{name}', branch.branchName);
+    if (confirm(confirmMsg)) {
       try {
         await branchService.deleteBranch(branch.id);
-        onShowNotification(`Cabang "${branch.branchName}" berhasil dihapus.`);
+        onShowNotification(
+          t('branch_deleted_success', 'Cabang "{name}" berhasil dihapus.').replace('{name}', branch.branchName)
+        );
         await loadBranches();
       } catch (err: any) {
-        alert(err.message || 'Gagal menghapus cabang');
+        alert(err.message || t('branch_delete_error', 'Gagal menghapus cabang'));
       }
     }
   };
@@ -205,19 +210,16 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
   );
 
   return (
-    <div className="space-y-4 font-sans text-left">
+    <div className="space-y-4 font-poppins text-left">
       {/* Top Header & Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#EAEAEA] shadow-2xs">
         <div>
           <div className="flex items-center gap-2">
             <Warehouse className="w-5 h-5 text-[#9A0602]" />
             <h3 className="font-bold text-sm sm:text-base text-[#1F1F1F]">
-              Manajemen Cabang & Gudang Asal
+              {t('branch_management_title', 'Manajemen Cabang & Gudang Asal')}
             </h3>
           </div>
-          <p className="text-xs text-[#777777] mt-1">
-            Lokasi cabang/gudang digunakan oleh kurir (Biteship) sebagai titik penjemputan (origin) dan dasar kalkulasi ongkir.
-          </p>
         </div>
 
         <button
@@ -225,7 +227,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
           className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs transition shadow-xs cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>Tambah Cabang / Gudang</span>
+          <span>{t('branch_add_button', 'Tambah Cabang / Gudang')}</span>
         </button>
       </div>
 
@@ -235,27 +237,29 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
           <Search className="w-4 h-4 text-[#777777] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Cari nama gudang, kota, nama PIC, atau kode pos..."
+            placeholder={t('branch_search_placeholder', 'Cari nama gudang, kota, nama PIC, atau kode pos...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-white rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] placeholder:text-[#999999] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
           />
         </div>
         <div className="px-3 py-2 bg-white rounded-xl border border-[#EAEAEA] text-xs font-semibold text-[#555555] whitespace-nowrap">
-          {filteredBranches.length} Cabang
+          {filteredBranches.length} {t('branch_count_label', 'Cabang')}
         </div>
       </div>
 
       {/* Branch List */}
       {isLoading ? (
         <div className="p-8 text-center bg-white rounded-2xl border border-[#EAEAEA] text-xs text-[#777777]">
-          Memuat data cabang gudang...
+          {t('branch_loading', 'Memuat data cabang gudang...')}
         </div>
       ) : filteredBranches.length === 0 ? (
         <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-[#CCCCCC] text-xs text-[#777777] space-y-2">
           <Warehouse className="w-8 h-8 text-[#CCCCCC] mx-auto" />
-          <p className="font-semibold text-[#1F1F1F]">Tidak ada cabang yang cocok dengan pencarian</p>
-          <p>Tambahkan cabang baru untuk mengaktifkan titik penjemputan logistik.</p>
+          <p className="font-semibold text-[#1F1F1F]">
+            {t('branch_empty_title', 'Tidak ada cabang yang cocok dengan pencarian')}
+          </p>
+          <p>{t('branch_empty_desc', 'Tambahkan cabang baru untuk mengaktifkan titik penjemputan logistik.')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -282,7 +286,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                     {branch.isDefault && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FFF1F0] text-[#9A0602] border border-[#FECDCA] text-[10px] font-bold">
                         <Star className="w-3 h-3 fill-[#9A0602]" />
-                        Cabang Utama
+                        {t('branch_default_badge', 'Cabang Utama')}
                       </span>
                     )}
 
@@ -295,11 +299,11 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                     >
                       {branch.isActive ? (
                         <>
-                          <CheckCircle2 className="w-2.5 h-2.5" /> Aktif
+                          <CheckCircle2 className="w-2.5 h-2.5" /> {t('branch_active', 'Aktif')}
                         </>
                       ) : (
                         <>
-                          <XCircle className="w-2.5 h-2.5" /> Nonaktif
+                          <XCircle className="w-2.5 h-2.5" /> {t('branch_inactive', 'Nonaktif')}
                         </>
                       )}
                     </span>
@@ -308,7 +312,9 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
 
                 {/* PIC Info */}
                 <div className="flex flex-wrap items-center gap-3 text-xs text-[#555555] py-1 border-b border-[#F0F0F0]">
-                  <span className="font-semibold text-[#1F1F1F]">PIC: {branch.picName}</span>
+                  <span className="font-semibold text-[#1F1F1F]">
+                    {t('branch_pic_label', 'PIC')}: {branch.picName}
+                  </span>
                   <span className="text-[#CCCCCC]">•</span>
                   <a
                     href={`tel:${branch.picPhone}`}
@@ -329,7 +335,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                     {branch.subdistrict ? `${branch.subdistrict}, ` : ''}
                     {branch.city}, {branch.province}
                     <span className="ml-2 font-mono font-semibold bg-[#F7F7F7] px-1.5 py-0.5 rounded border border-[#EAEAEA]">
-                      Kode Pos: {branch.postalCode}
+                      {t('branch_postal_code', 'Kode Pos')}: {branch.postalCode}
                     </span>
                   </div>
                 </div>
@@ -344,7 +350,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                       className="text-[11px] font-semibold text-[#9A0602] hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <Star className="w-3 h-3" />
-                      <span>Jadikan Utama</span>
+                      <span>{t('branch_set_default', 'Jadikan Utama')}</span>
                     </button>
                   )}
                 </div>
@@ -354,13 +360,13 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                     onClick={() => handleToggleActive(branch)}
                     className="px-2 py-1 rounded-lg text-[11px] font-medium border border-[#EAEAEA] text-[#555555] hover:bg-[#F7F7F7] transition cursor-pointer"
                   >
-                    {branch.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                    {branch.isActive ? t('branch_deactivate', 'Nonaktifkan') : t('branch_activate', 'Aktifkan')}
                   </button>
 
                   <button
                     onClick={() => handleOpenEditModal(branch)}
                     className="p-1.5 rounded-lg border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] transition cursor-pointer"
-                    title="Ubah Cabang"
+                    title={t('branch_edit', 'Ubah Cabang')}
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
@@ -369,7 +375,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                     <button
                       onClick={() => handleDelete(branch)}
                       className="p-1.5 rounded-lg border border-[#FECDCA] text-[#D92D20] hover:bg-[#FEF3F2] transition cursor-pointer"
-                      title="Hapus Cabang"
+                      title={t('branch_delete', 'Hapus Cabang')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -383,12 +389,16 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
 
       {/* MODAL FORM TAMBAH / EDIT CABANG */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs font-poppins">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-[#EAEAEA]">
               <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-base">
                 <Building2 className="w-5 h-5 text-[#9A0602]" />
-                <span>{editingBranch ? 'Edit Cabang / Gudang' : 'Tambah Cabang / Gudang Asal'}</span>
+                <span>
+                  {editingBranch
+                    ? t('branch_modal_edit_title', 'Edit Cabang / Gudang')
+                    : t('branch_modal_add_title', 'Tambah Cabang / Gudang Asal')}
+                </span>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -409,12 +419,12 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
               {/* Nama Cabang */}
               <div>
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                  Nama Cabang / Gudang *
+                  {t('branch_form_name', 'Nama Cabang / Gudang')} *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Gudang Pusat Jakarta, Cabang Bandung"
+                  placeholder={t('branch_form_name_placeholder', 'Contoh: Gudang Pusat Jakarta, Cabang Bandung')}
                   value={branchName}
                   onChange={(e) => setBranchName(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs font-medium text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
@@ -425,12 +435,12 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                    Nama Penanggung Jawab (PIC) *
+                    {t('branch_form_pic', 'Nama Penanggung Jawab (PIC)')} *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Nama PIC penyerahan paket"
+                    placeholder={t('branch_form_pic_placeholder', 'Nama PIC penyerahan paket')}
                     value={picName}
                     onChange={(e) => setPicName(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
@@ -438,12 +448,12 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                    No. Handphone PIC *
+                    {t('branch_form_phone', 'No. Handphone PIC')} *
                   </label>
                   <input
                     type="tel"
                     required
-                    placeholder="0812xxxxxxxx (untuk kurir)"
+                    placeholder={t('branch_form_phone_placeholder', '0812xxxxxxxx (untuk kurir)')}
                     value={picPhone}
                     onChange={(e) => setPicPhone(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
@@ -454,12 +464,12 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
               {/* Alamat Lengkap */}
               <div>
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                  Alamat Lengkap Gudang *
+                  {t('branch_form_address', 'Alamat Lengkap Gudang')} *
                 </label>
                 <textarea
                   rows={2}
                   required
-                  placeholder="Nama jalan, nomor gudang/ruko, RT/RW, patokan lokasi..."
+                  placeholder={t('branch_form_address_placeholder', 'Nama jalan, nomor gudang/ruko, RT/RW, patokan lokasi...')}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
@@ -470,7 +480,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                    Kecamatan
+                    {t('branch_form_subdistrict', 'Kecamatan')}
                   </label>
                   <input
                     type="text"
@@ -482,7 +492,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                    Kota / Kab *
+                    {t('branch_form_city', 'Kota / Kab')} *
                   </label>
                   <input
                     type="text"
@@ -495,7 +505,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                    Kode Pos *
+                    {t('branch_form_postal_code', 'Kode Pos')} *
                   </label>
                   <input
                     type="text"
@@ -512,7 +522,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
               {/* Provinsi */}
               <div>
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                  Provinsi
+                  {t('branch_form_province', 'Provinsi')}
                 </label>
                 <input
                   type="text"
@@ -533,9 +543,11 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                     className="w-4 h-4 rounded text-[#9A0602] focus:ring-[#9A0602] border-[#CCCCCC]"
                   />
                   <div>
-                    <span className="font-semibold text-xs text-[#1F1F1F]">Jadikan Cabang Utama</span>
+                    <span className="font-semibold text-xs text-[#1F1F1F]">
+                      {t('branch_form_default_checkbox', 'Jadikan Cabang Utama')}
+                    </span>
                     <p className="text-[11px] text-[#777777]">
-                      Cabang utama otomatis terpilih sebagai origin saat checkout dan perhitungan ongkir pembeli.
+                      {t('branch_form_default_hint', 'Cabang utama otomatis terpilih sebagai origin saat checkout dan perhitungan ongkir pembeli.')}
                     </p>
                   </div>
                 </label>
@@ -548,9 +560,11 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                     className="w-4 h-4 rounded text-[#9A0602] focus:ring-[#9A0602] border-[#CCCCCC]"
                   />
                   <div>
-                    <span className="font-semibold text-xs text-[#1F1F1F]">Status Aktif</span>
+                    <span className="font-semibold text-xs text-[#1F1F1F]">
+                      {t('branch_form_active_checkbox', 'Status Aktif')}
+                    </span>
                     <p className="text-[11px] text-[#777777]">
-                      Cabang aktif dapat digunakan untuk proses booking pengiriman dan penjemputan paket.
+                      {t('branch_form_active_hint', 'Cabang aktif dapat digunakan untuk proses booking pengiriman dan penjemputan paket.')}
                     </p>
                   </div>
                 </label>
@@ -563,14 +577,18 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                   onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2 min-h-[38px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] font-semibold text-xs transition cursor-pointer"
                 >
-                  Batal
+                  {t('branch_form_cancel', 'Batal')}
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="px-5 py-2 min-h-[38px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs transition cursor-pointer disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Menyimpan...' : editingBranch ? 'Perbarui Cabang' : 'Simpan Cabang'}
+                  {isSubmitting
+                    ? t('branch_form_saving', 'Menyimpan...')
+                    : editingBranch
+                    ? t('branch_form_submit_edit', 'Perbarui Cabang')
+                    : t('branch_form_submit_add', 'Simpan Cabang')}
                 </button>
               </div>
             </form>

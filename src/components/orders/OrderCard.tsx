@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Order } from '../../types';
 import { formatRupiah, formatDateIndo, generateWhatsAppLink, generateTrackingLink } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface OrderCardProps {
   order: Order;
@@ -31,6 +32,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   onSelectOrder,
   onShowNotification,
 }) => {
+  const { t, language } = useLanguage();
   const [copiedResi, setCopiedResi] = useState(false);
 
   const handleCopyResi = () => {
@@ -39,6 +41,25 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     setCopiedResi(true);
     onShowNotification(`Nomor Resi ${order.resiNumber} berhasil disalin!`);
     setTimeout(() => setCopiedResi(false), 2000);
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'Baru':
+        return t('filter_new', 'Baru');
+      case 'Diproses':
+        return t('filter_processing', 'Diproses');
+      case 'Dikirim':
+        return t('filter_shipped', 'Dikirim');
+      case 'Selesai':
+        return t('filter_completed', 'Selesai');
+      case 'Dibatalkan':
+        return t('filter_cancelled', 'Dibatalkan');
+      case 'ready_to_ship':
+        return language === 'en' ? 'Ready to Ship' : 'Siap Dikirim';
+      default:
+        return status;
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -57,6 +78,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         return 'bg-[#F7F7F7] text-[#555555] border-[#EAEAEA]';
     }
   };
+
+  const formattedDate = language === 'en'
+    ? new Date(order.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : formatDateIndo(order.createdAt);
 
   const waMessage = `Halo Kak ${order.customerName}, konfirmasi pesanan (${order.orderNumber}):\nTotal: ${formatRupiah(order.grandTotal)}\nStatus: ${order.shippingStatus}${order.resiNumber ? `\nNo. Resi: ${order.resiNumber}` : ''}\n\nTerima kasih sudah belanja di toko kami! 🙏`;
 
@@ -79,17 +104,17 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           {onSelectOrder && (
             <span className="text-[10px] text-[#777777] bg-[#F7F7F7] px-2 py-0.5 rounded-md border border-[#EAEAEA] group-hover:border-[#FECDCA] group-hover:text-[#9A0602] group-hover:bg-[#FFF1F0] transition hidden sm:inline-flex items-center gap-1">
               <Eye className="w-3 h-3" />
-              <span>Detail</span>
+              <span>{t('detail_short', 'Detail')}</span>
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-[#777777] hidden sm:inline">
-            {formatDateIndo(order.createdAt)}
+            {formattedDate}
           </span>
           <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${getStatusBadge(order.shippingStatus)}`}>
-            {order.shippingStatus}
+            {getStatusLabel(order.shippingStatus)}
           </span>
         </div>
       </div>
@@ -113,7 +138,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                   {item.productName}
                 </h5>
                 <div className="flex items-center gap-2 text-xs text-[#777777] mt-0.5">
-                  <span className="font-medium text-[#555555]">{item.quantity} produk</span>
+                  <span className="font-medium text-[#555555]">{item.quantity} {t('items_count', 'produk')}</span>
                   {item.variantName && <span>({item.variantName})</span>}
                   <span>•</span>
                   <span>{formatRupiah(item.price)}</span>
@@ -127,7 +152,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
           {order.notes && (
             <div className="text-xs text-[#555555] bg-[#F7F7F7] p-2.5 rounded-xl border border-[#EAEAEA] mt-2">
-              <span className="font-semibold text-[#1F1F1F]">Catatan Pembeli:</span> {order.notes}
+              <span className="font-semibold text-[#1F1F1F]">{t('buyer_note', 'Catatan Pembeli:')}</span> {order.notes}
             </div>
           )}
         </div>
@@ -144,9 +169,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           </div>
 
           <div className="pt-2 border-t border-[#EAEAEA] flex items-center justify-between">
-            <span className="font-semibold text-[#1F1F1F]">Kurir: {order.courier}</span>
+            <span className="font-semibold text-[#1F1F1F]">{t('courier_colon', 'Kurir:')} {order.courier}</span>
             <span className="font-semibold text-[#027A48] bg-[#ECFDF3] border border-[#ABEFC6] px-2 py-0.5 rounded-md text-[10px]">
-              {order.paymentStatus}
+              {order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Sudah Dibayar') : (order.paymentStatus === 'Belum Dibayar' ? t('order_unpaid', 'Belum Dibayar') : order.paymentStatus)}
             </span>
           </div>
         </div>
@@ -157,7 +182,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         <div className="p-3 bg-[#F7F7F7] rounded-xl border border-[#EAEAEA] flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
             <Package className="w-4 h-4 text-[#9A0602]" />
-            <span className="font-semibold text-[#1F1F1F]">Resi {order.courier}:</span>
+            <span className="font-semibold text-[#1F1F1F]">{t('resi_colon', 'Resi')} {order.courier}:</span>
             <span className="font-mono font-bold text-[#1F1F1F] bg-white px-2 py-0.5 rounded border border-[#EAEAEA]">
               {order.resiNumber}
             </span>
@@ -169,7 +194,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#EAEAEA] hover:bg-[#F7F7F7] text-[#1F1F1F] font-semibold text-[11px] transition cursor-pointer"
             >
               {copiedResi ? <Check className="w-3 h-3 text-[#027A48]" /> : <Copy className="w-3 h-3 text-[#777777]" />}
-              <span>{copiedResi ? 'Tersalin' : 'Salin Resi'}</span>
+              <span>{copiedResi ? t('copied', 'Tersalin') : t('copy_resi', 'Salin Resi')}</span>
             </button>
             <a
               href={generateTrackingLink(order.courier, order.resiNumber)}
@@ -178,7 +203,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-[11px] transition"
             >
               <ExternalLink className="w-3 h-3" />
-              <span>Cek Tracking</span>
+              <span>{t('check_tracking', 'Cek Tracking')}</span>
             </a>
           </div>
         </div>
@@ -187,7 +212,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       {/* Bottom Bar: Total & Actions */}
       <div className="pt-3 border-t border-[#EAEAEA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center justify-between sm:block">
-          <span className="text-[11px] text-[#777777] block font-medium">Total Pembayaran</span>
+          <span className="text-[11px] text-[#777777] block font-medium">{t('total_payment', 'Total Pembayaran')}</span>
           <span className="font-bold text-base sm:text-lg text-[#1F1F1F]">
             {formatRupiah(order.grandTotal)}
           </span>
@@ -208,7 +233,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               title="Cetak Label Pengiriman PDF (Biteship)"
             >
               <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">Label PDF</span>
+              <span className="hidden sm:inline">{t('label_pdf', 'Label PDF')}</span>
             </a>
           ) : (
             <button
@@ -228,7 +253,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               title="Lihat Detail Lengkap & Tracking"
             >
               <Eye className="w-4 h-4 text-[#777777]" />
-              <span>Detail & Lacak</span>
+              <span>{t('detail_and_track', 'Detail & Lacak')}</span>
             </button>
           )}
 
@@ -240,7 +265,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-white hover:bg-[#F7F7F7] text-[#027A48] font-semibold text-xs border border-[#ABEFC6] transition"
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Chat Pembeli</span>
+            <span>{t('chat_buyer', 'Chat Pembeli')}</span>
           </a>
 
           {/* Primary Action Button */}
@@ -250,7 +275,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
             >
               <Send className="w-4 h-4" />
-              <span>Atur Pengiriman</span>
+              <span>{t('arrange_shipping', 'Atur Pengiriman')}</span>
             </button>
           ) : (order.shippingStatus === 'Dikirim' || order.shippingStatus === 'ready_to_ship') && onMarkCompleted ? (
             <button
@@ -258,12 +283,12 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-3.5 py-2.5 min-h-[40px] rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Tandai Selesai</span>
+              <span>{t('mark_completed', 'Tandai Selesai')}</span>
             </button>
           ) : (
             <span className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1 text-xs font-semibold text-[#027A48] bg-[#ECFDF3] px-3 py-2 min-h-[40px] rounded-xl border border-[#ABEFC6]">
               <CheckCircle2 className="w-4 h-4" />
-              <span>Pesanan Selesai</span>
+              <span>{t('order_completed', 'Pesanan Selesai')}</span>
             </span>
           )}
         </div>

@@ -418,6 +418,7 @@ export default function App() {
   };
 
   const handlePrintReceipt = (order: Order) => {
+    setSelectedOrderDetail(null);
     setOrderToPrint(order);
     setIsReceiptModalOpen(true);
   };
@@ -1462,6 +1463,7 @@ export default function App() {
       {/* 4. Order Detail Modal with Stepper & Info (Base Modal z-50) */}
       <OrderDetailModal
         order={selectedOrderDetail}
+        store={currentStore}
         isOpen={Boolean(selectedOrderDetail)}
         onClose={() => setSelectedOrderDetail(null)}
         onProcessShipping={handleOpenProcessShipping}

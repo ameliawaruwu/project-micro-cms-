@@ -144,6 +144,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               key={item.id}
               onClick={() => handleSelectTab(item.id)}
               className={`flex flex-col items-center justify-center py-1 px-2 rounded-2xl min-w-[56px] min-h-[46px] transition-all duration-150 relative cursor-pointer ${
+                item.id === 'pesanan' || item.id === 'pengiriman' ? 'font-poppins' : ''
+              } ${
                 isActive
                   ? 'text-[#9A0602] font-bold'
                   : 'text-[#666666] hover:text-[#1F1F1F] font-medium'

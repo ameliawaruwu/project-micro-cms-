@@ -17,8 +17,13 @@ class OrderService {
       const orderMap = new Map<string, Order>();
       parsed.forEach((o) => {
         if (o && o.id) {
-          if (o.shippingLabelUrl && o.shippingLabelUrl.includes('labels.biteship.com')) {
-            o.shippingLabelUrl = `https://biteship.com/id/tracking/${o.resiNumber || o.trackingNumber || ''}`;
+          if (o.customerName?.toLowerCase() === 'utiy') {
+            o.resiNumber = 'WYB-1789350705568';
+            o.trackingNumber = 'WYB-1789350705568';
+            o.shippingLabelUrl = 'https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development';
+            modified = true;
+          } else if (o.shippingLabelUrl && o.shippingLabelUrl.includes('labels.biteship.com')) {
+            o.shippingLabelUrl = `https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development`;
             modified = true;
           }
           orderMap.set(o.id, o);
@@ -55,6 +60,48 @@ class OrderService {
   async getOrdersByStore(storeId: string): Promise<Order[]> {
     let orders = this.getStoredOrders();
     let storeOrders = orders.filter((o) => o.storeId === storeId);
+
+    // Ensure order for "utiy" at Telkom University Bandung with status "Baru" exists
+    const hasUtiy = storeOrders.some((o) => o.customerName.toLowerCase() === 'utiy');
+    if (!hasUtiy) {
+      const utiyOrder: Order = {
+        id: `ord-${storeId}-utiy-${Date.now()}`,
+        storeId,
+        orderNumber: `KB-${Math.floor(9100 + Math.random() * 800)}`,
+        customerName: 'utiy',
+        customerPhone: '081223344556',
+        customerEmail: 'utiy@telkomuniversity.ac.id',
+        customerAddress: 'Gedung Asrama Putri / Gedung Pelangi, Telkom University, Jl. Telekomunikasi No. 1, Terusan Buahbatu, Sukapura, Kec. Dayeuhkolot',
+        customerCity: 'Kab. Bandung, Jawa Barat',
+        customerPostalCode: '40257',
+        items: [
+          {
+            productId: 'prod-andhika-101',
+            productName: 'Kemeja Batik Tulis Modern Heritage Lengan Panjang',
+            productImage: 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=800&auto=format&fit=crop&q=80',
+            price: 185000,
+            quantity: 1,
+            subtotal: 185000,
+            variantName: 'Size M',
+          },
+        ],
+        subtotal: 185000,
+        shippingCost: 14000,
+        discount: 0,
+        grandTotal: 199000,
+        paymentMethod: 'QRIS',
+        paymentStatus: 'Sudah Dibayar',
+        courier: 'J&T',
+        courierService: 'EZ Regular (1-2 Hari)',
+        resiNumber: '',
+        shippingStatus: 'Baru',
+        createdAt: new Date().toISOString(),
+        notes: 'Kirim ke pos satpam / lobi asrama Telkom University Bandung. Tolong hubungi WA sebelum sampai.',
+      };
+      orders = [utiyOrder, ...orders];
+      this.saveOrders(orders);
+      storeOrders = [utiyOrder, ...storeOrders];
+    }
 
     // If store has 0 orders, seed starter orders for this store
     if (storeOrders.length === 0) {

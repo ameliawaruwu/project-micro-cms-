@@ -84,6 +84,24 @@ export const translations: Translations = {
   buyer_note: { id: 'Catatan Pembeli:', en: 'Buyer Note:' },
   order_paid: { id: 'Sudah Dibayar', en: 'Paid' },
   order_unpaid: { id: 'Belum Dibayar', en: 'Unpaid' },
+  chat_buyer: { id: 'Chat Pembeli', en: 'Chat Buyer' },
+  copy_resi: { id: 'Salin Resi', en: 'Copy Tracking' },
+  copied: { id: 'Tersalin', en: 'Copied' },
+  check_tracking: { id: 'Cek Tracking', en: 'Track Order' },
+  label_pdf: { id: 'Label PDF', en: 'PDF Label' },
+  detail_and_track: { id: 'Detail & Lacak', en: 'Details & Track' },
+  detail_short: { id: 'Detail', en: 'Detail' },
+  arrange_shipping: { id: 'Atur Pengiriman', en: 'Arrange Shipment' },
+  mark_completed: { id: 'Tandai Selesai', en: 'Mark Completed' },
+  order_completed: { id: 'Pesanan Selesai', en: 'Order Completed' },
+  no_orders_found: { id: 'Tidak ada pesanan ditemukan', en: 'No orders found' },
+  no_orders_desc: { id: 'Pesanan baru dari pembeli di toko online Anda akan otomatis masuk dan tampil di halaman ini.', en: 'New orders from buyers in your online store will automatically appear on this page.' },
+  items_count: { id: 'produk', en: 'items' },
+  courier_colon: { id: 'Kurir:', en: 'Courier:' },
+  resi_colon: { id: 'Resi', en: 'Tracking' },
+  close: { id: 'Tutup', en: 'Close' },
+  label_and_receipt: { id: 'Label Pengiriman & Struk', en: 'Shipping Label & Receipt' },
+  print_thermal_receipt: { id: 'Cetak Struk Thermal', en: 'Print Thermal Receipt' },
 
   // Payment & Shipping Page
   payments_shipping_title: { id: 'Pembayaran & Pengiriman', en: 'Payment & Shipping' },
@@ -335,6 +353,114 @@ export const translations: Translations = {
   auth_send_reset_link: { id: 'Kirim Tautan Pemulihan', en: 'Send Recovery Link' },
   auth_reset_sent_title: { id: 'Tautan Berhasil Dikirim', en: 'Link Sent Successfully' },
   auth_reset_sent_desc: { id: 'Tautan atur ulang kata sandi telah dikirim ke email Anda.', en: 'The password reset link has been sent to your email.' },
+
+  // Shipping & Logistics Page
+  shipping_subtitle: {
+    id: 'Kelola cabang gudang asal pengiriman (origin) dan konfigurasi kurir ekspedisi otomatis (Biteship).',
+    en: 'Manage origin dispatch warehouses/branches and automated courier logistics settings (Biteship).'
+  },
+  shipping_of: { id: 'dari', en: 'of' },
+  shipping_active_badge: { id: 'Ekspedisi Aktif', en: 'Active Couriers' },
+  tab_branches: { id: 'Cabang & Gudang Asal', en: 'Branches & Origin Warehouses' },
+  tab_couriers: { id: 'Pilihan Kurir & Ekspedisi', en: 'Courier & Carrier Options' },
+  calc_biteship_title: { id: 'Kalkulasi Ongkir & Biteship Aggregator', en: 'Shipping Rate Calculation & Biteship Aggregator' },
+  calc_biteship_desc: {
+    id: 'Ekspedisi yang aktif akan langsung muncul saat pembeli melakukan checkout di etalase toko. Ongkos kirim dihitung akurat berdasarkan lokasi cabang gudang asal dan kode pos tujuan.',
+    en: 'Active couriers will appear directly during buyer checkout. Shipping fees are accurately computed based on origin branch warehouse location and destination postal code.'
+  },
+  available_couriers_heading: { id: 'Pilihan Ekspedisi & Kurir Logistik', en: 'Available Shipping Carriers & Logistics' },
+  couriers_active_count: { id: 'aktif', en: 'active' },
+
+  // Branch & Origin Warehouse Management
+  branch_management_title: { id: 'Manajemen Cabang & Gudang Asal', en: 'Branch & Origin Warehouse Management' },
+  branch_management_desc: {
+    id: 'Lokasi cabang/gudang digunakan oleh kurir (Biteship) sebagai titik penjemputan (origin) dan dasar kalkulasi ongkir.',
+    en: 'Warehouse branch locations are used by couriers (Biteship) as pickup origins and the baseline for shipping fee calculations.'
+  },
+  branch_add_button: { id: 'Tambah Cabang / Gudang', en: 'Add Branch / Warehouse' },
+  branch_search_placeholder: {
+    id: 'Cari nama gudang, kota, nama PIC, atau kode pos...',
+    en: 'Search warehouse name, city, PIC name, or postal code...'
+  },
+  branch_count_label: { id: 'Cabang', en: 'Branches' },
+  branch_loading: { id: 'Memuat data cabang gudang...', en: 'Loading branch warehouse data...' },
+  branch_empty_title: { id: 'Tidak ada cabang yang cocok dengan pencarian', en: 'No branches match your search' },
+  branch_empty_desc: {
+    id: 'Tambahkan cabang baru untuk mengaktifkan titik penjemputan logistik.',
+    en: 'Add a new branch to activate logistics pickup points.'
+  },
+  branch_default_badge: { id: 'Cabang Utama', en: 'Primary Branch' },
+  branch_active: { id: 'Aktif', en: 'Active' },
+  branch_inactive: { id: 'Nonaktif', en: 'Inactive' },
+  branch_pic_label: { id: 'PIC', en: 'PIC' },
+  branch_postal_code: { id: 'Kode Pos', en: 'Postal Code' },
+  branch_set_default: { id: 'Jadikan Utama', en: 'Set as Primary' },
+  branch_deactivate: { id: 'Nonaktifkan', en: 'Deactivate' },
+  branch_activate: { id: 'Aktifkan', en: 'Activate' },
+  branch_edit: { id: 'Ubah Cabang', en: 'Edit Branch' },
+  branch_delete: { id: 'Hapus Cabang', en: 'Delete Branch' },
+  branch_modal_add_title: { id: 'Tambah Cabang / Gudang Asal', en: 'Add Origin Branch / Warehouse' },
+  branch_modal_edit_title: { id: 'Edit Cabang / Gudang', en: 'Edit Branch / Warehouse' },
+  branch_form_name: { id: 'Nama Cabang / Gudang', en: 'Branch / Warehouse Name' },
+  branch_form_name_placeholder: {
+    id: 'Contoh: Gudang Pusat Jakarta, Cabang Bandung',
+    en: 'Example: Jakarta Central Warehouse, Bandung Branch'
+  },
+  branch_form_pic: { id: 'Nama Penanggung Jawab (PIC)', en: 'Person in Charge (PIC) Name' },
+  branch_form_pic_placeholder: { id: 'Nama PIC penyerahan paket', en: 'PIC name for parcel handover' },
+  branch_form_phone: { id: 'No. Handphone PIC', en: 'PIC Phone Number' },
+  branch_form_phone_placeholder: { id: '0812xxxxxxxx (untuk kurir)', en: '0812xxxxxxxx (for courier)' },
+  branch_form_address: { id: 'Alamat Lengkap Gudang', en: 'Full Warehouse Address' },
+  branch_form_address_placeholder: {
+    id: 'Nama jalan, nomor gudang/ruko, RT/RW, patokan lokasi...',
+    en: 'Street name, unit number, district, landmarks...'
+  },
+  branch_form_subdistrict: { id: 'Kecamatan', en: 'Subdistrict' },
+  branch_form_city: { id: 'Kota / Kab', en: 'City / Regency' },
+  branch_form_postal_code: { id: 'Kode Pos', en: 'Postal Code' },
+  branch_form_province: { id: 'Provinsi', en: 'Province' },
+  branch_form_default_checkbox: { id: 'Jadikan Cabang Utama', en: 'Set as Primary Branch' },
+  branch_form_default_hint: {
+    id: 'Cabang utama otomatis terpilih sebagai origin saat checkout dan perhitungan ongkir pembeli.',
+    en: 'Primary branch is automatically selected as origin during checkout and shipping calculation.'
+  },
+  branch_form_active_checkbox: { id: 'Status Aktif', en: 'Active Status' },
+  branch_form_active_hint: {
+    id: 'Cabang aktif dapat digunakan untuk proses booking pengiriman dan penjemputan paket.',
+    en: 'Active branches can be used for shipping bookings and parcel pickups.'
+  },
+  branch_form_cancel: { id: 'Batal', en: 'Cancel' },
+  branch_form_saving: { id: 'Menyimpan...', en: 'Saving...' },
+  branch_form_submit_add: { id: 'Simpan Cabang', en: 'Save Branch' },
+  branch_form_submit_edit: { id: 'Perbarui Cabang', en: 'Update Branch' },
+  branch_delete_confirm: {
+    id: 'Apakah Anda yakin ingin menghapus cabang "{name}"?',
+    en: 'Are you sure you want to delete branch "{name}"?'
+  },
+  branch_deleted_success: {
+    id: 'Cabang "{name}" berhasil dihapus.',
+    en: 'Branch "{name}" was successfully deleted.'
+  },
+  branch_delete_error: { id: 'Gagal menghapus cabang', en: 'Failed to delete branch' },
+  branch_status_updated: { id: 'Status cabang berhasil diperbarui.', en: 'Branch status successfully updated.' },
+  branch_status_error: { id: 'Gagal mengubah status cabang', en: 'Failed to change branch status' },
+  branch_default_updated: { id: '"{name}" sekarang menjadi cabang utama.', en: '"{name}" is now the primary branch.' },
+  branch_default_error: { id: 'Gagal mengatur cabang utama', en: 'Failed to set primary branch' },
+  branch_created_success: { id: 'Cabang baru berhasil ditambahkan.', en: 'New branch successfully added.' },
+  branch_updated_success: { id: 'Data cabang berhasil diperbarui.', en: 'Branch details successfully updated.' },
+  branch_postal_required: { id: 'Kode pos harus 5 digit angka.', en: 'Postal code must be a 5-digit number.' },
+
+  // Courier Card Integrations
+  courier_badge_popular: { id: 'Populer', en: 'Popular' },
+  courier_badge_aggregator: { id: 'Aggregator Terpusat', en: 'Centralized Aggregator' },
+  courier_badge_master_api: { id: 'Master API', en: 'Master API' },
+  courier_connected_env: { id: 'Terhubung via .env', en: 'Connected via .env' },
+  courier_status_active: { id: 'Aktif', en: 'Active' },
+  courier_status_inactive: { id: 'Nonaktif', en: 'Inactive' },
+  courier_btn_settings: { id: 'Atur', en: 'Configure' },
+  courier_title_settings: { id: 'Atur Preferensi Layanan', en: 'Configure Service Preferences' },
+  courier_title_api_settings: { id: 'Atur Kunci API', en: 'Configure API Keys' },
+  btn_save_settings: { id: 'Simpan Pengaturan', en: 'Save Settings' },
 };
 
 interface LanguageContextType {

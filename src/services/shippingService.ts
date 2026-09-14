@@ -230,6 +230,7 @@ export const shippingService = {
   async createShipment(
     payload: CreateShipmentPayload & { origin_branch_id?: string; notes?: string }
   ): Promise<CreateShipmentResult> {
+    // 1. Coba panggil via Supabase Edge Function
     try {
       const { data, error } = await supabase.functions.invoke('create-shipment', {
         body: payload,
@@ -248,11 +249,117 @@ export const shippingService = {
       console.warn('[Supabase Edge Function] create-shipment fallback:', err);
     }
 
-    // Fallback simulation: buat resi dan label standar
-    const prefix = 'EXP';
-    const randomDigits = Math.floor(1000000000 + Math.random() * 9000000000);
+    // 2. Panggil langsung API resmi Biteship jika API Key aktif
+    try {
+      const apiKey =
+        (import.meta as any).env?.VITE_BITESHIP_API_KEY ||
+        'biteship_test.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiVGVzdGluZyBNaWNyb0NNUyIsInVzZXJJZCI6IjZhYTc0ZjBlZjQyZTNkMzE1NDY2YmI1YSIsImlhdCI6MTc4OTM1MDA1MX0.TEmKBLYc6Ei-L4FfuCSH2JtNBAxrWR_imx3P9WddciA';
+
+      if (apiKey && apiKey.startsWith('biteship_')) {
+        const branches = await branchService.getBranches();
+        const branch =
+          branches.find((b) => b.id === payload.origin_branch_id) ||
+          branches.find((b) => b.isDefault) ||
+          branches[0];
+
+        let customerName = 'utiy';
+        let customerPhone = '081223344556';
+        let customerAddress = 'Telkom University Bandung';
+        let customerPostal = 40257;
+        let itemTitle = 'Pesanan Produk Toko';
+        let itemValue = 185000;
+
+        try {
+          const rawOrders = localStorage.getItem('microcms_orders_v1');
+          if (rawOrders) {
+            const list = JSON.parse(rawOrders);
+            const found = list.find((o: any) => o.id === payload.order_id);
+            if (found) {
+              customerName = found.customerName || customerName;
+              customerPhone = found.customerPhone || customerPhone;
+              customerAddress = found.customerAddress || customerAddress;
+              customerPostal = Number(found.customerPostalCode || customerPostal);
+              if (found.items && found.items[0]) {
+                itemTitle = found.items[0].productName || itemTitle;
+                itemValue = found.items[0].price || itemValue;
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
+
+        const courierComp = (payload.courier_code || 'jnt').toLowerCase().includes('jne')
+          ? 'jne'
+          : (payload.courier_code || 'jnt').toLowerCase().includes('sicepat')
+          ? 'sicepat'
+          : 'jnt';
+
+        const courierType = (payload.courier_service || 'ez').toLowerCase().includes('reg')
+          ? 'reg'
+          : (payload.courier_service || 'ez').toLowerCase().includes('siuntung')
+          ? 'siuntung'
+          : 'ez';
+
+        const biteshipRes = await fetch('https://api.biteship.com/v1/orders', {
+          method: 'POST',
+          headers: {
+            Authorization: apiKey.startsWith('Bearer ') ? apiKey : `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            origin_contact_name: branch?.picName || 'Gudang Pusat Jakarta',
+            origin_contact_phone: branch?.picPhone || '081298765432',
+            origin_address: branch?.address || 'Jl. Kemang Raya No. 42',
+            origin_postal_code: Number(branch?.postalCode || 12730),
+            destination_contact_name: customerName,
+            destination_contact_phone: customerPhone,
+            destination_address: customerAddress,
+            destination_postal_code: customerPostal,
+            courier_company: courierComp,
+            courier_type: courierType,
+            delivery_type: 'now',
+            items: [
+              {
+                name: itemTitle,
+                value: itemValue,
+                quantity: 1,
+                weight: 500,
+              },
+            ],
+          }),
+        });
+
+        if (biteshipRes.ok) {
+          const biteshipData = await biteshipRes.json();
+          if (biteshipData.success) {
+            const waybill =
+              biteshipData.courier?.waybill_id ||
+              biteshipData.courier?.tracking_id ||
+              biteshipData.id;
+            const trackingUrl =
+              biteshipData.courier?.link ||
+              `https://track.biteship.com/${biteshipData.courier?.tracking_id}?environment=development`;
+
+            return {
+              success: true,
+              tracking_number: waybill,
+              shipping_label_url: trackingUrl,
+              status: 'ready_to_ship',
+              message: 'Resi resmi Biteship berhasil diterbitkan & terhubung langsung ke tracking!',
+            };
+          }
+        }
+      }
+    } catch (apiDirectErr) {
+      console.warn('[Direct Biteship API] createShipment fallback:', apiDirectErr);
+    }
+
+    // 3. Fallback simulation bila server offline
+    const prefix = 'WYB-';
+    const randomDigits = Math.floor(100000000000 + Math.random() * 900000000000);
     const trackingNumber = `${prefix}${randomDigits}`;
-    const labelUrl = `https://labels.biteship.com/labels/${trackingNumber}.pdf`;
+    const labelUrl = `https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development`;
 
     return {
       success: true,

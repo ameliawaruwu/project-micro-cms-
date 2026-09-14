@@ -14,6 +14,7 @@ import {
   Info,
 } from 'lucide-react';
 import { Integration } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface IntegrationCardProps {
   integration: Integration;
@@ -66,6 +67,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
   onSaveConfig,
   onShowNotification,
 }) => {
+  const { t } = useLanguage();
   const [showConfigModal, setShowConfigModal] = useState(false);
 
   // Form State: Payment Integrations
@@ -146,13 +148,13 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
               {integration.isPopular && (
                 <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-[#FFF1F0] text-[#9A0602] border border-[#FECDCA] px-2 py-0.2 rounded-full shrink-0">
                   <Zap className="w-2.5 h-2.5 fill-[#9A0602]" />
-                  <span>Populer</span>
+                  <span>{t('courier_badge_popular', 'Populer')}</span>
                 </span>
               )}
               {isBiteship && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-[#ECFDF3] text-[#027A48] border border-[#ABEFC6] px-2 py-0.2 rounded-full shrink-0">
                   <CheckCircle2 className="w-3 h-3" />
-                  <span>Aggregator Terpusat</span>
+                  <span>{t('courier_badge_aggregator', 'Aggregator Terpusat')}</span>
                 </span>
               )}
             </div>
@@ -177,10 +179,10 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
               }`}
             >
               {isBiteship && integration.isConnected
-                ? 'Terhubung via .env'
+                ? t('courier_connected_env', 'Terhubung via .env')
                 : integration.isConnected
-                ? 'Aktif'
-                : 'Nonaktif'}
+                ? t('courier_status_active', 'Aktif')
+                : t('courier_status_inactive', 'Nonaktif')}
             </span>
           </div>
 
@@ -190,10 +192,10 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
               type="button"
               onClick={() => setShowConfigModal(true)}
               className="flex items-center gap-1.5 text-xs font-semibold text-[#555555] hover:text-[#1F1F1F] px-3 py-2 rounded-xl hover:bg-[#F7F7F7] border border-[#EAEAEA] transition cursor-pointer"
-              title={isShipping ? 'Atur Preferensi Layanan' : 'Atur Kunci API'}
+              title={isShipping ? t('courier_title_settings', 'Atur Preferensi Layanan') : t('courier_title_api_settings', 'Atur Kunci API')}
             >
               <Settings className="w-3.5 h-3.5 text-[#777777]" />
-              <span>Atur</span>
+              <span>{t('courier_btn_settings', 'Atur')}</span>
             </button>
 
             {/* Toggle Switch (Disembunyikan pada master Biteship agar selalu aktif via .env) */}
@@ -422,13 +424,13 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                       onClick={() => setShowConfigModal(false)}
                       className="px-4 py-2.5 min-h-[40px] rounded-xl border border-[#EAEAEA] text-xs font-semibold text-[#555555] hover:bg-[#F7F7F7] transition cursor-pointer"
                     >
-                      Batal
+                      {t('branch_form_cancel', 'Batal')}
                     </button>
                     <button
                       type="submit"
                       className="px-5 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
                     >
-                      Simpan Pengaturan
+                      {t('btn_save_settings', 'Simpan Pengaturan')}
                     </button>
                   </div>
                 </form>

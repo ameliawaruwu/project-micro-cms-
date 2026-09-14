@@ -25,7 +25,7 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
   const activeCount = shippingIntegrations.filter((i) => i.isConnected).length;
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left max-w-5xl">
+    <div className="space-y-5 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8 text-left max-w-5xl">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0DD]">
         <div>
@@ -33,9 +33,6 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
             <Truck className="w-6 h-6 text-[#66000E]" />
             <span>{t('nav_shipping', 'Logistik & Pengiriman')}</span>
           </h1>
-          <p className="text-xs text-[#706866] mt-1">
-            Kelola cabang gudang asal pengiriman (origin) dan konfigurasi kurir ekspedisi otomatis (Biteship).
-          </p>
         </div>
 
         {/* Status Badge */}
@@ -43,7 +40,7 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-[#E5E0DD] shadow-2xs text-xs text-[#241A1A]">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="font-semibold">
-              {activeCount} dari {shippingIntegrations.length} {t('services_active', 'Ekspedisi Aktif')}
+              {activeCount} {t('shipping_of', 'dari')} {shippingIntegrations.length} {t('shipping_active_badge', 'Ekspedisi Aktif')}
             </span>
           </div>
         </div>
@@ -60,7 +57,7 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
           }`}
         >
           <Warehouse className="w-4 h-4" />
-          <span>Cabang & Gudang Asal</span>
+          <span>{t('tab_branches', 'Cabang & Gudang Asal')}</span>
         </button>
 
         <button
@@ -72,7 +69,7 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
           }`}
         >
           <Truck className="w-4 h-4" />
-          <span>Pilihan Kurir & Ekspedisi</span>
+          <span>{t('tab_couriers', 'Pilihan Kurir & Ekspedisi')}</span>
         </button>
       </div>
 
@@ -90,19 +87,19 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
               <MapPin className="w-4 h-4" />
             </div>
             <div className="text-xs text-[#5F5652] leading-relaxed">
-              <p className="font-semibold text-[#241A1A]">Kalkulasi Ongkir & Biteship Aggregator</p>
+              <p className="font-semibold text-[#241A1A]">{t('calc_biteship_title', 'Kalkulasi Ongkir & Biteship Aggregator')}</p>
               <p className="mt-0.5">
-                Ekspedisi yang aktif akan langsung muncul saat pembeli melakukan checkout di etalase toko. Ongkos kirim dihitung akurat berdasarkan lokasi cabang gudang asal dan kode pos tujuan.
+                {t('calc_biteship_desc', 'Ekspedisi yang aktif akan langsung muncul saat pembeli melakukan checkout di etalase toko. Ongkos kirim dihitung akurat berdasarkan lokasi cabang gudang asal dan kode pos tujuan.')}
               </p>
             </div>
           </div>
 
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-[#241A1A]">
-              Pilihan Ekspedisi & Kurir Logistik
+              {t('available_couriers_heading', 'Pilihan Ekspedisi & Kurir Logistik')}
             </h2>
             <span className="text-xs text-[#706866]">
-              {activeCount} dari {shippingIntegrations.length} aktif
+              {activeCount} {t('shipping_of', 'dari')} {shippingIntegrations.length} {t('couriers_active_count', 'aktif')}
             </span>
           </div>
 
