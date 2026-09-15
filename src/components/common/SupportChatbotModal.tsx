@@ -287,7 +287,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
       return {
         id,
         sender: 'bot',
-        text: `Anda dapat melihat pratinjau toko online Anda persis seperti yang dilihat oleh pembeli saat berbelanja. Halaman toko sudah dilengkapi keranjang belanja, checkout WhatsApp, dan pembayaran otomatis.`,
+        text: `Anda dapat melihat pratinjau toko online Anda persis seperti yang dilihat oleh pembeli saat berbelanja. Halaman toko sudah dilengkapi keranjang belanja instan dan pembayaran online otomatis Midtrans (QRIS & VA).`,
         timestamp: time,
         actionButton: {
           label: 'Buka Toko Online',

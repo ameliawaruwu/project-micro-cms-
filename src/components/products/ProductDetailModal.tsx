@@ -154,48 +154,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           </div>
         </div>
 
-        {/* Footer Actions: Status selector, Edit, Duplicate, Delete */}
-        <div className="pt-4 border-t border-[#E5E0DD] flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#706866]">Status:</span>
-            <select
-              value={product.status}
-              onChange={(e) => onStatusChange(product.id, e.target.value as ProductStatus)}
-              aria-label="Status ketersediaan"
-              className="py-1.5 px-3 rounded-xl border border-[#E5E0DD] text-xs font-bold text-[#241A1A] bg-white focus:outline-none focus:border-[#66000E]"
-            >
-              <option value="Tersedia">Tersedia</option>
-              <option value="Hampir Habis">Hampir Habis</option>
-              <option value="Habis">Habis</option>
-              <option value="Nonaktif">Nonaktifkan</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onDuplicate(product)}
-              className="px-3.5 py-2 min-h-[38px] rounded-xl bg-[#FAF7F7] hover:bg-[#F5E8EA] text-[#241A1A] hover:text-[#66000E] border border-[#E5E0DD] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              <span>Duplikat</span>
-            </button>
-
-            <button
-              onClick={() => onDelete(product.id)}
-              className="px-3.5 py-2 min-h-[38px] rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Hapus</span>
-            </button>
-
-            <button
-              onClick={() => onEdit(product)}
-              className="px-4 py-2 min-h-[38px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs transition cursor-pointer active:scale-95"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-              <span>Edit Produk</span>
-            </button>
-          </div>
+        {/* Clean Footer: Only Close Action */}
+        <div className="pt-4 border-t border-[#E5E0DD] flex items-center justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2 min-h-[38px] rounded-xl bg-[#FAF7F7] hover:bg-[#E5E0DD] text-[#241A1A] font-semibold text-xs border border-[#E5E0DD] transition cursor-pointer"
+          >
+            Tutup
+          </button>
         </div>
       </div>
     </div>

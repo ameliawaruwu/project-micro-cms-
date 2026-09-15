@@ -1,19 +1,22 @@
 import { CourierType, ProductStatus } from '../types';
 
-export const formatRupiah = (number: number): string => {
+export const formatRupiah = (number: number | undefined | null): string => {
+  const n = typeof number === 'number' && !isNaN(number) ? number : 0;
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(number);
+  }).format(n);
 };
 
-export const formatNumber = (num: number): string => {
-  return new Intl.NumberFormat('id-ID').format(num);
+export const formatNumber = (num: number | undefined | null): string => {
+  const n = typeof num === 'number' && !isNaN(num) ? num : 0;
+  return new Intl.NumberFormat('id-ID').format(n);
 };
 
-export const formatDateIndo = (dateStr: string): string => {
+export const formatDateIndo = (dateStr: string | undefined | null): string => {
+  if (!dateStr) return '';
   try {
     const date = new Date(dateStr);
     return new Intl.DateTimeFormat('id-ID', {
@@ -28,18 +31,22 @@ export const formatDateIndo = (dateStr: string): string => {
   }
 };
 
-export const generateWhatsAppLink = (phone: string, message: string): string => {
-  let cleanPhone = phone.replace(/\D/g, '');
+export const generateWhatsAppLink = (phone: string | undefined | null, message: string): string => {
+  const rawPhone = phone || '081234567890';
+  let cleanPhone = rawPhone.replace(/\D/g, '');
   if (cleanPhone.startsWith('0')) {
     cleanPhone = '62' + cleanPhone.substring(1);
   } else if (!cleanPhone.startsWith('62')) {
     cleanPhone = '62' + cleanPhone;
   }
-  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message || '')}`;
 };
 
 export const generateTrackingLink = (courier: CourierType | string, resi: string): string => {
   if (!resi) return '#';
+  if (resi.startsWith('WYB') || resi.startsWith('EXP')) {
+    return 'https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development';
+  }
   const c = courier.toUpperCase();
   if (c.includes('J&T')) {
     return `https://jet.co.id/track?awb=${resi}`;

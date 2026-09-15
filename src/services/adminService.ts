@@ -1,6 +1,7 @@
 import { Store, WithdrawalRequest, AdminPlatformStats, Order, PlatformSettings } from '../types';
 import { initialStores } from './mockData';
 import { storeService } from './storeService';
+import { supabase } from './supabaseClient';
 
 const WITHDRAWALS_KEY = 'microcms_admin_withdrawals_v1';
 const STORE_SUSPENSIONS_KEY = 'microcms_admin_suspended_stores_v1';
@@ -114,7 +115,43 @@ class AdminService {
     return this.getStoredWithdrawals();
   }
 
-  approveWithdrawal(id: string): boolean {
+  async fetchWithdrawalsFromDatabase(): Promise<WithdrawalRequest[]> {
+    try {
+      const { data, error } = await supabase
+        .from('withdrawals')
+        .select('*')
+        .order('requested_at', { ascending: false });
+
+      if (error) {
+        console.warn('Supabase fetch withdrawals error:', error.message);
+        return this.getWithdrawals();
+      }
+
+      if (data && data.length > 0) {
+        const mapped: WithdrawalRequest[] = data.map((r: any) => ({
+          id: r.id,
+          storeId: r.store_id,
+          storeName: r.store_name,
+          storeLogo: r.store_logo,
+          amount: Number(r.amount),
+          bankName: r.bank_name,
+          accountNumber: r.account_number,
+          accountHolder: r.account_holder,
+          status: r.status,
+          requestedAt: r.requested_at,
+          processedAt: r.processed_at,
+        }));
+        this.saveWithdrawals(mapped);
+        return mapped;
+      }
+      return this.getWithdrawals();
+    } catch (err) {
+      console.warn('Network error fetching withdrawals:', err);
+      return this.getWithdrawals();
+    }
+  }
+
+  async approveWithdrawal(id: string): Promise<boolean> {
     const list = this.getStoredWithdrawals();
     const target = list.find((w) => w.id === id);
     if (!target) return false;
@@ -122,10 +159,26 @@ class AdminService {
     target.status = 'approved';
     target.processedAt = new Date().toISOString();
     this.saveWithdrawals(list);
+
+    // Sync to Supabase
+    try {
+      await supabase
+        .from('withdrawals')
+        .update({ status: 'approved', processed_at: target.processedAt })
+        .eq('id', id);
+
+      await supabase
+        .from('wallet_transactions')
+        .update({ status: 'completed' })
+        .eq('reference_id', id);
+    } catch (err) {
+      console.warn('Failed to update approved withdrawal in Supabase:', err);
+    }
+
     return true;
   }
 
-  rejectWithdrawal(id: string): boolean {
+  async rejectWithdrawal(id: string): Promise<boolean> {
     const list = this.getStoredWithdrawals();
     const target = list.find((w) => w.id === id);
     if (!target) return false;
@@ -133,6 +186,38 @@ class AdminService {
     target.status = 'rejected';
     target.processedAt = new Date().toISOString();
     this.saveWithdrawals(list);
+
+    // Refund store balance
+    const stores = await storeService.getStores();
+    const targetStore = stores.find((s) => s.id === target.storeId);
+    if (targetStore) {
+      const newBalance = (targetStore.balance || 0) + target.amount;
+      await storeService.updateStore(targetStore.id, { balance: newBalance });
+      try {
+        await supabase
+          .from('stores')
+          .update({ balance: newBalance })
+          .eq('id', targetStore.id);
+      } catch (err) {
+        console.warn('Failed to refund store balance in Supabase:', err);
+      }
+    }
+
+    // Sync to Supabase
+    try {
+      await supabase
+        .from('withdrawals')
+        .update({ status: 'rejected', processed_at: target.processedAt })
+        .eq('id', id);
+
+      await supabase
+        .from('wallet_transactions')
+        .update({ status: 'rejected' })
+        .eq('reference_id', id);
+    } catch (err) {
+      console.warn('Failed to update rejected withdrawal in Supabase:', err);
+    }
+
     return true;
   }
 
@@ -163,12 +248,12 @@ class AdminService {
 
   getPlatformSettings(): PlatformSettings {
     const defaultSettings: PlatformSettings = {
-      midtransEnvironment: 'sandbox',
-      midtransMerchantId: 'G182930491',
-      midtransClientKey: 'SB-Mid-client-8Yp9X1v2wQzL4a7k',
-      midtransServerKey: 'SB-Mid-server-zR9u3M2vX8pLk1A0yW4t',
+      midtransEnvironment: ((import.meta as any).env?.VITE_MIDTRANS_ENV as any) || 'sandbox',
+      midtransMerchantId: (import.meta as any).env?.VITE_MIDTRANS_MERCHANT_ID || 'G477630600',
+      midtransClientKey: (import.meta as any).env?.VITE_MIDTRANS_CLIENT_KEY || 'SB-Mid-client-6qHzXwHC6yMvkJ9J',
+      midtransServerKey: (import.meta as any).env?.MIDTRANS_SERVER_KEY || 'SB-Mid-server-n197M_KyR7is6x0Ag4cZEIAj',
       biteshipEnabled: true,
-      biteshipApiKey: 'biteship_test.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjaGFudElkIjoiNjU0MyJ9',
+      biteshipApiKey: 'biteship_test.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiVGVzdGluZyBNaWNyb0NNUyIsInVzZXJJZCI6IjZhYTc0ZjBlZjQyZTNkMzE1NDY2YmI1YSIsImlhdCI6MTc4OTM1MDA1MX0.TEmKBLYc6Ei-L4FfuCSH2JtNBAxrWR_imx3P9WddciA',
       biteshipOriginCity: 'Jakarta Selatan',
       waGatewayEnabled: true,
       waGatewayApiKey: 'fonnte_token_88921xks9021',

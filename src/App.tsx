@@ -63,9 +63,11 @@ import { DeviceSimulatorFrame } from './components/common/DeviceSimulatorFrame';
 // Merchant Pages
 import { DashboardPage } from './pages/merchant/DashboardPage';
 import { ProductListPage } from './pages/merchant/ProductListPage';
+import { ProductFormPage } from './pages/merchant/ProductFormPage';
 import { OrderListPage } from './pages/merchant/OrderListPage';
 import { PaymentListPage } from './pages/merchant/PaymentListPage';
 import { ShippingListPage } from './pages/merchant/ShippingListPage';
+import { BillingPage } from './pages/merchant/BillingPage';
 import { IntegrationListPage } from './pages/merchant/IntegrationListPage';
 import { SettingsPage } from './pages/merchant/SettingsPage';
 import { LayoutPage } from './pages/merchant/LayoutPage';
@@ -80,9 +82,9 @@ import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { LandingPage } from './pages/LandingPage';
 
 // Modals
-import { ProductFormModal } from './components/products/ProductFormModal';
+import { ConfirmDeleteModal } from './components/common/ConfirmDeleteModal';
 import { ProductDetailModal as MerchantProductDetailModal } from './components/products/ProductDetailModal';
-import { ProcessShippingModal } from './components/orders/ProcessShippingModal';
+import { ShippingModal } from './components/shipping/ShippingModal';
 import { ReceiptModal } from './components/orders/ReceiptModal';
 import { OrderDetailModal } from './components/orders/OrderDetailModal';
 import { MerchantWalletModal } from './components/wallet/MerchantWalletModal';
@@ -125,8 +127,10 @@ export default function App() {
   // State: Modals & Drawers
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [productSubView, setProductSubView] = useState<'list' | 'add' | 'edit'>('list');
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const [selectedMerchantProduct, setSelectedMerchantProduct] = useState<Product | null>(null);
   const [selectedStorefrontProduct, setSelectedStorefrontProduct] = useState<Product | null>(null);
   const [isShippingModalOpen, setIsShippingModalOpen] = useState(false);
@@ -161,15 +165,25 @@ export default function App() {
   const loadData = async (targetStoreId?: string) => {
     try {
       if (!user) {
+        const params = new URLSearchParams(window.location.search);
+        const tokoParam = params.get('toko') || params.get('store');
         const allStores = await storeService.getStores();
-        const defaultStore = allStores[0] || initialStores[0];
-        setActiveStore(defaultStore);
+        let selectedStore: Store;
+        if (tokoParam) {
+          selectedStore = await storeService.getStoreBySlug(tokoParam);
+        } else {
+          selectedStore = allStores[0] || initialStores[0];
+        }
+
+        setActiveStore(selectedStore);
         setStores(allStores.length > 0 ? allStores : initialStores);
 
-        const storeProducts = await productService.getProductsByStore(defaultStore.id);
-        const storeOrders = await orderService.getOrdersByStore(defaultStore.id);
-        const storeIntegrations = await integrationService.getIntegrations();
-        const initialCart = cartService.getCart(defaultStore.slug);
+        const [storeProducts, storeOrders, storeIntegrations] = await Promise.all([
+          productService.getProductsByStore(selectedStore.id),
+          orderService.getOrdersByStore(selectedStore.id),
+          integrationService.getIntegrations(),
+        ]);
+        const initialCart = cartService.getCart(selectedStore.slug);
 
         setProducts(storeProducts);
         setOrders(storeOrders);
@@ -204,9 +218,11 @@ export default function App() {
       setActiveStore(finalStore || null);
 
       if (finalStore) {
-        const storeProducts = await productService.getProductsByStore(finalStore.id);
-        const storeOrders = await orderService.getOrdersByStore(finalStore.id);
-        const storeIntegrations = await integrationService.getIntegrations();
+        const [storeProducts, storeOrders, storeIntegrations] = await Promise.all([
+          productService.getProductsByStore(finalStore.id),
+          orderService.getOrdersByStore(finalStore.id),
+          integrationService.getIntegrations(),
+        ]);
         const initialCart = cartService.getCart(finalStore.slug);
 
         setProducts(storeProducts);
@@ -219,7 +235,7 @@ export default function App() {
     }
   };
 
-  // Direct URL routing for buyers/customers (e.g. localhost:3000/?toko=batik-nusantara or ?mode=storefront)
+  // Direct URL routing for buyers/customers (e.g. localhost:3000/?toko=toko-andhikagonzales or ?mode=storefront)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokoParam = params.get('toko') || params.get('store');
@@ -240,21 +256,42 @@ export default function App() {
     }
 
     if (tokoParam || modeParam === 'storefront') {
-      storeService.getStores().then((all) => {
-        if (tokoParam) {
-          const match = all.find((s) => s.slug === tokoParam || s.id === tokoParam);
-          if (match) {
-            setActiveStore(match);
-          }
+      setViewMode('storefront-live');
+      storeService.getStoreBySlug(tokoParam || '').then(async (targetStore) => {
+        if (targetStore) {
+          setActiveStore(targetStore);
+          const [storeProducts, storeOrders] = await Promise.all([
+            productService.getProductsByStore(targetStore.id),
+            orderService.getOrdersByStore(targetStore.id),
+          ]);
+          const initialCart = cartService.getCart(targetStore.slug);
+          setProducts(storeProducts);
+          setOrders(storeOrders);
+          setCartItems(initialCart);
         }
-        setViewMode('storefront-live');
       });
     }
   }, []);
 
   useEffect(() => {
     loadData();
-  }, [isAuthenticated, authStore, user?.id, viewMode]);
+  }, [isAuthenticated, authStore, user?.id]);
+
+  // Real-time synchronization for orders via Supabase WebSocket
+  useEffect(() => {
+    if (!activeStore?.id) return;
+
+    const unsubscribe = orderService.subscribeToOrderChanges(activeStore.id, (updatedOrder) => {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
+      );
+      addToast(`Status pesanan #${updatedOrder.orderNumber} terupdate secara real-time!`, 'info');
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [activeStore?.id]);
 
   // Route Super Admin directly to Admin Dashboard
   useEffect(() => {
@@ -329,13 +366,15 @@ export default function App() {
   // Handlers for Products
   const handleOpenAddProduct = () => {
     setProductToEdit(null);
-    setIsProductModalOpen(true);
+    setProductSubView('add');
+    setActiveTab('produk');
   };
 
   const handleOpenEditProduct = (prod: Product) => {
     setSelectedMerchantProduct(null);
     setProductToEdit(prod);
-    setIsProductModalOpen(true);
+    setProductSubView('edit');
+    setActiveTab('produk');
   };
 
   const handleDuplicateProduct = async (prod: Product) => {
@@ -351,9 +390,22 @@ export default function App() {
       imageUrl: prod.imageUrl,
       status: prod.status,
     };
-    const created = await productService.createProduct(activeStore.id, duplicatedData);
+    const res = await productService.createProduct(activeStore.id, duplicatedData);
+    const created = res.product;
     setProducts((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
     addToast(`Produk "${created.name}" berhasil disalin.`);
+  };
+
+  const handleSyncProducts = async () => {
+    if (!activeStore) return;
+    addToast('Menyinkronkan produk ke database Supabase Cloud...');
+    const res = await productService.syncAllLocalToCloud(activeStore.id);
+    if (res.success) {
+      addToast(`Berhasil! ${res.count} produk tersinkron ke database Supabase Cloud.`);
+      await loadData();
+    } else {
+      addToast(`Gagal sinkron: ${res.error}`, 'error');
+    }
   };
 
   const handleSaveProduct = async (data: any) => {
@@ -363,23 +415,42 @@ export default function App() {
       setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       addToast(`Produk "${updated.name}" berhasil diperbarui.`);
     } else {
-      const created = await productService.createProduct(activeStore.id, data);
+      const res = await productService.createProduct(activeStore.id, data);
+      const created = res.product;
       setProducts((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
-      addToast(`Produk baru "${created.name}" berhasil ditambahkan.`);
+      if (res.syncedToCloud) {
+        addToast(`Produk "${created.name}" berhasil disimpan & tersinkron ke Supabase Cloud!`);
+      } else {
+        addToast(`Produk "${created.name}" tersimpan di lokal (Supabase belum tersinkron: ${res.cloudError || 'RLS terkunci'})`, 'info');
+      }
     }
-    setIsProductModalOpen(false);
+    setProductSubView('list');
+    setProductToEdit(null);
   };
 
-  const handleDeleteProduct = async (id: string) => {
+
+  const handleDeleteProduct = (id: string) => {
     const prod = products.find((p) => p.id === id);
-    if (!prod) return;
-    if (confirm(`Apakah Anda yakin ingin menghapus produk "${prod.name}"?`)) {
-      await productService.deleteProduct(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      if (selectedMerchantProduct?.id === id) {
+    if (prod) {
+      setProductToDelete(prod);
+    }
+  };
+
+  const handleConfirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    setIsDeletingProduct(true);
+    try {
+      await productService.deleteProduct(productToDelete.id);
+      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
+      if (selectedMerchantProduct?.id === productToDelete.id) {
         setSelectedMerchantProduct(null);
       }
-      addToast(`Produk "${prod.name}" berhasil dihapus.`);
+      addToast(`Produk "${productToDelete.name}" berhasil dihapus.`);
+      setProductToDelete(null);
+    } catch (err: any) {
+      addToast(`Gagal menghapus produk: ${err.message}`, 'error');
+    } finally {
+      setIsDeletingProduct(false);
     }
   };
 
@@ -406,6 +477,7 @@ export default function App() {
   };
 
   const handlePrintReceipt = (order: Order) => {
+    setSelectedOrderDetail(null);
     setOrderToPrint(order);
     setIsReceiptModalOpen(true);
   };
@@ -775,6 +847,7 @@ export default function App() {
       {/* 4. SUPER ADMIN DASHBOARD VIEW */}
       {viewMode === 'admin' && (
         <AdminDashboardPage
+          currentUser={user}
           onOpenStorefront={(slug) => {
             const targetStore = stores.find((s) => s.slug === slug);
             if (targetStore) setActiveStore(targetStore);
@@ -842,7 +915,10 @@ export default function App() {
             isCollapsed={isSidebarCollapsed}
             isOpenMobile={mobileSidebarOpen}
             onCloseMobile={() => setMobileSidebarOpen(false)}
-            onTabChange={setActiveTab}
+            onTabChange={(tab) => {
+              setActiveTab(tab);
+              if (tab !== 'produk') setProductSubView('list');
+            }}
             onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             onOpenShareModal={() => setIsShareModalOpen(true)}
             onOpenStorefront={() => setViewMode('storefront')}
@@ -892,16 +968,30 @@ export default function App() {
 
               {/* TAB 2: PRODUK */}
               {activeTab === 'produk' && (
-                <ProductListPage
-                  products={products}
-                  categories={categories}
-                  onAddProduct={handleOpenAddProduct}
-                  onViewProduct={(p) => setSelectedMerchantProduct(p)}
-                  onEditProduct={handleOpenEditProduct}
-                  onDuplicateProduct={handleDuplicateProduct}
-                  onDeleteProduct={handleDeleteProduct}
-                  onQuickStockChange={handleQuickStockChange}
-                />
+                productSubView === 'list' ? (
+                  <ProductListPage
+                    products={products}
+                    categories={categories}
+                    onAddProduct={handleOpenAddProduct}
+                    onViewProduct={(p) => setSelectedMerchantProduct(p)}
+                    onEditProduct={handleOpenEditProduct}
+                    onDuplicateProduct={handleDuplicateProduct}
+                    onDeleteProduct={handleDeleteProduct}
+                    onQuickStockChange={handleQuickStockChange}
+                    onNavigateDashboard={() => setActiveTab('beranda')}
+                    onSyncProducts={handleSyncProducts}
+                  />
+                ) : (
+                  <ProductFormPage
+                    productToEdit={productToEdit}
+                    categories={categories}
+                    onBack={() => {
+                      setProductSubView('list');
+                      setProductToEdit(null);
+                    }}
+                    onSave={handleSaveProduct}
+                  />
+                )
               )}
 
               {/* TAB 3: PESANAN */}
@@ -931,12 +1021,7 @@ export default function App() {
 
               {/* TAB 5: PEMBAYARAN */}
               {activeTab === 'pembayaran' && (
-                <PaymentListPage
-                  integrations={integrations}
-                  onToggleIntegration={handleToggleIntegration}
-                  onSaveConfig={handleSaveIntegrationConfig}
-                  onShowNotification={addToast}
-                />
+                <PaymentListPage onShowNotification={addToast} />
               )}
 
               {/* TAB 6: PENGIRIMAN */}
@@ -951,22 +1036,26 @@ export default function App() {
 
               {/* TAB FALLBACK: INTEGRASI */}
               {activeTab === 'integrasi' && (
-                <PaymentListPage
-                  integrations={integrations}
-                  onToggleIntegration={handleToggleIntegration}
-                  onSaveConfig={handleSaveIntegrationConfig}
+                <PaymentListPage onShowNotification={addToast} />
+              )}
+
+              {/* TAB 7: BILLING PLAN / LANGGANAN */}
+              {activeTab === 'billing' && (
+                <BillingPage
+                  store={currentStore}
+                  onUpdateStore={handleUpdateStore}
                   onShowNotification={addToast}
                 />
               )}
 
-              {/* TAB 6: PENGATURAN / PROFIL TOKO */}
+              {/* TAB 8: PENGATURAN / PROFIL TOKO */}
               {activeTab === 'pengaturan' && (
                 <SettingsPage
                   store={currentStore}
                   onUpdateStore={handleUpdateStore}
                   onOpenWithdraw={() => setWithdrawModalOpen(true)}
                   onOpenShareModal={() => setIsShareModalOpen(true)}
-                  onOpenUpgradePlan={() => setIsUpgradePlanModalOpen(true)}
+                  onNavigateBilling={() => setActiveTab('billing')}
                   onShowNotification={addToast}
                 />
               )}
@@ -976,7 +1065,10 @@ export default function App() {
             <BottomNav
               activeTab={activeTab}
               pendingOrdersCount={pendingOrdersCount}
-              onTabChange={setActiveTab}
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                if (tab !== 'produk') setProductSubView('list');
+              }}
             />
           </div>
         </div>
@@ -991,13 +1083,14 @@ export default function App() {
         onShowNotification={addToast}
       />
 
-      {/* 2. Add / Edit Product Modal */}
-      <ProductFormModal
-        isOpen={isProductModalOpen}
-        productToEdit={productToEdit}
-        categories={categories}
-        onClose={() => setIsProductModalOpen(false)}
-        onSave={handleSaveProduct}
+      {/* 2. Custom Alert Dialog: Confirm Delete Product */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(productToDelete)}
+        title="Hapus Produk?"
+        itemName={productToDelete?.name}
+        isDeleting={isDeletingProduct}
+        onConfirm={handleConfirmDeleteProduct}
+        onClose={() => setProductToDelete(null)}
       />
 
       {/* 3. Merchant Product Detail & Management Modal */}
@@ -1016,31 +1109,35 @@ export default function App() {
         }}
       />
 
-      {/* 4. Process Shipping & Resi Modal */}
-      <ProcessShippingModal
-        order={orderToShip}
-        isOpen={isShippingModalOpen}
-        onClose={() => setIsShippingModalOpen(false)}
-        onConfirmShipping={handleConfirmShipping}
-      />
-
-      {/* 5. Thermal Receipt & Label Modal */}
-      <ReceiptModal
-        order={orderToPrint}
-        store={currentStore}
-        isOpen={isReceiptModalOpen}
-        onClose={() => setIsReceiptModalOpen(false)}
-      />
-
-      {/* 6. Order Detail Modal with Stepper & Info */}
+      {/* 4. Order Detail Modal with Stepper & Info (Base Modal z-50) */}
       <OrderDetailModal
         order={selectedOrderDetail}
+        store={currentStore}
         isOpen={Boolean(selectedOrderDetail)}
         onClose={() => setSelectedOrderDetail(null)}
         onProcessShipping={handleOpenProcessShipping}
         onPrintReceipt={handlePrintReceipt}
         onMarkCompleted={handleMarkCompleted}
         onShowNotification={addToast}
+      />
+
+      {/* 5. Process Shipping & Resi Modal (z-[70], opens on top) */}
+      <ShippingModal
+        order={orderToShip}
+        isOpen={isShippingModalOpen}
+        onClose={() => setIsShippingModalOpen(false)}
+        onSuccess={(updatedOrder) => {
+          setOrders((prev) => prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o)));
+        }}
+        onShowNotification={addToast}
+      />
+
+      {/* 6. Thermal Receipt & Label Modal (z-[70], opens on top) */}
+      <ReceiptModal
+        order={orderToPrint}
+        store={currentStore}
+        isOpen={isReceiptModalOpen}
+        onClose={() => setIsReceiptModalOpen(false)}
       />
 
       {/* 7. Storefront Product Detail Modal */}

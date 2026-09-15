@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, Trash2, Plus, Minus, Search, Eye, Image as ImageIcon } from 'lucide-react';
+import { Edit2, Trash2, Plus, Search, Eye, Image as ImageIcon } from 'lucide-react';
 import { Product } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
 
@@ -20,6 +20,7 @@ interface ProductTableProps {
   onDuplicateProduct?: (product: Product) => void;
   onDeleteProduct: (id: string) => void;
   onQuickStockChange?: (id: string, delta: number) => void;
+  onSyncProducts?: () => Promise<void>;
 }
 
 export const ProductTable: React.FC<ProductTableProps> = ({
@@ -34,6 +35,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   onEditProduct,
   onDeleteProduct,
 }) => {
+
   return (
     <div className="space-y-4 font-sans">
       {/* Header filter controls */}
@@ -88,13 +90,6 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             <p className="text-xs text-[#706866] mt-1 max-w-sm mx-auto font-normal">
               Tambahkan produk dagangan Anda agar etalase toko online dapat langsung dikunjungi pelanggan.
             </p>
-            <button
-              onClick={onAddProduct}
-              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs transition cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Tambah Produk Pertama</span>
-            </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -208,4 +203,3 @@ export const ProductTable: React.FC<ProductTableProps> = ({
     </div>
   );
 };
-

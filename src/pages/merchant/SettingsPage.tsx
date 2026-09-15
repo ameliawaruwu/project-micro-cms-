@@ -1,24 +1,20 @@
 import React, { useState } from 'react';
-import { Wallet, Save, Share2, Phone, MapPin, Crown, Zap } from 'lucide-react';
+import { Save, Phone, MapPin } from 'lucide-react';
 import { Store } from '../../types';
-import { formatRupiah } from '../../utils/formatters';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface SettingsPageProps {
   store: Store;
   onUpdateStore: (updated: Store) => void;
-  onOpenWithdraw: () => void;
-  onOpenShareModal: () => void;
-  onOpenUpgradePlan?: () => void;
+  onOpenWithdraw?: () => void;
+  onOpenShareModal?: () => void;
+  onNavigateBilling?: () => void;
   onShowNotification: (msg: string) => void;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   store,
   onUpdateStore,
-  onOpenWithdraw,
-  onOpenShareModal,
-  onOpenUpgradePlan,
   onShowNotification,
 }) => {
   const { t } = useLanguage();
@@ -52,14 +48,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8">
+    <div className="space-y-6 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 w-full">
       <div>
-        <h1 className="text-xl sm:text-2xl font-semibold text-[#1F1F1F] tracking-tight">{t('settings_title', 'Pengaturan')}</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-[#1F1F1F] tracking-tight">
+          {t('settings_title', 'Pengaturan')}
+        </h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Store Profile Edit Form */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-7 border border-[#EAEAEA] shadow-xs space-y-5">
+      <div className="w-full">
+        {/* Store Profile Edit Form */}
+        <div className="bg-white rounded-3xl p-6 sm:p-7 border border-[#EAEAEA] shadow-xs space-y-5">
           <div className="pb-3 border-b border-[#EAEAEA] flex items-center justify-between">
             <h2 className="font-bold text-base text-[#1F1F1F]">Informasi Toko Online</h2>
             <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#ECFDF3] text-[#027A48] border border-[#ABEFC6]">
@@ -94,8 +92,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     type="text"
                     required
                     value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                    className="w-full px-3.5 py-2.5 rounded-r-xl border border-[#EAEAEA] text-xs font-mono text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                    className="w-full px-3.5 py-2.5 rounded-r-xl border border-[#EAEAEA] text-xs font-semibold text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
                   />
                 </div>
               </div>
@@ -109,7 +107,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 type="text"
                 value={formData.tagline}
                 onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
-                placeholder="Contoh: Kemeja & Kain Tradisional Berkualitas"
+                placeholder="Misal: Toko Resmi Toko Kopi Nusantara"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
               />
             </div>
@@ -122,7 +120,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 rows={3}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Ceritakan tentang produk dan brand Anda..."
+                placeholder="Tuliskan deskripsi singkat mengenai toko Anda..."
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
               />
             </div>
@@ -170,99 +168,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               </button>
             </div>
           </form>
-        </div>
-
-        {/* Right 1 Col: Subscription Plan & Wallet & QR Code */}
-        <div className="space-y-6">
-          
-          {/* 1. Subscription Plan Card */}
-          <div className="bg-white rounded-3xl p-6 border-2 border-[#66000E] shadow-xs space-y-4 relative overflow-hidden text-left">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-base">
-                <Crown className="w-5 h-5 text-[#66000E]" />
-                <span>Paket Langganan</span>
-              </div>
-              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#F5E8EA] text-[#66000E] uppercase border border-[#E8DDDE]">
-                {store.plan === 'premium' ? 'Pro / Premium' : store.plan === 'starter' ? 'Starter' : 'Free'}
-              </span>
-            </div>
-
-            <div className="p-3.5 bg-[#FAF7F7] rounded-2xl border border-[#E8DDDE] space-y-1 text-xs text-[#5F5652]">
-              <div className="flex items-center justify-between font-bold text-[#241A1A]">
-                <span>Status Paket:</span>
-                <span className="text-emerald-700">Aktif</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Katalog Produk:</span>
-                <span className="font-semibold">{store.plan === 'premium' ? 'Unlimited' : store.plan === 'starter' ? '100 Produk' : '25 Produk'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Biaya Transaksi:</span>
-                <span className="font-semibold">{store.plan === 'premium' ? '1%' : store.plan === 'starter' ? '1.5%' : '2%'}</span>
-              </div>
-            </div>
-
-            {onOpenUpgradePlan && (
-              <button
-                type="button"
-                onClick={onOpenUpgradePlan}
-                className="w-full py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-              >
-                <Zap className="w-3.5 h-3.5" />
-                <span>Upgrade / Ubah Paket</span>
-              </button>
-            )}
-          </div>
-
-          {/* 2. Wallet Card */}
-          <div className="bg-white rounded-3xl p-6 border border-[#EAEAEA] shadow-xs space-y-4 text-left">
-            <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-base">
-              <Wallet className="w-5 h-5 text-[#66000E]" />
-              <span>Dompet Saldo UMKM</span>
-            </div>
-
-            <div className="p-4 bg-[#FAF7F7] rounded-2xl border border-[#E8DDDE] space-y-1">
-              <span className="text-xs text-[#777777] font-semibold block">Saldo Aktif Siap Ditarik</span>
-              <span className="text-2xl font-bold text-[#66000E] block">
-                {formatRupiah(store.balance)}
-              </span>
-              <p className="text-[11px] text-[#555555]">
-                Pencairan otomatis ke rekening BCA, Mandiri, BRI, atau Bank Jago.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={onOpenWithdraw}
-              className="w-full py-3 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
-            >
-              Tarik Dana ke Rekening Bank
-            </button>
-          </div>
-
-          {/* 3. Store QR Card */}
-          <div className="bg-white rounded-3xl p-6 border border-[#EAEAEA] shadow-xs text-center space-y-3">
-            <h3 className="font-semibold text-xs text-[#777777] uppercase tracking-wider">
-              QR Code Etalase Toko
-            </h3>
-            <div className="w-32 h-32 mx-auto bg-[#FAF7F7] p-2.5 rounded-2xl border border-[#E8DDDE] flex items-center justify-center">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`https://kroombox.id/${store.slug}`)}&color=66000e`}
-                alt="QR Code Toko"
-                className="w-full h-full object-contain"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={onOpenShareModal}
-              className="text-xs font-semibold text-[#66000E] hover:underline flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              <span>Bagikan Link & QR Toko</span>
-            </button>
-          </div>
-
         </div>
       </div>
     </div>
