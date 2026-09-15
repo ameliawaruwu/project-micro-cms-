@@ -96,6 +96,7 @@ import { StoreHeader } from './components/storefront/StoreHeader';
 import { StoreProductCard } from './components/storefront/StoreProductCard';
 import { ProductDetailModal as StorefrontProductDetailModal } from './components/storefront/ProductDetailModal';
 import { CartDrawer } from './components/storefront/CartDrawer';
+import { ThemeRenderer } from './themes/ThemeRenderer';
 
 export default function App() {
   // Auth Context Hook
@@ -266,6 +267,13 @@ export default function App() {
   useEffect(() => {
     if (user?.role === 'admin' && viewMode !== 'admin' && viewMode !== 'storefront' && viewMode !== 'storefront-live') {
       setViewMode('admin');
+    }
+  }, [user, viewMode]);
+
+  // Route Merchant directly to Dashboard (e.g. after Google Auth Redirect)
+  useEffect(() => {
+    if (user?.role === 'merchant' && viewMode === 'landing') {
+      setViewMode('merchant-desktop');
     }
   }, [user, viewMode]);
 
@@ -641,413 +649,9 @@ export default function App() {
     );
   }
 
-  // Render Public Storefront Content (used in Desktop Storefront and Phone Simulator)
+  // Render Public Storefront Content (Using New Dynamic Theme Engine)
   const renderStorefrontContent = () => {
-    const sections = getStoreSections(currentStore.layoutSettings);
-    const visibleSections = sections.filter((s) => s.isVisible);
-    const announcementSec = sections.find((s) => s.id === 'announcement' && s.isVisible);
-    const headerSec = sections.find((s) => s.id === 'header' && s.isVisible);
-    const featuredProds = products.filter((p) => p.isFeatured && p.status !== 'Nonaktif');
-
-    return (
-      <div className="min-h-full flex flex-col bg-[#FAF7F7] text-[#241A1A] font-sans">
-        <StoreHeader
-          store={currentStore}
-          cartCount={cartService.getCount(cartItems)}
-          categories={categories}
-          selectedCategory={storefrontCategory}
-          searchQuery={storefrontSearchQuery}
-          showTopNotice={!!announcementSec}
-          topNoticeText={announcementSec?.options?.announcementText}
-          headerOptions={headerSec?.options}
-          primaryAccent={currentStore.layoutSettings?.primaryAccent || '#66000E'}
-          onSearchChange={setStorefrontSearchQuery}
-          onCategoryChange={setStorefrontCategory}
-          onOpenCart={() => setIsCartOpen(true)}
-        />
-
-        <div className="w-full flex-1 pb-16">
-          {visibleSections.map((sec) => {
-            if (sec.id === 'announcement' || sec.id === 'header') {
-              return null;
-            }
-
-            if (sec.id === 'hero_banner') {
-              const isCompact = sec.options?.bannerStyle === 'compact';
-              return (
-                <div key={sec.id} id="hero" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2 w-full">
-                  <div
-                    className={`relative rounded-3xl overflow-hidden shadow-2xs border border-[#E5E0DD] bg-[#1C1414] text-white flex items-center p-5 sm:p-8 ${
-                      isCompact ? 'min-h-[140px] sm:min-h-[160px]' : 'min-h-[180px] sm:min-h-[220px]'
-                    }`}
-                  >
-                    <img
-                      src={currentStore.bannerUrl}
-                      alt={currentStore.name}
-                      className="absolute inset-0 w-full h-full object-cover opacity-30"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="relative z-10 max-w-xl">
-                      <span className="inline-block px-3 py-1 rounded-full bg-[#66000E] text-white font-bold text-[10px] uppercase tracking-wider mb-2 border border-[#801010]">
-                        Katalog Resmi UMKM
-                      </span>
-                      <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight leading-tight">
-                        {currentStore.name}
-                      </h2>
-                      <p className="text-xs sm:text-sm text-slate-200 mt-1.5 leading-relaxed max-w-md">
-                        {currentStore.tagline || currentStore.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            if (sec.id === 'search_category') {
-              return (
-                <div key={sec.id} id="katalog-filter" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 w-full">
-                  <div className="bg-white p-3 sm:p-4 rounded-2xl border border-[#E5E0DD] shadow-2xs space-y-2.5">
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-[#706866] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        placeholder="Cari produk di etalase toko..."
-                        value={storefrontSearchQuery}
-                        onChange={(e) => setStorefrontSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#241A1A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
-                      />
-                    </div>
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar">
-                      <button
-                        onClick={() => setStorefrontCategory('all')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                          storefrontCategory === 'all'
-                            ? 'bg-[#66000E] text-white shadow-2xs'
-                            : 'text-[#706866] hover:bg-[#FAF7F7] hover:text-[#241A1A]'
-                        }`}
-                      >
-                        Semua Produk
-                      </button>
-                      {categories.map((cat) => (
-                        <button
-                          key={cat}
-                          onClick={() => setStorefrontCategory(cat)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                            storefrontCategory === cat
-                              ? 'bg-[#66000E] text-white shadow-2xs'
-                              : 'text-[#706866] hover:bg-[#FAF7F7] hover:text-[#241A1A]'
-                          }`}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            if (sec.id === 'featured_products') {
-              const displayFeatured = (featuredProds.length > 0 ? featuredProds : products.slice(0, 4)).filter(
-                (p) => p.status !== 'Nonaktif'
-              );
-              if (displayFeatured.length === 0) return null;
-
-              return (
-                <div key={sec.id} id="featured" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 w-full">
-                  <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E5E0DD] shadow-2xs">
-                    <div className="flex items-center justify-between mb-3.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center">
-                          <Star className="w-3.5 h-3.5 fill-[#66000E]" />
-                        </div>
-                        <h3 className="font-bold text-sm sm:text-base text-[#241A1A]">
-                          {sec.options?.featuredTitle || 'Produk Unggulan Pilihan'}
-                        </h3>
-                      </div>
-                      <span className="text-[11px] font-semibold text-[#66000E]">
-                        Rekomendasi Terbaik
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                      {displayFeatured.map((prod) => (
-                        <StoreProductCard
-                          key={`featured-${prod.id}`}
-                          product={prod}
-                          onSelectProduct={setSelectedStorefrontProduct}
-                          onAddToCart={handleAddToCart}
-                          onBuyNow={handleBuyNow}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            if (sec.id === 'store_benefits') {
-              return (
-                <div key={sec.id} id="keunggulan" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 w-full">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="bg-white p-3.5 rounded-2xl border border-[#E5E0DD] shadow-2xs flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-[#241A1A]">100% Produk UMKM Asli</h4>
-                        <p className="text-[11px] text-[#706866]">Kualitas teruji dari produsen lokal</p>
-                      </div>
-                    </div>
-                    <div className="bg-white p-3.5 rounded-2xl border border-[#E5E0DD] shadow-2xs flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0">
-                        <Truck className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-[#241A1A]">Pengiriman Cepat</h4>
-                        <p className="text-[11px] text-[#706866]">Ekspedisi resmi se-Indonesia</p>
-                      </div>
-                    </div>
-                    <div className="bg-white p-3.5 rounded-2xl border border-[#E5E0DD] shadow-2xs flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0">
-                        <ShieldCheck className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-[#241A1A]">Layanan Responsif</h4>
-                        <p className="text-[11px] text-[#706866]">Konfirmasi pesanan via WhatsApp</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            if (sec.id === 'product_grid') {
-              return (
-                <div key={sec.id} id="katalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 w-full">
-                  <div className="flex items-center justify-between mb-3.5">
-                    <div>
-                      <h3 className="font-bold text-base sm:text-lg text-[#241A1A]">
-                        {storefrontCategory === 'all' ? 'Semua Produk' : storefrontCategory}
-                      </h3>
-                      <p className="text-xs text-[#706866]">
-                        Menampilkan {storefrontFilteredProducts.length} produk pilihan
-                      </p>
-                    </div>
-                  </div>
-
-                  {storefrontFilteredProducts.length === 0 ? (
-                    <div className="py-14 text-center bg-white rounded-3xl border border-[#E5E0DD] p-8">
-                      <Package className="w-10 h-10 text-[#A8A09E] mx-auto mb-2" />
-                      <h4 className="font-bold text-[#241A1A] text-sm">Tidak ada produk ditemukan</h4>
-                      <p className="text-xs text-[#706866] mt-1">
-                        Coba pilih kategori lain atau ubah kata kunci pencarian.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                      {storefrontFilteredProducts.map((prod) => (
-                        <StoreProductCard
-                          key={`main-${prod.id}`}
-                          product={prod}
-                          onSelectProduct={setSelectedStorefrontProduct}
-                          onAddToCart={handleAddToCart}
-                          onBuyNow={handleBuyNow}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-
-            if (sec.id === 'testimonials') {
-              return (
-                <div key={sec.id} id="ulasan" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 w-full">
-                  <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E5E0DD] shadow-2xs">
-                    <div className="flex items-center justify-between mb-3.5">
-                      <div>
-                        <h3 className="font-bold text-sm sm:text-base text-[#241A1A]">
-                          Ulasan & Testimoni Pelanggan
-                        </h3>
-                        <p className="text-xs text-[#706866]">
-                          Pengalaman belanja nyata dari konsumen terverifikasi
-                        </p>
-                      </div>
-                      <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                        ⭐ 4.9 / 5.0
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div className="p-3.5 rounded-2xl bg-[#FAF7F7] border border-[#E5E0DD] space-y-1.5 text-xs">
-                        <div className="flex text-amber-500 text-xs">⭐⭐⭐⭐⭐</div>
-                        <p className="text-[#241A1A] italic">
-                          "Packing rapi, barang asli berkualitas tinggi sesuai foto. Pengiriman sangat cepat!"
-                        </p>
-                        <div className="text-[11px] font-semibold text-[#241A1A] pt-1">
-                          — Rina Safitri <span className="text-emerald-700 font-normal">(Yogyakarta)</span>
-                        </div>
-                      </div>
-                      <div className="p-3.5 rounded-2xl bg-[#FAF7F7] border border-[#E5E0DD] space-y-1.5 text-xs">
-                        <div className="flex text-amber-500 text-xs">⭐⭐⭐⭐⭐</div>
-                        <p className="text-[#241A1A] italic">
-                          "Respon penjual via WA sangat ramah dan pesanan sampai tepat waktu. Recommended!"
-                        </p>
-                        <div className="text-[11px] font-semibold text-[#241A1A] pt-1">
-                          — Budi Hartono <span className="text-emerald-700 font-normal">(Jakarta)</span>
-                        </div>
-                      </div>
-                      <div className="p-3.5 rounded-2xl bg-[#FAF7F7] border border-[#E5E0DD] space-y-1.5 text-xs">
-                        <div className="flex text-amber-500 text-xs">⭐⭐⭐⭐⭐</div>
-                        <p className="text-[#241A1A] italic">
-                          "Kualitas produk UMKM lokal rasa premium. Bangga pakai buatan dalam negeri."
-                        </p>
-                        <div className="text-[11px] font-semibold text-[#241A1A] pt-1">
-                          — Maya Anggraini <span className="text-emerald-700 font-normal">(Surabaya)</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            if (sec.id === 'promo_banner') {
-              return (
-                <div key={sec.id} id="promo" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 w-full">
-                  <div
-                    className="p-6 sm:p-8 rounded-3xl text-white text-center space-y-2 relative overflow-hidden shadow-2xs"
-                    style={{
-                      backgroundColor:
-                        sec.options?.backgroundColor === 'amber'
-                          ? '#B54708'
-                          : sec.options?.backgroundColor === 'dark'
-                          ? '#18181B'
-                          : '#66000E',
-                    }}
-                  >
-                    {sec.options?.discountBadge && (
-                      <span className="inline-block text-[10px] font-extrabold px-3 py-1 rounded-full bg-white text-[#241A1A] shadow-xs">
-                        {sec.options.discountBadge}
-                      </span>
-                    )}
-                    <h3 className="text-lg sm:text-2xl font-extrabold tracking-tight">
-                      {sec.options?.heading || 'Penawaran Spesial Terbatas'}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-white/90 max-w-md mx-auto">
-                      {sec.options?.description || 'Dapatkan potongan harga eksklusif untuk pesanan Anda hari ini.'}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setStorefrontCategory('all')}
-                      className="mt-2 px-5 py-2 rounded-xl bg-white text-[#241A1A] font-bold text-xs hover:bg-[#FAF7F7] transition shadow-xs cursor-pointer"
-                    >
-                      {sec.options?.buttonLabel || 'Klaim Promo Sekarang'}
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-
-            if (sec.id === 'newsletter') {
-              return (
-                <div key={sec.id} id="newsletter" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 w-full">
-                  <div className="bg-[#F5E8EA]/50 border border-[#E5E0DD] p-6 sm:p-8 rounded-3xl text-center space-y-2.5">
-                    {sec.options?.incentiveBadge && (
-                      <span className="inline-block text-[10px] font-bold text-[#66000E] bg-white px-2.5 py-0.5 rounded-full border border-[#E6DDDA]">
-                        {sec.options.incentiveBadge}
-                      </span>
-                    )}
-                    <h3 className="text-base sm:text-lg font-bold text-[#241A1A]">
-                      {sec.options?.newsletterTitle || 'Dapatkan Info Promo & Voucher Spesial'}
-                    </h3>
-                    <p className="text-xs text-[#706866] max-w-md mx-auto">
-                      {sec.options?.newsletterSubtitle || 'Daftarkan email atau kontak Anda untuk menerima rilis diskon.'}
-                    </p>
-                    <div className="flex items-center gap-2 max-w-sm mx-auto pt-1">
-                      <input
-                        type="email"
-                        placeholder="Masukkan alamat email..."
-                        className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-[#E5E0DD] text-xs text-[#241A1A] focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => addToast('Terima kasih telah berlangganan newsletter!')}
-                        className="px-4 py-2 rounded-xl bg-[#66000E] text-white font-bold text-xs shadow-2xs hover:bg-[#801010] transition cursor-pointer shrink-0"
-                      >
-                        {sec.options?.buttonText || 'Berlangganan'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            if (sec.id === 'footer') {
-              return (
-                <footer key={sec.id} id="footer" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2 w-full">
-                  <div className="bg-[#1F1918] text-white p-5 rounded-2xl text-center space-y-1.5">
-                    <div className="font-bold text-xs tracking-tight">{currentStore.name}</div>
-                    <p className="text-[10px] text-[#A8A09E]">
-                      {sec.options?.copyrightText || 'Hak Cipta Dilindungi Undang-Undang • Katalog Resmi UMKM'}
-                    </p>
-                  </div>
-                </footer>
-              );
-            }
-
-            if (sec.id === 'store_info') {
-              return (
-                <div key={sec.id} id="kontak" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 w-full">
-                  <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E5E0DD] shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <h4 className="font-bold text-sm text-[#241A1A] flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-[#66000E]" />
-                        {currentStore.name} — {currentStore.city}
-                      </h4>
-                      <p className="text-xs text-[#706866] max-w-lg">
-                        {currentStore.address}
-                      </p>
-                      <p className="text-[11px] text-[#706866] pt-0.5">
-                        Jam Operasional: Senin - Sabtu (08:00 - 17:00 WIB)
-                      </p>
-                    </div>
-                    <a
-                      href={generateWhatsAppLink(currentStore.phoneWhatsApp, `Halo ${currentStore.name}, saya ingin bertanya mengenai toko dan produk Anda.`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2.5 rounded-xl bg-[#ECFDF3] hover:bg-[#D1FADF] text-[#027A48] font-bold text-xs border border-[#ABEFC6] transition flex items-center gap-2 shrink-0 cursor-pointer"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      <span>Chat Toko via WhatsApp</span>
-                    </a>
-                  </div>
-                </div>
-              );
-            }
-
-            return null;
-          })}
-        </div>
-
-        {/* Floating Cart Button for Mobile View */}
-        {cartItems.length > 0 && (
-          <div className="fixed bottom-4 left-4 right-4 z-40 max-w-md mx-auto">
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="w-full py-3.5 px-5 rounded-2xl bg-[#66000E] text-white font-extrabold text-sm shadow-xl flex items-center justify-between border-2 border-white transition active:scale-95 cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-white text-[#66000E] font-bold text-xs flex items-center justify-center">
-                  {cartService.getCount(cartItems)}
-                </span>
-                <span>Lihat Keranjang Belanja</span>
-              </div>
-              <span className="text-white font-black">{formatRupiah(cartService.getTotal(cartItems))}</span>
-            </button>
-          </div>
-        )}
-      </div>
-    );
+    return <ThemeRenderer store={currentStore} products={products} />;
   };
 
   return (
@@ -1069,11 +673,10 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setStorefrontDeviceMode('desktop')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                  storefrontDeviceMode === 'desktop'
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${storefrontDeviceMode === 'desktop'
                     ? 'bg-[#FFD358] text-[#002A45] shadow-xs'
                     : 'text-white/80 hover:text-white'
-                }`}
+                  }`}
                 title="Mode Desktop"
               >
                 <Monitor className="w-3.5 h-3.5" />
@@ -1082,11 +685,10 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setStorefrontDeviceMode('tablet')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                  storefrontDeviceMode === 'tablet'
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${storefrontDeviceMode === 'tablet'
                     ? 'bg-[#FFD358] text-[#002A45] shadow-xs'
                     : 'text-white/80 hover:text-white'
-                }`}
+                  }`}
                 title="Mode Tablet"
               >
                 <Tablet className="w-3.5 h-3.5" />
@@ -1095,11 +697,10 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setStorefrontDeviceMode('mobile')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                  storefrontDeviceMode === 'mobile'
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${storefrontDeviceMode === 'mobile'
                     ? 'bg-[#FFD358] text-[#002A45] shadow-xs'
                     : 'text-white/80 hover:text-white'
-                }`}
+                  }`}
                 title="Mode Ponsel"
               >
                 <Smartphone className="w-3.5 h-3.5" />
@@ -1129,29 +730,26 @@ export default function App() {
 
           {/* Canvas Container */}
           <div
-            className={`flex-1 flex flex-col items-center justify-start overflow-y-auto ${
-              storefrontDeviceMode === 'desktop'
+            className={`flex-1 flex flex-col items-center justify-start overflow-y-auto ${storefrontDeviceMode === 'desktop'
                 ? 'p-0 w-full bg-[#FAF7F7]'
                 : 'p-3 sm:p-6 bg-[#0D1520]'
-            }`}
+              }`}
           >
             <div
-              className={`w-full transition-all duration-300 mx-auto ${
-                storefrontDeviceMode === 'desktop'
+              className={`w-full transition-all duration-300 mx-auto ${storefrontDeviceMode === 'desktop'
                   ? 'w-full max-w-none'
                   : storefrontDeviceMode === 'tablet'
-                  ? 'max-w-[768px]'
-                  : 'max-w-[390px]'
-              }`}
+                    ? 'max-w-[768px]'
+                    : 'max-w-[390px]'
+                }`}
             >
               <div
-                className={`bg-white transition-all overflow-hidden flex flex-col ${
-                  storefrontDeviceMode === 'mobile'
+                className={`bg-white transition-all overflow-hidden flex flex-col ${storefrontDeviceMode === 'mobile'
                     ? 'rounded-[40px] border-[8px] border-slate-900 ring-1 ring-slate-800 shadow-slate-900/30 min-h-[680px]'
                     : storefrontDeviceMode === 'tablet'
-                    ? 'rounded-[28px] border-[8px] border-slate-800 ring-1 ring-slate-700 shadow-slate-900/25 min-h-[680px]'
-                    : 'w-full min-h-screen rounded-none border-0 shadow-none'
-                }`}
+                      ? 'rounded-[28px] border-[8px] border-slate-800 ring-1 ring-slate-700 shadow-slate-900/25 min-h-[680px]'
+                      : 'w-full min-h-screen rounded-none border-0 shadow-none'
+                  }`}
               >
                 {/* Device Status Bar */}
                 {storefrontDeviceMode === 'mobile' && (
@@ -1317,11 +915,10 @@ export default function App() {
 
             {/* Main Content Area */}
             <main
-              className={`flex-1 ${
-                activeTab === 'layout'
+              className={`flex-1 ${activeTab === 'layout'
                   ? 'w-full h-full p-0 m-0 overflow-hidden'
                   : 'p-3.5 sm:p-6 lg:p-8 pb-24 lg:pb-8 max-w-7xl w-full mx-auto space-y-5 sm:space-y-6 overflow-y-auto custom-scrollbar'
-              }`}
+                }`}
             >
               {/* TAB 1: BERANDA / DASHBOARD */}
               {activeTab === 'beranda' && (

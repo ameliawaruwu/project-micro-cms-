@@ -109,11 +109,10 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           <button
             type="button"
             onClick={() => onDeviceModeChange('desktop')}
-            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-              deviceMode === 'desktop'
+            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${deviceMode === 'desktop'
                 ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]'
                 : 'text-[#706866] hover:text-[#241A1A]'
-            }`}
+              }`}
             title="Desktop"
           >
             <Monitor className="w-4 h-4" />
@@ -123,11 +122,10 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           <button
             type="button"
             onClick={() => onDeviceModeChange('tablet')}
-            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-              deviceMode === 'tablet'
+            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${deviceMode === 'tablet'
                 ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]'
                 : 'text-[#706866] hover:text-[#241A1A]'
-            }`}
+              }`}
             title="Tablet"
           >
             <Tablet className="w-4 h-4" />
@@ -137,11 +135,10 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           <button
             type="button"
             onClick={() => onDeviceModeChange('mobile')}
-            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-              deviceMode === 'mobile'
+            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${deviceMode === 'mobile'
                 ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]'
                 : 'text-[#706866] hover:text-[#241A1A]'
-            }`}
+              }`}
             title="Mobile"
           >
             <Smartphone className="w-4 h-4" />
@@ -160,11 +157,10 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           type="button"
           onClick={onUndo}
           disabled={!canUndo}
-          className={`p-1.5 sm:p-2 rounded-lg border transition ${
-            canUndo
+          className={`p-1.5 sm:p-2 rounded-lg border transition ${canUndo
               ? 'text-[#241A1A] hover:bg-[#FAF7F7] border-[#E5E0DD] cursor-pointer'
               : 'text-[#C5BEBA] border-[#EAE5E2] cursor-not-allowed bg-[#FAF7F7]/50'
-          }`}
+            }`}
           title={`${t('undo', 'Urungkan')} (Undo)`}
         >
           <Undo2 className="w-4 h-4" />
@@ -175,11 +171,10 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           type="button"
           onClick={onRedo}
           disabled={!canRedo}
-          className={`p-1.5 sm:p-2 rounded-lg border transition ${
-            canRedo
+          className={`p-1.5 sm:p-2 rounded-lg border transition ${canRedo
               ? 'text-[#241A1A] hover:bg-[#FAF7F7] border-[#E5E0DD] cursor-pointer'
               : 'text-[#C5BEBA] border-[#EAE5E2] cursor-not-allowed bg-[#FAF7F7]/50'
-          }`}
+            }`}
           title={`${t('redo', 'Ulangi')} (Redo)`}
         >
           <Redo2 className="w-4 h-4" />
@@ -190,11 +185,10 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           <button
             type="button"
             onClick={onToggleFullscreen}
-            className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg border transition flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${
-              isFullscreen
+            className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg border transition flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${isFullscreen
                 ? 'bg-[#66000E] text-white border-[#66000E] shadow-2xs'
                 : 'border-[#E5E0DD] text-[#241A1A] hover:bg-[#FAF7F7]'
-            }`}
+              }`}
             title={isFullscreen ? `${t('exit_fullscreen', 'Keluar Layar Penuh')} (Esc)` : t('fullscreen', 'Layar Penuh')}
           >
             {isFullscreen ? (
@@ -227,11 +221,10 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           type="button"
           onClick={onSave}
           disabled={isSaving}
-          className={`px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-white transition flex items-center gap-1.5 shadow-2xs cursor-pointer ${
-            hasChanges
+          className={`px-3.5 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-white transition flex items-center gap-1.5 shadow-2xs cursor-pointer ${hasChanges
               ? 'bg-[#66000E] hover:bg-[#7D0012] ring-2 ring-[#66000E]/20'
               : 'bg-[#66000E] hover:bg-[#7D0012]'
-          } ${isSaving ? 'opacity-70 cursor-wait' : ''}`}
+            } ${isSaving ? 'opacity-70 cursor-wait' : ''}`}
         >
           <Save className="w-3.5 h-3.5" />
           <span>{isSaving ? t('saving', 'Menyimpan...') : t('save', 'Simpan')}</span>
