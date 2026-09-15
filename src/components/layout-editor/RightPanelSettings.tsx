@@ -23,6 +23,7 @@ import {
   Paintbrush,
   FileText,
   SlidersHorizontal,
+  ChevronLeft,
 } from 'lucide-react';
 import { Store, StoreSectionConfig, StoreSectionOptions } from '../../types';
 import { CURATED_BANNER_PRESETS, DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
@@ -37,6 +38,7 @@ interface RightPanelSettingsProps {
   onDeleteSection: (key: string) => void;
   primaryAccent: string;
   onChangePrimaryAccent: (color: string) => void;
+  onBack?: () => void;
 }
 
 export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
@@ -48,6 +50,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   onDeleteSection,
   primaryAccent,
   onChangePrimaryAccent,
+  onBack,
 }) => {
   const [activeTab, setActiveTab] = useState<'konten' | 'tampilan' | 'lanjutan'>('konten');
   const [showImagePresets, setShowImagePresets] = useState(false);
@@ -140,12 +143,22 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
       : '');
 
   return (
-    <aside className="w-full lg:w-80 xl:w-88 bg-white border-l border-[#E5E0DD] flex flex-col h-full shrink-0 font-sans shadow-2xs select-none">
-      {/* 1. COMPACT SECTION HEADER */}
-      <div className="p-3 border-b border-[#E5E0DD] bg-white shrink-0 space-y-2.5">
+    <aside className="w-full lg:w-80 xl:w-88 bg-white border-r border-[#E5E0DD] flex flex-col h-full shrink-0 font-sans shadow-2xs select-none">
+      {/* 1. COMPACT SECTION HEADER WITH BACK BUTTON */}
+      <div className="p-3 border-b border-[#E5E0DD] bg-[#FAF7F7] shrink-0 space-y-2.5">
         <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <h2 className="text-xs font-bold text-[#241A1A] truncate flex items-center gap-1.5">
+          <div className="flex items-center min-w-0 gap-2">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="p-1.5 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-[#E5E0DD] shrink-0 flex items-center justify-center cursor-pointer text-[#706866] hover:text-[#241A1A]"
+                title="Kembali ke Daftar Section"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            )}
+            <h2 className="text-sm font-bold text-[#241A1A] truncate flex items-center gap-1.5">
               <span>{selectedSection.title}</span>
             </h2>
           </div>

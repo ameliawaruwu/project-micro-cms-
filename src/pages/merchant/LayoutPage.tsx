@@ -11,6 +11,7 @@ import {
   LAYOUT_PRESETS,
   getStoreSections,
   SectionTemplateDef,
+  STORE_TEMPLATES,
 } from '../../utils/layoutConstants';
 import { EditorTopBar } from '../../components/layout-editor/EditorTopBar';
 import { LeftPanelSections } from '../../components/layout-editor/LeftPanelSections';
@@ -18,6 +19,8 @@ import { CenterPreviewCanvas } from '../../components/layout-editor/CenterPrevie
 import { RightPanelSettings } from '../../components/layout-editor/RightPanelSettings';
 import { AddSectionModal } from '../../components/layout-editor/AddSectionModal';
 import { StoreLayoutSetupWizard } from '../../components/layout-editor/StoreLayoutSetupWizard';
+import { ThemeLibraryView, TemplateGalleryItem } from '../../components/layout-editor/ThemeLibraryView';
+import { ArrowLeft, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
 
 interface LayoutPageProps {
   store: Store;
@@ -64,12 +67,76 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [activeLeftPane, setActiveLeftPane] = useState<'sections' | 'settings'>('sections');
+  
+  // Theme Library vs Editor Mode
+  const [pageMode, setPageMode] = useState<'library' | 'preview' | 'loading' | 'editor'>('library');
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateGalleryItem | null>(null);
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingTemplateName, setLoadingTemplateName] = useState('');
 
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
     if (!isFullscreen) {
       onShowNotification('Mode Layar Penuh aktif. Tekan Esc atau tombol Layar Penuh untuk keluar.');
     }
+  };
+
+  // Handle clicking a template card → go to fullscreen preview
+  const handlePreviewTemplate = (template: TemplateGalleryItem) => {
+    setPreviewTemplate(template);
+    setPreviewDevice('desktop');
+    setPageMode('preview');
+  };
+
+  // Handle "Coba tema" → show loading then go to editor
+  const handleApplyAndEdit = (template: TemplateGalleryItem) => {
+    setLoadingTemplateName(template.name);
+    setLoadingProgress(0);
+    setPageMode('loading');
+
+    // Apply template sections and styling
+    const storeTemplate = template.storeTemplate;
+    const newSections = storeTemplate.sections.map((s, idx) => ({
+      ...s,
+      key: s.key || `${s.id}-${idx}`,
+      order: s.order !== undefined ? s.order : idx,
+    }));
+    setSections(newSections);
+    setSelectedSectionKey(newSections[0]?.key || null);
+    setPrimaryAccent(template.primaryAccent);
+
+    handleUpdateStore({
+      bannerUrl: storeTemplate.bannerUrl,
+      tagline: storeTemplate.tagline,
+    });
+
+    onSaveLayout({
+      ...store.layoutSettings,
+      primaryAccent: template.primaryAccent,
+      sections: newSections,
+    });
+    setHistory([newSections]);
+    setHistoryIndex(0);
+    setHasChanges(false);
+
+    // Animate progress bar over ~2.5 seconds, then switch to editor
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 18 + 8;
+      if (progress >= 100) {
+        progress = 100;
+        setLoadingProgress(100);
+        clearInterval(interval);
+        setTimeout(() => {
+          setPageMode('editor');
+          setPreviewTemplate(null);
+        }, 400);
+      } else {
+        setLoadingProgress(Math.min(progress, 95));
+      }
+    }, 300);
   };
 
   // Keyboard shortcut listener for Esc to exit fullscreen
@@ -163,6 +230,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   // Select section handler
   const handleSelectSection = (key: string) => {
     setSelectedSectionKey(key);
+    setActiveLeftPane('settings');
   };
 
   // Move section (reorder)
@@ -357,107 +425,354 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       onShowNotification('Tata letak etalase toko berhasil disimpan!');
     }, 200);
   };
-
   return (
-    <div
-      id="merchant-visual-layout-editor"
-      className={`flex flex-col ${
-        isFullscreen
-          ? 'fixed inset-0 z-50 h-screen w-screen bg-[#FAF7F7]'
-          : 'h-full w-full min-h-[640px] bg-[#FAF7F7]'
-      } font-sans animate-in fade-in duration-200 overflow-hidden`}
-    >
-      {/* 1. TOP BAR */}
-      <EditorTopBar
-        store={currentStore}
-        hasChanges={hasChanges}
-        deviceMode={deviceMode}
-        onDeviceModeChange={setDeviceMode}
-        onSave={handleSave}
-        onReset={handleReset}
-        onOpenStorefront={onOpenStorefront}
-        onBack={onBack ? onBack : () => onShowNotification('Navigasi kembali')}
-        onOpenWizard={() => setIsWizardOpen(true)}
-        activePreset={activePreset}
-        onApplyPreset={handleApplyPreset}
-        isSaving={isSaving}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        isFullscreen={isFullscreen}
-        onToggleFullscreen={toggleFullscreen}
-      />
-
-      {/* 2. THREE-PANEL WORKSPACE (Left: Sections, Center: Live Canvas, Right: Contextual Settings) */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 relative">
-        {/* Left Panel: Sections List & Reordering */}
-        <LeftPanelSections
-          sections={sections}
-          selectedSectionKey={selectedSectionKey}
-          onSelectSection={handleSelectSection}
-          onToggleVisibility={handleToggleVisibility}
-          onDuplicateSection={handleDuplicateSection}
-          onDeleteSection={handleDeleteSection}
-          onMoveSection={handleMoveSection}
-          onRenameSection={handleRenameSection}
-          onOpenAddModal={(cat) => {
-            setAddModalCategoryFilter(cat);
-            setIsAddModalOpen(true);
-          }}
-        />
-
-        {/* Center Panel: Live Responsive Storefront Preview Canvas */}
-        <CenterPreviewCanvas
-          store={currentStore}
-          products={products}
-          sections={sections}
-          selectedSectionKey={selectedSectionKey}
-          onSelectSection={handleSelectSection}
-          deviceMode={deviceMode}
-          onDeviceModeChange={setDeviceMode}
-          primaryAccent={primaryAccent}
-          onMoveSection={handleMoveSection}
-          onToggleVisibility={handleToggleVisibility}
-          onDeleteSection={handleDeleteSection}
-          onUpdateSectionOptions={handleUpdateSectionOptions}
-          onUpdateStore={handleUpdateStore}
-          isFullscreen={isFullscreen}
-          onToggleFullscreen={toggleFullscreen}
-        />
-
-        {/* Right Panel: Contextual Inspector & Options Settings */}
-        <RightPanelSettings
-          store={currentStore}
-          selectedSection={selectedSection}
-          onUpdateSectionOptions={handleUpdateSectionOptions}
-          onUpdateSectionTitle={handleUpdateSectionTitle}
-          onToggleVisibility={handleToggleVisibility}
-          onDuplicateSection={handleDuplicateSection}
-          onDeleteSection={handleDeleteSection}
-          primaryAccent={primaryAccent}
-          onChangePrimaryAccent={(col) => {
-            setPrimaryAccent(col);
-            setHasChanges(true);
-          }}
-        />
-      </div>
-
-      {/* Modal: Add Section from catalog */}
-      <AddSectionModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAddSection={handleAddSection}
-      />
-
-      {/* Wizard Modal: Store Identity, Template Selection, and Web Generator */}
-      {isWizardOpen && (
-        <StoreLayoutSetupWizard
-          currentStore={currentStore}
-          onComplete={handleWizardComplete}
-          onCancel={() => setIsWizardOpen(false)}
-        />
+    <>
+      {/* ═══ MODE 1: LIBRARY (inside dashboard, with sidebar visible) ═══ */}
+      {pageMode === 'library' && (
+        <div className="h-full w-full bg-[#FAF7F7] font-sans animate-in fade-in duration-200 overflow-hidden">
+          <ThemeLibraryView
+            store={currentStore}
+            products={products}
+            onCustomize={() => setPageMode('editor')}
+            onSelectTheme={(themeId) => {
+              const storeTemplate = STORE_TEMPLATES.find(t => t.id === themeId);
+              if (storeTemplate) {
+                const newSections = storeTemplate.sections.map((s, idx) => ({
+                  ...s,
+                  key: s.key || `${s.id}-${idx}`,
+                  order: s.order !== undefined ? s.order : idx,
+                }));
+                setSections(newSections);
+                setSelectedSectionKey(newSections[0]?.key || null);
+                setPrimaryAccent(storeTemplate.primaryAccent);
+                handleUpdateStore({
+                  bannerUrl: storeTemplate.bannerUrl,
+                  tagline: storeTemplate.tagline,
+                });
+                onSaveLayout({
+                  ...store.layoutSettings,
+                  primaryAccent: storeTemplate.primaryAccent,
+                  sections: newSections,
+                });
+                setHistory([newSections]);
+                setHistoryIndex(0);
+                onShowNotification(`Template "${storeTemplate.name}" berhasil diterapkan!`);
+              }
+            }}
+            onPreviewTheme={(themeId) => {
+              console.log('Previewing theme:', themeId);
+            }}
+            onPreviewTemplate={handlePreviewTemplate}
+            onApplyTemplate={(template: TemplateGalleryItem) => {
+              handleApplyAndEdit(template);
+            }}
+          />
+        </div>
       )}
-    </div>
+
+      {/* ═══ MODE 2: PREVIEW (fullscreen overlay, separate page) ═══ */}
+      {pageMode === 'preview' && previewTemplate && (
+        <div className="fixed inset-0 z-[60] bg-white flex flex-col font-sans animate-in fade-in duration-200">
+          {/* Shopify Theme Store Top Bar */}
+          <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => { setPageMode('library'); setPreviewTemplate(null); }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer text-gray-500 hover:text-gray-900"
+                title="Kembali"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div className="w-px h-6 bg-gray-200"></div>
+              <h2 className="text-base font-bold text-gray-900">{previewTemplate.name}</h2>
+            </div>
+
+            {/* Device Switcher */}
+            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+              {([
+                { mode: 'desktop' as const, icon: Monitor },
+                { mode: 'mobile' as const, icon: Smartphone },
+              ]).map(({ mode, icon: Icon }) => (
+                <button
+                  key={mode}
+                  onClick={() => setPreviewDevice(mode)}
+                  className={`p-2 rounded-md transition cursor-pointer ${
+                    previewDevice === mode
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Preview Canvas */}
+          <div className="flex-1 overflow-y-auto bg-gray-100 flex justify-center py-4 sm:py-8 px-4">
+            <div
+              className={`transition-all duration-300 ${
+                previewDevice === 'desktop'
+                  ? 'w-full max-w-6xl'
+                  : 'max-w-[390px] w-full'
+              }`}
+            >
+              <div
+                className={`bg-white overflow-hidden shadow-2xl ${
+                  previewDevice === 'mobile'
+                    ? 'rounded-[40px] border-[6px] border-gray-800'
+                    : 'rounded-t-xl border border-gray-300'
+                }`}
+              >
+                {/* Faux Browser Chrome (Desktop) */}
+                {previewDevice === 'desktop' && (
+                  <div className="bg-gray-100 border-b border-gray-200 px-4 py-2.5 flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                      <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                    </div>
+                    <div className="flex-1 mx-4">
+                      <div className="bg-white rounded-md px-3 py-1.5 text-xs text-gray-400 font-mono truncate border border-gray-200">
+                        https://{store.slug || 'toko-anda'}.kroombox.id
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Mobile Status Bar */}
+                {previewDevice === 'mobile' && (
+                  <div className="bg-gray-900 pt-2.5 pb-1.5 px-6 flex items-center justify-between text-white text-[10px]">
+                    <span className="font-semibold">09:41</span>
+                    <div className="w-16 h-4 bg-black rounded-full"></div>
+                    <span>5G 100%</span>
+                  </div>
+                )}
+
+                {/* Template Preview Content */}
+                <div 
+                  className="w-full h-full relative" 
+                  style={{ 
+                    minHeight: previewDevice === 'mobile' ? '500px' : '600px',
+                    fontFamily: previewTemplate.fontFamily 
+                  }}
+                >
+                  <CenterPreviewCanvas
+                    store={{
+                      ...currentStore,
+                      bannerUrl: previewTemplate.storeTemplate.bannerUrl,
+                      tagline: previewTemplate.storeTemplate.tagline,
+                    }}
+                    products={products}
+                    sections={previewTemplate.storeTemplate.sections.map((s, idx) => ({
+                      ...s,
+                      key: s.key || `${s.id}-${idx}`,
+                    }))}
+                    selectedSectionKey={null}
+                    onSelectSection={() => {}}
+                    deviceMode={previewDevice}
+                    onDeviceModeChange={() => {}}
+                    primaryAccent={previewTemplate.primaryAccent}
+                    readonly={true}
+                  />
+                </div>
+
+                {/* Mobile bottom bar */}
+                {previewDevice === 'mobile' && (
+                  <div className="bg-gray-900 py-2 flex items-center justify-center">
+                    <div className="w-28 h-1 bg-white/40 rounded-full"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Shopify-Style Floating Bottom Bar */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white rounded-full shadow-2xl border border-gray-200 px-3 py-2.5 flex items-center gap-4 sm:gap-6 text-sm">
+            <div className="hidden sm:flex items-center gap-4 border-r border-gray-200 pl-3 pr-6">
+              <h3 className="font-bold text-gray-900 text-base whitespace-nowrap">{previewTemplate.name}</h3>
+              <span className="text-sm font-semibold text-gray-600">Gratis</span>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3 pr-1 pl-1 sm:pl-0">
+              <button
+                onClick={() => {}}
+                className="px-5 py-2.5 font-semibold text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors cursor-default whitespace-nowrap"
+              >
+                Lihat demo
+              </button>
+              <button
+                onClick={() => handleApplyAndEdit(previewTemplate)}
+                className="px-6 py-2.5 font-bold text-white bg-gray-900 rounded-full hover:bg-black transition-colors cursor-pointer whitespace-nowrap"
+              >
+                Coba tema
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODE 3: LOADING (fullscreen overlay with progress bar) ═══ */}
+      {pageMode === 'loading' && (
+        <div className="fixed inset-0 z-[60] bg-white flex flex-col font-sans">
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center shadow-sm">
+                <Palette className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-base font-bold text-gray-900">MicroCMS</span>
+            </div>
+          </div>
+
+          {/* Loading Content */}
+          <div className="flex-1 flex flex-col items-center justify-center px-6">
+            <div className="max-w-xl w-full text-center space-y-6">
+              <Loader2 className="w-8 h-8 text-gray-400 animate-spin mx-auto" />
+              <p className="text-lg font-semibold text-gray-700">
+                Menambahkan "{loadingTemplateName}" ke tema toko online Anda...
+              </p>
+
+              {/* Progress Bar */}
+              <div className="w-full max-w-md mx-auto bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300 ease-out"
+                  style={{
+                    width: `${loadingProgress}%`,
+                    background: 'linear-gradient(90deg, #2271B1 0%, #3B82F6 100%)',
+                  }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-8 bg-gray-900 text-gray-400 text-sm">
+            <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6">
+              <div>
+                <h4 className="font-bold text-white mb-2">MicroCMS</h4>
+                <p className="text-xs">Platform toko online #1 Indonesia</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-300 mb-2">Bantuan</h4>
+                <p className="text-xs">Pusat Bantuan</p>
+                <p className="text-xs">Dokumentasi API</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-300 mb-2">Kategori</h4>
+                <p className="text-xs">Semua Tema</p>
+                <p className="text-xs">Tema Gratis</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-300 mb-2">Tentang</h4>
+                <p className="text-xs">Tim Kami</p>
+                <p className="text-xs">Syarat Layanan</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODE 4: EDITOR (fullscreen overlay) ═══ */}
+      {pageMode === 'editor' && (
+        <div
+          id="merchant-visual-layout-editor"
+          className="fixed inset-0 z-[60] flex flex-col h-screen w-screen bg-[#FAF7F7] font-sans animate-in fade-in duration-200 overflow-hidden"
+        >
+          {/* 1. TOP BAR */}
+          <EditorTopBar
+            store={currentStore}
+            hasChanges={hasChanges}
+            deviceMode={deviceMode}
+            onDeviceModeChange={setDeviceMode}
+            onSave={handleSave}
+            onReset={handleReset}
+            onOpenStorefront={onOpenStorefront}
+            onBack={() => setPageMode('library')}
+            onOpenWizard={() => setIsWizardOpen(true)}
+            activePreset={activePreset}
+            onApplyPreset={handleApplyPreset}
+            isSaving={isSaving}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={toggleFullscreen}
+          />
+
+          {/* 2. TWO-PANEL WORKSPACE */}
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 relative">
+            {/* Left Panel: Sections List OR Settings */}
+            {activeLeftPane === 'sections' ? (
+              <LeftPanelSections
+                sections={sections}
+                selectedSectionKey={selectedSectionKey}
+                onSelectSection={handleSelectSection}
+                onToggleVisibility={handleToggleVisibility}
+                onDuplicateSection={handleDuplicateSection}
+                onDeleteSection={handleDeleteSection}
+                onMoveSection={handleMoveSection}
+                onRenameSection={handleRenameSection}
+                onOpenAddModal={(cat) => {
+                  setAddModalCategoryFilter(cat);
+                  setIsAddModalOpen(true);
+                }}
+              />
+            ) : (
+              <RightPanelSettings
+                store={currentStore}
+                selectedSection={selectedSection}
+                onUpdateSectionOptions={handleUpdateSectionOptions}
+                onUpdateSectionTitle={handleUpdateSectionTitle}
+                onToggleVisibility={handleToggleVisibility}
+                onDuplicateSection={handleDuplicateSection}
+                onDeleteSection={handleDeleteSection}
+                primaryAccent={primaryAccent}
+                onChangePrimaryAccent={(col) => {
+                  setPrimaryAccent(col);
+                  setHasChanges(true);
+                }}
+                onBack={() => setActiveLeftPane('sections')}
+              />
+            )}
+
+            {/* Center Panel: Live Responsive Storefront Preview Canvas */}
+            <CenterPreviewCanvas
+              store={currentStore}
+              products={products}
+              sections={sections}
+              selectedSectionKey={selectedSectionKey}
+              onSelectSection={handleSelectSection}
+              deviceMode={deviceMode}
+              onDeviceModeChange={setDeviceMode}
+              primaryAccent={primaryAccent}
+              onMoveSection={handleMoveSection}
+              onToggleVisibility={handleToggleVisibility}
+              onDeleteSection={handleDeleteSection}
+              onUpdateSectionOptions={handleUpdateSectionOptions}
+              onUpdateStore={handleUpdateStore}
+              isFullscreen={isFullscreen}
+              onToggleFullscreen={toggleFullscreen}
+            />
+          </div>
+
+          {/* Modal: Add Section from catalog */}
+          <AddSectionModal
+            isOpen={isAddModalOpen}
+            onClose={() => setIsAddModalOpen(false)}
+            onAddSection={handleAddSection}
+          />
+
+          {/* Wizard Modal */}
+          {isWizardOpen && (
+            <StoreLayoutSetupWizard
+              currentStore={currentStore}
+              onComplete={handleWizardComplete}
+              onCancel={() => setIsWizardOpen(false)}
+            />
+          )}
+        </div>
+      )}
+    </>
   );
 };

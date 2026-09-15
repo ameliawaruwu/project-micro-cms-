@@ -65,6 +65,8 @@ class ProductService {
   }
 
   async getProductsByStore(storeId: string): Promise<Product[]> {
+    const localProducts = this.getStoredProducts().filter((p) => p.storeId === storeId);
+
     // 1. Try fetching from Supabase Database
     try {
       const { data, error } = await supabase
@@ -75,16 +77,31 @@ class ProductService {
 
       if (!error && data) {
         const dbProducts = data.map(mapSupabaseRowToProduct);
-        this.saveProducts(dbProducts);
-        return dbProducts;
+
+        if (dbProducts.length > 0) {
+          // Merge db products with any local-only products
+          const map = new Map<string, Product>();
+          dbProducts.forEach((p) => map.set(p.id, p));
+          localProducts.forEach((p) => {
+            if (!map.has(p.id)) {
+              map.set(p.id, p);
+            }
+          });
+          const merged = Array.from(map.values());
+          this.saveProducts(merged);
+          return merged;
+        } else if (localProducts.length > 0) {
+          // Supabase is empty, but local has products -> preserve local products
+          return localProducts;
+        }
+        return [];
       }
     } catch (err: any) {
       console.warn('[Supabase Database] Offline fallback for products:', err?.message || err);
     }
 
-    // 2. Fallback to LocalStorage (No fake dummy injection)
-    const products = this.getStoredProducts();
-    return products.filter((p) => p.storeId === storeId);
+    // 2. Fallback to LocalStorage
+    return localProducts;
   }
 
   async getProductById(id: string): Promise<Product | undefined> {
@@ -109,7 +126,7 @@ class ProductService {
   async createProduct(
     storeId: string,
     data: Omit<Product, 'id' | 'storeId' | 'status' | 'createdAt' | 'slug'>
-  ): Promise<Product> {
+  ): Promise<{ product: Product; syncedToCloud: boolean; cloudError?: string }> {
     const products = this.getStoredProducts();
     const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -122,44 +139,44 @@ class ProductService {
       createdAt: new Date().toISOString(),
     };
 
-    // 1. Save to Supabase Cloud Database
+    // 1. Always persist to LocalStorage first for instant UI update & zero blocking
+    products.unshift(newProduct);
+    this.saveProducts(products);
+
+    // 2. Sync to Supabase Cloud Database
+    let syncedToCloud = false;
+    let cloudError: string | undefined;
+
     try {
       const { error } = await supabase.from('products').insert({
         id: newProduct.id,
         store_id: storeId,
         name: newProduct.name,
-        slug: newProduct.slug,
-        description: newProduct.description,
-        price: newProduct.price,
-        original_price: newProduct.originalPrice || null,
-        stock: newProduct.stock,
         category: newProduct.category,
-        image_url: newProduct.imageUrl,
+        price: newProduct.price,
+        stock: newProduct.stock,
+        sku: newProduct.sku || '',
+        weight_grams: newProduct.weightGrams || 250,
+        description: newProduct.description || '',
+        image_url: newProduct.imageUrl || '',
         images: newProduct.images || [],
         status: newProduct.status,
-        sku: newProduct.sku,
-        weight_grams: newProduct.weightGrams || 250,
-        variants: newProduct.variants || [],
-        dimensions: newProduct.dimensions || { length: 10, width: 10, height: 10 },
-        is_featured: newProduct.isFeatured || false,
-        sales_count: newProduct.salesCount || 0,
+        slug: newProduct.slug,
       });
 
       if (error) {
-        console.error('[Supabase Database Error]:', error);
-        throw new Error(`Database Supabase: ${error.message} (Code: ${error.code})`);
+        cloudError = `${error.message} (Code: ${error.code})`;
+        console.warn('[Supabase Database]:', cloudError);
       } else {
-        console.log(`[Supabase Database] Produk "${newProduct.name}" berhasil tersimpan ke tabel products!`);
+        syncedToCloud = true;
+        console.log(`[Supabase Database] Produk "${newProduct.name}" tersinkron ke cloud!`);
       }
     } catch (err: any) {
-      console.error('[Supabase Database] Gagal menyimpan ke cloud:', err);
-      throw err;
+      cloudError = err?.message || 'Koneksi ke Supabase gagal';
+      console.warn('[Supabase Database] Gagal sinkron ke cloud:', err);
     }
 
-    // 2. Always persist to LocalStorage for instant UI update & offline reliability
-    products.unshift(newProduct);
-    this.saveProducts(products);
-    return newProduct;
+    return { product: newProduct, syncedToCloud, cloudError };
   }
 
   async updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
@@ -176,33 +193,34 @@ class ProductService {
       status: updates.status || newStatus,
     };
 
-    // 1. Update in Supabase Cloud Database
+    // 1. Persist locally first
+    products[index] = updatedProduct;
+    this.saveProducts(products);
+
+    // 2. Sync to Supabase Cloud Database
     try {
       const dbPayload: any = {};
       if (updates.name !== undefined) dbPayload.name = updates.name;
-      if (updates.price !== undefined) dbPayload.price = updates.price;
-      if (updates.originalPrice !== undefined) dbPayload.original_price = updates.originalPrice;
-      if (updates.stock !== undefined) dbPayload.stock = updates.stock;
       if (updates.category !== undefined) dbPayload.category = updates.category;
-      if (updates.description !== undefined) dbPayload.description = updates.description;
-      if (updates.imageUrl !== undefined) dbPayload.image_url = updates.imageUrl;
+      if (updates.price !== undefined) dbPayload.price = updates.price;
+      if (updates.stock !== undefined) dbPayload.stock = updates.stock;
       if (updates.sku !== undefined) dbPayload.sku = updates.sku;
       if (updates.weightGrams !== undefined) dbPayload.weight_grams = updates.weightGrams;
+      if (updates.description !== undefined) dbPayload.description = updates.description;
+      if (updates.imageUrl !== undefined) dbPayload.image_url = updates.imageUrl;
+      if (updates.images !== undefined) dbPayload.images = updates.images;
       if (updates.status !== undefined) dbPayload.status = updates.status;
 
       const { error } = await supabase.from('products').update(dbPayload).eq('id', id);
       if (error) {
-        console.error('[Supabase Database Update Error]:', error);
-        throw new Error(`Database Supabase: ${error.message}`);
+        console.warn('[Supabase Database Update]:', error.message);
+      } else {
+        console.log(`[Supabase Database] Produk "${id}" berhasil diperbarui di cloud!`);
       }
     } catch (err: any) {
-      console.error('[Supabase Database] Gagal update ke cloud:', err);
-      throw err;
+      console.warn('[Supabase Database] Gagal update ke cloud:', err);
     }
 
-    // 2. Persist locally
-    products[index] = updatedProduct;
-    this.saveProducts(products);
     return updatedProduct;
   }
 
@@ -214,22 +232,20 @@ class ProductService {
   }
 
   async deleteProduct(id: string): Promise<void> {
-    // 1. Delete from Supabase Cloud Database
-    try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) {
-        console.error('[Supabase Database Delete Error]:', error);
-        throw new Error(`Database Supabase: ${error.message}`);
-      }
-    } catch (err: any) {
-      console.error('[Supabase Database] Gagal hapus dari cloud:', err);
-      throw err;
-    }
-
-    // 2. Delete from LocalStorage
+    // 1. Delete from LocalStorage first
     let products = this.getStoredProducts();
     products = products.filter((p) => p.id !== id);
     this.saveProducts(products);
+
+    // 2. Sync delete to Supabase Cloud Database
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) {
+        console.warn('[Supabase Database Delete]:', error.message);
+      }
+    } catch (err: any) {
+      console.warn('[Supabase Database] Gagal hapus dari cloud:', err);
+    }
   }
 
   async getCategories(storeId: string): Promise<string[]> {
@@ -239,6 +255,44 @@ class ProductService {
       if (p.category) set.add(p.category);
     });
     return Array.from(set);
+  }
+
+  // Sinkronisasi manual/otomatis seluruh produk lokal ke Supabase
+  async syncAllLocalToCloud(storeId: string): Promise<{ success: boolean; count: number; error?: string }> {
+    const local = this.getStoredProducts().filter((p) => p.storeId === storeId);
+    if (local.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    let syncedCount = 0;
+    for (const prod of local) {
+      try {
+        const { error } = await supabase.from('products').upsert({
+          id: prod.id,
+          store_id: storeId,
+          name: prod.name,
+          category: prod.category,
+          price: prod.price,
+          stock: prod.stock,
+          sku: prod.sku || '',
+          weight_grams: prod.weightGrams || 250,
+          description: prod.description || '',
+          image_url: prod.imageUrl || '',
+          images: prod.images || [],
+          status: prod.status,
+          slug: prod.slug,
+        });
+
+        if (error) {
+          return { success: false, count: syncedCount, error: `${error.message} (Code: ${error.code})` };
+        }
+        syncedCount++;
+      } catch (err: any) {
+        return { success: false, count: syncedCount, error: err?.message || 'Gagal tersambung ke Supabase' };
+      }
+    }
+
+    return { success: true, count: syncedCount };
   }
 }
 

@@ -25,7 +25,7 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
   const activeCount = shippingIntegrations.filter((i) => i.isConnected).length;
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8 text-left max-w-5xl">
+    <div className="space-y-5 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left w-full">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0DD]">
         <div>

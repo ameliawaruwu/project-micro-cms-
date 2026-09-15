@@ -14,6 +14,7 @@ import {
   X,
   LogOut,
   ExternalLink,
+  Crown,
 } from 'lucide-react';
 import { MerchantTab, Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -55,6 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'layout', label: t('nav_layout', 'Layout Toko'), icon: LayoutTemplate },
     { id: 'pembayaran', label: t('nav_payment', 'Pembayaran'), icon: CreditCard },
     { id: 'pengiriman', label: t('nav_shipping', 'Pengiriman'), icon: Truck },
+    { id: 'billing', label: 'Billing Plan', icon: Crown },
     { id: 'pengaturan', label: t('nav_settings', 'Pengaturan'), icon: Settings },
   ];
 
@@ -227,7 +229,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* 1. DESKTOP PERMANENT SIDEBAR */}
       <aside
         id="sidebar-navigation-desktop"
-        className={`hidden lg:flex relative h-full flex-col justify-between z-20 transition-all duration-200 border-r border-gray-200 shrink-0 bg-white ${
+        className={`hidden lg:flex relative h-full flex-col justify-between z-30 transition-all duration-200 border-r border-gray-200 shrink-0 bg-white ${
           isCollapsed ? 'w-16' : 'w-56'
         }`}
       >
@@ -237,7 +239,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-gray-900 shadow-sm hover:shadow flex items-center justify-center transition-all cursor-pointer z-30 focus:outline-none hover:scale-105"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 shadow-xs hover:shadow-sm flex items-center justify-center transition-all cursor-pointer z-40 focus:outline-none hover:scale-105"
           title={isCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
         >
           {isCollapsed ? (

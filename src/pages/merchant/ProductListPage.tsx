@@ -15,6 +15,7 @@ interface ProductListPageProps {
   onDeleteProduct: (id: string) => void;
   onQuickStockChange: (id: string, delta: number) => void;
   onNavigateDashboard?: () => void;
+  onSyncProducts?: () => Promise<void>;
 }
 
 export const ProductListPage: React.FC<ProductListPageProps> = ({
@@ -26,6 +27,7 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
   onDeleteProduct,
   onQuickStockChange,
   onNavigateDashboard,
+  onSyncProducts,
 }) => {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,6 +88,7 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
           onEditProduct={onEditProduct}
           onDeleteProduct={onDeleteProduct}
           onQuickStockChange={onQuickStockChange}
+          onSyncProducts={onSyncProducts}
         />
       </div>
 

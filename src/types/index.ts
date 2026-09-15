@@ -212,23 +212,32 @@ export type PaymentStatus = 'Sudah Dibayar' | 'Belum Dibayar' | 'Gagal';
 export type ShippingStatus = 'Baru' | 'Diproses' | 'Dikirim' | 'Selesai' | 'Dibatalkan' | 'ready_to_ship';
 export type CourierType = 'J&T' | 'JNE' | 'SiCepat' | 'GoSend';
 export type ShippingMethod = 'pickup' | 'drop_off';
-export type PaymentMethod = 'QRIS' | 'BCA_VA' | 'MANDIRI_VA' | 'STRIPE' | 'COD';
+export type PaymentMethod = 'QRIS' | 'BCA_VA' | 'MANDIRI_VA' | 'STRIPE' | 'COD' | string;
 
 export interface ShippingBranch {
   id: string;
   storeId?: string;
-  branchName: string;
-  picName: string;
-  picPhone: string;
+  store_id?: string;
+  branchName?: string;
+  branch_name?: string;
+  picName?: string;
+  pic_name?: string;
+  picPhone?: string;
+  pic_phone?: string;
   address: string;
   subdistrict?: string;
   city: string;
   province: string;
-  postalCode: string;
-  isDefault: boolean;
-  isActive: boolean;
+  postalCode?: string;
+  postal_code?: string;
+  isDefault?: boolean;
+  is_default?: boolean;
+  isActive?: boolean;
+  is_active?: boolean;
   createdAt?: string;
+  created_at?: string;
   updatedAt?: string;
+  updated_at?: string;
 }
 
 export interface BiteshipRateOption {
@@ -308,8 +317,12 @@ export interface Order {
   shippingMethod?: ShippingMethod;
   resiNumber?: string;
   trackingNumber?: string;
+  shippingOrderId?: string;
   shippingLabelUrl?: string;
   pickupTime?: string;
+  destinationAddress?: string;
+  destinationPostalCode?: string;
+  totalWeight?: number;
   shippingStatus: ShippingStatus;
   createdAt: string;
   shippedAt?: string;
@@ -354,6 +367,7 @@ export type MerchantTab =
   | 'layout'
   | 'pembayaran'
   | 'pengiriman'
+  | 'billing'
   | 'pengaturan'
   | 'profil'
   | 'integrasi';
@@ -433,5 +447,32 @@ export interface PlatformSettings {
   maintenanceMode: boolean;
 }
 
+export interface BillingPlan {
+  id: string;
+  name: string;
+  slug: string;
+  tagline: string;
+  priceMonthly: number;
+  priceYearly: number;
+  features: string[];
+  isActive: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
-
+export interface BillingSubscription {
+  id: string;
+  storeId: string;
+  storeName?: string;
+  planId: string;
+  planName: string;
+  cycle: 'monthly' | 'yearly';
+  amount: number;
+  status: 'paid' | 'pending' | 'expired' | 'failed';
+  paymentMethod: string;
+  invoiceNumber: string;
+  paidAt: string;
+  expiresAt?: string;
+  createdAt: string;
+}

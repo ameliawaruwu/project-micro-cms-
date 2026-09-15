@@ -41,6 +41,14 @@ export class ErrorBoundary extends React.Component<Props, State> {
             <p className="text-sm text-[#5F5652] leading-relaxed">
               Aplikasi mengalami gangguan sementara. Silakan muat ulang halaman untuk melanjutkan.
             </p>
+            {this.state.error && (
+              <div className="text-left bg-rose-50 border border-rose-200 p-3 rounded-xl max-h-40 overflow-y-auto">
+                <p className="text-xs font-mono text-rose-700 font-bold">{this.state.error.name}: {this.state.error.message}</p>
+                {this.state.error.stack && (
+                  <pre className="text-[10px] font-mono text-rose-600 mt-1 whitespace-pre-wrap">{this.state.error.stack.split('\n').slice(0, 4).join('\n')}</pre>
+                )}
+              </div>
+            )}
             <button
               onClick={this.handleReload}
               className="inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl bg-[#66000E] text-white font-medium text-sm hover:bg-[#801010] transition-colors cursor-pointer"
