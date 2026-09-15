@@ -77,16 +77,16 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
       {/* 1. Header & Period Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#E5E0DD]">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <h2 className="text-sm sm:text-base font-bold text-slate-900">
+          <h2 className="text-sm sm:text-base font-semibold text-slate-800">
             Ringkasan Penjualan
           </h2>
           {analytics.salesGrowth > 0 ? (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-medium">
               <ArrowUpRight className="w-3.5 h-3.5" />
               <span>+{analytics.salesGrowth}%</span>
             </span>
           ) : (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-medium">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-normal">
               Data Real-time
             </span>
           )}
@@ -102,7 +102,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
                 onClick={() => setSelectedPeriod(p)}
                 className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer min-h-[34px] ${
                   isActive
-                    ? 'bg-white text-[#800000] shadow-2xs border border-[#E6DDDA] font-bold'
+                    ? 'bg-white text-[#800000] shadow-2xs border border-[#E6DDDA] font-medium'
                     : 'text-[#706866] hover:text-slate-900 font-normal'
                 }`}
               >
@@ -116,7 +116,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
         <div className="sm:hidden flex items-center justify-between pt-1">
           <button
             onClick={() => setShowMobilePeriodSheet(true)}
-            className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-rose-50/50 border border-rose-200/80 text-xs font-semibold text-[#800000] shadow-2xs min-h-[38px] w-full"
+            className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-rose-50/50 border border-rose-200/80 text-xs font-medium text-[#800000] shadow-2xs min-h-[38px] w-full"
           >
             <span>Periode: {selectedPeriod}</span>
             <ChevronDown className="w-4 h-4 text-[#800000]" />
@@ -127,22 +127,22 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
       {/* 2. Key Metrics Snapshot for Selected Period */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 py-3 border-b border-[#E5E0DD]/60">
         <div className="bg-rose-50/40 rounded-xl p-2.5 border border-rose-100/80">
-          <span className="text-[11px] font-medium text-[#706866] block">Total Omset ({selectedPeriod})</span>
-          <p className="text-sm sm:text-base font-black text-[#800000] tracking-tight">
+          <span className="text-[11px] font-normal text-[#706866] block">Total Omset ({selectedPeriod})</span>
+          <p className="text-sm sm:text-base font-semibold text-[#800000] tracking-tight">
             {formatRupiah(analytics.totalSales)}
           </p>
         </div>
 
         <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/60">
-          <span className="text-[11px] font-medium text-[#706866] block">Total Pesanan Sukses</span>
-          <p className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+          <span className="text-[11px] font-normal text-[#706866] block">Total Pesanan Sukses</span>
+          <p className="text-sm sm:text-base font-medium text-slate-800 tracking-tight">
             {analytics.orderCount} Transaksi
           </p>
         </div>
 
         <div className="hidden sm:block bg-slate-50 rounded-xl p-2.5 border border-slate-200/60">
-          <span className="text-[11px] font-medium text-[#706866] block">Rata-rata Nilai Order (AOV)</span>
-          <p className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+          <span className="text-[11px] font-normal text-[#706866] block">Rata-rata Nilai Order (AOV)</span>
+          <p className="text-sm sm:text-base font-medium text-slate-800 tracking-tight">
             {formatRupiah(analytics.averageOrderValue)}
           </p>
         </div>
@@ -152,14 +152,14 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
       <div className="pt-4">
         <div className="flex items-center justify-between text-xs text-[#706866] font-normal mb-3">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-900">Grafik Omset Transaksi</span>
+            <span className="font-medium text-slate-800">Grafik Omset Transaksi</span>
             <span className="text-[11px] text-[#706866]">({selectedPeriod})</span>
           </div>
 
           {/* Simple Legend */}
           <div className="flex items-center gap-1.5 text-[11px]">
             <span className="w-2.5 h-2.5 rounded-sm bg-[#800000]"></span>
-            <span className="font-medium text-slate-700">Nominal Penjualan</span>
+            <span className="font-normal text-slate-600">Nominal Penjualan</span>
           </div>
         </div>
 
@@ -198,10 +198,10 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
                 >
                   {/* Tooltip on active/hovered bar */}
                   {isPrimary && (
-                    <div className="absolute -top-12 z-30 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-[11px] font-medium shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 pointer-events-none border border-white/10">
+                    <div className="absolute -top-12 z-30 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-[11px] font-normal shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 pointer-events-none border border-white/10">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-white/70 font-normal">{d.label}:</span>
-                        <span className="font-bold">{formatRupiah(d.sales)}</span>
+                        <span className="text-white/70">{d.label}:</span>
+                        <span className="font-semibold">{formatRupiah(d.sales)}</span>
                       </div>
                       <p className="text-[10px] text-rose-200 font-normal mt-0.5">
                         {d.orders} pesanan sukses
@@ -224,7 +224,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
                   {/* X-Axis Label */}
                   <span
                     className={`absolute -bottom-6 text-[10px] sm:text-[11px] transition-colors whitespace-nowrap ${
-                      isPrimary ? 'font-bold text-[#800000]' : 'font-normal text-[#706866]'
+                      isPrimary ? 'font-medium text-[#800000]' : 'font-normal text-[#706866]'
                     }`}
                   >
                     {d.label}
@@ -246,7 +246,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
           <div className="relative w-full bg-white rounded-t-3xl p-5 shadow-2xl z-10 border-t border-[#E5E0DD] animate-in slide-in-from-bottom duration-250">
             <div className="w-12 h-1.5 bg-[#E5E0DD] rounded-full mx-auto mb-4" />
             <div className="flex items-center justify-between pb-3 border-b border-[#E5E0DD] mb-3">
-              <h3 className="font-bold text-sm text-slate-900">Pilih Periode Penjualan</h3>
+              <h3 className="font-semibold text-sm text-slate-800">Pilih Periode Penjualan</h3>
               <button
                 onClick={() => setShowMobilePeriodSheet(false)}
                 className="p-1 rounded-full text-[#706866] hover:bg-[#FAF7F7]"
@@ -265,7 +265,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
                       setSelectedPeriod(p);
                       setShowMobilePeriodSheet(false);
                     }}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold transition ${
+                    className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-medium transition ${
                       isActive
                         ? 'bg-rose-50 text-[#800000] border border-rose-200'
                         : 'text-slate-800 hover:bg-slate-50'

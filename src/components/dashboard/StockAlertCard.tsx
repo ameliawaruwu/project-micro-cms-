@@ -32,18 +32,18 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
             }`}
           >
             {totalLowStock > 0 ? (
-              <AlertTriangle className="w-4 h-4 stroke-[2]" />
+              <AlertTriangle className="w-4 h-4 stroke-[1.8]" />
             ) : (
-              <CheckCircle2 className="w-4 h-4 stroke-[2]" />
+              <CheckCircle2 className="w-4 h-4 stroke-[1.8]" />
             )}
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Stok Menipis</h3>
+            <h3 className="text-sm font-semibold text-slate-800">Stok Menipis</h3>
           </div>
         </div>
 
         <span
-          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+          className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${
             totalLowStock > 0
               ? 'bg-rose-50 text-[#800000] border-rose-200'
               : 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -60,7 +60,7 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-2 text-emerald-600">
               <PackageX className="w-5 h-5" />
             </div>
-            <p className="font-semibold text-slate-800">Semua stok produk aman</p>
+            <p className="font-medium text-slate-800">Semua stok produk aman</p>
             <p className="text-[11px] text-[#706866] mt-0.5">Tidak ada produk dengan stok di bawah 5</p>
           </div>
         ) : (
@@ -77,7 +77,7 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#800000] border-2 border-white"></span>
                 </div>
                 <div className="truncate">
-                  <p className="text-xs font-semibold text-slate-900 truncate group-hover:text-[#800000] transition-colors">
+                  <p className="text-xs font-medium text-slate-800 truncate group-hover:text-[#800000] transition-colors">
                     {prod.name}
                   </p>
                   <p className="text-[11px] text-[#706866] font-normal">{formatRupiah(prod.price)}</p>
@@ -85,7 +85,7 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="inline-block px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-[#800000] text-xs font-bold">
+                <span className="inline-block px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-[#800000] text-xs font-semibold">
                   Sisa {prod.stock}
                 </span>
                 <button
@@ -105,7 +105,7 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
       <div className="pt-2">
         <button
           onClick={onManageStock}
-          className="w-full py-2.5 min-h-[40px] rounded-xl bg-white hover:bg-rose-50/70 border border-[#E5E0DD] hover:border-rose-200 text-[#800000] font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer active:scale-98 shadow-2xs"
+          className="w-full py-2.5 min-h-[40px] rounded-xl bg-white hover:bg-rose-50/70 border border-[#E5E0DD] hover:border-rose-200 text-[#800000] font-medium text-xs flex items-center justify-center gap-2 transition cursor-pointer active:scale-98 shadow-2xs"
         >
           <span>Kelola Stok & Restock</span>
           <ArrowRight className="w-3.5 h-3.5" />

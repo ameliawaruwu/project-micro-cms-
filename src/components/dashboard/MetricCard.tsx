@@ -88,7 +88,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
             >
               <Icon className="w-4 h-4 stroke-[1.8]" />
             </div>
-            <span className="text-xs font-semibold text-[#706866] truncate">
+            <span className="text-xs font-medium text-[#706866] truncate">
               {config.title}
             </span>
           </div>
@@ -98,7 +98,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 
         {/* Metric Value */}
         <div className="mt-1">
-          <h3 className={`text-xl sm:text-2xl font-bold tracking-tight transition-colors ${config.valueColor}`}>
+          <h3 className={`text-xl sm:text-2xl font-semibold tracking-tight transition-colors ${config.valueColor}`}>
             {config.displayValue}
           </h3>
           <p className="text-xs text-[#706866] mt-1 font-normal truncate">
