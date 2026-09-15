@@ -19,7 +19,7 @@ import { CenterPreviewCanvas } from '../../components/layout-editor/CenterPrevie
 import { RightPanelSettings } from '../../components/layout-editor/RightPanelSettings';
 import { AddSectionModal } from '../../components/layout-editor/AddSectionModal';
 import { StoreLayoutSetupWizard } from '../../components/layout-editor/StoreLayoutSetupWizard';
-import { ThemeLibraryView, TemplateGalleryItem } from '../../components/layout-editor/ThemeLibraryView';
+import { ThemeLibraryView, TemplateGalleryItem, TEMPLATE_GALLERY_ITEMS } from '../../components/layout-editor/ThemeLibraryView';
 import { ArrowLeft, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
 
 interface LayoutPageProps {
@@ -46,6 +46,23 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   useEffect(() => {
     setCurrentStore(store);
   }, [store]);
+
+  // Check URL for previewTheme to automatically open preview overlay (like Canva)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const themeId = params.get('previewTheme');
+    if (themeId) {
+      const template = TEMPLATE_GALLERY_ITEMS.find((t) => t.storeTemplate.id === themeId);
+      if (template) {
+        setPreviewTemplate(template);
+        setPreviewDevice('desktop');
+        setPageMode('preview');
+        // Clean up URL so it doesn't get stuck in preview mode on reload
+        const newUrl = window.location.pathname + '?toko=' + (currentStore.slug || '');
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [currentStore.slug]);
 
   const initialSections = useMemo(
     () => getStoreSections(store.layoutSettings),
@@ -83,11 +100,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   };
 
-  // Handle clicking a template card → go to fullscreen preview
+  // Handle clicking a template card → redirect to new tab like Canva
   const handlePreviewTemplate = (template: TemplateGalleryItem) => {
-    setPreviewTemplate(template);
-    setPreviewDevice('desktop');
-    setPageMode('preview');
+    window.open(`/?previewTheme=${template.storeTemplate.id}&toko=${currentStore.slug}`, '_blank');
   };
 
   // Handle "Coba tema" → show loading then go to editor
@@ -491,6 +506,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
               {([
                 { mode: 'desktop' as const, icon: Monitor },
+                { mode: 'tablet' as const, icon: Tablet },
                 { mode: 'mobile' as const, icon: Smartphone },
               ]).map(({ mode, icon: Icon }) => (
                 <button

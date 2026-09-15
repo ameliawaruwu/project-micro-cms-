@@ -12,11 +12,9 @@ export interface SectionTemplateDef {
 
 export const DEFAULT_LANDING_NAV_ITEMS: NavMenuItem[] = [
   { id: 'nav-1', label: 'Beranda', href: '#beranda' },
-  { id: 'nav-2', label: 'Katalog Produk', href: '#katalog' },
-  { id: 'nav-3', label: 'Promo Spesial', href: '#promo' },
-  { id: 'nav-4', label: 'Keunggulan Toko', href: '#keunggulan' },
-  { id: 'nav-5', label: 'Ulasan Pelanggan', href: '#ulasan' },
-  { id: 'nav-6', label: 'Hubungi Toko', href: '#kontak' },
+  { id: 'nav-2', label: 'Katalog', href: '#katalog' },
+  { id: 'nav-3', label: 'Promo', href: '#promo' },
+  { id: 'nav-4', label: 'Kontak', href: '#kontak' },
 ];
 
 export const DEFAULT_TESTIMONIALS: TestimonialItem[] = [
@@ -631,7 +629,14 @@ export const STORE_TEMPLATES: StoreTemplate[] = [
     bannerUrl: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1600&q=80",
     tagline: "Welcome to 2077",
     sections: [
-      { id: "header", isVisible: true, options: { headerStyle: "brand" } },
+      { id: "header", isVisible: true, options: { 
+          headerStyle: "brand",
+          navMenuItems: [
+            { id: 'nav-1', label: 'Home', href: '#beranda' },
+            { id: 'nav-2', label: 'Explore', href: '#katalog' }
+          ]
+        } 
+      },
       { id: "hero_banner", isVisible: true, options: { bannerStyle: "compact", sectionHeight: "compact", textAlignment: "center", overlayOpacity: 60 } },
       { id: "promo_banner", isVisible: true, options: { backgroundColor: "dark", textColor: "light" } },
       { id: "product_grid", isVisible: true, options: { backgroundColor: "dark", textColor: "light", gridColumns: 4 } },

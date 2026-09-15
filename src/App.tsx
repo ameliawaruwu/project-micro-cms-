@@ -224,6 +224,20 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const tokoParam = params.get('toko') || params.get('store');
     const modeParam = params.get('mode') || params.get('view');
+    const previewThemeParam = params.get('previewTheme');
+
+    if (previewThemeParam) {
+      storeService.getStores().then((all) => {
+        let match = all[0] || initialStores[0];
+        if (tokoParam) {
+          match = all.find((s) => s.slug === tokoParam || s.id === tokoParam) || match;
+        }
+        setActiveStore(match);
+        setActiveTab('layout');
+        setViewMode('merchant-desktop');
+      });
+      return;
+    }
 
     if (tokoParam || modeParam === 'storefront') {
       storeService.getStores().then((all) => {
