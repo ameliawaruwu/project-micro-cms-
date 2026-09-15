@@ -1,6 +1,7 @@
 import { Product } from '../types';
 import { calculateProductStatus } from '../utils/formatters';
 import { supabase } from './supabaseClient';
+import { initialProducts } from './mockData';
 
 const PRODUCTS_KEY = 'microcms_products_clean_v1';
 
@@ -94,13 +95,29 @@ class ProductService {
           // Supabase is empty, but local has products -> preserve local products
           return localProducts;
         }
+
+        // Neither Supabase nor local has products -> seed starter products
+        const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId || !p.storeId);
+        if (defaultStoreProducts.length > 0) {
+          const storeMapped = defaultStoreProducts.map((p) => ({ ...p, storeId }));
+          this.saveProducts(storeMapped);
+          return storeMapped;
+        }
         return [];
       }
     } catch (err: any) {
       console.warn('[Supabase Database] Offline fallback for products:', err?.message || err);
     }
 
-    // 2. Fallback to LocalStorage
+    // 2. Fallback to LocalStorage or initialProducts
+    if (localProducts.length === 0) {
+      const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId || !p.storeId);
+      if (defaultStoreProducts.length > 0) {
+        const storeMapped = defaultStoreProducts.map((p) => ({ ...p, storeId }));
+        this.saveProducts(storeMapped);
+        return storeMapped;
+      }
+    }
     return localProducts;
   }
 

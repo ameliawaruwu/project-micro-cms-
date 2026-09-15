@@ -29,10 +29,10 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           title: 'Pesanan Masuk',
           displayValue: typeof value === 'number' ? `${value} Pesanan` : value,
           icon: PackageOpen,
-          iconColor: 'text-[#66000E]',
-          iconBg: 'bg-[#F9EDEF] border border-[#F5D0D6]',
-          valueColor: 'text-[#241A1A] group-hover:text-[#66000E]',
-          helper: subtitle || 'Segera proses & kirim resi',
+          iconColor: 'text-[#800000]',
+          iconBg: 'bg-rose-50 border border-rose-200',
+          valueColor: 'text-slate-900 group-hover:text-[#800000]',
+          helper: subtitle || 'Segera kemas & kirimkan resi',
         };
       case 'sales':
         return {
@@ -41,17 +41,17 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           icon: TrendingUp,
           iconColor: 'text-emerald-700',
           iconBg: 'bg-emerald-50 border border-emerald-200',
-          valueColor: 'text-[#241A1A] group-hover:text-emerald-700',
-          helper: subtitle || 'Total omset berhasil',
+          valueColor: 'text-slate-900 group-hover:text-emerald-700',
+          helper: subtitle || 'Total omset transaksi sukses',
         };
       case 'products':
         return {
           title: 'Total Produk',
           displayValue: typeof value === 'number' ? `${value} Produk` : value,
           icon: PackageCheck,
-          iconColor: 'text-[#241A1A]',
-          iconBg: 'bg-[#FAF7F7] border border-[#E5E0DD]',
-          valueColor: 'text-[#241A1A]',
+          iconColor: 'text-[#800000]',
+          iconBg: 'bg-rose-50/70 border border-rose-200/80',
+          valueColor: 'text-slate-900 group-hover:text-[#800000]',
           helper: subtitle || 'Barang aktif di etalase',
         };
       case 'stock_alert':
@@ -59,10 +59,10 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           title: 'Stok Menipis',
           displayValue: typeof value === 'number' ? `${value} Produk` : value,
           icon: AlertTriangle,
-          iconColor: hasLowStock ? 'text-red-600' : 'text-amber-700',
-          iconBg: hasLowStock ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200',
-          valueColor: hasLowStock ? 'text-red-600 group-hover:text-red-700' : 'text-[#241A1A]',
-          helper: subtitle || 'Segera lakukan restock barang',
+          iconColor: hasLowStock ? 'text-[#800000]' : 'text-emerald-700',
+          iconBg: hasLowStock ? 'bg-rose-50 border border-rose-200' : 'bg-emerald-50 border border-emerald-200',
+          valueColor: hasLowStock ? 'text-[#800000] group-hover:text-[#7A0C0C]' : 'text-slate-900',
+          helper: subtitle || (hasLowStock ? 'Segera lakukan restock barang' : 'Semua stok produk aman'),
         };
     }
   };
@@ -75,15 +75,17 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       onClick={onClick}
       className={`bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 cursor-pointer flex flex-col justify-between font-sans text-left group relative overflow-hidden ${
         hasLowStock
-          ? 'border-red-300 hover:border-red-500 shadow-2xs hover:shadow-xs bg-gradient-to-b from-white to-red-50/20'
-          : 'border-[#E5E0DD] hover:border-[#66000E]/40 shadow-2xs hover:shadow-xs'
+          ? 'border-rose-300 hover:border-[#800000] shadow-2xs hover:shadow-xs bg-gradient-to-b from-white to-rose-50/20'
+          : 'border-[#E5E0DD] hover:border-[#800000]/40 shadow-2xs hover:shadow-xs'
       }`}
     >
       <div>
-        {/* Top Header: Icon + Title (Badges Removed) */}
-        <div className="flex items-center justify-between gap-2 mb-2.5">
+        {/* Top Header: Icon + Title */}
+        <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className={`w-8 h-8 rounded-xl ${config.iconBg} ${config.iconColor} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200`}>
+            <div
+              className={`w-8 h-8 rounded-xl ${config.iconBg} ${config.iconColor} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200`}
+            >
               <Icon className="w-4 h-4 stroke-[1.8]" />
             </div>
             <span className="text-xs font-semibold text-[#706866] truncate">
@@ -95,13 +97,15 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         </div>
 
         {/* Metric Value */}
-        <div className="mt-2">
+        <div className="mt-1">
           <h3 className={`text-xl sm:text-2xl font-bold tracking-tight transition-colors ${config.valueColor}`}>
             {config.displayValue}
           </h3>
+          <p className="text-xs text-[#706866] mt-1 font-normal truncate">
+            {config.helper}
+          </p>
         </div>
       </div>
     </div>
   );
 };
-
