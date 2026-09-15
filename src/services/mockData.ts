@@ -95,6 +95,41 @@ export const initialStores: Store[] = [
 export const initialProducts: Product[] = [];
 
 export const initialOrders: Order[] = [
+  // Order Baru untuk Uji Coba Pengiriman - Telkom University Bandung
+  {
+    id: 'ord-utiy-telkom-2026',
+    storeId: 'store-andhika',
+    orderNumber: 'KB-9901',
+    customerName: 'utiy',
+    customerPhone: '081223344556',
+    customerEmail: 'utiy@telkomuniversity.ac.id',
+    customerAddress: 'Gedung Asrama Putri / Gedung Pelangi, Telkom University, Jl. Telekomunikasi No. 1, Terusan Buahbatu, Sukapura, Kec. Dayeuhkolot',
+    customerCity: 'Kab. Bandung, Jawa Barat',
+    customerPostalCode: '40257',
+    items: [
+      {
+        productId: 'prod-andhika-101',
+        productName: 'Kemeja Batik Tulis Modern Heritage Lengan Panjang',
+        productImage: 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=800&auto=format&fit=crop&q=80',
+        price: 185000,
+        quantity: 1,
+        subtotal: 185000,
+        variantName: 'Size M',
+      },
+    ],
+    subtotal: 185000,
+    shippingCost: 14000,
+    discount: 0,
+    grandTotal: 199000,
+    paymentMethod: 'QRIS',
+    paymentStatus: 'Sudah Dibayar',
+    courier: 'J&T',
+    courierService: 'EZ Regular (1-2 Hari)',
+    resiNumber: '',
+    shippingStatus: 'Baru',
+    createdAt: new Date().toISOString(),
+    notes: 'Kirim ke pos satpam / lobi asrama Telkom University. Tolong hubungi nomor WA sebelum sampai.',
+  },
   // Store 0 - Toko Andhikagonzales Orders
   {
     id: 'ord-andhika-101',
@@ -437,7 +472,7 @@ export const initialIntegrations: Integration[] = [
     },
   },
 
-  // Shipping
+  // Shipping (Biteship Aggregator Powered)
   {
     id: 'int-jnt',
     type: 'shipping',
@@ -447,7 +482,12 @@ export const initialIntegrations: Integration[] = [
     description: 'Kirim paket dengan jemput gratis (pick-up) ke toko dan resi otomatis tanpa perlu input manual.',
     isConnected: true,
     isPopular: true,
-    statusText: 'Terhubung (Auto Pick-up Aktif)',
+    statusText: 'Terhubung (Auto Pick-up)',
+    config: {
+      enabledServices: ['ez', 'super', 'economy'],
+      autoInsurance: false,
+      defaultHandoff: 'pickup',
+    },
   },
   {
     id: 'int-jne',
@@ -457,7 +497,12 @@ export const initialIntegrations: Integration[] = [
     logo: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=100&auto=format&fit=crop&q=80',
     description: 'Jaringan pengiriman terluas ke pelosok Indonesia dengan layanan REG, YES (Yakin Esok Sampai), dan JTR Trucking.',
     isConnected: true,
-    statusText: 'Terhubung',
+    statusText: 'Terhubung (Drop & Pick-up)',
+    config: {
+      enabledServices: ['reg', 'yes', 'jtr'],
+      autoInsurance: false,
+      defaultHandoff: 'drop_off',
+    },
   },
   {
     id: 'int-sicepat',
@@ -465,9 +510,14 @@ export const initialIntegrations: Integration[] = [
     provider: 'sicepat',
     name: 'SiCepat Ekspres',
     logo: 'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=100&auto=format&fit=crop&q=80',
-    description: 'Pengiriman cepat dengan tarif flat HALU dan layanan BEST sameday untuk kota-kota besar.',
+    description: 'Pengiriman cepat dengan tarif flat HALU, SIUNTUNG, dan layanan BEST sameday untuk kota-kota besar.',
     isConnected: true,
-    statusText: 'Terhubung',
+    statusText: 'Terhubung (Pick-up Cepat)',
+    config: {
+      enabledServices: ['halu', 'siuntung', 'best'],
+      autoInsurance: false,
+      defaultHandoff: 'pickup',
+    },
   },
   {
     id: 'int-gosend',
@@ -477,7 +527,12 @@ export const initialIntegrations: Integration[] = [
     logo: 'https://images.unsplash.com/photo-1526367790999-0150786686a2?w=100&auto=format&fit=crop&q=80',
     description: 'Kurir motor instan sampai dalam 1-2 jam untuk pelanggan satu kota/wilayah.',
     isConnected: true,
-    statusText: 'Terhubung',
+    statusText: 'Terhubung (Instant)',
+    config: {
+      enabledServices: ['instant', 'sameday'],
+      autoInsurance: true,
+      defaultHandoff: 'pickup',
+    },
   },
   {
     id: 'int-biteship',
@@ -485,8 +540,11 @@ export const initialIntegrations: Integration[] = [
     provider: 'biteship',
     name: 'Biteship Aggregator API',
     logo: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=100&auto=format&fit=crop&q=80',
-    description: 'Satu integrasi untuk 25+ ekspedisi sekaligus (Anteraja, Lion Parcel, Ninja Van, Pos Indonesia, dll).',
-    isConnected: false,
-    statusText: 'Belum terhubung',
+    description: 'Gateway terpusat untuk 25+ ekspedisi sekaligus (J&T, JNE, SiCepat, Anteraja, GoSend, POS, dll).',
+    isConnected: true,
+    statusText: 'Terhubung via .env',
+    config: {
+      environment: 'production',
+    },
   },
 ];

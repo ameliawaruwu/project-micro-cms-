@@ -292,7 +292,6 @@ CREATE TABLE IF NOT EXISTS platform_settings (
     midtrans_client_key VARCHAR(255) DEFAULT 'SB-Mid-client-8Yp9X1v2wQzL4a7k',
     midtrans_server_key VARCHAR(255) DEFAULT 'SB-Mid-server-zR9u3M2vX8pLk1A0yW4t',
     biteship_enabled BOOLEAN DEFAULT TRUE,
-    biteship_api_key VARCHAR(255) DEFAULT 'biteship_test.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjaGFudElkIjoiNjU0MyJ9',
     biteship_origin_city VARCHAR(128) DEFAULT 'Jakarta Selatan',
     wa_gateway_enabled BOOLEAN DEFAULT TRUE,
     wa_gateway_api_key VARCHAR(255) DEFAULT 'fonnte_token_88921xks9021',

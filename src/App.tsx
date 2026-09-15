@@ -84,7 +84,7 @@ import { LandingPage } from './pages/LandingPage';
 // Modals
 import { ConfirmDeleteModal } from './components/common/ConfirmDeleteModal';
 import { ProductDetailModal as MerchantProductDetailModal } from './components/products/ProductDetailModal';
-import { ProcessShippingModal } from './components/orders/ProcessShippingModal';
+import { ShippingModal } from './components/shipping/ShippingModal';
 import { ReceiptModal } from './components/orders/ReceiptModal';
 import { OrderDetailModal } from './components/orders/OrderDetailModal';
 import { MerchantWalletModal } from './components/wallet/MerchantWalletModal';
@@ -262,6 +262,22 @@ export default function App() {
   useEffect(() => {
     loadData();
   }, [isAuthenticated, authStore, user?.id]);
+
+  // Real-time synchronization for orders via Supabase WebSocket
+  useEffect(() => {
+    if (!activeStore?.id) return;
+
+    const unsubscribe = orderService.subscribeToOrderChanges(activeStore.id, (updatedOrder) => {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
+      );
+      addToast(`Status pesanan #${updatedOrder.orderNumber} terupdate secara real-time!`, 'info');
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [activeStore?.id]);
 
   // Route Super Admin directly to Admin Dashboard
   useEffect(() => {
@@ -447,6 +463,7 @@ export default function App() {
   };
 
   const handlePrintReceipt = (order: Order) => {
+    setSelectedOrderDetail(null);
     setOrderToPrint(order);
     setIsReceiptModalOpen(true);
   };
@@ -1078,31 +1095,35 @@ export default function App() {
         }}
       />
 
-      {/* 4. Process Shipping & Resi Modal */}
-      <ProcessShippingModal
-        order={orderToShip}
-        isOpen={isShippingModalOpen}
-        onClose={() => setIsShippingModalOpen(false)}
-        onConfirmShipping={handleConfirmShipping}
-      />
-
-      {/* 5. Thermal Receipt & Label Modal */}
-      <ReceiptModal
-        order={orderToPrint}
-        store={currentStore}
-        isOpen={isReceiptModalOpen}
-        onClose={() => setIsReceiptModalOpen(false)}
-      />
-
-      {/* 6. Order Detail Modal with Stepper & Info */}
+      {/* 4. Order Detail Modal with Stepper & Info (Base Modal z-50) */}
       <OrderDetailModal
         order={selectedOrderDetail}
+        store={currentStore}
         isOpen={Boolean(selectedOrderDetail)}
         onClose={() => setSelectedOrderDetail(null)}
         onProcessShipping={handleOpenProcessShipping}
         onPrintReceipt={handlePrintReceipt}
         onMarkCompleted={handleMarkCompleted}
         onShowNotification={addToast}
+      />
+
+      {/* 5. Process Shipping & Resi Modal (z-[70], opens on top) */}
+      <ShippingModal
+        order={orderToShip}
+        isOpen={isShippingModalOpen}
+        onClose={() => setIsShippingModalOpen(false)}
+        onSuccess={(updatedOrder) => {
+          setOrders((prev) => prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o)));
+        }}
+        onShowNotification={addToast}
+      />
+
+      {/* 6. Thermal Receipt & Label Modal (z-[70], opens on top) */}
+      <ReceiptModal
+        order={orderToPrint}
+        store={currentStore}
+        isOpen={isReceiptModalOpen}
+        onClose={() => setIsReceiptModalOpen(false)}
       />
 
       {/* 7. Storefront Product Detail Modal */}

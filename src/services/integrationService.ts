@@ -77,7 +77,7 @@ class IntegrationService {
     return integrations[index];
   }
 
-  async updateIntegrationConfig(id: string, config: Record<string, string>): Promise<Integration> {
+  async updateIntegrationConfig(id: string, config: Record<string, any>): Promise<Integration> {
     const integrations = this.getStoredIntegrations();
     const index = integrations.findIndex((i) => i.id === id);
     if (index === -1) throw new Error('Integrasi tidak ditemukan');

@@ -25,7 +25,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { CartItem, Store, CourierType, PaymentMethod, Order } from '../../types';
+import { CartItem, Store, CourierType, PaymentMethod, Order, ShippingBranch, BiteshipRateOption } from '../../types';
 import { formatRupiah, generateWhatsAppLink } from '../../utils/formatters';
 import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
@@ -37,6 +37,7 @@ import {
   PaymentChannel,
   DEFAULT_MIDTRANS_CHANNELS,
 } from '../../services/paymentChannelService';
+import { CourierSelector } from '../shipping/CourierSelector';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -62,7 +63,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('Jakarta Selatan');
+  const [postalCode, setPostalCode] = useState('12730');
   const [courier, setCourier] = useState<CourierType>('J&T');
+  const [selectedBranch, setSelectedBranch] = useState<ShippingBranch | null>(null);
+  const [selectedBiteshipRate, setSelectedBiteshipRate] = useState<BiteshipRateOption | null>(null);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
@@ -119,7 +123,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   if (!isOpen) return null;
 
   const subtotal = cartService.getTotal(items);
-  const shippingCost = selectedRate ? selectedRate.cost : items.length > 0 ? 15000 : 0;
+  const shippingCost = selectedBiteshipRate
+    ? selectedBiteshipRate.price
+    : selectedRate
+    ? selectedRate.cost
+    : items.length > 0
+    ? 15000
+    : 0;
   const grandTotal = subtotal + shippingCost;
 
   // Virtual Account number generator based on channel and customer phone
@@ -256,9 +266,73 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   const handleManualFinalizeOrder = async () => {
     setIsSubmitting(true);
+<<<<<<< HEAD
     const orderId = `KROOM-${Date.now()}`;
     await recordSuccessOrder(orderId, selectedChannel.name);
     setIsSubmitting(false);
+=======
+
+    try {
+      const orderItems = items.map((item) => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        productImage: item.product.imageUrl || '',
+        price: item.product.price,
+        quantity: item.quantity,
+        subtotal: item.product.price * item.quantity,
+        variantName: item.variantName,
+      }));
+
+      const newOrder = await orderService.createOrder({
+        storeId: store.id,
+        customerName: name.trim(),
+        customerPhone: phone.trim(),
+        customerAddress: address.trim(),
+        customerCity: city,
+        customerPostalCode: postalCode,
+        originBranchId: selectedBranch?.id,
+        items: orderItems,
+        subtotal,
+        shippingCost: activeShippingCost,
+        discount: 0,
+        grandTotal,
+        paymentMethod,
+        paymentStatus: 'Sudah Dibayar',
+        courier,
+        courierCode: selectedBiteshipRate?.courier_code || 'jnt',
+        courierService: selectedBiteshipRate
+          ? `${selectedBiteshipRate.courier_name} ${selectedBiteshipRate.courier_service_name} (${selectedBiteshipRate.etd})`
+          : selectedRate
+          ? `${selectedRate.serviceName} (${selectedRate.etd})`
+          : 'Reguler (1-2 Hari)',
+        shippingStatus: 'Baru',
+        notes: notes.trim() || undefined,
+      });
+
+      // Credit the merchant store balance automatically!
+      const currentBalance = store.balance || 0;
+      await storeService.updateStore(store.id, { balance: currentBalance + grandTotal });
+
+      cartService.clearCart(store.slug);
+      setCompletedOrder(newOrder);
+      setStep('success');
+      onOrderSuccess(newOrder);
+
+      try {
+        confetti({
+          particleCount: 70,
+          spread: 60,
+          origin: { y: 0.6 },
+        });
+      } catch {
+        // Confetti fallback
+      }
+    } catch {
+      alert('Terjadi kesalahan saat memproses pesanan.');
+    } finally {
+      setIsSubmitting(false);
+    }
+>>>>>>> origin/feature/pengiriman-dan-pesanan
   };
 
   const handleCopyVa = () => {
@@ -451,19 +525,41 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </span>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#706866] mb-1">Kota Tujuan *</label>
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#241A1A] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
-                  >
-                    {INDONESIAN_CITIES.map((c) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name} ({c.province})
-                      </option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">Kota Tujuan *</label>
+                    <select
+                      value={city}
+                      onChange={(e) => {
+                        const selectedCity = e.target.value;
+                        setCity(selectedCity);
+                        const matchCity = INDONESIAN_CITIES.find((c) => c.name === selectedCity);
+                        if (matchCity?.postalCode) {
+                          setPostalCode(matchCity.postalCode);
+                        }
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#241A1A] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
+                    >
+                      {INDONESIAN_CITIES.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name} ({c.province})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">Kode Pos Tujuan *</label>
+                    <input
+                      type="text"
+                      maxLength={5}
+                      required
+                      placeholder="12730"
+                      value={postalCode}
+                      onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-mono font-bold text-[#241A1A] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -471,7 +567,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <textarea
                     rows={2}
                     required
-                    placeholder="Jl. Nama Jalan No. XX, RT/RW, Patokan..."
+                    placeholder="Jl. Nama Jalan No. XX, RT/RW, Kelurahan, Patokan..."
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] bg-[#FAF7F7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
@@ -524,6 +620,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
               </div>
 
+<<<<<<< HEAD
               {/* DYNAMIC MIDTRANS PAYMENT CHANNELS SELECTOR */}
               <div className="space-y-2.5 pt-3 border-t border-[#E5E0DD]">
                 <div className="flex items-center justify-between">
