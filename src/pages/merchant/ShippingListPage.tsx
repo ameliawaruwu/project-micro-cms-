@@ -29,10 +29,13 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0DD]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-            <Truck className="w-6 h-6 text-[#800000]" />
+          <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+            <Truck className="w-6 h-6 text-[#66000E]" />
             <span>{t('nav_shipping', 'Logistik & Pengiriman')}</span>
           </h1>
+          <p className="text-xs text-[#706866] mt-0.5">
+            Kelola cabang gudang asal penjemputan paket dan pilihan ekspedisi otomatis Biteship
+          </p>
         </div>
 
         {/* Status Badge */}

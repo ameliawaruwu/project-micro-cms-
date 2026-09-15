@@ -70,8 +70,14 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
 
   return (
     <div className="space-y-3.5 sm:space-y-5 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8">
-      <div>
-        <h1 className="text-lg sm:text-2xl font-bold text-[#1F1F1F] tracking-tight">{t('orders_title', 'Daftar Pesanan Masuk')}</h1>
+      <div className="pb-3 border-b border-[#E5E0DD]">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+          <ShoppingBag className="w-6 h-6 text-[#66000E]" />
+          <span>{t('orders_title', 'Daftar Pesanan Masuk')}</span>
+        </h1>
+        <p className="text-xs text-[#706866] mt-0.5">
+          Pantau transaksi belanja pembeli, proses resi pengiriman, dan kelola status order
+        </p>
       </div>
 
       {/* Filter Tabs */}

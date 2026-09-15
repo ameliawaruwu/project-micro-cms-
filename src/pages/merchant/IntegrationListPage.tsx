@@ -32,12 +32,16 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8 text-left max-w-5xl">
-      {/* Page Header - Clean & Concise */}
+      {/* Page Header - Clean & Concise (Billing Plan Model) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0DD]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-[#1F1F1F] tracking-tight">
-            {t('integrations_title', 'Pembayaran & Pengiriman')}
+          <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+            <CreditCard className="w-6 h-6 text-[#66000E]" />
+            <span>{t('integrations_title', 'Pembayaran & Pengiriman')}</span>
           </h1>
+          <p className="text-xs text-[#706866] mt-0.5">
+            Konfigurasi gateway pembayaran otomatis Midtrans dan integrasi kurir ekspedisi
+          </p>
         </div>
 
         {/* Global summary badge */}

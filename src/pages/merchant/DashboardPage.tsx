@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, ArrowUpRight, RefreshCw } from 'lucide-react';
+import { Wallet, ArrowUpRight, RefreshCw, LayoutDashboard } from 'lucide-react';
 import { Store as StoreType, Order, Product, MerchantTab } from '../../types';
 import { MetricCard } from '../../components/dashboard/MetricCard';
 import { SalesAnalyticsSection } from '../../components/dashboard/SalesAnalyticsSection';
@@ -51,20 +51,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   return (
     <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-300 font-sans pb-24 lg:pb-6 relative text-left">
       
-      {/* 1. Store Greeting & Real-Time Status Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 pb-2 border-b border-[#E5E0DD]/60">
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 tracking-tight">
-            {t('dashboard_title', 'Dashboard')}
-          </h1>
-          {/* Live store badge */}
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-medium shadow-2xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>{t('live_store_active', 'Toko Online Aktif')}</span>
+      {/* 1. Store Greeting & Real-Time Status Header - Billing Plan Model */}
+      <div className="pb-3 border-b border-[#E5E0DD] flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+              <LayoutDashboard className="w-6 h-6 text-[#66000E]" />
+              <span>{t('dashboard_title', 'Dashboard')}</span>
+            </h1>
+            {/* Live store badge */}
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-medium shadow-2xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>{t('live_store_active', 'Toko Online Aktif')}</span>
+            </div>
           </div>
+          <p className="text-xs text-[#706866] mt-0.5">
+            Ringkasan performa penjualan, pesanan masuk, dan katalog produk toko Anda
+          </p>
         </div>
 
         {/* Real-time date & quick refresh trigger */}

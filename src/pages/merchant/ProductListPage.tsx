@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Package } from 'lucide-react';
 import { Product } from '../../types';
 import { ProductTable } from '../../components/products/ProductTable';
 import { ProductMobileCard } from '../../components/products/ProductMobileCard';
@@ -65,9 +66,10 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
         ]}
       />
 
-      <div className="pb-1 border-b border-[#E5E0DD]">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight">
-          {t('products_title', 'Produk')}
+      <div className="pb-3 border-b border-[#E5E0DD]">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+          <Package className="w-6 h-6 text-[#66000E]" />
+          <span>{t('products_title', 'Produk')}</span>
         </h1>
         <p className="text-xs text-[#706866] mt-0.5">
           Kelola inventaris barang dagangan, harga promo, stok ketersediaan, dan etalase toko online.
