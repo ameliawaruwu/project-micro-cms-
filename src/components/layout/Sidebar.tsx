@@ -68,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const sidebarContent = (
-    <div className="h-full flex flex-col justify-between bg-white text-gray-900 font-sans">
+    <div className="h-full flex flex-col justify-between bg-white text-gray-900 font-poppins">
       {/* Top Header Logo */}
       <div className="p-3.5 flex items-center justify-between border-b border-gray-100 shrink-0">
         <button
@@ -77,16 +77,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="flex items-center gap-2.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none"
           title="Kroombox"
         >
-          <div className="w-7 h-7 rounded-md bg-red-600 flex items-center justify-center shadow-xs group-hover:bg-red-700 transition-colors shrink-0">
+          <div className="w-7 h-7 rounded-md bg-[#800000] flex items-center justify-center shadow-xs group-hover:bg-[#7A0C0C] transition-colors shrink-0">
             <span className="text-white font-bold text-sm">K</span>
           </div>
           {(!isCollapsed || isOpenMobile) && (
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-sm tracking-tight text-gray-900 group-hover:text-red-600 transition-colors">
+                <span className="font-semibold text-sm tracking-tight text-gray-900 group-hover:text-[#800000] transition-colors">
                   Kroombox
                 </span>
-                <span className="text-[10px] font-semibold px-1 py-0.2 rounded bg-gray-100 text-gray-600 border border-gray-200">
+                <span className="text-[10px] font-medium px-1 py-0.2 rounded bg-gray-100 text-gray-600 border border-gray-200">
                   UMKM
                 </span>
               </div>
@@ -107,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto font-poppins">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -116,18 +116,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => handleItemClick(item.id)}
-              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-colors group relative cursor-pointer ${
-                item.id === 'pesanan' || item.id === 'pengiriman' ? 'font-poppins' : ''
-              } ${
+              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
                 isActive
-                  ? 'bg-red-50 text-red-700 font-semibold'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-rose-50 text-[#800000] font-semibold'
+                  : 'text-gray-600 hover:bg-rose-50/50 hover:text-[#800000]'
               }`}
               title={isCollapsed && !isOpenMobile ? item.label : undefined}
             >
               <Icon
                 className={`w-4 h-4 shrink-0 transition-colors ${
-                  isActive ? 'text-red-600' : 'text-gray-400 group-hover:text-gray-700'
+                  isActive ? 'text-[#800000]' : 'text-gray-400 group-hover:text-[#800000]'
                 }`}
               />
 
@@ -135,8 +133,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               {item.badge !== undefined && item.badge > 0 && (
                 <span
-                  className={`text-[10px] font-bold px-1.5 py-0.2 rounded shrink-0 ${
-                    isActive ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700'
+                  className={`text-[10px] font-medium px-1.5 py-0.2 rounded shrink-0 ${
+                    isActive ? 'bg-[#800000] text-white' : 'bg-rose-100 text-[#800000]'
                   } ${isCollapsed && !isOpenMobile ? 'absolute -top-1 -right-1' : ''}`}
                 >
                   {item.badge}
@@ -149,14 +147,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Store Info & "Lihat Toko" Action */}
       {(!isCollapsed || isOpenMobile) ? (
-        <div className="p-2.5 mx-2.5 my-2 rounded-lg bg-gray-50 border border-gray-200 text-xs shrink-0 shadow-2xs">
+        <div className="p-2.5 mx-2.5 my-2 rounded-lg bg-gray-50 border border-gray-200 text-xs shrink-0 shadow-2xs font-poppins">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-6 h-6 rounded-md bg-red-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+            <div className="w-6 h-6 rounded-md bg-[#800000] text-white flex items-center justify-center font-semibold text-[10px] shrink-0">
               <Store className="w-3.5 h-3.5" />
             </div>
             <div className="truncate flex-1 min-w-0">
               <div className="flex items-center gap-1">
-                <h4 className="font-semibold text-xs text-gray-900 truncate leading-tight">
+                <h4 className="font-medium text-xs text-gray-900 truncate leading-tight">
                   {activeStore.name}
                 </h4>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title={t('nav_store_active', 'Toko Online Aktif')}></span>
@@ -173,7 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onOpenStorefront();
               if (onCloseMobile) onCloseMobile();
             }}
-            className="w-full inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 py-1.5 rounded-md transition cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-rose-50/50 hover:text-[#800000] border border-gray-200 hover:border-rose-200 py-1.5 rounded-md transition cursor-pointer"
             title={t('nav_view_store', 'Lihat Toko')}
           >
             <ExternalLink className="w-3 h-3" />
@@ -181,11 +179,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
       ) : (
-        <div className="p-2 mx-auto my-2 shrink-0 flex justify-center">
+        <div className="p-2 mx-auto my-2 shrink-0 flex justify-center font-poppins">
           <button
             type="button"
             onClick={onOpenStorefront}
-            className="w-8 h-8 rounded-md bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 flex items-center justify-center transition cursor-pointer"
+            className="w-8 h-8 rounded-md bg-gray-50 hover:bg-rose-50/50 hover:text-[#800000] border border-gray-200 text-gray-700 flex items-center justify-center transition cursor-pointer"
             title={`${t('nav_view_store', 'Lihat Toko')} (${activeStore.name})`}
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -194,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {/* Logout Bottom Action */}
-      <div className="p-2.5 border-t border-gray-100 shrink-0">
+      <div className="p-2.5 border-t border-gray-100 shrink-0 font-poppins">
         {(!isCollapsed || isOpenMobile) ? (
           <button
             type="button"
@@ -202,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               if (onLogout) onLogout();
               if (onCloseMobile) onCloseMobile();
             }}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-gray-600 hover:text-red-600 hover:bg-red-50/50 transition cursor-pointer"
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-gray-600 hover:text-[#800000] hover:bg-rose-50/50 transition cursor-pointer"
             title={t('nav_logout', 'Keluar (Logout)')}
           >
             <LogOut className="w-3.5 h-3.5 text-gray-400" />
@@ -213,7 +211,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={onLogout}
-              className="w-8 h-8 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer"
+              className="w-8 h-8 rounded-md text-gray-400 hover:text-[#800000] hover:bg-rose-50/50 flex items-center justify-center transition cursor-pointer"
               title={t('nav_logout', 'Keluar (Logout)')}
             >
               <LogOut className="w-3.5 h-3.5" />

@@ -25,12 +25,12 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
   const activeCount = shippingIntegrations.filter((i) => i.isConnected).length;
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left w-full">
+    <div className="space-y-5 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8 text-left w-full">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0DD]">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-            <Truck className="w-6 h-6 text-[#66000E]" />
+            <Truck className="w-6 h-6 text-[#800000]" />
             <span>{t('nav_shipping', 'Logistik & Pengiriman')}</span>
           </h1>
         </div>
@@ -39,7 +39,7 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-[#E5E0DD] shadow-2xs text-xs text-[#241A1A]">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span className="font-semibold">
+            <span className="font-medium">
               {activeCount} {t('shipping_of', 'dari')} {shippingIntegrations.length} {t('shipping_active_badge', 'Ekspedisi Aktif')}
             </span>
           </div>
@@ -47,12 +47,12 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
       </div>
 
       {/* Subtab Navigation */}
-      <div className="flex items-center gap-2 border-b border-[#EAEAEA] pb-1 overflow-x-auto no-scrollbar scroll-smooth">
+      <div className="flex items-center gap-2 border-b border-[#EAEAEA] pb-1 overflow-x-auto no-scrollbar scroll-smooth font-poppins">
         <button
           onClick={() => setActiveSubTab('branches')}
-          className={`flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-medium rounded-xl transition cursor-pointer whitespace-nowrap shrink-0 ${
             activeSubTab === 'branches'
-              ? 'bg-[#9A0602] text-white shadow-xs'
+              ? 'bg-[#800000] text-white shadow-xs'
               : 'text-[#555555] hover:bg-[#F7F7F7] hover:text-[#1F1F1F]'
           }`}
         >
@@ -62,9 +62,9 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
 
         <button
           onClick={() => setActiveSubTab('couriers')}
-          className={`flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-medium rounded-xl transition cursor-pointer whitespace-nowrap shrink-0 ${
             activeSubTab === 'couriers'
-              ? 'bg-[#9A0602] text-white shadow-xs'
+              ? 'bg-[#800000] text-white shadow-xs'
               : 'text-[#555555] hover:bg-[#F7F7F7] hover:text-[#1F1F1F]'
           }`}
         >

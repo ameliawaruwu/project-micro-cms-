@@ -343,7 +343,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           </div>
 
           {/* Navigation Links */}
-          <nav className="mt-3 space-y-1 flex-1 overflow-y-auto">
+          <nav className="mt-3 space-y-1 flex-1 overflow-y-auto font-poppins">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -352,12 +352,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   title={!isSidebarOpen ? item.label : undefined}
-                  className={`w-full flex items-center rounded-md text-xs font-medium transition cursor-pointer relative group ${
+                  className={`w-full flex items-center rounded-md text-xs font-medium font-poppins transition cursor-pointer relative group ${
                     isSidebarOpen ? 'justify-between px-2.5 py-2' : 'justify-center p-2'
                   } ${
                     isActive
-                      ? 'bg-red-50 text-red-700 font-semibold'
-                      : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                      ? 'bg-rose-50 text-[#800000] font-semibold'
+                      : 'text-gray-600 hover:bg-rose-50/50 hover:text-[#800000]'
                   }`}
                 >
                   <div className={`flex items-center ${isSidebarOpen ? 'gap-2.5 min-w-0' : 'justify-center'}`}>

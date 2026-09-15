@@ -31,7 +31,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
   const activeShippingsCount = shippingIntegrations.filter((i) => i.isConnected).length;
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left max-w-5xl">
+    <div className="space-y-5 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8 text-left max-w-5xl">
       {/* Page Header - Clean & Concise */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0DD]">
         <div>
@@ -44,7 +44,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-[#E5E0DD] shadow-2xs text-xs text-[#241A1A]">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span className="font-semibold">{activePaymentsCount + activeShippingsCount} {t('services_active', 'Layanan Aktif')}</span>
+            <span className="font-medium">{activePaymentsCount + activeShippingsCount} {t('services_active', 'Layanan Aktif')}</span>
           </div>
         </div>
       </div>
@@ -54,7 +54,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('pembayaran')}
-          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer min-h-[38px] ${
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer min-h-[38px] ${
             activeTab === 'pembayaran'
               ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]'
               : 'text-[#706866] hover:text-[#241A1A] hover:bg-white/50'
@@ -63,7 +63,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
           <CreditCard className={`w-4 h-4 ${activeTab === 'pembayaran' ? 'text-[#66000E]' : 'text-[#706866]'}`} />
           <span>{t('tab_payment', 'Pembayaran')}</span>
           <span
-            className={`px-2 py-0.2 text-[10px] font-bold rounded-full transition-colors ${
+            className={`px-2 py-0.2 text-[10px] font-medium rounded-full transition-colors ${
               activeTab === 'pembayaran'
                 ? 'bg-[#F9EDEF] text-[#66000E]'
                 : 'bg-white/80 text-[#706866]'
@@ -76,7 +76,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('pengiriman')}
-          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer min-h-[38px] ${
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer min-h-[38px] ${
             activeTab === 'pengiriman'
               ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]'
               : 'text-[#706866] hover:text-[#241A1A] hover:bg-white/50'
@@ -85,7 +85,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
           <Truck className={`w-4 h-4 ${activeTab === 'pengiriman' ? 'text-[#66000E]' : 'text-[#706866]'}`} />
           <span>{t('tab_shipping', 'Pengiriman')}</span>
           <span
-            className={`px-2 py-0.2 text-[10px] font-bold rounded-full transition-colors ${
+            className={`px-2 py-0.2 text-[10px] font-medium rounded-full transition-colors ${
               activeTab === 'pengiriman'
                 ? 'bg-[#F9EDEF] text-[#66000E]'
                 : 'bg-white/80 text-[#706866]'
