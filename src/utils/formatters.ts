@@ -44,6 +44,9 @@ export const generateWhatsAppLink = (phone: string | undefined | null, message: 
 
 export const generateTrackingLink = (courier: CourierType | string, resi: string): string => {
   if (!resi) return '#';
+  if (resi.startsWith('WYB') || resi.startsWith('EXP')) {
+    return 'https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development';
+  }
   const c = courier.toUpperCase();
   if (c.includes('J&T')) {
     return `https://jet.co.id/track?awb=${resi}`;

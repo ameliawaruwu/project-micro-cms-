@@ -248,12 +248,12 @@ class AdminService {
 
   getPlatformSettings(): PlatformSettings {
     const defaultSettings: PlatformSettings = {
-      midtransEnvironment: (import.meta.env.VITE_MIDTRANS_ENV as 'sandbox' | 'production') || 'sandbox',
-      midtransMerchantId: import.meta.env.VITE_MIDTRANS_MERCHANT_ID || 'G182930491',
-      midtransClientKey: import.meta.env.VITE_MIDTRANS_CLIENT_KEY || 'SB-Mid-client-8Yp9X1v2wQzL4a7k',
-      midtransServerKey: import.meta.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-zR9u3M2vX8pLk1A0yW4t',
+      midtransEnvironment: ((import.meta as any).env?.VITE_MIDTRANS_ENV as any) || 'sandbox',
+      midtransMerchantId: (import.meta as any).env?.VITE_MIDTRANS_MERCHANT_ID || 'G477630600',
+      midtransClientKey: (import.meta as any).env?.VITE_MIDTRANS_CLIENT_KEY || 'SB-Mid-client-6qHzXwHC6yMvkJ9J',
+      midtransServerKey: (import.meta as any).env?.MIDTRANS_SERVER_KEY || 'SB-Mid-server-n197M_KyR7is6x0Ag4cZEIAj',
       biteshipEnabled: true,
-      biteshipApiKey: 'biteship_test.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjaGFudElkIjoiNjU0MyJ9',
+      biteshipApiKey: 'biteship_test.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiVGVzdGluZyBNaWNyb0NNUyIsInVzZXJJZCI6IjZhYTc0ZjBlZjQyZTNkMzE1NDY2YmI1YSIsImlhdCI6MTc4OTM1MDA1MX0.TEmKBLYc6Ei-L4FfuCSH2JtNBAxrWR_imx3P9WddciA',
       biteshipOriginCity: 'Jakarta Selatan',
       waGatewayEnabled: true,
       waGatewayApiKey: 'fonnte_token_88921xks9021',

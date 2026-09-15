@@ -1,0 +1,148 @@
+/* CSS overrides to radically alter the appearance of the Layout Editor Canvas based on the selected Theme ID. */
+
+/* 1. COMPACT THEME OVERRIDES */
+[data-theme*="compact"] {
+  background-color: #F3F4F6 !important;
+}
+
+/* Compact Promo Banner (Flash Sale) */
+[data-theme*="compact"] [id^="promo-"] {
+  height: auto !important;
+  min-height: 120px !important;
+  padding: 20px !important;
+  background-color: #0055FF !important;
+  color: #fff !important;
+  border-radius: 0 !important;
+}
+[data-theme*="compact"] [id^="promo-"] h2,
+[data-theme*="compact"] [id^="promo-"] div {
+  color: #fff !important;
+}
+
+/* Compact Product Grid */
+[data-theme*="compact"] .grid-cols-2.md\:grid-cols-3 {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+@media (max-width: 768px) {
+  [data-theme*="compact"] .grid-cols-2.md\:grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+[data-theme*="compact"] .bg-white.rounded-2xl.shadow-sm {
+  border-radius: 6px !important;
+  border: 1px solid #E5E7EB !important;
+  box-shadow: none !important;
+}
+[data-theme*="compact"] .aspect-\[4\/5\] {
+  aspect-ratio: 1 / 1 !important;
+}
+[data-theme*="compact"] .text-lg.font-bold {
+  font-size: 0.875rem !important;
+  line-height: 1.2;
+}
+
+/* 2. EDITORIAL THEME OVERRIDES */
+[data-theme*="editorial"] {
+  background-color: #FAF7F7 !important;
+  font-family: "Lora", serif !important;
+}
+
+/* Editorial Hero (Immersive Fullscreen) */
+[data-theme*="editorial"] [id^="hero-"] {
+  height: 90vh !important;
+  min-height: 600px !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+[data-theme*="editorial"] [id^="hero-"] .absolute.inset-0.bg-black\/30 {
+  background-color: rgba(0,0,0,0.1) !important;
+}
+[data-theme*="editorial"] [id^="hero-"] h1,
+[data-theme*="editorial"] [id^="hero-"] div {
+  font-family: "Lora", serif !important;
+}
+[data-theme*="editorial"] [id^="hero-"] h1 {
+  font-size: 4rem !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+[data-theme*="editorial"] [id^="hero-"] p,
+[data-theme*="editorial"] [id^="hero-"] div.text-lg {
+  font-style: italic !important;
+  font-size: 1.25rem !important;
+}
+
+/* Editorial Story Block (Mapped from Promo Banner) */
+[data-theme*="editorial"] [id^="promo-"] {
+  background-color: transparent !important;
+  color: #241A1A !important;
+  text-align: center !important;
+  padding: 80px 20px !important;
+}
+[data-theme*="editorial"] [id^="promo-"] h2,
+[data-theme*="editorial"] [id^="promo-"] div {
+  font-family: "Lora", serif !important;
+  color: #241A1A !important;
+}
+[data-theme*="editorial"] [id^="promo-"] h2 {
+  font-size: 2.5rem !important;
+  font-weight: 400 !important;
+}
+
+/* Editorial Product Grid (Masonry feel) */
+[data-theme*="editorial"] .grid-cols-2.md\:grid-cols-3 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 40px !important;
+  padding: 0 40px !important;
+}
+[data-theme*="editorial"] .bg-white.rounded-2xl.shadow-sm {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+[data-theme*="editorial"] .aspect-\[4\/5\] {
+  aspect-ratio: 3 / 4 !important;
+}
+[data-theme*="editorial"] .p-4.md\:p-5 {
+  padding: 20px 0 0 0 !important;
+  text-align: center !important;
+}
+[data-theme*="editorial"] .text-lg.font-bold {
+  font-family: "Lora", serif !important;
+  font-weight: 400 !important;
+  font-size: 1.25rem !important;
+}
+[data-theme*="editorial"] .text-\[\#66000E\] {
+  color: #241A1A !important;
+  font-size: 0.875rem !important;
+  letter-spacing: 1px !important;
+}
+
+/* 3. MINIMALIST THEME OVERRIDES */
+[data-theme*="minimalist"] {
+  background-color: #FFFFFF !important;
+}
+
+[data-theme*="minimalist"] [id^="hero-"] {
+  background-color: #FAFAFA !important;
+  border-radius: 0 !important;
+}
+[data-theme*="minimalist"] [id^="hero-"] h1,
+[data-theme*="minimalist"] [id^="hero-"] div {
+  font-weight: 200 !important;
+  letter-spacing: -1px !important;
+}
+
+[data-theme*="minimalist"] .bg-white.rounded-2xl.shadow-sm {
+  box-shadow: none !important;
+  border: none !important;
+  transition: opacity 0.3s ease !important;
+}
+[data-theme*="minimalist"] .bg-white.rounded-2xl.shadow-sm:hover {
+  opacity: 0.8 !important;
+}
