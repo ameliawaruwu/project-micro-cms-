@@ -9,6 +9,7 @@ interface InlineEditableButtonProps {
   className?: string;
   style?: React.CSSProperties;
   isSelected?: boolean;
+  readonly?: boolean;
 }
 
 export const InlineEditableButton: React.FC<InlineEditableButtonProps> = ({
@@ -19,6 +20,7 @@ export const InlineEditableButton: React.FC<InlineEditableButtonProps> = ({
   className = '',
   style,
   isSelected = false,
+  readonly = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draftLabel, setDraftLabel] = useState(label);
@@ -74,6 +76,20 @@ export const InlineEditableButton: React.FC<InlineEditableButtonProps> = ({
           placeholder="Teks tombol..."
         />
       </div>
+    );
+  }
+
+  if (readonly) {
+    return (
+      <button
+        type="button"
+        className={className}
+        style={style}
+      >
+        {iconPosition === 'left' && icon}
+        <span className="truncate">{draftLabel || 'Tombol'}</span>
+        {iconPosition === 'right' && icon}
+      </button>
     );
   }
 

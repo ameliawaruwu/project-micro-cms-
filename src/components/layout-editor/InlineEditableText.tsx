@@ -11,6 +11,7 @@ interface InlineEditableTextProps {
   tagName?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span' | 'div';
   isSelected?: boolean;
   showEditHint?: boolean;
+  readonly?: boolean;
 }
 
 export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
@@ -23,6 +24,7 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
   tagName: Tag = 'span',
   isSelected = false,
   showEditHint = true,
+  readonly = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draftValue, setDraftValue] = useState(value);
@@ -62,6 +64,14 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       setIsEditing(false);
     }
   };
+
+  if (readonly) {
+    return (
+      <Tag className={className} style={style}>
+        {value}
+      </Tag>
+    );
+  }
 
   if (isEditing) {
     if (multiline) {
