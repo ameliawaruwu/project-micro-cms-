@@ -172,6 +172,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       customerPhone: phone.trim(),
       customerAddress: address.trim(),
       customerCity: city,
+      customerPostalCode: postalCode,
+      destinationAddress: address.trim(),
+      destinationPostalCode: postalCode,
+      originBranchId: selectedBranch?.id,
+      courierCode: selectedBiteshipRate?.courier_code || courier.toLowerCase(),
+      courierService: selectedBiteshipRate
+        ? `${selectedBiteshipRate.courier_name} ${selectedBiteshipRate.courier_service_name} (${selectedBiteshipRate.etd})`
+        : selectedRate
+        ? `${selectedRate.serviceName} (${selectedRate.etd})`
+        : 'Reguler (1-2 Hari)',
       items: orderItems,
       subtotal,
       shippingCost,
@@ -180,7 +190,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       paymentMethod: finalMethod as PaymentMethod,
       paymentStatus: 'Sudah Dibayar',
       courier,
-      courierService: selectedRate ? `${selectedRate.serviceName} (${selectedRate.etd})` : 'Reguler (1-2 Hari)',
       shippingStatus: 'Baru',
       notes: notes.trim() || undefined,
     });
@@ -216,6 +225,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           orderId,
           grossAmount: grandTotal,
           customerName: name.trim(),
+          customerEmail: 'customer@example.com',
           customerPhone: phone.trim(),
           enabledPayments: [selectedChannel.id],
           items: items.map((i) => ({
@@ -226,18 +236,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           })),
         },
         {
-          onSuccess: async (res) => {
-            const methodTag = res.payment_type ? res.payment_type.toUpperCase() : selectedChannel.name;
-            await recordSuccessOrder(orderId, `${selectedChannel.name} (${methodTag})`);
+          onSuccess: async (result) => {
+            await recordSuccessOrder(result.order_id || orderId, `Midtrans (${result.payment_type})`);
             setIsSubmitting(false);
           },
-          onPending: async (res) => {
-            const methodTag = res.payment_type ? res.payment_type.toUpperCase() : selectedChannel.name;
-            await recordSuccessOrder(orderId, `${selectedChannel.name} (${methodTag})`);
+          onPending: async (result) => {
+            await recordSuccessOrder(result.order_id || orderId, `Midtrans Pending (${result.payment_type})`);
             setIsSubmitting(false);
           },
-          onError: () => {
-            alert('Pembayaran Midtrans dibatalkan atau mengalami kendala.');
+          onError: (err) => {
+            console.error('Midtrans Snap error:', err);
             setIsSubmitting(false);
           },
           onClose: () => {
@@ -245,8 +253,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           },
         }
       );
-    } catch (err: any) {
-      console.warn('Midtrans Snap fallback mode:', err);
+    } catch (error) {
+      console.warn('Midtrans Snap pop-up tidak dapat dibuka, dialihkan ke instruksi manual:', error);
       setIsSubmitting(false);
     }
   };
@@ -266,73 +274,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   const handleManualFinalizeOrder = async () => {
     setIsSubmitting(true);
-<<<<<<< HEAD
-    const orderId = `KROOM-${Date.now()}`;
-    await recordSuccessOrder(orderId, selectedChannel.name);
-    setIsSubmitting(false);
-=======
-
     try {
-      const orderItems = items.map((item) => ({
-        productId: item.product.id,
-        productName: item.product.name,
-        productImage: item.product.imageUrl || '',
-        price: item.product.price,
-        quantity: item.quantity,
-        subtotal: item.product.price * item.quantity,
-        variantName: item.variantName,
-      }));
-
-      const newOrder = await orderService.createOrder({
-        storeId: store.id,
-        customerName: name.trim(),
-        customerPhone: phone.trim(),
-        customerAddress: address.trim(),
-        customerCity: city,
-        customerPostalCode: postalCode,
-        originBranchId: selectedBranch?.id,
-        items: orderItems,
-        subtotal,
-        shippingCost: activeShippingCost,
-        discount: 0,
-        grandTotal,
-        paymentMethod,
-        paymentStatus: 'Sudah Dibayar',
-        courier,
-        courierCode: selectedBiteshipRate?.courier_code || 'jnt',
-        courierService: selectedBiteshipRate
-          ? `${selectedBiteshipRate.courier_name} ${selectedBiteshipRate.courier_service_name} (${selectedBiteshipRate.etd})`
-          : selectedRate
-          ? `${selectedRate.serviceName} (${selectedRate.etd})`
-          : 'Reguler (1-2 Hari)',
-        shippingStatus: 'Baru',
-        notes: notes.trim() || undefined,
-      });
-
-      // Credit the merchant store balance automatically!
-      const currentBalance = store.balance || 0;
-      await storeService.updateStore(store.id, { balance: currentBalance + grandTotal });
-
-      cartService.clearCart(store.slug);
-      setCompletedOrder(newOrder);
-      setStep('success');
-      onOrderSuccess(newOrder);
-
-      try {
-        confetti({
-          particleCount: 70,
-          spread: 60,
-          origin: { y: 0.6 },
-        });
-      } catch {
-        // Confetti fallback
-      }
+      const orderId = `KROOM-${Date.now()}`;
+      await recordSuccessOrder(orderId, selectedChannel.name);
     } catch {
       alert('Terjadi kesalahan saat memproses pesanan.');
     } finally {
       setIsSubmitting(false);
     }
->>>>>>> origin/feature/pengiriman-dan-pesanan
   };
 
   const handleCopyVa = () => {
@@ -620,7 +569,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
               </div>
 
-<<<<<<< HEAD
               {/* DYNAMIC MIDTRANS PAYMENT CHANNELS SELECTOR */}
               <div className="space-y-2.5 pt-3 border-t border-[#E5E0DD]">
                 <div className="flex items-center justify-between">
