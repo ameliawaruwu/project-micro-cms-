@@ -29,6 +29,9 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
                 sections={sections}
                 selectedSectionKey={null}
                 deviceMode="desktop"
+                primaryAccent={store.layoutSettings?.primaryAccent || '#2563EB'}
+                onSelectSection={() => {}}
+                onDeviceModeChange={() => {}}
                 readonly={true}
               />
             } 
