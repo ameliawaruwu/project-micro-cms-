@@ -41,7 +41,7 @@ export const ProcessShippingModal: React.FC<ProcessShippingModalProps> = ({
   };
 
   return (
-    <div id="modal-process-shipping" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs font-sans">
+    <div id="modal-process-shipping" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs font-poppins">
       <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-200">
         <div className="flex items-center justify-between pb-4 border-b border-[#EAEAEA]">
           <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-base">

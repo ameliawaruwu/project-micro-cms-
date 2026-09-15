@@ -25,7 +25,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { CartItem, Store, CourierType, PaymentMethod, Order } from '../../types';
+import { CartItem, Store, CourierType, PaymentMethod, Order, ShippingBranch, BiteshipRateOption } from '../../types';
 import { formatRupiah, generateWhatsAppLink } from '../../utils/formatters';
 import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
@@ -37,6 +37,7 @@ import {
   PaymentChannel,
   DEFAULT_MIDTRANS_CHANNELS,
 } from '../../services/paymentChannelService';
+import { CourierSelector } from '../shipping/CourierSelector';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -62,7 +63,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('Jakarta Selatan');
+  const [postalCode, setPostalCode] = useState('12730');
   const [courier, setCourier] = useState<CourierType>('J&T');
+  const [selectedBranch, setSelectedBranch] = useState<ShippingBranch | null>(null);
+  const [selectedBiteshipRate, setSelectedBiteshipRate] = useState<BiteshipRateOption | null>(null);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
@@ -119,7 +123,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   if (!isOpen) return null;
 
   const subtotal = cartService.getTotal(items);
-  const shippingCost = selectedRate ? selectedRate.cost : items.length > 0 ? 15000 : 0;
+  const shippingCost = selectedBiteshipRate
+    ? selectedBiteshipRate.price
+    : selectedRate
+    ? selectedRate.cost
+    : items.length > 0
+    ? 15000
+    : 0;
   const grandTotal = subtotal + shippingCost;
 
   // Virtual Account number generator based on channel and customer phone
@@ -162,6 +172,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       customerPhone: phone.trim(),
       customerAddress: address.trim(),
       customerCity: city,
+      customerPostalCode: postalCode,
+      destinationAddress: address.trim(),
+      destinationPostalCode: postalCode,
+      originBranchId: selectedBranch?.id,
+      courierCode: selectedBiteshipRate?.courier_code || courier.toLowerCase(),
+      courierService: selectedBiteshipRate
+        ? `${selectedBiteshipRate.courier_name} ${selectedBiteshipRate.courier_service_name} (${selectedBiteshipRate.etd})`
+        : selectedRate
+        ? `${selectedRate.serviceName} (${selectedRate.etd})`
+        : 'Reguler (1-2 Hari)',
       items: orderItems,
       subtotal,
       shippingCost,
@@ -170,7 +190,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       paymentMethod: finalMethod as PaymentMethod,
       paymentStatus: 'Sudah Dibayar',
       courier,
-      courierService: selectedRate ? `${selectedRate.serviceName} (${selectedRate.etd})` : 'Reguler (1-2 Hari)',
       shippingStatus: 'Baru',
       notes: notes.trim() || undefined,
     });
@@ -206,6 +225,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           orderId,
           grossAmount: grandTotal,
           customerName: name.trim(),
+          customerEmail: 'customer@example.com',
           customerPhone: phone.trim(),
           enabledPayments: [selectedChannel.id],
           items: items.map((i) => ({
@@ -216,18 +236,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           })),
         },
         {
-          onSuccess: async (res) => {
-            const methodTag = res.payment_type ? res.payment_type.toUpperCase() : selectedChannel.name;
-            await recordSuccessOrder(orderId, `${selectedChannel.name} (${methodTag})`);
+          onSuccess: async (result) => {
+            await recordSuccessOrder(result.order_id || orderId, `Midtrans (${result.payment_type})`);
             setIsSubmitting(false);
           },
-          onPending: async (res) => {
-            const methodTag = res.payment_type ? res.payment_type.toUpperCase() : selectedChannel.name;
-            await recordSuccessOrder(orderId, `${selectedChannel.name} (${methodTag})`);
+          onPending: async (result) => {
+            await recordSuccessOrder(result.order_id || orderId, `Midtrans Pending (${result.payment_type})`);
             setIsSubmitting(false);
           },
-          onError: () => {
-            alert('Pembayaran Midtrans dibatalkan atau mengalami kendala.');
+          onError: (err) => {
+            console.error('Midtrans Snap error:', err);
             setIsSubmitting(false);
           },
           onClose: () => {
@@ -235,8 +253,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           },
         }
       );
-    } catch (err: any) {
-      console.warn('Midtrans Snap fallback mode:', err);
+    } catch (error) {
+      console.warn('Midtrans Snap pop-up tidak dapat dibuka, dialihkan ke instruksi manual:', error);
       setIsSubmitting(false);
     }
   };
@@ -256,9 +274,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   const handleManualFinalizeOrder = async () => {
     setIsSubmitting(true);
-    const orderId = `KROOM-${Date.now()}`;
-    await recordSuccessOrder(orderId, selectedChannel.name);
-    setIsSubmitting(false);
+    try {
+      const orderId = `KROOM-${Date.now()}`;
+      await recordSuccessOrder(orderId, selectedChannel.name);
+    } catch {
+      alert('Terjadi kesalahan saat memproses pesanan.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCopyVa = () => {
@@ -451,19 +474,41 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </span>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#706866] mb-1">Kota Tujuan *</label>
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#241A1A] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
-                  >
-                    {INDONESIAN_CITIES.map((c) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name} ({c.province})
-                      </option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">Kota Tujuan *</label>
+                    <select
+                      value={city}
+                      onChange={(e) => {
+                        const selectedCity = e.target.value;
+                        setCity(selectedCity);
+                        const matchCity = INDONESIAN_CITIES.find((c) => c.name === selectedCity);
+                        if (matchCity?.postalCode) {
+                          setPostalCode(matchCity.postalCode);
+                        }
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#241A1A] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
+                    >
+                      {INDONESIAN_CITIES.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name} ({c.province})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">Kode Pos Tujuan *</label>
+                    <input
+                      type="text"
+                      maxLength={5}
+                      required
+                      placeholder="12730"
+                      value={postalCode}
+                      onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-mono font-bold text-[#241A1A] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -471,7 +516,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <textarea
                     rows={2}
                     required
-                    placeholder="Jl. Nama Jalan No. XX, RT/RW, Patokan..."
+                    placeholder="Jl. Nama Jalan No. XX, RT/RW, Kelurahan, Patokan..."
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] bg-[#FAF7F7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"

@@ -11,6 +11,7 @@ interface InlineEditableImageProps {
   onUpdateImage: (newUrl: string) => void;
   onRemoveImage?: () => void;
   isSelected?: boolean;
+  readonly?: boolean;
 }
 
 export const InlineEditableImage: React.FC<InlineEditableImageProps> = ({
@@ -22,9 +23,19 @@ export const InlineEditableImage: React.FC<InlineEditableImageProps> = ({
   onUpdateImage,
   onRemoveImage,
   isSelected = false,
+  readonly = false,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+
+  if (readonly) {
+    if (!src) return null;
+    return (
+      <div className={containerClassName}>
+        <img src={src} alt={alt} className={className} referrerPolicy="no-referrer" />
+      </div>
+    );
+  }
 
   return (
     <>
