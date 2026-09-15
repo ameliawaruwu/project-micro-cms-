@@ -590,9 +590,9 @@ export interface StoreTemplate {
   id: string;
   name: string;
   category: string;
-  badge: string;
-  description: string;
-  previewImage: string;
+  badge?: string;
+  description?: string;
+  previewImage?: string;
   primaryAccent: string;
   bannerUrl: string;
   tagline: string;

@@ -112,7 +112,7 @@ export interface StoreSectionOptions {
 
   // Header / Navbar
   stickyHeader?: boolean;
-  headerStyle?: 'standard' | 'brand' | 'minimal';
+  headerStyle?: 'standard' | 'brand' | 'minimal' | 'transparent';
   showLogo?: boolean;
   showTagline?: boolean;
   showNavMenu?: boolean;
@@ -129,10 +129,10 @@ export interface StoreSectionOptions {
 export interface StoreSectionConfig {
   key?: string;
   id: StoreSectionType;
-  title: string;
+  title?: string;
   subtitle?: string;
   isVisible: boolean;
-  order: number;
+  order?: number;
   options?: StoreSectionOptions;
 }
 
