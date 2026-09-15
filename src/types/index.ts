@@ -249,6 +249,33 @@ export interface Order {
   createdAt: string;
   shippedAt?: string;
   notes?: string;
+  // Integrasi Logistik & Multi-Gudang (Biteship Aggregator)
+  originBranchId?: string;
+  destinationAddress?: string;
+  destinationPostalCode?: string;
+  totalWeight?: number;
+  courierCode?: string;
+  shippingMethod?: 'pickup' | 'drop_off';
+  shippingOrderId?: string;
+  shippingLabelUrl?: string;
+  pickupTime?: string;
+}
+
+export interface ShippingBranch {
+  id: string;
+  store_id: string;
+  branch_name: string;
+  pic_name: string;
+  pic_phone: string;
+  address: string;
+  subdistrict?: string;
+  city: string;
+  province: string;
+  postal_code: string;
+  is_default: boolean;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Integration {

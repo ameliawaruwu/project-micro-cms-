@@ -2,8 +2,10 @@
 -- KROOMBOX (MICRO CMS) - SUPABASE / POSTGRESQL CLEAN DATABASE SCHEMA
 -- ============================================================================
 -- Kompatibel dengan Supabase Database & PostgreSQL 13+
+-- Mendukung Multi-Store UMKM, Katalog Produk, Midtrans Payment Gateway,
+-- Billing Plans Langganan, dan Sistem Logistik Pengiriman & Multi-Gudang (Biteship Aggregator)
 -- Tanpa Data Dummy Produk (Clean State)
--- Sudah termasuk perizinan akses publik/anon untuk frontend
+-- Sudah termasuk perizinan akses publik/anon untuk frontend & Supabase Realtime
 -- ============================================================================
 
 -- Ekstensi UUID & pgcrypto
@@ -15,9 +17,12 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- ============================================================================
 DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS shipping_branches CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS wallet_transactions CASCADE;
 DROP TABLE IF EXISTS withdrawals CASCADE;
+DROP TABLE IF EXISTS store_subscriptions CASCADE;
+DROP TABLE IF EXISTS billing_plans CASCADE;
 DROP TABLE IF EXISTS stores CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS platform_settings CASCADE;
@@ -95,7 +100,50 @@ CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
 
 -- ============================================================================
--- 4. TABEL: ORDERS (PESANAN PEMBELI)
+-- 4. TABEL: SHIPPING_BRANCHES (GUDANG / CABANG ASAL PENGIRIMAN MULTI-GUDANG)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS shipping_branches (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    store_id VARCHAR(64) REFERENCES stores(id) ON DELETE CASCADE,
+    branch_name TEXT NOT NULL,
+    pic_name TEXT NOT NULL,
+    pic_phone TEXT NOT NULL,
+    address TEXT NOT NULL,
+    subdistrict TEXT,
+    city TEXT NOT NULL,
+    province TEXT NOT NULL,
+    postal_code TEXT NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_shipping_branches_store_id ON shipping_branches(store_id);
+CREATE INDEX IF NOT EXISTS idx_shipping_branches_is_default ON shipping_branches(is_default);
+
+-- Trigger Otomatis: Hanya 1 Cabang Default per Store
+CREATE OR REPLACE FUNCTION set_single_default_branch()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.is_default = TRUE THEN
+        UPDATE shipping_branches
+        SET is_default = FALSE
+        WHERE store_id = NEW.store_id AND id != NEW.id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_single_default_branch ON shipping_branches;
+CREATE TRIGGER trg_single_default_branch
+BEFORE INSERT OR UPDATE OF is_default ON shipping_branches
+FOR EACH ROW
+WHEN (NEW.is_default = TRUE)
+EXECUTE FUNCTION set_single_default_branch();
+
+-- ============================================================================
+-- 5. TABEL: ORDERS (PESANAN PEMBELI & LOGISTIK PENGIRIMAN)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS orders (
     id VARCHAR(64) PRIMARY KEY DEFAULT 'ord_' || replace(gen_random_uuid()::text, '-', ''),
@@ -117,6 +165,17 @@ CREATE TABLE IF NOT EXISTS orders (
     paid_at TIMESTAMP WITH TIME ZONE,
     shipped_at TIMESTAMP WITH TIME ZONE,
     notes TEXT,
+    -- Kolom Integrasi Logistik & Multi-Gudang (Biteship Aggregator)
+    origin_branch_id UUID REFERENCES shipping_branches(id) ON DELETE SET NULL,
+    destination_address TEXT,
+    destination_postal_code TEXT,
+    total_weight INTEGER DEFAULT 1000,
+    courier_code TEXT,
+    courier_service TEXT,
+    shipping_method TEXT DEFAULT 'drop_off' CHECK (shipping_method IN ('pickup', 'drop_off')),
+    shipping_order_id TEXT,
+    shipping_label_url TEXT,
+    pickup_time TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -124,9 +183,54 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE INDEX IF NOT EXISTS idx_orders_store_id ON orders(store_id);
 CREATE INDEX IF NOT EXISTS idx_orders_order_number ON orders(order_number);
 CREATE INDEX IF NOT EXISTS idx_orders_order_status ON orders(order_status);
+CREATE INDEX IF NOT EXISTS idx_orders_origin_branch ON orders(origin_branch_id);
+
+-- Migrasi Idempoten: Tambahkan kolom logistik jika tabel orders sudah ada sebelumnya di DB
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'origin_branch_id') THEN
+        ALTER TABLE orders ADD COLUMN origin_branch_id UUID REFERENCES shipping_branches(id) ON DELETE SET NULL;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'destination_address') THEN
+        ALTER TABLE orders ADD COLUMN destination_address TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'destination_postal_code') THEN
+        ALTER TABLE orders ADD COLUMN destination_postal_code TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'total_weight') THEN
+        ALTER TABLE orders ADD COLUMN total_weight INTEGER DEFAULT 1000;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'courier_code') THEN
+        ALTER TABLE orders ADD COLUMN courier_code TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'courier_service') THEN
+        ALTER TABLE orders ADD COLUMN courier_service TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'shipping_method') THEN
+        ALTER TABLE orders ADD COLUMN shipping_method TEXT DEFAULT 'drop_off' CHECK (shipping_method IN ('pickup', 'drop_off'));
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'shipping_order_id') THEN
+        ALTER TABLE orders ADD COLUMN shipping_order_id TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'shipping_label_url') THEN
+        ALTER TABLE orders ADD COLUMN shipping_label_url TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'pickup_time') THEN
+        ALTER TABLE orders ADD COLUMN pickup_time TIMESTAMP WITH TIME ZONE;
+    END IF;
+END $$;
 
 -- ============================================================================
--- 5. TABEL: ORDER_ITEMS (RINCIAN PRODUK DALAM PESANAN)
+-- 6. TABEL: ORDER_ITEMS (RINCIAN PRODUK DALAM PESANAN)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS order_items (
     id VARCHAR(64) PRIMARY KEY DEFAULT 'itm_' || replace(gen_random_uuid()::text, '-', ''),
@@ -143,7 +247,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 
 -- ============================================================================
--- 6. TABEL: WITHDRAWALS (PENARIKAN DANA OLEH MERCHANT)
+-- 7. TABEL: WITHDRAWALS (PENARIKAN DANA OLEH MERCHANT)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS withdrawals (
     id VARCHAR(64) PRIMARY KEY DEFAULT 'wd_' || replace(gen_random_uuid()::text, '-', ''),
@@ -163,7 +267,7 @@ CREATE INDEX IF NOT EXISTS idx_withdrawals_store_id ON withdrawals(store_id);
 CREATE INDEX IF NOT EXISTS idx_withdrawals_status ON withdrawals(status);
 
 -- ============================================================================
--- 7. TABEL: WALLET_TRANSACTIONS (MUTASI DOMPET TOKO)
+-- 8. TABEL: WALLET_TRANSACTIONS (MUTASI DOMPET TOKO)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS wallet_transactions (
     id VARCHAR(64) PRIMARY KEY DEFAULT 'tx_' || replace(gen_random_uuid()::text, '-', ''),
@@ -179,7 +283,7 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
 CREATE INDEX IF NOT EXISTS idx_wallet_transactions_store_id ON wallet_transactions(store_id);
 
 -- ============================================================================
--- 8. TABEL: PLATFORM_SETTINGS (KONFIGURASI MASTER ADMIN & API KEYS)
+-- 9. TABEL: PLATFORM_SETTINGS (KONFIGURASI MASTER ADMIN & API KEYS)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS platform_settings (
     id VARCHAR(32) PRIMARY KEY DEFAULT 'global_config',
@@ -202,7 +306,7 @@ CREATE TABLE IF NOT EXISTS platform_settings (
 );
 
 -- ============================================================================
--- 9. TABEL: BILLING_PLANS (MASTER PAKET LANGGANAN SUPER ADMIN)
+-- 10. TABEL: BILLING_PLANS (MASTER PAKET LANGGANAN SUPER ADMIN)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS billing_plans (
     id VARCHAR(64) PRIMARY KEY DEFAULT 'plan_' || replace(gen_random_uuid()::text, '-', ''),
@@ -222,7 +326,7 @@ CREATE INDEX IF NOT EXISTS idx_billing_plans_slug ON billing_plans(slug);
 CREATE INDEX IF NOT EXISTS idx_billing_plans_active ON billing_plans(is_active);
 
 -- ============================================================================
--- 10. TABEL: STORE_SUBSCRIPTIONS (RIWAYAT TRANSAKSI & INVOICE LANGGANAN)
+-- 11. TABEL: STORE_SUBSCRIPTIONS (RIWAYAT TRANSAKSI & INVOICE LANGGANAN)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS store_subscriptions (
     id VARCHAR(64) PRIMARY KEY DEFAULT 'sub_' || replace(gen_random_uuid()::text, '-', ''),
@@ -243,7 +347,7 @@ CREATE INDEX IF NOT EXISTS idx_store_subscriptions_store_id ON store_subscriptio
 CREATE INDEX IF NOT EXISTS idx_store_subscriptions_status ON store_subscriptions(status);
 
 -- ============================================================================
--- DATA INISIALISASI DASAR (AKUN, TOKO, & MASTER BILLING PLANS)
+-- DATA INISIALISASI DASAR (AKUN, TOKO, GUDANG, & MASTER BILLING PLANS)
 -- ============================================================================
 INSERT INTO platform_settings (id) VALUES ('global_config') ON CONFLICT (id) DO NOTHING;
 
@@ -254,6 +358,49 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO stores (id, user_id, name, slug, tagline, description, phone_whatsapp, city, province, address, category, plan, balance) VALUES
 ('store-andhika', 'usr-andhika-1', 'Toko Andhika', 'toko-andhika', 'Toko Online Andhika', 'Pusat belanja produk berkualitas', '6281298765432', 'Jakarta Selatan', 'DKI Jakarta', 'Jl. Kemang Raya No. 42', 'Fashion & Retail', 'starter', 0)
+ON CONFLICT (id) DO NOTHING;
+
+-- Seed Data Default Cabang Toko Andhika (Multi-Gudang Biteship)
+INSERT INTO shipping_branches (
+    id,
+    store_id,
+    branch_name,
+    pic_name,
+    pic_phone,
+    address,
+    subdistrict,
+    city,
+    province,
+    postal_code,
+    is_default,
+    is_active
+) VALUES (
+    'a0000000-0000-0000-0000-000000000001',
+    'store-andhika',
+    'Gudang Pusat Jakarta',
+    'Andhika Pratama',
+    '081298765432',
+    'Jl. Kemang Raya No. 42, RT 04 / RW 02',
+    'Bangka, Mampang Prapatan',
+    'Jakarta Selatan',
+    'DKI Jakarta',
+    '12730',
+    TRUE,
+    TRUE
+), (
+    'a0000000-0000-0000-0000-000000000002',
+    'store-andhika',
+    'Cabang Logistik Surabaya',
+    'Budi Santoso',
+    '081377889900',
+    'Jl. Rungkut Industri Raya No. 15',
+    'Kali Rungkut',
+    'Kota Surabaya',
+    'Jawa Timur',
+    '60293',
+    FALSE,
+    TRUE
+)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO billing_plans (id, name, slug, tagline, price_monthly, price_yearly, features, is_active, sort_order) VALUES
@@ -267,6 +414,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================================
 ALTER TABLE IF EXISTS products DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS stores DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS shipping_branches DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS orders DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS order_items DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS users DISABLE ROW LEVEL SECURITY;
@@ -278,6 +426,7 @@ ALTER TABLE IF EXISTS store_subscriptions DISABLE ROW LEVEL SECURITY;
 
 GRANT ALL ON TABLE products TO anon, authenticated, service_role;
 GRANT ALL ON TABLE stores TO anon, authenticated, service_role;
+GRANT ALL ON TABLE shipping_branches TO anon, authenticated, service_role;
 GRANT ALL ON TABLE orders TO anon, authenticated, service_role;
 GRANT ALL ON TABLE order_items TO anon, authenticated, service_role;
 GRANT ALL ON TABLE users TO anon, authenticated, service_role;
@@ -286,3 +435,20 @@ GRANT ALL ON TABLE wallet_transactions TO anon, authenticated, service_role;
 GRANT ALL ON TABLE withdrawals TO anon, authenticated, service_role;
 GRANT ALL ON TABLE billing_plans TO anon, authenticated, service_role;
 GRANT ALL ON TABLE store_subscriptions TO anon, authenticated, service_role;
+
+-- ============================================================================
+-- KONFIGURASI SUPABASE REALTIME (WEBSOCKET) UNTUK ORDERS & SHIPPING_BRANCHES
+-- ============================================================================
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE shipping_branches;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
