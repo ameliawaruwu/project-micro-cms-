@@ -4,7 +4,7 @@ import { authService } from '../services/authService';
 import { supabase, signInWithGoogleOAuth } from '../services/supabaseClient';
 
 
-interface AuthContextType {
+  interface AuthContextType {
   user: User | null;
   merchant: Merchant | null;
   store: Store | null;
@@ -26,7 +26,8 @@ interface AuthContextType {
     storeSlug: string;
     businessCategory: string;
     password: string;
-  }) => Promise<void>;
+    autoLogin?: boolean;
+  }) => Promise<{ user: User; merchant: Merchant; store: Store }>;
   forgotPassword: (email: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateStore: (updatedStore: Store) => void;
@@ -53,25 +54,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setStore(current.store);
         }
 
+        // Background sync any existing local accounts to Supabase
+        authService.syncLocalAccountsToSupabase().catch((err) => console.warn('Background sync error:', err));
+
         // 2. Check Supabase OAuth session (if redirected from Google)
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user && session.user.email) {
           const googleUser = session.user;
           const userMeta = googleUser.user_metadata || {};
-          const googleEmail = googleUser.email;
+          const googleEmail = googleUser.email.toLowerCase().trim();
           const fullName = userMeta.full_name || userMeta.name || googleEmail.split('@')[0];
           const avatarUrl = userMeta.avatar_url || userMeta.picture;
 
-          // Register or Login merchant with Google account
-          const data = await authService.registerWithGoogle({
-            googleEmail,
-            fullName,
-            avatarUrl,
-          });
+          const oauthIntent = sessionStorage.getItem('oauth_intent') || 'login';
+          sessionStorage.removeItem('oauth_intent');
 
-          setUser(data.user);
-          setMerchant(data.merchant);
-          setStore(data.store);
+          const exists = await authService.checkAccountExists(googleEmail);
+
+          if (oauthIntent === 'register') {
+            // User registered via Google
+            await authService.registerWithGoogle({
+              googleEmail,
+              fullName,
+              avatarUrl,
+            });
+            // After register, user must login first
+            await supabase.auth.signOut();
+            await authService.logout();
+            sessionStorage.setItem('auth_redirect_msg', 'Pendaftaran dengan Google berhasil! Silakan klik "Masuk dengan Google" untuk login ke akun Anda.');
+            sessionStorage.setItem('auth_prefill_email', googleEmail);
+            window.dispatchEvent(new CustomEvent('auth_nav_login', { detail: { email: googleEmail } }));
+          } else {
+            // User attempting to login with Google
+            if (!exists) {
+              // Reject if account not registered yet
+              await supabase.auth.signOut();
+              await authService.logout();
+              sessionStorage.setItem('auth_redirect_err', 'Akun Google ini belum terdaftar. Silakan daftar akun baru terlebih dahulu.');
+              window.dispatchEvent(new CustomEvent('auth_nav_login'));
+            } else {
+              // Existing registered user: login directly
+              const data = await authService.login(googleEmail, 'google-auth');
+              setUser(data.user);
+              setMerchant(data.merchant);
+              setStore(data.store);
+            }
+          }
         }
       } catch (e) {
         console.error('Auth initialization error:', e);
@@ -130,17 +158,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     storeSlug: string;
     businessCategory: string;
     password: string;
+    autoLogin?: boolean;
   }) => {
     setIsLoading(true);
     try {
       const data = await authService.register(params);
-      setUser(data.user);
-      setMerchant(data.merchant);
-      setStore(data.store);
+      if (params.autoLogin) {
+        setUser(data.user);
+        setMerchant(data.merchant);
+        setStore(data.store);
+      }
+      return data;
     } finally {
       setIsLoading(false);
     }
   };
+
 
   const forgotPassword = async (email: string) => {
     return authService.forgotPassword(email);
