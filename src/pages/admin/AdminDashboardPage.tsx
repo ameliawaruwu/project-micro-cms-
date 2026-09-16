@@ -69,6 +69,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   onLogout,
 }) => {
   const { language } = useLanguage();
+  const isEn = language === 'en';
   const [stats, setStats] = useState<AdminPlatformStats>(adminService.getPlatformStats());
   const [stores, setStores] = useState<Store[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
@@ -358,6 +359,43 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         return 'bg-rose-50 text-rose-700 border-rose-200';
       default:
         return 'bg-gray-50 text-gray-600 border-gray-200';
+    }
+  };
+
+  const getShippingStatusLabel = (status?: string) => {
+    switch (status) {
+      case 'Baru':
+        return isEn ? 'New Order' : 'Pesanan Baru';
+      case 'Diproses':
+      case 'ready_to_ship':
+        return isEn ? 'Ready to Ship' : 'Siap Kirim';
+      case 'Dikirim':
+        return isEn ? 'In Shipping' : 'Dalam Pengiriman';
+      case 'Selesai':
+        return isEn ? 'Delivered' : 'Selesai';
+      case 'Dibatalkan':
+        return isEn ? 'Cancelled' : 'Dibatalkan';
+      default:
+        return status || (isEn ? 'Pending' : 'Menunggu');
+    }
+  };
+
+  const getPaymentStatusLabel = (status?: string) => {
+    switch (status) {
+      case 'Sudah Dibayar':
+      case 'paid':
+        return isEn ? 'Paid' : 'Sudah Dibayar';
+      case 'Menunggu Pembayaran':
+      case 'pending':
+        return isEn ? 'Pending Payment' : 'Menunggu Pembayaran';
+      case 'Gagal':
+      case 'failed':
+        return isEn ? 'Failed' : 'Gagal';
+      case 'Dibatalkan':
+      case 'cancelled':
+        return isEn ? 'Cancelled' : 'Dibatalkan';
+      default:
+        return status || (isEn ? 'Pending' : 'Menunggu');
     }
   };
 
@@ -820,11 +858,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                             <td className="py-2.5 px-3.5">
                               {isSuspended ? (
                                 <span className="inline-flex items-center gap-1 text-[11px] font-medium text-red-700 bg-red-50 px-1.5 py-0.2 rounded border border-red-100">
-                                  <Ban className="w-3 h-3" /> Disuspend
+                                  <Ban className="w-3 h-3" /> {isEn ? 'Suspended' : 'Disuspend'}
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Aktif
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {isEn ? 'Active' : 'Aktif'}
                                 </span>
                               )}
                             </td>
@@ -836,7 +874,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                   <button
                                     onClick={() => onOpenStorefront(store.slug)}
                                     className="p-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-600 transition cursor-pointer"
-                                    title="Lihat Storefront"
+                                    title={isEn ? 'View Storefront' : 'Lihat Storefront'}
                                   >
                                     <ExternalLink className="w-3 h-3" />
                                   </button>
@@ -849,7 +887,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                       : 'bg-white hover:bg-red-50 border border-red-200 text-red-600'
                                   }`}
                                 >
-                                  {isSuspended ? 'Aktifkan' : 'Suspend'}
+                                  {isSuspended ? (isEn ? 'Activate' : 'Aktifkan') : (isEn ? 'Suspend' : 'Suspend')}
                                 </button>
                               </div>
                             </td>
@@ -891,10 +929,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   <div>
                     <div className="flex items-center gap-2">
                       <Wallet className="w-5 h-5 text-red-600" />
-                      <h2 className="text-base font-bold text-gray-900">Pencairan Dana Toko</h2>
+                      <h2 className="text-base font-bold text-gray-900">
+                        {isEn ? 'Store Payout Requests' : 'Pencairan Dana Toko'}
+                      </h2>
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      Kelola dan verifikasi permohonan transfer saldo dompet dari toko merchant
+                      {isEn
+                        ? 'Manage and verify wallet balance withdrawal requests from merchant stores'
+                        : 'Kelola dan verifikasi permohonan transfer saldo dompet dari toko merchant'}
                     </p>
                   </div>
 
@@ -913,7 +955,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                       }`}
                     >
                       <Clock className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Butuh Approval</span>
+                      <span>{isEn ? 'Needs Approval' : 'Butuh Approval'}</span>
                       <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
                         pendingList.length > 0 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600'
                       }`}>
@@ -934,7 +976,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                       }`}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Berhasil Approval (Paid)</span>
+                      <span>{isEn ? 'Approved (Paid)' : 'Berhasil Approval (Paid)'}</span>
                       <span className="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
                         {approvedList.length}
                       </span>
@@ -946,9 +988,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-xs flex items-center justify-between">
                     <div>
-                      <span className="text-[11px] font-medium text-gray-500">Menunggu Approval</span>
+                      <span className="text-[11px] font-medium text-gray-500">
+                        {isEn ? 'Awaiting Approval' : 'Menunggu Approval'}
+                      </span>
                       <p className="text-base font-extrabold text-amber-600 mt-0.5">
-                        {pendingList.length} Pengajuan
+                        {pendingList.length} {isEn ? 'Requests' : 'Pengajuan'}
                       </p>
                       <span className="text-[11px] font-bold text-gray-700">
                         {formatRupiah(totalPendingAmount)}
@@ -961,9 +1005,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
                   <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-xs flex items-center justify-between">
                     <div>
-                      <span className="text-[11px] font-medium text-gray-500">Berhasil Disetujui (Paid)</span>
+                      <span className="text-[11px] font-medium text-gray-500">
+                        {isEn ? 'Approved (Paid)' : 'Berhasil Disetujui (Paid)'}
+                      </span>
                       <p className="text-base font-extrabold text-emerald-600 mt-0.5">
-                        {approvedList.filter((w) => w.status === 'approved').length} Selesai
+                        {approvedList.filter((w) => w.status === 'approved').length} {isEn ? 'Completed' : 'Selesai'}
                       </p>
                       <span className="text-[11px] font-bold text-gray-700">
                         {formatRupiah(totalApprovedAmount)}
@@ -976,15 +1022,17 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
                   <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-xs flex items-center justify-between">
                     <div>
-                      <span className="text-[11px] font-medium text-gray-500">Total Seluruh Pengajuan</span>
+                      <span className="text-[11px] font-medium text-gray-500">
+                        {isEn ? 'Platform Balance Processed' : 'Total Dana Diproses'}
+                      </span>
                       <p className="text-base font-extrabold text-gray-900 mt-0.5">
-                        {withdrawals.length} Transaksi
+                        {formatRupiah(totalPendingAmount + totalApprovedAmount)}
                       </p>
-                      <span className="text-[11px] font-semibold text-gray-500">
-                        Maks. 10 data per halaman
+                      <span className="text-[10px] text-gray-400">
+                        {withdrawals.length} {isEn ? 'total submissions' : 'total pengajuan'}
                       </span>
                     </div>
-                    <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center">
                       <Wallet className="w-5 h-5" />
                     </div>
                   </div>
@@ -996,17 +1044,17 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     <div>
                       <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
                         {withdrawalTab === 'pending'
-                          ? 'Daftar Pengajuan Butuh Approval'
-                          : 'Riwayat Pencairan Dana Selesai (Paid)'}
+                          ? (isEn ? 'Pending Approval Requests' : 'Daftar Pengajuan Butuh Approval')
+                          : (isEn ? 'Completed Payout History (Paid)' : 'Riwayat Pencairan Dana Selesai (Paid)')}
                       </h3>
                       <p className="text-[11px] text-gray-500">
                         {withdrawalTab === 'pending'
-                          ? 'Tinjau dan setujui penarikan saldo toko sebelum ditransfer ke rekening tujuan'
-                          : 'Daftar transaksi penarikan dana yang telah disetujui atau diproses admin'}
+                          ? (isEn ? 'Review and approve store balance withdrawals before sending funds' : 'Tinjau dan setujui penarikan saldo toko sebelum ditransfer ke rekening tujuan')
+                          : (isEn ? 'List of withdrawal transactions that have been approved or processed by admin' : 'Daftar transaksi penarikan dana yang telah disetujui atau diproses admin')}
                       </p>
                     </div>
                     <span className="text-xs font-semibold text-gray-700">
-                      Total: {currentList.length} Pengajuan
+                      Total: {currentList.length} {isEn ? 'Requests' : 'Pengajuan'}
                     </span>
                   </div>
 
@@ -1015,8 +1063,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                       <Wallet className="w-8 h-8 mx-auto text-gray-300" />
                       <p className="text-xs font-medium">
                         {withdrawalTab === 'pending'
-                          ? 'Tidak ada pengajuan penarikan dana yang menunggu persetujuan.'
-                          : 'Belum ada riwayat penarikan dana yang selesai / disetujui.'}
+                          ? (isEn ? 'No payout requests awaiting approval.' : 'Tidak ada pengajuan penarikan dana yang menunggu persetujuan.')
+                          : (isEn ? 'No completed payout history yet.' : 'Belum ada riwayat penarikan dana yang selesai / disetujui.')}
                       </p>
                     </div>
                   ) : (
@@ -1048,7 +1096,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                 </span>
                                 <span>a.n. <strong className="text-gray-900">{req.accountHolder}</strong></span>
                                 <span className="text-gray-400 text-[11px]">
-                                  Diajukan: {new Date(req.requestedAt).toLocaleDateString('id-ID', {
+                                  {isEn ? 'Requested:' : 'Diajukan:'} {new Date(req.requestedAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', {
                                     day: 'numeric',
                                     month: 'short',
                                     year: 'numeric',
@@ -1061,7 +1109,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           {/* Nominal, Status, & Aksi */}
                           <div className="flex items-center justify-between md:justify-end gap-4 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-gray-100">
                             <div className="text-left md:text-right">
-                              <span className="text-[10px] font-medium text-gray-400 block">Nominal Penarikan</span>
+                              <span className="text-[10px] font-medium text-gray-400 block">
+                                {isEn ? 'Withdrawal Amount' : 'Nominal Penarikan'}
+                              </span>
                               <span className="text-base font-extrabold text-gray-900">
                                 {formatRupiah(req.amount)}
                               </span>
@@ -1074,7 +1124,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                   onClick={() => handleRejectWithdrawal(req.id, req.storeName)}
                                   className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-red-700 text-xs font-semibold transition cursor-pointer"
                                 >
-                                  Tolak
+                                  {isEn ? 'Reject' : 'Tolak'}
                                 </button>
                                 <button
                                   type="button"
@@ -1082,7 +1132,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                   className="px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5 active:scale-95"
                                 >
                                   <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Setujui (Paid)</span>
+                                  <span>{isEn ? 'Approve (Paid)' : 'Setujui (Paid)'}</span>
                                 </button>
                               </div>
                             ) : (
@@ -1092,11 +1142,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                     : 'bg-red-50 text-red-700 border-red-200'
                                 }`}>
-                                  {req.status === 'approved' ? 'SELESAI (PAID)' : 'DITOLAK'}
+                                  {req.status === 'approved' ? (isEn ? 'COMPLETED (PAID)' : 'SELESAI (PAID)') : (isEn ? 'REJECTED' : 'DITOLAK')}
                                 </span>
                                 {req.processedAt && (
                                   <span className="text-[10px] text-gray-400 block">
-                                    Disetujui: {new Date(req.processedAt).toLocaleDateString('id-ID', {
+                                    {isEn ? 'Approved:' : 'Disetujui:'} {new Date(req.processedAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', {
                                       day: 'numeric',
                                       month: 'short',
                                       year: 'numeric',
@@ -1161,11 +1211,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   <div className="flex items-center gap-2">
                     <Crown className="w-5 h-5 text-red-600" />
                     <h2 className="text-base font-bold text-gray-900">
-                      {language === 'en' ? 'Billing Plans Management' : 'Pengaturan Paket Langganan'}
+                      {isEn ? 'Billing Plans Management' : 'Pengaturan Paket Langganan'}
                     </h2>
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Kelola paket langganan toko, harga bulanan & tahunan, fitur, dan riwayat tagihan platform
+                    {isEn
+                      ? 'Manage store subscription tiers, monthly & yearly pricing, features, and platform billing history'
+                      : 'Kelola paket langganan toko, harga bulanan & tahunan, fitur, dan riwayat tagihan platform'}
                   </p>
                 </div>
 
@@ -1179,7 +1231,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
-                      Daftar Paket ({billingPlans.length})
+                      {isEn ? 'Plans List' : 'Daftar Paket'} ({billingPlans.length})
                     </button>
                     <button
                       onClick={() => setPlanSubTab('invoices')}
@@ -1189,7 +1241,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
-                      Riwayat Langganan ({billingSubscriptions.length})
+                      {isEn ? 'Subscription Invoices' : 'Riwayat Langganan'} ({billingSubscriptions.length})
                     </button>
                   </div>
 
@@ -1198,7 +1250,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     className="px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Tambah Paket Baru</span>
+                    <span>{isEn ? 'Add New Plan' : 'Tambah Paket Baru'}</span>
                   </button>
                 </div>
               </div>
@@ -1207,9 +1259,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-white p-3.5 rounded-lg border border-gray-200 shadow-xs flex items-center justify-between">
                   <div>
-                    <span className="text-[11px] font-medium text-gray-500">Total Paket Aktif</span>
+                    <span className="text-[11px] font-medium text-gray-500">
+                      {isEn ? 'Active Plans' : 'Total Paket Aktif'}
+                    </span>
                     <p className="text-lg font-bold text-gray-900 mt-0.5">
-                      {billingPlans.filter((p) => p.isActive).length} / {billingPlans.length} Paket
+                      {billingPlans.filter((p) => p.isActive).length} / {billingPlans.length} {isEn ? 'Plans' : 'Paket'}
                     </p>
                   </div>
                   <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -1219,9 +1273,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
                 <div className="bg-white p-3.5 rounded-lg border border-gray-200 shadow-xs flex items-center justify-between">
                   <div>
-                    <span className="text-[11px] font-medium text-gray-500">Toko Berlangganan Berbayar</span>
+                    <span className="text-[11px] font-medium text-gray-500">
+                      {isEn ? 'Paid Subscribed Stores' : 'Toko Berlangganan Berbayar'}
+                    </span>
                     <p className="text-lg font-bold text-red-600 mt-0.5">
-                      {stores.filter((s) => s.plan && s.plan !== 'free').length} Toko
+                      {stores.filter((s) => s.plan && s.plan !== 'free').length} {isEn ? 'Stores' : 'Toko'}
                     </p>
                   </div>
                   <div className="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
@@ -1231,7 +1287,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
                 <div className="bg-white p-3.5 rounded-lg border border-gray-200 shadow-xs flex items-center justify-between">
                   <div>
-                    <span className="text-[11px] font-medium text-gray-500">Total Pemasukan Paket</span>
+                    <span className="text-[11px] font-medium text-gray-500">
+                      {isEn ? 'Total Subscription Revenue' : 'Total Pemasukan Paket'}
+                    </span>
                     <p className="text-lg font-bold text-gray-900 mt-0.5">
                       {formatRupiah(billingSubscriptions.reduce((acc, sub) => acc + sub.amount, 0))}
                     </p>
@@ -1264,7 +1322,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                 </span>
                               </div>
                               <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-2 min-h-[32px]">
-                                {plan.tagline || 'Tidak ada deskripsi'}
+                                {plan.tagline || (isEn ? 'No description available' : 'Tidak ada deskripsi')}
                               </p>
                             </div>
 
@@ -1275,29 +1333,31 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                   : 'bg-gray-200 text-gray-600'
                               }`}
                             >
-                              {plan.isActive ? 'Aktif' : 'Nonaktif'}
+                              {plan.isActive ? (isEn ? 'Active' : 'Aktif') : (isEn ? 'Inactive' : 'Nonaktif')}
                             </span>
                           </div>
 
                           {/* Pricing Box */}
                           <div className="bg-gray-50 rounded-lg p-2.5 my-3 border border-gray-100 space-y-1">
                             <div className="flex items-baseline justify-between text-xs">
-                              <span className="text-gray-500">Bulanan:</span>
+                              <span className="text-gray-500">{isEn ? 'Monthly:' : 'Bulanan:'}</span>
                               <span className="font-extrabold text-gray-900">
-                                {plan.priceMonthly === 0 ? 'Gratis' : `${formatRupiah(plan.priceMonthly)} / bln`}
+                                {plan.priceMonthly === 0 ? (isEn ? 'Free' : 'Gratis') : `${formatRupiah(plan.priceMonthly)} ${isEn ? '/ mo' : '/ bln'}`}
                               </span>
                             </div>
                             <div className="flex items-baseline justify-between text-xs">
-                              <span className="text-gray-500">Tahunan:</span>
+                              <span className="text-gray-500">{isEn ? 'Yearly:' : 'Tahunan:'}</span>
                               <span className="font-extrabold text-gray-900">
-                                {plan.priceYearly === 0 ? 'Gratis' : `${formatRupiah(plan.priceYearly)} / thn`}
+                                {plan.priceYearly === 0 ? (isEn ? 'Free' : 'Gratis') : `${formatRupiah(plan.priceYearly)} ${isEn ? '/ yr' : '/ thn'}`}
                               </span>
                             </div>
                           </div>
 
                           {/* Features preview */}
                           <div className="space-y-1.5 text-xs text-gray-700 pb-3">
-                            <span className="text-[11px] font-semibold text-gray-400 block mb-1">Fitur Utama:</span>
+                            <span className="text-[11px] font-semibold text-gray-400 block mb-1">
+                              {isEn ? 'Key Features:' : 'Fitur Utama:'}
+                            </span>
                             {plan.features.slice(0, 5).map((feat, idx) => (
                               <div key={idx} className="flex items-center gap-1.5 text-[11px] leading-snug">
                                 <Check className="w-3 h-3 text-emerald-600 shrink-0" />
@@ -1306,7 +1366,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                             ))}
                             {plan.features.length > 5 && (
                               <p className="text-[10px] text-gray-400 pl-4.5">
-                                +{plan.features.length - 5} fitur lainnya
+                                +{plan.features.length - 5} {isEn ? 'other features' : 'fitur lainnya'}
                               </p>
                             )}
                           </div>
@@ -1316,14 +1376,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                         <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
                           <span className="text-xs font-semibold text-gray-600 flex items-center gap-1">
                             <StoreIcon className="w-3.5 h-3.5 text-gray-400" />
-                            <span>{storeCount} Toko</span>
+                            <span>{storeCount} {isEn ? 'Stores' : 'Toko'}</span>
                           </span>
 
                           <div className="flex items-center gap-1">
                             <button
                               type="button"
                               onClick={() => handleTogglePlanActive(plan.id)}
-                              title={plan.isActive ? 'Nonaktifkan paket' : 'Aktifkan paket'}
+                              title={plan.isActive ? (isEn ? 'Deactivate plan' : 'Nonaktifkan paket') : (isEn ? 'Activate plan' : 'Aktifkan paket')}
                               className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition cursor-pointer"
                             >
                               {plan.isActive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-emerald-600" />}
@@ -1332,7 +1392,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                             <button
                               type="button"
                               onClick={() => handleOpenEditPlan(plan)}
-                              title="Edit paket"
+                              title={isEn ? 'Edit plan' : 'Edit paket'}
                               className="p-1.5 rounded hover:bg-blue-50 text-blue-600 transition cursor-pointer"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -1341,7 +1401,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                             <button
                               type="button"
                               onClick={() => handleDeletePlan(plan.id, plan.name)}
-                              title="Hapus paket"
+                              title={isEn ? 'Delete plan' : 'Hapus paket'}
                               className="p-1.5 rounded hover:bg-red-50 text-red-600 transition cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1581,21 +1641,23 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <div>
                   <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                     <Truck className="w-4 h-4 text-red-600" />
-                    <span>Monitoring Pesanan & Pengiriman Global</span>
+                    <span>{isEn ? 'Global Orders & Shipping Monitoring' : 'Monitoring Pesanan & Pengiriman Global'}</span>
                   </h2>
                   <p className="text-[11px] text-gray-500 mt-0.5">
-                    Pantau seluruh transaksi pesanan, status kurir logistik, dan pelacakan nomor resi lintas toko secara real-time.
+                    {isEn
+                      ? 'Track all store order transactions, courier logistics statuses, and tracking numbers in real-time.'
+                      : 'Pantau seluruh transaksi pesanan, status kurir logistik, dan pelacakan nomor resi lintas toko secara real-time.'}
                   </p>
                 </div>
                 <button
                   onClick={() => {
                     loadData();
-                    showToast('Data pesanan dan pengiriman diperbarui');
+                    showToast(isEn ? 'Orders and shipping data refreshed' : 'Data pesanan dan pengiriman diperbarui');
                   }}
                   className="px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0"
                 >
                   <RefreshCw className="w-3.5 h-3.5 text-gray-500" />
-                  <span>Segarkan Data</span>
+                  <span>{isEn ? 'Refresh Data' : 'Segarkan Data'}</span>
                 </button>
               </div>
 
@@ -1604,25 +1666,25 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 {/* Total Orders */}
                 <div className="bg-white rounded-lg p-3.5 border border-gray-200 shadow-xs">
                   <div className="flex items-center justify-between text-gray-500 mb-1">
-                    <span className="text-[11px] font-medium">Total Pesanan</span>
+                    <span className="text-[11px] font-medium">{isEn ? 'Total Orders' : 'Total Pesanan'}</span>
                     <ShoppingBag className="w-3.5 h-3.5 text-gray-400" />
                   </div>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-xl font-bold text-gray-900">{totalOrdersCount}</span>
-                    <span className="text-[10px] text-gray-500">transaksi</span>
+                    <span className="text-[10px] text-gray-500">{isEn ? 'orders' : 'transaksi'}</span>
                   </div>
                 </div>
 
                 {/* Perlu Diproses / Siap Kirim */}
                 <div className="bg-white rounded-lg p-3.5 border border-gray-200 shadow-xs">
                   <div className="flex items-center justify-between text-gray-500 mb-1">
-                    <span className="text-[11px] font-medium">Diproses / Siap Kirim</span>
+                    <span className="text-[11px] font-medium">{isEn ? 'Processing / Ready to Ship' : 'Diproses / Siap Kirim'}</span>
                     <Clock className="w-3.5 h-3.5 text-amber-500" />
                   </div>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-xl font-bold text-amber-600">{processingOrdersCount}</span>
                     <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-1 py-0.2 rounded border border-amber-200">
-                      Antrean
+                      {isEn ? 'Queued' : 'Antrean'}
                     </span>
                   </div>
                 </div>
@@ -1630,13 +1692,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 {/* Sedang Dikirim */}
                 <div className="bg-white rounded-lg p-3.5 border border-gray-200 shadow-xs">
                   <div className="flex items-center justify-between text-gray-500 mb-1">
-                    <span className="text-[11px] font-medium">Dalam Pengiriman</span>
+                    <span className="text-[11px] font-medium">{isEn ? 'In Shipping' : 'Dalam Pengiriman'}</span>
                     <Truck className="w-3.5 h-3.5 text-blue-500" />
                   </div>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-xl font-bold text-blue-600">{shippedOrdersCount}</span>
                     <span className="text-[10px] font-medium text-blue-700 bg-blue-50 px-1 py-0.2 rounded border border-blue-200">
-                      Transit
+                      {isEn ? 'Transit' : 'Transit'}
                     </span>
                   </div>
                 </div>
@@ -1644,13 +1706,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 {/* Selesai / Terkirim */}
                 <div className="bg-white rounded-lg p-3.5 border border-gray-200 shadow-xs">
                   <div className="flex items-center justify-between text-gray-500 mb-1">
-                    <span className="text-[11px] font-medium">Terkirim / Selesai</span>
+                    <span className="text-[11px] font-medium">{isEn ? 'Delivered / Completed' : 'Terkirim / Selesai'}</span>
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                   </div>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-xl font-bold text-emerald-600">{completedOrdersCount}</span>
                     <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
-                      Sukses
+                      {isEn ? 'Success' : 'Sukses'}
                     </span>
                   </div>
                 </div>
@@ -1658,7 +1720,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 {/* Total Ongkir Platform */}
                 <div className="col-span-2 lg:col-span-1 bg-white rounded-lg p-3.5 border border-gray-200 shadow-xs">
                   <div className="flex items-center justify-between text-gray-500 mb-1">
-                    <span className="text-[11px] font-medium">Volume Ongkir</span>
+                    <span className="text-[11px] font-medium">{isEn ? 'Shipping Volume' : 'Volume Ongkir'}</span>
                     <Wallet className="w-3.5 h-3.5 text-purple-500" />
                   </div>
                   <div className="flex items-baseline gap-1.5">
@@ -1677,7 +1739,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="Cari no. order, resi, pembeli, toko..."
+                    placeholder={isEn ? 'Search order no, tracking, customer, store...' : 'Cari no. order, resi, pembeli, toko...'}
                     value={orderSearchQuery}
                     onChange={(e) => setOrderSearchQuery(e.target.value)}
                     className="w-full pl-9 pr-8 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600"
@@ -1685,7 +1747,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   {orderSearchQuery && (
                     <button
                       onClick={() => setOrderSearchQuery('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1698,23 +1760,23 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   <select
                     value={orderFilterStatus}
                     onChange={(e) => setOrderFilterStatus(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
+                    className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600 cursor-pointer"
                   >
-                    <option value="all">Semua Status Kirim</option>
-                    <option value="Baru">Pesanan Baru</option>
-                    <option value="Diproses">Diproses / Siap Kirim</option>
-                    <option value="Dikirim">Dalam Pengiriman</option>
-                    <option value="Selesai">Terkirim / Selesai</option>
-                    <option value="Dibatalkan">Dibatalkan</option>
+                    <option value="all">{isEn ? 'All Shipping Status' : 'Semua Status Kirim'}</option>
+                    <option value="Baru">{isEn ? 'New Orders' : 'Pesanan Baru'}</option>
+                    <option value="Diproses">{isEn ? 'Processing / Ready to Ship' : 'Diproses / Siap Kirim'}</option>
+                    <option value="Dikirim">{isEn ? 'In Shipping' : 'Dalam Pengiriman'}</option>
+                    <option value="Selesai">{isEn ? 'Delivered / Completed' : 'Terkirim / Selesai'}</option>
+                    <option value="Dibatalkan">{isEn ? 'Cancelled' : 'Dibatalkan'}</option>
                   </select>
 
                   {/* Kurir Filter */}
                   <select
                     value={orderFilterCourier}
                     onChange={(e) => setOrderFilterCourier(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
+                    className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600 cursor-pointer"
                   >
-                    <option value="all">Semua Kurir</option>
+                    <option value="all">{isEn ? 'All Couriers' : 'Semua Kurir'}</option>
                     <option value="J&T">J&T Express</option>
                     <option value="SiCepat">SiCepat</option>
                     <option value="JNE">JNE</option>
@@ -1725,9 +1787,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   <select
                     value={orderFilterStore}
                     onChange={(e) => setOrderFilterStore(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600 max-w-[150px] truncate"
+                    className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600 max-w-[150px] truncate cursor-pointer"
                   >
-                    <option value="all">Semua Toko</option>
+                    <option value="all">{isEn ? 'All Stores' : 'Semua Toko'}</option>
                     {stores.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
@@ -1746,7 +1808,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                       }}
                       className="px-2.5 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition font-medium cursor-pointer"
                     >
-                      Reset Filter
+                      {isEn ? 'Reset Filter' : 'Reset Filter'}
                     </button>
                   )}
                 </div>
@@ -1758,10 +1820,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <div className="p-3.5 border-b border-gray-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Daftar Logistik & Pengiriman Toko
+                      {isEn ? 'Store Logistics & Shipping List' : 'Daftar Logistik & Pengiriman Toko'}
                     </span>
                     <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[11px] font-semibold">
-                      {filteredAdminOrders.length} Ditemukan
+                      {filteredAdminOrders.length} {isEn ? 'Found' : 'Ditemukan'}
                     </span>
                   </div>
                 </div>
@@ -1770,14 +1832,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   <table className="w-full text-left text-xs">
                     <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-600 font-semibold">
                       <tr>
-                        <th className="py-2.5 px-3.5">Order & Tanggal</th>
-                        <th className="py-2.5 px-3.5">Toko Pengirim</th>
-                        <th className="py-2.5 px-3.5">Penerima & Alamat</th>
-                        <th className="py-2.5 px-3.5">Ekspedisi & Ongkir</th>
-                        <th className="py-2.5 px-3.5">Nomor Resi</th>
-                        <th className="py-2.5 px-3.5">Status Pengiriman</th>
-                        <th className="py-2.5 px-3.5">Total Belanja</th>
-                        <th className="py-2.5 px-3.5 text-right">Aksi</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Order & Date' : 'Order & Tanggal'}</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Origin Store' : 'Toko Pengirim'}</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Recipient & Address' : 'Penerima & Alamat'}</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Courier & Shipping Fee' : 'Ekspedisi & Ongkir'}</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Tracking Number' : 'Nomor Resi'}</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Shipping Status' : 'Status Pengiriman'}</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Grand Total' : 'Total Belanja'}</th>
+                        <th className="py-2.5 px-3.5 text-right">{isEn ? 'Action' : 'Aksi'}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -1785,16 +1847,16 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                         <tr>
                           <td colSpan={8} className="py-12 text-center text-gray-400">
                             <Package className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                            <p className="font-semibold text-gray-700">Tidak ada pesanan ditemukan</p>
+                            <p className="font-semibold text-gray-700">{isEn ? 'No orders found' : 'Tidak ada pesanan ditemukan'}</p>
                             <p className="text-[11px] text-gray-400 mt-0.5">
-                              Coba sesuaikan kata kunci pencarian atau filter status pengiriman.
+                              {isEn ? 'Try adjusting your search keywords or shipping status filters.' : 'Coba sesuaikan kata kunci pencarian atau filter status pengiriman.'}
                             </p>
                           </td>
                         </tr>
                       ) : (
                         filteredAdminOrders.map((ord) => {
                           const store = stores.find((s) => s.id === ord.storeId);
-                          const storeName = store?.name || 'Toko ' + ord.storeId;
+                          const storeName = store?.name || (isEn ? 'Store ' : 'Toko ') + ord.storeId;
                           const resi = ord.resiNumber || ord.trackingNumber;
 
                           return (
@@ -1806,7 +1868,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                   {ord.orderNumber || ord.id.slice(0, 8)}
                                 </div>
                                 <span className="text-[10px] text-gray-400 block mt-0.5">
-                                  {new Date(ord.createdAt).toLocaleDateString('id-ID', {
+                                  {new Date(ord.createdAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', {
                                     day: 'numeric',
                                     month: 'short',
                                     year: 'numeric',
@@ -1848,7 +1910,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                               <td className="py-3 px-3.5 align-top">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${getCourierBadgeStyle(ord.courier)}`}>
-                                    {ord.courier || 'Kurir'}
+                                    {ord.courier || (isEn ? 'Courier' : 'Kurir')}
                                   </span>
                                   {ord.courierService && (
                                     <span className="text-[10px] text-gray-500">
@@ -1871,7 +1933,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                       </span>
                                       <button
                                         onClick={() => handleCopyResi(resi)}
-                                        title="Salin Resi"
+                                        title={isEn ? 'Copy Tracking' : 'Salin Resi'}
                                         className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
                                       >
                                         <Copy className="w-3.5 h-3.5" />
@@ -1891,7 +1953,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                   </div>
                                 ) : (
                                   <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200">
-                                    Belum ada resi
+                                    {isEn ? 'No tracking yet' : 'Belum ada resi'}
                                   </span>
                                 )}
                               </td>
@@ -1899,12 +1961,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                               {/* Shipping & Payment Status */}
                               <td className="py-3 px-3.5 align-top">
                                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border block w-max ${getShippingStatusBadgeStyle(ord.shippingStatus)}`}>
-                                  {ord.shippingStatus === 'ready_to_ship' ? 'Siap Kirim' : ord.shippingStatus}
+                                  {getShippingStatusLabel(ord.shippingStatus)}
                                 </span>
                                 <span className={`text-[10px] font-medium block mt-1 ${
                                   ord.paymentStatus === 'Sudah Dibayar' ? 'text-emerald-700' : 'text-amber-600'
                                 }`}>
-                                  ● {ord.paymentStatus} ({ord.paymentMethod})
+                                  ● {getPaymentStatusLabel(ord.paymentStatus)} ({ord.paymentMethod})
                                 </span>
                               </td>
 
@@ -1914,7 +1976,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                   {formatRupiah(ord.grandTotal)}
                                 </div>
                                 <span className="text-[10px] text-gray-400">
-                                  {ord.items?.length || 1} item
+                                  {ord.items?.length || 1} {isEn ? 'item' : 'item'}
                                 </span>
                               </td>
 
@@ -1925,7 +1987,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                   className="px-2.5 py-1 rounded-md bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium text-xs shadow-2xs transition cursor-pointer flex items-center gap-1 ml-auto"
                                 >
                                   <Eye className="w-3.5 h-3.5 text-gray-500" />
-                                  <span>Detail</span>
+                                  <span>{isEn ? 'Detail' : 'Detail'}</span>
                                 </button>
                               </td>
 
@@ -1949,11 +2011,15 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <div className="p-3.5 border-b border-gray-100 flex items-center justify-between">
                   <div>
                     <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Riwayat Transaksi Global
+                      {isEn ? 'Global Transaction History' : 'Riwayat Transaksi Global'}
                     </h3>
-                    <p className="text-[11px] text-gray-400">Semua pesanan pembeli yang diproses melalui gateway</p>
+                    <p className="text-[11px] text-gray-400">
+                      {isEn ? 'All customer orders processed through payment gateways' : 'Semua pesanan pembeli yang diproses melalui gateway'}
+                    </p>
                   </div>
-                  <span className="text-xs font-semibold text-gray-800">{orders.length} Transaksi</span>
+                  <span className="text-xs font-semibold text-gray-800">
+                    {orders.length} {isEn ? 'Transactions' : 'Transaksi'}
+                  </span>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -1961,11 +2027,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-600 font-semibold">
                       <tr>
                         <th className="py-2.5 px-3.5">Order ID</th>
-                        <th className="py-2.5 px-3.5">Pembeli</th>
-                        <th className="py-2.5 px-3.5">Metode</th>
-                        <th className="py-2.5 px-3.5">Total Belanja</th>
-                        <th className="py-2.5 px-3.5">Fee Platform</th>
-                        <th className="py-2.5 px-3.5">Status</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Customer' : 'Pembeli'}</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Method' : 'Metode'}</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Grand Total' : 'Total Belanja'}</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Platform Fee' : 'Fee Platform'}</th>
+                        <th className="py-2.5 px-3.5">{isEn ? 'Status' : 'Status'}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -1995,7 +2061,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                                   : 'bg-amber-50 text-amber-700 border border-amber-100'
                               }`}>
-                                {ord.paymentStatus}
+                                {getPaymentStatusLabel(ord.paymentStatus)}
                               </span>
                             </td>
                           </tr>
@@ -2017,10 +2083,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <div>
                   <h2 className="text-xs font-bold text-gray-900 flex items-center gap-1.5 uppercase tracking-wider">
                     <SettingsIcon className="w-3.5 h-3.5 text-red-600" />
-                    <span>Pengaturan Kebijakan & Sistem Platform</span>
+                    <span>{isEn ? 'Platform Policy & System Settings' : 'Pengaturan Kebijakan & Sistem Platform'}</span>
                   </h2>
                   <p className="text-[11px] text-gray-500">
-                    Konfigurasi operasional komisi transaksi, batas payout, dan status sistem. Kunci API rahasia dikelola aman via file .env.
+                    {isEn ? 'Operational configuration for transaction fees, payout limits, and system status. Secret API keys are securely managed via .env.' : 'Konfigurasi operasional komisi transaksi, batas payout, dan status sistem. Kunci API rahasia dikelola aman via file .env.'}
                   </p>
                 </div>
                 <button
@@ -2028,7 +2094,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   className="px-3.5 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium text-xs shadow-xs transition cursor-pointer flex items-center gap-1"
                 >
                   <Check className="w-3.5 h-3.5" />
-                  <span>Simpan</span>
+                  <span>{isEn ? 'Save' : 'Simpan'}</span>
                 </button>
               </div>
 
@@ -2038,10 +2104,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   <div>
                     <h3 className="font-semibold text-xs text-gray-900 flex items-center gap-1.5">
                       <Key className="w-3.5 h-3.5 text-gray-500" />
-                      <span>Status Integrasi Kunci API Master (.env)</span>
+                      <span>{isEn ? 'Master API Key Integration Status (.env)' : 'Status Integrasi Kunci API Master (.env)'}</span>
                     </h3>
                     <p className="text-[11px] text-gray-500">
-                      Sesuai standar keamanan, seluruh Secret API Key dikonfigurasi melalui file environment backend (.env) agar tidak terekspos di browser.
+                      {isEn ? 'According to security standards, all Secret API Keys are configured via backend environment (.env) files so they are not exposed to the browser.' : 'Sesuai standar keamanan, seluruh Secret API Key dikonfigurasi melalui file environment backend (.env) agar tidak terekspos di browser.'}
                     </p>
                   </div>
                 </div>
@@ -2057,7 +2123,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                         <span className="font-semibold text-xs text-gray-900 block">Midtrans Payment</span>
                         <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Terhubung via .env
+                          {isEn ? 'Connected via .env' : 'Terhubung via .env'}
                         </span>
                       </div>
                     </div>
@@ -2067,7 +2133,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                       disabled={testingService === 'midtrans'}
                       className="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 shadow-xs"
                     >
-                      {testingService === 'midtrans' ? 'Menguji...' : 'Tes Ping'}
+                      {testingService === 'midtrans' ? (isEn ? 'Testing...' : 'Menguji...') : (isEn ? 'Ping Test' : 'Tes Ping')}
                     </button>
                   </div>
 
@@ -2078,10 +2144,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                         <Truck className="w-4 h-4" />
                       </div>
                       <div>
-                        <span className="font-semibold text-xs text-gray-900 block">Biteship Ekspedisi</span>
+                        <span className="font-semibold text-xs text-gray-900 block">{isEn ? 'Biteship Shipping' : 'Biteship Ekspedisi'}</span>
                         <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Terhubung via .env
+                          {isEn ? 'Connected via .env' : 'Terhubung via .env'}
                         </span>
                       </div>
                     </div>
@@ -2091,7 +2157,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                       disabled={testingService === 'biteship'}
                       className="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 shadow-xs"
                     >
-                      {testingService === 'biteship' ? 'Menguji...' : 'Tes Ping'}
+                      {testingService === 'biteship' ? (isEn ? 'Testing...' : 'Menguji...') : (isEn ? 'Ping Test' : 'Tes Ping')}
                     </button>
                   </div>
                 </div>
@@ -2101,15 +2167,15 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
                 <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs space-y-3">
                   <div className="pb-2 border-b border-gray-100">
-                    <h3 className="font-semibold text-xs text-gray-900">Komisi Platform & Kebijakan Payout</h3>
+                    <h3 className="font-semibold text-xs text-gray-900">{isEn ? 'Platform Commission & Payout Policy' : 'Komisi Platform & Kebijakan Payout'}</h3>
                     <p className="text-[11px] text-gray-500">
-                      Parameter tarif potongan dan ketentuan penarikan saldo toko merchant.
+                      {isEn ? 'Fee rate parameters and merchant store withdrawal terms.' : 'Parameter tarif potongan dan ketentuan penarikan saldo toko merchant.'}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="font-medium text-gray-700 block mb-1">Biaya Transaksi (%)</label>
+                      <label className="font-medium text-gray-700 block mb-1">{isEn ? 'Transaction Fee (%)' : 'Biaya Transaksi (%)'}</label>
                       <input
                         type="number"
                         step="0.1"
@@ -2127,7 +2193,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     </div>
 
                     <div>
-                      <label className="font-medium text-gray-700 block mb-1">Min. Tarik Saldo (Rp)</label>
+                      <label className="font-medium text-gray-700 block mb-1">{isEn ? 'Min. Payout (Rp)' : 'Min. Tarik Saldo (Rp)'}</label>
                       <input
                         type="number"
                         step="10000"
@@ -2144,7 +2210,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     </div>
 
                     <div>
-                      <label className="font-medium text-gray-700 block mb-1">Biaya Bank (Rp)</label>
+                      <label className="font-medium text-gray-700 block mb-1">{isEn ? 'Bank Fee (Rp)' : 'Biaya Bank (Rp)'}</label>
                       <input
                         type="number"
                         step="500"
@@ -2164,8 +2230,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   {/* Maintenance Switch */}
                   <div className="flex items-center justify-between p-2.5 rounded bg-gray-50 border border-gray-200 mt-2">
                     <div>
-                      <span className="font-medium text-gray-800 block">Mode Pemeliharaan (Maintenance Mode)</span>
-                      <span className="text-[11px] text-gray-500">Jika aktif, pengunjung dan merchant akan melihat layar pemeliharaan sistem.</span>
+                      <span className="font-medium text-gray-800 block">{isEn ? 'System Maintenance Mode' : 'Mode Pemeliharaan (Maintenance Mode)'}</span>
+                      <span className="text-[11px] text-gray-500">{isEn ? 'When active, visitors and merchants will see a system maintenance screen.' : 'Jika aktif, pengunjung dan merchant akan melihat layar pemeliharaan sistem.'}</span>
                     </div>
                     <input
                       type="checkbox"
@@ -2183,7 +2249,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     type="submit"
                     className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium text-xs shadow-xs transition cursor-pointer"
                   >
-                    Simpan Perubahan
+                    {isEn ? 'Save Changes' : 'Simpan Perubahan'}
                   </button>
                 </div>
               </form>
@@ -2207,10 +2273,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-gray-900 leading-tight">
-                    Detail Pesanan #{selectedAdminOrder.orderNumber || selectedAdminOrder.id}
+                    {isEn ? 'Order Details #' : 'Detail Pesanan #'}{selectedAdminOrder.orderNumber || selectedAdminOrder.id}
                   </h3>
                   <p className="text-[11px] text-gray-500">
-                    Waktu Transaksi: {new Date(selectedAdminOrder.createdAt).toLocaleString('id-ID')}
+                    {isEn ? 'Transaction Time: ' : 'Waktu Transaksi: '}{new Date(selectedAdminOrder.createdAt).toLocaleString(isEn ? 'en-US' : 'id-ID')}
                   </p>
                 </div>
               </div>
@@ -2228,7 +2294,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               <div className="flex items-center gap-2">
                 <StoreIcon className="w-4 h-4 text-gray-500" />
                 <span className="text-xs font-semibold text-gray-900">
-                  Toko: {stores.find((s) => s.id === selectedAdminOrder.storeId)?.name || selectedAdminOrder.storeId}
+                  {isEn ? 'Store: ' : 'Toko: '}{stores.find((s) => s.id === selectedAdminOrder.storeId)?.name || selectedAdminOrder.storeId}
                 </span>
                 <span className="text-[10px] text-gray-500 font-mono">
                   (ID: {selectedAdminOrder.storeId})
@@ -2236,14 +2302,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               </div>
               <div className="flex items-center gap-1.5">
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getShippingStatusBadgeStyle(selectedAdminOrder.shippingStatus)}`}>
-                  Kirim: {selectedAdminOrder.shippingStatus}
+                  {isEn ? 'Shipping: ' : 'Kirim: '}{getShippingStatusLabel(selectedAdminOrder.shippingStatus)}
                 </span>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                   selectedAdminOrder.paymentStatus === 'Sudah Dibayar'
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}>
-                  Bayar: {selectedAdminOrder.paymentStatus}
+                  {isEn ? 'Payment: ' : 'Bayar: '}{getPaymentStatusLabel(selectedAdminOrder.paymentStatus)}
                 </span>
               </div>
             </div>
@@ -2255,7 +2321,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               <div className="border border-gray-200 rounded-xl p-3.5 space-y-2">
                 <div className="flex items-center gap-1.5 text-gray-500 font-semibold uppercase tracking-wider text-[10px]">
                   <MapPin className="w-3.5 h-3.5 text-red-600" />
-                  <span>Informasi Penerima</span>
+                  <span>{isEn ? 'Recipient Information' : 'Informasi Penerima'}</span>
                 </div>
                 <div>
                   <p className="font-bold text-gray-900">{selectedAdminOrder.customerName}</p>
@@ -2273,18 +2339,18 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               <div className="border border-gray-200 rounded-xl p-3.5 space-y-2">
                 <div className="flex items-center gap-1.5 text-gray-500 font-semibold uppercase tracking-wider text-[10px]">
                   <Truck className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Ekspedisi & Nomor Resi</span>
+                  <span>{isEn ? 'Courier & Tracking' : 'Ekspedisi & Nomor Resi'}</span>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500 text-[11px]">Kurir & Layanan:</span>
+                    <span className="text-gray-500 text-[11px]">{isEn ? 'Courier & Service:' : 'Kurir & Layanan:'}</span>
                     <span className="font-bold text-gray-900">
-                      {selectedAdminOrder.courier || 'Kurir'} {selectedAdminOrder.courierService ? `(${selectedAdminOrder.courierService})` : ''}
+                      {selectedAdminOrder.courier || (isEn ? 'Courier' : 'Kurir')} {selectedAdminOrder.courierService ? `(${selectedAdminOrder.courierService})` : ''}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500 text-[11px]">Nomor Resi:</span>
+                    <span className="text-gray-500 text-[11px]">{isEn ? 'Tracking Number:' : 'Nomor Resi:'}</span>
                     <span className="font-mono font-bold text-gray-900">
                       {selectedAdminOrder.resiNumber || selectedAdminOrder.trackingNumber || '-'}
                     </span>
@@ -2297,7 +2363,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                         className="px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-medium flex items-center gap-1 cursor-pointer transition"
                       >
                         <Copy className="w-3 h-3" />
-                        <span>Salin Resi</span>
+                        <span>{isEn ? 'Copy Tracking' : 'Salin Resi'}</span>
                       </button>
                       {selectedAdminOrder.shippingLabelUrl && (
                         <a
@@ -2307,7 +2373,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           className="px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-medium flex items-center gap-1 transition"
                         >
                           <ExternalLink className="w-3 h-3" />
-                          <span>Buka Tracking Biteship</span>
+                          <span>{isEn ? 'Track on Biteship' : 'Buka Tracking Biteship'}</span>
                         </a>
                       )}
                     </div>
@@ -2320,8 +2386,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             {/* Items List */}
             <div className="border border-gray-200 rounded-xl overflow-hidden">
               <div className="bg-gray-50/80 px-3.5 py-2 border-b border-gray-200 font-semibold text-[11px] text-gray-600 flex items-center justify-between">
-                <span>Daftar Produk yang Dipesan</span>
-                <span>{selectedAdminOrder.items?.length || 0} Item</span>
+                <span>{isEn ? 'Ordered Products List' : 'Daftar Produk yang Dipesan'}</span>
+                <span>{selectedAdminOrder.items?.length || 0} {isEn ? 'Items' : 'Item'}</span>
               </div>
               <div className="divide-y divide-gray-100 max-h-48 overflow-y-auto">
                 {selectedAdminOrder.items && selectedAdminOrder.items.length > 0 ? (
@@ -2343,7 +2409,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           <p className="font-semibold text-gray-900 truncate">{item.productName}</p>
                           <p className="text-[11px] text-gray-500">
                             {item.quantity}x {formatRupiah(item.price)}
-                            {item.variantName ? ` • Varian: ${item.variantName}` : ''}
+                            {item.variantName ? ` • ${isEn ? 'Variant' : 'Varian'}: ${item.variantName}` : ''}
                           </p>
                         </div>
                       </div>
@@ -2353,7 +2419,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     </div>
                   ))
                 ) : (
-                  <div className="p-4 text-center text-gray-400 text-xs">Tidak ada data rincian item</div>
+                  <div className="p-4 text-center text-gray-400 text-xs">{isEn ? 'No item details available' : 'Tidak ada data rincian item'}</div>
                 )}
               </div>
             </div>
@@ -2361,25 +2427,25 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             {/* Financial Calculation breakdown */}
             <div className="bg-gray-50/70 border border-gray-200 rounded-xl p-3.5 space-y-1.5 text-xs">
               <div className="flex justify-between text-gray-600">
-                <span>Subtotal Produk</span>
+                <span>{isEn ? 'Product Subtotal' : 'Subtotal Produk'}</span>
                 <span>{formatRupiah(selectedAdminOrder.subtotal)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
-                <span>Biaya Pengiriman (Ongkir)</span>
+                <span>{isEn ? 'Shipping Fee (Ongkir)' : 'Biaya Pengiriman (Ongkir)'}</span>
                 <span>{formatRupiah(selectedAdminOrder.shippingCost || 0)}</span>
               </div>
               {selectedAdminOrder.discount ? (
                 <div className="flex justify-between text-emerald-600">
-                  <span>Diskon Promo</span>
+                  <span>{isEn ? 'Promo Discount' : 'Diskon Promo'}</span>
                   <span>-{formatRupiah(selectedAdminOrder.discount)}</span>
                 </div>
               ) : null}
               <div className="pt-2 border-t border-gray-200 flex justify-between items-center font-bold text-sm text-gray-900">
-                <span>Grand Total Pembayaran</span>
+                <span>{isEn ? 'Grand Total Payment' : 'Grand Total Pembayaran'}</span>
                 <span className="text-red-600">{formatRupiah(selectedAdminOrder.grandTotal)}</span>
               </div>
               <div className="pt-1 text-[11px] text-gray-500 flex justify-between">
-                <span>Metode Pembayaran</span>
+                <span>{isEn ? 'Payment Method' : 'Metode Pembayaran'}</span>
                 <span className="font-semibold text-gray-800">{selectedAdminOrder.paymentMethod}</span>
               </div>
             </div>
@@ -2391,7 +2457,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 onClick={() => setSelectedAdminOrder(null)}
                 className="px-4 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-white font-semibold text-xs transition cursor-pointer"
               >
-                Tutup
+                {isEn ? 'Close' : 'Tutup'}
               </button>
             </div>
 
