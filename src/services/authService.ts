@@ -2,6 +2,7 @@ import { User, Merchant, Store } from '../types';
 import { initialStores } from './mockData';
 import { storeService } from './storeService';
 import { productService } from './productService';
+import { supabase } from './supabaseClient';
 
 const AUTH_USER_KEY = 'microcms_auth_user';
 const AUTH_MERCHANT_KEY = 'microcms_auth_merchant';
@@ -124,6 +125,27 @@ class AuthService {
     }
   }
 
+  async checkAccountExists(email: string): Promise<boolean> {
+    const cleanEmail = email.toLowerCase().trim();
+    const accounts = this.getStoredAccounts();
+    if (accounts.some((a) => a.email.toLowerCase() === cleanEmail)) {
+      return true;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+      if (!error && data) {
+        return true;
+      }
+    } catch (e) {
+      console.warn('Supabase check account error:', e);
+    }
+    return false;
+  }
+
   async login(email: string, _password?: string): Promise<{ user: User; merchant: Merchant; store: Store }> {
     await new Promise((res) => setTimeout(res, 350));
 
@@ -136,6 +158,32 @@ class AuthService {
     const accounts = this.getStoredAccounts();
 
     let account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
+
+    // Also check Supabase DB
+    let dbUser: any = null;
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+      if (!error && data) {
+        dbUser = data;
+      }
+    } catch (e) {
+      console.warn('Supabase query user warning:', e);
+    }
+
+    // If account doesn't exist in local accounts AND not in Supabase DB:
+    if (!account && !dbUser) {
+      throw new Error('Akun belum terdaftar. Silakan lakukan registrasi terlebih dahulu.');
+    }
+
+    // Password validation:
+    const expectedPassword = account?.password || dbUser?.password_hash;
+    if (_password && _password !== 'google-auth' && expectedPassword && _password !== expectedPassword) {
+      throw new Error('Kata sandi yang Anda masukkan salah.');
+    }
 
     let user: User;
     let merchant: Merchant;
@@ -164,7 +212,7 @@ class AuthService {
             description: 'Katalog online dan pemesanan praktis via WhatsApp.',
             logoUrl: user.avatarUrl,
             bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-            phoneWhatsApp: user.phoneWhatsApp || '081234567890',
+            phoneWhatsApp: user.phoneWhatsApp || '',
             city: 'Indonesia',
             address: 'Pusat Usaha UMKM',
             category: 'Bisnis UMKM',
@@ -173,27 +221,28 @@ class AuthService {
         }
       }
     } else {
-      // Create new account entry for this email
-      const userId = `usr_${cleanEmail.replace(/[^a-z0-9]/g, '_')}`;
-      const userName = cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-      const storeName = `Toko ${userName}`;
-      const storeSlug = `toko-${cleanEmail.split('@')[0].replace(/[^a-z0-9]/g, '')}`;
+      // Account exists in Supabase DB but not yet in localStorage
+      const userId = dbUser.id || `usr_${cleanEmail.replace(/[^a-z0-9]/g, '_')}`;
+      const userName = dbUser.name || cleanEmail.split('@')[0];
+      const userRole = (dbUser.role as 'admin' | 'merchant' | 'buyer') || 'merchant';
 
       user = {
         id: userId,
         name: userName,
         email: cleanEmail,
-        phoneWhatsApp: '081234567890',
+        phoneWhatsApp: dbUser.phone || '',
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1F4072&color=FFD358&bold=true`,
-        role: 'merchant',
-        createdAt: new Date().toISOString(),
+        role: userRole,
+        createdAt: dbUser.created_at || new Date().toISOString(),
       };
 
-      // Check if user already had a store previously
+      // Check stores for this user
       let userStores = await storeService.getStoresForUser(userId);
       if (userStores.length > 0) {
         storeToUse = userStores[0];
       } else {
+        const storeName = `Toko ${userName}`;
+        const storeSlug = `toko-${cleanEmail.split('@')[0].replace(/[^a-z0-9]/g, '')}`;
         storeToUse = await storeService.createStore({
           merchantId: userId,
           name: storeName,
@@ -202,7 +251,7 @@ class AuthService {
           description: 'Pusat belanja online praktis dan cepat.',
           logoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(storeName)}&background=FFD358&color=002A45&bold=true`,
           bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-          phoneWhatsApp: '081234567890',
+          phoneWhatsApp: dbUser.phone || '',
           city: 'Indonesia',
           address: 'Pusat Usaha UMKM',
           category: 'Bisnis UMKM',
@@ -221,7 +270,7 @@ class AuthService {
       const newAccount: StoredAccount = {
         id: userId,
         email: cleanEmail,
-        password: _password || 'password123',
+        password: dbUser.password_hash || _password || 'password123',
         user,
         merchant,
         storeId: storeToUse.id,
@@ -247,10 +296,9 @@ class AuthService {
     storeSlug: string;
     businessCategory: string;
     password: string;
+    autoLogin?: boolean;
   }): Promise<{ user: User; merchant: Merchant; store: Store }> {
     await new Promise((res) => setTimeout(res, 450));
-
-    localStorage.removeItem('microcms_explicit_logout');
 
     const cleanEmail = params.email.toLowerCase().trim();
     const userId = `usr_${cleanEmail.replace(/[^a-z0-9]/g, '_')}`;
@@ -303,6 +351,50 @@ class AuthService {
       isVerified: true,
     };
 
+    // 1. Sync User to Supabase Database
+    const { error: dbUserErr } = await supabase.from('users').upsert({
+      id: userId,
+      email: cleanEmail,
+      password_hash: params.password,
+      name: params.fullName.trim(),
+      phone: params.phoneWhatsApp.trim() || null,
+      role: 'merchant',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    if (dbUserErr) {
+      console.error('❌ Supabase users upsert error:', dbUserErr);
+      throw new Error(`Gagal menyimpan akun ke database: ${dbUserErr.message}`);
+    }
+    console.log('✅ User berhasil disimpan ke database Supabase:', cleanEmail);
+
+    // 2. Sync Store to Supabase Database
+    const { error: dbStoreErr } = await supabase.from('stores').upsert({
+      id: store.id,
+      user_id: userId,
+      name: store.name,
+      slug: store.slug,
+      tagline: store.tagline,
+      description: store.description,
+      logo_url: store.logoUrl,
+      banner_url: store.bannerUrl,
+      phone_whatsapp: store.phoneWhatsApp,
+      city: store.city || 'Indonesia',
+      category: store.category,
+      plan: 'starter',
+      balance: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    if (dbStoreErr) {
+      console.error('❌ Supabase stores upsert error:', dbStoreErr);
+      throw new Error(`Gagal menyimpan toko ke database: ${dbStoreErr.message}`);
+    }
+    console.log('✅ Toko berhasil disimpan ke database Supabase:', store.name);
+
+
     // Save newly created store to storeService
     await storeService.createStore(store);
 
@@ -354,11 +446,14 @@ class AuthService {
     }
     this.saveAccounts(accounts);
 
-    // Set Active Session
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-    localStorage.setItem(AUTH_MERCHANT_KEY, JSON.stringify(merchant));
-    localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(store));
-    localStorage.setItem(ACTIVE_STORE_ID_KEY, store.id);
+    // Set Active Session ONLY if autoLogin is true
+    if (params.autoLogin) {
+      localStorage.removeItem('microcms_explicit_logout');
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      localStorage.setItem(AUTH_MERCHANT_KEY, JSON.stringify(merchant));
+      localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(store));
+      localStorage.setItem(ACTIVE_STORE_ID_KEY, store.id);
+    }
 
     return { user, merchant, store };
   }
@@ -370,8 +465,6 @@ class AuthService {
     avatarUrl?: string;
   }): Promise<{ user: User; merchant: Merchant; store: Store }> {
     await new Promise((res) => setTimeout(res, 450));
-
-    localStorage.removeItem('microcms_explicit_logout');
 
     const cleanEmail = params.googleEmail.toLowerCase().trim();
     if (!cleanEmail || !cleanEmail.includes('@')) {
@@ -401,7 +494,7 @@ class AuthService {
       id: userId,
       name: finalName,
       email: cleanEmail,
-      phoneWhatsApp: '081234567890',
+      phoneWhatsApp: '',
       avatarUrl: userAvatar,
       role: 'merchant',
       createdAt: new Date().toISOString(),
@@ -416,7 +509,7 @@ class AuthService {
       description: 'Pusat belanja produk berkualitas dengan pemesanan mudah dan cepat.',
       logoUrl: userAvatar,
       bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-      phoneWhatsApp: '081234567890',
+      phoneWhatsApp: '',
       city: 'Indonesia',
       address: 'Pusat Usaha UMKM',
       category: 'Bisnis UMKM',
@@ -437,6 +530,38 @@ class AuthService {
       plan: 'starter',
       isVerified: true,
     };
+
+    // Sync to Supabase Database
+    try {
+      await supabase.from('users').upsert({
+        id: userId,
+        email: cleanEmail,
+        password_hash: 'google-oauth-managed',
+        name: finalName,
+        phone: null,
+        role: 'merchant',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      await supabase.from('stores').upsert({
+        id: store.id,
+        user_id: userId,
+        name: finalStoreName,
+        slug: storeSlug,
+        tagline: `Toko Resmi ${finalStoreName}`,
+        description: store.description,
+        phone_whatsapp: '',
+        category: 'Bisnis UMKM',
+        city: 'Indonesia',
+        address: 'Pusat Usaha UMKM',
+        plan: 'starter',
+        balance: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.warn('Supabase Google auth insert warning:', e);
+    }
 
     // Save newly created store to storeService
     await storeService.createStore(store);
@@ -482,13 +607,9 @@ class AuthService {
     accounts.push(newAccountRecord);
     this.saveAccounts(accounts);
 
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-    localStorage.setItem(AUTH_MERCHANT_KEY, JSON.stringify(merchant));
-    localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(store));
-    localStorage.setItem(ACTIVE_STORE_ID_KEY, store.id);
-
     return { user, merchant, store };
   }
+
 
   async forgotPassword(email: string): Promise<boolean> {
     await new Promise((res) => setTimeout(res, 400));
@@ -511,10 +632,35 @@ class AuthService {
     localStorage.setItem('microcms_explicit_logout', 'true');
   }
 
+  async syncLocalAccountsToSupabase(): Promise<void> {
+    const accounts = this.getStoredAccounts();
+    for (const acc of accounts) {
+      if (acc.email === 'admin@kroombox.id' || acc.email === 'andhika@gmail.com') continue;
+      try {
+        const { error: uErr } = await supabase.from('users').upsert({
+          id: acc.id,
+          email: acc.email,
+          password_hash: acc.password || 'password123',
+          name: acc.user.name,
+          phone: acc.user.phoneWhatsApp || null,
+          role: acc.user.role || 'merchant',
+          created_at: acc.user.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        if (!uErr) {
+          console.log('🔄 Synced local user to Supabase:', acc.email);
+        }
+      } catch (e) {
+        console.warn('Sync local user warning:', e);
+      }
+    }
+  }
+
   updateActiveStore(store: Store): void {
     localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(store));
     localStorage.setItem(ACTIVE_STORE_ID_KEY, store.id);
   }
 }
+
 
 export const authService = new AuthService();

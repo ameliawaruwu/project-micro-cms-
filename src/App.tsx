@@ -104,6 +104,18 @@ export default function App() {
 
   // State: Authentication View
   const [authView, setAuthView] = useState<'login' | 'register' | 'forgot_password' | null>(null);
+  const [registeredEmailForLogin, setRegisteredEmailForLogin] = useState<string>('');
+
+  useEffect(() => {
+    const handleNavLogin = (e: any) => {
+      setAuthView('login');
+      if (e.detail?.email) {
+        setRegisteredEmailForLogin(e.detail.email);
+      }
+    };
+    window.addEventListener('auth_nav_login', handleNavLogin);
+    return () => window.removeEventListener('auth_nav_login', handleNavLogin);
+  }, []);
 
   // State: Navigation & Multi-tenant Store
   const [stores, setStores] = useState<Store[]>([]);
@@ -606,11 +618,12 @@ export default function App() {
     return (
       <>
         <RegisterPage
-          onSuccess={() => {
-            setAuthView(null);
-            setViewMode('merchant-desktop');
-            loadData();
-            addToast('Akun Toko UMKM baru berhasil dibuat!');
+          onSuccess={(registeredEmail) => {
+            if (registeredEmail) {
+              setRegisteredEmailForLogin(registeredEmail);
+            }
+            setAuthView('login');
+            addToast('Akun berhasil didaftarkan! Silakan masuk dengan kata sandi Anda.', 'success');
           }}
           onNavigateLogin={() => setAuthView('login')}
           onNavigateLanding={() => {
@@ -627,6 +640,7 @@ export default function App() {
     return (
       <>
         <LoginPage
+          initialEmail={registeredEmailForLogin}
           onSuccess={() => {
             setAuthView(null);
             const currentUser = authService.getCurrentUser().user;
@@ -855,7 +869,7 @@ export default function App() {
             description: '',
             logoUrl: user.avatarUrl,
             bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-            phoneWhatsApp: user.phoneWhatsApp || '081234567890',
+            phoneWhatsApp: user.phoneWhatsApp || '',
             city: 'Indonesia',
             category: 'Kuliner & Minuman',
             currency: 'IDR',
@@ -870,7 +884,7 @@ export default function App() {
                 description: data.storeUpdates.tagline || 'Pusat belanja online praktis dan cepat.',
                 logoUrl: user.avatarUrl || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=200&auto=format&fit=crop&q=80',
                 bannerUrl: data.storeUpdates.bannerUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-                phoneWhatsApp: data.storeUpdates.phoneWhatsApp || user.phoneWhatsApp || '081234567890',
+                phoneWhatsApp: data.storeUpdates.phoneWhatsApp || user.phoneWhatsApp || '',
                 city: 'Indonesia',
                 category: data.storeUpdates.category || 'Kuliner & Minuman',
                 currency: 'IDR',

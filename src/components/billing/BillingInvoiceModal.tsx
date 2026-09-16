@@ -1,7 +1,6 @@
-import React from 'react';
-import { X, Printer, Shield, CheckCircle2, QrCode } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Printer, Copy, Check, Mail, Globe } from 'lucide-react';
 import { Store as StoreType } from '../../types';
-import { formatRupiah } from '../../utils/formatters';
 
 export interface InvoiceRecord {
   id: string;
@@ -25,32 +24,70 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const [copied, setCopied] = useState(false);
+
   if (!isOpen || !invoice) return null;
 
   const handlePrint = () => {
     window.print();
   };
 
+  const handleCopyInvoiceNumber = () => {
+    navigator.clipboard.writeText(invoice.id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Format currency matching the reference (Rp430.000 without space)
+  const formatInvoiceCurrency = (val: number) => {
+    return `Rp${val.toLocaleString('id-ID')}`;
+  };
+
+  // Format current print timestamp e.g. "31 Agustus 2026 11:38 WIB"
+  const printTimestamp = `${invoice.date} 11:38 WIB`;
+
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-xs overflow-y-auto font-sans">
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-[#E5E0DD] my-4 animate-in fade-in zoom-in-95 duration-200 text-left">
-        
-        {/* Top Controls (Hidden when printing) */}
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#E5E0DD] print:hidden">
+    <div
+      id="invoice-modal-overlay"
+      className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-5 bg-gray-950/70 backdrop-blur-xs overflow-y-auto font-sans"
+    >
+      {/* Modal Card Wrapper */}
+      <div
+        id="invoice-modal-card"
+        className="bg-white rounded-2xl max-w-2xl w-full p-0 shadow-2xl border border-gray-200 my-4 animate-in fade-in zoom-in-95 duration-150 text-left overflow-hidden flex flex-col"
+      >
+        {/* Top Control Bar (Hidden on Print) */}
+        <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-b border-gray-200 print:hidden">
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-red-50 text-red-700">
-              <Shield className="w-4 h-4" />
-            </span>
-            <span className="font-bold text-sm text-[#1F1F1F]">
-              Bukti Pembayaran & Invoice Resmi
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span className="font-bold text-xs text-gray-700">
+              Preview Invoice Resmi — {invoice.id}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={handleCopyInvoiceNumber}
+              className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-emerald-700 font-bold">Tersalin!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-gray-500" />
+                  <span>Salin No. Inv</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
               onClick={handlePrint}
-              className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              className="px-4 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Cetak / Unduh PDF</span>
@@ -59,173 +96,262 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl text-[#777777] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] transition cursor-pointer"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
               title="Tutup"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Printable Document Area */}
-        <div className="space-y-6 text-[#1F1F1F]">
+        {/* ================= Printable Document Area ================= */}
+        <div
+          id="invoice-printable-area"
+          className="p-6 sm:p-8 bg-white text-gray-900 space-y-4 sm:space-y-5"
+        >
           
-          {/* Header & Paid Stamp */}
-          <div className="flex items-start justify-between gap-4 pb-5 border-b-2 border-gray-100">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-7 h-7 rounded-md bg-[#66000E] flex items-center justify-center text-white font-black text-xs shadow-xs">
-                  K
-                </div>
-                <span className="text-lg font-black tracking-tight text-[#1F1F1F]">KROOMBOX</span>
-              </div>
-              <p className="text-[11px] text-[#706866] leading-tight">
-                Platform Micro-CMS & Solusi Toko Online UMKM
-              </p>
-              <p className="text-[10px] text-[#706866] mt-0.5">
-                PT Kroombox Teknologi Indonesia • billing@kroombox.id
+          {/* Header: Clean Brand Text on Left (No Logo), INVOICE title on Right */}
+          <div className="flex items-start justify-between">
+            {/* Brand Typography */}
+            <div className="space-y-0.5">
+              <h2 className="text-2xl font-black text-[#66000E] tracking-tight uppercase">KROOMSTORE</h2>
+              <p className="text-[11px] font-semibold text-gray-500">
+                Platform Micro-CMS & Toko Online UMKM
               </p>
             </div>
 
-            {/* Paid Badge Stamp */}
-            <div className="border-2 border-emerald-600/80 bg-emerald-50/50 rounded-2xl px-4 py-2 text-center shrink-0">
-              <div className="flex items-center justify-center gap-1 text-emerald-700 font-black text-xs uppercase tracking-wider">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>LUNAS / PAID</span>
-              </div>
-              <span className="text-[10px] font-bold text-emerald-700 block mt-0.5">
-                VERIFIED MIDTRANS
-              </span>
+            {/* Invoice Title & Number */}
+            <div className="text-right space-y-1">
+              <h1 className="text-xl sm:text-2xl font-black text-black tracking-[0.25em] uppercase">
+                INVOICE
+              </h1>
+              <p className="font-bold text-xs sm:text-sm text-[#66000E] tracking-wide">
+                {invoice.id}
+              </p>
             </div>
           </div>
 
-          {/* Invoice Info Grid */}
-          <div className="grid grid-cols-2 gap-4 text-xs">
+          {/* DITERBITKAN ATAS NAMA & UNTUK */}
+          <div className="grid grid-cols-2 gap-6 text-[11px] leading-relaxed pt-2">
+            
+            {/* Left: Diterbitkan Atas Nama */}
             <div>
-              <span className="text-[10px] font-bold uppercase text-[#706866] block mb-1">
-                Diterbitkan Kepada:
+              <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider block mb-1.5">
+                DITERBITKAN ATAS NAMA
               </span>
-              <p className="font-bold text-sm text-[#1F1F1F]">{store.name}</p>
-              <p className="text-[#706866] mt-0.5">kroombox.id/{store.slug}</p>
-              <p className="text-[#706866] mt-0.5">WhatsApp: {store.phoneWhatsApp}</p>
-              <p className="text-[#706866]">{store.city || 'Indonesia'}</p>
+              <table className="text-[11px]">
+                <tbody>
+                  <tr>
+                    <td className="font-medium text-gray-600 pr-3 py-0.5">Penjual</td>
+                    <td className="font-medium text-gray-600 pr-2 py-0.5">:</td>
+                    <td className="font-bold text-gray-900 py-0.5">KroomStore</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <div className="text-right sm:text-right space-y-1">
-              <div>
-                <span className="text-[10px] font-bold uppercase text-[#706866] block">
-                  Nomor Invoice:
-                </span>
-                <span className="font-mono font-bold text-sm text-[#66000E]">
-                  {invoice.id}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-bold uppercase text-[#706866] block">
-                  Tanggal Pembayaran:
-                </span>
-                <span className="font-semibold text-gray-800">
-                  {invoice.date}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-bold uppercase text-[#706866] block">
-                  Metode Pembayaran:
-                </span>
-                <span className="font-semibold text-gray-800">
-                  Payment Gateway (Otomatis)
-                </span>
-              </div>
+            {/* Right: Untuk */}
+            <div>
+              <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider block mb-1.5">
+                UNTUK
+              </span>
+              <table className="text-[11px]">
+                <tbody>
+                  <tr>
+                    <td className="font-medium text-gray-600 pr-3 py-0.5 whitespace-nowrap">Pembeli</td>
+                    <td className="font-medium text-gray-600 pr-2 py-0.5">:</td>
+                    <td className="font-bold text-gray-900 py-0.5 uppercase">
+                      {store.name}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="font-medium text-gray-600 pr-3 py-0.5 whitespace-nowrap">Tanggal Pembelian</td>
+                    <td className="font-medium text-gray-600 pr-2 py-0.5">:</td>
+                    <td className="font-bold text-gray-900 py-0.5">
+                      {invoice.date}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+
           </div>
 
-          {/* Line Item Table */}
-          <div className="border border-gray-200 rounded-2xl overflow-hidden">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-[#FAF7F7] border-b border-gray-200 text-[#706866] font-bold uppercase text-[10px]">
-                <tr>
-                  <th className="py-2.5 px-4">Deskripsi Layanan</th>
-                  <th className="py-2.5 px-3">Siklus</th>
-                  <th className="py-2.5 px-3 text-right">Harga Satuan</th>
-                  <th className="py-2.5 px-4 text-right">Subtotal</th>
+          {/* Solid Separator Line (Micro CMS Brand Color) */}
+          <div className="h-[2.5px] bg-[#66000E] w-full" />
+
+          {/* Table Products */}
+          <div className="overflow-hidden">
+            <table className="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr className="bg-[#66000E] text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
+                  <th className="py-2.5 px-3 text-left">INFO PRODUK</th>
+                  <th className="py-2.5 px-2 text-center w-14">QTY</th>
+                  <th className="py-2.5 px-3 text-right">HARGA SATUAN</th>
+                  <th className="py-2.5 px-3 text-right">TOTAL HARGA</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 <tr>
-                  <td className="py-3 px-4">
-                    <p className="font-bold text-[#1F1F1F] text-xs">
-                      Langganan Platform Kroombox — {invoice.plan}
+                  <td className="py-4 px-3 align-top">
+                    <p className="font-bold text-gray-900 text-xs leading-snug">
+                      Langganan Platform KroomStore — {invoice.plan} ({invoice.cycle}) + Domain Toko ({store.slug ? `kroomstore.id/${store.slug}` : 'kroomstore.id'})
                     </p>
-                    <p className="text-[10px] text-[#706866] mt-0.5">
-                      Akses penuh fitur jualan online, integrasi pembayaran otomatis, dan domain etalase toko.
+                    <p className="text-[10.5px] text-gray-500 mt-0.5">
+                      Akses fitur jualan online, katalog produk, payment gateway otomatis, dan domain etalase toko
                     </p>
                   </td>
-                  <td className="py-3 px-3 font-semibold text-[#706866]">
-                    {invoice.cycle}
+                  <td className="py-4 px-2 text-center font-semibold text-gray-800 align-top">
+                    1
                   </td>
-                  <td className="py-3 px-3 text-right font-semibold">
-                    {formatRupiah(invoice.amount)}
+                  <td className="py-4 px-3 text-right font-semibold text-gray-800 align-top">
+                    {formatInvoiceCurrency(invoice.amount)}
                   </td>
-                  <td className="py-3 px-4 text-right font-bold text-[#1F1F1F]">
-                    {formatRupiah(invoice.amount)}
+                  <td className="py-4 px-3 text-right font-bold text-gray-900 align-top">
+                    {formatInvoiceCurrency(invoice.amount)}
                   </td>
                 </tr>
               </tbody>
             </table>
+          </div>
 
-            {/* Total Calculation */}
-            <div className="bg-[#FAF7F7]/60 p-4 border-t border-gray-200 space-y-1.5 text-xs">
-              <div className="flex justify-between text-[#706866]">
-                <span>Subtotal Layanan</span>
-                <span className="font-medium text-[#1F1F1F]">{formatRupiah(invoice.amount)}</span>
+          {/* Summary Calculation Area (Right Aligned) */}
+          <div className="flex justify-end pt-2">
+            <div className="w-72 space-y-1.5 text-xs">
+              <div className="flex justify-between items-center text-gray-600 text-[11px]">
+                <span className="uppercase font-semibold text-[10px] tracking-wide">
+                  TOTAL HARGA (1 BARANG)
+                </span>
+                <span className="font-bold text-gray-900">
+                  {formatInvoiceCurrency(invoice.amount)}
+                </span>
               </div>
-              <div className="flex justify-between text-[#706866]">
-                <span>PPN (11%) & Biaya Admin Gateway</span>
-                <span className="font-medium text-emerald-700">Rp 0 (Ditanggung Kroombox)</span>
+
+              <div className="flex justify-between items-center text-gray-600 text-[11px]">
+                <span className="uppercase font-semibold text-[10px] tracking-wide">
+                  TOTAL BELANJA
+                </span>
+                <span className="font-bold text-gray-900">
+                  {formatInvoiceCurrency(invoice.amount)}
+                </span>
               </div>
-              <div className="pt-2 border-t border-gray-200 flex justify-between items-center text-sm font-black">
-                <span className="text-[#1F1F1F]">Total Dibayar</span>
-                <span className="text-base text-[#66000E] font-black">{formatRupiah(invoice.amount)}</span>
+
+              <div className="border-t border-gray-300 my-1.5" />
+
+              <div className="flex justify-between items-center pt-0.5">
+                <span className="uppercase font-bold text-xs text-gray-900 tracking-wide">
+                  TOTAL TAGIHAN
+                </span>
+                <span className="font-bold text-base text-[#66000E]">
+                  {formatInvoiceCurrency(invoice.amount)}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Footer & QR Verification */}
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-16 p-1 bg-white border border-gray-200 rounded-xl flex items-center justify-center shrink-0">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(`INVOICE-VERIFIED:${invoice.id}:${store.slug}:${invoice.amount}`)}&color=66000e`}
-                  alt="Invoice Verification QR"
-                  className="w-full h-full object-contain"
-                  referrerPolicy="no-referrer"
-                />
+          {/* Footer: HUBUNGI KAMI on Left, Dicetak pada on Right */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 text-[10.5px] pt-4 border-t border-gray-200">
+            
+            {/* Contact Info */}
+            <div className="space-y-1">
+              <span className="font-bold text-gray-500 uppercase tracking-wider text-[9.5px] block">
+                HUBUNGI KAMI
+              </span>
+              <div className="flex items-center gap-1.5 text-gray-700 font-medium">
+                <Mail className="w-3.5 h-3.5 text-[#66000E]" />
+                <span>support@kroomstore.id</span>
               </div>
-              <div className="text-[10px] text-[#706866] leading-tight">
-                <p className="font-bold text-[#1F1F1F] flex items-center gap-1">
-                  <QrCode className="w-3 h-3 text-[#66000E]" />
-                  <span>Verifikasi Elektronik Valid</span>
-                </p>
-                <p className="mt-0.5">
-                  Scan QR code untuk memeriksa keaslian bukti pembayaran ini di server Kroombox.
-                </p>
-                <p className="text-[9px] text-[#999999] mt-0.5">
-                  Dokumen ini diterbitkan sah secara digital tanpa memerlukan tanda tangan basah.
-                </p>
+              <div className="flex items-center gap-1.5 text-gray-700 font-medium">
+                <Globe className="w-3.5 h-3.5 text-[#66000E]" />
+                <span>kroomstore.id</span>
               </div>
             </div>
 
-            <div className="text-right shrink-0">
-              <span className="text-[10px] text-[#706866] block">Otorisasi Finansial</span>
-              <span className="text-xs font-bold text-[#66000E]">Kroombox Automated Billing</span>
+            {/* Print Date */}
+            <div className="text-left sm:text-right">
+              <span className="italic text-[10px] text-gray-400">
+                Dicetak pada: {printTimestamp}
+              </span>
             </div>
+
           </div>
 
         </div>
 
       </div>
+
+      {/* Print CSS to fill page properly with standard margins (no giant whitespace) */}
+      <style>{`
+        @page {
+          size: auto;
+          margin: 12mm 15mm 12mm 15mm;
+        }
+        @media print {
+          html, body {
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            overflow: visible !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          body * {
+            visibility: hidden;
+          }
+          #invoice-printable-area,
+          #invoice-printable-area * {
+            visibility: visible;
+          }
+          #invoice-modal-overlay {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+            overflow: visible !important;
+            z-index: 99999 !important;
+          }
+          #invoice-modal-card {
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            background: transparent !important;
+            overflow: visible !important;
+          }
+          #invoice-printable-area {
+            position: relative !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
+            background: #ffffff !important;
+            border: none !important;
+            box-shadow: none !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          .print\\:hidden {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
