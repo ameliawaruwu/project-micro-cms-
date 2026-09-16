@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, ArrowUpRight } from 'lucide-react';
+import { Wallet, ArrowUpRight, RefreshCw, LayoutDashboard } from 'lucide-react';
 import { Store as StoreType, Order, Product, MerchantTab } from '../../types';
 import { MetricCard } from '../../components/dashboard/MetricCard';
 import { SalesAnalyticsSection } from '../../components/dashboard/SalesAnalyticsSection';
@@ -7,6 +7,7 @@ import { StockAlertCard } from '../../components/dashboard/StockAlertCard';
 import { RecentOrdersSection } from '../../components/dashboard/RecentOrdersSection';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { formatRupiah } from '../../utils/formatters';
+import { useDashboardData } from '../../hooks/useDashboardData';
 
 interface DashboardPageProps {
   store: StoreType;
@@ -29,51 +30,72 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onSelectOrder,
 }) => {
   const { t } = useLanguage();
-  const pendingOrdersCount = orders.filter((o) => o.shippingStatus === 'Baru' || o.shippingStatus === 'Diproses').length;
-  const activeProductsCount = products.filter((p) => p.status === 'Tersedia' || p.status === 'Hampir Habis').length;
-  const lowStockProductsCount = products.filter((p) => p.stock <= 5).length;
-  const totalSalesToday = orders
-    .filter((o) => o.paymentStatus === 'Sudah Dibayar')
-    .reduce((sum, o) => sum + o.grandTotal, 0);
+
+  // Coordinated Single Source of Truth Hook for Dashboard Metrics
+  const {
+    balance,
+    incomingOrdersCount,
+    todaySales,
+    totalProductsCount,
+    lowStockCount,
+    lowStockProducts,
+    recentOrders,
+    refresh,
+    isLoading,
+  } = useDashboardData({
+    store,
+    orders,
+    products,
+  });
 
   return (
     <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-300 font-sans pb-24 lg:pb-6 relative text-left">
       
-      {/* 1. Lively Store Greeting & Real-Time Status Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 pb-2 border-b border-[#E5E0DD]/60">
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl sm:text-2xl font-semibold text-[#1F1F1F] tracking-tight">
-            {t('dashboard_title', 'Dashboard')}
-          </h1>
-          {/* Live pulsating store status */}
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-medium shadow-2xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>{t('live_store_active', 'Toko Online Aktif')}</span>
+      {/* 1. Store Greeting & Real-Time Status Header - Billing Plan Model */}
+      <div className="pb-3 border-b border-[#E5E0DD] flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+              <LayoutDashboard className="w-6 h-6 text-[#66000E]" />
+              <span>{t('dashboard_title', 'Dashboard')}</span>
+            </h1>
+            {/* Live store badge */}
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-medium shadow-2xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>{t('live_store_active', 'Toko Online Aktif')}</span>
+            </div>
           </div>
+          <p className="text-xs text-[#706866] mt-0.5">
+            Ringkasan performa penjualan, pesanan masuk, dan katalog produk toko Anda
+          </p>
         </div>
 
-        {/* Real-time date & quick glance badge */}
+        {/* Real-time date & quick refresh trigger */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="px-3 py-1.5 rounded-xl bg-white border border-[#E5E0DD] text-[#706866] text-xs font-medium shadow-2xs flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#66000E]"></span>
-            <span>{t('auto_update', 'Update Otomatis')}</span>
-          </div>
+          <button
+            onClick={refresh}
+            title="Muat ulang metrik real-time"
+            className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50/50 border border-[#E5E0DD] hover:border-rose-200 text-[#706866] hover:text-[#800000] text-xs font-medium shadow-2xs flex items-center gap-2 transition cursor-pointer active:scale-95"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#800000] ${isLoading ? 'animate-spin' : ''}`} />
+            <span>{t('auto_update', 'Sinkronisasi Real-time')}</span>
+          </button>
         </div>
       </div>
 
       {/* 2. Quick Store Wallet Banner */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8DDDE] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#66000E]/30 transition">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8DDDE] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#800000]/30 transition">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold shadow-2xs shrink-0">
-            <Wallet className="w-5 h-5" />
+          <div className="w-11 h-11 rounded-2xl bg-rose-50 text-[#800000] border border-rose-200/60 flex items-center justify-center font-semibold shadow-2xs shrink-0">
+            <Wallet className="w-5 h-5 stroke-[1.8]" />
           </div>
           <div>
-            <span className="text-xs text-[#706866] font-medium block">Saldo Toko Aktif (Siap Ditarik)</span>
-            <p className="text-xl sm:text-2xl font-black text-[#66000E] tracking-tight">
-              {formatRupiah(store.balance || 0)}
+            <span className="text-xs text-[#706866] font-normal block">Saldo Toko Aktif (Siap Ditarik)</span>
+            <p className="text-xl sm:text-2xl font-semibold text-[#800000] tracking-tight">
+              {formatRupiah(balance)}
             </p>
           </div>
         </div>
@@ -82,7 +104,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           {onOpenWithdraw && (
             <button
               onClick={onOpenWithdraw}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#800000] hover:bg-[#7A0C0C] text-white text-xs font-medium transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
             >
               <ArrowUpRight className="w-4 h-4" />
               <span>Dompet & Tarik Dana</span>
@@ -91,53 +113,57 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </div>
 
-      {/* 3. 4 Core Metric Cards */}
+      {/* 3. 4 Core Metric Cards (Unified Live Single Source of Truth) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Metric 1: Orders (Priority 1) */}
+        {/* Metric 1: Incoming Orders */}
         <MetricCard
           type="orders"
-          value={pendingOrdersCount || 8}
+          value={incomingOrdersCount}
           subtitle="Segera kemas & kirimkan resi"
           onClick={() => onNavigateTab('pesanan')}
           actionLabel="Lihat Pesanan"
         />
 
-        {/* Metric 2: Sales (Priority 2) */}
+        {/* Metric 2: Today's Revenue */}
         <MetricCard
           type="sales"
-          value={totalSalesToday || 8638000}
+          value={todaySales}
           subtitle="Total omset transaksi sukses"
           onClick={() => onNavigateTab('pesanan')}
           actionLabel="Lihat Rincian"
         />
 
-        {/* Metric 3: Products */}
+        {/* Metric 3: Total Products in Catalog */}
         <MetricCard
           type="products"
-          value={activeProductsCount || products.length}
-          subtitle="Barang siap dibeli pelanggan"
+          value={totalProductsCount}
+          subtitle="Barang aktif di etalase"
           onClick={() => onNavigateTab('produk')}
           actionLabel="Lihat Katalog"
         />
 
-        {/* Metric 4: Stock Alert */}
+        {/* Metric 4: Low Stock Alert (Unified Count) */}
         <MetricCard
           type="stock_alert"
-          value={lowStockProductsCount || 3}
-          subtitle="Segera lakukan restock barang"
+          value={lowStockCount}
+          subtitle={lowStockCount > 0 ? 'Segera lakukan restock barang' : 'Semua stok produk aman'}
           onClick={() => onNavigateTab('produk')}
           actionLabel="Cek Stok"
         />
       </div>
 
-      {/* 3. Sales Analytics Chart Section */}
-      <SalesAnalyticsSection storeId={store.id} onNavigateTab={onNavigateTab} />
+      {/* 4. Sales Analytics Chart Section */}
+      <SalesAnalyticsSection
+        storeId={store.id}
+        orders={orders}
+        onNavigateTab={onNavigateTab}
+      />
 
-      {/* 4. Two Column Section: Recent Orders & Low Stock Alert */}
+      {/* 5. Two Column Section: Recent Orders & Low Stock Alert */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <RecentOrdersSection
-            orders={orders}
+            orders={recentOrders.length > 0 ? recentOrders : orders}
             onViewAllOrders={() => onNavigateTab('pesanan')}
             onSelectOrder={onSelectOrder}
           />
@@ -146,6 +172,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div className="lg:col-span-1">
           <StockAlertCard
             products={products}
+            lowStockItems={lowStockProducts}
+            count={lowStockCount}
             onManageStock={() => onNavigateTab('produk')}
           />
         </div>
