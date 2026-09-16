@@ -111,38 +111,51 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
   // --- 3. BOLD BRAND THEME ---
   if (themeId && themeId.includes('bold')) {
     return (
-      <footer className="bg-[#000000] text-white pt-24 pb-12 border-t-8 border-[#FF0000]">
-        <div className="mx-auto px-6 max-w-7xl">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-20">
-            <div>
-              <h2 className="text-6xl md:text-8xl font-black uppercase text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-500 tracking-tighter mb-6" style={{ fontFamily: themeSettings.fontFamily }}>
-                JOIN THE REVOLUTION
+
+      <footer className="bg-black text-white pt-24 pb-12 border-t-8 border-white relative overflow-hidden">
+        {/* Giant background text */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[25vw] font-black text-white/5 select-none pointer-events-none whitespace-nowrap">
+          BOLD
+        </div>
+
+        <div className="mx-auto px-6 max-w-7xl relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
+            <div className="lg:col-span-2">
+              <h2 className="text-7xl font-black mb-6 uppercase tracking-tighter" style={{ fontFamily: themeSettings.fontFamily }}>
+                BOLD
               </h2>
-              {settings.showNewsletter && (
-                <form className="flex flex-col sm:flex-row gap-4 mt-8">
-                  <input type="email" placeholder="ENTER YOUR EMAIL" className="flex-1 px-6 py-4 bg-white text-black font-bold uppercase tracking-widest border-4 border-white focus:outline-none focus:border-[#FF0000]" />
-                  <button type="button" className="px-10 py-4 bg-[#FF0000] text-white font-black uppercase tracking-widest border-4 border-[#FF0000] hover:bg-transparent hover:text-[#FF0000] transition-colors">SUBSCRIBE</button>
-                </form>
+              <div className="w-24 h-4 bg-[#FF0000] mb-8"></div>
+              {settings.showSocials && (
+                <div className="flex gap-4">
+                  <a href="#" className="w-14 h-14 bg-white text-black flex items-center justify-center hover:bg-[#FF0000] hover:text-white hover:-rotate-12 transition-all"><Facebook className="w-6 h-6 stroke-[3]" /></a>
+                  <a href="#" className="w-14 h-14 bg-white text-black flex items-center justify-center hover:bg-[#FF0000] hover:text-white hover:rotate-12 transition-all"><Twitter className="w-6 h-6 stroke-[3]" /></a>
+                  <a href="#" className="w-14 h-14 bg-white text-black flex items-center justify-center hover:bg-[#FF0000] hover:text-white hover:-rotate-12 transition-all"><Instagram className="w-6 h-6 stroke-[3]" /></a>
+                </div>
               )}
             </div>
             
-            <div className="flex flex-col items-start lg:items-end justify-end">
-              <nav className="flex flex-col items-start lg:items-end gap-4 mb-12">
-                <Link to="/" className="text-2xl font-black uppercase hover:text-[#FF0000] transition-colors">HOME</Link>
-                <Link to="/products" className="text-2xl font-black uppercase hover:text-[#FF0000] transition-colors">SHOP ALL</Link>
-                <Link to="/about" className="text-2xl font-black uppercase hover:text-[#FF0000] transition-colors">ABOUT US</Link>
-              </nav>
+            <div>
+              <h4 className="text-xl font-black uppercase mb-8 tracking-widest text-[#FF0000]">Explore</h4>
+              <ul className="space-y-4">
+                <li><Link to="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Shop All</Link></li>
+                <li><Link to="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Trending</Link></li>
+                <li><Link to="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Sale</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-xl font-black uppercase mb-8 tracking-widest text-[#FF0000]">Join Us</h4>
+              <div className="flex bg-white text-black border-4 border-black group focus-within:border-white shadow-[8px_8px_0_rgba(255,0,0,1)]">
+                <input type="email" placeholder="EMAIL" className="w-full bg-transparent px-4 py-4 text-black font-bold uppercase outline-none placeholder-black/50" />
+                <button className="bg-black text-white px-6 font-black uppercase hover:bg-[#FF0000] transition-colors">
+                  &rarr;
+                </button>
+              </div>
             </div>
           </div>
-
-          <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t-4 border-gray-900 gap-8">
-            <p className="text-lg font-bold text-gray-500 uppercase tracking-widest">{settings.copyrightText}</p>
-            {settings.showSocials && (
-              <div className="flex space-x-6">
-                <a href="#" className="text-white hover:text-[#FF0000] transition-colors hover:scale-125 transform duration-300"><Instagram className="w-8 h-8 stroke-[2.5]" /></a>
-                <a href="#" className="text-white hover:text-[#FF0000] transition-colors hover:scale-125 transform duration-300"><Twitter className="w-8 h-8 stroke-[2.5]" /></a>
-              </div>
-            )}
+          
+          <div className="text-center md:text-left flex flex-col md:flex-row justify-between items-center text-sm font-bold uppercase tracking-widest pt-8 border-t-4 border-white/20">
+            <p>{settings.copyrightText}</p>
           </div>
         </div>
       </footer>
@@ -152,45 +165,56 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
   // --- 4. LIFESTYLE STORE THEME ---
   if (themeId && themeId.includes('lifestyle')) {
     return (
-      <footer className="bg-[#FDFBF7] pt-24 pb-12 border-t border-gray-200">
-        <div className="mx-auto px-6 lg:px-12 max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20 text-[#3E3E3E]">
-            <div className="md:col-span-2">
-              <h3 className="text-2xl font-semibold tracking-tight mb-6" style={{ fontFamily: themeSettings.fontFamily }}>Lifestyle.</h3>
-              <p className="text-gray-500 font-light leading-relaxed max-w-sm mb-8">
-                Bringing thoughtful design and curated essentials into your everyday life.
-              </p>
-              {settings.showSocials && (
-                <div className="flex space-x-4 text-[#D9A05B]">
-                  <a href="#" className="p-2 border border-[#D9A05B]/30 rounded-full hover:bg-[#D9A05B] hover:text-white transition-colors"><Instagram className="w-4 h-4" /></a>
-                  <a href="#" className="p-2 border border-[#D9A05B]/30 rounded-full hover:bg-[#D9A05B] hover:text-white transition-colors"><Facebook className="w-4 h-4" /></a>
-                </div>
-              )}
-            </div>
+      <footer className="bg-[#3E3E3E] text-white py-24 relative overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-[#D9A05B]/20 rounded-full blur-[100px]"></div>
 
-            <div>
-              <h4 className="font-medium mb-6">Explore</h4>
-              <ul className="space-y-4 font-light text-gray-500">
-                <li><Link to="/" className="hover:text-[#D9A05B] transition-colors">Home</Link></li>
-                <li><Link to="/products" className="hover:text-[#D9A05B] transition-colors">Shop</Link></li>
-                <li><Link to="/about" className="hover:text-[#D9A05B] transition-colors">Our Story</Link></li>
-                <li><Link to="/about" className="hover:text-[#D9A05B] transition-colors">Journal</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-medium mb-6">Support</h4>
-              <ul className="space-y-4 font-light text-gray-500">
-                <li><Link to="/about" className="hover:text-[#D9A05B] transition-colors">FAQ</Link></li>
-                <li><Link to="/about" className="hover:text-[#D9A05B] transition-colors">Shipping</Link></li>
-                <li><Link to="/about" className="hover:text-[#D9A05B] transition-colors">Returns</Link></li>
-                <li><Link to="/about" className="hover:text-[#D9A05B] transition-colors">Contact</Link></li>
-              </ul>
+        <div className="mx-auto px-6 max-w-6xl relative z-10">
+          <div className="flex flex-col items-center text-center mb-24">
+            <h3 className="text-3xl md:text-5xl font-medium mb-6 tracking-tight" style={{ fontFamily: themeSettings.fontFamily }}>
+              Join Our Lifestyle.
+            </h3>
+            <p className="text-white/70 mb-10 font-light max-w-lg">Get 10% off your first order when you sign up for our newsletter.</p>
+            <div className="w-full max-w-md flex bg-white/10 rounded-full overflow-hidden border border-white/20 focus-within:border-[#D9A05B] transition-colors p-1">
+              <input type="email" placeholder="Email address" className="w-full bg-transparent px-6 py-3 text-white outline-none font-light" />
+              <button className="bg-[#D9A05B] text-white px-8 py-3 rounded-full font-medium hover:bg-[#c28e4e] transition-colors">
+                Subscribe
+              </button>
             </div>
           </div>
 
-          <div className="text-center pt-8 border-t border-gray-200">
-            <p className="text-sm text-gray-400 font-light">{settings.copyrightText}</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 border-t border-white/10 pt-16 mb-16">
+            <div className="col-span-2 md:col-span-1">
+              <h2 className="text-2xl font-semibold tracking-tight mb-6" style={{ fontFamily: themeSettings.fontFamily }}>
+                Lifestyle<span className="text-[#D9A05B]">.</span>
+              </h2>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-6">Shop</h4>
+              <ul className="space-y-4 font-light text-white/70">
+                <li><Link to="/products" className="hover:text-[#D9A05B] transition-colors">All Products</Link></li>
+                <li><Link to="/products" className="hover:text-[#D9A05B] transition-colors">New Arrivals</Link></li>
+                <li><Link to="/products" className="hover:text-[#D9A05B] transition-colors">Collections</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-6">About</h4>
+              <ul className="space-y-4 font-light text-white/70">
+                <li><Link to="/" className="hover:text-[#D9A05B] transition-colors">Our Story</Link></li>
+                <li><Link to="/" className="hover:text-[#D9A05B] transition-colors">Journal</Link></li>
+                <li><Link to="/" className="hover:text-[#D9A05B] transition-colors">Contact</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-6">Social</h4>
+              <div className="flex gap-4">
+                <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#D9A05B] transition-colors"><Instagram className="w-4 h-4" /></a>
+                <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#D9A05B] transition-colors"><Facebook className="w-4 h-4" /></a>
+              </div>
+            </div>
+          </div>
+          
+          <div className="text-center md:text-left text-white/50 text-sm font-light">
+            <p>{settings.copyrightText}</p>
           </div>
         </div>
       </footer>
@@ -199,49 +223,43 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
 
   // --- 5. MINIMALIST CLEAN THEME (Default) ---
   return (
-    <footer className="bg-white pt-24 pb-12 border-t border-gray-100">
+    <footer className="bg-gray-50 pt-20 pb-10 border-t border-gray-200">
       <div className={`mx-auto px-6 lg:px-12 ${themeSettings.containerWidth}`}>
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-20">
-          
-          <div className="md:col-span-5 lg:col-span-4">
-            <h3 className="text-xl font-light text-[#1A1A1A] tracking-tight mb-6">Minimal.</h3>
-            {settings.showNewsletter && (
-              <div className="max-w-xs">
-                <p className="text-sm text-gray-500 font-light mb-6">Subscribe to receive updates, access to exclusive deals, and more.</p>
-                <div className="relative">
-                  <input type="email" placeholder="Email address" className="w-full border-b border-gray-300 py-2 pl-0 pr-10 text-sm focus:outline-none focus:border-[#1A1A1A] transition-colors" />
-                  <button className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#1A1A1A] transition-colors">&rarr;</button>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+          <div className="col-span-1">
+            <Link to="/" className="font-light text-2xl tracking-tighter" style={{ fontFamily: themeSettings.fontFamily }}>
+              Minimal.
+            </Link>
+          </div>
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-6">Shop</h4>
+            <ul className="space-y-3">
+              <li><Link to="/products" className="text-sm text-gray-500 hover:text-black transition-colors">All Products</Link></li>
+              <li><Link to="/products" className="text-sm text-gray-500 hover:text-black transition-colors">New Arrivals</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-6">Support</h4>
+            <ul className="space-y-3">
+              <li><Link to="/" className="text-sm text-gray-500 hover:text-black transition-colors">FAQ</Link></li>
+              <li><Link to="/" className="text-sm text-gray-500 hover:text-black transition-colors">Contact</Link></li>
+            </ul>
+          </div>
+          <div>
+            {settings.showSocials && (
+              <>
+                <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-6">Social</h4>
+                <div className="flex gap-4">
+                  <a href="#" className="text-gray-500 hover:text-black transition-colors"><Instagram className="w-5 h-5" /></a>
+                  <a href="#" className="text-gray-500 hover:text-black transition-colors"><Facebook className="w-5 h-5" /></a>
+                  <a href="#" className="text-gray-500 hover:text-black transition-colors"><Twitter className="w-5 h-5" /></a>
                 </div>
-              </div>
+              </>
             )}
           </div>
-
-          <div className="md:col-span-7 lg:col-span-8 flex flex-wrap gap-12 md:justify-end">
-            {settings.columns.map((col, idx) => (
-              <div key={idx} className="min-w-[120px]">
-                <h4 className="text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.2em] mb-6">{col.title}</h4>
-                <ul className="space-y-4">
-                  {col.links.map((link, lIdx) => (
-                    <li key={lIdx}>
-                      <Link to={link.url} className="text-sm text-gray-500 font-light hover:text-[#1A1A1A] transition-colors">{link.label}</Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
         </div>
-
-        <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-gray-100 gap-6">
-          {settings.showSocials && (
-            <div className="flex space-x-6 text-[#1A1A1A]">
-              <a href="#" className="hover:opacity-50 transition-opacity"><Instagram className="w-4 h-4" /></a>
-              <a href="#" className="hover:opacity-50 transition-opacity"><Twitter className="w-4 h-4" /></a>
-              <a href="#" className="hover:opacity-50 transition-opacity"><Facebook className="w-4 h-4" /></a>
-            </div>
-          )}
-          <p className="text-[11px] text-gray-400 uppercase tracking-wider">{settings.copyrightText}</p>
+        <div className="text-center md:text-left text-xs text-gray-400 font-light tracking-wide pt-8 border-t border-gray-200">
+          {settings.copyrightText}
         </div>
       </div>
     </footer>

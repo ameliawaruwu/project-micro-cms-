@@ -67,6 +67,30 @@
 
 
 @layer utilities {
+  @keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+  @keyframes marquee-reverse {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  @keyframes fadeUp {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scaleX {
+    0% { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+  }
+
+  .animate-marquee {
+    animation: marquee 20s linear infinite;
+  }
+  .animate-marquee-reverse {
+    animation: marquee-reverse 20s linear infinite;
+  }
+
   @keyframes float-subtle {
     0%, 100% {
       transform: translateY(0px);

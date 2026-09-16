@@ -35,10 +35,27 @@ import { DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
 import { InlineEditableText } from './InlineEditableText';
 import { InlineEditableImage } from './InlineEditableImage';
 import { InlineEditableButton } from './InlineEditableButton';
+import { ThemeId, ThemeRegistry } from '../../themes/ThemeRegistry';
+import { ThemeSectionRenderer } from './ThemeSectionRenderer';
+
+const hasThemeComponent = (themeId: ThemeId, sectionId: string) => {
+  const theme = ThemeRegistry[themeId];
+  if (!theme) return false;
+  const specialMap: Record<string, string> = {
+    'header': 'Navbar',
+    'hero_banner': 'Hero',
+    'footer': 'Footer',
+    'featured_products': 'FeaturedProducts',
+    'product_grid': 'FeaturedProducts',
+  };
+  const toPascalCase = (str: string) => str.replace(/[-_](.)/g, (_, c) => c.toUpperCase()).replace(/^(.)/, (_, c) => c.toUpperCase());
+  const componentName = specialMap[sectionId] || toPascalCase(sectionId);
+  return !!theme[componentName];
+};
 
 interface CenterPreviewCanvasProps {
   store: Store;
-  products: Product[];
+  products: any[];
   sections: StoreSectionConfig[];
   selectedSectionKey: string | null;
   onSelectSection: (key: string) => void;
@@ -53,6 +70,9 @@ interface CenterPreviewCanvasProps {
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   readonly?: boolean;
+  activeThemeId?: ThemeId;
+  activePage?: string;
+  onPageChange?: (page: string) => void;
 }
 
 export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
@@ -72,6 +92,9 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
   isFullscreen = false,
   onToggleFullscreen,
   readonly = false,
+  activeThemeId,
+  activePage = 'homepage',
+  onPageChange,
 }) => {
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('Semua');
   const [searchPreviewQuery, setSearchPreviewQuery] = useState<string>('');
@@ -84,24 +107,27 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
   const visibleSections = sections.filter((s) => s.isVisible);
 
   // Derive unique categories from product list
-  const categories = ['Semua', ...Array.from(new Set(products.map((p) => p.category)))];
+  const categories = ['Semua', ...Array.from(new Set(products.map((p: any) => p.category || p.categoryName).filter(Boolean)))];
 
-  const filteredProducts = products.filter((p) => {
-    const matchCat = activeCategoryFilter === 'Semua' || p.category === activeCategoryFilter;
+  const filteredProducts = products.filter((p: any) => {
+    const pCategory = p.category || p.categoryName;
+    const matchCat = activeCategoryFilter === 'Semua' || pCategory === activeCategoryFilter;
     const matchSearch =
       p.name.toLowerCase().includes(searchPreviewQuery.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchPreviewQuery.toLowerCase());
+      (p.description || '').toLowerCase().includes(searchPreviewQuery.toLowerCase());
     return matchCat && matchSearch;
   });
 
   const handleNavClick = (href: string) => {
-    let targetSectionId = '';
-    if (href === '#beranda') targetSectionId = 'hero_banner';
-    else if (href === '#katalog') targetSectionId = 'product_grid';
-    else if (href === '#promo') targetSectionId = 'promo_banner';
-    else if (href === '#keunggulan') targetSectionId = 'store_benefits';
-    else if (href === '#ulasan') targetSectionId = 'testimonials';
-    else if (href === '#kontak') targetSectionId = 'store_info';
+    let targetSectionId: string | null = null;
+    if (href === '#beranda' || href === '/' || href === '/beranda') {
+      if (onPageChange) onPageChange('homepage');
+      targetSectionId = 'hero_banner';
+    } else {
+      // Anything else (Katalog, Promo, Kontak), redirect to catalog to show products as fallback
+      if (onPageChange) onPageChange('katalog');
+      targetSectionId = 'product_grid';
+    }
   
     if (targetSectionId) {
       const targetSection = sections.find(s => s.id === targetSectionId && s.isVisible);
@@ -116,6 +142,19 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     }
   };
 
+  // Intercept anchor clicks to fake routing
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    // Find the closest anchor tag
+    const target = e.target as HTMLElement;
+    const anchor = target.closest('a');
+    
+    if (anchor && anchor.getAttribute('href')) {
+      e.preventDefault();
+      const href = anchor.getAttribute('href')!;
+      handleNavClick(href);
+    }
+  };
+
   const handleUpdateOption = (sectionKey: string, partial: Partial<StoreSectionOptions>) => {
     if (onUpdateSectionOptions) {
       onUpdateSectionOptions(sectionKey, partial);
@@ -125,8 +164,84 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
   // If readonly, we skip the device chrome and just render the content container
   if (readonly) {
     return (
-      <div className="w-full h-full bg-white relative">
-        {visibleSections.length === 0 ? (
+      <div className="flex-1 w-full bg-white relative pb-32" onClick={handleCanvasClick}>
+        {activePage === 'katalog' ? (
+           <div className="flex flex-col min-h-full pb-32">
+             <div className="pointer-events-none">
+               {ThemeRegistry[activeThemeId!]?.Navbar && React.createElement(ThemeRegistry[activeThemeId!].Navbar)}
+             </div>
+             
+             <div className="flex-1 py-16 px-6">
+               <div className="max-w-7xl mx-auto">
+                 <h1 className="text-3xl font-bold mb-8 text-center text-gray-900">Katalog Produk</h1>
+                 
+                 {/* Search & Categories */}
+                 <div className="mb-12 space-y-6">
+                   <div className="max-w-md mx-auto relative">
+                     <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                     <input
+                       type="text"
+                       value={searchPreviewQuery}
+                       onChange={(e) => setSearchPreviewQuery(e.target.value)}
+                       placeholder="Cari produk..."
+                       className="w-full pl-12 pr-4 py-3 rounded-full bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black"
+                     />
+                   </div>
+                   
+                   <div className="flex flex-wrap justify-center gap-2">
+                     {categories.map((cat) => (
+                       <button
+                         key={cat}
+                         onClick={() => setActiveCategoryFilter(cat)}
+                         className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                           activeCategoryFilter === cat 
+                             ? 'bg-black text-white' 
+                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                         }`}
+                       >
+                         {cat}
+                       </button>
+                     ))}
+                   </div>
+                 </div>
+
+                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                   {filteredProducts.map(p => {
+                     // Normalize product to handle both Product and CmsProduct structures
+                     const normalizedProduct = {
+                       ...p,
+                       image: p.imageUrl || (p as any).image,
+                       categoryName: p.category || (p as any).categoryName,
+                     };
+                     
+                     const CustomCard = ThemeRegistry[activeThemeId!]?.ProductCard;
+                     
+                     return (
+                       <div key={p.id} className="pointer-events-none">
+                         {CustomCard ? (
+                           <CustomCard product={normalizedProduct} />
+                         ) : (
+                           /* Generic Fallback Product Card */
+                           <div className="group cursor-pointer">
+                             <div className="relative aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden mb-3">
+                               <img src={normalizedProduct.image} alt={normalizedProduct.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                             </div>
+                             <h3 className="font-semibold text-gray-900 truncate">{normalizedProduct.name}</h3>
+                             <p className="text-gray-500 text-sm">Rp {normalizedProduct.price.toLocaleString('id-ID')}</p>
+                           </div>
+                         )}
+                       </div>
+                     );
+                   })}
+                 </div>
+               </div>
+             </div>
+
+             <div className="mt-auto">
+               {ThemeRegistry[activeThemeId!]?.Footer && React.createElement(ThemeRegistry[activeThemeId!].Footer)}
+             </div>
+           </div>
+        ) : visibleSections.length === 0 ? (
           <div className="py-24 text-center text-xs text-[#706866] p-6 space-y-2">
             <p className="font-bold text-[#241A1A]">Toko sedang dalam perbaikan</p>
           </div>
@@ -147,7 +262,13 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                 className="relative"
                 style={customPaddingStyle}
               >
-                {/* 1. ANNOUNCEMENT BAR */}
+                {activeThemeId && hasThemeComponent(activeThemeId, section.id) ? (
+                  <div>
+                    <ThemeSectionRenderer themeId={activeThemeId} section={section} />
+                  </div>
+                ) : (
+                  <>
+                    {/* 1. ANNOUNCEMENT BAR */}
                 {section.id === 'announcement' && (
                   <div
                     className={`text-center py-2 px-3 sm:px-4 font-semibold flex items-center justify-center gap-1.5 transition-colors ${
@@ -611,9 +732,9 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                         >
                           <div className="space-y-1 sm:space-y-1.5">
                             <div className="relative rounded-xl overflow-hidden aspect-square bg-[#FAF7F7]">
-                              <img
-                                src={p.imageUrl}
-                                alt={p.name}
+                                <img
+                                  src={p.imageUrl || (p as any).image}
+                                  alt={p.name}
                                 className="w-full h-full object-cover"
                                 referrerPolicy="no-referrer"
                               />
@@ -986,10 +1107,12 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                     />
                   </footer>
                 )}
-              </div>
-            );
-          })
-        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })
+            )}
       </div>
     );
   }
@@ -1077,8 +1200,84 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           )}
 
           {/* STOREFRONT PREVIEW SCROLLABLE CONTENT */}
-          <div className="bg-white min-h-[620px] max-h-[calc(100vh-130px)] overflow-y-auto custom-scrollbar relative selection:bg-[#F5E8EA]">
-            {visibleSections.length === 0 ? (
+          <div className="bg-white min-h-[620px] max-h-[calc(100vh-130px)] overflow-y-auto custom-scrollbar relative selection:bg-[#F5E8EA]" onClick={handleCanvasClick}>
+            {activePage === 'katalog' ? (
+               <div className="flex flex-col min-h-full pb-32">
+                 <div>
+                   {ThemeRegistry[activeThemeId!]?.Navbar && React.createElement(ThemeRegistry[activeThemeId!].Navbar)}
+                 </div>
+                 
+                 <div className="flex-1 py-16 px-6">
+                   <div className="max-w-7xl mx-auto">
+                     <h1 className="text-3xl font-bold mb-8 text-center text-gray-900">Katalog Produk</h1>
+                     
+                     {/* Search & Categories */}
+                     <div className="mb-12 space-y-6">
+                       <div className="max-w-md mx-auto relative">
+                         <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                         <input
+                           type="text"
+                           value={searchPreviewQuery}
+                           onChange={(e) => setSearchPreviewQuery(e.target.value)}
+                           placeholder="Cari produk..."
+                           className="w-full pl-12 pr-4 py-3 rounded-full bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black"
+                         />
+                       </div>
+                       
+                       <div className="flex flex-wrap justify-center gap-2">
+                         {categories.map((cat) => (
+                           <button
+                             key={cat}
+                             onClick={() => setActiveCategoryFilter(cat)}
+                             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                               activeCategoryFilter === cat 
+                                 ? 'bg-black text-white' 
+                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                             }`}
+                           >
+                             {cat}
+                           </button>
+                         ))}
+                       </div>
+                     </div>
+    
+                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                       {filteredProducts.map(p => {
+                         // Normalize product to handle both Product and CmsProduct structures
+                         const normalizedProduct = {
+                           ...p,
+                           image: p.imageUrl || (p as any).image,
+                           categoryName: p.category || (p as any).categoryName,
+                         };
+                         
+                         const CustomCard = ThemeRegistry[activeThemeId!]?.ProductCard;
+                         
+                         return (
+                           <div key={p.id}>
+                             {CustomCard ? (
+                               <CustomCard product={normalizedProduct} />
+                             ) : (
+                               /* Generic Fallback Product Card */
+                               <div className="group cursor-pointer">
+                                 <div className="relative aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden mb-3">
+                                   <img src={normalizedProduct.image} alt={normalizedProduct.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                                 </div>
+                                 <h3 className="font-semibold text-gray-900 truncate">{normalizedProduct.name}</h3>
+                                 <p className="text-gray-500 text-sm">Rp {normalizedProduct.price.toLocaleString('id-ID')}</p>
+                               </div>
+                             )}
+                           </div>
+                         );
+                       })}
+                     </div>
+                   </div>
+                 </div>
+
+                 <div className="mt-auto">
+                   {ThemeRegistry[activeThemeId!]?.Footer && React.createElement(ThemeRegistry[activeThemeId!].Footer)}
+                 </div>
+               </div>
+            ) : visibleSections.length === 0 ? (
               <div className="py-24 text-center text-xs text-[#706866] p-6 space-y-2">
                 <p className="font-bold text-[#241A1A]">Semua Bagian Sedang Disembunyikan</p>
                 <p>Aktifkan kembali bagian toko pada panel kiri untuk menampilkan pratinjau.</p>
@@ -1174,7 +1373,13 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                       </div>
                     )}
 
-                    {/* 1. ANNOUNCEMENT BAR */}
+                    {activeThemeId && hasThemeComponent(activeThemeId, section.id) ? (
+                      <div>
+                        <ThemeSectionRenderer themeId={activeThemeId} section={section} />
+                      </div>
+                    ) : (
+                      <>
+                        {/* 1. ANNOUNCEMENT BAR */}
                     {section.id === 'announcement' && (
                       <div
                         className={`text-center py-2 px-3 sm:px-4 font-semibold flex items-center justify-center gap-1.5 transition-colors ${
@@ -1694,9 +1899,9 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                             >
                               <div className="space-y-1 sm:space-y-1.5">
                                 <div className="relative rounded-xl overflow-hidden aspect-square bg-[#FAF7F7]">
-                                  <img
-                                    src={p.imageUrl}
-                                    alt={p.name}
+                                    <img
+                                      src={p.imageUrl || (p as any).image}
+                                      alt={p.name}
                                     className="w-full h-full object-cover"
                                     referrerPolicy="no-referrer"
                                   />
@@ -1813,9 +2018,9 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                               >
                                 <div className="space-y-1 sm:space-y-1.5">
                                   <div className="relative rounded-xl overflow-hidden aspect-square bg-[#FAF7F7]">
-                                    <img
-                                      src={p.imageUrl}
-                                      alt={p.name}
+                                      <img
+                                        src={p.imageUrl || (p as any).image}
+                                        alt={p.name}
                                       className="w-full h-full object-cover"
                                       referrerPolicy="no-referrer"
                                     />
@@ -2103,6 +2308,8 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                           isSelected={isSelected}
                         />
                       </footer>
+                    )}
+                      </>
                     )}
                   </div>
                 );

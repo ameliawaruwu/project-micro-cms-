@@ -28,7 +28,124 @@ export type StoreSectionType =
   | 'testimonials'
   | 'newsletter'
   | 'store_info'
-  | 'footer';
+  | 'footer'
+  | 'rich_text'
+  | 'image_with_text'
+  | 'gallery'
+  | 'video'
+  | 'product_carousel'
+  | 'collection'
+  | 'product_categories'
+  | 'countdown'
+  | 'cta'
+  | 'reviews'
+  | 'brand_logos'
+  | 'contact'
+  | 'spacer'
+  | 'divider'
+  | 'columns'
+  | 'brand_philosophy'
+  | 'editorial_campaign'
+  | 'asymmetric_showcase'
+  | 'lookbook'
+  | 'brand_story'
+  | 'journal'
+  | 'floating_showcase'
+  | 'tech_features'
+  | 'product_comparison'
+  | 'innovation_cta'
+  | 'signature_collection'
+  | 'craftsmanship_story'
+  | 'private_collection'
+  | 'ingredient_story'
+  | 'sustainability'
+  | 'latest_drop'
+  | 'category_tiles'
+  | 'limited_release'
+  | 'community_board';
+
+// ── Block System ─────────────────────────────────────────────
+export type SectionBlockType =
+  | 'heading'
+  | 'text'
+  | 'button'
+  | 'image'
+  | 'badge'
+  | 'product_card'
+  | 'testimonial_card'
+  | 'spacer'
+  | 'icon_text';
+
+export interface SectionBlock {
+  id: string;
+  type: SectionBlockType;
+  settings: Record<string, any>;
+  order: number;
+}
+
+// ── Page System ──────────────────────────────────────────────
+export interface ThemePage {
+  id: string;
+  title: string;
+  slug: string;
+  sections: StoreSectionConfig[];
+}
+
+// ── Global Theme Settings ────────────────────────────────────
+export interface GlobalThemeColors {
+  primary: string;
+  secondary: string;
+  background: string;
+  surface: string;
+  text: string;
+  mutedText: string;
+  border: string;
+}
+
+export interface GlobalThemeTypography {
+  headingFont: string;
+  bodyFont: string;
+  headingSize: 'sm' | 'md' | 'lg' | 'xl';
+  bodySize: 'sm' | 'md' | 'lg';
+}
+
+export interface GlobalThemeSettings {
+  colors: GlobalThemeColors;
+  typography: GlobalThemeTypography;
+  buttons: {
+    radius: 'none' | 'sm' | 'md' | 'lg' | 'full';
+    style: 'solid' | 'outline' | 'ghost';
+  };
+  cards: {
+    radius: 'none' | 'sm' | 'md' | 'lg';
+    shadow: 'none' | 'sm' | 'md' | 'lg';
+    border: boolean;
+  };
+  layout: {
+    contentWidth: 'narrow' | 'normal' | 'wide' | 'full';
+    sectionSpacing: 'compact' | 'normal' | 'spacious';
+  };
+}
+
+// ── Complete Theme Template Definition ───────────────────────
+export interface ThemeTemplate {
+  id: string;
+  name: string;
+  category: string;
+  categories: string[];
+  description: string;
+  thumbnailUrl: string;
+  badge?: 'free' | 'premium' | 'new';
+  designTraits: string[];
+  globalSettings: GlobalThemeSettings;
+  pages: ThemePage[];
+  fontFamily: string;
+  primaryAccent: string;
+  bannerUrl: string;
+  tagline: string;
+  /** Legacy sections array for backward compat with existing StoreSectionConfig[] */
+  sections: StoreSectionConfig[];
+}
 
 export interface TestimonialItem {
   id: string;
@@ -129,17 +246,22 @@ export interface StoreSectionOptions {
 export interface StoreSectionConfig {
   key?: string;
   id: StoreSectionType;
-  title: string;
+  title?: string;
   subtitle?: string;
   isVisible: boolean;
-  order: number;
+  order?: number;
   options?: StoreSectionOptions;
+  blocks?: SectionBlock[];
 }
 
 export interface StoreLayoutSettings {
   sections: StoreSectionConfig[];
   primaryAccent?: string;
   themeStyle?: 'minimal' | 'modern' | 'compact';
+  globalThemeSettings?: GlobalThemeSettings;
+  pages?: ThemePage[];
+  activePage?: string;
+  activeTemplateId?: string;
 }
 
 export interface Store {

@@ -345,7 +345,7 @@ export const DEFAULT_STORE_SECTIONS: StoreSectionConfig[] = [
     id: 'promo_banner',
     title: 'Banner Promo & Diskon',
     subtitle: 'Spanduk promosi diskon spesial hari ini',
-    isVisible: false, order: 0, options: {
+    isVisible: true, order: 0, options: {
       heading: 'Spesial Promo Hari Ini: Diskon 20%',
       description: 'Gunakan kesempatan promo untuk belanja produk UMKM favorit Anda.',
       discountBadge: 'PROMO TERBATAS',
@@ -452,6 +452,19 @@ export const LAYOUT_PRESETS: {
         title: 'Pencarian & Kategori',
         isVisible: true,
         order: 2,
+      },
+      {
+        key: 'promo-min',
+        id: 'promo_banner',
+        title: 'Banner Promo & Diskon',
+        isVisible: true, order: 0, options: {
+          heading: 'Promo Spesial Minggu Ini',
+          description: 'Dapatkan diskon untuk semua kategori katalog.',
+          discountBadge: 'KODE: MINIMALIST',
+          buttonLabel: 'Klaim Sekarang',
+          buttonLink: '#katalog',
+          backgroundColor: 'neutral',
+        },
       },
       {
         key: 'grid-min',
@@ -588,9 +601,9 @@ export interface StoreTemplate {
   id: string;
   name: string;
   category: string;
-  badge: string;
-  description: string;
-  previewImage: string;
+  badge?: string;
+  description?: string;
+  previewImage?: string;
   primaryAccent: string;
   bannerUrl: string;
   tagline: string;
@@ -600,137 +613,130 @@ export interface StoreTemplate {
 export const STORE_TEMPLATES: StoreTemplate[] = [
   {
     id: "minimalist_clean", name: "Minimal Store", category: "Minimalis", primaryAccent: "#1A1A1A",
-    bannerUrl: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80",
-    tagline: "Kesederhanaan yang Elegan",
+    bannerUrl: "https://images.unsplash.com/photo-1441986300917-64674bd600d8",
+    tagline: "Objects Made for Everyday Living",
     sections: [
       { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
-      { id: "hero_banner", isVisible: true, options: { bannerStyle: "minimal", sectionHeight: "tall", textAlignment: "left", overlayOpacity: 10 } },
-      { id: "featured_products", isVisible: true, options: { gridColumns: 3 } },
-      { id: "product_grid", isVisible: true, options: { gridColumns: 3, showCategoryTabs: true } },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "normal", textAlignment: "center", heading: "Objects Made for Everyday Living" } },
+      { id: "brand_philosophy", isVisible: true, options: {} },
+      { id: "collection_grid", isVisible: true, options: { gridColumns: 3 } },
+      { id: "featured_products", isVisible: true, options: { gridColumns: 2 } },
       { id: "footer", isVisible: true, options: {} }
     ]
   },
   {
     id: "gadget_tech", name: "Nova Commerce", category: "Modern", primaryAccent: "#2563EB",
-    bannerUrl: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1600&q=80",
+    bannerUrl: "https://images.unsplash.com/photo-1519389950473-47ba0277781c",
     tagline: "Teknologi Terkini",
     sections: [
-      { id: "announcement", isVisible: true, options: { backgroundColor: "brand" } },
       { id: "header", isVisible: true, options: { headerStyle: "brand" } },
-      { id: "promo_banner", isVisible: true, options: { backgroundColor: "dark", textColor: "light", sectionHeight: "normal" } },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "split", contentPosition: "left" } },
       { id: "search_category", isVisible: true, options: {} },
-      { id: "product_grid", isVisible: true, options: { gridColumns: 4, showCategoryTabs: true, showSearchBar: true } },
-      { id: "store_benefits", isVisible: true, options: { backgroundColor: "neutral" } },
+      { id: "featured_products", isVisible: true, options: { layout: "grid", gridColumns: 4 } },
+      { id: "promo_banner", isVisible: true, options: { backgroundColor: "dark" } },
       { id: "footer", isVisible: true, options: {} }
     ]
   },
   {
     id: "futuristic_dark", name: "Future Shop", category: "Futuristik", primaryAccent: "#8B5CF6",
-    bannerUrl: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1600&q=80",
+    bannerUrl: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b",
     tagline: "Welcome to 2077",
     sections: [
-      { id: "header", isVisible: true, options: { 
-          headerStyle: "brand",
-          navMenuItems: [
-            { id: 'nav-1', label: 'Home', href: '#beranda' },
-            { id: 'nav-2', label: 'Explore', href: '#katalog' }
-          ]
-        } 
-      },
-      { id: "hero_banner", isVisible: true, options: { bannerStyle: "compact", sectionHeight: "compact", textAlignment: "center", overlayOpacity: 60 } },
-      { id: "promo_banner", isVisible: true, options: { backgroundColor: "dark", textColor: "light" } },
-      { id: "product_grid", isVisible: true, options: { backgroundColor: "dark", textColor: "light", gridColumns: 4 } },
-      { id: "testimonials", isVisible: true, options: { backgroundColor: "dark", textColor: "light" } },
+      { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "full" } },
+      { id: "floating_showcase", isVisible: true, options: {} },
+      { id: "tech_features", isVisible: true, options: {} },
+      { id: "innovation_cta", isVisible: true, options: {} },
       { id: "footer", isVisible: true, options: {} }
     ]
   },
   {
     id: "editorial_luxury", name: "Maison", category: "Luxury", primaryAccent: "#92400E",
-    bannerUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&q=80",
+    bannerUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d",
     tagline: "Elegansi Klasik",
     sections: [
-      { id: "header", isVisible: true, options: { headerStyle: "minimal", showLogo: true } },
-      { id: "hero_banner", isVisible: true, options: { bannerStyle: "normal", sectionHeight: "tall", textAlignment: "right", overlayOpacity: 20 } },
-      { id: "store_benefits", isVisible: true, options: {} },
-      { id: "featured_products", isVisible: true, options: { gridColumns: 2 } },
-      { id: "product_grid", isVisible: true, options: { gridColumns: 2 } },
+      { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "full" } },
+      { id: "craftsmanship_story", isVisible: true, options: {} },
+      { id: "signature_collection", isVisible: true, options: {} },
+      { id: "private_collection", isVisible: true, options: {} },
+      { id: "footer", isVisible: true, options: {} }
+    ]
+  },
+  {
+    id: "editorial_commerce", name: "Editorial Commerce", category: "Editorial", primaryAccent: "#1A1A1A",
+    bannerUrl: "https://images.unsplash.com/photo-1445205170230-053b83016050",
+    tagline: "Autumn / Winter",
+    sections: [
+      { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "editorial" } },
+      { id: "asymmetric_showcase", isVisible: true, options: {} },
+      { id: "brand_story", isVisible: true, options: {} },
+      { id: "journal", isVisible: true, options: {} },
       { id: "footer", isVisible: true, options: {} }
     ]
   },
   {
     id: "bold_market", name: "Bold Market", category: "Bold", primaryAccent: "#DC2626",
-    bannerUrl: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1600&q=80",
+    bannerUrl: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b",
     tagline: "LOUD & CLEAR",
     sections: [
-      { id: "announcement", isVisible: true, options: { backgroundColor: "dark", textColor: "light" } },
-      { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
-      { id: "promo_banner", isVisible: true, options: { backgroundColor: "brand", textColor: "light", sectionHeight: "tall" } },
-      { id: "product_grid", isVisible: true, options: { gridColumns: 4, showCategoryTabs: false } },
-      { id: "footer", isVisible: true, options: {} }
-    ]
-  },
-  {
-    id: "editorial_commerce", name: "Editorial Commerce", category: "Editorial", primaryAccent: "#66000E",
-    bannerUrl: "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1600&q=80",
-    tagline: "The Modern Curated",
-    sections: [
-      { id: "header", isVisible: true, options: { headerStyle: "transparent" } },
-      { id: "hero_banner", isVisible: true, options: { bannerStyle: "normal", sectionHeight: "tall", textAlignment: "center", overlayOpacity: 30 } },
-      { id: "store_benefits", isVisible: true, options: { backgroundColor: "neutral" } },
-      { id: "featured_products", isVisible: true, options: { gridColumns: 3 } },
-      { id: "newsletter", isVisible: true, options: {} },
+      { id: "header", isVisible: true, options: { headerStyle: "brand" } },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "typographic", textAlignment: "center" } },
+      { id: "latest_drop", isVisible: true, options: {} },
+      { id: "lookbook", isVisible: true, options: {} },
+      { id: "community_board", isVisible: true, options: {} },
       { id: "footer", isVisible: true, options: {} }
     ]
   },
   {
     id: "nature_organic", name: "Green Market", category: "Alam", primaryAccent: "#059669",
-    bannerUrl: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1600&q=80",
+    bannerUrl: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09",
     tagline: "Dari Alam Untukmu",
     sections: [
-      { id: "announcement", isVisible: true, options: { backgroundColor: "brand", textColor: "light" } },
       { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
-      { id: "hero_banner", isVisible: true, options: { bannerStyle: "normal", sectionHeight: "normal", textAlignment: "center", overlayOpacity: 40 } },
-      { id: "testimonials", isVisible: true, options: { backgroundColor: "brand", textColor: "light" } },
-      { id: "product_grid", isVisible: true, options: { gridColumns: 3 } },
-      { id: "store_info", isVisible: true, options: {} },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "organic" } },
+      { id: "ingredient_story", isVisible: true, options: {} },
+      { id: "product_grid", isVisible: true, options: { gridColumns: 4 } },
+      { id: "sustainability", isVisible: true, options: {} },
       { id: "footer", isVisible: true, options: {} }
     ]
   },
   {
     id: "creative_studio", name: "Creative Studio", category: "Kreatif", primaryAccent: "#E11D48",
-    bannerUrl: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1600&q=80",
+    bannerUrl: "https://images.unsplash.com/photo-1513364776144-60967b0f800f",
     tagline: "Where Art Meets Commerce",
     sections: [
-      { id: "header", isVisible: true, options: { headerStyle: "brand" } },
-      { id: "hero_banner", isVisible: true, options: { bannerStyle: "compact", sectionHeight: "tall", textAlignment: "left", overlayOpacity: 50 } },
-      { id: "featured_products", isVisible: true, options: { gridColumns: 4 } },
-      { id: "product_grid", isVisible: true, options: { gridColumns: 3 } },
-      { id: "footer", isVisible: true, options: {} }
-    ]
-  },
-  {
-    id: "pro_corporate", name: "Pro Commerce", category: "Korporat", primaryAccent: "#1E40AF",
-    bannerUrl: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1600&q=80",
-    tagline: "Solusi B2B Terpercaya",
-    sections: [
       { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
-      { id: "hero_banner", isVisible: true, options: { bannerStyle: "compact", sectionHeight: "compact", textAlignment: "left", overlayOpacity: 70 } },
-      { id: "store_benefits", isVisible: true, options: {} },
-      { id: "search_category", isVisible: true, options: {} },
-      { id: "product_grid", isVisible: true, options: { gridColumns: 4 } },
-      { id: "store_info", isVisible: true, options: { backgroundColor: "neutral" } },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "compact", textAlignment: "left" } },
+      { id: "lookbook", isVisible: true, options: { layout: "masonry" } },
+      { id: "floating_showcase", isVisible: true, options: {} },
       { id: "footer", isVisible: true, options: {} }
     ]
   },
   {
     id: "chic_fashion", name: "Urban Collection", category: "Fashion", primaryAccent: "#18181B",
-    bannerUrl: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1600&q=80",
+    bannerUrl: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f",
     tagline: "Chic & Urban",
     sections: [
-      { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
-      { id: "hero_banner", isVisible: true, options: { bannerStyle: "normal", sectionHeight: "tall", textAlignment: "center", overlayOpacity: 10 } },
-      { id: "promo_banner", isVisible: true, options: { backgroundColor: "dark", textColor: "light", sectionHeight: "compact" } },
-      { id: "product_grid", isVisible: true, options: { gridColumns: 2 } },
+      { id: "header", isVisible: true, options: { headerStyle: "brand" } },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "campaign" } },
+      { id: "lookbook", isVisible: true, options: {} },
+      { id: "featured_products", isVisible: true, options: { layout: "asymmetric" } },
+      { id: "promo_banner", isVisible: true, options: {} },
+      { id: "footer", isVisible: true, options: {} }
+    ]
+  },
+  {
+    id: "pro_corporate", name: "Pro Commerce", category: "Korporat", primaryAccent: "#1E40AF",
+    bannerUrl: "https://images.unsplash.com/photo-1497215728101-856f4ea42174",
+    tagline: "Solusi B2B",
+    sections: [
+      { id: "header", isVisible: true, options: { headerStyle: "brand" } },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "split" } },
+      { id: "store_benefits", isVisible: true, options: {} },
+      { id: "product_grid", isVisible: true, options: { gridColumns: 4 } },
+      { id: "testimonials", isVisible: true, options: {} },
       { id: "footer", isVisible: true, options: {} }
     ]
   }

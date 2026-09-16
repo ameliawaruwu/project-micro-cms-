@@ -104,6 +104,18 @@ export default function App() {
 
   // State: Authentication View
   const [authView, setAuthView] = useState<'login' | 'register' | 'forgot_password' | null>(null);
+  const [registeredEmailForLogin, setRegisteredEmailForLogin] = useState<string>('');
+
+  useEffect(() => {
+    const handleNavLogin = (e: any) => {
+      setAuthView('login');
+      if (e.detail?.email) {
+        setRegisteredEmailForLogin(e.detail.email);
+      }
+    };
+    window.addEventListener('auth_nav_login', handleNavLogin);
+    return () => window.removeEventListener('auth_nav_login', handleNavLogin);
+  }, []);
 
   // State: Navigation & Multi-tenant Store
   const [stores, setStores] = useState<Store[]>([]);
@@ -158,6 +170,15 @@ export default function App() {
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
+
+  useEffect(() => {
+    const handleToastNotification = (e: any) => {
+      const { message, type, duration } = e.detail;
+      addToast(message, type);
+    };
+    window.addEventListener('toast_notification', handleToastNotification);
+    return () => window.removeEventListener('toast_notification', handleToastNotification);
+  }, []);
 
   const currentStore = activeStore || initialStores[0];
 
@@ -293,17 +314,14 @@ export default function App() {
     };
   }, [activeStore?.id]);
 
-  // Route Super Admin directly to Admin Dashboard
+  // Route Users to their respective dashboards if they are logged in and on the landing page
   useEffect(() => {
-    if (user?.role === 'admin' && viewMode !== 'admin' && viewMode !== 'storefront' && viewMode !== 'storefront-live') {
-      setViewMode('admin');
-    }
-  }, [user, viewMode]);
-
-  // Route Merchant directly to Dashboard (e.g. after Google Auth Redirect)
-  useEffect(() => {
-    if (user?.role === 'merchant' && viewMode === 'landing') {
-      setViewMode('merchant-desktop');
+    if (user && viewMode === 'landing') {
+      if (user.role === 'admin') {
+        setViewMode('admin');
+      } else {
+        setViewMode('merchant-desktop');
+      }
     }
   }, [user, viewMode]);
 
@@ -606,6 +624,9 @@ export default function App() {
           onNavigateRegister={() => {
             setAuthView('register');
           }}
+          onNavigateDashboard={() => {
+            setViewMode(user?.role === 'admin' ? 'admin' : 'merchant-desktop');
+          }}
           onLaunchDemo={handleLaunchDemo}
           onViewStorefrontDemo={handleLaunchStorefrontDemo}
           isAuthenticated={isAuthenticated}
@@ -620,11 +641,12 @@ export default function App() {
     return (
       <>
         <RegisterPage
-          onSuccess={() => {
-            setAuthView(null);
-            setViewMode('merchant-desktop');
-            loadData();
-            addToast('Akun Toko UMKM baru berhasil dibuat!');
+          onSuccess={(registeredEmail) => {
+            if (registeredEmail) {
+              setRegisteredEmailForLogin(registeredEmail);
+            }
+            setAuthView('login');
+            addToast('Akun berhasil didaftarkan! Silakan masuk dengan kata sandi Anda.', 'success');
           }}
           onNavigateLogin={() => setAuthView('login')}
           onNavigateLanding={() => {
@@ -641,6 +663,7 @@ export default function App() {
     return (
       <>
         <LoginPage
+          initialEmail={registeredEmailForLogin}
           onSuccess={() => {
             setAuthView(null);
             const currentUser = authService.getCurrentUser().user;
@@ -869,7 +892,7 @@ export default function App() {
             description: '',
             logoUrl: user.avatarUrl,
             bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-            phoneWhatsApp: user.phoneWhatsApp || '081234567890',
+            phoneWhatsApp: user.phoneWhatsApp || '',
             city: 'Indonesia',
             category: 'Kuliner & Minuman',
             currency: 'IDR',
@@ -884,7 +907,7 @@ export default function App() {
                 description: data.storeUpdates.tagline || 'Pusat belanja online praktis dan cepat.',
                 logoUrl: user.avatarUrl || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=200&auto=format&fit=crop&q=80',
                 bannerUrl: data.storeUpdates.bannerUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-                phoneWhatsApp: data.storeUpdates.phoneWhatsApp || user.phoneWhatsApp || '081234567890',
+                phoneWhatsApp: data.storeUpdates.phoneWhatsApp || user.phoneWhatsApp || '',
                 city: 'Indonesia',
                 category: data.storeUpdates.category || 'Kuliner & Minuman',
                 currency: 'IDR',

@@ -11,6 +11,7 @@ import { AuthIllustration } from '../../components/auth/AuthIllustration';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
 
 interface LoginPageProps {
+  initialEmail?: string;
   onNavigateRegister?: () => void;
   onNavigateForgotPassword?: () => void;
   onNavigateLanding?: () => void;
@@ -18,6 +19,7 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({
+  initialEmail,
   onNavigateRegister,
   onNavigateForgotPassword,
   onNavigateLanding,
@@ -25,25 +27,35 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 }) => {
   const { login, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const fillAdminCredentials = () => {
-    setEmail('admin@kroombox.id');
-    setPassword('admin123');
-    setError(null);
-  };
-
-  const fillMerchantCredentials = () => {
-    setEmail('andhika@gmail.com');
-    setPassword('password123');
-    setError(null);
-  };
+  React.useEffect(() => {
+    if (initialEmail) {
+      setEmail(initialEmail);
+    }
+    const redirectMsg = sessionStorage.getItem('auth_redirect_msg');
+    if (redirectMsg) {
+      setSuccessMsg(redirectMsg);
+      sessionStorage.removeItem('auth_redirect_msg');
+    }
+    const redirectErr = sessionStorage.getItem('auth_redirect_err');
+    if (redirectErr) {
+      setError(redirectErr);
+      sessionStorage.removeItem('auth_redirect_err');
+    }
+    const prefillEmail = sessionStorage.getItem('auth_prefill_email');
+    if (prefillEmail) {
+      setEmail(prefillEmail);
+      sessionStorage.removeItem('auth_prefill_email');
+    }
+  }, [initialEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,8 +78,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       setTimeout(() => {
         if (onSuccess) onSuccess();
       }, 350);
-    } catch {
-      setError('Email atau kata sandi tidak sesuai. Silakan periksa kembali.');
+    } catch (err: any) {
+      setError(err?.message || 'Email atau kata sandi tidak sesuai. Silakan periksa kembali.');
       setIsSubmitting(false);
     }
   };
@@ -76,6 +88,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     try {
       setGoogleLoading(true);
       setError(null);
+      setSuccessMsg(null);
+      sessionStorage.setItem('oauth_intent', 'login');
       await loginWithGoogle();
     } catch {
       setError('Gagal menghubungkan ke Google. Pastikan Google Provider sudah diaktifkan di Supabase.');
@@ -83,6 +97,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       setGoogleLoading(false);
     }
   };
+
 
   return (
     <div
@@ -177,6 +192,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </h1>
           </div>
 
+          {/* SUCCESS NOTIFICATION */}
+          {successMsg && (
+            <div
+              id="login-success-msg"
+              className="mb-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium text-center animate-in fade-in duration-200"
+            >
+              {successMsg}
+            </div>
+          )}
+
           {/* ERROR NOTIFICATION */}
           {error && (
             <div
@@ -203,7 +228,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="andhikagonzales@gmail.com"
+                  placeholder="nama@email.com"
                   required
                   autoComplete="email"
                   className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
@@ -238,27 +263,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
-              </div>
-
-              {/* Quick Fill Accounts Chips */}
-              <div className="pt-2">
-                <span className="text-[11px] font-medium text-gray-500 block mb-1.5">Pilih Akun Cepat:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={fillAdminCredentials}
-                    className="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-[11px] font-semibold transition cursor-pointer flex items-center gap-1"
-                  >
-                    <span>👑 Super Admin</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={fillMerchantCredentials}
-                    className="px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 text-[11px] font-medium transition cursor-pointer"
-                  >
-                    <span>🏪 Merchant</span>
-                  </button>
-                </div>
               </div>
 
               {/* Forgot Password Link */}

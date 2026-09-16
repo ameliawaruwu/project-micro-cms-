@@ -17,6 +17,7 @@ interface LandingHeroProps {
   onNavigateLogin: () => void;
   onLaunchDemo: () => void;
   onScrollToHowItWorks: () => void;
+  isAuthenticated?: boolean;
 }
 
 export const LandingHero: React.FC<LandingHeroProps> = ({
