@@ -4,7 +4,7 @@ export interface User {
   email: string;
   phoneWhatsApp: string;
   avatarUrl?: string;
-  role: 'merchant' | 'admin';
+  role: 'merchant' | 'admin' | 'buyer';
   createdAt: string;
 }
 
