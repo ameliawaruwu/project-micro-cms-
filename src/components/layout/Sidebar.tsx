@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'layout', label: t('nav_layout', 'Layout Toko'), icon: LayoutTemplate },
     { id: 'pembayaran', label: t('nav_payment', 'Pembayaran'), icon: CreditCard },
     { id: 'pengiriman', label: t('nav_shipping', 'Pengiriman'), icon: Truck },
-    { id: 'billing', label: 'Billing Plan', icon: Crown },
+    { id: 'billing', label: t('nav_billing', 'Paket Langganan'), icon: Crown },
     { id: 'pengaturan', label: t('nav_settings', 'Pengaturan'), icon: Settings },
   ];
 

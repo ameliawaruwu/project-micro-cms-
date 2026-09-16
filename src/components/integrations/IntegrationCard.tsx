@@ -128,14 +128,14 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
 
   return (
     <>
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#EAEAEA] shadow-2xs hover:border-[#D5CEC9] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-sans text-left">
+      <div className="bg-white rounded-2xl p-3.5 sm:p-4.5 border border-[#EAEAEA] shadow-2xs hover:border-[#D5CEC9] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-sans text-left">
         {/* Left: Logo & Info */}
-        <div className="flex items-center gap-3.5 min-w-0 flex-1">
-          <div className="w-12 h-12 rounded-2xl bg-[#FAF7F7] border border-[#EAEAEA] overflow-hidden flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#FAF7F7] border border-[#EAEAEA] overflow-hidden flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
             <img
               src={integration.logo}
               alt={integration.name}
-              className="w-full h-full object-contain rounded-xl"
+              className="w-full h-full object-contain rounded-lg sm:rounded-xl"
               referrerPolicy="no-referrer"
             />
           </div>

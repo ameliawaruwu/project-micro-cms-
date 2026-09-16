@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Store, Product } from '../../types';
 import { STORE_TEMPLATES, StoreTemplate } from '../../utils/layoutConstants';
 import { CenterPreviewCanvas } from './CenterPreviewCanvas';
+import { Breadcrumb } from '../common/Breadcrumb';
+import { useLanguage } from '../../contexts/LanguageContext';
 import {
   Search,
   Eye,
@@ -27,6 +29,7 @@ import {
   PenTool,
   Briefcase,
   Building2,
+  RotateCcw,
 } from 'lucide-react';
 
 // ─── Template Category Definitions ───────────────────────────────────
@@ -201,6 +204,7 @@ interface ThemeLibraryViewProps {
   onPreviewTheme: (themeId: string) => void;
   onApplyTemplate?: (template: TemplateGalleryItem) => void;
   onPreviewTemplate?: (template: TemplateGalleryItem) => void;
+  onNavigateDashboard?: () => void;
 }
 
 // ─── Component ───────────────────────────────────────────────────────
@@ -212,9 +216,26 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   onPreviewTheme,
   onApplyTemplate,
   onPreviewTemplate,
+  onNavigateDashboard,
 }) => {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      all: TEMPLATE_GALLERY_ITEMS.length,
+    };
+    TEMPLATE_CATEGORIES.forEach((cat) => {
+      if (cat.id !== 'all') {
+        counts[cat.id] = TEMPLATE_GALLERY_ITEMS.filter(
+          (t) => t.category === cat.id || t.categories.includes(cat.id)
+        ).length;
+      }
+    });
+    return counts;
+  }, []);
 
   // Filter templates
   const filteredTemplates = useMemo(() => {
@@ -242,91 +263,134 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   // ── GALLERY MODE ─────────────────────────────────────────────────
   return (
     <div className="w-full h-full bg-[#FAF7F7] overflow-y-auto custom-scrollbar flex flex-col font-sans">
-      <div className="bg-white border-b border-[#E5E0DD] px-6 sm:px-8 py-6 sm:py-8 shrink-0">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2.5 mb-1">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center shadow-sm">
-                  <LayoutTemplate className="w-4.5 h-4.5 text-white" />
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-[#241A1A] tracking-tight">Template Website</h1>
-              </div>
-              <p className="text-[#706866] text-sm sm:text-base mt-1 max-w-xl">
-                Pilih template desain yang sesuai dengan karakter bisnis Anda, lalu sesuaikan konten dan tampilannya di visual editor.
-              </p>
-            </div>
+      <div className="bg-white border-b border-[#E5E0DD] px-4 sm:px-8 py-4 sm:py-6 shrink-0">
+        <div className="max-w-7xl mx-auto space-y-4">
+          {/* Breadcrumb Navigation */}
+          <Breadcrumb
+            items={[
+              { label: t('nav_dashboard', 'Dashboard'), onClick: onNavigateDashboard },
+              { label: t('nav_template_website', 'Template Website'), isActive: true },
+            ]}
+          />
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-3 border-b border-[#E5E0DD]">
+            <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+              <LayoutTemplate className="w-5 h-5 text-[#66000E]" />
+              <span>{t('nav_template_website', 'Template Website')}</span>
+            </h1>
             <div className="flex items-center gap-2 text-xs text-[#706866]">
               <div className="flex items-center gap-1.5 bg-[#F6F4F3] px-3 py-1.5 rounded-lg border border-[#E5E0DD]">
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span className="font-semibold">{TEMPLATE_GALLERY_ITEMS.length} Template Tersedia</span>
+                <span className="font-semibold">{TEMPLATE_GALLERY_ITEMS.length} {t('templates_available', 'Template Tersedia')}</span>
               </div>
             </div>
           </div>
 
-          {/* ── SEARCH BAR ── */}
-          <div className="mt-5 relative max-w-xl">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B5AEAC]" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari template berdasarkan nama, kategori, atau gaya desain..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] text-sm text-[#241A1A] placeholder:text-[#B5AEAC] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]/40 transition"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-gray-400 hover:text-gray-600 cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+          {/* ── CATEGORY FILTER DOCK CONTAINER (Consistent Segmented Dock Design) ── */}
+          <div className="relative p-1 sm:p-1.5 rounded-xl sm:rounded-2xl bg-[#F8F9FA] border border-[#EAEAEA] shadow-2xs">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth">
+              {TEMPLATE_CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const isActive = activeCategory === cat.id;
+                const count = categoryCounts[cat.id] || 0;
+                const label = cat.id === 'all' ? t('filter_all', 'Semua') : cat.label;
+
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setActiveCategory(cat.id)}
+                    title={`Filter: ${label} (${count})`}
+                    className={`group relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 ease-out shrink-0 cursor-pointer select-none active:scale-[0.97] ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#9A0602] to-[#B91C1C] text-white shadow-xs font-bold z-10'
+                        : 'bg-white text-[#555555] hover:bg-white/95 border border-[#EAEAEA] hover:border-[#9A0602]/40 hover:text-[#9A0602]'
+                    }`}
+                  >
+                    {/* Icon */}
+                    <span className={`transition-transform duration-300 ${isActive ? 'scale-105' : 'group-hover:scale-110'}`}>
+                      <Icon
+                        className={`w-3.5 h-3.5 transition-colors duration-200 ${
+                          isActive ? 'text-white' : 'text-[#777777] group-hover:text-[#9A0602]'
+                        }`}
+                      />
+                    </span>
+
+                    {/* Tab Label */}
+                    <span className="tracking-tight text-[11px] sm:text-xs">{label}</span>
+
+                    {/* Interactive Counter Badge */}
+                    <span
+                      className={`text-[10px] sm:text-[11px] min-w-[18px] sm:min-w-[20px] h-4.5 sm:h-5 px-1 sm:px-1.5 rounded-full font-mono font-bold flex items-center justify-center border transition-all duration-200 ${
+                        isActive
+                          ? 'bg-white/25 text-white border-white/30'
+                          : 'bg-[#F4F4F5] text-[#52525B] border-[#E4E4E7] group-hover:bg-[#FFF1F0] group-hover:text-[#9A0602] group-hover:border-[#FECDCA]'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {/* Quick Clear Filter Button */}
+              {activeCategory !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory('all')}
+                  className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold text-[#777777] hover:text-[#9A0602] hover:bg-white border border-dashed border-[#D4D4D8] hover:border-[#9A0602]/50 whitespace-nowrap transition-all duration-200 shrink-0 cursor-pointer ml-auto active:scale-95 group"
+                  title="Reset Filter"
+                >
+                  <RotateCcw className="w-3 h-3 text-[#777777] group-hover:text-[#9A0602] group-hover:-rotate-90 transition-transform duration-300" />
+                  <span>{t('reset_filter', 'Reset')}</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* ── CATEGORY FILTERS ── */}
-          <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {TEMPLATE_CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              const isActive = activeCategory === cat.id;
-              return (
+          {/* ── SEARCH BAR CARD (Consistent Secondary Filter Box) ── */}
+          <div className="bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-[#EAEAEA] shadow-2xs flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-[#777777] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('search_template_placeholder', 'Cari template berdasarkan nama, kategori, atau gaya desain...')}
+                className="w-full pl-9 pr-8 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border border-[#EAEAEA] bg-[#F9F9F9] text-xs sm:text-sm text-[#1F1F1F] placeholder:text-[#999999] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] focus:bg-white transition"
+              />
+              {searchQuery && (
                 <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
-                    isActive
-                      ? 'bg-[#66000E] text-white border-[#66000E] shadow-sm'
-                      : 'bg-white text-[#706866] border-[#E5E0DD] hover:border-[#66000E]/30 hover:text-[#66000E]'
-                  }`}
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{cat.label}</span>
+                  <X className="w-3.5 h-3.5" />
                 </button>
-              );
-            })}
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── TEMPLATE GRID ── */}
-      <div className="flex-1 p-6 sm:p-8">
+      <div className="flex-1 p-4 sm:p-8">
         <div className="max-w-7xl mx-auto">
           {filteredTemplates.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+            <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-[#EAEAEA] shadow-2xs">
+              <div className="w-16 h-16 rounded-2xl bg-[#FBF9F9] border border-[#EBE5E2] flex items-center justify-center mb-4 text-[#66000E]">
                 <Search className="w-7 h-7 text-gray-400" />
               </div>
-              <h3 className="text-lg font-bold text-gray-700">Tidak ada template ditemukan</h3>
-              <p className="text-sm text-gray-500 mt-1">Coba ubah kata kunci pencarian atau filter kategori.</p>
+              <h3 className="text-base sm:text-lg font-semibold text-[#1F1F1F]">{t('no_templates_found', 'Tidak ada template ditemukan')}</h3>
+              <p className="text-xs sm:text-sm text-[#706866] mt-1">{t('try_different_search', 'Coba ubah kata kunci pencarian atau filter kategori.')}</p>
               <button
                 onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
-                className="mt-4 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition cursor-pointer"
+                className="mt-4 px-4 py-2 rounded-xl bg-white border border-[#EAEAEA] text-xs sm:text-sm font-semibold text-[#1F1F1F] hover:bg-[#F9F9F9] hover:border-[#9A0602]/40 hover:text-[#9A0602] transition cursor-pointer shadow-2xs"
               >
-                Reset Filter
+                {t('reset_filter', 'Reset Filter')}
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
               {filteredTemplates.map((template) => (
                 <TemplateCard
                   key={template.id}
@@ -351,40 +415,78 @@ const TemplateCard: React.FC<{
   onPreview: () => void;
   onUse: () => void;
 }> = ({ template, onPreview, onUse }) => {
+  const { t } = useLanguage();
+
   return (
-    <div className="bg-white group font-sans">
-      {/* Thumbnail */}
-      <div
-        className="relative aspect-[4/3] sm:aspect-[16/11] bg-gray-100 overflow-hidden cursor-pointer rounded-2xl border-2 border-transparent group-hover:border-[#2271B1] transition-all duration-200"
-        onClick={onPreview}
-      >
-        <img
-          src={template.thumbnailUrl}
-          alt={template.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          loading="lazy"
-        />
-        {/* Hover overlay with Pratinjau button */}
-        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <span className="bg-white/90 backdrop-blur-sm text-[#241A1A] font-bold text-sm px-6 py-2.5 rounded-lg shadow-md flex items-center justify-center transform scale-95 group-hover:scale-100 transition-all duration-300">
-            Pratinjau
-          </span>
+    <div className="bg-white rounded-2xl border border-[#EAEAEA] p-3.5 sm:p-4 shadow-2xs hover:shadow-md hover:border-[#9A0602]/30 transition-all duration-300 flex flex-col justify-between group">
+      <div>
+        {/* Thumbnail */}
+        <div
+          className="relative aspect-[4/3] sm:aspect-[16/11] bg-gray-100 overflow-hidden cursor-pointer rounded-xl border border-[#EAEAEA] group-hover:border-[#9A0602]/30 transition-all duration-200"
+          onClick={onPreview}
+        >
+          <img
+            src={template.thumbnailUrl}
+            alt={template.name}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            loading="lazy"
+          />
+
+          {/* Section count badge */}
+          <div className="absolute top-2.5 right-2.5 z-10 bg-black/60 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-md border border-white/10">
+            {template.sectionCount} {t('sections_count', 'Seksi')}
+          </div>
+
+          {/* Hover overlay with Pratinjau button */}
+          <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <span className="bg-white/95 backdrop-blur-sm text-[#1F1F1F] font-semibold text-xs sm:text-sm px-4 py-2 rounded-xl shadow-md flex items-center gap-1.5 transform scale-95 group-hover:scale-100 transition-all duration-300">
+              <Eye className="w-3.5 h-3.5 text-[#9A0602]" />
+              <span>{t('btn_preview', 'Pratinjau')}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="pt-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-semibold text-sm sm:text-base text-[#1F1F1F] truncate group-hover:text-[#9A0602] transition-colors">
+              {template.name}
+            </h3>
+            <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-medium shrink-0">
+              {t('badge_free', 'Gratis')}
+            </span>
+          </div>
+          <p className="text-xs text-[#706866] mt-1 line-clamp-2 leading-relaxed">
+            {template.description}
+          </p>
+          {/* Design Traits tags */}
+          <div className="flex flex-wrap gap-1 mt-2.5">
+            {template.designTraits.map((trait, idx) => (
+              <span
+                key={idx}
+                className="text-[10px] font-medium text-[#555555] bg-[#F4F4F5] border border-[#E4E4E7] px-2 py-0.5 rounded-md"
+              >
+                {trait}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Info & Action */}
-      <div className="pt-4 flex items-start justify-between gap-4">
-        <div>
-          <h3 className="font-bold text-[15px] text-gray-900 leading-tight">
-            {template.name}
-          </h3>
-          <p className="text-sm text-gray-500 mt-1">oleh MicroCMS</p>
-        </div>
+      {/* Action Buttons */}
+      <div className="pt-4 mt-3 border-t border-[#F0EDED] flex items-center gap-2">
+        <button
+          onClick={onPreview}
+          className="flex-1 px-3 py-2 rounded-xl text-xs font-semibold text-[#555555] bg-white border border-[#EAEAEA] hover:bg-[#F9F9F9] hover:text-[#1F1F1F] transition cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span>{t('btn_view_demo', 'Lihat Demo')}</span>
+        </button>
         <button
           onClick={onUse}
-          className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-400 transition-colors cursor-pointer shadow-xs"
+          className="flex-1 px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-[#9A0602] to-[#B91C1C] hover:from-[#800000] hover:to-[#9A0602] transition cursor-pointer shadow-xs active:scale-[0.98] flex items-center justify-center gap-1.5"
         >
-          Tambahkan
+          <span>{t('btn_use_template', 'Gunakan')}</span>
         </button>
       </div>
     </div>

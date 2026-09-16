@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Save, Phone, MapPin, Settings as SettingsIcon } from 'lucide-react';
 import { Store } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
 
 interface SettingsPageProps {
   store: Store;
@@ -10,12 +11,14 @@ interface SettingsPageProps {
   onOpenShareModal?: () => void;
   onNavigateBilling?: () => void;
   onShowNotification: (msg: string) => void;
+  onNavigateDashboard?: () => void;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   store,
   onUpdateStore,
   onShowNotification,
+  onNavigateDashboard,
 }) => {
   const { t } = useLanguage();
   const [formData, setFormData] = useState({
@@ -48,15 +51,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 w-full">
+    <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 w-full text-left">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: t('nav_dashboard', 'Dashboard'), onClick: onNavigateDashboard },
+          { label: t('settings_title', 'Pengaturan'), isActive: true },
+        ]}
+      />
+
       <div className="pb-3 border-b border-[#E5E0DD]">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-          <SettingsIcon className="w-6 h-6 text-[#66000E]" />
-          <span>{t('settings_title', 'Pengaturan Toko')}</span>
+        <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+          <SettingsIcon className="w-5 h-5 text-[#66000E]" />
+          <span>{t('settings_title', 'Pengaturan')}</span>
         </h1>
-        <p className="text-xs text-[#706866] mt-0.5">
-          Konfigurasi identitas toko, nomor WhatsApp penjual, alamat, dan profil bisnis Anda
-        </p>
       </div>
 
       <div className="w-full">

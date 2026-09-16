@@ -51,12 +51,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   return (
     <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-300 font-sans pb-24 lg:pb-6 relative text-left">
       
-      {/* 1. Store Greeting & Real-Time Status Header - Billing Plan Model */}
+      {/* 1. Store Greeting & Real-Time Status Header */}
       <div className="pb-3 border-b border-[#E5E0DD] flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-              <LayoutDashboard className="w-6 h-6 text-[#66000E]" />
+            <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+              <LayoutDashboard className="w-5 h-5 text-[#66000E]" />
               <span>{t('dashboard_title', 'Dashboard')}</span>
             </h1>
             {/* Live store badge */}
@@ -68,9 +68,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <span>{t('live_store_active', 'Toko Online Aktif')}</span>
             </div>
           </div>
-          <p className="text-xs text-[#706866] mt-0.5">
-            Ringkasan performa penjualan, pesanan masuk, dan katalog produk toko Anda
-          </p>
         </div>
 
         {/* Real-time date & quick refresh trigger */}

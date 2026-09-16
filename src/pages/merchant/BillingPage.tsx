@@ -16,11 +16,14 @@ import { midtransService } from '../../services/midtransService';
 import { billingPlanService } from '../../services/billingPlanService';
 import { formatRupiah } from '../../utils/formatters';
 import { BillingInvoiceModal } from '../../components/billing/BillingInvoiceModal';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface BillingPageProps {
   store: StoreType;
   onUpdateStore: (updated: StoreType) => void;
   onShowNotification?: (msg: string) => void;
+  onNavigateDashboard?: () => void;
 }
 
 interface InvoiceItem {
@@ -47,7 +50,9 @@ export const BillingPage: React.FC<BillingPageProps> = ({
   store,
   onUpdateStore,
   onShowNotification,
+  onNavigateDashboard,
 }) => {
+  const { t } = useLanguage();
   const [plans, setPlans] = useState<BillingPlan[]>(billingPlanService.getActivePlans());
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<BillingPlan | null>(null);
@@ -189,16 +194,21 @@ export const BillingPage: React.FC<BillingPageProps> = ({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left w-full">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: 'Dashboard', onClick: onNavigateDashboard },
+          { label: t('nav_billing', 'Paket Langganan'), isActive: true },
+        ]}
+      />
+
       {/* 1. Clean Page Header */}
       <div className="pb-3 border-b border-[#E5E0DD] flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-            <Crown className="w-6 h-6 text-[#66000E]" />
-            <span>Billing Plan</span>
+          <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+            <Crown className="w-5 h-5 text-[#66000E]" />
+            <span>{t('nav_billing', 'Paket Langganan')}</span>
           </h1>
-          <p className="text-xs text-[#706866] mt-0.5">
-            Kelola paket langganan dan fitur akun toko Anda
-          </p>
         </div>
 
         {/* Top Controls: Switcher, Current Plan Status & Riwayat Berlangganan Button */}

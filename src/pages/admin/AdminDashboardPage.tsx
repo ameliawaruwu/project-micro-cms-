@@ -370,7 +370,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       icon: Wallet,
       badge: pendingWithdrawals.length > 0 ? pendingWithdrawals.length : undefined,
     },
-    { id: 'plans' as AdminTab, label: language === 'en' ? 'Billing Plans' : 'Pengaturan Billing Plan', icon: Crown },
+    { id: 'plans' as AdminTab, label: language === 'en' ? 'Billing Plans' : 'Paket Langganan', icon: Crown },
     {
       id: 'orders-shipping' as AdminTab,
       label: language === 'en' ? 'Orders & Shipping' : 'Pesanan & Pengiriman',
@@ -1160,7 +1160,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <div>
                   <div className="flex items-center gap-2">
                     <Crown className="w-5 h-5 text-red-600" />
-                    <h2 className="text-base font-bold text-gray-900">Pengaturan Billing Plan</h2>
+                    <h2 className="text-base font-bold text-gray-900">
+                      {language === 'en' ? 'Billing Plans Management' : 'Pengaturan Paket Langganan'}
+                    </h2>
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
                     Kelola paket langganan toko, harga bulanan & tahunan, fitur, dan riwayat tagihan platform

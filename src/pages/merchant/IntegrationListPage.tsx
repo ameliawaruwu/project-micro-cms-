@@ -7,12 +7,14 @@ import {
 import { Integration } from '../../types';
 import { IntegrationCard } from '../../components/integrations/IntegrationCard';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
 
 interface IntegrationListPageProps {
   integrations: Integration[];
   onToggleIntegration: (id: string) => void;
   onSaveConfig: (id: string, config: Record<string, string>) => void;
   onShowNotification: (msg: string) => void;
+  onNavigateDashboard?: () => void;
 }
 
 export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
@@ -20,6 +22,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
   onToggleIntegration,
   onSaveConfig,
   onShowNotification,
+  onNavigateDashboard,
 }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'pembayaran' | 'pengiriman'>('pembayaran');
@@ -31,17 +34,22 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
   const activeShippingsCount = shippingIntegrations.filter((i) => i.isConnected).length;
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8 text-left max-w-5xl">
-      {/* Page Header - Clean & Concise (Billing Plan Model) */}
+    <div className="space-y-4 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8 text-left max-w-5xl">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: t('nav_dashboard', 'Dashboard'), onClick: onNavigateDashboard },
+          { label: t('integrations_title', 'Integrasi'), isActive: true },
+        ]}
+      />
+
+      {/* Page Header - Clean & Concise */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0DD]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-            <CreditCard className="w-6 h-6 text-[#66000E]" />
-            <span>{t('integrations_title', 'Pembayaran & Pengiriman')}</span>
+          <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+            <CreditCard className="w-5 h-5 text-[#66000E]" />
+            <span>{t('integrations_title', 'Integrasi')}</span>
           </h1>
-          <p className="text-xs text-[#706866] mt-0.5">
-            Konfigurasi gateway pembayaran otomatis Midtrans dan integrasi kurir ekspedisi
-          </p>
         </div>
 
         {/* Global summary badge */}
