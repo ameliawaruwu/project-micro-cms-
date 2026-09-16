@@ -13,7 +13,8 @@ interface PaymentListPageProps {
 }
 
 export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotification, onNavigateDashboard }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
   const [channels, setChannels] = useState<PaymentChannel[]>(() => paymentChannelService.getChannels());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | string>('all');
@@ -283,7 +284,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
               <Search className="w-4 h-4 text-[#706866] absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Cari metode pembayaran (contoh: BCA, QRIS, GoPay, Mandiri)..."
+                placeholder={isEn ? 'Search payment methods (e.g. BCA, QRIS, GoPay, Mandiri)...' : 'Cari metode pembayaran (contoh: BCA, QRIS, GoPay, Mandiri)...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
@@ -297,11 +298,11 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="py-2.5 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] cursor-pointer"
               >
-                <option value="all">Semua Kategori ({channels.length})</option>
+                <option value="all">{isEn ? `All Categories (${channels.length})` : `Semua Kategori (${channels.length})`}</option>
                 <option value="virtual_account">Virtual Account (Bank)</option>
                 <option value="qris_ewallet">QRIS &amp; E-Wallet</option>
-                <option value="credit_card">Kartu Kredit</option>
-                <option value="retail_paylater">Gerai Retail &amp; PayLater</option>
+                <option value="credit_card">{isEn ? 'Credit Card' : 'Kartu Kredit'}</option>
+                <option value="retail_paylater">{isEn ? 'Retail & PayLater' : 'Gerai Retail & PayLater'}</option>
               </select>
             </div>
           </div>
@@ -310,9 +311,9 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
           {filteredChannels.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-xl border border-[#E5E0DD]">
               <Search className="w-8 h-8 text-[#706866] mx-auto mb-2 opacity-50" />
-              <p className="text-xs font-semibold text-[#241A1A]">Metode pembayaran tidak ditemukan</p>
+              <p className="text-xs font-semibold text-[#241A1A]">{isEn ? 'No payment methods found' : 'Metode pembayaran tidak ditemukan'}</p>
               <p className="text-[11px] text-[#706866] mt-0.5">
-                Coba kata kunci pencarian lain seperti "BCA", "QRIS", atau pilih Semua Kategori.
+                {isEn ? 'Try different search keywords such as "BCA", "QRIS", or select All Categories.' : 'Coba kata kunci pencarian lain seperti "BCA", "QRIS", atau pilih Semua Kategori.'}
               </p>
             </div>
           ) : (
@@ -347,7 +348,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
                         channel.isEnabled ? 'text-emerald-700' : 'text-[#706866]'
                       }`}
                     >
-                      {channel.isEnabled ? 'Aktif' : 'Nonaktif'}
+                      {channel.isEnabled ? (isEn ? 'Active' : 'Aktif') : (isEn ? 'Inactive' : 'Nonaktif')}
                     </span>
 
                     <button
@@ -356,7 +357,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
                       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                         channel.isEnabled ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
                       }`}
-                      title={channel.isEnabled ? `Nonaktifkan ${channel.name}` : `Aktifkan ${channel.name}`}
+                      title={channel.isEnabled ? (isEn ? `Disable ${channel.name}` : `Nonaktifkan ${channel.name}`) : (isEn ? `Enable ${channel.name}` : `Aktifkan ${channel.name}`)}
                     >
                       <span
                         className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
@@ -372,9 +373,9 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
 
           {/* Bottom Counter & Help Note */}
           <div className="flex items-center justify-between text-[11px] text-[#706866] pt-2 border-t border-[#E5E0DD]/80">
-            <span>Menampilkan {filteredChannels.length} metode pembayaran</span>
+            <span>{isEn ? `Showing ${filteredChannels.length} payment methods` : `Menampilkan ${filteredChannels.length} metode pembayaran`}</span>
             <span className="text-[#66000E] font-medium">
-              Pilihan metode pembayaran otomatis tersinkron ke checkout pembeli
+              {isEn ? 'Active payment methods automatically sync to buyer checkout' : 'Pilihan metode pembayaran otomatis tersinkron ke checkout pembeli'}
             </span>
           </div>
         </div>

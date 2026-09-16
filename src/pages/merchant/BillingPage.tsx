@@ -46,13 +46,53 @@ const INITIAL_INVOICES: InvoiceItem[] = [
   },
 ];
 
+const PLAN_NAME_MAP: Record<string, string> = {
+  'Starter (Gratis)': 'Starter (Free)',
+  'Pro UMKM': 'Pro UMKM',
+  'Bisnis Scale-Up': 'Business Scale-Up',
+  'Paket Pro UMKM': 'Pro UMKM Plan',
+  'Paket Starter (Gratis)': 'Starter (Free) Plan',
+  'Paket Bisnis Scale-Up': 'Business Scale-Up Plan',
+};
+
+const PLAN_TAGLINE_MAP: Record<string, string> = {
+  'Cocok untuk toko baru yang mulai berjualan online': 'Suitable for new stores starting to sell online',
+  'Fitur lengkap tanpa batas untuk meningkatkan omset toko': 'Full unlimited features to boost store revenue',
+  'Untuk bisnis UMKM berkembang dengan tim & cabang': 'For growing businesses with teams & branches',
+};
+
+const PLAN_FEATURE_MAP: Record<string, string> = {
+  'Katalog produk hingga 25 item': 'Product catalog up to 25 items',
+  'Checkout otomatis via Midtrans (QRIS & VA)': 'Automated checkout via Midtrans (QRIS & VA)',
+  'Cek ongkir otomatis ekspedisi (J&T, JNE)': 'Automated shipping rate check (J&T, JNE)',
+  'Watermark resmi Kroombox di footer toko': 'Official Kroombox watermark in store footer',
+  'Unlimited katalog produk & varian': 'Unlimited product catalog & variants',
+  'Bebas watermark (white-label brand sendiri)': 'Watermark free (your own white-label brand)',
+  'Semua metode pembayaran Midtrans (QRIS, VA Bank, Kartu Kredit)': 'All Midtrans payment methods (QRIS, VA Bank, Credit Card)',
+  'Visual layout builder & kustomisasi banner toko': 'Visual layout builder & store banner customization',
+  'Cetak label pengiriman thermal massal': 'Bulk thermal shipping label printing',
+  'Laporan analitik penjualan & omset real-time': 'Real-time sales & turnover analytics report',
+  'Prioritas bantuan customer support': 'Priority customer support assistance',
+  'Semua fitur paket Pro UMKM': 'All features in Pro UMKM plan',
+  'Akses multi-staf pengelola toko (hingga 5 admin)': 'Multi-staff store access (up to 5 admins)',
+  'Dukungan custom domain toko (.com / .id)': 'Custom store domain support (.com / .id)',
+  'Notifikasi otomatis WhatsApp bot ke pembeli': 'Automated WhatsApp bot notifications to buyers',
+  'Dedicated Account Manager 24/7': 'Dedicated Account Manager 24/7',
+};
+
 export const BillingPage: React.FC<BillingPageProps> = ({
   store,
   onUpdateStore,
   onShowNotification,
   onNavigateDashboard,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
+
+  const getPlanName = (name: string) => (isEn && PLAN_NAME_MAP[name] ? PLAN_NAME_MAP[name] : name);
+  const getPlanTagline = (tagline: string) => (isEn && PLAN_TAGLINE_MAP[tagline] ? PLAN_TAGLINE_MAP[tagline] : tagline);
+  const getPlanFeature = (feat: string) => (isEn && PLAN_FEATURE_MAP[feat] ? PLAN_FEATURE_MAP[feat] : feat);
+
   const [plans, setPlans] = useState<BillingPlan[]>(billingPlanService.getActivePlans());
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<BillingPlan | null>(null);
@@ -67,10 +107,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       return subs.map((s) => ({
         id: s.invoiceNumber,
         plan: s.planName,
-        cycle: s.cycle === 'yearly' ? 'Tahunan' : 'Bulanan',
-        date: new Date(s.paidAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        cycle: s.cycle === 'yearly' ? (isEn ? 'Yearly' : 'Tahunan') : (isEn ? 'Monthly' : 'Bulanan'),
+        date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
         amount: s.amount,
-        status: s.status === 'paid' ? 'Lunas (Midtrans)' : s.status,
+        status: s.status === 'paid' ? (isEn ? 'Paid (Midtrans)' : 'Lunas (Midtrans)') : s.status,
       }));
     }
     return INITIAL_INVOICES;
@@ -224,7 +264,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   : 'text-[#706866] hover:text-[#241A1A]'
               }`}
             >
-              Bulanan
+              {isEn ? 'Monthly' : 'Bulanan'}
             </button>
             <button
               type="button"
@@ -235,7 +275,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   : 'text-[#706866] hover:text-[#241A1A]'
               }`}
             >
-              Tahunan
+              {isEn ? 'Yearly' : 'Tahunan'}
             </button>
           </div>
 
@@ -248,10 +288,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   subs.map((s) => ({
                     id: s.invoiceNumber,
                     plan: s.planName,
-                    cycle: s.cycle === 'yearly' ? 'Tahunan' : 'Bulanan',
-                    date: new Date(s.paidAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+                    cycle: s.cycle === 'yearly' ? (isEn ? 'Yearly' : 'Tahunan') : (isEn ? 'Monthly' : 'Bulanan'),
+                    date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
                     amount: s.amount,
-                    status: s.status === 'paid' ? 'Lunas (Midtrans)' : s.status,
+                    status: s.status === 'paid' ? (isEn ? 'Paid (Midtrans)' : 'Lunas (Midtrans)') : s.status,
                   }))
                 );
               }
@@ -260,7 +300,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             className="px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF7F7] border border-[#E5E0DD] text-xs font-semibold text-[#241A1A] hover:text-[#66000E] hover:border-[#66000E] transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5 text-[#66000E]" />
-            <span>Riwayat Berlangganan</span>
+            <span>{isEn ? 'Subscription History' : 'Riwayat Berlangganan'}</span>
           </button>
         </div>
       </div>
@@ -282,29 +322,31 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <h3 className="font-extrabold text-base text-[#241A1A]">{plan.name}</h3>
+                  <h3 className="font-extrabold text-base text-[#241A1A]">{getPlanName(plan.name)}</h3>
                   {isCurrent && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Aktif
+                      {isEn ? 'Active' : 'Aktif'}
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs text-[#706866] mt-1 min-h-[32px]">{plan.tagline}</p>
+                <p className="text-xs text-[#706866] mt-1 min-h-[32px]">{getPlanTagline(plan.tagline)}</p>
 
                 {/* Price */}
                 <div className="py-4 border-y border-[#FAF7F7] my-3">
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl sm:text-3xl font-black text-[#241A1A]">
-                      {price === 0 ? 'Gratis' : formatRupiah(price)}
+                      {price === 0 ? (isEn ? 'Free' : 'Gratis') : formatRupiah(price)}
                     </span>
                     <span className="text-xs text-[#706866]">
-                      {price === 0 ? '' : billingCycle === 'yearly' ? '/ tahun' : '/ bulan'}
+                      {price === 0 ? '' : billingCycle === 'yearly' ? (isEn ? '/ year' : '/ tahun') : (isEn ? '/ month' : '/ bulan')}
                     </span>
                   </div>
                   {billingCycle === 'yearly' && price > 0 && (
                     <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
-                      Setara {formatRupiah(Math.round(price / 12))}/bulan (Hemat 2 bulan)
+                      {isEn
+                        ? `Equivalent to ${formatRupiah(Math.round(price / 12))}/month (Save 2 months)`
+                        : `Setara ${formatRupiah(Math.round(price / 12))}/bulan (Hemat 2 bulan)`}
                     </span>
                   )}
                 </div>
@@ -316,7 +358,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                       <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
                         <Check className="w-2.5 h-2.5 stroke-[3]" />
                       </div>
-                      <span>{feat}</span>
+                      <span>{getPlanFeature(feat)}</span>
                     </li>
                   ))}
                 </ul>
@@ -335,10 +377,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   }`}
                 >
                   {isCurrent ? (
-                    <span>Paket Sedang Aktif</span>
+                    <span>{isEn ? 'Current Active Plan' : 'Paket Sedang Aktif'}</span>
                   ) : (
                     <>
-                      <span>{plan.slug === 'free' ? 'Pilih Paket Starter' : `Beralih ke ${plan.name}`}</span>
+                      <span>{plan.slug === 'free' ? (isEn ? 'Select Free Plan' : 'Pilih Paket Starter') : (isEn ? `Upgrade to ${getPlanName(plan.name)}` : `Beralih ke ${plan.name}`)}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </>
                   )}
@@ -357,8 +399,8 @@ export const BillingPage: React.FC<BillingPageProps> = ({
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-[#66000E]" />
                 <div>
-                  <h3 className="font-bold text-base text-[#241A1A]">Riwayat Berlangganan</h3>
-                  <p className="text-xs text-[#706866]">Catatan transaksi paket langganan toko Anda</p>
+                  <h3 className="font-bold text-base text-[#241A1A]">{isEn ? 'Subscription History' : 'Riwayat Berlangganan'}</h3>
+                  <p className="text-xs text-[#706866]">{isEn ? 'Transaction history of your store subscription plan' : 'Catatan transaksi paket langganan toko Anda'}</p>
                 </div>
               </div>
               <button
@@ -374,20 +416,20 @@ export const BillingPage: React.FC<BillingPageProps> = ({
               <table className="w-full text-xs text-left text-[#241A1A]">
                 <thead className="bg-[#FAF7F7] text-[#706866] border-b border-[#E5E0DD]">
                   <tr>
-                    <th className="py-2.5 px-3 font-semibold">No. Invoice</th>
-                    <th className="py-2.5 px-3 font-semibold">Paket</th>
-                    <th className="py-2.5 px-3 font-semibold">Siklus</th>
-                    <th className="py-2.5 px-3 font-semibold">Tanggal</th>
-                    <th className="py-2.5 px-3 font-semibold">Total</th>
-                    <th className="py-2.5 px-3 font-semibold">Status</th>
-                    <th className="py-2.5 px-3 font-semibold text-right">Aksi</th>
+                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Invoice No.' : 'No. Invoice'}</th>
+                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Plan' : 'Paket'}</th>
+                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Cycle' : 'Siklus'}</th>
+                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Date' : 'Tanggal'}</th>
+                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Total' : 'Total'}</th>
+                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Status' : 'Status'}</th>
+                    <th className="py-2.5 px-3 font-semibold text-right">{isEn ? 'Action' : 'Aksi'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#FAF7F7]">
                   {invoices.map((inv) => (
                     <tr key={inv.id} className="hover:bg-[#FAF7F7]/60 transition">
                       <td className="py-3 px-3 font-mono font-semibold">{inv.id}</td>
-                      <td className="py-3 px-3 font-bold">{inv.plan}</td>
+                      <td className="py-3 px-3 font-bold">{getPlanName(inv.plan)}</td>
                       <td className="py-3 px-3 text-[#706866]">{inv.cycle}</td>
                       <td className="py-3 px-3 text-[#706866]">{inv.date}</td>
                       <td className="py-3 px-3 font-bold text-[#66000E]">{formatRupiah(inv.amount)}</td>
@@ -401,10 +443,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                           type="button"
                           onClick={() => setViewingInvoice(inv)}
                           className="text-[#66000E] hover:underline font-semibold flex items-center gap-1 ml-auto cursor-pointer"
-                          title="Lihat & Unduh Bukti Invoice Resmi"
+                          title={isEn ? 'View & Download Official Invoice' : 'Lihat & Unduh Bukti Invoice Resmi'}
                         >
                           <Download className="w-3.5 h-3.5" />
-                          <span>Download</span>
+                          <span>{isEn ? 'Download' : 'Unduh'}</span>
                         </button>
                       </td>
                     </tr>
@@ -419,7 +461,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 onClick={() => setIsHistoryOpen(false)}
                 className="px-4 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#706866] hover:bg-[#FAF7F7] transition cursor-pointer"
               >
-                Tutup
+                {isEn ? 'Close' : 'Tutup'}
               </button>
             </div>
           </div>
@@ -433,7 +475,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-[#FAF7F7]">
               <div className="flex items-center gap-2">
                 <Crown className="w-5 h-5 text-[#66000E]" />
-                <h3 className="font-bold text-sm text-[#241A1A]">Konfirmasi Berlangganan</h3>
+                <h3 className="font-bold text-sm text-[#241A1A]">{isEn ? 'Subscription Confirmation' : 'Konfirmasi Berlangganan'}</h3>
               </div>
               <button
                 type="button"
@@ -446,17 +488,17 @@ export const BillingPage: React.FC<BillingPageProps> = ({
 
             <div className="bg-[#FAF7F7] p-3.5 rounded-2xl border border-[#E5E0DD] space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[#706866]">Paket Tujuan:</span>
-                <span className="font-bold text-[#241A1A]">{selectedPlanForUpgrade.name}</span>
+                <span className="text-[#706866]">{isEn ? 'Target Plan:' : 'Paket Tujuan:'}</span>
+                <span className="font-bold text-[#241A1A]">{getPlanName(selectedPlanForUpgrade.name)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#706866]">Siklus Tagihan:</span>
+                <span className="text-[#706866]">{isEn ? 'Billing Cycle:' : 'Siklus Tagihan:'}</span>
                 <span className="font-medium text-[#241A1A]">
-                  {billingCycle === 'yearly' ? 'Tahunan (Hemat 20%)' : 'Bulanan'}
+                  {billingCycle === 'yearly' ? (isEn ? 'Yearly (Save 20%)' : 'Tahunan (Hemat 20%)') : (isEn ? 'Monthly' : 'Bulanan')}
                 </span>
               </div>
               <div className="pt-2 border-t border-[#E5E0DD] flex items-center justify-between">
-                <span className="font-bold text-[#241A1A]">Total Biaya:</span>
+                <span className="font-bold text-[#241A1A]">{isEn ? 'Total Cost:' : 'Total Biaya:'}</span>
                 <span className="text-base font-black text-[#66000E]">
                   {formatRupiah(billingCycle === 'yearly' ? selectedPlanForUpgrade.priceYearly : selectedPlanForUpgrade.priceMonthly)}
                 </span>
@@ -464,7 +506,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             </div>
 
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-[#241A1A] block">Metode Pembayaran:</label>
+              <label className="font-semibold text-[#241A1A] block">{isEn ? 'Payment Method:' : 'Metode Pembayaran:'}</label>
               <div className="grid grid-cols-2 gap-2">
                 <div
                   onClick={() => setPaymentMethod('qris')}
@@ -475,7 +517,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   }`}
                 >
                   <QrCode className="w-4 h-4" />
-                  <span>QRIS Instan</span>
+                  <span>{isEn ? 'Instant QRIS' : 'QRIS Instan'}</span>
                 </div>
 
                 <div
@@ -487,7 +529,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   }`}
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span>Virtual Account</span>
+                  <span>{isEn ? 'Virtual Account' : 'Virtual Account'}</span>
                 </div>
               </div>
             </div>
@@ -499,7 +541,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 onClick={handleExecuteUpgrade}
                 className="w-full py-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                <span>{isProcessing ? 'Memproses Transaksi...' : 'Bayar Sekarang via Midtrans'}</span>
+                <span>{isProcessing ? (isEn ? 'Processing Transaction...' : 'Memproses Transaksi...') : (isEn ? 'Pay Now via Midtrans' : 'Bayar Sekarang via Midtrans')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
@@ -508,7 +550,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 onClick={() => setIsModalOpen(false)}
                 className="w-full py-2 text-xs text-[#706866] hover:text-[#241A1A] transition cursor-pointer text-center"
               >
-                Batal
+                {isEn ? 'Cancel' : 'Batal'}
               </button>
             </div>
           </div>

@@ -29,7 +29,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onOpenWithdraw,
   onSelectOrder,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
 
   // Coordinated Single Source of Truth Hook for Dashboard Metrics
   const {
@@ -74,11 +75,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={refresh}
-            title="Muat ulang metrik real-time"
+            title={isEn ? 'Reload real-time metrics' : 'Muat ulang metrik real-time'}
             className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50/50 border border-[#E5E0DD] hover:border-rose-200 text-[#706866] hover:text-[#800000] text-xs font-medium shadow-2xs flex items-center gap-2 transition cursor-pointer active:scale-95"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#800000] ${isLoading ? 'animate-spin' : ''}`} />
-            <span>{t('auto_update', 'Sinkronisasi Real-time')}</span>
+            <span>{t('auto_update', 'Auto Update')}</span>
           </button>
         </div>
       </div>
@@ -90,7 +91,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <Wallet className="w-5 h-5 stroke-[1.8]" />
           </div>
           <div>
-            <span className="text-xs text-[#706866] font-normal block">Saldo Toko Aktif (Siap Ditarik)</span>
+            <span className="text-xs text-[#706866] font-normal block">{t('wallet_active_balance', 'Saldo Toko Aktif (Siap Ditarik)')}</span>
             <p className="text-xl sm:text-2xl font-semibold text-[#800000] tracking-tight">
               {formatRupiah(balance)}
             </p>
@@ -104,7 +105,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#800000] hover:bg-[#7A0C0C] text-white text-xs font-medium transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
             >
               <ArrowUpRight className="w-4 h-4" />
-              <span>Dompet & Tarik Dana</span>
+              <span>{t('wallet_and_withdraw', 'Dompet & Tarik Dana')}</span>
             </button>
           )}
         </div>
@@ -116,36 +117,40 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <MetricCard
           type="orders"
           value={incomingOrdersCount}
-          subtitle="Segera kemas & kirimkan resi"
+          subtitle={isEn ? 'Pack & ship tracking number' : 'Segera kemas & kirimkan resi'}
           onClick={() => onNavigateTab('pesanan')}
-          actionLabel="Lihat Pesanan"
+          actionLabel={isEn ? 'View Orders' : 'Lihat Pesanan'}
         />
 
         {/* Metric 2: Today's Revenue */}
         <MetricCard
           type="sales"
           value={todaySales}
-          subtitle="Total omset transaksi sukses"
+          subtitle={isEn ? 'Total completed transaction revenue' : 'Total omset transaksi sukses'}
           onClick={() => onNavigateTab('pesanan')}
-          actionLabel="Lihat Rincian"
+          actionLabel={isEn ? 'View Details' : 'Lihat Rincian'}
         />
 
         {/* Metric 3: Total Products in Catalog */}
         <MetricCard
           type="products"
           value={totalProductsCount}
-          subtitle="Barang aktif di etalase"
+          subtitle={isEn ? 'Active items in storefront' : 'Barang aktif di etalase'}
           onClick={() => onNavigateTab('produk')}
-          actionLabel="Lihat Katalog"
+          actionLabel={isEn ? 'View Catalog' : 'Lihat Katalog'}
         />
 
         {/* Metric 4: Low Stock Alert (Unified Count) */}
         <MetricCard
           type="stock_alert"
           value={lowStockCount}
-          subtitle={lowStockCount > 0 ? 'Segera lakukan restock barang' : 'Semua stok produk aman'}
+          subtitle={
+            lowStockCount > 0
+              ? (isEn ? 'Restock items soon' : 'Segera lakukan restock barang')
+              : (isEn ? 'All product stock is safe' : 'Semua stok produk aman')
+          }
           onClick={() => onNavigateTab('produk')}
-          actionLabel="Cek Stok"
+          actionLabel={isEn ? 'Check Stock' : 'Cek Stok'}
         />
       </div>
 
