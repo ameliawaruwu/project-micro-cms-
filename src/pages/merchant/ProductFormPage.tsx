@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ArrowLeft,
   Camera,
@@ -17,6 +17,19 @@ import { Product } from '../../types';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { useLanguage } from '../../contexts/LanguageContext';
 
+export const DEFAULT_PRODUCT_CATEGORIES = [
+  'Pakaian & Fashion',
+  'Makanan & Minuman',
+  'Kesehatan & Kecantikan',
+  'Elektronik & Gadget',
+  'Aksesoris & Perhiasan',
+  'Rumah Tangga & Dapur',
+  'Hobi, Mainan & Koleksi',
+  'Buku & Alat Tulis',
+  'Otomotif',
+  'Umum',
+];
+
 interface ProductFormPageProps {
   productToEdit?: Product | null;
   categories: string[];
@@ -33,6 +46,16 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
   const { t } = useLanguage();
   const isEditing = Boolean(productToEdit);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Available categories: Combine passed categories with default popular options
+  const availableCategories = useMemo(() => {
+    const set = new Set<string>();
+    (categories || []).forEach((c) => {
+      if (c && c.trim() && c !== '__new__') set.add(c.trim());
+    });
+    DEFAULT_PRODUCT_CATEGORIES.forEach((c) => set.add(c));
+    return Array.from(set);
+  }, [categories]);
 
   // Form states
   const [name, setName] = useState('');
@@ -84,19 +107,22 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
       setSku(productToEdit.sku || '');
       setWeightDisplay(productToEdit.weightGrams ? String(productToEdit.weightGrams) : '');
 
-      if (categories.includes(productToEdit.category)) {
+      if (productToEdit.category && availableCategories.includes(productToEdit.category)) {
         setCategory(productToEdit.category);
         setCustomCategory('');
-      } else {
+      } else if (productToEdit.category) {
         setCategory('__new__');
         setCustomCategory(productToEdit.category);
+      } else {
+        setCategory(availableCategories[0] || 'Umum');
+        setCustomCategory('');
       }
     } else {
       // Reset defaults for Add New
       setName('');
       setPriceDisplay('');
       setStockDisplay('');
-      setCategory(categories[0] || 'Umum');
+      setCategory(availableCategories[0] || 'Umum');
       setCustomCategory('');
       setDescription('');
       setImages([]);
@@ -105,7 +131,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
       setWeightDisplay('');
       setErrorMsg('');
     }
-  }, [productToEdit, categories]);
+  }, [productToEdit, availableCategories]);
 
   // Multiple files processing helper (device only)
   const processFiles = (files: File[]) => {
@@ -492,28 +518,53 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                   <span>Kategori Produk <span className="text-rose-500">*</span></span>
                 </label>
                 <div className="space-y-2">
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E] transition cursor-pointer"
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                    <option value="__new__">+ Tambah Kategori Baru...</option>
-                  </select>
-
-                  {category === '__new__' && (
-                    <input
-                      type="text"
-                      required
-                      value={customCategory}
-                      onChange={(e) => setCustomCategory(e.target.value)}
-                      placeholder="Tulis nama kategori..."
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#E5E0DD] bg-white text-[#241A1A] focus:outline-none focus:border-[#66000E] transition"
-                    />
+                  {category === '__new__' ? (
+                    <div className="space-y-1.5 animate-in fade-in duration-150">
+                      <div className="relative flex items-center">
+                        <input
+                          type="text"
+                          required
+                          autoFocus
+                          value={customCategory}
+                          onChange={(e) => setCustomCategory(e.target.value)}
+                          placeholder="Tulis nama kategori baru (contoh: Boneka)..."
+                          className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-[#66000E] bg-white text-[#241A1A] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 transition"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-[#706866]">Kategori kustom baru</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCategory(availableCategories[0] || 'Umum');
+                            setCustomCategory('');
+                          }}
+                          className="text-[11px] font-semibold text-[#66000E] hover:underline cursor-pointer"
+                        >
+                          Batal (Pilih dari daftar)
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <select
+                      value={category}
+                      onChange={(e) => {
+                        if (e.target.value === '__new__') {
+                          setCategory('__new__');
+                          setCustomCategory('');
+                        } else {
+                          setCategory(e.target.value);
+                        }
+                      }}
+                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E] transition cursor-pointer"
+                    >
+                      {availableCategories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                      <option value="__new__">+ Tambah Kategori Baru...</option>
+                    </select>
                   )}
                 </div>
               </div>
