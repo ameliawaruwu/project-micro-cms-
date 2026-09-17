@@ -102,7 +102,7 @@ serve(async (req) => {
       const biteshipPayload = {
         shipper_contact_name: shipperContactName,
         shipper_contact_phone: shipperContactPhone,
-        shipper_contact_email: 'logistik@kroombox.id',
+        shipper_contact_email: 'logistik@kroomify.id',
         origin_contact_name: shipperContactName,
         origin_contact_phone: shipperContactPhone,
         origin_address: originAddress,

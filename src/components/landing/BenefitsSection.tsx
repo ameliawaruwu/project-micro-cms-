@@ -40,7 +40,7 @@ export const BenefitsSection: React.FC = () => {
             <span>Keunggulan Utama</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#241A1A] tracking-tight leading-snug mb-2">
-            Mengapa Memilih Kroombox?
+            Mengapa Memilih Kroomify?
           </h2>
           <p className="text-[#5F5652] text-sm sm:text-base leading-relaxed font-normal max-w-lg mx-auto">
             Didesain khusus untuk menyederhanakan aktivitas harian pemilik UMKM di Indonesia.

@@ -65,7 +65,7 @@ const PLAN_FEATURE_MAP: Record<string, string> = {
   'Katalog produk hingga 25 item': 'Product catalog up to 25 items',
   'Checkout otomatis via Midtrans (QRIS & VA)': 'Automated checkout via Midtrans (QRIS & VA)',
   'Cek ongkir otomatis ekspedisi (J&T, JNE)': 'Automated shipping rate check (J&T, JNE)',
-  'Watermark resmi Kroombox di footer toko': 'Official Kroombox watermark in store footer',
+  'Watermark resmi Kroomify di footer toko': 'Official Kroomify watermark in store footer',
   'Unlimited katalog produk & varian': 'Unlimited product catalog & variants',
   'Bebas watermark (white-label brand sendiri)': 'Watermark free (your own white-label brand)',
   'Semua metode pembayaran Midtrans (QRIS, VA Bank, Kartu Kredit)': 'All Midtrans payment methods (QRIS, VA Bank, Credit Card)',

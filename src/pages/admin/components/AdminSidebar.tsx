@@ -7,6 +7,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { AdminTab, AdminNavItem } from '../types';
+import { KroomifyLogo } from '../../../components/common/KroomifyLogo';
 
 interface AdminSidebarProps {
   isSidebarOpen: boolean;
@@ -49,20 +50,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           {/* Brand Header */}
           <div className={`flex items-center pb-3.5 border-b border-gray-100 ${isSidebarOpen ? 'justify-between' : 'justify-center flex-col gap-2'}`}>
             <div className={`flex items-center gap-2.5 ${!isSidebarOpen ? 'justify-center' : ''}`}>
-              <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white shadow-xs shrink-0">
-                <Shield className="w-4 h-4 text-white" />
-              </div>
-              {isSidebarOpen && (
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-sm text-gray-900 tracking-tight">Kroombox</span>
-                    <span className="px-1 py-0.2 rounded bg-red-50 text-red-700 text-[10px] font-bold border border-red-100">
-                      ADMIN
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-gray-500 block leading-tight truncate">Super Admin Panel</span>
-                </div>
-              )}
+              <KroomifyLogo
+                size="sm"
+                showText={isSidebarOpen}
+                badge="ADMIN"
+              />
             </div>
 
             <button

@@ -22,12 +22,12 @@ interface StoredAccount {
 const defaultAccounts: StoredAccount[] = [
   {
     id: 'usr-admin-1',
-    email: 'admin@kroombox.id',
+    email: 'admin@kroomify.id',
     password: 'admin123',
     user: {
       id: 'usr-admin-1',
-      name: 'Super Admin Kroombox',
-      email: 'admin@kroombox.id',
+      name: 'Super Admin Kroomify',
+      email: 'admin@kroomify.id',
       phoneWhatsApp: '081289201928',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
       role: 'admin',
@@ -640,18 +640,18 @@ class AuthService {
         },
         body: JSON.stringify({
           to: cleanEmail,
-          subject: 'Kroombox - Token Reset Password Anda',
+          subject: 'Kroomify - Token Reset Password Anda',
           html: `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
               <h2 style="color: #66000E;">Permintaan Reset Kata Sandi</h2>
               <p>Halo,</p>
-              <p>Kami menerima permintaan untuk mengatur ulang kata sandi akun Kroombox Anda. Gunakan token 6 digit di bawah ini untuk melanjutkan:</p>
+              <p>Kami menerima permintaan untuk mengatur ulang kata sandi akun Kroomify Anda. Gunakan token 6 digit di bawah ini untuk melanjutkan:</p>
               <div style="background-color: #F9EDEF; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
                 <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #66000E;">${token}</span>
               </div>
               <p>Token ini hanya berlaku selama sesi ini. Jika Anda tidak meminta reset kata sandi, abaikan email ini.</p>
               <br/>
-              <p style="font-size: 12px; color: #666;">Tim Kroombox</p>
+              <p style="font-size: 12px; color: #666;">Tim Kroomify</p>
             </div>
           `
         }),
@@ -729,7 +729,7 @@ class AuthService {
   async syncLocalAccountsToSupabase(): Promise<void> {
     const accounts = this.getStoredAccounts();
     for (const acc of accounts) {
-      if (acc.email === 'admin@kroombox.id' || acc.email === 'andhika@gmail.com') continue;
+      if (acc.email === 'admin@kroomify.id' || acc.email === 'admin@kroombox.id' || acc.email === 'andhika@gmail.com') continue;
       try {
         const { error: uErr } = await supabase.from('users').upsert({
           id: acc.id,

@@ -156,12 +156,10 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               {/* Mockup Header */}
               <div className="bg-[#FAF7F7] rounded-xl p-3 mb-3 flex items-center justify-between border border-[#E8DDDE]">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-[#66000E] flex items-center justify-center text-white font-bold text-xs shadow-xs">
-                    K
-                  </div>
+                  <img src="/Logo.png" alt="Kroomify" className="w-7 h-7 object-contain rounded-lg shadow-xs" />
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-[#241A1A] tracking-tight">{t('hero_dash_title', 'Kroombox Dashboard')}</span>
+                      <span className="text-xs font-bold text-[#241A1A] tracking-tight">{t('hero_dash_title', 'Kroomify Dashboard')}</span>
                       <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-800 font-medium border border-emerald-200">
                         {t('hero_dash_status_online', 'Online')}
                       </span>

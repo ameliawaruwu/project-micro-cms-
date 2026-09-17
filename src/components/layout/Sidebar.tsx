@@ -20,6 +20,7 @@ import {
 import { MerchantTab, Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
+import { KroomifyLogo } from '../common/KroomifyLogo';
 
 interface SidebarProps {
   activeTab: MerchantTab;
@@ -96,23 +97,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           type="button"
           onClick={() => handleItemClick('beranda')}
           className="flex items-center gap-2.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none"
-          title="Kroombox"
+          title="Kroomify"
         >
-          <div className="w-7 h-7 rounded-md bg-[#800000] flex items-center justify-center shadow-xs group-hover:bg-[#7A0C0C] transition-colors shrink-0">
-            <span className="text-white font-bold text-sm">K</span>
-          </div>
-          {(!isCollapsed || isOpenMobile) && (
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-sm tracking-tight text-gray-900 group-hover:text-[#800000] transition-colors">
-                  Kroombox
-                </span>
-                <span className="text-[10px] font-medium px-1 py-0.2 rounded bg-gray-100 text-gray-600 border border-gray-200">
-                  UMKM
-                </span>
-              </div>
-            </div>
-          )}
+          <KroomifyLogo
+            size="sm"
+            showText={!isCollapsed || isOpenMobile}
+            badge="UMKM"
+          />
         </button>
 
         {/* Mobile Close Button */}

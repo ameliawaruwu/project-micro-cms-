@@ -1,5 +1,5 @@
 -- ============================================================================
--- KROOMBOX (MICRO CMS) - SUPABASE / POSTGRESQL CLEAN DATABASE SCHEMA
+-- KROOMIFY (MICRO CMS) - SUPABASE / POSTGRESQL CLEAN DATABASE SCHEMA
 -- ============================================================================
 -- Kompatibel dengan Supabase Database & PostgreSQL 13+
 -- Mendukung Multi-Store UMKM, Katalog Produk, Midtrans Payment Gateway,
@@ -375,7 +375,7 @@ CREATE INDEX IF NOT EXISTS idx_domain_requests_status ON domain_requests(status)
 INSERT INTO platform_settings (id) VALUES ('global_config') ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO users (id, email, password_hash, name, phone, role) VALUES
-('usr-admin-1', 'admin@kroombox.id', 'admin123', 'Super Admin Kroombox', '081289201928', 'admin'),
+('usr-admin-1', 'admin@kroomify.id', 'admin123', 'Super Admin Kroomify', '081289201928', 'admin'),
 ('usr-andhika-1', 'andhika@gmail.com', 'password123', 'Andhika Pratama', '081298765432', 'merchant')
 ON CONFLICT (id) DO NOTHING;
 
@@ -427,7 +427,7 @@ INSERT INTO shipping_branches (
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO billing_plans (id, name, slug, tagline, price_monthly, price_yearly, features, is_active, sort_order) VALUES
-('plan_free', 'Paket Free', 'free', 'Cocok untuk toko baru yang baru mulai belajar online', 0, 0, '["Subdomain gratis [slug].kroombox.com", "Katalog produk hingga 15 item", "Checkout katalog & order WhatsApp", "Watermark Kroombox di footer toko", "Manual shipping & payment"]'::jsonb, true, 1),
+('plan_free', 'Paket Free', 'free', 'Cocok untuk toko baru yang baru mulai belajar online', 0, 0, '["Subdomain gratis [slug].kroomify.com", "Katalog produk hingga 15 item", "Checkout katalog & order WhatsApp", "Watermark Kroomify di footer toko", "Manual shipping & payment"]'::jsonb, true, 1),
 ('plan_personal', 'Personal Toko', 'personal', 'Cocok untuk bisnis individu & toko retail mandiri', 35000, 350000, '["Hosting Server: Rp 200.000 / tahun", "Jasa Micro CMS: Rp 150.000 / tahun", "Dukungan Custom Domain (.top, .online, .org, .com, .id)", "Katalog produk hingga 100 item", "Automated Midtrans (QRIS, VA Bank, E-Wallet)", "Integrasi Ekspedisi Logistik (JNE, J&T via Biteship)", "White-label tanpa watermark"]'::jsonb, true, 2),
 ('plan_community', 'Community UMKM', 'community', 'Pilihan terbaik untuk UMKM & komunitas bisnis berkembang', 100000, 1000000, '["Hosting Server: Rp 700.000 / tahun", "Jasa Micro CMS: Rp 300.000 / tahun", "Pilihan Terbaik UMKM (Rekomendasi Utama)", "Dukungan Custom Domain (.top, .online, .org, .com, .id)", "Unlimited katalog produk & varian", "Prioritas DNS setup & SSL otomatis", "Semua channel Midtrans & Biteship aktif", "Multi-gudang & multi-cabang pengiriman", "Laporan analitik omset & export data"]'::jsonb, true, 3),
 ('plan_corporate', 'Bisnis Corporate', 'corporate', 'Solusi perusahaan retail skala menengah dengan multi-cabang', 250000, 2500000, '["Hosting Server: Rp 1.800.000 / tahun", "Jasa Micro CMS: Rp 700.000 / tahun", "Server dedicated cloud berkecepatan tinggi", "Kustomisasi tema & visual layout builder tingkat lanjut", "Multi-cabang gudang tidak terbatas", "Notifikasi otomatis WhatsApp bot ke pembeli", "Dedicated Account Manager 24/7"]'::jsonb, true, 4),

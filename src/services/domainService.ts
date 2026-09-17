@@ -93,7 +93,7 @@ class DomainService {
 
       return {
         success: true,
-        message: `Domain ${cleanHost} tersimpan. Pastikan CNAME mengarah ke host Kroombox.`,
+        message: `Domain ${cleanHost} tersimpan. Pastikan CNAME mengarah ke host Kroomify.`,
         hostname: cleanHost,
       };
     }
@@ -123,7 +123,7 @@ class DomainService {
 
       return {
         success: true,
-        message: 'Berhasil menggunakan domain gratis dari sistem Kroombox.',
+        message: 'Berhasil menggunakan domain gratis dari sistem Kroomify.',
       };
     } catch (err: any) {
       return {

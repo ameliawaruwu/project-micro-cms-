@@ -47,7 +47,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store }) => {
   const [activeRequest, setActiveRequest] = useState<DomainRequest | null>(null);
   const [isConnected, setIsConnected] = useState(store.domainStatus === 'connected' && !!store.customDomain);
 
-  const randomDomain = `${store.slug || 'toko'}.kroombox.com`;
+  const randomDomain = `${store.slug || 'toko'}.kroomify.com`;
 
   // Fetch request domain dari Supabase / service
   const loadDomainRequest = async () => {
@@ -237,7 +237,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store }) => {
             Pengaturan Alamat Domain Toko
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Gunakan domain gratis bawaan dari Kroombox atau ajukan custom domain profesional Anda sendiri.
+            Gunakan domain gratis bawaan dari Kroomify atau ajukan custom domain profesional Anda sendiri.
           </p>
         </div>
       </div>
@@ -491,7 +491,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store }) => {
                   {activeRequest.status === 'active' && (
                     <div className="pt-2 border-t border-green-200 flex justify-between items-center">
                       <span className="text-green-800 font-semibold text-[11px]">
-                        Terhubung ke Cloudflare Tunnel Kroombox
+                        Terhubung ke Cloudflare Tunnel Kroomify
                       </span>
                       <button
                         type="button"

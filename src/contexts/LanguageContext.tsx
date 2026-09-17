@@ -224,7 +224,7 @@ export const translations: Translations = {
   hero_badge_ready_process: { id: 'Siap diproses', en: 'Ready to ship' },
   hero_badge_payment_success: { id: 'Pembayaran Berhasil', en: 'Payment Confirmed' },
   hero_badge_qris_bank: { id: 'QRIS & Bank', en: 'QRIS & Bank' },
-  hero_dash_title: { id: 'Kroombox Dashboard', en: 'Kroombox Dashboard' },
+  hero_dash_title: { id: 'Kroomify Dashboard', en: 'Kroomify Dashboard' },
   hero_dash_status_online: { id: 'Online', en: 'Online' },
   hero_dash_tab_overview: { id: 'Ringkasan', en: 'Summary' },
   hero_dash_tab_orders: { id: 'Pesanan', en: 'Orders' },
@@ -324,13 +324,13 @@ export const translations: Translations = {
   // FAQ Section
   faq_section_badge: { id: 'Tanya Jawab', en: 'Q & A' },
   faq_section_title: { id: 'Pertanyaan Umum', en: 'Frequently Asked Questions' },
-  faq_section_desc: { id: 'Jawaban untuk hal-hal yang sering ditanyakan seputar Kroombox.', en: 'Clear answers to common questions about Kroombox.' },
+  faq_section_desc: { id: 'Jawaban untuk hal-hal yang sering ditanyakan seputar Kroomify.', en: 'Clear answers to common questions about Kroomify.' },
   faq_need_more_help: { id: 'Butuh bantuan lebih lanjut?', en: 'Need further assistance?' },
   faq_contact_cs: { id: 'Hubungi CS WhatsApp', en: 'Contact WhatsApp Support' },
   faq_q1: { id: 'Apakah saya perlu keahlian teknis atau bisa coding?', en: 'Do I need coding skills or technical background?' },
-  faq_a1: { id: 'Tidak sama sekali. Kroombox dirancang sangat sederhana sehingga siapa pun bisa membuat katalog produk dan melayani pesanan langsung lewat layar smartphone tanpa pengetahuan teknis.', en: 'Not at all. Kroombox is built simply so anyone can create a product catalog and process incoming orders straight from their smartphone.' },
+  faq_a1: { id: 'Tidak sama sekali. Kroomify dirancang sangat sederhana sehingga siapa pun bisa membuat katalog produk dan melayani pesanan langsung lewat layar smartphone tanpa pengetahuan teknis.', en: 'Not at all. Kroomify is built simply so anyone can create a product catalog and process incoming orders straight from their smartphone.' },
   faq_q2: { id: 'Berapa lama proses pembuatan toko online?', en: 'How long does it take to create an online store?' },
-  faq_a2: { id: 'Kurang dari 5 menit. Cukup daftarkan nama usaha Anda, masukkan foto produk pertama, dan tautan toko online (kroombox.id/toko-anda) langsung aktif dan siap disebarkan ke WhatsApp atau media sosial.', en: 'Less than 5 minutes. Simply register your store name, add your first product photo, and your store link is instantly live and ready to share.' },
+  faq_a2: { id: 'Kurang dari 5 menit. Cukup daftarkan nama usaha Anda, masukkan foto produk pertama, dan tautan toko online (kroomify.id/toko-anda) langsung aktif dan siap disebarkan ke WhatsApp atau media sosial.', en: 'Less than 5 minutes. Simply register your store name, add your first product photo, and your store link is instantly live and ready to share.' },
   faq_q3: { id: 'Bagaimana cara pembeli membayar pesanan?', en: 'How do customers pay for orders?' },
   faq_a3: { id: 'Tersedia pembayaran otomatis menggunakan QRIS Instan (bisa di-scan dari GoPay, OVO, Dana, ShopeePay, serta seluruh mobile banking) dan Transfer Virtual Account Bank resmi.', en: 'Automatic payment methods include instant QRIS (scannable from GoPay, OVO, Dana, ShopeePay, and all banking apps) as well as bank Virtual Accounts.' },
   faq_q4: { id: 'Apakah uang dan saldo hasil jualan saya aman?', en: 'Is my store revenue and wallet balance safe?' },
@@ -370,12 +370,12 @@ export const translations: Translations = {
   footer_link_privacy: { id: 'Kebijakan Privasi', en: 'Privacy Policy' },
   footer_link_terms: { id: 'Syarat & Ketentuan', en: 'Terms & Conditions' },
   footer_link_security: { id: 'Keamanan Data', en: 'Data Security' },
-  footer_copyright: { id: '© 2026 Kroombox. Dibuat untuk UMKM Indonesia.', en: '© 2026 Kroombox. Crafted for Entrepreneurs.' },
+  footer_copyright: { id: '© 2026 Kroomify. Dibuat untuk UMKM Indonesia.', en: '© 2026 Kroomify. Crafted for Entrepreneurs.' },
   footer_privacy_safe: { id: 'Privasi Terjaga', en: 'Privacy Protected' },
   footer_server_secure: { id: 'Server Cepat & Aman', en: 'Fast & Secure Servers' },
 
   // Demo Modal & Preview
-  demo_modal_title: { id: 'Demo Interaktif Kroombox', en: 'Kroombox Interactive Demo' },
+  demo_modal_title: { id: 'Demo Interaktif Kroomify', en: 'Kroomify Interactive Demo' },
   demo_modal_subtitle: { id: 'Jelajahi fitur dashboard toko online dalam mode uji coba', en: 'Explore online store dashboard features in trial mode' },
   demo_modal_launch_btn: { id: 'Masuk ke Live Demo Dashboard', en: 'Enter Live Dashboard Demo' },
   demo_modal_register_btn: { id: 'Daftar Akun Toko Baru', en: 'Register New Store Account' },
@@ -529,7 +529,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const LANGUAGE_STORAGE_KEY = 'kroombox_language_preference';
+const LANGUAGE_STORAGE_KEY = 'kroomify_language_preference';
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {

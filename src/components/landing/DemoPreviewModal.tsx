@@ -44,7 +44,7 @@ export const DemoPreviewModal: React.FC<DemoPreviewModalProps> = ({
               <span>Simulasi 1 Menit</span>
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-[#241A1A] tracking-tight">
-              Lihat Kroombox dalam 1 Menit
+              Lihat Kroomify dalam 1 Menit
             </h3>
             <p className="text-xs sm:text-sm text-[#706866] mt-0.5">
               Cara termudah kelola toko online Anda dari HP atau laptop.

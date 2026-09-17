@@ -10,6 +10,7 @@ import {
 import { scrollToLandingSection } from '../../utils/scroll';
 import { DemoPreviewModal } from './DemoPreviewModal';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
+import { KroomifyLogo } from '../common/KroomifyLogo';
 
 interface LandingNavbarProps {
   activeTab?: string;
@@ -108,7 +109,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
   return (
     <>
       <header
-        id="kroombox-landing-header"
+        id="kroomify-landing-header"
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 bg-white/95 backdrop-blur-md border-b ${
           isScrolled
             ? 'border-[#E5E0DD] shadow-[0_2px_12px_rgba(36,26,26,0.06)] h-[64px] sm:h-[68px]'
@@ -128,23 +129,10 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
                 if (onNavigateHome) onNavigateHome();
               }}
               className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer text-left bg-transparent border-0 p-0 focus:outline-none shrink-0"
-              title="Kroombox"
-              aria-label="Kroombox"
+              title="Kroomify"
+              aria-label="Kroomify"
             >
-              {/* Dark Burgundy Logo Icon (#66000E) */}
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#66000E] flex items-center justify-center text-white shrink-0 shadow-2xs group-hover:bg-[#801010] transition-colors">
-                <span className="font-bold text-base sm:text-lg text-white select-none">K</span>
-              </div>
-
-              {/* Brand Typography & UMKM Badge */}
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="font-bold text-base sm:text-lg text-[#241A1A] tracking-tight group-hover:text-[#66000E] transition-colors font-sans">
-                  Kroombox
-                </span>
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-[#F5E8EA] text-[#66000E] text-[10px] font-semibold tracking-wide border border-[#E8DDDE] leading-tight select-none">
-                  UMKM
-                </span>
-              </div>
+              <KroomifyLogo size="md" badge="UMKM" />
             </button>
           </div>
 

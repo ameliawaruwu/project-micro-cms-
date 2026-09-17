@@ -45,7 +45,7 @@ app.post('/api/send-email', async (req, res) => {
 
     // Send the email
     const info = await transporter.sendMail({
-      from: `"Kroombox" <${smtpEmail}>`,
+      from: `"Kroomify" <${smtpEmail}>`,
       to,
       subject,
       html,

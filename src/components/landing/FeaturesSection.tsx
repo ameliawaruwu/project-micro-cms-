@@ -314,7 +314,7 @@ export const FeaturesSection: React.FC = () => {
                     </div>
 
                     <div className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg bg-white border border-[#E8DDDE] text-[11px] sm:text-xs font-mono text-[#66000E]">
-                      <span>kroombox.id/tokobatik</span>
+                      <span>kroomify.id/tokobatik</span>
                       <ExternalLink className="w-3.5 h-3.5 text-[#66000E]" />
                     </div>
                   </div>
@@ -328,7 +328,7 @@ export const FeaturesSection: React.FC = () => {
 
               {/* Bottom Feature Footer */}
               <div className="pt-2 mt-2 border-t border-[#E8DDDE] flex items-center justify-between text-[11px] sm:text-xs text-[#5F5652]">
-                <span>{t('features_integrated_footer', 'Fitur Terintegrasi Kroombox')}</span>
+                <span>{t('features_integrated_footer', 'Fitur Terintegrasi Kroomify')}</span>
                 <span className="text-[#66000E] font-semibold">{t('features_free_plan_footer', 'Gratis Tanpa Biaya Langganan')}</span>
               </div>
 

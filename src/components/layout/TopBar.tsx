@@ -89,7 +89,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         UMKM
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#706866] truncate font-normal mt-0.5">{user?.email || 'merchant@kroombox.id'}</p>
+                    <p className="text-[11px] text-[#706866] truncate font-normal mt-0.5">{user?.email || 'merchant@kroomify.id'}</p>
                   </div>
                 </div>
 

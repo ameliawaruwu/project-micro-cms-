@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
+import { KroomifyLogo } from '../../components/common/KroomifyLogo';
 
 interface ForgotPasswordPageProps {
   onNavigateLogin: () => void;
@@ -122,20 +123,10 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
             type="button"
             onClick={onNavigateLanding || onNavigateLogin}
             className="inline-flex items-center gap-2.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none"
-            title={t('auth_back_to_home', 'Halaman Utama Kroombox')}
+            title={t('auth_back_to_home', 'Halaman Utama Kroomify')}
             aria-label={t('auth_back_to_home', 'Kembali ke Halaman Utama')}
           >
-            <div className="w-8 h-8 rounded-xl bg-[#66000E] text-white flex items-center justify-center font-bold text-base shadow-xs group-hover:scale-105 transition-transform">
-              K
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg text-[#241A1A] tracking-tight group-hover:text-[#66000E] transition-colors leading-none">
-                Kroombox
-              </span>
-              <span className="text-[10px] text-[#6B6260] mt-0.5">
-                {t('landing_platform_badge', 'Platform Toko Online UMKM')}
-              </span>
-            </div>
+            <KroomifyLogo size="md" />
           </button>
 
           {/* Right actions: Language switcher + Back */}

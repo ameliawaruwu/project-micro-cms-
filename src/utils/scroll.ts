@@ -1,5 +1,5 @@
 /**
- * Ultra-smooth scrolling utility for Kroombox Landing Page.
+ * Ultra-smooth scrolling utility for Kroomify Landing Page.
  * Uses custom cubic-bezier easing interpolation (easeInOutCubic)
  * with requestAnimationFrame to ensure silky smooth continuous scrolling
  * across all mobile and desktop browsers and iframes.
@@ -18,7 +18,7 @@ export const scrollToLandingSection = (id: string, customOffset: number = 0, dur
   const element = document.getElementById(id);
   if (!element) return;
 
-  const header = document.getElementById('kroombox-landing-header');
+  const header = document.getElementById('kroomify-landing-header');
   const headerHeight = header ? header.getBoundingClientRect().height : (window.innerWidth < 1024 ? 64 : 68);
   
   const elementTop = element.getBoundingClientRect().top + window.scrollY;
@@ -44,6 +44,6 @@ export const smoothScrollToY = (targetY: number, _duration?: number) => {
 // Global declaration for TS
 declare global {
   interface Window {
-    __kroomboxScrollRafId?: number;
+    __kroomifyScrollRafId?: number;
   }
 }

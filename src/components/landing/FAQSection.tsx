@@ -9,11 +9,11 @@ export const FAQSection: React.FC = () => {
   const faqs = [
     {
       q: t('faq_q1', 'Apakah saya perlu keahlian teknis atau bisa coding?'),
-      a: t('faq_a1', 'Tidak sama sekali. Kroombox dirancang sangat sederhana sehingga siapa pun bisa membuat katalog produk dan melayani pesanan langsung lewat layar smartphone tanpa pengetahuan teknis.'),
+      a: t('faq_a1', 'Tidak sama sekali. Kroomify dirancang sangat sederhana sehingga siapa pun bisa membuat katalog produk dan melayani pesanan langsung lewat layar smartphone tanpa pengetahuan teknis.'),
     },
     {
       q: t('faq_q2', 'Berapa lama proses pembuatan toko online?'),
-      a: t('faq_a2', 'Kurang dari 5 menit. Cukup daftarkan nama usaha Anda, masukkan foto produk pertama, dan tautan toko online (kroombox.id/toko-anda) langsung aktif dan siap disebarkan ke WhatsApp atau media sosial.'),
+      a: t('faq_a2', 'Kurang dari 5 menit. Cukup daftarkan nama usaha Anda, masukkan foto produk pertama, dan tautan toko online (kroomify.id/toko-anda) langsung aktif dan siap disebarkan ke WhatsApp atau media sosial.'),
     },
     {
       q: t('faq_q3', 'Bagaimana cara pembeli membayar pesanan?'),
@@ -50,7 +50,7 @@ export const FAQSection: React.FC = () => {
             </h2>
 
             <p className="text-[#5F5652] text-xs sm:text-sm leading-relaxed font-normal max-w-md mx-auto lg:mx-0">
-              {t('faq_section_desc', 'Jawaban untuk hal-hal yang sering ditanyakan seputar Kroombox.')}
+              {t('faq_section_desc', 'Jawaban untuk hal-hal yang sering ditanyakan seputar Kroomify.')}
             </p>
 
             {/* WhatsApp Quick Help Card */}
@@ -60,10 +60,10 @@ export const FAQSection: React.FC = () => {
                 <span>{t('faq_more_help', 'Butuh bantuan lebih lanjut?')}</span>
               </div>
               <p className="text-[11px] sm:text-xs text-[#5F5652] leading-relaxed">
-                Tim CS Kroombox siap membantu panduan setting toko dan pertanyaan teknis Anda.
+                Tim CS Kroomify siap membantu panduan setting toko dan pertanyaan teknis Anda.
               </p>
               <a
-                href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroombox,%20saya%20ingin%20tanya%20seputar%20pembuatan%20toko%20online"
+                href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroomify,%20saya%20ingin%20tanya%20seputar%20pembuatan%20toko%20online"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 w-full h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition cursor-pointer active:scale-[0.98] shadow-xs"

@@ -98,7 +98,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 </label>
                 <div className="flex items-center">
                   <span className="px-3 py-2.5 bg-[#F7F7F7] border border-r-0 border-[#EAEAEA] rounded-l-xl text-xs text-[#777777] font-mono">
-                    kroombox.id/
+                    kroomify.id/
                   </span>
                   <input
                     type="text"

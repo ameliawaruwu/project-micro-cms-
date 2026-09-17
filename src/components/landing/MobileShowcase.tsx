@@ -14,7 +14,7 @@ export const MobileShowcase: React.FC = () => {
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-semibold mb-3">
             <Smartphone className="w-3.5 h-3.5" />
-            <span>Mobile-First Kroombox</span>
+            <span>Mobile-First Kroomify</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#241A1A] tracking-tight leading-tight mb-3">
             Bisnis Anda, di Genggaman.
@@ -42,7 +42,7 @@ export const MobileShowcase: React.FC = () => {
                 {/* Top User Bar */}
                 <div className="flex items-center justify-between pt-1">
                   <div>
-                    <span className="text-[10px] text-[#857C76]">Merchant Kroombox</span>
+                    <span className="text-[10px] text-[#857C76]">Merchant Kroomify</span>
                     <h3 className="text-xs font-bold text-[#241A1A]">Toko Batik Kirana</h3>
                   </div>
                   <div className="w-6 h-6 rounded-full bg-[#66000E] text-white flex items-center justify-center text-[10px] font-bold">

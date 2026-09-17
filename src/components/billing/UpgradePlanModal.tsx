@@ -46,7 +46,7 @@ const PLANS: PlanDetail[] = [
       'Checkout Otomatis Midtrans (QRIS & VA)',
       'Cek Ongkir Otomatis (J&T, JNE)',
       '0% Komisi Transaksi (Bebas Potongan)',
-      'Watermark Powered by Kroombox',
+      'Watermark Powered by Kroomify',
     ],
   },
   {

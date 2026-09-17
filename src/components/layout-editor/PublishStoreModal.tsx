@@ -72,7 +72,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   const friendlyDisplayUrl = hasActiveCustomDomain
     ? activeCustomDomainName
-    : `${store.slug}.kroombox.com`;
+    : `${store.slug}.kroomify.com`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(liveStoreUrl);
@@ -167,7 +167,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                         </div>
                         <p className="text-[11px] text-[#706866] mt-0.5 leading-snug">
                           {isFreePlan
-                            ? 'Shared hosting gratis Kroombox dengan watermark di footer. Tetap bisa live & berjualan via WhatsApp.'
+                            ? 'Shared hosting gratis Kroomify dengan watermark di footer. Tetap bisa live & berjualan via WhatsApp.'
                             : `Hosting server prioritas aktif (${currentPlan?.tagline}). Bebas watermark & white-label.`}
                         </p>
                       </div>
@@ -233,15 +233,15 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                             </span>
                           ) : domainRequest?.status === 'approved' ? (
                             <span>
-                              Domain <b>{domainRequest.fullDomain}</b> disetujui (Rp {domainRequest.price.toLocaleString('id-ID')}/thn). Toko sementara akan live di <b>{store.slug}.kroombox.com</b>.
+                              Domain <b>{domainRequest.fullDomain}</b> disetujui (Rp {domainRequest.price.toLocaleString('id-ID')}/thn). Toko sementara akan live di <b>{store.slug}.kroomify.com</b>.
                             </span>
                           ) : domainRequest?.status === 'pending' ? (
                             <span>
-                              Domain <b>{domainRequest.fullDomain}</b> sedang dicek admin. Toko sementara live di <b>{store.slug}.kroombox.com</b>.
+                              Domain <b>{domainRequest.fullDomain}</b> sedang dicek admin. Toko sementara live di <b>{store.slug}.kroomify.com</b>.
                             </span>
                           ) : (
                             <span>
-                              Toko langsung live di subdomain <b>{store.slug}.kroombox.com</b> tanpa biaya tambahan.
+                              Toko langsung live di subdomain <b>{store.slug}.kroomify.com</b> tanpa biaya tambahan.
                             </span>
                           )}
                         </p>

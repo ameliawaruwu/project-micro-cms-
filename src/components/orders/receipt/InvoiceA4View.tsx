@@ -30,7 +30,7 @@ export const InvoiceA4View: React.FC<InvoiceA4ViewProps> = ({
           </h1>
           <p className="text-xs text-gray-600 mt-0.5">{store.city || 'Indonesia'}</p>
           <p className="text-xs text-gray-600 font-mono">WA: {store.phoneWhatsApp || '-'}</p>
-          <p className="text-xs text-gray-500 font-mono">kroombox.id/{store.slug}</p>
+          <p className="text-xs text-gray-500 font-mono">kroomify.id/{store.slug}</p>
         </div>
 
         <div className="text-right">
@@ -158,7 +158,7 @@ export const InvoiceA4View: React.FC<InvoiceA4ViewProps> = ({
 
       {/* Invoice Footer */}
       <div className="pt-6 border-t border-dashed border-gray-300 text-center text-xs text-gray-500">
-        Terima kasih atas pesanan Anda di <strong>{store.name}</strong> • Powered by Kroombox
+        Terima kasih atas pesanan Anda di <strong>{store.name}</strong> • Powered by Kroomify
       </div>
     </div>
   );

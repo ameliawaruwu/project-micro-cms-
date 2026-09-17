@@ -25,7 +25,7 @@ export const DOMAIN_TLD_PRICES: Record<string, { price: number; label: string; p
   '.top': { price: 50000, label: 'Rp 50.000 / thn' },
 };
 
-const STORAGE_KEY = 'kroombox_domain_requests_v1';
+const STORAGE_KEY = 'kroomify_domain_requests_v1';
 
 const INITIAL_REQUESTS: DomainRequest[] = [
   {

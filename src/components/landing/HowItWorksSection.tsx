@@ -183,7 +183,7 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({
                     <div>
                       <span className="text-[9px] sm:text-[10px] font-bold text-[#857C76] uppercase tracking-wider">{t('how_preview_store_link', 'Tautan Toko Online')}</span>
                       <div className="flex items-center justify-between p-1.5 sm:p-2 mt-0.5 rounded-lg bg-[#FAF7F7] border border-[#E8DDDE] text-[11px] sm:text-xs font-mono text-[#66000E] font-semibold">
-                        <span>kroombox.id/batiknusantara</span>
+                        <span>kroomify.id/batiknusantara</span>
                         <ExternalLink className="w-3.5 h-3.5 text-[#66000E]" />
                       </div>
                     </div>

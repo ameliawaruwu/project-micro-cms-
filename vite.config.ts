@@ -155,7 +155,7 @@ function emailDevPlugin(): Plugin {
 
 
             const info = await transporter.sendMail({
-              from: `"Kroombox" <${smtpEmail}>`,
+              from: `"Kroomify" <${smtpEmail}>`,
               to,
               subject,
               html,
@@ -188,9 +188,9 @@ function cloudflareDevPlugin(): Plugin {
           return;
         }
         try {
-          const panelUrl = process.env.KROOMBOX_PANEL_URL || 'https://panel.kroombox.com';
-          const token = process.env.KROOMBOX_API_TOKEN || '';
-          const tunnelId = process.env.KROOMBOX_TUNNEL_ID || '9743ab8b-d18a-47ac-aeac-87cc6d177db2';
+          const panelUrl = process.env.KROOMIFY_PANEL_URL || process.env.KROOMBOX_PANEL_URL || 'https://panel.kroomify.com';
+          const token = process.env.KROOMIFY_API_TOKEN || process.env.KROOMBOX_API_TOKEN || '';
+          const tunnelId = process.env.KROOMIFY_TUNNEL_ID || process.env.KROOMBOX_TUNNEL_ID || '9743ab8b-d18a-47ac-aeac-87cc6d177db2';
 
           const response = await fetch(`${panelUrl}/api/admin/cloudflare/tunnels/${tunnelId}/routes`, {
             headers: {
@@ -236,9 +236,9 @@ function cloudflareDevPlugin(): Plugin {
               .toLowerCase()
               .replace(/^https?:\/\//, '')
               .replace(/\/+$/, '');
-            const panelUrl = process.env.KROOMBOX_PANEL_URL || 'https://panel.kroombox.com';
-            const token = process.env.KROOMBOX_API_TOKEN || '';
-            const tunnelId = process.env.KROOMBOX_TUNNEL_ID || '9743ab8b-d18a-47ac-aeac-87cc6d177db2';
+            const panelUrl = process.env.KROOMIFY_PANEL_URL || process.env.KROOMBOX_PANEL_URL || 'https://panel.kroomify.com';
+            const token = process.env.KROOMIFY_API_TOKEN || process.env.KROOMBOX_API_TOKEN || '';
+            const tunnelId = process.env.KROOMIFY_TUNNEL_ID || process.env.KROOMBOX_TUNNEL_ID || '9743ab8b-d18a-47ac-aeac-87cc6d177db2';
             const targetService = service || 'http://127.0.0.1:3001';
 
             // 1. Cek apakah hostname sudah ada di daftar rute tunnel
@@ -340,9 +340,9 @@ function cloudflareDevPlugin(): Plugin {
               .toLowerCase()
               .replace(/^https?:\/\//, '')
               .replace(/\/+$/, '');
-            const panelUrl = process.env.KROOMBOX_PANEL_URL || 'https://panel.kroombox.com';
-            const token = process.env.KROOMBOX_API_TOKEN || '';
-            const tunnelId = process.env.KROOMBOX_TUNNEL_ID || '9743ab8b-d18a-47ac-aeac-87cc6d177db2';
+            const panelUrl = process.env.KROOMIFY_PANEL_URL || process.env.KROOMBOX_PANEL_URL || 'https://panel.kroomify.com';
+            const token = process.env.KROOMIFY_API_TOKEN || process.env.KROOMBOX_API_TOKEN || '';
+            const tunnelId = process.env.KROOMIFY_TUNNEL_ID || process.env.KROOMBOX_TUNNEL_ID || '9743ab8b-d18a-47ac-aeac-87cc6d177db2';
 
             const delRes = await fetch(
               `${panelUrl}/api/admin/cloudflare/tunnels/${tunnelId}/routes`,
@@ -378,8 +378,8 @@ function cloudflareDevPlugin(): Plugin {
           return;
         }
         try {
-          const panelUrl = process.env.KROOMBOX_PANEL_URL || 'https://panel.kroombox.com';
-          const token = process.env.KROOMBOX_API_TOKEN || '';
+          const panelUrl = process.env.KROOMIFY_PANEL_URL || process.env.KROOMBOX_PANEL_URL || 'https://panel.kroomify.com';
+          const token = process.env.KROOMIFY_API_TOKEN || process.env.KROOMBOX_API_TOKEN || '';
 
           const response = await fetch(`${panelUrl}/api/admin/cloudflare/health`, {
             headers: {

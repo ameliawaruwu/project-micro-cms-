@@ -1,4 +1,4 @@
-// Kroombox Global Design System Tokens
+// Kroomify Global Design System Tokens
 export const theme = {
   colors: {
     primary: '#9A0602',
