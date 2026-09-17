@@ -224,7 +224,7 @@ class AuthService {
       // Account exists in Supabase DB but not yet in localStorage
       const userId = dbUser.id || `usr_${cleanEmail.replace(/[^a-z0-9]/g, '_')}`;
       const userName = dbUser.name || cleanEmail.split('@')[0];
-      const userRole = (dbUser.role as 'admin' | 'merchant' | 'buyer') || 'merchant';
+      const userRole = (dbUser.role as 'admin' | 'merchant') || 'merchant';
 
       user = {
         id: userId,
@@ -613,14 +613,108 @@ class AuthService {
 
   async forgotPassword(email: string): Promise<boolean> {
     await new Promise((res) => setTimeout(res, 400));
-    if (!email || !email.includes('@')) {
+    const cleanEmail = email.toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
       throw new Error('Alamat email tidak valid.');
+    }
+
+    const accounts = this.getStoredAccounts();
+    const account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
+
+    if (!account) {
+      // Don't throw error to prevent email enumeration, but return true anyway
+      return true;
+    }
+
+    // Generate a 6-digit token
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Store token in session storage
+    sessionStorage.setItem(`reset_token_${cleanEmail}`, token);
+
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: cleanEmail,
+          subject: 'Kroombox - Token Reset Password Anda',
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #66000E;">Permintaan Reset Kata Sandi</h2>
+              <p>Halo,</p>
+              <p>Kami menerima permintaan untuk mengatur ulang kata sandi akun Kroombox Anda. Gunakan token 6 digit di bawah ini untuk melanjutkan:</p>
+              <div style="background-color: #F9EDEF; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #66000E;">${token}</span>
+              </div>
+              <p>Token ini hanya berlaku selama sesi ini. Jika Anda tidak meminta reset kata sandi, abaikan email ini.</p>
+              <br/>
+              <p style="font-size: 12px; color: #666;">Tim Kroombox</p>
+            </div>
+          `
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Error invoking local email server:', result.error);
+        throw new Error(result.error || 'Gagal mengirim email. Pastikan server lokal berjalan.');
+      }
+    } catch (err) {
+      console.error('Failed to send email:', err);
+      // Fallback to toast if function fails in local dev without CLI
+      window.dispatchEvent(
+        new CustomEvent('toast_notification', {
+          detail: {
+            message: `[GAGAL MENGIRIM EMAIL] Token Reset Password Anda: ${token}`,
+            type: 'error',
+            duration: 10000,
+          },
+        })
+      );
+    }
+
+    return true;
+  }
+
+  async verifyResetToken(email: string, token: string): Promise<boolean> {
+    await new Promise((res) => setTimeout(res, 300));
+    const cleanEmail = email.toLowerCase().trim();
+    const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
+    
+    if (!storedToken || storedToken !== token.trim()) {
+      throw new Error('Token tidak valid atau sudah kadaluarsa.');
     }
     return true;
   }
 
-  async resetPassword(_token: string, _newPassword: string): Promise<boolean> {
+  async resetPassword(email: string, token: string, newPassword: string): Promise<boolean> {
     await new Promise((res) => setTimeout(res, 400));
+    const cleanEmail = email.toLowerCase().trim();
+    
+    // Verify token one last time
+    const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
+    if (!storedToken || storedToken !== token.trim()) {
+      throw new Error('Token tidak valid atau sudah kadaluarsa.');
+    }
+
+    const accounts = this.getStoredAccounts();
+    const accountIndex = accounts.findIndex((a) => a.email.toLowerCase() === cleanEmail);
+
+    if (accountIndex === -1) {
+      throw new Error('Akun tidak ditemukan.');
+    }
+
+    // Update password
+    accounts[accountIndex].password = newPassword;
+    this.saveAccounts(accounts);
+
+    // Clean up token
+    sessionStorage.removeItem(`reset_token_${cleanEmail}`);
+
     return true;
   }
 

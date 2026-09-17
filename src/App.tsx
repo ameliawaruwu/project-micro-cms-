@@ -171,6 +171,15 @@ export default function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  useEffect(() => {
+    const handleToastNotification = (e: any) => {
+      const { message, type, duration } = e.detail;
+      addToast(message, type);
+    };
+    window.addEventListener('toast_notification', handleToastNotification);
+    return () => window.removeEventListener('toast_notification', handleToastNotification);
+  }, []);
+
   const currentStore = activeStore || initialStores[0];
 
   // Initial Data Loading
@@ -252,6 +261,20 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const tokoParam = params.get('toko') || params.get('store');
     const modeParam = params.get('mode') || params.get('view');
+    const previewThemeParam = params.get('previewTheme');
+
+    if (previewThemeParam) {
+      storeService.getStores().then((all) => {
+        let match = all[0] || initialStores[0];
+        if (tokoParam) {
+          match = all.find((s) => s.slug === tokoParam || s.id === tokoParam) || match;
+        }
+        setActiveStore(match);
+        setActiveTab('layout');
+        setViewMode('merchant-desktop');
+      });
+      return;
+    }
 
     if (tokoParam || modeParam === 'storefront') {
       setViewMode('storefront-live');
@@ -291,17 +314,14 @@ export default function App() {
     };
   }, [activeStore?.id]);
 
-  // Route Super Admin directly to Admin Dashboard
+  // Route Users to their respective dashboards if they are logged in and on the landing page
   useEffect(() => {
-    if (user?.role === 'admin' && viewMode !== 'admin' && viewMode !== 'storefront' && viewMode !== 'storefront-live') {
-      setViewMode('admin');
-    }
-  }, [user, viewMode]);
-
-  // Route Merchant directly to Dashboard (e.g. after Google Auth Redirect)
-  useEffect(() => {
-    if (user?.role === 'merchant' && viewMode === 'landing') {
-      setViewMode('merchant-desktop');
+    if (user && viewMode === 'landing') {
+      if (user.role === 'admin') {
+        setViewMode('admin');
+      } else {
+        setViewMode('merchant-desktop');
+      }
     }
   }, [user, viewMode]);
 
@@ -603,6 +623,9 @@ export default function App() {
           }}
           onNavigateRegister={() => {
             setAuthView('register');
+          }}
+          onNavigateDashboard={() => {
+            setViewMode(user?.role === 'admin' ? 'admin' : 'merchant-desktop');
           }}
           onLaunchDemo={handleLaunchDemo}
           onViewStorefrontDemo={handleLaunchStorefrontDemo}

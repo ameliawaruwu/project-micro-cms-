@@ -26,7 +26,13 @@ function midtransDevPlugin(): Plugin {
         req.on('end', async () => {
           try {
             const data = JSON.parse(body || '{}');
-            const serverKey = process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-zR9u3M2vX8pLk1A0yW4t';
+            const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+            if (!serverKey) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'MIDTRANS_SERVER_KEY tidak ditemukan di .env' }));
+              return;
+            }
             const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
             const apiUrl =
               env === 'production'
@@ -95,9 +101,84 @@ function midtransDevPlugin(): Plugin {
   };
 }
 
+function emailDevPlugin(): Plugin {
+  return {
+    name: 'email-dev-server',
+    configureServer(server) {
+      server.middlewares.use('/api/send-email', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+
+        let body = '';
+        req.on('data', (chunk) => {
+          body += chunk;
+        });
+
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const { to, subject, html } = data;
+
+            if (!to || !subject || !html) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Missing required fields' }));
+              return;
+            }
+
+            const smtpEmail = process.env.SMTP_EMAIL;
+            const smtpPassword = process.env.SMTP_PASSWORD;
+
+            if (!smtpEmail || !smtpPassword) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Server configuration error' }));
+              return;
+            }
+
+            const nodemailer = await import('nodemailer');
+            const isGmail = smtpEmail.toLowerCase().includes('@gmail.com');
+            const transporter = nodemailer.createTransport({
+              host: isGmail ? 'smtp.gmail.com' : 'smtp.ethereal.email',
+              port: 587,
+              secure: false, // true for 465, false for other ports
+              requireTLS: true,
+              auth: {
+                user: smtpEmail,
+                pass: smtpPassword,
+              },
+            });
+
+
+            const info = await transporter.sendMail({
+              from: `"Kroombox" <${smtpEmail}>`,
+              to,
+              subject,
+              html,
+            });
+
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, messageId: info.messageId }));
+          } catch (err: any) {
+            console.error('Email sending error:', err);
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: err.message || 'Internal server error' }));
+          }
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), midtransDevPlugin()],
+    plugins: [react(), tailwindcss(), midtransDevPlugin(), emailDevPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

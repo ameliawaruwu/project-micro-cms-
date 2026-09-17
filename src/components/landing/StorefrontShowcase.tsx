@@ -49,11 +49,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
           {/* Top Browser URL Bar */}
           <div className="bg-[#241A1A] text-white p-3 sm:p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="flex gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-white/30" />
-                <span className="w-2.5 h-2.5 rounded-full bg-white/30" />
-                <span className="w-2.5 h-2.5 rounded-full bg-white/30" />
-              </div>
+
               <div className="px-3 py-1 rounded-lg bg-white/10 text-white font-mono text-xs flex items-center gap-1.5 flex-1 sm:flex-initial">
                 <Store className="w-3.5 h-3.5 text-[#F5E8EA]" />
                 <span className="font-normal">kroombox.id/toko-batik</span>

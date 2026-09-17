@@ -19,6 +19,7 @@ interface LandingNavbarProps {
   onLaunchDemo: () => void;
   onViewStorefrontDemo?: () => void;
   onNavigateHome?: () => void;
+  onNavigateDashboard?: () => void;
   isAuthenticated?: boolean;
 }
 
@@ -27,8 +28,8 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
   onSelectTab,
   onNavigateLogin,
   onNavigateRegister,
-  onLaunchDemo,
   onNavigateHome,
+  onNavigateDashboard,
   isAuthenticated = false,
 }) => {
   const { t } = useLanguage();
@@ -176,13 +177,22 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
             {/* Language Switch Button */}
             <LanguageSwitchButton compact />
 
-            {/* Login Link if not authenticated */}
-            <button
-              onClick={onNavigateLogin}
-              className="min-h-[42px] px-4 py-2 rounded-xl text-[14px] font-semibold text-[#66000E] bg-[#F5E8EA] hover:bg-[#ebd3d6] transition-colors cursor-pointer border border-[#E8DDDE]"
-            >
-              {t('landing_login', 'Masuk Akun')}
-            </button>
+            {/* Login / Dashboard Link */}
+            {isAuthenticated ? (
+              <button
+                onClick={onNavigateDashboard}
+                className="min-h-[42px] px-4 py-2 rounded-xl text-[14px] font-semibold text-white bg-[#66000E] hover:bg-[#801010] transition-colors cursor-pointer border border-[#66000E]"
+              >
+                {t('landing_dashboard', 'Ke Dashboard')}
+              </button>
+            ) : (
+              <button
+                onClick={onNavigateLogin}
+                className="min-h-[42px] px-4 py-2 rounded-xl text-[14px] font-semibold text-[#66000E] bg-[#F5E8EA] hover:bg-[#ebd3d6] transition-colors cursor-pointer border border-[#E8DDDE]"
+              >
+                {t('landing_login', 'Masuk Akun')}
+              </button>
+            )}
           </div>
 
           {/* 4. Mobile & Tablet Header Controls (< 1024px) */}

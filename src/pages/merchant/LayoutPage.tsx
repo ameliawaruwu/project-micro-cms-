@@ -19,8 +19,9 @@ import { CenterPreviewCanvas } from '../../components/layout-editor/CenterPrevie
 import { RightPanelSettings } from '../../components/layout-editor/RightPanelSettings';
 import { AddSectionModal } from '../../components/layout-editor/AddSectionModal';
 import { StoreLayoutSetupWizard } from '../../components/layout-editor/StoreLayoutSetupWizard';
-import { ThemeLibraryView, TemplateGalleryItem } from '../../components/layout-editor/ThemeLibraryView';
+import { ThemeLibraryView, TemplateGalleryItem, TEMPLATE_GALLERY_ITEMS } from '../../components/layout-editor/ThemeLibraryView';
 import { ArrowLeft, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
+import { useCmsStore } from '../../cms/useCmsStore';
 
 interface LayoutPageProps {
   store: Store;
@@ -44,10 +45,43 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   onNavigateDashboard,
 }) => {
   const [currentStore, setCurrentStore] = useState<Store>(store);
-
+  const cmsProducts = useCmsStore(state => state.products);
   useEffect(() => {
     setCurrentStore(store);
   }, [store]);
+
+  // Check URL for previewTheme to automatically open preview overlay (like Canva)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const themeId = params.get('previewTheme');
+    if (themeId) {
+      const template = TEMPLATE_GALLERY_ITEMS.find((t) => t.storeTemplate.id === themeId);
+      if (template) {
+        setPreviewTemplate(template);
+        
+        const mappedThemeId = {
+          'minimalist_clean': 'minimalist',
+          'gadget_tech': 'modern',
+          'futuristic_dark': 'futuristic',
+          'editorial_luxury': 'luxury',
+          'bold_market': 'bold',
+          'editorial_commerce': 'editorial',
+          'nature_organic': 'nature',
+          'creative_studio': 'creative',
+          'pro_corporate': 'professional',
+          'chic_fashion': 'fashion',
+        }[template.storeTemplate.id] || 'minimalist';
+        useCmsStore.getState().loadThemeData(mappedThemeId);
+        setActiveThemeId(mappedThemeId);
+        
+        setPreviewDevice('desktop');
+        setPageMode('preview');
+        // Clean up URL so it doesn't get stuck in preview mode on reload
+        const newUrl = window.location.pathname + '?toko=' + (currentStore.slug || '');
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [currentStore.slug]);
 
   const initialSections = useMemo(
     () => getStoreSections(store.layoutSettings),
@@ -77,6 +111,22 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingTemplateName, setLoadingTemplateName] = useState('');
+  const [activePage, setActivePage] = useState('homepage');
+  const [activeThemeId, setActiveThemeId] = useState<any>('minimalist');
+  const [showGlobalSettings, setShowGlobalSettings] = useState(false);
+  const [globalSettings, setGlobalSettings] = useState<any>(
+    store.layoutSettings?.globalThemeSettings || {
+      colors: { primary: '#2C6ECB', secondary: '#1E40AF', background: '#FFFFFF', surface: '#F6F6F7', text: '#202223', mutedText: '#6D7175', border: '#E1E3E5' },
+      typography: { headingFont: 'Inter', bodyFont: 'Inter', headingSize: 'md', bodySize: 'md' },
+      buttons: { radius: 'md', style: 'solid' },
+      cards: { radius: 'lg', shadow: 'sm', border: true },
+      layout: { contentWidth: 'normal', sectionSpacing: 'normal' }
+    }
+  );
+
+  const displayProducts = (pageMode === 'preview' || !products || products.length === 0) 
+    ? cmsProducts 
+    : products;
 
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
@@ -85,11 +135,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   };
 
-  // Handle clicking a template card → go to fullscreen preview
+  // Handle clicking a template card → redirect to new tab like Canva
   const handlePreviewTemplate = (template: TemplateGalleryItem) => {
-    setPreviewTemplate(template);
-    setPreviewDevice('desktop');
-    setPageMode('preview');
+    window.open(`/?previewTheme=${template.storeTemplate.id}&toko=${currentStore.slug}`, '_blank');
   };
 
   // Handle "Coba tema" → show loading then go to editor
@@ -108,6 +156,26 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setSections(newSections);
     setSelectedSectionKey(newSections[0]?.key || null);
     setPrimaryAccent(template.primaryAccent);
+    
+    const themeMap: Record<string, any> = {
+      'minimalist_clean': 'minimalist',
+      'gadget_tech': 'modern',
+      'futuristic_dark': 'futuristic',
+      'editorial_luxury': 'luxury',
+      'bold_market': 'bold',
+      'editorial_commerce': 'editorial',
+      'nature_organic': 'nature',
+      'creative_studio': 'creative',
+      'pro_corporate': 'professional',
+      'chic_fashion': 'fashion',
+      'brand': 'minimalist', // legacy
+      'classic': 'elegant' // legacy
+    };
+    const mappedThemeId = themeMap[template.storeTemplate.id] || 'minimalist';
+    setActiveThemeId(mappedThemeId);
+    
+    // Load dynamic theme dummy data if available
+    useCmsStore.getState().loadThemeData(mappedThemeId);
 
     handleUpdateStore({
       bannerUrl: storeTemplate.bannerUrl,
@@ -459,6 +527,20 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 });
                 setHistory([newSections]);
                 setHistoryIndex(0);
+                const themeMap: Record<string, any> = {
+                  'minimalist_clean': 'minimalist',
+                  'gadget_tech': 'modern',
+                  'futuristic_dark': 'futuristic',
+                  'editorial_luxury': 'luxury',
+                  'bold_market': 'bold',
+                  'editorial_commerce': 'editorial',
+                  'nature_organic': 'nature',
+                  'creative_studio': 'creative',
+                  'pro_corporate': 'professional',
+                  'chic_fashion': 'fashion',
+                };
+                const mappedThemeId = themeMap[themeId] || themeId || 'minimalist';
+                useCmsStore.getState().loadThemeData(mappedThemeId);
                 onShowNotification(`Template "${storeTemplate.name}" berhasil diterapkan!`);
               }
             }}
@@ -494,6 +576,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
               {([
                 { mode: 'desktop' as const, icon: Monitor },
+                { mode: 'tablet' as const, icon: Tablet },
                 { mode: 'mobile' as const, icon: Smartphone },
               ]).map(({ mode, icon: Icon }) => (
                 <button
@@ -527,21 +610,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     : 'rounded-t-xl border border-gray-300'
                 }`}
               >
-                {/* Faux Browser Chrome (Desktop) */}
-                {previewDevice === 'desktop' && (
-                  <div className="bg-gray-100 border-b border-gray-200 px-4 py-2.5 flex items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                    </div>
-                    <div className="flex-1 mx-4">
-                      <div className="bg-white rounded-md px-3 py-1.5 text-xs text-gray-400 font-mono truncate border border-gray-200">
-                        https://{store.slug || 'toko-anda'}.kroombox.id
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Faux Browser Chrome dihapus berdasarkan permintaan user agar tampilan terlihat biasa saja */}
 
                 {/* Mobile Status Bar */}
                 {previewDevice === 'mobile' && (
@@ -566,7 +635,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                       bannerUrl: previewTemplate.storeTemplate.bannerUrl,
                       tagline: previewTemplate.storeTemplate.tagline,
                     }}
-                    products={products}
+                    products={displayProducts}
                     sections={previewTemplate.storeTemplate.sections.map((s, idx) => ({
                       ...s,
                       key: s.key || `${s.id}-${idx}`,
@@ -577,6 +646,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     onDeviceModeChange={() => {}}
                     primaryAccent={previewTemplate.primaryAccent}
                     readonly={true}
+                    activeThemeId={activeThemeId}
                   />
                 </div>
 
@@ -605,7 +675,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               </button>
               <button
                 onClick={() => handleApplyAndEdit(previewTemplate)}
-                className="px-6 py-2.5 font-bold text-white bg-gray-900 rounded-full hover:bg-black transition-colors cursor-pointer whitespace-nowrap"
+                className="px-6 py-2.5 font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors cursor-pointer whitespace-nowrap"
               >
                 Coba tema
               </button>
@@ -630,7 +700,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           {/* Loading Content */}
           <div className="flex-1 flex flex-col items-center justify-center px-6">
             <div className="max-w-xl w-full text-center space-y-6">
-              <Loader2 className="w-8 h-8 text-gray-400 animate-spin mx-auto" />
+              <Loader2 className="w-8 h-8 text-red-600 animate-spin mx-auto" />
               <p className="text-lg font-semibold text-gray-700">
                 Menambahkan "{loadingTemplateName}" ke tema toko online Anda...
               </p>
@@ -641,7 +711,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                   className="h-full rounded-full transition-all duration-300 ease-out"
                   style={{
                     width: `${loadingProgress}%`,
-                    background: 'linear-gradient(90deg, #2271B1 0%, #3B82F6 100%)',
+                    background: 'linear-gradient(90deg, #DC2626 0%, #B91C1C 100%)',
                   }}
                 ></div>
               </div>
@@ -649,26 +719,26 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-8 bg-gray-900 text-gray-400 text-sm">
+          <div className="px-6 py-8 bg-[#66000E] text-white/70 text-sm">
             <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6">
               <div>
                 <h4 className="font-bold text-white mb-2">MicroCMS</h4>
                 <p className="text-xs">Platform toko online #1 Indonesia</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-300 mb-2">Bantuan</h4>
-                <p className="text-xs">Pusat Bantuan</p>
-                <p className="text-xs">Dokumentasi API</p>
+                <h4 className="font-semibold text-white/90 mb-2">Bantuan</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">Pusat Bantuan</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Dokumentasi API</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-300 mb-2">Kategori</h4>
-                <p className="text-xs">Semua Tema</p>
-                <p className="text-xs">Tema Gratis</p>
+                <h4 className="font-semibold text-white/90 mb-2">Kategori</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">Semua Tema</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Tema Gratis</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-300 mb-2">Tentang</h4>
-                <p className="text-xs">Tim Kami</p>
-                <p className="text-xs">Syarat Layanan</p>
+                <h4 className="font-semibold text-white/90 mb-2">Tentang</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">Tim Kami</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Syarat Layanan</p>
               </div>
             </div>
           </div>
@@ -691,9 +761,6 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             onReset={handleReset}
             onOpenStorefront={onOpenStorefront}
             onBack={() => setPageMode('library')}
-            onOpenWizard={() => setIsWizardOpen(true)}
-            activePreset={activePreset}
-            onApplyPreset={handleApplyPreset}
             isSaving={isSaving}
             canUndo={canUndo}
             canRedo={canRedo}
@@ -701,12 +768,14 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             onRedo={handleRedo}
             isFullscreen={isFullscreen}
             onToggleFullscreen={toggleFullscreen}
+            activePage={activePage}
+            onPageChange={setActivePage}
           />
 
-          {/* 2. TWO-PANEL WORKSPACE */}
-          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 relative">
-            {/* Left Panel: Sections List OR Settings */}
-            {activeLeftPane === 'sections' ? (
+          {/* 2. THREE-PANEL WORKSPACE */}
+          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 relative bg-[#F6F6F7]">
+            {/* Left Panel: Sections List */}
+            <div className={`lg:block ${selectedSectionKey && !isFullscreen ? 'hidden' : 'block'} h-full shrink-0 z-10`}>
               <LeftPanelSections
                 sections={sections}
                 selectedSectionKey={selectedSectionKey}
@@ -720,43 +789,72 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                   setAddModalCategoryFilter(cat);
                   setIsAddModalOpen(true);
                 }}
+                activePage={activePage}
+                onOpenThemeSettings={() => {
+                  setShowGlobalSettings(true);
+                  setSelectedSectionKey(null);
+                }}
               />
-            ) : (
+            </div>
+
+            {/* Center Panel: Live Responsive Storefront Preview Canvas */}
+            <div className="flex-1 min-w-0 h-full flex flex-col relative z-0">
+              <CenterPreviewCanvas
+                store={currentStore}
+                products={displayProducts}
+                sections={sections}
+                selectedSectionKey={selectedSectionKey}
+                onSelectSection={handleSelectSection}
+                deviceMode={deviceMode}
+                onDeviceModeChange={setDeviceMode}
+                primaryAccent={primaryAccent}
+                onMoveSection={handleMoveSection}
+                onToggleVisibility={handleToggleVisibility}
+                onDeleteSection={handleDeleteSection}
+                onUpdateSectionOptions={handleUpdateSectionOptions}
+                onUpdateStore={handleUpdateStore}
+                isFullscreen={isFullscreen}
+                onToggleFullscreen={toggleFullscreen}
+                activeThemeId={activeThemeId}
+                activePage={activePage}
+                onPageChange={setActivePage}
+              />
+            </div>
+
+            {/* Right Panel: Section Settings */}
+            <div className={`lg:block ${(selectedSectionKey || showGlobalSettings) && !isFullscreen ? 'block absolute lg:relative right-0 inset-y-0 shadow-2xl lg:shadow-none' : 'hidden'} h-full shrink-0 z-20 w-[320px] bg-white border-l border-[#E1E3E5]`}>
               <RightPanelSettings
                 store={currentStore}
-                selectedSection={selectedSection}
+                selectedSection={selectedSectionKey ? sections.find((s) => s.key === selectedSectionKey) || null : null}
                 onUpdateSectionOptions={handleUpdateSectionOptions}
-                onUpdateSectionTitle={handleUpdateSectionTitle}
+                onUpdateSectionTitle={handleRenameSection}
                 onToggleVisibility={handleToggleVisibility}
                 onDuplicateSection={handleDuplicateSection}
                 onDeleteSection={handleDeleteSection}
                 primaryAccent={primaryAccent}
-                onChangePrimaryAccent={(col) => {
-                  setPrimaryAccent(col);
+                onChangePrimaryAccent={(color) => {
+                  setPrimaryAccent(color);
+                  setHasChanges(true);
+                  setGlobalSettings({
+                    ...globalSettings,
+                    colors: { ...globalSettings.colors, primary: color }
+                  });
+                }}
+                onBack={() => {
+                  if (showGlobalSettings) {
+                    setShowGlobalSettings(false);
+                  } else {
+                    setSelectedSectionKey(null);
+                  }
+                }}
+                showGlobalSettings={showGlobalSettings}
+                globalSettings={globalSettings}
+                onUpdateGlobalSettings={(newSettings) => {
+                  setGlobalSettings(newSettings);
                   setHasChanges(true);
                 }}
-                onBack={() => setActiveLeftPane('sections')}
               />
-            )}
-
-            {/* Center Panel: Live Responsive Storefront Preview Canvas */}
-            <CenterPreviewCanvas
-              store={currentStore}
-              products={products}
-              sections={sections}
-              selectedSectionKey={selectedSectionKey}
-              onSelectSection={handleSelectSection}
-              deviceMode={deviceMode}
-              onDeviceModeChange={setDeviceMode}
-              primaryAccent={primaryAccent}
-              onMoveSection={handleMoveSection}
-              onToggleVisibility={handleToggleVisibility}
-              onDeleteSection={handleDeleteSection}
-              onUpdateSectionOptions={handleUpdateSectionOptions}
-              onUpdateStore={handleUpdateStore}
-              isFullscreen={isFullscreen}
-              onToggleFullscreen={toggleFullscreen}
-            />
+            </div>
           </div>
 
           {/* Modal: Add Section from catalog */}

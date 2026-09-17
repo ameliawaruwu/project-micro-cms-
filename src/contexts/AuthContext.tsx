@@ -29,6 +29,8 @@ import { supabase, signInWithGoogleOAuth } from '../services/supabaseClient';
     autoLogin?: boolean;
   }) => Promise<{ user: User; merchant: Merchant; store: Store }>;
   forgotPassword: (email: string) => Promise<boolean>;
+  verifyResetToken: (email: string, token: string) => Promise<boolean>;
+  resetPassword: (email: string, token: string, newPassword: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateStore: (updatedStore: Store) => void;
   updateUser: (updatedUser: User) => void;
@@ -179,6 +181,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return authService.forgotPassword(email);
   };
 
+  const verifyResetToken = async (email: string, token: string) => {
+    return authService.verifyResetToken(email, token);
+  };
+
+  const resetPassword = async (email: string, token: string, newPassword: string) => {
+    return authService.resetPassword(email, token, newPassword);
+  };
+
   const logout = async () => {
     await authService.logout();
     setUser(null);
@@ -214,6 +224,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         registerWithGoogle,
         register,
         forgotPassword,
+        verifyResetToken,
+        resetPassword,
         logout,
         updateStore,
         updateUser,

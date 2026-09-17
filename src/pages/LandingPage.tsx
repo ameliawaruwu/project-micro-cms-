@@ -13,6 +13,7 @@ import { scrollToLandingSection } from '../utils/scroll';
 interface LandingPageProps {
   onNavigateLogin: () => void;
   onNavigateRegister: () => void;
+  onNavigateDashboard?: () => void;
   onLaunchDemo: () => void;
   onViewStorefrontDemo: () => void;
   isAuthenticated?: boolean;
@@ -21,6 +22,7 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({
   onNavigateLogin,
   onNavigateRegister,
+  onNavigateDashboard,
   onLaunchDemo,
   onViewStorefrontDemo,
   isAuthenticated = false,
@@ -36,6 +38,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         onNavigateHome={() => scrollToLandingSection('hero', 0)}
         onNavigateLogin={onNavigateLogin}
         onNavigateRegister={onNavigateRegister}
+        onNavigateDashboard={onNavigateDashboard}
         onLaunchDemo={onLaunchDemo}
         onViewStorefrontDemo={onViewStorefrontDemo}
         isAuthenticated={isAuthenticated}
@@ -47,6 +50,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         onNavigateLogin={onNavigateLogin}
         onLaunchDemo={onLaunchDemo}
         onScrollToHowItWorks={scrollToHowItWorks}
+        isAuthenticated={isAuthenticated}
       />
 
       {/* 2. Produk Section */}
