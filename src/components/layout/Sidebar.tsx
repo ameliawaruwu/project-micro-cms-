@@ -11,10 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Store,
   X,
   LogOut,
-  ExternalLink,
   Crown,
 } from 'lucide-react';
 import { MerchantTab, Store as StoreType } from '../../types';
@@ -25,7 +23,7 @@ import { KroomifyLogo } from '../common/KroomifyLogo';
 interface SidebarProps {
   activeTab: MerchantTab;
   pendingOrdersCount: number;
-  activeStore: StoreType;
+  activeStore?: StoreType;
   userName?: string;
   isCollapsed: boolean;
   isOpenMobile?: boolean;
@@ -33,7 +31,7 @@ interface SidebarProps {
   onTabChange: (tab: MerchantTab) => void;
   onToggleCollapse: () => void;
   onOpenShareModal: () => void;
-  onOpenStorefront: () => void;
+  onOpenStorefront?: () => void;
   onOpenChatbot?: () => void;
   onLogout?: () => void;
 }
@@ -41,13 +39,11 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   pendingOrdersCount,
-  activeStore,
   isCollapsed,
   isOpenMobile = false,
   onCloseMobile,
   onTabChange,
   onToggleCollapse,
-  onOpenStorefront,
   onLogout,
 }) => {
   const { t } = useLanguage();
@@ -205,51 +201,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Store Info & "Lihat Toko" Action */}
-      {(!isCollapsed || isOpenMobile) ? (
-        <div className="p-2.5 mx-2.5 my-2 rounded-lg bg-gray-50 border border-gray-200 text-xs shrink-0 shadow-2xs font-poppins">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-6 h-6 rounded-md bg-[#800000] text-white flex items-center justify-center font-semibold text-[10px] shrink-0">
-              <Store className="w-3.5 h-3.5" />
-            </div>
-            <div className="truncate flex-1 min-w-0">
-              <div className="flex items-center gap-1">
-                <h4 className="font-medium text-xs text-gray-900 truncate leading-tight">
-                  {activeStore.name}
-                </h4>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title={t('nav_store_active', 'Toko Online Aktif')}></span>
-              </div>
-              <p className="text-[10px] text-gray-400 font-mono truncate">
-                /{activeStore.slug}
-              </p>
-            </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              onOpenStorefront();
-              if (onCloseMobile) onCloseMobile();
-            }}
-            className="w-full inline-flex items-center justify-center gap-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-rose-50/50 hover:text-[#800000] border border-gray-200 hover:border-rose-200 py-1.5 rounded-md transition cursor-pointer"
-            title={t('nav_view_store', 'Lihat Toko')}
-          >
-            <ExternalLink className="w-3 h-3" />
-            <span>{t('nav_view_store', 'Lihat Toko')}</span>
-          </button>
-        </div>
-      ) : (
-        <div className="p-2 mx-auto my-2 shrink-0 flex justify-center font-poppins">
-          <button
-            type="button"
-            onClick={onOpenStorefront}
-            className="w-8 h-8 rounded-md bg-gray-50 hover:bg-rose-50/50 hover:text-[#800000] border border-gray-200 text-gray-700 flex items-center justify-center transition cursor-pointer"
-            title={`${t('nav_view_store', 'Lihat Toko')} (${activeStore.name})`}
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
 
       {/* Logout Bottom Action */}
       <div className="p-2.5 border-t border-gray-100 shrink-0 font-poppins">
