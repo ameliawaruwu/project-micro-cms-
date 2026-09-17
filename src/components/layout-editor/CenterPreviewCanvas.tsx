@@ -123,39 +123,126 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
   });
 
   const handleNavClick = (href: string) => {
-    let targetSectionId: string | null = null;
-    if (href === '#beranda' || href === '/' || href === '/beranda') {
+    if (!href) return;
+    const cleanHref = href.toLowerCase().trim();
+
+    if (cleanHref === '/' || cleanHref === '/beranda' || cleanHref === '#beranda') {
       if (onPageChange) onPageChange('homepage');
-      targetSectionId = 'hero_banner';
-    } else {
-      // Anything else (Katalog, Promo, Kontak), redirect to catalog to show products as fallback
-      if (onPageChange) onPageChange('katalog');
-      targetSectionId = 'product_grid';
+      const el = document.getElementById('preview-hero_banner');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      return;
     }
-  
-    if (targetSectionId) {
-      const targetSection = sections.find(s => s.id === targetSectionId && s.isVisible);
-      if (targetSection) {
-         const sectionIndex = sections.indexOf(targetSection);
-         const sectionKey = targetSection.key || `${targetSection.id}-${sectionIndex}`;
-         const el = document.getElementById(`preview-${sectionKey}`);
-         if (el) {
-           el.scrollIntoView({ behavior: 'smooth' });
-         }
+
+    if (cleanHref.includes('/katalog') || cleanHref.includes('/products') || cleanHref.includes('/catalog') || cleanHref === '#katalog') {
+      if (onPageChange) onPageChange('katalog');
+      return;
+    }
+
+    if (cleanHref.includes('/product/')) {
+      if (onPageChange) onPageChange('product');
+      return;
+    }
+
+    if (cleanHref.includes('/about') || cleanHref.includes('/tentang') || cleanHref.includes('/archive') || cleanHref === '#about') {
+      if (onPageChange) onPageChange('about');
+      return;
+    }
+
+    if (cleanHref.includes('/contact') || cleanHref.includes('/kontak') || cleanHref === '#kontak') {
+      if (onPageChange) onPageChange('contact');
+      return;
+    }
+
+    if (cleanHref.includes('/cart') || cleanHref.includes('/keranjang') || cleanHref === '#cart') {
+      if (onPageChange) onPageChange('cart');
+      return;
+    }
+
+    if (cleanHref.includes('/checkout') || cleanHref === '#checkout') {
+      if (onPageChange) onPageChange('checkout');
+      return;
+    }
+
+    if (cleanHref.includes('/orders') || cleanHref.includes('/pesanan') || cleanHref === '#orders') {
+      if (onPageChange) onPageChange('orders');
+      return;
+    }
+
+    if (cleanHref.includes('/profile') || cleanHref.includes('/profil') || cleanHref === '#profile') {
+      if (onPageChange) onPageChange('profile');
+      return;
+    }
+
+    if (cleanHref.includes('/login') || cleanHref === '#login') {
+      if (onPageChange) onPageChange('login');
+      return;
+    }
+
+    if (cleanHref.includes('/berita') || cleanHref.includes('/lookbook') || cleanHref.includes('/journal')) {
+      const lookbookSec = sections.find(s => s.id === 'lookbook' || s.id === 'journal');
+      if (lookbookSec) {
+        if (onPageChange && activePage !== 'homepage') onPageChange('homepage');
+        const idx = sections.indexOf(lookbookSec);
+        const secKey = lookbookSec.key || `${lookbookSec.id}-${idx}`;
+        setTimeout(() => {
+          const el = document.getElementById(`preview-${secKey}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+        return;
+      }
+      if (onPageChange) onPageChange('about');
+      return;
+    }
+
+    // Hash section scroll
+    if (cleanHref.startsWith('#')) {
+      const targetId = cleanHref.replace('#', '');
+      const targetSec = sections.find(s => s.id === targetId || (s.id && s.id.includes(targetId)));
+      if (targetSec) {
+        const idx = sections.indexOf(targetSec);
+        const secKey = targetSec.key || `${targetSec.id}-${idx}`;
+        const el = document.getElementById(`preview-${secKey}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
       }
     }
+
+    // Default fallback: navigate to katalog
+    if (onPageChange) onPageChange('katalog');
   };
 
-  // Intercept anchor clicks to fake routing
+  // Intercept anchor and button clicks to fake routing
   const handleCanvasClick = (e: React.MouseEvent) => {
-    // Find the closest anchor tag
     const target = e.target as HTMLElement;
     const anchor = target.closest('a');
-    
+    const button = target.closest('button');
+
     if (anchor && anchor.getAttribute('href')) {
       e.preventDefault();
       const href = anchor.getAttribute('href')!;
       handleNavClick(href);
+      return;
+    }
+
+    if (button) {
+      const btnText = (button.textContent || '').toLowerCase().trim();
+      if (btnText.includes('cart') || btnText.includes('keranjang')) {
+        e.preventDefault();
+        if (onPageChange) onPageChange('cart');
+        return;
+      }
+      if (btnText.includes('checkout') || btnText.includes('bayar')) {
+        e.preventDefault();
+        if (onPageChange) onPageChange('checkout');
+        return;
+      }
+      if (btnText.includes('shop') || btnText.includes('katalog') || btnText.includes('cop now') || btnText.includes('jelajahi')) {
+        e.preventDefault();
+        if (onPageChange) onPageChange('katalog');
+        return;
+      }
     }
   };
 
