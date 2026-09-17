@@ -14,6 +14,7 @@ import {
   CreditCard,
   ShieldCheck,
   XCircle,
+  Lock,
 } from 'lucide-react';
 import { domainService } from '../../services/domainService';
 import {
@@ -27,9 +28,11 @@ import confetti from 'canvas-confetti';
 
 interface DomainPageProps {
   store: Store;
+  onNavigateBilling?: () => void;
 }
 
-export const DomainPage: React.FC<DomainPageProps> = ({ store }) => {
+export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling }) => {
+  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial';
   const [domainType, setDomainType] = useState<'random' | 'custom'>(
     store.domainType || (store.customDomain ? 'custom' : 'random')
   );
@@ -241,6 +244,33 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store }) => {
           </p>
         </div>
       </div>
+
+      {/* FREE PLAN SANDBOX NOTICE */}
+      {isFreePlan && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-amber-100 rounded-lg text-amber-800 shrink-0 mt-0.5">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-amber-950">Paket Free: Toko Berstatus Sandbox Preview</h4>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Fitur deploy publikasi live dan Custom Domain (.com / .id) terbuka di paket Personal Toko & Community UMKM.
+              </p>
+            </div>
+          </div>
+          {onNavigateBilling && (
+            <button
+              type="button"
+              onClick={onNavigateBilling}
+              className="px-3.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-bold shrink-0 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+              Upgrade Hosting
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ALERT NOTIFICATION */}
       {alert && (
@@ -505,66 +535,89 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store }) => {
                 </div>
               )}
 
-              {/* FORM PENGAJUAN DOMAIN BARU */}
-              <form onSubmit={handleRequestDomain} className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Cari & Ajukan Nama Domain Toko
-                  </label>
-                  <div className="flex rounded-xl shadow-xs border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500">
-                    <input
-                      type="text"
-                      value={domainPrefix}
-                      onChange={(e) => setDomainPrefix(e.target.value.toLowerCase())}
-                      placeholder="contoh: tokoroti-jaya"
-                      className="flex-1 px-3.5 py-2.5 text-sm outline-none font-medium text-gray-900 bg-white"
-                    />
-                    <select
-                      value={selectedTld}
-                      onChange={(e) => setSelectedTld(e.target.value)}
-                      className="px-3 py-2.5 text-sm font-bold bg-gray-100 text-gray-800 border-l border-gray-300 outline-none cursor-pointer hover:bg-gray-200/70"
-                    >
-                      {Object.entries(DOMAIN_TLD_PRICES).map(([tld, info]) => (
-                        <option key={tld} value={tld}>
-                          {tld} ({info.label})
-                        </option>
-                      ))}
-                    </select>
+              {isFreePlan ? (
+                <div className="p-5 rounded-xl bg-gray-50 border border-dashed border-gray-300 text-center space-y-3">
+                  <div className="w-10 h-10 mx-auto rounded-full bg-red-50 text-red-600 flex items-center justify-center">
+                    <Lock className="w-5 h-5" />
                   </div>
-                </div>
-
-                {/* INFO HARGA DAN ESTIMASI */}
-                <div className="bg-gray-50 p-3 rounded-xl border border-gray-200 text-xs flex justify-between items-center">
                   <div>
-                    <span className="text-gray-500 block text-[11px]">Estimasi Biaya Domain:</span>
-                    <span className="font-extrabold text-gray-900 text-sm">
-                      {DOMAIN_TLD_PRICES[selectedTld]?.label || 'Rp 250.000 / thn'}
-                    </span>
+                    <h4 className="text-sm font-bold text-gray-900">Custom Domain Terkunci</h4>
+                    <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                      Upgrade ke paket <span className="font-semibold text-gray-700">Personal Toko</span> atau <span className="font-semibold text-gray-700">Community UMKM</span> untuk menghubungkan domain brand sendiri (.com, .id, dll) lengkap dengan sertifikat SSL gratis.
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-gray-400 block">Siklus: 1 Tahun Penuh</span>
-                    <span className="text-[11px] text-green-700 font-bold">Include DNS & SSL</span>
-                  </div>
+                  {onNavigateBilling && (
+                    <button
+                      type="button"
+                      onClick={onNavigateBilling}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-2"
+                    >
+                      <Sparkles className="w-4 h-4 text-white" />
+                      Lihat Pilihan Paket
+                    </button>
+                  )}
                 </div>
+              ) : (
+                <form onSubmit={handleRequestDomain} className="space-y-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Cari & Ajukan Nama Domain Toko
+                    </label>
+                    <div className="flex rounded-xl shadow-xs border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500">
+                      <input
+                        type="text"
+                        value={domainPrefix}
+                        onChange={(e) => setDomainPrefix(e.target.value.toLowerCase())}
+                        placeholder="contoh: tokoroti-jaya"
+                        className="flex-1 px-3.5 py-2.5 text-sm outline-none font-medium text-gray-900 bg-white"
+                      />
+                      <select
+                        value={selectedTld}
+                        onChange={(e) => setSelectedTld(e.target.value)}
+                        className="px-3 py-2.5 text-sm font-bold bg-gray-100 text-gray-800 border-l border-gray-300 outline-none cursor-pointer hover:bg-gray-200/70"
+                      >
+                        {Object.entries(DOMAIN_TLD_PRICES).map(([tld, info]) => (
+                          <option key={tld} value={tld}>
+                            {tld} ({info.label})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-                <div className="flex justify-end pt-1">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || !domainPrefix.trim()}
-                    className="bg-gray-900 hover:bg-black text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow hover:shadow-md disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Mengajukan...
-                      </>
-                    ) : (
-                      <>
-                        Ajukan Permintaan Domain <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+                  {/* INFO HARGA DAN ESTIMASI */}
+                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-200 text-xs flex justify-between items-center">
+                    <div>
+                      <span className="text-gray-500 block text-[11px]">Estimasi Biaya Domain:</span>
+                      <span className="font-extrabold text-gray-900 text-sm">
+                        {DOMAIN_TLD_PRICES[selectedTld]?.label || 'Rp 250.000 / thn'}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-gray-400 block">Siklus: 1 Tahun Penuh</span>
+                      <span className="text-[11px] text-green-700 font-bold">Include DNS & SSL</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !domainPrefix.trim()}
+                      className="bg-gray-900 hover:bg-black text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow hover:shadow-md disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" /> Mengajukan...
+                        </>
+                      ) : (
+                        <>
+                          Ajukan Permintaan Domain <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           ) : (
             <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-xs text-gray-400">

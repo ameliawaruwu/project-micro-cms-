@@ -9,16 +9,17 @@ export const DEFAULT_BILLING_PLANS: BillingPlan[] = [
     id: 'plan_free',
     name: 'Paket Free',
     slug: 'free',
-    tagline: 'Eksplorasi & pembuatan katalog toko gratis selamanya',
+    tagline: 'Belajar & kelola katalog produk lokal secara gratis',
     priceMonthly: 0,
     priceYearly: 0,
     hostingPriceYearly: 0,
     cmsPriceYearly: 0,
     features: [
-      'Subdomain gratis: namatoko.kroomify.com',
-      'Katalog produk dasar (hingga 10 produk)',
-      '❌ Tanpa Checkout Otomatis Midtrans',
-      '❌ Tanpa Cek Ongkir Otomatis Ekspedisi',
+      'Subdomain pratinjau: namatoko.kroomify.com',
+      'Katalog produk dasar (maksimal 10 produk)',
+      '❌ Tanpa Checkout Otomatis Midtrans (Manual/WA saja)',
+      '❌ Tanpa Ekspedisi Kurir Otomatis Biteship',
+      '❌ Tanpa Publikasi/Deploy Toko Online & Domain',
       'Watermark resmi Kroomify di footer',
     ],
     isActive: true,
@@ -28,17 +29,18 @@ export const DEFAULT_BILLING_PLANS: BillingPlan[] = [
     id: 'plan_personal',
     name: 'Personal Toko',
     slug: 'personal',
-    tagline: 'Pilihan hemat untuk pedagang individu & toko pemula',
+    tagline: 'Buka toko online mandiri & terima pembayaran instan',
     priceMonthly: 0,
     priceYearly: 350000,
     hostingPriceYearly: 200000,
     cmsPriceYearly: 150000,
     features: [
       'Kapasitas hingga 50 produk & varian',
+      'Deploy Toko Online Aktif (bisa diakses pembeli)',
       'Checkout otomatis Midtrans (QRIS & VA Bank)',
       'Cek ongkir & pengiriman otomatis Biteship',
-      'Kapasitas Hosting Server Kroomify cepat',
-      'Laporan penjualan harian & ringkas',
+      'Kapasitas Hosting Cloud Kroomify cepat',
+      'Laporan penjualan & pesanan harian',
     ],
     isActive: true,
     sortOrder: 2,
@@ -55,54 +57,15 @@ export const DEFAULT_BILLING_PLANS: BillingPlan[] = [
     cmsPriceYearly: 300000,
     features: [
       'Unlimited katalog produk & varian tanpa batas',
-      'Bebas watermark (Brand profesional Anda sendiri)',
-      'Mendukung Custom Domain Toko (.com, .id, dll)',
+      'Mendukung Custom Domain Sendiri (.com, .id, dll)',
+      'Bebas Watermark (100% White-label Brand Anda)',
       'Full checkout Midtrans (QRIS, VA Bank, E-Wallet)',
       'Cetak label resi pengiriman thermal massal',
-      'Visual layout builder (bebas custom tema toko)',
+      'Visual layout builder (bebas kustom tema toko)',
       'Hosting Server UMKM prioritas tinggi',
     ],
     isActive: true,
     sortOrder: 3,
-  },
-  {
-    id: 'plan_corporate',
-    name: 'Bisnis Corporate',
-    slug: 'corporate',
-    tagline: 'Untuk toko skala berkembang dengan tim kasir & cabang',
-    priceMonthly: 0,
-    priceYearly: 2500000,
-    hostingPriceYearly: 1800000,
-    cmsPriceYearly: 700000,
-    features: [
-      'Semua fitur paket Community UMKM',
-      'Akses multi-staf pengelola toko (hingga 5 admin)',
-      'Notifikasi otomatis WhatsApp bot ke pembeli',
-      'Laporan analitik omset & ekspor akuntansi mendalam',
-      'Hosting Server Corporate performa ultra',
-      'Prioritas bantuan Customer Success 24/7',
-    ],
-    isActive: true,
-    sortOrder: 4,
-  },
-  {
-    id: 'plan_startup',
-    name: 'Startup Scale',
-    slug: 'startup',
-    tagline: 'Performa maksimal untuk volume transaksi & traffic tinggi',
-    priceMonthly: 0,
-    priceYearly: 3000000,
-    hostingPriceYearly: 2000000,
-    cmsPriceYearly: 1000000,
-    features: [
-      'Semua fitur paket Bisnis Corporate',
-      'Skala transaksi tanpa batas & dedicated cluster',
-      'Dedicated Account Manager Kroomify',
-      'Garansi SLA Uptime 99.9%',
-      'Integrasi API kustom Kroomify',
-    ],
-    isActive: true,
-    sortOrder: 5,
   },
 ];
 
@@ -190,7 +153,14 @@ class BillingPlanService {
     }
     try {
       const parsed: BillingPlan[] = JSON.parse(raw);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_BILLING_PLANS;
+      // Validasi agar hanya 3 paket resmi yang dimuat
+      const validSlugs = new Set(['free', 'personal', 'community']);
+      const filtered = Array.isArray(parsed) ? parsed.filter((p) => validSlugs.has(p.slug)) : [];
+      if (filtered.length !== 3) {
+        localStorage.setItem(BILLING_PLANS_KEY, JSON.stringify(DEFAULT_BILLING_PLANS));
+        return DEFAULT_BILLING_PLANS;
+      }
+      return filtered;
     } catch {
       return DEFAULT_BILLING_PLANS;
     }
@@ -223,9 +193,12 @@ class BillingPlanService {
       }
 
       if (data && data.length > 0) {
-        const mapped = data.map(mapRowToPlan);
-        this.saveStoredPlans(mapped);
-        return mapped;
+        const validSlugs = new Set(['free', 'personal', 'community']);
+        const mapped = data.map(mapRowToPlan).filter((p) => validSlugs.has(p.slug));
+        if (mapped.length > 0) {
+          this.saveStoredPlans(mapped);
+          return mapped;
+        }
       }
       return this.getPlans();
     } catch (err) {

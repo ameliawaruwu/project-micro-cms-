@@ -133,12 +133,26 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
           {step === 'checklist' && (
             <>
               {/* Intro banner */}
-              <div className="bg-[#FAF7F7] border border-[#EBE5E2] rounded-xl p-3 sm:p-3.5 flex items-start gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-[#5F5652] leading-relaxed">
-                  Sistem mengecek kelayakan toko Anda. Toko dapat langsung live menggunakan subdomain gratis, atau menggunakan custom domain berbayar setelah diverifikasi.
-                </p>
-              </div>
+              {isFreePlan ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-2.5">
+                  <Lock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-amber-900">
+                      Publikasi &amp; Deploy Toko Terkunci pada Paket Free
+                    </p>
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      Toko Anda saat ini berada dalam mode editor/sandbox CMS. Untuk menerbitkan website toko online agar bisa diakses langsung oleh publik dan menerima transaksi, silakan upgrade ke <b>Paket Personal Toko</b> (Rp 350.000/tahun).
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-[#FAF7F7] border border-[#EBE5E2] rounded-xl p-3 sm:p-3.5 flex items-start gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-[#5F5652] leading-relaxed">
+                    Sistem mengecek kelayakan toko Anda. Toko Anda siap dipublikasikan secara live ke internet.
+                  </p>
+                </div>
+              )}
 
               {/* 3 Pillar Checklist Cards */}
               <div className="space-y-3">
@@ -403,24 +417,38 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 Batal
               </button>
 
-              <button
-                type="button"
-                disabled={isPublishing}
-                onClick={handleConfirmPublish}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
-              >
-                {isPublishing ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Mempublikasikan...</span>
-                  </>
-                ) : (
-                  <>
-                    <Globe className="w-3.5 h-3.5" />
-                    <span>Konfirmasi &amp; Publikasikan Toko</span>
-                  </>
-                )}
-              </button>
+              {isFreePlan ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    if (onNavigateBilling) onNavigateBilling();
+                  }}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Upgrade Paket untuk Deploy Toko</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isPublishing}
+                  onClick={handleConfirmPublish}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
+                >
+                  {isPublishing ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Mempublikasikan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>Konfirmasi &amp; Publikasikan Toko</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">

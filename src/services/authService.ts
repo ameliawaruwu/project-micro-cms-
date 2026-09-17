@@ -263,7 +263,7 @@ class AuthService {
         id: `merch-${userId}`,
         userId: userId,
         storeId: storeToUse.id,
-        plan: 'starter',
+        plan: 'free',
         isVerified: true,
       };
 
@@ -347,7 +347,7 @@ class AuthService {
       id: `merch-${userId}`,
       userId: userId,
       storeId: storeId,
-      plan: 'starter',
+      plan: 'free',
       isVerified: true,
     };
 
@@ -382,7 +382,7 @@ class AuthService {
       phone_whatsapp: store.phoneWhatsApp,
       city: store.city || 'Indonesia',
       category: store.category,
-      plan: 'starter',
+      plan: 'free',
       balance: 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -482,6 +482,7 @@ class AuthService {
 
     const defaultName = cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
     const finalName = (params.fullName || defaultName).trim();
+    const hasCustomStoreName = !!params.storeName && params.storeName.trim().length > 0;
     const finalStoreName = (params.storeName || `Toko ${finalName}`).trim();
     const storeSlug = `toko-${cleanEmail.split('@')[0].replace(/[^a-z0-9]/g, '')}`;
     const storeId = `store_${Date.now()}`;
@@ -515,8 +516,9 @@ class AuthService {
       category: 'Bisnis UMKM',
       currency: 'IDR',
       balance: 0,
+      plan: 'free',
       onboarding: {
-        storeNameSet: true,
+        storeNameSet: hasCustomStoreName,
         productUploaded: false,
         paymentConnected: false,
       },
@@ -527,7 +529,7 @@ class AuthService {
       id: `merch-${userId}`,
       userId: userId,
       storeId: storeId,
-      plan: 'starter',
+      plan: 'free',
       isVerified: true,
     };
 
@@ -554,7 +556,7 @@ class AuthService {
         category: 'Bisnis UMKM',
         city: 'Indonesia',
         address: 'Pusat Usaha UMKM',
-        plan: 'starter',
+        plan: 'free',
         balance: 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

@@ -88,8 +88,55 @@ class StoreService {
   }
 
   async getStoresForUser(userId: string): Promise<Store[]> {
-    const stores = this.getStoredStores();
-    return stores.filter((s) => s.merchantId === userId);
+    const localStores = this.getStoredStores().filter((s) => s.merchantId === userId);
+    try {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('user_id', userId);
+      if (!error && data && data.length > 0) {
+        const mappedStores: Store[] = data.map((row) => ({
+          id: row.id,
+          merchantId: row.user_id,
+          name: row.name,
+          slug: row.slug,
+          tagline: row.tagline || '',
+          description: row.description || '',
+          logoUrl: row.logo_url || '',
+          bannerUrl: row.banner_url || '',
+          phoneWhatsApp: row.phone_whatsapp || '',
+          city: row.city || 'Indonesia',
+          province: row.province,
+          district: row.district,
+          postalCode: row.postal_code,
+          address: row.address || '',
+          category: row.category || 'Bisnis UMKM',
+          currency: 'IDR',
+          balance: Number(row.balance || 0),
+          plan: row.plan || 'free',
+          layoutSettings: row.theme_settings,
+          customDomain: row.custom_domain,
+          onboarding: {
+            storeNameSet: !row.name.startsWith('Toko usr_'),
+            productUploaded: false,
+            paymentConnected: row.plan !== 'free',
+          },
+          createdAt: row.created_at || new Date().toISOString(),
+        }));
+        const map = new Map<string, Store>();
+        mappedStores.forEach((s) => map.set(s.id, s));
+        localStores.forEach((s) => {
+          if (!map.has(s.id)) map.set(s.id, s);
+        });
+        const combined = Array.from(map.values());
+        const allOther = this.getStoredStores().filter((s) => s.merchantId !== userId);
+        this.saveStores([...allOther, ...combined]);
+        return combined;
+      }
+    } catch (e) {
+      console.warn('Supabase fetch stores error:', e);
+    }
+    return localStores;
   }
 
   async getStoreById(id: string): Promise<Store | undefined> {
@@ -106,7 +153,7 @@ class StoreService {
     const exact = stores.find((s) => s.slug?.toLowerCase() === clean || s.id?.toLowerCase() === clean);
     if (exact) return exact;
 
-    // 2. Fuzzy match (e.g. 'toko-andhikagonzales' vs 'store-andhika' or 'toko-andhika')
+    // 2. Fuzzy match
     const fuzzy = stores.find((s) => {
       const sSlug = (s.slug || '').toLowerCase();
       const sId = (s.id || '').toLowerCase();
@@ -128,7 +175,7 @@ class StoreService {
   async getActiveStore(userId?: string): Promise<Store | undefined> {
     const stores = this.getStoredStores();
     if (userId) {
-      const userStores = stores.filter((s) => s.merchantId === userId);
+      const userStores = await this.getStoresForUser(userId);
       if (userStores.length === 0) return undefined;
       const activeId = localStorage.getItem(ACTIVE_STORE_KEY);
       return userStores.find((s) => s.id === activeId) || userStores[0];
@@ -162,10 +209,18 @@ class StoreService {
       const dbUpdates: any = { updated_at: new Date().toISOString() };
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.slug !== undefined) dbUpdates.slug = updates.slug;
+      if (updates.tagline !== undefined) dbUpdates.tagline = updates.tagline;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.phoneWhatsApp !== undefined) dbUpdates.phone_whatsapp = updates.phoneWhatsApp;
+      if (updates.city !== undefined) dbUpdates.city = updates.city;
+      if (updates.address !== undefined) dbUpdates.address = updates.address;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
       if (updates.plan !== undefined) dbUpdates.plan = updates.plan;
+      if (updates.balance !== undefined) dbUpdates.balance = updates.balance;
       if (updates.customDomain !== undefined) dbUpdates.custom_domain = updates.customDomain;
       if (updates.layoutSettings !== undefined) dbUpdates.theme_settings = updates.layoutSettings;
       await supabase.from('stores').update(dbUpdates).eq('id', storeId);
+      console.log(`[Supabase Database] Toko ${storeId} berhasil diperbarui di cloud.`);
     } catch (err) {
       console.warn('Supabase store update notice:', err);
     }
@@ -202,6 +257,7 @@ class StoreService {
       category: data.category || 'Bisnis UMKM',
       currency: data.currency || 'IDR',
       balance: data.balance || 0,
+      plan: data.plan || 'free',
       onboarding: data.onboarding || {
         storeNameSet: true,
         productUploaded: false,
@@ -213,6 +269,36 @@ class StoreService {
     stores.push(newStore);
     this.saveStores(stores);
     localStorage.setItem(ACTIVE_STORE_KEY, newStore.id);
+
+    // Sync directly to Supabase
+    try {
+      await supabase.from('stores').upsert({
+        id: newStore.id,
+        user_id: newStore.merchantId,
+        name: newStore.name,
+        slug: newStore.slug,
+        tagline: newStore.tagline,
+        description: newStore.description,
+        logo_url: newStore.logoUrl,
+        banner_url: newStore.bannerUrl,
+        phone_whatsapp: newStore.phoneWhatsApp,
+        city: newStore.city || 'Indonesia',
+        province: newStore.province,
+        district: newStore.district,
+        postal_code: newStore.postalCode,
+        address: newStore.address,
+        category: newStore.category,
+        plan: newStore.plan || 'free',
+        balance: newStore.balance || 0,
+        theme_settings: newStore.layoutSettings || {},
+        created_at: newStore.createdAt,
+        updated_at: new Date().toISOString(),
+      });
+      console.log(`[Supabase Database] Toko ${newStore.name} (${newStore.id}) berhasil dibuat di cloud!`);
+    } catch (err) {
+      console.warn('Supabase create store warning:', err);
+    }
+
     return newStore;
   }
 

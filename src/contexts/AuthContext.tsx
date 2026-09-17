@@ -74,11 +74,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const exists = await authService.checkAccountExists(googleEmail);
 
           if (oauthIntent === 'register') {
+            const pendingStoreName = sessionStorage.getItem('oauth_pending_store_name');
+            sessionStorage.removeItem('oauth_pending_store_name');
+
             // User registered via Google
             await authService.registerWithGoogle({
               googleEmail,
               fullName,
               avatarUrl,
+              storeName: pendingStoreName || undefined,
             });
             // After register, user must login first
             await supabase.auth.signOut();

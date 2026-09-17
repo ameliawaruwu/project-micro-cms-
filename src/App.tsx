@@ -155,6 +155,7 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [isUpgradePlanModalOpen, setIsUpgradePlanModalOpen] = useState(false);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('500000');
   const [bankAccount, setBankAccount] = useState('BCA - 8920192811');
 
@@ -179,7 +180,12 @@ export default function App() {
       addToast(message, type);
     };
     window.addEventListener('toast_notification', handleToastNotification);
-    return () => window.removeEventListener('toast_notification', handleToastNotification);
+    const handleOpenOnboarding = () => setIsOnboardingModalOpen(true);
+    window.addEventListener('open_store_onboarding', handleOpenOnboarding);
+    return () => {
+      window.removeEventListener('toast_notification', handleToastNotification);
+      window.removeEventListener('open_store_onboarding', handleOpenOnboarding);
+    };
   }, []);
 
   const currentStore = activeStore || initialStores[0];
@@ -244,6 +250,11 @@ export default function App() {
       setActiveStore(finalStore || null);
 
       if (finalStore) {
+        // Otomatis buka onboarding setup jika nama toko belum diatur (khususnya user Google baru)
+        if (user && (!finalStore.onboarding?.storeNameSet || finalStore.name.startsWith('Toko usr_'))) {
+          setIsOnboardingModalOpen(true);
+        }
+
         const [storeProducts, storeOrders, storeIntegrations] = await Promise.all([
           productService.getProductsByStore(finalStore.id),
           orderService.getOrdersByStore(finalStore.id),
@@ -1171,7 +1182,10 @@ export default function App() {
 
               {/* TAB: DOMAIN */}
               {activeTab === 'domain' && (
-                <DomainPage store={currentStore} />
+                <DomainPage
+                  store={currentStore}
+                  onNavigateBilling={() => setActiveTab('billing')}
+                />
               )}
 
               {/* TAB 5: PEMBAYARAN */}
@@ -1363,6 +1377,31 @@ export default function App() {
           addToast(`Toko berhasil di-upgrade ke Paket ${newPlan.toUpperCase()}!`);
         }}
       />
+
+      {/* 11. Store Setup / Onboarding Wizard Modal */}
+      {isOnboardingModalOpen && currentStore && (
+        <StoreLayoutSetupWizard
+          currentStore={currentStore}
+          onComplete={async ({ storeUpdates, layoutSettings }) => {
+            try {
+              const updated = await storeService.updateStore(currentStore.id, {
+                ...storeUpdates,
+                layoutSettings,
+                onboarding: {
+                  ...currentStore.onboarding,
+                  storeNameSet: true,
+                },
+              });
+              setActiveStore(updated);
+              setIsOnboardingModalOpen(false);
+              addToast(`Identitas toko "${updated.name}" berhasil disimpan ke cloud!`);
+            } catch (err: any) {
+              addToast('Gagal menyimpan identitas toko: ' + (err?.message || err), 'error');
+            }
+          }}
+          onCancel={() => setIsOnboardingModalOpen(false)}
+        />
+      )}
 
       {/* Global Toast Notification Container */}
       <Toast toasts={toasts} onDismiss={removeToast} />

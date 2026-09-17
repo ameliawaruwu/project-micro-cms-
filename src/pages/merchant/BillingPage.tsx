@@ -124,10 +124,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     });
   }, []);
 
-  const currentPlan = store.plan === 'premium' ? 'premium' : 'free';
+  const currentPlan = store.plan || 'free';
 
   const handleOpenUpgrade = (plan: BillingPlan) => {
-    if (plan.slug === currentPlan || (plan.slug === 'free' && currentPlan === 'free')) return;
+    if (plan.slug === currentPlan || (plan.slug === 'free' && (!store.plan || store.plan === 'free' || store.plan === 'starter'))) return;
     setSelectedPlanForUpgrade(plan);
     setIsModalOpen(true);
   };
@@ -136,16 +136,16 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     if (!selectedPlanForUpgrade) return;
     setIsProcessing(true);
 
-    const targetPlan = selectedPlanForUpgrade.id === 'business' ? 'premium' : selectedPlanForUpgrade.id;
-    const price = billingCycle === 'yearly' ? selectedPlanForUpgrade.priceYearly : selectedPlanForUpgrade.priceMonthly;
+    const targetPlan = selectedPlanForUpgrade.slug;
+    const price = selectedPlanForUpgrade.priceYearly;
 
-    if (price === 0) {
-      // Downgrade to Free
+    if (price === 0 || targetPlan === 'free') {
+      // Set to Free
       const updated = await storeService.updateStore(store.id, { plan: 'free' });
       onUpdateStore(updated);
       setIsProcessing(false);
       setIsModalOpen(false);
-      if (onShowNotification) onShowNotification('Paket toko dialihkan ke Starter (Gratis).');
+      if (onShowNotification) onShowNotification('Paket toko dialihkan ke Paket Free (Gratis).');
       return;
     }
 
@@ -291,10 +291,9 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pt-2">
         {plans.map((plan) => {
           const isCurrent =
-            (plan.slug === 'premium' && currentPlan === 'premium') ||
-            (plan.slug === 'free' && currentPlan === 'free') ||
             plan.slug === store.plan ||
-            plan.id === store.plan;
+            (plan.slug === 'free' && (!store.plan || store.plan === 'free' || store.plan === 'starter')) ||
+            (plan.slug === 'community' && store.plan === 'premium');
           const price = plan.priceYearly;
 
           return (
