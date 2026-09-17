@@ -675,7 +675,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               </button>
               <button
                 onClick={() => handleApplyAndEdit(previewTemplate)}
-                className="px-6 py-2.5 font-bold text-white bg-gray-900 rounded-full hover:bg-black transition-colors cursor-pointer whitespace-nowrap"
+                className="px-6 py-2.5 font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors cursor-pointer whitespace-nowrap"
               >
                 Coba tema
               </button>
@@ -700,7 +700,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           {/* Loading Content */}
           <div className="flex-1 flex flex-col items-center justify-center px-6">
             <div className="max-w-xl w-full text-center space-y-6">
-              <Loader2 className="w-8 h-8 text-gray-400 animate-spin mx-auto" />
+              <Loader2 className="w-8 h-8 text-red-600 animate-spin mx-auto" />
               <p className="text-lg font-semibold text-gray-700">
                 Menambahkan "{loadingTemplateName}" ke tema toko online Anda...
               </p>
@@ -711,7 +711,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                   className="h-full rounded-full transition-all duration-300 ease-out"
                   style={{
                     width: `${loadingProgress}%`,
-                    background: 'linear-gradient(90deg, #2271B1 0%, #3B82F6 100%)',
+                    background: 'linear-gradient(90deg, #DC2626 0%, #B91C1C 100%)',
                   }}
                 ></div>
               </div>
@@ -719,26 +719,26 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-8 bg-gray-900 text-gray-400 text-sm">
+          <div className="px-6 py-8 bg-[#66000E] text-white/70 text-sm">
             <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6">
               <div>
                 <h4 className="font-bold text-white mb-2">MicroCMS</h4>
                 <p className="text-xs">Platform toko online #1 Indonesia</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-300 mb-2">Bantuan</h4>
-                <p className="text-xs">Pusat Bantuan</p>
-                <p className="text-xs">Dokumentasi API</p>
+                <h4 className="font-semibold text-white/90 mb-2">Bantuan</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">Pusat Bantuan</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Dokumentasi API</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-300 mb-2">Kategori</h4>
-                <p className="text-xs">Semua Tema</p>
-                <p className="text-xs">Tema Gratis</p>
+                <h4 className="font-semibold text-white/90 mb-2">Kategori</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">Semua Tema</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Tema Gratis</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-300 mb-2">Tentang</h4>
-                <p className="text-xs">Tim Kami</p>
-                <p className="text-xs">Syarat Layanan</p>
+                <h4 className="font-semibold text-white/90 mb-2">Tentang</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">Tim Kami</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Syarat Layanan</p>
               </div>
             </div>
           </div>
