@@ -156,7 +156,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               {/* Mockup Header */}
               <div className="bg-[#FAF7F7] rounded-xl p-3 mb-3 flex items-center justify-between border border-[#E8DDDE]">
                 <div className="flex items-center gap-2.5">
-                  <img src="/Logo.png" alt="Kroomify" className="w-7 h-7 object-contain rounded-lg shadow-xs" />
+                  <img src="/Logo.png" alt="Kroomify" className="h-6 w-auto object-contain shrink-0 drop-shadow-2xs" />
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-bold text-[#241A1A] tracking-tight">{t('hero_dash_title', 'Kroomify Dashboard')}</span>
