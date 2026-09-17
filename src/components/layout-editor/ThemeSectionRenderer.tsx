@@ -5,9 +5,10 @@ import { ThemeRegistry, ThemeId, normalizeThemeId } from '../../themes/ThemeRegi
 interface ThemeSectionRendererProps {
   themeId: ThemeId | string;
   section: StoreSectionConfig;
+  onUpdateSectionOptions?: (key: string, newOptions: Partial<any>) => void;
 }
 
-export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ themeId, section }) => {
+export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ themeId, section, onUpdateSectionOptions }) => {
   const normalizedId = normalizeThemeId(themeId);
   const themeComponents = ThemeRegistry[normalizedId] || ThemeRegistry[themeId as ThemeId];
 
@@ -35,7 +36,7 @@ export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ them
   const Component = themeComponents[componentName] as React.FC<any>;
 
   if (Component) {
-    return <Component sectionOptions={section.options} />;
+    return <Component sectionOptions={section.options} onUpdateSectionOptions={onUpdateSectionOptions} sectionKey={section.key} />;
   }
 
   // Final fallback to original generic rendering if no custom component exists

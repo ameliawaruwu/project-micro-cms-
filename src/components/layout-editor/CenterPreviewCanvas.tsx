@@ -918,17 +918,15 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                           <InlineEditableText
                             tagName="h3"
                             value={opts.featuredTitle || '⭐ Produk Unggulan & Pilihan Toko'}
-                            onSave={() => {}}
+                            onSave={(val) => onUpdateSectionOptions(section.key || section.id, { featuredTitle: val })}
                             className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
-                            readonly={true}
                           />
                         </div>
                         <InlineEditableText
                           tagName="p"
                           value={opts.featuredSubtitle || 'Produk pilihan terbaik dengan kualitas terjamin'}
-                          onSave={() => {}}
+                          onSave={(val) => onUpdateSectionOptions(section.key || section.id, { featuredSubtitle: val })}
                           className="text-[10px] sm:text-[11px] text-[#706866] mt-0.5 font-normal block"
-                          readonly={true}
                         />
                       </div>
                       <span className="text-[11px] sm:text-xs font-bold text-[#66000E] hover:underline flex items-center gap-0.5 shrink-0">
@@ -1578,7 +1576,11 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
 
                     {activeThemeId && hasThemeComponent(activeThemeId, section.id) ? (
                       <div>
-                        <ThemeSectionRenderer themeId={activeThemeId} section={section} />
+                        <ThemeSectionRenderer 
+                          themeId={activeThemeId} 
+                          section={section} 
+                          onUpdateSectionOptions={onUpdateSectionOptions}
+                        />
                       </div>
                     ) : (
                       <>
