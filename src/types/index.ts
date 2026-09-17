@@ -291,6 +291,9 @@ export interface Store {
   plan?: 'free' | 'starter' | 'premium';
   themeColor?: string;
   layoutSettings?: StoreLayoutSettings;
+  customDomain?: string;
+  domainType?: 'random' | 'custom';
+  domainStatus?: 'connected' | 'pending' | 'error';
   onboarding: {
     storeNameSet: boolean;
     productUploaded: boolean;
