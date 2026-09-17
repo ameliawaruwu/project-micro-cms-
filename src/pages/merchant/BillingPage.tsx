@@ -256,10 +256,6 @@ export const BillingPage: React.FC<BillingPageProps> = ({
 
         {/* Top Controls: Current Plan Status & Riwayat Berlangganan Button */}
         <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-          <div className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900 flex items-center gap-1.5 shadow-2xs">
-            <span>📅</span>
-            <span>{isEn ? 'Yearly Billing (12 Months)' : 'Langganan Tahunan (12 Bulan Penuh)'}</span>
-          </div>
 
           <button
             type="button"

@@ -298,8 +298,9 @@ export default function App() {
     const tokoParam = params.get('toko') || params.get('store') || storeSlugFromPath;
     const modeParam = params.get('mode') || params.get('view');
     const previewThemeParam = params.get('previewTheme');
+    const editThemeParam = params.get('editTheme');
 
-    if (previewThemeParam) {
+    if (previewThemeParam || editThemeParam || modeParam === 'editor') {
       storeService.getStores().then((all) => {
         let match = all[0] || initialStores[0];
         if (tokoParam) {

@@ -76,7 +76,16 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   
   // Theme Library vs Editor Mode
-  const [pageMode, setPageMode] = useState<'library' | 'preview' | 'loading' | 'editor'>('library');
+  const [pageMode, setPageMode] = useState<'library' | 'preview' | 'loading' | 'editor'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'editor' || params.get('editTheme')) {
+        return 'editor';
+      }
+    }
+    return 'library';
+  });
+
   const [previewTemplate, setPreviewTemplate] = useState<TemplateGalleryItem | null>(null);
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -86,6 +95,46 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const [activeThemeId, setActiveThemeId] = useState<any>(
     (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist'
   );
+
+  // Sync template from URL parameter if opened via new tab (?mode=editor&editTheme=...)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const editTheme = params.get('editTheme');
+      if (editTheme) {
+        const found = TEMPLATE_GALLERY_ITEMS.find(
+          (t) => t.id === editTheme || t.storeTemplate.id === editTheme
+        );
+        if (found) {
+          const storeTemplate = found.storeTemplate;
+          const newSections = storeTemplate.sections.map((s, idx) => ({
+            ...s,
+            key: s.key || `${s.id}-${idx}`,
+            order: s.order !== undefined ? s.order : idx,
+          }));
+          setSections(newSections);
+          setSelectedSectionKey(newSections[0]?.key || null);
+          setPrimaryAccent(found.primaryAccent);
+          const themeMap: Record<string, any> = {
+            'minimalist_clean': 'minimalist',
+            'gadget_tech': 'modern',
+            'futuristic_dark': 'futuristic',
+            'editorial_luxury': 'luxury',
+            'bold_market': 'bold',
+            'editorial_commerce': 'editorial',
+            'nature_organic': 'nature',
+            'creative_studio': 'creative',
+            'pro_corporate': 'professional',
+            'chic_fashion': 'fashion',
+          };
+          const mappedThemeId = themeMap[found.storeTemplate.id] || 'minimalist';
+          setActiveThemeId(mappedThemeId);
+          useCmsStore.getState().loadThemeData(mappedThemeId);
+          setPageMode('editor');
+        }
+      }
+    }
+  }, []);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [globalSettings, setGlobalSettings] = useState<any>(
     store.layoutSettings?.globalThemeSettings || {
@@ -455,22 +504,15 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setHistoryIndex(0);
     setHasChanges(false);
 
-    // Animate progress bar over ~2.5 seconds, then switch to editor
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 18 + 8;
-      if (progress >= 100) {
-        progress = 100;
-        setLoadingProgress(100);
-        clearInterval(interval);
-        setTimeout(() => {
-          setPageMode('editor');
-          setPreviewTemplate(null);
-        }, 400);
-      } else {
-        setLoadingProgress(Math.min(progress, 95));
-      }
-    }, 300);
+    // Buka editor di tab baru browser
+    const editorUrl = `/?mode=editor&editTheme=${template.storeTemplate.id}&toko=${currentStore.slug}`;
+    const newTab = window.open(editorUrl, '_blank');
+    if (!newTab) {
+      // Jika pop-up diblokir browser, alihkan di tab saat ini
+      setPageMode('editor');
+    } else {
+      onShowNotification(`Membuka editor tata letak "${template.name}" di tab baru...`);
+    }
   };
 
   // Keyboard shortcut listener for Esc to exit fullscreen
@@ -798,7 +840,12 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           <ThemeLibraryView
             store={currentStore}
             products={products}
-            onCustomize={() => setPageMode('editor')}
+            onCustomize={() => {
+              const newTab = window.open(`/?mode=editor&toko=${currentStore.slug}`, '_blank');
+              if (!newTab) {
+                setPageMode('editor');
+              }
+            }}
             onNavigateDashboard={onNavigateDashboard || onBack}
             onSelectTheme={(themeId) => {
               const storeTemplate = STORE_TEMPLATES.find(t => t.id === themeId);
@@ -1070,7 +1117,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             onSave={handleSave}
             onReset={handleReset}
             onOpenStorefront={handleOpenPreviewTab}
-            onBack={() => setPageMode('library')}
+            onBack={() => {
+              if (window.opener) {
+                window.close();
+              } else {
+                setPageMode('library');
+              }
+            }}
             isSaving={isSaving}
             canUndo={canUndo}
             canRedo={canRedo}
