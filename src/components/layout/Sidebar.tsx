@@ -11,10 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Store,
   X,
   LogOut,
-  ExternalLink,
   Crown,
 } from 'lucide-react';
 import { MerchantTab, Store as StoreType } from '../../types';
@@ -217,51 +215,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Store Info & "Lihat Toko" Action */}
-      {(!isCollapsed || isOpenMobile) ? (
-        <div className="p-2.5 mx-2.5 my-2 rounded-lg bg-gray-50 border border-gray-200 text-xs shrink-0 shadow-2xs">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-6 h-6 rounded-md bg-red-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
-              <Store className="w-3.5 h-3.5" />
-            </div>
-            <div className="truncate flex-1 min-w-0">
-              <div className="flex items-center gap-1">
-                <h4 className="font-semibold text-xs text-gray-900 truncate leading-tight">
-                  {activeStore.name}
-                </h4>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title={t('nav_store_active', 'Toko Online Aktif')}></span>
-              </div>
-              <p className="text-[10px] text-gray-400 font-mono truncate">
-                /{activeStore.slug}
-              </p>
-            </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              onOpenStorefront();
-              if (onCloseMobile) onCloseMobile();
-            }}
-            className="w-full inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 py-1.5 rounded-md transition cursor-pointer"
-            title={t('nav_view_store', 'Lihat Toko')}
-          >
-            <ExternalLink className="w-3 h-3" />
-            <span>{t('nav_view_store', 'Lihat Toko')}</span>
-          </button>
-        </div>
-      ) : (
-        <div className="p-2 mx-auto my-2 shrink-0 flex justify-center">
-          <button
-            type="button"
-            onClick={onOpenStorefront}
-            className="w-8 h-8 rounded-md bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 flex items-center justify-center transition cursor-pointer"
-            title={`${t('nav_view_store', 'Lihat Toko')} (${activeStore.name})`}
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
 
       {/* Logout Bottom Action */}
       <div className="p-2.5 border-t border-gray-100 shrink-0">
@@ -273,10 +227,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               if (onCloseMobile) onCloseMobile();
             }}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-gray-600 hover:text-red-600 hover:bg-red-50/50 transition cursor-pointer"
-            title={t('nav_logout', 'Keluar (Logout)')}
+            title={t('nav_logout', 'Keluar')}
           >
             <LogOut className="w-3.5 h-3.5 text-gray-400" />
-            <span className="truncate">{t('nav_logout', 'Keluar (Logout)')}</span>
+            <span className="truncate">{t('nav_logout', 'Keluar')}</span>
           </button>
         ) : (
           <div className="flex justify-center">
@@ -284,7 +238,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               type="button"
               onClick={onLogout}
               className="w-8 h-8 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer"
-              title={t('nav_logout', 'Keluar (Logout)')}
+              title={t('nav_logout', 'Keluar')}
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>

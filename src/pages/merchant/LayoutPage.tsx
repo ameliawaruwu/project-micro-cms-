@@ -19,7 +19,7 @@ import { CenterPreviewCanvas } from '../../components/layout-editor/CenterPrevie
 import { RightPanelSettings } from '../../components/layout-editor/RightPanelSettings';
 import { AddSectionModal } from '../../components/layout-editor/AddSectionModal';
 import { StoreLayoutSetupWizard } from '../../components/layout-editor/StoreLayoutSetupWizard';
-import { ThemeLibraryView, TemplateGalleryItem, TEMPLATE_GALLERY_ITEMS } from '../../components/layout-editor/ThemeLibraryView';
+import { ThemeLibraryView, TemplateGalleryItem, SavedThemeItem, TEMPLATE_GALLERY_ITEMS } from '../../components/layout-editor/ThemeLibraryView';
 import { PublishStoreModal } from '../../components/layout-editor/PublishStoreModal';
 import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
@@ -329,16 +329,98 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     window.open(`/${currentStore.slug}?preview=true`, '_blank');
   };
 
-  const [savedThemes, setSavedThemes] = useState<TemplateGalleryItem[]>([
-    TEMPLATE_GALLERY_ITEMS[0],
-  ]);
+  // Saved draft themes persistence in localStorage
+  const savedThemesStorageKey = `microcms_saved_themes_${currentStore.id || 'default'}`;
+
+  const [savedThemes, setSavedThemes] = useState<SavedThemeItem[]>(() => {
+    try {
+      const stored = localStorage.getItem(savedThemesStorageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load saved themes from storage:', e);
+    }
+    // Default initial saved theme
+    return [
+      {
+        ...TEMPLATE_GALLERY_ITEMS[0],
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+  });
+
+  const [editingDraftId, setEditingDraftId] = useState<string>(() => {
+    return savedThemes[0]?.id || TEMPLATE_GALLERY_ITEMS[0].id;
+  });
+
+  // Save savedThemes to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(savedThemesStorageKey, JSON.stringify(savedThemes));
+    } catch (e) {
+      console.error('Failed to persist saved themes:', e);
+    }
+  }, [savedThemes, savedThemesStorageKey]);
 
   const handleAddSavedTheme = (template: TemplateGalleryItem) => {
-    const isExist = savedThemes.some((t) => t.id === template.id);
-    if (!isExist) {
-      setSavedThemes((prev) => [template, ...prev]);
-      onShowNotification(`Tema "${template.name}" berhasil ditambahkan ke Pustaka Tema (Draf).`);
-    }
+    setSavedThemes((prev) => {
+      const existingIdx = prev.findIndex((t) => t.id === template.id);
+      const nowIso = new Date().toISOString();
+      const newDraftItem: SavedThemeItem = {
+        ...template,
+        updatedAt: nowIso,
+      };
+      if (existingIdx !== -1) {
+        const copy = [...prev];
+        copy[existingIdx] = { ...copy[existingIdx], updatedAt: nowIso };
+        return copy;
+      }
+      return [newDraftItem, ...prev];
+    });
+  };
+
+  const handlePublishTheme = (theme: SavedThemeItem) => {
+    const storeTemplateId = theme.storeTemplate?.id || theme.id;
+    const nowIso = new Date().toISOString();
+    
+    // Set as active theme layout
+    onSaveLayout({
+      ...store.layoutSettings,
+      activeTemplateId: storeTemplateId,
+      primaryAccent: theme.primaryAccent,
+      sections: theme.customLayoutSettings?.sections || theme.storeTemplate.sections,
+    });
+    
+    setSavedThemes((prev) =>
+      prev.map((t) => (t.id === theme.id ? { ...t, updatedAt: nowIso } : t))
+    );
+    setEditingDraftId(theme.id);
+    onShowNotification(`🎉 Tema "${theme.name}" berhasil dipublikasikan sebagai Tema Utama toko!`);
+  };
+
+  const handleDuplicateTheme = (theme: SavedThemeItem) => {
+    const duplicated: SavedThemeItem = {
+      ...theme,
+      id: `${theme.id}_copy_${Date.now()}`,
+      name: `${theme.name} (Salinan)`,
+      updatedAt: new Date().toISOString(),
+    };
+    setSavedThemes((prev) => [duplicated, ...prev]);
+    onShowNotification(`Draf tema "${theme.name}" berhasil diduplikasi.`);
+  };
+
+  const handleRenameTheme = (theme: SavedThemeItem, newName: string) => {
+    setSavedThemes((prev) =>
+      prev.map((t) => (t.id === theme.id ? { ...t, name: newName, updatedAt: new Date().toISOString() } : t))
+    );
+    onShowNotification(`Nama draf diubah menjadi "${newName}".`);
+  };
+
+  const handleDeleteTheme = (themeId: string) => {
+    setSavedThemes((prev) => prev.filter((t) => t.id !== themeId));
+    onShowNotification('Draf tema berhasil dihapus dari Pustaka Tema.');
   };
 
   // Handle clicking a template card → redirect to new tab like Canva
@@ -358,62 +440,84 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setHasChanges(true);
   };
 
-  // Handle "Coba tema" → show loading then go to editor
-  const handleApplyAndEdit = (template: TemplateGalleryItem) => {
+  // Handle "Sesuaikan Draf" / "Coba tema" → restore customized sections or template defaults
+  const handleApplyAndEdit = (template: SavedThemeItem) => {
+    setEditingDraftId(template.id);
     handleAddSavedTheme(template);
     setLoadingTemplateName(template.name);
     setLoadingProgress(0);
     setPageMode('loading');
 
-    // Apply template sections and styling
-    const storeTemplate = template.storeTemplate;
-    const newSections = storeTemplate.sections.map((s, idx) => ({
-      ...s,
-      key: s.key || `${s.id}-${idx}`,
-      order: s.order !== undefined ? s.order : idx,
-    }));
-    setSections(newSections);
-    setSelectedSectionKey(newSections[0]?.key || null);
-    setPrimaryAccent(template.primaryAccent);
-    
-    const themeMap: Record<string, any> = {
-      'minimalist_clean': 'minimalist',
-      'gadget_tech': 'modern',
-      'futuristic_dark': 'futuristic',
-      'editorial_luxury': 'luxury',
-      'bold_market': 'bold',
-      'editorial_commerce': 'editorial',
-      'nature_organic': 'nature',
-      'creative_studio': 'creative',
-      'pro_corporate': 'professional',
-      'chic_fashion': 'fashion',
-      'brand': 'minimalist', // legacy
-      'classic': 'elegant' // legacy
-    };
-    const mappedThemeId = themeMap[template.storeTemplate.id] || 'minimalist';
-    setActiveThemeId(mappedThemeId);
-    
-    // Load dynamic theme dummy data if available
-    useCmsStore.getState().loadThemeData(mappedThemeId);
+    // If template has customized layout settings saved, restore them!
+    if (template.customLayoutSettings && template.customLayoutSettings.sections) {
+      const restoredSections = template.customLayoutSettings.sections;
+      setSections(restoredSections);
+      setSelectedSectionKey(restoredSections[0]?.key || null);
+      if (template.customLayoutSettings.primaryAccent) {
+        setPrimaryAccent(template.customLayoutSettings.primaryAccent);
+      }
+      if (template.customLayoutSettings.globalThemeSettings) {
+        setGlobalSettings(template.customLayoutSettings.globalThemeSettings);
+      }
+      if (template.customLayoutSettings.activeThemeId) {
+        setActiveThemeId(template.customLayoutSettings.activeThemeId);
+      }
+      if (template.customPageSectionsMap) {
+        setPageSectionsMap(template.customPageSectionsMap);
+      }
+      setHistory([restoredSections]);
+      setHistoryIndex(0);
+      setHasChanges(false);
+    } else {
+      // Apply template default sections and styling
+      const storeTemplate = template.storeTemplate;
+      const newSections = storeTemplate.sections.map((s, idx) => ({
+        ...s,
+        key: s.key || `${s.id}-${idx}`,
+        order: s.order !== undefined ? s.order : idx,
+      }));
+      setSections(newSections);
+      setSelectedSectionKey(newSections[0]?.key || null);
+      setPrimaryAccent(template.primaryAccent);
+      
+      const themeMap: Record<string, any> = {
+        'minimalist_clean': 'minimalist',
+        'gadget_tech': 'modern',
+        'futuristic_dark': 'futuristic',
+        'editorial_luxury': 'luxury',
+        'bold_market': 'bold',
+        'editorial_commerce': 'editorial',
+        'nature_organic': 'nature',
+        'creative_studio': 'creative',
+        'pro_corporate': 'professional',
+        'chic_fashion': 'fashion',
+        'brand': 'minimalist',
+        'classic': 'elegant'
+      };
+      const mappedThemeId = themeMap[template.storeTemplate.id] || 'minimalist';
+      setActiveThemeId(mappedThemeId);
+      
+      useCmsStore.getState().loadThemeData(mappedThemeId);
 
-    handleUpdateStore({
-      bannerUrl: storeTemplate.bannerUrl,
-      tagline: storeTemplate.tagline,
-    });
+      handleUpdateStore({
+        bannerUrl: storeTemplate.bannerUrl,
+        tagline: storeTemplate.tagline,
+      });
 
-    onSaveLayout({
-      ...store.layoutSettings,
-      primaryAccent: template.primaryAccent,
-      sections: newSections,
-    });
-    setHistory([newSections]);
-    setHistoryIndex(0);
-    setHasChanges(false);
+      onSaveLayout({
+        ...store.layoutSettings,
+        primaryAccent: template.primaryAccent,
+        sections: newSections,
+      });
+      setHistory([newSections]);
+      setHistoryIndex(0);
+      setHasChanges(false);
+    }
 
-    // Animate progress bar over ~2.5 seconds, then switch to editor
+    // Animate progress bar over ~1.5 seconds, then switch to editor
     let progress = 0;
     const interval = setInterval(() => {
-      progress += Math.random() * 18 + 8;
+      progress += Math.random() * 25 + 15;
       if (progress >= 100) {
         progress = 100;
         setLoadingProgress(100);
@@ -421,11 +525,11 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         setTimeout(() => {
           setPageMode('editor');
           setPreviewTemplate(null);
-        }, 400);
+        }, 300);
       } else {
         setLoadingProgress(Math.min(progress, 95));
       }
-    }, 300);
+    }, 200);
   };
 
   // Keyboard shortcut listener for Esc to exit fullscreen
@@ -699,6 +803,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   // Save layout
   const handleSave = () => {
     setIsSaving(true);
+    const nowIso = new Date().toISOString();
     const updatedMap = {
       ...pageSectionsMap,
       [activePage]: sections,
@@ -721,11 +826,38 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       activePage,
     };
 
+    // UPDATE CURRENT EDITING DRAFT THEME IN savedThemes WITH LATEST TIMESTAMP & CUSTOM DATA!
+    setSavedThemes((prev) => {
+      const targetIdx = prev.findIndex((t) => t.id === editingDraftId);
+      if (targetIdx !== -1) {
+        const copy = [...prev];
+        copy[targetIdx] = {
+          ...copy[targetIdx],
+          updatedAt: nowIso,
+          customLayoutSettings: layoutSettings,
+          customPageSectionsMap: updatedMap,
+        };
+        const [editedItem] = copy.splice(targetIdx, 1);
+        return [editedItem, ...copy];
+      } else if (prev.length > 0) {
+        const copy = [...prev];
+        copy[0] = {
+          ...copy[0],
+          updatedAt: nowIso,
+          customLayoutSettings: layoutSettings,
+          customPageSectionsMap: updatedMap,
+        };
+        return copy;
+      }
+      return prev;
+    });
+
     onSaveLayout(layoutSettings);
     setHasChanges(false);
     setTimeout(() => {
       setIsSaving(false);
-      onShowNotification('Tata letak & konfigurasi seluruh halaman toko berhasil disimpan!');
+      const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+      onShowNotification(`Draf tema & tata letak berhasil disimpan pada pukul ${timeStr}! Jam pembaruan draf diperbarui.`);
     }, 200);
   };
   return (
@@ -780,11 +912,16 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               console.log('Previewing theme:', themeId);
             }}
             onPreviewTemplate={handlePreviewTemplate}
-            onApplyTemplate={(template: TemplateGalleryItem) => {
+            onApplyTemplate={(template: SavedThemeItem) => {
               handleApplyAndEdit(template);
             }}
             savedThemes={savedThemes}
+            editingDraftId={editingDraftId}
             onAddSavedTheme={handleAddSavedTheme}
+            onPublishTheme={handlePublishTheme}
+            onDuplicateTheme={handleDuplicateTheme}
+            onRenameTheme={handleRenameTheme}
+            onDeleteTheme={handleDeleteTheme}
           />
         </div>
       )}

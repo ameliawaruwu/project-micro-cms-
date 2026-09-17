@@ -465,14 +465,12 @@ export default function App() {
     setProducts(storeProducts);
     setOrders(storeOrders);
     setCartItems(initialCart);
-    addToast(`Berpindah ke toko ${store.name}`);
   };
 
   // Handle Logout
   const handleLogout = async () => {
     await logout();
     setAuthView('login');
-    addToast('Anda telah keluar dari akun merchant.', 'info');
   };
 
   // Categories list

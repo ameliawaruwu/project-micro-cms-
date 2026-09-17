@@ -22,6 +22,8 @@ import {
   Palette,
   Layers,
   Settings2,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 
 // ─── Template Category Definitions ───────────────────────────────────
@@ -54,6 +56,36 @@ export interface TemplateGalleryItem {
   storeTemplate: StoreTemplate;
   pageNames: string[];
 }
+
+export interface SavedThemeItem extends TemplateGalleryItem {
+  updatedAt?: string;
+  customLayoutSettings?: any;
+  customPageSectionsMap?: any;
+}
+
+export const formatSavedDate = (isoString?: string): string => {
+  if (!isoString) return 'Tersimpan: Baru saja';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return 'Tersimpan: Baru saja';
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+  if (diffMinutes < 1) return 'Tersimpan: Baru saja';
+  if (diffMinutes < 60) return `Tersimpan: ${diffMinutes} mnt lalu`;
+
+  const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) return `Tersimpan: Hari ini pukul ${timeStr}`;
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) {
+    return `Tersimpan: Kemarin pukul ${timeStr}`;
+  }
+
+  return `Tersimpan: ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} pukul ${timeStr}`;
+};
 
 export const TEMPLATE_GALLERY_ITEMS: TemplateGalleryItem[] = [
   {
@@ -191,10 +223,15 @@ interface ThemeLibraryViewProps {
   onCustomize: () => void;
   onSelectTheme: (themeId: string) => void;
   onPreviewTheme: (themeId: string) => void;
-  onApplyTemplate?: (template: TemplateGalleryItem) => void;
+  onApplyTemplate?: (template: SavedThemeItem) => void;
   onPreviewTemplate?: (template: TemplateGalleryItem) => void;
-  savedThemes?: TemplateGalleryItem[];
+  savedThemes?: SavedThemeItem[];
+  editingDraftId?: string;
   onAddSavedTheme?: (template: TemplateGalleryItem) => void;
+  onPublishTheme?: (theme: SavedThemeItem) => void;
+  onDuplicateTheme?: (theme: SavedThemeItem) => void;
+  onRenameTheme?: (theme: SavedThemeItem, newName: string) => void;
+  onDeleteTheme?: (themeId: string) => void;
 }
 
 // ─── Component ───────────────────────────────────────────────────────
@@ -207,11 +244,19 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   onApplyTemplate,
   onPreviewTemplate,
   savedThemes = [],
+  editingDraftId,
   onAddSavedTheme,
+  onPublishTheme,
+  onDuplicateTheme,
+  onRenameTheme,
+  onDeleteTheme,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [showAllDrafts, setShowAllDrafts] = useState(false);
+  const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
+  const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null);
+  const [miniToast, setMiniToast] = useState<{ id: string; message: string; isSuccess: boolean } | null>(null);
 
   const currentTemplateId = store.layoutSettings?.activeTemplateId;
 
@@ -230,14 +275,34 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   }, [activeCategory, searchQuery]);
 
   const handleUseTemplate = (template: TemplateGalleryItem) => {
-    if (onAddSavedTheme) {
-      onAddSavedTheme(template);
-      // Removed onApplyTemplate so it just adds to draft list without forcing the user into the editor
-    } else if (onApplyTemplate) {
-      onApplyTemplate(template);
-    } else {
-      onSelectTheme(template.storeTemplate.id);
-    }
+    if (loadingTemplateId) return;
+
+    setLoadingTemplateId(template.id);
+    setMiniToast({
+      id: template.id,
+      message: `Menambahkan ${template.name}...`,
+      isSuccess: false,
+    });
+
+    setTimeout(() => {
+      if (onAddSavedTheme) {
+        onAddSavedTheme(template);
+      } else if (onApplyTemplate) {
+        onApplyTemplate(template as SavedThemeItem);
+      } else {
+        onSelectTheme(template.storeTemplate.id);
+      }
+      setLoadingTemplateId(null);
+      setMiniToast({
+        id: template.id,
+        message: `Tema "${template.name}" ditambahkan ke Draf`,
+        isSuccess: true,
+      });
+
+      setTimeout(() => {
+        setMiniToast((prev) => (prev?.id === template.id ? null : prev));
+      }, 3500);
+    }, 650);
   };
 
   return (
@@ -275,58 +340,130 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
           {/* ── PUSTAKA TEMA TERSIMPAN (SAVED DRAFT THEMES) ── */}
           {savedThemes.length > 0 && (
             <div className="mb-10">
-              <div className="mb-4 px-1">
+              <div className="mb-4 px-1 flex items-center justify-between">
                 <h3 className="font-bold text-[16px] text-[#202223]">Pustaka tema</h3>
+                <span className="text-xs text-[#6D7175] font-medium">{savedThemes.length} Draf Tersimpan</span>
               </div>
               
-              <div className="bg-white border border-[#E1E3E5] rounded-xl shadow-xs overflow-hidden">
+              <div className="bg-white border border-[#E1E3E5] rounded-xl shadow-xs overflow-visible">
                 <div className="flex flex-col">
                   {(showAllDrafts ? savedThemes : savedThemes.slice(0, 3)).map((savedTmpl, idx) => {
                     const isCurrentActive = currentTemplateId === savedTmpl.storeTemplate.id;
+                    const isEditingActive = editingDraftId
+                      ? savedTmpl.id === editingDraftId
+                      : !isCurrentActive && idx === 0;
                     const isLast = idx === (showAllDrafts ? savedThemes.length : Math.min(3, savedThemes.length)) - 1;
+                    const isMenuOpen = openActionMenuId === savedTmpl.id;
+
                     return (
-                      <div key={savedTmpl.id} className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#F9FAFB] transition ${!isLast ? 'border-b border-[#E1E3E5]' : ''}`}>
+                      <div key={savedTmpl.id} className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#F9FAFB] transition ${!isLast ? 'border-b border-[#E1E3E5]' : ''} relative`}>
                         <div className="flex items-center gap-4 min-w-0">
                           <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-[#E1E3E5] bg-gray-50 flex items-center justify-center shadow-inner">
                             <img src={savedTmpl.thumbnailUrl} alt={savedTmpl.name} className="w-full h-full object-cover" />
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2 mb-1.5">
+                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                               <h4 className="font-bold text-[15px] text-[#202223] truncate">{savedTmpl.name}</h4>
-                              {idx === 0 && (
-                                <span className="px-1.5 py-0.5 bg-[#E4F8EB] text-[#008060] text-[10px] font-bold rounded uppercase tracking-wider hidden sm:inline-block">Baru ditambahkan</span>
+                              {isCurrentActive ? (
+                                <span className="px-2 py-0.5 bg-[#E4F8EB] text-[#008060] text-[10px] font-bold rounded uppercase tracking-wider">Dipublikasikan</span>
+                              ) : isEditingActive ? (
+                                <span className="px-2 py-0.5 bg-[#F0F4FE] text-[#2C6ECB] text-[10px] font-bold rounded uppercase tracking-wider">Draf Aktif</span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded uppercase tracking-wider">Draf</span>
                               )}
                             </div>
                             <div className="text-[13px] text-[#6D7175] flex items-center gap-1.5">
                               {isCurrentActive ? (
-                                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#008060] shadow-[0_0_0_2px_#E4F8EB]"></span> Tema sedang digunakan</span>
-                              ) : (
-                                <span>
-                                  {(() => {
-                                    if (idx === 0) return 'Tersimpan: Baru saja';
-                                    const d = new Date();
-                                    if (idx === 1) {
-                                      d.setHours(d.getHours() - 2);
-                                      return `Tersimpan: ${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.')}`;
-                                    }
-                                    if (idx === 2) {
-                                      d.setDate(d.getDate() - 1);
-                                      return `Tersimpan: Kemarin pukul ${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.')}`;
-                                    }
-                                    d.setDate(d.getDate() - idx);
-                                    return `Tersimpan: ${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
-                                  })()}
+                                <span className="flex items-center gap-1.5 text-[#008060] font-medium">
+                                  <span className="w-2 h-2 rounded-full bg-[#008060] shadow-[0_0_0_2px_#E4F8EB]"></span>
+                                  Tema sedang digunakan live
                                 </span>
+                              ) : (
+                                <span>{formatSavedDate(savedTmpl.updatedAt)}</span>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                          <button
-                            className="px-4 py-2 rounded-lg text-[13px] font-semibold text-[#202223] bg-white border border-[#C9CCCF] hover:bg-[#F6F6F7] hover:border-[#8C9196] transition cursor-pointer shadow-xs"
-                          >
-                            Tindakan
-                          </button>
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto relative">
+                          <div className="relative">
+                            <button
+                              onClick={() => setOpenActionMenuId(isMenuOpen ? null : savedTmpl.id)}
+                              className="px-4 py-2 rounded-lg text-[13px] font-semibold text-[#202223] bg-white border border-[#C9CCCF] hover:bg-[#F6F6F7] hover:border-[#8C9196] transition cursor-pointer shadow-xs flex items-center gap-1"
+                            >
+                              <span>Tindakan</span>
+                              <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isMenuOpen ? 'rotate-90' : ''}`} />
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {isMenuOpen && (
+                              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-[#E1E3E5] py-1.5 z-50 text-xs font-medium animate-in fade-in zoom-in-95 duration-100">
+                                {!isCurrentActive && onPublishTheme && (
+                                  <button
+                                    onClick={() => {
+                                      onPublishTheme(savedTmpl);
+                                      setOpenActionMenuId(null);
+                                    }}
+                                    className="w-full text-left px-3.5 py-2 text-[#008060] hover:bg-[#E4F8EB] font-bold flex items-center gap-2 transition"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    <span>Publikasikan Tema</span>
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    onApplyTemplate?.(savedTmpl);
+                                    setOpenActionMenuId(null);
+                                  }}
+                                  className="w-full text-left px-3.5 py-2 text-[#202223] hover:bg-[#F6F6F7] flex items-center gap-2 transition"
+                                >
+                                  <Settings2 className="w-3.5 h-3.5 text-gray-500" />
+                                  <span>Sesuaikan Draf</span>
+                                </button>
+                                {onDuplicateTheme && (
+                                  <button
+                                    onClick={() => {
+                                      onDuplicateTheme(savedTmpl);
+                                      setOpenActionMenuId(null);
+                                    }}
+                                    className="w-full text-left px-3.5 py-2 text-[#202223] hover:bg-[#F6F6F7] flex items-center gap-2 transition"
+                                  >
+                                    <Layers className="w-3.5 h-3.5 text-gray-500" />
+                                    <span>Duplikat Draf</span>
+                                  </button>
+                                )}
+                                {onRenameTheme && (
+                                  <button
+                                    onClick={() => {
+                                      const newName = window.prompt('Masukkan nama baru untuk draf tema:', savedTmpl.name);
+                                      if (newName && newName.trim()) {
+                                        onRenameTheme(savedTmpl, newName.trim());
+                                      }
+                                      setOpenActionMenuId(null);
+                                    }}
+                                    className="w-full text-left px-3.5 py-2 text-[#202223] hover:bg-[#F6F6F7] flex items-center gap-2 transition"
+                                  >
+                                    <PenTool className="w-3.5 h-3.5 text-gray-500" />
+                                    <span>Ubah Nama</span>
+                                  </button>
+                                )}
+                                {onDeleteTheme && savedThemes.length > 1 && (
+                                  <button
+                                    onClick={() => {
+                                      if (window.confirm(`Yakin ingin menghapus draf tema "${savedTmpl.name}"?`)) {
+                                        onDeleteTheme(savedTmpl.id);
+                                      }
+                                      setOpenActionMenuId(null);
+                                    }}
+                                    className="w-full text-left px-3.5 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 transition border-t border-gray-100"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                    <span>Hapus Draf</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
                           <button
                             onClick={() => onApplyTemplate?.(savedTmpl)}
                             className="px-4 py-2 rounded-lg text-[13px] font-semibold bg-[#202223] hover:bg-black text-white transition cursor-pointer shadow-xs"
@@ -407,6 +544,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
                   key={template.id}
                   template={template}
                   isActive={currentTemplateId === template.storeTemplate.id}
+                  isLoading={loadingTemplateId === template.id}
                   onPreview={() => onPreviewTemplate?.(template)}
                   onUse={() => handleUseTemplate(template)}
                 />
@@ -417,6 +555,27 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
 
         <div className="h-16"></div>
       </div>
+
+      {/* Mini Toast Notification (Bottom Center Red Snack Bar matching palette) */}
+      {miniToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-3 duration-300 pointer-events-auto">
+          <div className="bg-[#DC2626] text-white px-4 py-2.5 rounded-2xl shadow-[0_12px_30px_rgba(220,38,38,0.35)] flex items-center gap-2.5 text-xs font-semibold border border-red-600/80 backdrop-blur-md">
+            {!miniToast.isSuccess ? (
+              <Loader2 className="w-4 h-4 animate-spin text-amber-200 shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-emerald-200 shrink-0" />
+            )}
+            <span className="tracking-tight">{miniToast.message}</span>
+            <button
+              type="button"
+              onClick={() => setMiniToast(null)}
+              className="ml-1 text-white/80 hover:text-white transition-colors p-0.5 rounded-full cursor-pointer focus:outline-none"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -583,9 +742,10 @@ const MiniTemplatePreview: React.FC<{
 const TemplateCard: React.FC<{
   template: TemplateGalleryItem;
   isActive: boolean;
+  isLoading?: boolean;
   onPreview: () => void;
   onUse: () => void;
-}> = ({ template, isActive, onPreview, onUse }) => {
+}> = ({ template, isActive, isLoading = false, onPreview, onUse }) => {
   const themeData = THEME_DATA_MAP[template.storeTemplate.id] || THEME_DATA_MAP['minimalist'];
 
   return (
@@ -614,12 +774,25 @@ const TemplateCard: React.FC<{
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); onUse(); }}
-          className={`px-4 py-2 rounded-xl border text-[13px] font-semibold shadow-sm transition-colors cursor-pointer ${isActive
+          disabled={isLoading || isActive}
+          className={`px-4 py-2 rounded-xl border text-[13px] font-semibold shadow-sm transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+            isActive
               ? 'bg-[#202223] text-white border-[#202223]'
+              : isLoading
+              ? 'bg-[#F6F6F7] border-[#E1E3E5] text-[#6D7175] cursor-wait'
               : 'bg-white border-[#E1E3E5] text-[#202223] hover:bg-[#F6F6F7]'
-            }`}
+          }`}
         >
-          {isActive ? 'Aktif' : 'Tambahkan'}
+          {isLoading ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#6D7175]" />
+              <span>Memuat...</span>
+            </>
+          ) : isActive ? (
+            'Aktif'
+          ) : (
+            'Tambahkan'
+          )}
         </button>
       </div>
     </div>

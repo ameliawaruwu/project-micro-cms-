@@ -19,7 +19,7 @@ export const translations: Translations = {
   nav_payment: { id: 'Pembayaran', en: 'Payment' },
   nav_shipping: { id: 'Pengiriman', en: 'Shipping' },
   nav_settings: { id: 'Pengaturan', en: 'Settings' },
-  nav_logout: { id: 'Keluar (Logout)', en: 'Log Out' },
+  nav_logout: { id: 'Keluar', en: 'Log Out' },
   nav_view_store: { id: 'Lihat Toko', en: 'View Store' },
   nav_store_active: { id: 'Toko Online Aktif', en: 'Store Online' },
   nav_switch_lang: { id: 'Ganti Bahasa', en: 'Switch Language' },
