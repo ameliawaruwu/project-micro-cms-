@@ -31,6 +31,7 @@ interface LayoutPageProps {
   onOpenPhoneSimulator: () => void;
   onShowNotification: (msg: string) => void;
   onBack?: () => void;
+  onNavigateDashboard?: () => void;
 }
 
 export const LayoutPage: React.FC<LayoutPageProps> = ({
@@ -41,6 +42,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   onOpenPhoneSimulator,
   onShowNotification,
   onBack,
+  onNavigateDashboard,
 }) => {
   const [currentStore, setCurrentStore] = useState<Store>(store);
   const cmsProducts = useCmsStore(state => state.products);
@@ -502,6 +504,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             store={currentStore}
             products={products}
             onCustomize={() => setPageMode('editor')}
+            onNavigateDashboard={onNavigateDashboard || onBack}
             onSelectTheme={(themeId) => {
               const storeTemplate = STORE_TEMPLATES.find(t => t.id === themeId);
               if (storeTemplate) {

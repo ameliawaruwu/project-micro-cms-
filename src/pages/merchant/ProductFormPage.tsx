@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Product } from '../../types';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ProductFormPageProps {
   productToEdit?: Product | null;
@@ -29,6 +30,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
   onBack,
   onSave,
 }) => {
+  const { t } = useLanguage();
   const isEditing = Boolean(productToEdit);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -252,8 +254,8 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
       <div className="flex flex-col gap-2">
         <Breadcrumb
           items={[
-            { label: 'Produk', onClick: onBack },
-            { label: isEditing ? `Edit: ${name || 'Produk'}` : 'Tambah Produk Baru', isActive: true },
+            { label: t('nav_products', 'Produk'), onClick: onBack },
+            { label: isEditing ? `${t('edit_product_title', 'Edit Produk')}: ${name || 'Produk'}` : t('add_product_title', 'Tambah Produk Baru'), isActive: true },
           ]}
         />
 
@@ -263,13 +265,13 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
               type="button"
               onClick={onBack}
               className="p-2 rounded-xl border border-[#E5E0DD] bg-white text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer shrink-0 shadow-2xs"
-              title="Kembali ke Daftar Produk"
+              title="Kembali"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight">
-                {isEditing ? 'Edit Produk' : 'Tambah Produk Baru'}
+                {isEditing ? t('edit_product_title', 'Edit Produk') : t('add_product_title', 'Tambah Produk Baru')}
               </h1>
             </div>
           </div>

@@ -41,12 +41,17 @@ import {
   Crown,
   FileText,
   Sparkles,
+  Package,
+  MapPin,
+  Phone,
+  ShoppingBag,
 } from 'lucide-react';
 import { Store, WithdrawalRequest, AdminPlatformStats, Order, BillingPlan, BillingSubscription, User } from '../../types';
 import { adminService } from '../../services/adminService';
 import { billingPlanService } from '../../services/billingPlanService';
 import { authService } from '../../services/authService';
 import { formatRupiah } from '../../utils/formatters';
+import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
 
 interface AdminDashboardPageProps {
   currentUser?: User | null;
@@ -55,7 +60,7 @@ interface AdminDashboardPageProps {
   onLogout?: () => void;
 }
 
-type AdminTab = 'overview' | 'stores' | 'withdrawals' | 'plans' | 'transactions' | 'settings';
+type AdminTab = 'overview' | 'stores' | 'withdrawals' | 'plans' | 'orders-shipping' | 'transactions' | 'settings';
 
 export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   currentUser,
@@ -63,6 +68,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   onOpenStorefront,
   onLogout,
 }) => {
+  const { language } = useLanguage();
   const [stats, setStats] = useState<AdminPlatformStats>(adminService.getPlatformStats());
   const [stores, setStores] = useState<Store[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
@@ -100,6 +106,21 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     sortOrder: 1,
     isActive: true,
   });
+
+  // Orders & Shipping Tab state
+  const [orderSearchQuery, setOrderSearchQuery] = useState('');
+  const [orderFilterStatus, setOrderFilterStatus] = useState<string>('all');
+  const [orderFilterCourier, setOrderFilterCourier] = useState<string>('all');
+  const [orderFilterStore, setOrderFilterStore] = useState<string>('all');
+  const [selectedAdminOrder, setSelectedAdminOrder] = useState<Order | null>(null);
+  const [copiedResi, setCopiedResi] = useState<string | null>(null);
+
+  const handleCopyResi = (resi: string) => {
+    navigator.clipboard.writeText(resi);
+    setCopiedResi(resi);
+    showToast(`No. Resi ${resi} disalin ke clipboard`);
+    setTimeout(() => setCopiedResi(null), 2000);
+  };
 
   const handleTestApi = (service: 'midtrans' | 'biteship' | 'wa') => {
     setTestingService(service);
@@ -273,18 +294,91 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   const pendingWithdrawals = withdrawals.filter((w) => w.status === 'pending');
 
+  // Orders & Shipping filtering and metrics
+  const totalOrdersCount = orders.length;
+  const processingOrdersCount = orders.filter(
+    (o) => o.shippingStatus === 'Diproses' || o.shippingStatus === 'ready_to_ship' || o.shippingStatus === 'Baru'
+  ).length;
+  const shippedOrdersCount = orders.filter((o) => o.shippingStatus === 'Dikirim').length;
+  const completedOrdersCount = orders.filter((o) => o.shippingStatus === 'Selesai').length;
+  const totalShippingFeePlatform = orders.reduce((acc, o) => acc + (o.shippingCost || 0), 0);
+
+  const filteredAdminOrders = orders.filter((ord) => {
+    const store = stores.find((s) => s.id === ord.storeId);
+    const storeName = store ? store.name.toLowerCase() : '';
+    const q = orderSearchQuery.toLowerCase().trim();
+
+    const matchesSearch =
+      !q ||
+      (ord.orderNumber && ord.orderNumber.toLowerCase().includes(q)) ||
+      (ord.id && ord.id.toLowerCase().includes(q)) ||
+      (ord.customerName && ord.customerName.toLowerCase().includes(q)) ||
+      (ord.customerPhone && ord.customerPhone.includes(q)) ||
+      (ord.resiNumber && ord.resiNumber.toLowerCase().includes(q)) ||
+      (ord.trackingNumber && ord.trackingNumber.toLowerCase().includes(q)) ||
+      storeName.includes(q);
+
+    const matchesStatus =
+      orderFilterStatus === 'all' ||
+      (orderFilterStatus === 'Diproses'
+        ? ord.shippingStatus === 'Diproses' || ord.shippingStatus === 'ready_to_ship'
+        : ord.shippingStatus === orderFilterStatus);
+
+    const matchesCourier =
+      orderFilterCourier === 'all' ||
+      (ord.courier && ord.courier.toLowerCase() === orderFilterCourier.toLowerCase());
+
+    const matchesStore =
+      orderFilterStore === 'all' || ord.storeId === orderFilterStore;
+
+    return matchesSearch && matchesStatus && matchesCourier && matchesStore;
+  });
+
+  const getCourierBadgeStyle = (courier?: string) => {
+    const c = (courier || '').toUpperCase();
+    if (c.includes('J&T')) return 'bg-red-50 text-red-700 border-red-200';
+    if (c.includes('SICEPAT')) return 'bg-orange-50 text-orange-700 border-orange-200';
+    if (c.includes('JNE')) return 'bg-blue-50 text-blue-700 border-blue-200';
+    if (c.includes('GOSEND')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    return 'bg-gray-100 text-gray-700 border-gray-200';
+  };
+
+  const getShippingStatusBadgeStyle = (status?: string) => {
+    switch (status) {
+      case 'Selesai':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'Dikirim':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'Diproses':
+      case 'ready_to_ship':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'Baru':
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'Dibatalkan':
+        return 'bg-rose-50 text-rose-700 border-rose-200';
+      default:
+        return 'bg-gray-50 text-gray-600 border-gray-200';
+    }
+  };
+
   const navItems = [
-    { id: 'overview' as AdminTab, label: 'Ringkasan', icon: LayoutDashboard },
-    { id: 'stores' as AdminTab, label: 'Kelola Toko', icon: StoreIcon, count: stores.length },
+    { id: 'overview' as AdminTab, label: language === 'en' ? 'Overview' : 'Ringkasan', icon: LayoutDashboard },
+    { id: 'stores' as AdminTab, label: language === 'en' ? 'Manage Stores' : 'Kelola Toko', icon: StoreIcon, count: stores.length },
     {
       id: 'withdrawals' as AdminTab,
-      label: 'Pencairan Dana',
+      label: language === 'en' ? 'Payouts' : 'Pencairan Dana',
       icon: Wallet,
       badge: pendingWithdrawals.length > 0 ? pendingWithdrawals.length : undefined,
     },
-    { id: 'plans' as AdminTab, label: 'Pengaturan Billing Plan', icon: Crown },
-    { id: 'transactions' as AdminTab, label: 'Log Transaksi', icon: Receipt },
-    { id: 'settings' as AdminTab, label: 'Pengaturan Sistem', icon: SettingsIcon },
+    { id: 'plans' as AdminTab, label: language === 'en' ? 'Billing Plans' : 'Paket Langganan', icon: Crown },
+    {
+      id: 'orders-shipping' as AdminTab,
+      label: language === 'en' ? 'Orders & Shipping' : 'Pesanan & Pengiriman',
+      icon: Truck,
+      badge: processingOrdersCount > 0 ? processingOrdersCount : undefined,
+    },
+    { id: 'transactions' as AdminTab, label: language === 'en' ? 'Transaction Logs' : 'Log Transaksi', icon: Receipt },
+    { id: 'settings' as AdminTab, label: language === 'en' ? 'System Settings' : 'Pengaturan Sistem', icon: SettingsIcon },
   ];
 
   return (
@@ -336,14 +430,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer shrink-0"
-              title={isSidebarOpen ? "Ciutkan Menu (Hanya Ikon)" : "Perluas Menu"}
+              title={isSidebarOpen ? (language === 'en' ? 'Collapse Menu' : 'Ciutkan Menu') : (language === 'en' ? 'Expand Menu' : 'Perluas Menu')}
             >
               {isSidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
           </div>
 
           {/* Navigation Links */}
-          <nav className="mt-3 space-y-1 flex-1 overflow-y-auto">
+          <nav className="mt-3 space-y-1 flex-1 overflow-y-auto font-poppins">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -352,12 +446,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   title={!isSidebarOpen ? item.label : undefined}
-                  className={`w-full flex items-center rounded-md text-xs font-medium transition cursor-pointer relative group ${
+                  className={`w-full flex items-center rounded-md text-xs font-medium font-poppins transition cursor-pointer relative group ${
                     isSidebarOpen ? 'justify-between px-2.5 py-2' : 'justify-center p-2'
                   } ${
                     isActive
-                      ? 'bg-red-50 text-red-700 font-semibold'
-                      : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                      ? 'bg-rose-50 text-[#800000] font-semibold'
+                      : 'text-gray-600 hover:bg-rose-50/50 hover:text-[#800000]'
                   }`}
                 >
                   <div className={`flex items-center ${isSidebarOpen ? 'gap-2.5 min-w-0' : 'justify-center'}`}>
@@ -376,7 +470,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                         {item.badge}
                       </span>
                     ) : (
-                      <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-600 ring-2 ring-white" />
+                      <span className="w-2 h-2 rounded-full bg-red-600 absolute top-1 right-1" />
                     )
                   )}
                 </button>
@@ -389,26 +483,26 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             {onBackToMerchant && (
               <button
                 onClick={onBackToMerchant}
-                title={!isSidebarOpen ? "Mode Merchant" : undefined}
+                title={!isSidebarOpen ? (language === 'en' ? 'Merchant Mode' : 'Mode Merchant') : undefined}
                 className={`w-full flex items-center rounded-md text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200/80 transition cursor-pointer ${
                   isSidebarOpen ? 'gap-2 px-2.5 py-1.5' : 'justify-center p-2'
                 }`}
               >
                 <ArrowLeft className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                {isSidebarOpen && <span>Mode Merchant</span>}
+                {isSidebarOpen && <span>{language === 'en' ? 'Merchant Mode' : 'Mode Merchant'}</span>}
               </button>
             )}
 
             {onLogout && (
               <button
                 onClick={onLogout}
-                title={!isSidebarOpen ? "Keluar" : undefined}
+                title={!isSidebarOpen ? (language === 'en' ? 'Logout' : 'Keluar') : undefined}
                 className={`w-full flex items-center rounded-md text-xs font-medium text-gray-500 hover:text-red-600 hover:bg-red-50/50 transition cursor-pointer ${
                   isSidebarOpen ? 'gap-2 px-2.5 py-1.5' : 'justify-center p-2'
                 }`}
               >
                 <LogOut className="w-3.5 h-3.5 shrink-0" />
-                {isSidebarOpen && <span>Keluar</span>}
+                {isSidebarOpen && <span>{language === 'en' ? 'Logout' : 'Keluar'}</span>}
               </button>
             )}
           </div>
@@ -420,12 +514,24 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
         
         {/* Top Header (Fixed) */}
-        <header className="shrink-0 z-30 bg-white border-b border-gray-200 px-4 sm:px-6 py-2.5 flex items-center justify-end gap-4">
+        <header className="shrink-0 z-30 bg-white border-b border-gray-200 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
+
+          {/* Left: Active Tab Name */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-gray-900 tracking-tight capitalize">
+              {navItems.find((n) => n.id === activeTab)?.label || 'Dashboard'}
+            </span>
+          </div>
 
           <div className="flex items-center gap-3 shrink-0">
+            {/* Language Switcher Button */}
+            <LanguageSwitchButton compact />
+
+            <div className="h-4 w-px bg-gray-200" />
+
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Sistem Aktif
+              {language === 'en' ? 'System Active' : 'Sistem Aktif'}
             </span>
 
             <div className="h-4 w-px bg-gray-200 hidden sm:block" />
@@ -468,13 +574,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 {/* Total Stores */}
                 <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs">
                   <div className="flex items-center justify-between text-gray-500 mb-1.5">
-                    <span className="text-xs font-medium">Toko Terdaftar</span>
+                    <span className="text-xs font-medium">{language === 'en' ? 'Registered Stores' : 'Toko Terdaftar'}</span>
                     <StoreIcon className="w-3.5 h-3.5 text-gray-400" />
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-xl font-bold text-gray-900">{stats.totalStores}</span>
                     <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded">
-                      {stats.activeStores} Aktif
+                      {stats.activeStores} {language === 'en' ? 'Active' : 'Aktif'}
                     </span>
                   </div>
                 </div>
@@ -493,7 +599,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 {/* Platform Fee Revenue */}
                 <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs">
                   <div className="flex items-center justify-between text-gray-500 mb-1.5">
-                    <span className="text-xs font-medium">Revenue Platform</span>
+                    <span className="text-xs font-medium">{language === 'en' ? 'Platform Revenue' : 'Revenue Platform'}</span>
                     <DollarSign className="w-3.5 h-3.5 text-red-600" />
                   </div>
                   <div className="flex items-baseline gap-2">
@@ -507,7 +613,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 {/* Pending Payouts */}
                 <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs">
                   <div className="flex items-center justify-between text-gray-500 mb-1.5">
-                    <span className="text-xs font-medium">Antrean Payout</span>
+                    <span className="text-xs font-medium">{language === 'en' ? 'Payout Queue' : 'Antrean Payout'}</span>
                     <Clock className="w-3.5 h-3.5 text-amber-600" />
                   </div>
                   <div className="flex items-baseline gap-2">
@@ -527,13 +633,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Permintaan Pencairan Terbaru
+                      {language === 'en' ? 'Recent Payout Requests' : 'Permintaan Pencairan Terbaru'}
                     </h3>
                     <button
                       onClick={() => setActiveTab('withdrawals')}
                       className="text-xs font-medium text-red-600 hover:underline flex items-center gap-0.5"
                     >
-                      Lihat Semua <ChevronRight className="w-3 h-3" />
+                      {language === 'en' ? 'View All' : 'Lihat Semua'} <ChevronRight className="w-3 h-3" />
                     </button>
                   </div>
 
@@ -549,16 +655,26 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           </div>
                           <div>
                             <p className="font-semibold text-xs text-gray-900 leading-tight">{w.storeName}</p>
-                            <span className="text-[11px] text-gray-500">{w.accountHolder}</span>
+                            <span className="text-[10px] text-gray-400">
+                              {w.accountNumber} a.n {w.accountHolder}
+                            </span>
                           </div>
                         </div>
 
                         <div className="text-right">
                           <span className="font-bold text-xs text-gray-900 block">{formatRupiah(w.amount)}</span>
-                          <span className={`text-[10px] font-semibold ${
-                            w.status === 'pending' ? 'text-amber-600' : 'text-emerald-600'
+                          <span className={`text-[10px] font-medium capitalize ${
+                            w.status === 'pending'
+                              ? 'text-amber-600'
+                              : w.status === 'approved'
+                              ? 'text-emerald-600'
+                              : 'text-gray-400'
                           }`}>
-                            {w.status === 'pending' ? 'Menunggu' : 'Disetujui'}
+                            {w.status === 'pending'
+                              ? (language === 'en' ? 'Pending' : 'Menunggu')
+                              : w.status === 'approved'
+                              ? (language === 'en' ? 'Approved' : 'Disetujui')
+                              : w.status}
                           </span>
                         </div>
                       </div>
@@ -570,23 +686,27 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Distribusi Paket Langganan
+                      {language === 'en' ? 'Subscription Distribution' : 'Distribusi Paket Langganan'}
                     </h3>
                     <button
                       onClick={() => setActiveTab('plans')}
                       className="text-xs font-medium text-red-600 hover:underline flex items-center gap-0.5"
                     >
-                      Atur Kuota <ChevronRight className="w-3 h-3" />
+                      {language === 'en' ? 'Manage Plans' : 'Atur Kuota'} <ChevronRight className="w-3 h-3" />
                     </button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-center pt-1">
                     <div className="p-3 rounded-md bg-gray-50 border border-gray-200">
-                      <span className="text-[10px] font-semibold text-gray-500 uppercase block">Gratis</span>
+                      <span className="text-[10px] font-semibold text-gray-500 uppercase block">
+                        {language === 'en' ? 'Free' : 'Gratis'}
+                      </span>
                       <span className="text-lg font-bold text-gray-900">
                         {stores.filter((s) => !s.plan || s.plan === 'free').length}
                       </span>
-                      <span className="text-[10px] text-gray-400 block">Toko</span>
+                      <span className="text-[10px] text-gray-400 block">
+                        {language === 'en' ? 'Stores' : 'Toko'}
+                      </span>
                     </div>
 
                     <div className="p-3 rounded-md bg-red-50/60 border border-red-100">
@@ -594,7 +714,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                       <span className="text-lg font-bold text-red-600">
                         {stores.filter((s) => s.plan === 'premium' || s.plan === 'starter').length}
                       </span>
-                      <span className="text-[10px] text-red-500 block">Toko</span>
+                      <span className="text-[10px] text-red-500 block">
+                        {language === 'en' ? 'Stores' : 'Toko'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -614,7 +736,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="Cari toko berdasarkan nama, domain, atau pemilik..."
+                    placeholder={language === 'en' ? 'Search store by name, domain, or owner...' : 'Cari toko berdasarkan nama, domain, atau pemilik...'}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-8 pr-3 py-1.5 rounded-md bg-white border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-red-500"
@@ -632,7 +754,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}
                     >
-                      {p === 'all' ? 'Semua' : p === 'premium' ? 'Pro' : 'Gratis'}
+                      {p === 'all'
+                        ? (language === 'en' ? 'All' : 'Semua')
+                        : p === 'premium'
+                        ? 'Pro'
+                        : (language === 'en' ? 'Free' : 'Gratis')}
                     </button>
                   ))}
                 </div>
@@ -644,11 +770,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   <table className="w-full text-left text-xs">
                     <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-600 font-semibold">
                       <tr>
-                        <th className="py-2.5 px-3.5">Toko</th>
-                        <th className="py-2.5 px-3.5">Paket</th>
-                        <th className="py-2.5 px-3.5">Saldo Dompet</th>
+                        <th className="py-2.5 px-3.5">{language === 'en' ? 'Store' : 'Toko'}</th>
+                        <th className="py-2.5 px-3.5">{language === 'en' ? 'Plan' : 'Paket'}</th>
+                        <th className="py-2.5 px-3.5">{language === 'en' ? 'Wallet Balance' : 'Saldo Dompet'}</th>
                         <th className="py-2.5 px-3.5">Status</th>
-                        <th className="py-2.5 px-3.5 text-right">Aksi</th>
+                        <th className="py-2.5 px-3.5 text-right">{language === 'en' ? 'Action' : 'Aksi'}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -1034,7 +1160,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 <div>
                   <div className="flex items-center gap-2">
                     <Crown className="w-5 h-5 text-red-600" />
-                    <h2 className="text-base font-bold text-gray-900">Pengaturan Billing Plan</h2>
+                    <h2 className="text-base font-bold text-gray-900">
+                      {language === 'en' ? 'Billing Plans Management' : 'Pengaturan Paket Langganan'}
+                    </h2>
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
                     Kelola paket langganan toko, harga bulanan & tahunan, fitur, dan riwayat tagihan platform
@@ -1444,7 +1572,376 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             </div>
           )}
 
-          {/* TAB 5: LOG TRANSAKSI */}
+          {/* TAB 5: PESANAN & PENGIRIMAN GLOBAL */}
+          {activeTab === 'orders-shipping' && (
+            <div className="space-y-4">
+              
+              {/* Header section with Actions */}
+              <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-red-600" />
+                    <span>Monitoring Pesanan & Pengiriman Global</span>
+                  </h2>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    Pantau seluruh transaksi pesanan, status kurir logistik, dan pelacakan nomor resi lintas toko secara real-time.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    loadData();
+                    showToast('Data pesanan dan pengiriman diperbarui');
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-gray-500" />
+                  <span>Segarkan Data</span>
+                </button>
+              </div>
+
+              {/* 5 KPI Metric Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                {/* Total Orders */}
+                <div className="bg-white rounded-lg p-3.5 border border-gray-200 shadow-xs">
+                  <div className="flex items-center justify-between text-gray-500 mb-1">
+                    <span className="text-[11px] font-medium">Total Pesanan</span>
+                    <ShoppingBag className="w-3.5 h-3.5 text-gray-400" />
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-bold text-gray-900">{totalOrdersCount}</span>
+                    <span className="text-[10px] text-gray-500">transaksi</span>
+                  </div>
+                </div>
+
+                {/* Perlu Diproses / Siap Kirim */}
+                <div className="bg-white rounded-lg p-3.5 border border-gray-200 shadow-xs">
+                  <div className="flex items-center justify-between text-gray-500 mb-1">
+                    <span className="text-[11px] font-medium">Diproses / Siap Kirim</span>
+                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-bold text-amber-600">{processingOrdersCount}</span>
+                    <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-1 py-0.2 rounded border border-amber-200">
+                      Antrean
+                    </span>
+                  </div>
+                </div>
+
+                {/* Sedang Dikirim */}
+                <div className="bg-white rounded-lg p-3.5 border border-gray-200 shadow-xs">
+                  <div className="flex items-center justify-between text-gray-500 mb-1">
+                    <span className="text-[11px] font-medium">Dalam Pengiriman</span>
+                    <Truck className="w-3.5 h-3.5 text-blue-500" />
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-bold text-blue-600">{shippedOrdersCount}</span>
+                    <span className="text-[10px] font-medium text-blue-700 bg-blue-50 px-1 py-0.2 rounded border border-blue-200">
+                      Transit
+                    </span>
+                  </div>
+                </div>
+
+                {/* Selesai / Terkirim */}
+                <div className="bg-white rounded-lg p-3.5 border border-gray-200 shadow-xs">
+                  <div className="flex items-center justify-between text-gray-500 mb-1">
+                    <span className="text-[11px] font-medium">Terkirim / Selesai</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-bold text-emerald-600">{completedOrdersCount}</span>
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
+                      Sukses
+                    </span>
+                  </div>
+                </div>
+
+                {/* Total Ongkir Platform */}
+                <div className="col-span-2 lg:col-span-1 bg-white rounded-lg p-3.5 border border-gray-200 shadow-xs">
+                  <div className="flex items-center justify-between text-gray-500 mb-1">
+                    <span className="text-[11px] font-medium">Volume Ongkir</span>
+                    <Wallet className="w-3.5 h-3.5 text-purple-500" />
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-base sm:text-lg font-bold text-purple-700 truncate">
+                      {formatRupiah(totalShippingFeePlatform)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filters & Search Bar */}
+              <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-xs flex flex-wrap items-center justify-between gap-2.5">
+                
+                {/* Search Input */}
+                <div className="relative flex-1 min-w-[240px]">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Cari no. order, resi, pembeli, toko..."
+                    value={orderSearchQuery}
+                    onChange={(e) => setOrderSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-8 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-1 focus:ring-red-600 focus:border-red-600"
+                  />
+                  {orderSearchQuery && (
+                    <button
+                      onClick={() => setOrderSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter Controls Group */}
+                <div className="flex items-center flex-wrap gap-2">
+                  {/* Status Kirim Filter */}
+                  <select
+                    value={orderFilterStatus}
+                    onChange={(e) => setOrderFilterStatus(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
+                  >
+                    <option value="all">Semua Status Kirim</option>
+                    <option value="Baru">Pesanan Baru</option>
+                    <option value="Diproses">Diproses / Siap Kirim</option>
+                    <option value="Dikirim">Dalam Pengiriman</option>
+                    <option value="Selesai">Terkirim / Selesai</option>
+                    <option value="Dibatalkan">Dibatalkan</option>
+                  </select>
+
+                  {/* Kurir Filter */}
+                  <select
+                    value={orderFilterCourier}
+                    onChange={(e) => setOrderFilterCourier(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
+                  >
+                    <option value="all">Semua Kurir</option>
+                    <option value="J&T">J&T Express</option>
+                    <option value="SiCepat">SiCepat</option>
+                    <option value="JNE">JNE</option>
+                    <option value="GoSend">GoSend</option>
+                  </select>
+
+                  {/* Toko Filter */}
+                  <select
+                    value={orderFilterStore}
+                    onChange={(e) => setOrderFilterStore(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600 max-w-[150px] truncate"
+                  >
+                    <option value="all">Semua Toko</option>
+                    {stores.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Reset Filter Button */}
+                  {(orderSearchQuery || orderFilterStatus !== 'all' || orderFilterCourier !== 'all' || orderFilterStore !== 'all') && (
+                    <button
+                      onClick={() => {
+                        setOrderSearchQuery('');
+                        setOrderFilterStatus('all');
+                        setOrderFilterCourier('all');
+                        setOrderFilterStore('all');
+                      }}
+                      className="px-2.5 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition font-medium cursor-pointer"
+                    >
+                      Reset Filter
+                    </button>
+                  )}
+                </div>
+
+              </div>
+
+              {/* Global Orders & Shipping Table */}
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-xs">
+                <div className="p-3.5 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Daftar Logistik & Pengiriman Toko
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[11px] font-semibold">
+                      {filteredAdminOrders.length} Ditemukan
+                    </span>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-600 font-semibold">
+                      <tr>
+                        <th className="py-2.5 px-3.5">Order & Tanggal</th>
+                        <th className="py-2.5 px-3.5">Toko Pengirim</th>
+                        <th className="py-2.5 px-3.5">Penerima & Alamat</th>
+                        <th className="py-2.5 px-3.5">Ekspedisi & Ongkir</th>
+                        <th className="py-2.5 px-3.5">Nomor Resi</th>
+                        <th className="py-2.5 px-3.5">Status Pengiriman</th>
+                        <th className="py-2.5 px-3.5">Total Belanja</th>
+                        <th className="py-2.5 px-3.5 text-right">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredAdminOrders.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="py-12 text-center text-gray-400">
+                            <Package className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                            <p className="font-semibold text-gray-700">Tidak ada pesanan ditemukan</p>
+                            <p className="text-[11px] text-gray-400 mt-0.5">
+                              Coba sesuaikan kata kunci pencarian atau filter status pengiriman.
+                            </p>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredAdminOrders.map((ord) => {
+                          const store = stores.find((s) => s.id === ord.storeId);
+                          const storeName = store?.name || 'Toko ' + ord.storeId;
+                          const resi = ord.resiNumber || ord.trackingNumber;
+
+                          return (
+                            <tr key={ord.id} className="hover:bg-gray-50/60 transition">
+                              
+                              {/* Order & Date */}
+                              <td className="py-3 px-3.5 align-top">
+                                <div className="font-mono font-bold text-gray-900 leading-tight">
+                                  {ord.orderNumber || ord.id.slice(0, 8)}
+                                </div>
+                                <span className="text-[10px] text-gray-400 block mt-0.5">
+                                  {new Date(ord.createdAt).toLocaleDateString('id-ID', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })}
+                                </span>
+                              </td>
+
+                              {/* Store */}
+                              <td className="py-3 px-3.5 align-top">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-md bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center shrink-0">
+                                    {store?.logoUrl ? (
+                                      <img src={store.logoUrl} alt={storeName} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <StoreIcon className="w-3.5 h-3.5 text-gray-500" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-semibold text-gray-900 truncate max-w-[130px] leading-tight">
+                                      {storeName}
+                                    </p>
+                                    <span className="text-[10px] text-gray-400 font-mono">
+                                      /{store?.slug || ord.storeId}
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Recipient */}
+                              <td className="py-3 px-3.5 align-top">
+                                <p className="font-semibold text-gray-900 leading-tight">{ord.customerName}</p>
+                                <span className="text-[11px] text-gray-500 block truncate max-w-[150px]">
+                                  {ord.customerCity || ord.customerAddress}
+                                </span>
+                                <span className="text-[10px] text-gray-400 block">{ord.customerPhone}</span>
+                              </td>
+
+                              {/* Courier & Shipping Cost */}
+                              <td className="py-3 px-3.5 align-top">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${getCourierBadgeStyle(ord.courier)}`}>
+                                    {ord.courier || 'Kurir'}
+                                  </span>
+                                  {ord.courierService && (
+                                    <span className="text-[10px] text-gray-500">
+                                      {ord.courierService}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[11px] font-semibold text-gray-700 block mt-1">
+                                  {formatRupiah(ord.shippingCost || 0)}
+                                </span>
+                              </td>
+
+                              {/* Resi Number */}
+                              <td className="py-3 px-3.5 align-top">
+                                {resi ? (
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-mono text-xs font-semibold text-gray-900 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
+                                        {resi}
+                                      </span>
+                                      <button
+                                        onClick={() => handleCopyResi(resi)}
+                                        title="Salin Resi"
+                                        className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                                      >
+                                        <Copy className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                    {ord.shippingLabelUrl && (
+                                      <a
+                                        href={ord.shippingLabelUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:underline font-medium"
+                                      >
+                                        <span>Biteship Tracking</span>
+                                        <ExternalLink className="w-2.5 h-2.5" />
+                                      </a>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                                    Belum ada resi
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Shipping & Payment Status */}
+                              <td className="py-3 px-3.5 align-top">
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border block w-max ${getShippingStatusBadgeStyle(ord.shippingStatus)}`}>
+                                  {ord.shippingStatus === 'ready_to_ship' ? 'Siap Kirim' : ord.shippingStatus}
+                                </span>
+                                <span className={`text-[10px] font-medium block mt-1 ${
+                                  ord.paymentStatus === 'Sudah Dibayar' ? 'text-emerald-700' : 'text-amber-600'
+                                }`}>
+                                  ● {ord.paymentStatus} ({ord.paymentMethod})
+                                </span>
+                              </td>
+
+                              {/* Grand Total */}
+                              <td className="py-3 px-3.5 align-top">
+                                <div className="font-bold text-gray-900">
+                                  {formatRupiah(ord.grandTotal)}
+                                </div>
+                                <span className="text-[10px] text-gray-400">
+                                  {ord.items?.length || 1} item
+                                </span>
+                              </td>
+
+                              {/* Action */}
+                              <td className="py-3 px-3.5 align-top text-right">
+                                <button
+                                  onClick={() => setSelectedAdminOrder(ord)}
+                                  className="px-2.5 py-1 rounded-md bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium text-xs shadow-2xs transition cursor-pointer flex items-center gap-1 ml-auto"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-gray-500" />
+                                  <span>Detail</span>
+                                </button>
+                              </td>
+
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 6: LOG TRANSAKSI */}
           {activeTab === 'transactions' && (
             <div className="space-y-3.5">
               
@@ -1696,6 +2193,211 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         </main>
       </div>
+
+      {/* MODAL DETAIL PESANAN & PENGIRIMAN (SUPER ADMIN) */}
+      {selectedAdminOrder && (
+        <div className="fixed inset-0 z-50 overflow-hidden bg-gray-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl bg-white rounded-2xl p-5 sm:p-6 border border-gray-200 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 text-left max-h-[90vh] overflow-y-auto">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center border border-red-100">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-gray-900 leading-tight">
+                    Detail Pesanan #{selectedAdminOrder.orderNumber || selectedAdminOrder.id}
+                  </h3>
+                  <p className="text-[11px] text-gray-500">
+                    Waktu Transaksi: {new Date(selectedAdminOrder.createdAt).toLocaleString('id-ID')}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedAdminOrder(null)}
+                className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Store & Status Bar */}
+            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <StoreIcon className="w-4 h-4 text-gray-500" />
+                <span className="text-xs font-semibold text-gray-900">
+                  Toko: {stores.find((s) => s.id === selectedAdminOrder.storeId)?.name || selectedAdminOrder.storeId}
+                </span>
+                <span className="text-[10px] text-gray-500 font-mono">
+                  (ID: {selectedAdminOrder.storeId})
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getShippingStatusBadgeStyle(selectedAdminOrder.shippingStatus)}`}>
+                  Kirim: {selectedAdminOrder.shippingStatus}
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                  selectedAdminOrder.paymentStatus === 'Sudah Dibayar'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}>
+                  Bayar: {selectedAdminOrder.paymentStatus}
+                </span>
+              </div>
+            </div>
+
+            {/* Grid 2 Columns: Penerima & Logistik */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              
+              {/* Penerima */}
+              <div className="border border-gray-200 rounded-xl p-3.5 space-y-2">
+                <div className="flex items-center gap-1.5 text-gray-500 font-semibold uppercase tracking-wider text-[10px]">
+                  <MapPin className="w-3.5 h-3.5 text-red-600" />
+                  <span>Informasi Penerima</span>
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900">{selectedAdminOrder.customerName}</p>
+                  <p className="text-gray-600 flex items-center gap-1 mt-0.5">
+                    <Phone className="w-3 h-3 text-gray-400" />
+                    <span>{selectedAdminOrder.customerPhone}</span>
+                  </p>
+                  <p className="text-gray-500 mt-1 leading-relaxed text-[11px]">
+                    {selectedAdminOrder.customerAddress}, {selectedAdminOrder.customerCity} {selectedAdminOrder.customerPostalCode || ''}
+                  </p>
+                </div>
+              </div>
+
+              {/* Ekspedisi */}
+              <div className="border border-gray-200 rounded-xl p-3.5 space-y-2">
+                <div className="flex items-center gap-1.5 text-gray-500 font-semibold uppercase tracking-wider text-[10px]">
+                  <Truck className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Ekspedisi & Nomor Resi</span>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 text-[11px]">Kurir & Layanan:</span>
+                    <span className="font-bold text-gray-900">
+                      {selectedAdminOrder.courier || 'Kurir'} {selectedAdminOrder.courierService ? `(${selectedAdminOrder.courierService})` : ''}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 text-[11px]">Nomor Resi:</span>
+                    <span className="font-mono font-bold text-gray-900">
+                      {selectedAdminOrder.resiNumber || selectedAdminOrder.trackingNumber || '-'}
+                    </span>
+                  </div>
+
+                  {(selectedAdminOrder.resiNumber || selectedAdminOrder.trackingNumber) && (
+                    <div className="pt-1 flex items-center gap-2">
+                      <button
+                        onClick={() => handleCopyResi(selectedAdminOrder.resiNumber || selectedAdminOrder.trackingNumber || '')}
+                        className="px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-medium flex items-center gap-1 cursor-pointer transition"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>Salin Resi</span>
+                      </button>
+                      {selectedAdminOrder.shippingLabelUrl && (
+                        <a
+                          href={selectedAdminOrder.shippingLabelUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-medium flex items-center gap-1 transition"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>Buka Tracking Biteship</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Items List */}
+            <div className="border border-gray-200 rounded-xl overflow-hidden">
+              <div className="bg-gray-50/80 px-3.5 py-2 border-b border-gray-200 font-semibold text-[11px] text-gray-600 flex items-center justify-between">
+                <span>Daftar Produk yang Dipesan</span>
+                <span>{selectedAdminOrder.items?.length || 0} Item</span>
+              </div>
+              <div className="divide-y divide-gray-100 max-h-48 overflow-y-auto">
+                {selectedAdminOrder.items && selectedAdminOrder.items.length > 0 ? (
+                  selectedAdminOrder.items.map((item, idx) => (
+                    <div key={idx} className="p-3 flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {item.productImage ? (
+                          <img
+                            src={item.productImage}
+                            alt={item.productName}
+                            className="w-10 h-10 rounded-lg object-cover border border-gray-100 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 shrink-0">
+                            <Package className="w-5 h-5" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 truncate">{item.productName}</p>
+                          <p className="text-[11px] text-gray-500">
+                            {item.quantity}x {formatRupiah(item.price)}
+                            {item.variantName ? ` • Varian: ${item.variantName}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="font-bold text-gray-900 shrink-0">
+                        {formatRupiah(item.subtotal || item.price * item.quantity)}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-gray-400 text-xs">Tidak ada data rincian item</div>
+                )}
+              </div>
+            </div>
+
+            {/* Financial Calculation breakdown */}
+            <div className="bg-gray-50/70 border border-gray-200 rounded-xl p-3.5 space-y-1.5 text-xs">
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal Produk</span>
+                <span>{formatRupiah(selectedAdminOrder.subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Biaya Pengiriman (Ongkir)</span>
+                <span>{formatRupiah(selectedAdminOrder.shippingCost || 0)}</span>
+              </div>
+              {selectedAdminOrder.discount ? (
+                <div className="flex justify-between text-emerald-600">
+                  <span>Diskon Promo</span>
+                  <span>-{formatRupiah(selectedAdminOrder.discount)}</span>
+                </div>
+              ) : null}
+              <div className="pt-2 border-t border-gray-200 flex justify-between items-center font-bold text-sm text-gray-900">
+                <span>Grand Total Pembayaran</span>
+                <span className="text-red-600">{formatRupiah(selectedAdminOrder.grandTotal)}</span>
+              </div>
+              <div className="pt-1 text-[11px] text-gray-500 flex justify-between">
+                <span>Metode Pembayaran</span>
+                <span className="font-semibold text-gray-800">{selectedAdminOrder.paymentMethod}</span>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedAdminOrder(null)}
+                className="px-4 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-white font-semibold text-xs transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

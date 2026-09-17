@@ -1,26 +1,35 @@
 import React, { useState, useMemo } from 'react';
-import { Store, Product, ThemeTemplate } from '../../types';
+import { Store, Product } from '../../types';
 import { STORE_TEMPLATES, StoreTemplate } from '../../utils/layoutConstants';
+import { CenterPreviewCanvas } from './CenterPreviewCanvas';
+import { Breadcrumb } from '../common/Breadcrumb';
+import { useLanguage } from '../../contexts/LanguageContext';
 import {
   Search,
-  X,
+  Eye,
+  Palette,
+  ArrowLeft,
+  Monitor,
+  Tablet,
+  Smartphone,
+  Layers,
   Sparkles,
+  ArrowRight,
+  CheckCircle2,
   Grid,
   LayoutTemplate,
+  X,
+  Star,
   Zap,
   Crown,
+  Gem,
   Flame,
   BookOpen,
   TreePine,
   PenTool,
   Briefcase,
-  Gem,
-  Eye,
-  Wand2,
-  ChevronRight,
-  Palette,
-  Layers,
-  Settings2,
+  Building2,
+  RotateCcw,
 } from 'lucide-react';
 
 // ─── Template Category Definitions ───────────────────────────────────
@@ -38,7 +47,7 @@ const TEMPLATE_CATEGORIES = [
   { id: 'professional', label: 'Professional', icon: Briefcase },
 ] as const;
 
-// ─── 10 Template Gallery Items ──────────────────────────────────────
+// ─── 10 Template Definitions (Design-Identity Focused) ──────────────
 export interface TemplateGalleryItem {
   id: string;
   name: string;
@@ -51,7 +60,6 @@ export interface TemplateGalleryItem {
   fontFamily: string;
   designTraits: string[];
   storeTemplate: StoreTemplate;
-  pageNames: string[];
 }
 
 export const TEMPLATE_GALLERY_ITEMS: TemplateGalleryItem[] = [
@@ -60,112 +68,104 @@ export const TEMPLATE_GALLERY_ITEMS: TemplateGalleryItem[] = [
     name: 'Minimal Store',
     category: 'minimalist',
     categories: ['minimalist'],
-    description: 'Desain bersih dengan whitespace berlimpah, tipografi sederhana, dan fokus penuh pada produk Anda.',
-    sectionCount: 7,
+    description: 'Desain bersih dengan banyak whitespace, tipografi sederhana, dan fokus penuh pada produk.',
+    sectionCount: 8,
     thumbnailUrl: 'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#1A1A1A',
     fontFamily: 'Inter',
     designTraits: ['Whitespace', 'Clean', 'Netral'],
     storeTemplate: STORE_TEMPLATES.find(t => t.id === 'minimalist_clean') || STORE_TEMPLATES[0],
-    pageNames: ['Beranda', 'Katalog', 'Produk', 'Tentang', 'Kontak'],
   },
   {
     id: 'nova_commerce',
     name: 'Nova Commerce',
     category: 'modern',
     categories: ['modern'],
-    description: 'Grid dinamis dengan rounded card, layout kontemporer, dan CTA yang menonjol untuk toko teknologi.',
-    sectionCount: 7,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=1200&auto=format&fit=crop',
+    description: 'Grid dinamis dengan rounded card, layout kontemporer, dan CTA yang menonjol.',
+    sectionCount: 10,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1555529733-0e670560f4e1?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#2563EB',
     fontFamily: 'Outfit',
     designTraits: ['Dinamis', 'Rounded', 'Vibrant'],
     storeTemplate: STORE_TEMPLATES.find(t => t.id === 'gadget_tech') || STORE_TEMPLATES[0],
-    pageNames: ['Beranda', 'Gadget', 'Promo', 'Support'],
   },
   {
     id: 'future_shop',
     name: 'Future Shop',
     category: 'futuristic',
     categories: ['futuristic'],
-    description: 'Tema dark dengan kontras tinggi, gradient neon, geometric layout, dan aksen glow futuristik.',
-    sectionCount: 6,
+    description: 'Tema dark dengan kontras tinggi, gradient, geometric layout, dan aksen glow.',
+    sectionCount: 9,
     thumbnailUrl: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#8B5CF6',
     fontFamily: 'Space Grotesk',
     designTraits: ['Dark Mode', 'Gradient', 'Geometric'],
     storeTemplate: STORE_TEMPLATES.find(t => t.id === 'futuristic_dark') || STORE_TEMPLATES[0],
-    pageNames: ['Beranda', 'Explore', 'Produk', 'Teknologi'],
   },
   {
     id: 'maison',
     name: 'Maison',
     category: 'elegant',
     categories: ['elegant', 'luxury'],
-    description: 'Tipografi premium serif, whitespace berlimpah, layout sophisticated untuk brand luxury.',
-    sectionCount: 6,
+    description: 'Tipografi premium, whitespace berlimpah, layout sophisticated, dan warna premium.',
+    sectionCount: 10,
     thumbnailUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#92400E',
     fontFamily: 'Cormorant Garamond',
     designTraits: ['Premium', 'Sophisticated', 'Serif'],
     storeTemplate: STORE_TEMPLATES.find(t => t.id === 'editorial_luxury') || STORE_TEMPLATES[0],
-    pageNames: ['Beranda', 'Koleksi', 'Lookbook', 'Brand Story'],
   },
   {
     id: 'bold_market',
     name: 'Bold Market',
     category: 'bold',
     categories: ['bold'],
-    description: 'Tipografi besar dan tebal, kontras tinggi, hero kuat, dan CTA agresif yang mencolok.',
-    sectionCount: 5,
+    description: 'Tipografi besar, kontras tinggi, hero kuat, dan CTA agresif yang mencolok.',
+    sectionCount: 9,
     thumbnailUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#DC2626',
     fontFamily: 'Anton',
     designTraits: ['Kontras Tinggi', 'Bold Type', 'Agresif'],
     storeTemplate: STORE_TEMPLATES.find(t => t.id === 'bold_market') || STORE_TEMPLATES[0],
-    pageNames: ['Beranda', 'Best Seller', 'Flash Sale'],
   },
   {
     id: 'editorial_commerce',
-    name: 'Editorial',
+    name: 'Editorial Commerce',
     category: 'editorial',
     categories: ['editorial'],
-    description: 'Layout majalah, asymmetric grid, storytelling sections, dan tipografi large serif yang elegan.',
-    sectionCount: 6,
+    description: 'Layout majalah, asymmetric grid, storytelling sections, dan tipografi large serif.',
+    sectionCount: 11,
     thumbnailUrl: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#66000E',
     fontFamily: 'Lora',
     designTraits: ['Magazine', 'Storytelling', 'Asymmetric'],
     storeTemplate: STORE_TEMPLATES.find(t => t.id === 'editorial_commerce') || STORE_TEMPLATES[0],
-    pageNames: ['Beranda', 'Stories', 'Koleksi', 'Journal'],
   },
   {
     id: 'green_market',
     name: 'Green Market',
     category: 'nature',
     categories: ['nature'],
-    description: 'Warna earth tone hangat, elemen organik, rounded shapes, dan image-driven layout untuk produk alam.',
-    sectionCount: 7,
+    description: 'Warna earth tone, elemen organik, rounded shapes, dan image-driven layout.',
+    sectionCount: 10,
     thumbnailUrl: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#059669',
     fontFamily: 'DM Sans',
     designTraits: ['Organik', 'Earth Tone', 'Rounded'],
     storeTemplate: STORE_TEMPLATES.find(t => t.id === 'nature_organic') || STORE_TEMPLATES[0],
-    pageNames: ['Beranda', 'Produk Segar', 'Kisah Kami', 'Resep'],
   },
   {
     id: 'creative_studio',
-    name: 'Creative Studio',
+    name: 'Creative Studio Store',
     category: 'creative',
     categories: ['creative'],
     description: 'Layout eksperimental, komposisi dinamis, visual storytelling, dan palet warna colorful.',
-    sectionCount: 5,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1200&auto=format&fit=crop',
+    sectionCount: 10,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#E11D48',
     fontFamily: 'Sora',
     designTraits: ['Eksperimental', 'Colorful', 'Dynamic'],
     storeTemplate: STORE_TEMPLATES.find(t => t.id === 'creative_studio') || STORE_TEMPLATES[0],
-    pageNames: ['Portfolio', 'Galeri', 'Workshop', 'Tentang'],
   },
   {
     id: 'pro_commerce',
@@ -173,13 +173,25 @@ export const TEMPLATE_GALLERY_ITEMS: TemplateGalleryItem[] = [
     category: 'professional',
     categories: ['professional'],
     description: 'Clean corporate commerce, struktur informasi jelas, dan fokus pada usability & conversion.',
-    sectionCount: 7,
+    sectionCount: 11,
     thumbnailUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#1E40AF',
     fontFamily: 'Inter',
     designTraits: ['Corporate', 'Structured', 'High Conversion'],
     storeTemplate: STORE_TEMPLATES.find(t => t.id === 'pro_corporate') || STORE_TEMPLATES[0],
-    pageNames: ['Beranda', 'Layanan B2B', 'Katalog', 'Studi Kasus'],
+  },
+  {
+    id: 'urban_collection',
+    name: 'Urban Collection',
+    category: 'modern',
+    categories: ['modern', 'editorial'],
+    description: 'Estetika urban, hybrid editorial-modern, monochrome dengan aksen warna kontras.',
+    sectionCount: 10,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?q=80&w=1200&auto=format&fit=crop',
+    primaryAccent: '#18181B',
+    fontFamily: 'Instrument Sans',
+    designTraits: ['Urban', 'Monochrome', 'Contemporary'],
+    storeTemplate: STORE_TEMPLATES.find(t => t.id === 'chic_fashion') || STORE_TEMPLATES[0],
   },
 ];
 
@@ -192,6 +204,7 @@ interface ThemeLibraryViewProps {
   onPreviewTheme: (themeId: string) => void;
   onApplyTemplate?: (template: TemplateGalleryItem) => void;
   onPreviewTemplate?: (template: TemplateGalleryItem) => void;
+  onNavigateDashboard?: () => void;
 }
 
 // ─── Component ───────────────────────────────────────────────────────
@@ -203,11 +216,26 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   onPreviewTheme,
   onApplyTemplate,
   onPreviewTemplate,
+  onNavigateDashboard,
 }) => {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
-  const currentTemplateId = store.layoutSettings?.activeTemplateId;
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      all: TEMPLATE_GALLERY_ITEMS.length,
+    };
+    TEMPLATE_CATEGORIES.forEach((cat) => {
+      if (cat.id !== 'all') {
+        counts[cat.id] = TEMPLATE_GALLERY_ITEMS.filter(
+          (t) => t.category === cat.id || t.categories.includes(cat.id)
+        ).length;
+      }
+    });
+    return counts;
+  }, []);
 
   // Filter templates
   const filteredTemplates = useMemo(() => {
@@ -223,6 +251,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
     });
   }, [activeCategory, searchQuery]);
 
+  // Handle "Gunakan Template" (directly from card button)
   const handleUseTemplate = (template: TemplateGalleryItem) => {
     if (onApplyTemplate) {
       onApplyTemplate(template);
@@ -231,114 +260,141 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
     }
   };
 
+  // ── GALLERY MODE ─────────────────────────────────────────────────
   return (
-    <div className="w-full h-full bg-[#F6F6F7] overflow-y-auto custom-scrollbar flex flex-col font-sans">
-      {/* ── HEADER ── */}
-      <div className="bg-white border-b border-[#E1E3E5] px-6 sm:px-10 pt-8 pb-6 shrink-0">
-        <div className="max-w-[1400px] mx-auto">
-          {/* Title Row */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1A1A1A] tracking-tight leading-tight">
-                Template Website
-              </h1>
-              <p className="text-[#6D7175] text-sm sm:text-[15px] mt-1.5 max-w-xl leading-relaxed">
-                Pilih desain yang sesuai dengan karakter bisnis Anda. Setiap template bisa dikustomisasi sepenuhnya di visual editor.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {currentTemplateId && (
-                <button
-                  onClick={onCustomize}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1A1A1A] hover:bg-black transition-colors cursor-pointer shadow-sm"
-                >
-                  <Settings2 className="w-4 h-4" />
-                  <span>Edit Template Aktif</span>
-                </button>
-              )}
-              <div className="flex items-center gap-1.5 bg-[#F6F6F7] px-3.5 py-2 rounded-xl border border-[#E1E3E5] text-xs text-[#6D7175]">
-                <Layers className="w-3.5 h-3.5 text-[#8C9196]" />
-                <span className="font-semibold">{TEMPLATE_GALLERY_ITEMS.length} Template</span>
+    <div className="w-full h-full bg-[#FAF7F7] overflow-y-auto custom-scrollbar flex flex-col font-sans">
+      <div className="bg-white border-b border-[#E5E0DD] px-4 sm:px-8 py-4 sm:py-6 shrink-0">
+        <div className="max-w-7xl mx-auto space-y-4">
+          {/* Breadcrumb Navigation */}
+          <Breadcrumb
+            items={[
+              { label: t('nav_dashboard', 'Dashboard'), onClick: onNavigateDashboard },
+              { label: t('nav_template_website', 'Template Website'), isActive: true },
+            ]}
+          />
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-3 border-b border-[#E5E0DD]">
+            <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+              <LayoutTemplate className="w-5 h-5 text-[#66000E]" />
+              <span>{t('nav_template_website', 'Template Website')}</span>
+            </h1>
+            <div className="flex items-center gap-2 text-xs text-[#706866]">
+              <div className="flex items-center gap-1.5 bg-[#F6F4F3] px-3 py-1.5 rounded-lg border border-[#E5E0DD]">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span className="font-semibold">{TEMPLATE_GALLERY_ITEMS.length} {t('templates_available', 'Template Tersedia')}</span>
               </div>
             </div>
           </div>
 
-          {/* ── SEARCH BAR ── */}
-          <div className="relative max-w-2xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#8C9196]" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari template berdasarkan nama, kategori, atau gaya desain..."
-              className="w-full pl-11 pr-10 py-3 rounded-xl bg-[#F6F6F7] border border-[#E1E3E5] text-sm text-[#202223] placeholder:text-[#8C9196] focus:outline-none focus:ring-2 focus:ring-[#2C6ECB]/30 focus:border-[#2C6ECB] transition font-medium"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-[#8C9196] hover:text-[#202223] hover:bg-[#E1E3E5] cursor-pointer transition"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+          {/* ── CATEGORY FILTER DOCK CONTAINER (Consistent Segmented Dock Design) ── */}
+          <div className="relative p-1 sm:p-1.5 rounded-xl sm:rounded-2xl bg-[#F8F9FA] border border-[#EAEAEA] shadow-2xs">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth">
+              {TEMPLATE_CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const isActive = activeCategory === cat.id;
+                const count = categoryCounts[cat.id] || 0;
+                const label = cat.id === 'all' ? t('filter_all', 'Semua') : cat.label;
+
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setActiveCategory(cat.id)}
+                    title={`Filter: ${label} (${count})`}
+                    className={`group relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 ease-out shrink-0 cursor-pointer select-none active:scale-[0.97] ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#9A0602] to-[#B91C1C] text-white shadow-xs font-bold z-10'
+                        : 'bg-white text-[#555555] hover:bg-white/95 border border-[#EAEAEA] hover:border-[#9A0602]/40 hover:text-[#9A0602]'
+                    }`}
+                  >
+                    {/* Icon */}
+                    <span className={`transition-transform duration-300 ${isActive ? 'scale-105' : 'group-hover:scale-110'}`}>
+                      <Icon
+                        className={`w-3.5 h-3.5 transition-colors duration-200 ${
+                          isActive ? 'text-white' : 'text-[#777777] group-hover:text-[#9A0602]'
+                        }`}
+                      />
+                    </span>
+
+                    {/* Tab Label */}
+                    <span className="tracking-tight text-[11px] sm:text-xs">{label}</span>
+
+                    {/* Interactive Counter Badge */}
+                    <span
+                      className={`text-[10px] sm:text-[11px] min-w-[18px] sm:min-w-[20px] h-4.5 sm:h-5 px-1 sm:px-1.5 rounded-full font-mono font-bold flex items-center justify-center border transition-all duration-200 ${
+                        isActive
+                          ? 'bg-white/25 text-white border-white/30'
+                          : 'bg-[#F4F4F5] text-[#52525B] border-[#E4E4E7] group-hover:bg-[#FFF1F0] group-hover:text-[#9A0602] group-hover:border-[#FECDCA]'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {/* Quick Clear Filter Button */}
+              {activeCategory !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory('all')}
+                  className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold text-[#777777] hover:text-[#9A0602] hover:bg-white border border-dashed border-[#D4D4D8] hover:border-[#9A0602]/50 whitespace-nowrap transition-all duration-200 shrink-0 cursor-pointer ml-auto active:scale-95 group"
+                  title="Reset Filter"
+                >
+                  <RotateCcw className="w-3 h-3 text-[#777777] group-hover:text-[#9A0602] group-hover:-rotate-90 transition-transform duration-300" />
+                  <span>{t('reset_filter', 'Reset')}</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* ── CATEGORY FILTERS ── */}
-          <div className="mt-5 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {TEMPLATE_CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              const isActive = activeCategory === cat.id;
-              const count = cat.id === 'all'
-                ? TEMPLATE_GALLERY_ITEMS.length
-                : TEMPLATE_GALLERY_ITEMS.filter(t => t.categories.includes(cat.id)).length;
-              return (
+          {/* ── SEARCH BAR CARD (Consistent Secondary Filter Box) ── */}
+          <div className="bg-white p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-[#EAEAEA] shadow-2xs flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-[#777777] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('search_template_placeholder', 'Cari template berdasarkan nama, kategori, atau gaya desain...')}
+                className="w-full pl-9 pr-8 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border border-[#EAEAEA] bg-[#F9F9F9] text-xs sm:text-sm text-[#1F1F1F] placeholder:text-[#999999] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] focus:bg-white transition"
+              />
+              {searchQuery && (
                 <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-semibold border transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[#202223] text-white border-[#202223] shadow-sm'
-                      : 'bg-white text-[#6D7175] border-[#E1E3E5] hover:border-[#8C9196] hover:text-[#202223]'
-                  }`}
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{cat.label}</span>
-                  {count > 0 && !isActive && (
-                    <span className="text-[11px] text-[#8C9196] ml-0.5">({count})</span>
-                  )}
+                  <X className="w-3.5 h-3.5" />
                 </button>
-              );
-            })}
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── TEMPLATE GRID ── */}
-      <div className="flex-1 px-6 sm:px-10 py-8">
-        <div className="max-w-[1400px] mx-auto">
+      <div className="flex-1 p-4 sm:p-8">
+        <div className="max-w-7xl mx-auto">
           {filteredTemplates.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-white border border-[#E1E3E5] flex items-center justify-center mb-5 shadow-sm">
-                <Search className="w-7 h-7 text-[#8C9196]" />
+            <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-[#EAEAEA] shadow-2xs">
+              <div className="w-16 h-16 rounded-2xl bg-[#FBF9F9] border border-[#EBE5E2] flex items-center justify-center mb-4 text-[#66000E]">
+                <Search className="w-7 h-7 text-gray-400" />
               </div>
-              <h3 className="text-lg font-bold text-[#202223]">Tidak ada template ditemukan</h3>
-              <p className="text-sm text-[#6D7175] mt-1.5 max-w-sm">
-                Coba ubah kata kunci pencarian atau pilih kategori lain.
-              </p>
+              <h3 className="text-base sm:text-lg font-semibold text-[#1F1F1F]">{t('no_templates_found', 'Tidak ada template ditemukan')}</h3>
+              <p className="text-xs sm:text-sm text-[#706866] mt-1">{t('try_different_search', 'Coba ubah kata kunci pencarian atau filter kategori.')}</p>
               <button
                 onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
-                className="mt-5 px-5 py-2.5 rounded-xl bg-white text-[#202223] text-sm font-semibold border border-[#E1E3E5] hover:bg-[#F6F6F7] transition cursor-pointer shadow-xs"
+                className="mt-4 px-4 py-2 rounded-xl bg-white border border-[#EAEAEA] text-xs sm:text-sm font-semibold text-[#1F1F1F] hover:bg-[#F9F9F9] hover:border-[#9A0602]/40 hover:text-[#9A0602] transition cursor-pointer shadow-2xs"
               >
-                Reset Filter
+                {t('reset_filter', 'Reset Filter')}
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
               {filteredTemplates.map((template) => (
                 <TemplateCard
                   key={template.id}
                   template={template}
-                  isActive={currentTemplateId === template.storeTemplate.id}
                   onPreview={() => onPreviewTemplate?.(template)}
                   onUse={() => handleUseTemplate(template)}
                 />
@@ -347,106 +403,91 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
           )}
         </div>
 
-        <div className="h-16"></div>
+        {/* Bottom spacing */}
+        <div className="h-12"></div>
       </div>
     </div>
   );
 };
 
-// ─── Template Card ───────────────────────────────────────────────────
 const TemplateCard: React.FC<{
   template: TemplateGalleryItem;
-  isActive: boolean;
   onPreview: () => void;
   onUse: () => void;
-}> = ({ template, isActive, onPreview, onUse }) => {
+}> = ({ template, onPreview, onUse }) => {
+  const { t } = useLanguage();
+
   return (
-    <div className="group font-sans">
-      {/* Thumbnail */}
-      <div
-        className={`relative aspect-[4/3] bg-[#F6F6F7] overflow-hidden cursor-pointer rounded-2xl border-2 transition-all duration-200 ${
-          isActive
-            ? 'border-[#2C6ECB] ring-2 ring-[#2C6ECB]/20'
-            : 'border-transparent hover:border-[#AEB4B9]'
-        }`}
-        onClick={onPreview}
-      >
-        <img
-          src={template.thumbnailUrl}
-          alt={template.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
-          loading="lazy"
-        />
+    <div className="bg-white rounded-2xl border border-[#EAEAEA] p-3.5 sm:p-4 shadow-2xs hover:shadow-md hover:border-[#9A0602]/30 transition-all duration-300 flex flex-col justify-between group">
+      <div>
+        {/* Thumbnail */}
+        <div
+          className="relative aspect-[4/3] sm:aspect-[16/11] bg-gray-100 overflow-hidden cursor-pointer rounded-xl border border-[#EAEAEA] group-hover:border-[#9A0602]/30 transition-all duration-200"
+          onClick={onPreview}
+        >
+          <img
+            src={template.thumbnailUrl}
+            alt={template.name}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            loading="lazy"
+          />
 
-        {/* Active badge */}
-        {isActive && (
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#2C6ECB] text-white text-[11px] font-bold shadow-md">
-            <Palette className="w-3 h-3" />
-            <span>Template Aktif</span>
+          {/* Section count badge */}
+          <div className="absolute top-2.5 right-2.5 z-10 bg-black/60 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-md border border-white/10">
+            {template.sectionCount} {t('sections_count', 'Seksi')}
           </div>
-        )}
 
-        {/* Badge Free */}
-        {!isActive && (
-          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-sm text-[11px] font-bold text-[#202223] shadow-sm border border-white/50">
-            Gratis
+          {/* Hover overlay with Pratinjau button */}
+          <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <span className="bg-white/95 backdrop-blur-sm text-[#1F1F1F] font-semibold text-xs sm:text-sm px-4 py-2 rounded-xl shadow-md flex items-center gap-1.5 transform scale-95 group-hover:scale-100 transition-all duration-300">
+              <Eye className="w-3.5 h-3.5 text-[#9A0602]" />
+              <span>{t('btn_preview', 'Pratinjau')}</span>
+            </span>
           </div>
-        )}
+        </div>
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <div className="flex items-center gap-2.5 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-            <button
-              onClick={(e) => { e.stopPropagation(); onPreview(); }}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/95 backdrop-blur-sm text-[#202223] text-[13px] font-bold shadow-lg hover:bg-white transition cursor-pointer"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              Pratinjau
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onUse(); }}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#202223] text-white text-[13px] font-bold shadow-lg hover:bg-black transition cursor-pointer"
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-              Gunakan
-            </button>
+        {/* Info */}
+        <div className="pt-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-semibold text-sm sm:text-base text-[#1F1F1F] truncate group-hover:text-[#9A0602] transition-colors">
+              {template.name}
+            </h3>
+            <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-medium shrink-0">
+              {t('badge_free', 'Gratis')}
+            </span>
+          </div>
+          <p className="text-xs text-[#706866] mt-1 line-clamp-2 leading-relaxed">
+            {template.description}
+          </p>
+          {/* Design Traits tags */}
+          <div className="flex flex-wrap gap-1 mt-2.5">
+            {template.designTraits.map((trait, idx) => (
+              <span
+                key={idx}
+                className="text-[10px] font-medium text-[#555555] bg-[#F4F4F5] border border-[#E4E4E7] px-2 py-0.5 rounded-md"
+              >
+                {trait}
+              </span>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Info */}
-      <div className="pt-4 px-0.5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="font-bold text-[15px] text-[#202223] leading-tight truncate">
-              {template.name}
-            </h3>
-            <p className="text-[13px] text-[#6D7175] mt-0.5 line-clamp-2 leading-relaxed">
-              {template.description}
-            </p>
-          </div>
-        </div>
-
-        {/* Design traits */}
-        <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
-          {template.designTraits.map((trait) => (
-            <span
-              key={trait}
-              className="px-2 py-0.5 rounded-md bg-[#F6F6F7] text-[11px] font-medium text-[#6D7175] border border-[#E1E3E5]"
-            >
-              {trait}
-            </span>
-          ))}
-          <span className="px-2 py-0.5 rounded-md bg-[#F6F6F7] text-[11px] font-medium text-[#6D7175] border border-[#E1E3E5]">
-            {template.sectionCount} bagian
-          </span>
-        </div>
-
-        {/* Pages list */}
-        <div className="flex items-center gap-1 mt-2 text-[11px] text-[#8C9196]">
-          <Layers className="w-3 h-3 shrink-0" />
-          <span className="truncate">{template.pageNames.join(' · ')}</span>
-        </div>
+      {/* Action Buttons */}
+      <div className="pt-4 mt-3 border-t border-[#F0EDED] flex items-center gap-2">
+        <button
+          onClick={onPreview}
+          className="flex-1 px-3 py-2 rounded-xl text-xs font-semibold text-[#555555] bg-white border border-[#EAEAEA] hover:bg-[#F9F9F9] hover:text-[#1F1F1F] transition cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span>{t('btn_view_demo', 'Lihat Demo')}</span>
+        </button>
+        <button
+          onClick={onUse}
+          className="flex-1 px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-[#9A0602] to-[#B91C1C] hover:from-[#800000] hover:to-[#9A0602] transition cursor-pointer shadow-xs active:scale-[0.98] flex items-center justify-center gap-1.5"
+        >
+          <span>{t('btn_use_template', 'Gunakan')}</span>
+        </button>
       </div>
     </div>
   );

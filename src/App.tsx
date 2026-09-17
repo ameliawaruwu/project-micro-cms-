@@ -1026,6 +1026,7 @@ export default function App() {
                   onMarkCompleted={handleMarkCompleted}
                   onSelectOrder={(ord) => setSelectedOrderDetail(ord)}
                   onShowNotification={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
                 />
               )}
 
@@ -1039,12 +1040,16 @@ export default function App() {
                   onOpenPhoneSimulator={() => setViewMode('storefront-phone')}
                   onShowNotification={addToast}
                   onBack={() => setActiveTab('beranda')}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
                 />
               )}
 
               {/* TAB 5: PEMBAYARAN */}
               {activeTab === 'pembayaran' && (
-                <PaymentListPage onShowNotification={addToast} />
+                <PaymentListPage
+                  onShowNotification={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
+                />
               )}
 
               {/* TAB 6: PENGIRIMAN */}
@@ -1054,12 +1059,16 @@ export default function App() {
                   onToggleIntegration={handleToggleIntegration}
                   onSaveConfig={handleSaveIntegrationConfig}
                   onShowNotification={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
                 />
               )}
 
               {/* TAB FALLBACK: INTEGRASI */}
               {activeTab === 'integrasi' && (
-                <PaymentListPage onShowNotification={addToast} />
+                <PaymentListPage
+                  onShowNotification={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
+                />
               )}
 
               {/* TAB 7: BILLING PLAN / LANGGANAN */}
@@ -1068,6 +1077,7 @@ export default function App() {
                   store={currentStore}
                   onUpdateStore={handleUpdateStore}
                   onShowNotification={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
                 />
               )}
 
@@ -1080,6 +1090,7 @@ export default function App() {
                   onOpenShareModal={() => setIsShareModalOpen(true)}
                   onNavigateBilling={() => setActiveTab('billing')}
                   onShowNotification={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
                 />
               )}
             </main>

@@ -211,40 +211,39 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
 
   return (
     <div className="space-y-4 font-poppins text-left">
-      {/* Top Header & Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#EAEAEA] shadow-2xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <Warehouse className="w-5 h-5 text-[#9A0602]" />
-            <h3 className="font-bold text-sm sm:text-base text-[#1F1F1F]">
-              {t('branch_management_title', 'Manajemen Cabang & Gudang Asal')}
-            </h3>
-          </div>
-        </div>
-
-        <button
-          onClick={handleOpenAddModal}
-          className="flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs transition shadow-xs cursor-pointer w-full sm:w-auto shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{t('branch_add_button', 'Tambah Cabang / Gudang')}</span>
-        </button>
-      </div>
-
-      {/* Search & Filter Bar */}
-      <div className="flex items-center gap-2">
+      {/* Compact Top Toolbar: Search + Count + Add Branch */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-[#777777] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#888888] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder={t('branch_search_placeholder', 'Cari nama gudang, kota, nama PIC, atau kode pos...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] placeholder:text-[#999999] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+            className="w-full pl-9 pr-8 py-2 sm:py-2.5 bg-white rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] placeholder:text-[#999999] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] shadow-2xs transition"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#999999] hover:text-[#555555] p-1 rounded-full cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
-        <div className="px-3 py-2 bg-white rounded-xl border border-[#EAEAEA] text-xs font-semibold text-[#555555] whitespace-nowrap">
-          {filteredBranches.length} {t('branch_count_label', 'Cabang')}
+
+        <div className="flex items-center gap-2 justify-between sm:justify-end shrink-0">
+          <div className="px-3 py-2 bg-white rounded-xl border border-[#EAEAEA] text-xs font-semibold text-[#555555] shadow-2xs whitespace-nowrap">
+            {filteredBranches.length} {t('branch_count_label', 'Cabang')}
+          </div>
+
+          <button
+            onClick={handleOpenAddModal}
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl bg-gradient-to-r from-[#9A0602] to-[#B91C1C] hover:brightness-110 text-white font-semibold text-xs transition shadow-xs cursor-pointer active:scale-[0.98]"
+          >
+            <Plus className="w-4 h-4 shrink-0" />
+            <span>{t('branch_add_button', 'Tambah Cabang')}</span>
+          </button>
         </div>
       </div>
 
@@ -262,92 +261,105 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
           <p>{t('branch_empty_desc', 'Tambahkan cabang baru untuk mengaktifkan titik penjemputan logistik.')}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {filteredBranches.map((branch) => (
             <div
               key={branch.id}
-              className={`p-4 rounded-2xl border transition-all bg-white relative flex flex-col justify-between gap-3 ${
+              className={`p-3.5 sm:p-4 rounded-2xl border transition-all bg-white relative flex flex-col justify-between gap-2.5 ${
                 branch.isDefault
-                  ? 'border-[#9A0602] shadow-xs ring-1 ring-[#9A0602]/20'
-                  : 'border-[#EAEAEA] hover:border-[#CCCCCC]'
+                  ? 'border-[#9A0602]/50 shadow-xs ring-1 ring-[#9A0602]/15 bg-gradient-to-b from-[#FFFDFD] to-white'
+                  : 'border-[#EAEAEA] hover:border-[#D5CEC9] shadow-2xs'
               }`}
             >
-              {/* Header Card */}
+              {/* Header Card: Name, PIC & Status */}
               <div>
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-[#1F1F1F] flex items-center gap-1.5">
-                      <Building2 className="w-4 h-4 text-[#9A0602]" />
-                      {branch.branchName}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {branch.isDefault && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FFF1F0] text-[#9A0602] border border-[#FECDCA] text-[10px] font-bold">
-                        <Star className="w-3 h-3 fill-[#9A0602]" />
-                        {t('branch_default_badge', 'Cabang Utama')}
-                      </span>
-                    )}
-
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
-                        branch.isActive
-                          ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]'
-                          : 'bg-[#F7F7F7] text-[#777777] border-[#EAEAEA]'
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                    <div
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                        branch.isDefault
+                          ? 'bg-[#FFF1F0] text-[#9A0602]'
+                          : 'bg-[#F5F5F5] text-[#555555]'
                       }`}
                     >
-                      {branch.isActive ? (
-                        <>
-                          <CheckCircle2 className="w-2.5 h-2.5" /> {t('branch_active', 'Aktif')}
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="w-2.5 h-2.5" /> {t('branch_inactive', 'Nonaktif')}
-                        </>
-                      )}
-                    </span>
-                  </div>
-                </div>
+                      <Building2 className="w-4 h-4" />
+                    </div>
 
-                {/* PIC Info */}
-                <div className="flex flex-wrap items-center gap-3 text-xs text-[#555555] py-1 border-b border-[#F0F0F0]">
-                  <span className="font-semibold text-[#1F1F1F]">
-                    {t('branch_pic_label', 'PIC')}: {branch.picName}
-                  </span>
-                  <span className="text-[#CCCCCC]">•</span>
-                  <a
-                    href={`tel:${branch.picPhone}`}
-                    className="flex items-center gap-1 text-[#555555] hover:text-[#9A0602]"
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="font-bold text-sm text-[#1F1F1F] leading-tight truncate">
+                          {branch.branchName}
+                        </h4>
+                        {branch.isDefault && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#FFF1F0] text-[#9A0602] border border-[#FECDCA] text-[10px] font-bold shrink-0">
+                            <Star className="w-2.5 h-2.5 fill-[#9A0602]" />
+                            {t('branch_default_badge', 'Cabang Utama')}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* PIC & Phone */}
+                      <div className="flex items-center gap-2 text-[11px] text-[#666666] mt-1 flex-wrap">
+                        <span className="truncate">
+                          <strong className="font-medium text-[#333333]">{t('branch_pic_label', 'PIC')}:</strong> {branch.picName}
+                        </span>
+                        <span className="text-[#D0D0D0] shrink-0">•</span>
+                        <a
+                          href={`tel:${branch.picPhone}`}
+                          className="inline-flex items-center gap-1 text-[#555555] hover:text-[#9A0602] transition shrink-0"
+                        >
+                          <Phone className="w-2.5 h-2.5 text-[#888888]" />
+                          <span>{branch.picPhone}</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 border ${
+                      branch.isActive
+                        ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]'
+                        : 'bg-[#F2F4F7] text-[#475467] border-[#EAECF0]'
+                    }`}
                   >
-                    <Phone className="w-3 h-3 text-[#777777]" />
-                    <span>{branch.picPhone}</span>
-                  </a>
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        branch.isActive ? 'bg-[#12B76A]' : 'bg-[#98A2B3]'
+                      }`}
+                    ></span>
+                    <span>{branch.isActive ? t('branch_active', 'Aktif') : t('branch_inactive', 'Nonaktif')}</span>
+                  </span>
                 </div>
 
-                {/* Address */}
-                <div className="mt-2 text-xs text-[#555555] space-y-1">
-                  <div className="flex items-start gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-[#9A0602] shrink-0 mt-0.5" />
-                    <p className="line-clamp-2">{branch.address}</p>
-                  </div>
-                  <div className="pl-5 text-[11px] text-[#777777]">
-                    {branch.subdistrict ? `${branch.subdistrict}, ` : ''}
-                    {branch.city}, {branch.province}
-                    <span className="ml-2 font-mono font-semibold bg-[#F7F7F7] px-1.5 py-0.5 rounded border border-[#EAEAEA]">
-                      {t('branch_postal_code', 'Kode Pos')}: {branch.postalCode}
-                    </span>
+                {/* Compact Address Box */}
+                <div className="mt-2.5 bg-[#FAF9F9] rounded-xl p-2.5 border border-[#F0EDED] text-xs text-[#555555] flex items-start gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-[#9A0602] shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0 text-[11px] leading-relaxed">
+                    <p className="line-clamp-1 text-[#241A1A] font-medium">{branch.address}</p>
+                    <p className="text-[#777777] text-[10.5px] truncate mt-0.5">
+                      {branch.subdistrict ? `${branch.subdistrict}, ` : ''}
+                      {branch.city}, {branch.province}
+                      <span className="ml-1.5 font-mono text-[10px] text-[#444444] bg-white px-1.5 py-0.5 rounded border border-[#E5E0DD] font-medium">
+                        {branch.postalCode}
+                      </span>
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Action Bar */}
-              <div className="pt-2.5 border-t border-[#F0F0F0] flex items-center justify-between gap-2">
+              <div className="pt-2 border-t border-[#F2F0EF] flex items-center justify-between gap-2">
                 <div>
-                  {!branch.isDefault && (
+                  {branch.isDefault ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#9A0602]">
+                      <Star className="w-3 h-3 fill-[#9A0602]" />
+                      <span>{t('branch_main_origin', 'Gudang Utama')}</span>
+                    </span>
+                  ) : (
                     <button
                       onClick={() => handleSetDefault(branch)}
-                      className="text-[11px] font-semibold text-[#9A0602] hover:underline flex items-center gap-1 cursor-pointer"
+                      className="text-[11px] font-semibold text-[#666666] hover:text-[#9A0602] hover:bg-[#FFF1F0] px-2 py-1 rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
                     >
                       <Star className="w-3 h-3" />
                       <span>{t('branch_set_default', 'Jadikan Utama')}</span>
@@ -358,7 +370,11 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => handleToggleActive(branch)}
-                    className="px-2 py-1 rounded-lg text-[11px] font-medium border border-[#EAEAEA] text-[#555555] hover:bg-[#F7F7F7] transition cursor-pointer"
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition cursor-pointer ${
+                      branch.isActive
+                        ? 'border-[#EAEAEA] text-[#555555] hover:bg-[#F7F7F7]'
+                        : 'border-[#ABEFC6] text-[#027A48] bg-[#ECFDF3] hover:bg-[#D1FADF]'
+                    }`}
                   >
                     {branch.isActive ? t('branch_deactivate', 'Nonaktifkan') : t('branch_activate', 'Aktifkan')}
                   </button>
@@ -386,6 +402,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
           ))}
         </div>
       )}
+
 
       {/* MODAL FORM TAMBAH / EDIT CABANG */}
       {isModalOpen && (

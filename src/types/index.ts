@@ -4,7 +4,7 @@ export interface User {
   email: string;
   phoneWhatsApp: string;
   avatarUrl?: string;
-  role: 'merchant' | 'admin';
+  role: 'merchant' | 'admin' | 'buyer';
   createdAt: string;
 }
 
@@ -231,7 +231,7 @@ export interface StoreSectionOptions {
 
   // Header / Navbar
   stickyHeader?: boolean;
-  headerStyle?: 'standard' | 'brand' | 'minimal';
+  headerStyle?: 'standard' | 'brand' | 'minimal' | 'transparent';
   showLogo?: boolean;
   showTagline?: boolean;
   showNavMenu?: boolean;

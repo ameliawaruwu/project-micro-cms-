@@ -32,7 +32,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   return (
     <header 
       id="topbar-main" 
-      className="sticky top-0 z-30 bg-white border-b border-[#E5E0DD] px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between shadow-2xs font-sans transition-all w-full max-w-full"
+      className="sticky top-0 z-30 bg-white border-b border-[#E5E0DD] px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between shadow-2xs font-poppins transition-all w-full max-w-full"
     >
       {/* Left side: Mobile Hamburger Toggle */}
       <div className="flex items-center gap-2">

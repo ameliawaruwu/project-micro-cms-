@@ -451,3 +451,129 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
+
+-- ============================================================================
+-- 11. RPC FUNCTION: GET_DASHBOARD_ANALYTICS
+-- ============================================================================
+CREATE OR REPLACE FUNCTION get_dashboard_analytics(p_store_id VARCHAR)
+RETURNS JSONB 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_balance NUMERIC;
+    v_incoming_orders INT;
+    v_today_sales NUMERIC;
+    v_total_products INT;
+    v_low_stock_count INT;
+    v_recent_orders JSONB;
+    v_low_stock_items JSONB;
+BEGIN
+    -- 1. Active Store Balance
+    SELECT COALESCE(balance, 0) 
+    INTO v_balance 
+    FROM stores 
+    WHERE id = p_store_id;
+
+    v_balance := COALESCE(v_balance, 0);
+
+    -- 2. Incoming Orders (Paid & Needing Processing/Shipment)
+    SELECT COUNT(*) 
+    INTO v_incoming_orders 
+    FROM orders 
+    WHERE store_id = p_store_id 
+      AND (
+          payment_status = 'paid' 
+          OR order_status IN ('pending', 'processing')
+      )
+      AND order_status NOT IN ('delivered', 'cancelled');
+
+    v_incoming_orders := COALESCE(v_incoming_orders, 0);
+
+    -- 3. Today's Revenue (Transactions created today with paid status)
+    SELECT COALESCE(SUM(total_amount), 0) 
+    INTO v_today_sales 
+    FROM orders 
+    WHERE store_id = p_store_id 
+      AND payment_status = 'paid'
+      AND created_at >= CURRENT_DATE;
+
+    v_today_sales := COALESCE(v_today_sales, 0);
+
+    -- 4. Products & Low Stock Statistics (Stock <= 5)
+    SELECT COUNT(*) 
+    INTO v_total_products 
+    FROM products 
+    WHERE store_id = p_store_id 
+      AND (status IS NULL OR status != 'Dihapus');
+
+    v_total_products := COALESCE(v_total_products, 0);
+
+    SELECT COUNT(*) 
+    INTO v_low_stock_count 
+    FROM products 
+    WHERE store_id = p_store_id 
+      AND stock <= 5 
+      AND (status IS NULL OR status != 'Dihapus');
+
+    v_low_stock_count := COALESCE(v_low_stock_count, 0);
+
+    -- 5. Low Stock Items Details (Up to 5 items)
+    SELECT COALESCE(json_agg(row_to_json(lsi)), '[]'::jsonb)
+    INTO v_low_stock_items
+    FROM (
+        SELECT id, name, price, stock, image_url, category
+        FROM products
+        WHERE store_id = p_store_id
+          AND stock <= 5
+          AND (status IS NULL OR status != 'Dihapus')
+        ORDER BY stock ASC
+        LIMIT 5
+    ) lsi;
+
+    -- 6. Recent 5 Orders with Customer & Summary Details
+    SELECT COALESCE(json_agg(row_to_json(ro)), '[]'::jsonb)
+    INTO v_recent_orders 
+    FROM (
+        SELECT 
+            id, 
+            order_number, 
+            customer_name, 
+            shipping_city, 
+            total_amount, 
+            payment_method, 
+            payment_status,
+            order_status, 
+            shipping_courier,
+            created_at,
+            (
+                SELECT COALESCE(json_agg(json_build_object(
+                    'product_id', product_id,
+                    'product_name', product_name, 
+                    'price', price,
+                    'quantity', quantity,
+                    'subtotal', subtotal,
+                    'product_image', product_image
+                )), '[]'::jsonb) 
+                FROM order_items 
+                WHERE order_id = orders.id
+            ) AS items
+        FROM orders 
+        WHERE store_id = p_store_id 
+        ORDER BY created_at DESC 
+        LIMIT 5
+    ) ro;
+
+    RETURN json_build_object(
+        'balance', v_balance,
+        'incoming_orders', v_incoming_orders,
+        'today_sales', v_today_sales,
+        'total_products', v_total_products,
+        'low_stock_count', v_low_stock_count,
+        'low_stock_items', COALESCE(v_low_stock_items, '[]'::jsonb),
+        'recent_orders', COALESCE(v_recent_orders, '[]'::jsonb)
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_dashboard_analytics(VARCHAR) TO anon, authenticated, service_role;

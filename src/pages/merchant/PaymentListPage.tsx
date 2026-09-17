@@ -4,12 +4,16 @@ import {
   Search,
 } from 'lucide-react';
 import { paymentChannelService, PaymentChannel } from '../../services/paymentChannelService';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface PaymentListPageProps {
   onShowNotification?: (msg: string) => void;
+  onNavigateDashboard?: () => void;
 }
 
-export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotification }) => {
+export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotification, onNavigateDashboard }) => {
+  const { t } = useLanguage();
   const [channels, setChannels] = useState<PaymentChannel[]>(() => paymentChannelService.getChannels());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | string>('all');
@@ -217,11 +221,19 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left w-full">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: t('nav_dashboard', 'Dashboard'), onClick: onNavigateDashboard },
+          { label: t('nav_payment', 'Pembayaran'), isActive: true },
+        ]}
+      />
+
       {/* 1. Page Title */}
       <div className="pb-3 border-b border-[#E5E0DD]">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-          <CreditCard className="w-6 h-6 text-[#66000E]" />
-          <span>Payment</span>
+        <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+          <CreditCard className="w-5 h-5 text-[#66000E]" />
+          <span>{t('nav_payment', 'Pembayaran')}</span>
         </h1>
       </div>
 
@@ -235,10 +247,10 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">
-                Pilihan Metode Pembayaran
+                {t('payment_methods_title', 'Pilihan Metode Pembayaran')}
               </h2>
               <p className="text-xs text-[#706866] mt-0.5">
-                {activeCount} dari {channels.length} metode pembayaran aktif di etalase toko Anda
+                {activeCount} / {channels.length} {t('payment_active_count', 'metode pembayaran aktif di etalase toko Anda')}
               </p>
             </div>
           </div>

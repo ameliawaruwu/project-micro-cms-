@@ -4,6 +4,7 @@ import { Order, ShippingStatus } from '../../types';
 import { OrderFilterTabs } from '../../components/orders/OrderFilterTabs';
 import { OrderCard } from '../../components/orders/OrderCard';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
 
 interface OrderListPageProps {
   orders: Order[];
@@ -12,6 +13,7 @@ interface OrderListPageProps {
   onMarkCompleted: (orderId: string) => void;
   onSelectOrder: (order: Order) => void;
   onShowNotification: (msg: string) => void;
+  onNavigateDashboard?: () => void;
 }
 
 export const OrderListPage: React.FC<OrderListPageProps> = ({
@@ -21,6 +23,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
   onMarkCompleted,
   onSelectOrder,
   onShowNotification,
+  onNavigateDashboard,
 }) => {
   const { t } = useLanguage();
   const [activeStatus, setActiveStatus] = useState<ShippingStatus | 'Semua'>('Semua');
@@ -69,9 +72,20 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
   }, [orders, activeStatus, searchQuery, paymentFilter, courierFilter]);
 
   return (
-    <div className="space-y-3.5 sm:space-y-5 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8">
-      <div>
-        <h1 className="text-lg sm:text-2xl font-bold text-[#1F1F1F] tracking-tight">{t('orders_title', 'Daftar Pesanan Masuk')}</h1>
+    <div className="space-y-3.5 sm:space-y-5 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8 text-left">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: t('nav_dashboard', 'Dashboard'), onClick: onNavigateDashboard },
+          { label: t('nav_orders', 'Pesanan'), isActive: true },
+        ]}
+      />
+
+      <div className="pb-3 border-b border-[#E5E0DD]">
+        <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+          <ShoppingBag className="w-5 h-5 text-[#66000E]" />
+          <span>{t('nav_orders', 'Pesanan')}</span>
+        </h1>
       </div>
 
       {/* Filter Tabs */}
