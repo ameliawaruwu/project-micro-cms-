@@ -512,6 +512,23 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       onShowNotification('Tata letak etalase toko berhasil disimpan!');
     }, 200);
   };
+
+  const handlePublish = () => {
+    setIsSaving(true);
+    const layoutSettings: StoreLayoutSettings = {
+      sections,
+      themeStyle: store.layoutSettings?.themeStyle || 'minimal',
+      primaryAccent,
+    };
+
+    onSaveLayout(layoutSettings);
+    setHasChanges(false);
+    setTimeout(() => {
+      setIsSaving(false);
+      setIsPublishModalOpen(true);
+      onShowNotification('🎉 Toko online berhasil dipublikasikan dan live!');
+    }, 200);
+  };
   return (
     <>
       {/* ═══ MODE 1: LIBRARY (inside dashboard, with sidebar visible) ═══ */}
@@ -788,7 +805,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             onToggleFullscreen={toggleFullscreen}
             activePage={activePage}
             onPageChange={setActivePage}
-            onPublish={() => setIsPublishModalOpen(true)}
+            onPublish={handlePublish}
           />
 
           {/* 2. THREE-PANEL WORKSPACE */}
