@@ -102,7 +102,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <KroomifyLogo
             size="sm"
             showText={!isCollapsed || isOpenMobile}
-            badge="UMKM"
           />
         </button>
 

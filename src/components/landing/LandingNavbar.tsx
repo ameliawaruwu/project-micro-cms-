@@ -132,7 +132,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
               title="Kroomify"
               aria-label="Kroomify"
             >
-              <KroomifyLogo size="md" badge="UMKM" />
+              <KroomifyLogo size="md" />
             </button>
           </div>
 
