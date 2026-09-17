@@ -130,53 +130,7 @@ class BranchService {
         return demoBranches;
       }
 
-      // Untuk akun toko baru: Inisialisasi otomatis "Gudang Utama" dari data toko mereka
-      try {
-        const currentStore = await storeService.getStoreById(storeId);
-        if (currentStore) {
-          const defaultBranch: ShippingBranch = {
-            id: `brn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-            storeId,
-            branchName: `Gudang Utama (${currentStore.name})`,
-            picName: currentStore.name,
-            picPhone: currentStore.phoneWhatsApp || '081234567890',
-            address: currentStore.address || 'Jl. Pusat Operasional Toko',
-            subdistrict: '',
-            city: currentStore.city ? currentStore.city.split(',')[0].trim() : 'Jakarta Selatan',
-            province: currentStore.province || 'DKI Jakarta',
-            postalCode: '12730',
-            isDefault: true,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-
-          this.saveBranches([defaultBranch]);
-
-          // Simpan ke database Supabase
-          await supabase.from('shipping_branches').insert([
-            {
-              id: defaultBranch.id,
-              store_id: storeId,
-              branch_name: defaultBranch.branchName,
-              pic_name: defaultBranch.picName,
-              pic_phone: defaultBranch.picPhone,
-              address: defaultBranch.address,
-              subdistrict: defaultBranch.subdistrict,
-              city: defaultBranch.city,
-              province: defaultBranch.province,
-              postal_code: defaultBranch.postalCode,
-              is_default: true,
-              is_active: true,
-            },
-          ]);
-
-          return [defaultBranch];
-        }
-      } catch (e) {
-        console.warn('Could not auto-create default warehouse for store:', e);
-      }
-
+      // Untuk akun toko baru: Tidak ada gudang otomatis (diinput manual oleh pengguna)
       return [];
     }
 
@@ -188,14 +142,19 @@ class BranchService {
     return branches.find((b) => b.id === id);
   }
 
-  async getDefaultBranch(storeId?: string): Promise<ShippingBranch> {
+  async getDefaultBranch(storeId?: string): Promise<ShippingBranch | undefined> {
     const branches = await this.getBranches(storeId);
-    return (
-      branches.find((b) => b.isDefault && b.isActive) ||
-      branches.find((b) => b.isDefault) ||
-      branches[0] ||
-      initialBranches[0]
-    );
+    if (branches.length > 0) {
+      return (
+        branches.find((b) => b.isDefault && b.isActive) ||
+        branches.find((b) => b.isDefault) ||
+        branches[0]
+      );
+    }
+    if (storeId === 'store-andhika') {
+      return initialBranches[0];
+    }
+    return undefined;
   }
 
   async createBranch(
@@ -204,15 +163,23 @@ class BranchService {
     const branches = this.getStoredBranches();
     const newId = crypto.randomUUID ? crypto.randomUUID() : `brn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
-    // Jika diset default, nonaktifkan default cabang lain
+    // Jika ini cabang pertama untuk toko tersebut, jadikan default otomatis
+    const storeBranches = branchData.storeId ? branches.filter((b) => b.storeId === branchData.storeId) : [];
+    const isFirstBranch = storeBranches.length === 0;
+    const isDefault = branchData.isDefault || isFirstBranch;
+
+    // Jika diset default, nonaktifkan default cabang lain milik toko yang sama
     let updatedList = branches;
-    if (branchData.isDefault) {
-      updatedList = updatedList.map((b) => ({ ...b, isDefault: false }));
+    if (isDefault) {
+      updatedList = updatedList.map((b) =>
+        b.storeId === branchData.storeId ? { ...b, isDefault: false } : b
+      );
     }
 
     const newBranch: ShippingBranch = {
       ...branchData,
       id: newId,
+      isDefault,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

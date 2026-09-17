@@ -164,12 +164,27 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
           {t('branch_loading', 'Memuat data cabang gudang...')}
         </div>
       ) : filteredBranches.length === 0 ? (
-        <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-[#CCCCCC] text-xs text-[#777777] space-y-2">
-          <Warehouse className="w-8 h-8 text-[#CCCCCC] mx-auto" />
-          <p className="font-semibold text-[#1F1F1F]">
-            {t('branch_empty_title', 'Tidak ada cabang yang cocok dengan pencarian')}
+        <div className="p-8 sm:p-10 text-center bg-white rounded-2xl border border-dashed border-[#CCCCCC] text-xs text-[#777777] space-y-3">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-[#FFF1F0] text-[#9A0602] flex items-center justify-center">
+            <Warehouse className="w-6 h-6" />
+          </div>
+          <p className="font-bold text-sm text-[#1F1F1F]">
+            {searchQuery ? t('branch_empty_title', 'Tidak ada cabang yang cocok dengan pencarian') : 'Belum Ada Cabang atau Gudang Pengiriman'}
           </p>
-          <p>{t('branch_empty_desc', 'Tambahkan cabang baru untuk mengaktifkan titik penjemputan logistik.')}</p>
+          <p className="max-w-md mx-auto text-[#666666]">
+            {searchQuery
+              ? t('branch_empty_search_desc', 'Coba kata kunci pencarian lain atau bersihkan kotak pencarian.')
+              : 'Tambahkan lokasi gudang atau toko fisik Anda sebagai titik penjemputan paket oleh kurir ekspedisi.'}
+          </p>
+          {!searchQuery && (
+            <button
+              onClick={handleOpenAddModal}
+              className="mt-2 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#9A0602] to-[#B91C1C] hover:brightness-110 text-white font-semibold text-xs shadow-xs transition cursor-pointer active:scale-[0.98]"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Tambah Cabang / Gudang Pertama</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
