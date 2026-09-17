@@ -398,34 +398,7 @@ class AuthService {
     // Save newly created store to storeService
     await storeService.createStore(store);
 
-    // Create initial starter sample products for this brand category
-    try {
-      await productService.createProduct(store.id, {
-        name: `Paket Pilihan ${params.storeName}`,
-        price: 95000,
-        originalPrice: 120000,
-        stock: 25,
-        sku: 'PROD-001',
-        category: params.businessCategory,
-        description: `Produk unggulan berkualitas dari ${params.storeName}. Dibuat dengan standar terbaik dan siap kirim ke seluruh Indonesia.`,
-        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
-        weightGrams: 350,
-      });
-
-      await productService.createProduct(store.id, {
-        name: `Koleksi Spesial ${params.businessCategory}`,
-        price: 150000,
-        originalPrice: 185000,
-        stock: 15,
-        sku: 'PROD-002',
-        category: params.businessCategory,
-        description: `Varian eksklusif terfavorit dengan jaminan kepuasan pelanggan dan garansi original.`,
-        imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
-        weightGrams: 500,
-      });
-    } catch (e) {
-      console.warn('Could not seed initial products for new store:', e);
-    }
+    // New stores start clean with 0 products
 
     // Save account into accounts repository
     const accounts = this.getStoredAccounts();
@@ -568,34 +541,7 @@ class AuthService {
     // Save newly created store to storeService
     await storeService.createStore(store);
 
-    // Create initial starter sample products
-    try {
-      await productService.createProduct(store.id, {
-        name: `Paket Perdana ${finalStoreName}`,
-        price: 85000,
-        originalPrice: 110000,
-        stock: 30,
-        sku: 'PROD-001',
-        category: 'Produk Unggulan',
-        description: `Produk pilihan berkualitas dari ${finalStoreName}. Siap dikirim ke seluruh Indonesia.`,
-        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
-        weightGrams: 350,
-      });
-
-      await productService.createProduct(store.id, {
-        name: 'Koleksi Spesial UMKM',
-        price: 135000,
-        originalPrice: 165000,
-        stock: 20,
-        sku: 'PROD-002',
-        category: 'Produk Unggulan',
-        description: 'Varian eksklusif dengan mutu terjamin dan respon cepat.',
-        imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
-        weightGrams: 450,
-      });
-    } catch (e) {
-      console.warn('Could not seed initial products for new Google user:', e);
-    }
+    // New stores start clean with 0 products
 
     const newAccountRecord: StoredAccount = {
       id: userId,

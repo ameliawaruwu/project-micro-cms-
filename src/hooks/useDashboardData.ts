@@ -113,13 +113,13 @@ export const useDashboardData = ({
     if (rpcData && typeof rpcData.total_products === 'number' && rpcData.total_products > 0) {
       return rpcData.total_products;
     }
-    const storeProducts = products.filter((p) => p.storeId === store.id || !p.storeId);
+    const storeProducts = products.filter((p) => p.storeId === store.id);
     return storeProducts.length;
   }, [rpcData, products, store.id]);
 
   // E. Low Stock Count & Items List (Stock <= 5)
   const lowStockProducts = useMemo<Product[]>(() => {
-    const storeProducts = products.filter((p) => p.storeId === store.id || !p.storeId);
+    const storeProducts = products.filter((p) => p.storeId === store.id);
     const lowFromLocal = storeProducts.filter((p) => Number(p.stock) <= 5);
 
     if (lowFromLocal.length > 0) {

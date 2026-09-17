@@ -5,11 +5,26 @@ import { initialProducts } from './mockData';
 
 const PRODUCTS_KEY = 'microcms_products_clean_v1';
 
-// Clean old dummy data from browser cache
+// Clean old dummy data and auto-seeded sample products from browser cache
 if (typeof window !== 'undefined') {
   try {
     localStorage.removeItem('microcms_products_v1');
     localStorage.removeItem('microcms_products');
+    const stored = localStorage.getItem(PRODUCTS_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter((p: any) => {
+          if (!p || !p.name) return false;
+          const isStarter =
+            p.name.startsWith('Paket Perdana') ||
+            p.name.startsWith('Paket Pilihan') ||
+            p.name.startsWith('Koleksi Spesial');
+          return !(isStarter && p.storeId !== 'store-andhika');
+        });
+        localStorage.setItem(PRODUCTS_KEY, JSON.stringify(cleaned));
+      }
+    }
   } catch {
     // ignore
   }
@@ -55,9 +70,15 @@ class ProductService {
     }
   }
 
-  private saveProducts(products: Product[]) {
+  private saveProducts(productsToSave: Product[]) {
+    const existing = this.getStoredProducts();
     const uniqueMap = new Map<string, Product>();
-    products.forEach((p) => {
+    existing.forEach((p) => {
+      if (p && p.id) {
+        uniqueMap.set(p.id, p);
+      }
+    });
+    productsToSave.forEach((p) => {
       if (p && p.id) {
         uniqueMap.set(p.id, p);
       }
@@ -96,12 +117,14 @@ class ProductService {
           return localProducts;
         }
 
-        // Neither Supabase nor local has products -> seed starter products
-        const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId || !p.storeId);
-        if (defaultStoreProducts.length > 0) {
-          const storeMapped = defaultStoreProducts.map((p) => ({ ...p, storeId }));
-          this.saveProducts(storeMapped);
-          return storeMapped;
+        // Neither Supabase nor local has products -> seed starter products ONLY for demo store (store-andhika)
+        if (storeId === 'store-andhika') {
+          const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId);
+          if (defaultStoreProducts.length > 0) {
+            const storeMapped = defaultStoreProducts.map((p) => ({ ...p, storeId }));
+            this.saveProducts(storeMapped);
+            return storeMapped;
+          }
         }
         return [];
       }
@@ -109,9 +132,9 @@ class ProductService {
       console.warn('[Supabase Database] Offline fallback for products:', err?.message || err);
     }
 
-    // 2. Fallback to LocalStorage or initialProducts
-    if (localProducts.length === 0) {
-      const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId || !p.storeId);
+    // 2. Fallback to LocalStorage or initialProducts (only for demo store)
+    if (localProducts.length === 0 && storeId === 'store-andhika') {
+      const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId);
       if (defaultStoreProducts.length > 0) {
         const storeMapped = defaultStoreProducts.map((p) => ({ ...p, storeId }));
         this.saveProducts(storeMapped);

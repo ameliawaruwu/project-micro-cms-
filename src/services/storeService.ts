@@ -51,7 +51,7 @@ class StoreService {
           updated.merchantId = 'usr-artisan-01';
           changed = true;
         }
-        if (!updated.onboarding?.paymentConnected) {
+        if (s.id.startsWith('store-') && !updated.onboarding?.paymentConnected) {
           updated.onboarding = {
             ...updated.onboarding,
             storeNameSet: true,
