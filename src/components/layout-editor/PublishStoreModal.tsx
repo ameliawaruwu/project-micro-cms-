@@ -40,6 +40,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [domainRequest, setDomainRequest] = useState<DomainRequest | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [selectedDomainType, setSelectedDomainType] = useState<'random' | 'custom'>('random');
 
   // Load domain request status for this store
   useEffect(() => {
@@ -47,8 +48,15 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
     setStep('checklist');
     domainRequestService.getRequestByStore(store.id).then((req) => {
       setDomainRequest(req);
+      if (req && (req.status === 'active' || req.status === 'paid')) {
+        setSelectedDomainType('custom');
+      } else if (store.customDomain && store.domainStatus === 'connected') {
+        setSelectedDomainType('custom');
+      } else {
+        setSelectedDomainType('random');
+      }
     });
-  }, [isOpen, store.id]);
+  }, [isOpen, store.id, store.customDomain, store.domainStatus]);
 
   if (!isOpen) return null;
 
@@ -66,11 +74,11 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
     store.customDomain || domainRequest?.fullDomain || '';
 
   // Accessible URL for preview and publishing
-  const liveStoreUrl = hasActiveCustomDomain
+  const liveStoreUrl = (selectedDomainType === 'custom' && activeCustomDomainName)
     ? `https://${activeCustomDomainName}`
     : `${window.location.origin}/${store.slug}`;
 
-  const friendlyDisplayUrl = hasActiveCustomDomain
+  const friendlyDisplayUrl = (selectedDomainType === 'custom' && activeCustomDomainName)
     ? activeCustomDomainName
     : `${store.slug}.kroomify.com`;
 
@@ -109,12 +117,12 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">
-                {step === 'published' ? 'Toko Berhasil Dipublikasikan' : 'Pemeriksaan Kesiapan & Publikasi'}
+                {step === 'published' ? 'Toko Berhasil Dipublikasikan' : 'Pilih Alamat Domain Toko'}
               </h2>
               <p className="text-[11px] text-[#706866]">
                 {step === 'published'
                   ? 'Website toko Anda kini online dan dapat diakses pembeli'
-                  : 'Verifikasi status paket langganan, domain, dan fitur transaksi'}
+                  : 'Pilih alamat website untuk toko online Anda'}
               </p>
             </div>
           </div>
@@ -127,213 +135,127 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5">
           
-          {/* ═══════════ STEP 1: CHECKLIST VERIFIKASI PRA-PUBLIKASI ═══════════ */}
+          {/* ═══════════ STEP 1: PILIHAN DOMAIN RINGKAS ═══════════ */}
           {step === 'checklist' && (
-            <>
-              {/* Intro banner */}
-              {isFreePlan ? (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-2.5">
-                  <Lock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-amber-900">
-                      Publikasi &amp; Deploy Toko Terkunci pada Paket Free
-                    </p>
-                    <p className="text-xs text-amber-800 leading-relaxed">
-                      Toko Anda saat ini berada dalam mode editor/sandbox CMS. Untuk menerbitkan website toko online agar bisa diakses langsung oleh publik dan menerima transaksi, silakan upgrade ke <b>Paket Personal Toko</b> (Rp 350.000/tahun).
+            <div className="space-y-3">
+              {/* Opsi 1: Domain Random (Subdomain Kroomify) */}
+              <div
+                onClick={() => setSelectedDomainType('random')}
+                className={`p-3.5 sm:p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                  selectedDomainType === 'random'
+                    ? 'border-[#66000E] bg-rose-50/25 shadow-xs'
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    selectedDomainType === 'random' ? 'bg-[#F5E8EA] text-[#66000E]' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    <Globe className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs sm:text-sm font-bold text-gray-900">Domain Random (Subdomain)</h4>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Gratis
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 font-mono truncate mt-0.5">
+                      https://{store.slug}.kroomify.com
                     </p>
                   </div>
                 </div>
-              ) : (
-                <div className="bg-[#FAF7F7] border border-[#EBE5E2] rounded-xl p-3 sm:p-3.5 flex items-start gap-2.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <p className="text-xs text-[#5F5652] leading-relaxed">
-                    Sistem mengecek kelayakan toko Anda. Toko Anda siap dipublikasikan secara live ke internet.
-                  </p>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                  selectedDomainType === 'random' ? 'border-[#66000E]' : 'border-gray-300'
+                }`}>
+                  {selectedDomainType === 'random' && <div className="w-2.5 h-2.5 rounded-full bg-[#66000E]" />}
+                </div>
+              </div>
+
+              {/* Opsi 2: Custom Domain */}
+              <div
+                onClick={() => setSelectedDomainType('custom')}
+                className={`p-3.5 sm:p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                  selectedDomainType === 'custom'
+                    ? 'border-[#66000E] bg-rose-50/25 shadow-xs'
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    selectedDomainType === 'custom' ? 'bg-[#F5E8EA] text-[#66000E]' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs sm:text-sm font-bold text-gray-900">Custom Domain</h4>
+                      {hasActiveCustomDomain ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Aktif
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          .com / .id
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                      {hasActiveCustomDomain
+                        ? `https://${activeCustomDomainName}`
+                        : 'Gunakan nama domain bisnis Anda sendiri'}
+                    </p>
+                  </div>
+                </div>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                  selectedDomainType === 'custom' ? 'border-[#66000E]' : 'border-gray-300'
+                }`}>
+                  {selectedDomainType === 'custom' && <div className="w-2.5 h-2.5 rounded-full bg-[#66000E]" />}
+                </div>
+              </div>
+
+              {/* Tautan Atur Domain jika memilih Custom Domain */}
+              {selectedDomainType === 'custom' && !hasActiveCustomDomain && onNavigateDomain && (
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between gap-3 text-xs animate-in fade-in duration-200">
+                  <span className="text-gray-600 text-[11px]">Belum memiliki domain sendiri terhubung?</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onNavigateDomain();
+                    }}
+                    className="font-bold text-[#66000E] hover:underline flex items-center gap-1 cursor-pointer shrink-0 text-xs"
+                  >
+                    <span>Atur di Menu Domain</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
                 </div>
               )}
 
-              {/* 3 Pillar Checklist Cards */}
-              <div className="space-y-3">
-                
-                {/* 1. Paket Langganan Hosting & CMS */}
-                <div className="p-3.5 rounded-xl border border-[#E5E0DD] bg-white shadow-2xs hover:border-[#66000E]/30 transition">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                        isFreePlan ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                      }`}>
-                        <Server className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-xs sm:text-sm font-bold text-[#241A1A]">
-                            1. Paket Hosting &amp; CMS
-                          </h4>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            isFreePlan
-                              ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                              : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
-                          }`}>
-                            {isFreePlan ? 'Paket Free (Gratis)' : `${currentPlan?.name} (Aktif)`}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[#706866] mt-0.5 leading-snug">
-                          {isFreePlan
-                            ? 'Shared hosting gratis Kroomify dengan watermark di footer. Tetap bisa live & berjualan via WhatsApp.'
-                            : `Hosting server prioritas aktif (${currentPlan?.tagline}). Bebas watermark & white-label.`}
-                        </p>
-                      </div>
-                    </div>
+              {/* Notifikasi Ringkas Paket Free */}
+              {isFreePlan && (
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-2 text-xs text-amber-900">
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                    <span className="font-medium text-[11px]">Paket Free (Mode Sandbox/Preview)</span>
                   </div>
-
-                  {isFreePlan && onNavigateBilling && (
-                    <div className="mt-2.5 pt-2.5 border-t border-dashed border-[#E5E0DD] flex items-center justify-between">
-                      <span className="text-[10px] text-[#78350F] font-medium flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-600" />
-                        Tersedia Paket Personal (350k/thn) &amp; Community UMKM (1jt/thn)
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onClose();
-                          onNavigateBilling();
-                        }}
-                        className="text-[11px] font-bold text-[#66000E] hover:underline flex items-center gap-1 cursor-pointer shrink-0"
-                      >
-                        <span>Upgrade</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </div>
+                  {onNavigateBilling && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onNavigateBilling();
+                      }}
+                      className="font-bold text-amber-800 hover:underline shrink-0 cursor-pointer text-xs"
+                    >
+                      Upgrade
+                    </button>
                   )}
                 </div>
-
-                {/* 2. Alamat Domain Toko */}
-                <div className="p-3.5 rounded-xl border border-[#E5E0DD] bg-white shadow-2xs hover:border-[#66000E]/30 transition">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center shrink-0">
-                        <Globe className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-xs sm:text-sm font-bold text-[#241A1A]">
-                            2. Alamat Domain Toko
-                          </h4>
-                          {hasActiveCustomDomain ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
-                              Custom Domain Aktif (SSL)
-                            </span>
-                          ) : domainRequest?.status === 'approved' ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                              Disetujui Admin - Menunggu Bayar
-                            </span>
-                          ) : domainRequest?.status === 'pending' ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-200">
-                              Menunggu Review Admin
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
-                              Subdomain Gratis (Siap Live)
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="text-[11px] text-[#706866] mt-0.5 leading-snug">
-                          {hasActiveCustomDomain ? (
-                            <span className="font-semibold text-emerald-700">
-                              Domain https://{activeCustomDomainName} siap dikunjungi pelanggan.
-                            </span>
-                          ) : domainRequest?.status === 'approved' ? (
-                            <span>
-                              Domain <b>{domainRequest.fullDomain}</b> disetujui (Rp {domainRequest.price.toLocaleString('id-ID')}/thn). Toko sementara akan live di <b>{store.slug}.kroomify.com</b>.
-                            </span>
-                          ) : domainRequest?.status === 'pending' ? (
-                            <span>
-                              Domain <b>{domainRequest.fullDomain}</b> sedang dicek admin. Toko sementara live di <b>{store.slug}.kroomify.com</b>.
-                            </span>
-                          ) : (
-                            <span>
-                              Toko langsung live di subdomain <b>{store.slug}.kroomify.com</b> tanpa biaya tambahan.
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {onNavigateDomain && (
-                    <div className="mt-2.5 pt-2.5 border-t border-dashed border-[#E5E0DD] flex items-center justify-between">
-                      <span className="text-[10px] text-[#706866]">
-                        {hasActiveCustomDomain
-                          ? 'Kelola pengaturan DNS domain toko'
-                          : domainRequest?.status === 'approved'
-                          ? 'Bayar invoice domain via Midtrans'
-                          : 'Ingin domain sendiri (.com / .id / .online)?'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onClose();
-                          onNavigateDomain();
-                        }}
-                        className="text-[11px] font-bold text-[#66000E] hover:underline flex items-center gap-1 cursor-pointer shrink-0"
-                      >
-                        <span>{domainRequest?.status === 'approved' ? 'Bayar Domain' : 'Menu Domain'}</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. Integrasi Pembayaran & Ekspedisi */}
-                <div className="p-3.5 rounded-xl border border-[#E5E0DD] bg-white shadow-2xs hover:border-[#66000E]/30 transition">
-                  <div className="flex items-center gap-2.5">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      isFreePlan ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                    }`}>
-                      <CreditCard className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="text-xs sm:text-sm font-bold text-[#241A1A]">
-                          3. Transaksi &amp; Pengiriman
-                        </h4>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          isFreePlan
-                            ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                            : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                        }`}>
-                          {isFreePlan ? 'Metode Manual (WhatsApp)' : 'Otomatis Siap (Midtrans & Biteship)'}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-[#706866] mt-0.5 leading-snug">
-                        {isFreePlan
-                          ? 'Pembeli memesan via tombol WhatsApp. Gateway otomatis QRIS/VA & cek ongkir terkunci pada Paket Free.'
-                          : 'Gateway pembayaran otomatis QRIS/VA Bank & kalkulasi ongkir ekspedisi aktif di checkout pembeli.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Box URL Pratinjau Publikasi */}
-              <div className="bg-[#FAF7F7] border border-[#EBE5E2] rounded-xl p-3.5 space-y-1.5">
-                <span className="text-[10px] font-bold text-[#706866] uppercase tracking-wider block">
-                  Link Publikasi Website Toko:
-                </span>
-                <div className="flex items-center justify-between bg-white border border-[#D5CEC8] rounded-lg p-2 gap-2 shadow-2xs">
-                  <span className="text-xs font-semibold text-[#66000E] truncate select-all">
-                    {liveStoreUrl}
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 shrink-0">
-                    Online
-                  </span>
-                </div>
-              </div>
-            </>
+              )}
+            </div>
           )}
 
           {/* ═══════════ STEP 2: SUKSES TERPUBLIKASIKAN ═══════════ */}
