@@ -10,6 +10,7 @@ import {
   LayoutTemplate,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Store,
   X,
   LogOut,
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react';
 import { MerchantTab, Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useState, useEffect } from 'react';
 
 interface SidebarProps {
   activeTab: MerchantTab;
@@ -49,16 +51,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { t } = useLanguage();
 
-  const navItems: { id: MerchantTab; label: string; icon: React.ComponentType<{ className?: string }>; badge?: number }[] = [
-    { id: 'beranda', label: t('nav_dashboard', 'Dashboard'), icon: LayoutDashboard },
-    { id: 'produk', label: t('nav_products', 'Produk'), icon: Package },
-    { id: 'pesanan', label: t('nav_orders', 'Pesanan'), icon: ShoppingBag, badge: pendingOrdersCount },
-    { id: 'layout', label: t('nav_layout', 'Layout Toko'), icon: LayoutTemplate },
-    { id: 'pembayaran', label: t('nav_payment', 'Pembayaran'), icon: CreditCard },
-    { id: 'pengiriman', label: t('nav_shipping', 'Pengiriman'), icon: Truck },
-    { id: 'billing', label: t('nav_billing', 'Paket Langganan'), icon: Crown },
-    { id: 'pengaturan', label: t('nav_settings', 'Pengaturan'), icon: Settings },
+  const navItems = [
+    { id: 'beranda' as MerchantTab, label: t('nav_dashboard', 'Dashboard'), icon: LayoutDashboard },
+    { id: 'produk' as MerchantTab, label: t('nav_products', 'Produk'), icon: Package },
+    { id: 'pesanan' as MerchantTab, label: t('nav_orders', 'Pesanan'), icon: ShoppingBag, badge: pendingOrdersCount },
+    { 
+      id: 'website', 
+      label: 'Website', 
+      icon: LayoutTemplate,
+      isParent: true,
+      children: [
+        { id: 'layout' as MerchantTab, label: t('nav_layout', 'Layout Toko') },
+        { id: 'domain' as MerchantTab, label: 'Domain' }
+      ]
+    },
+    { id: 'pembayaran' as MerchantTab, label: t('nav_payment', 'Pembayaran'), icon: CreditCard },
+    { id: 'pengiriman' as MerchantTab, label: t('nav_shipping', 'Pengiriman'), icon: Truck },
+    { id: 'billing' as MerchantTab, label: t('nav_billing', 'Billing Plan'), icon: Crown },
+    { id: 'pengaturan' as MerchantTab, label: t('nav_settings', 'Pengaturan'), icon: Settings },
   ];
+
+  const [isWebsiteMenuExpanded, setIsWebsiteMenuExpanded] = useState(
+    activeTab === 'layout' || activeTab === 'domain'
+  );
+
+  useEffect(() => {
+    if (activeTab === 'layout' || activeTab === 'domain') {
+      setIsWebsiteMenuExpanded(true);
+    }
+  }, [activeTab]);
 
   const handleItemClick = (id: MerchantTab) => {
     onTabChange(id);
@@ -110,12 +131,61 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto font-poppins">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive = item.isParent 
+            ? item.children?.some(child => child.id === activeTab)
+            : activeTab === item.id;
           const showLabel = !isCollapsed || isOpenMobile;
+          
+          if (item.isParent) {
+            return (
+              <div key={item.id} className="space-y-0.5">
+                <button
+                  onClick={() => setIsWebsiteMenuExpanded(!isWebsiteMenuExpanded)}
+                  className={`w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-colors group relative cursor-pointer ${
+                    isActive
+                      ? 'bg-red-50 text-red-700 font-semibold'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                  title={isCollapsed && !isOpenMobile ? item.label : undefined}
+                >
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <Icon
+                      className={`w-4 h-4 shrink-0 transition-colors ${
+                        isActive ? 'text-red-600' : 'text-gray-400 group-hover:text-gray-700'
+                      }`}
+                    />
+                    {showLabel && <span className="flex-1 text-left truncate">{item.label}</span>}
+                  </div>
+                  {showLabel && (
+                    isWebsiteMenuExpanded ? <ChevronDown className="w-3.5 h-3.5 opacity-50 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 opacity-50 shrink-0" />
+                  )}
+                </button>
+                
+                {showLabel && isWebsiteMenuExpanded && item.children && (
+                  <div className="ml-6 space-y-0.5 mt-1">
+                    {item.children.map(child => (
+                      <button
+                        key={child.id}
+                        onClick={() => handleItemClick(child.id)}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                          activeTab === child.id
+                            ? 'text-red-700 font-semibold bg-red-50/50'
+                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <span className="flex-1 text-left truncate">{child.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
           return (
             <button
               key={item.id}
-              onClick={() => handleItemClick(item.id)}
+              onClick={() => handleItemClick(item.id as MerchantTab)}
               className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
                 isActive
                   ? 'bg-rose-50 text-[#800000] font-semibold'

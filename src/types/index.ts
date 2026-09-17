@@ -63,7 +63,8 @@ export type StoreSectionType =
   | 'latest_drop'
   | 'category_tiles'
   | 'limited_release'
-  | 'community_board';
+  | 'community_board'
+  | 'collection_grid';
 
 // ── Block System ─────────────────────────────────────────────
 export type SectionBlockType =
@@ -179,13 +180,13 @@ export interface StoreSectionOptions {
   overlayOpacity?: number; // 0 - 100
   textAlignment?: 'left' | 'center' | 'right';
   sectionHeight?: 'compact' | 'normal' | 'tall';
-  bannerStyle?: 'compact' | 'normal' | 'minimal' | 'full' | 'split' | 'editorial' | 'typographic' | 'organic' | 'campaign';
-  backgroundColor?: 'default' | 'white' | 'brand' | 'dark' | 'amber' | 'neutral';
-  textColor?: 'light' | 'dark';
+  bannerStyle?: 'compact' | 'normal' | 'minimal' | 'split' | 'full' | 'editorial' | 'typographic' | 'organic' | 'campaign' | string;
+  backgroundColor?: 'default' | 'white' | 'brand' | 'dark' | 'amber' | 'neutral' | string;
+  textColor?: 'light' | 'dark' | string;
   layout?: 'grid' | 'masonry' | 'asymmetric' | 'carousel' | string;
 
   // Appearance & Positioning (Shopify Style)
-  contentPosition?: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'left' | 'center' | 'right';
+  contentPosition?: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'left' | 'center' | 'right' | string;
   animation?: 'none' | 'fade-in' | 'slide-up' | 'zoom-in';
   colorScheme?: 'scheme-1' | 'scheme-2' | 'scheme-3' | 'scheme-4' | 'scheme-5';
   enableContainer?: boolean;
@@ -243,6 +244,9 @@ export interface StoreSectionOptions {
   // Footer
   copyrightText?: string;
   showSocialLinks?: boolean;
+
+  // Custom Theme Properties
+  [key: string]: any;
 }
 
 export interface StoreSectionConfig {
@@ -489,6 +493,7 @@ export type MerchantTab =
   | 'produk'
   | 'pesanan'
   | 'layout'
+  | 'domain'
   | 'pembayaran'
   | 'pengiriman'
   | 'billing'

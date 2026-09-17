@@ -7,12 +7,14 @@ import {
   Undo2,
   Redo2,
   Eye,
+  EyeOff,
   Save,
   Maximize2,
   Minimize2,
   ChevronDown,
   Check,
   FileText,
+  Globe,
 } from 'lucide-react';
 import { Store } from '../../types';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
@@ -54,6 +56,7 @@ interface EditorTopBarProps {
   activePage?: string;
   onPageChange?: (pageId: string) => void;
   pages?: EditorPage[];
+  onPublish?: () => void;
 }
 
 export const EditorTopBar: React.FC<EditorTopBarProps> = ({
@@ -74,6 +77,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   activePage = 'homepage',
   onPageChange,
   pages = DEFAULT_EDITOR_PAGES,
+  onPublish,
 }) => {
   const { t } = useLanguage();
   const [isPageDropdownOpen, setIsPageDropdownOpen] = useState(false);
@@ -222,7 +226,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         </div>
       </div>
 
-      {/* ── RIGHT: Language, Preview, Fullscreen, Save ── */}
+      {/* ── RIGHT: Language, Preview, Fullscreen, Save, Publish ── */}
       <div className="flex items-center gap-1.5">
         <LanguageSwitchButton compact />
 
@@ -230,28 +234,28 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         <button
           type="button"
           onClick={onOpenStorefront}
-          className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg border border-[#E1E3E5] text-[#202223] hover:bg-[#F6F6F7] transition flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
-          title={t('preview', 'Pratinjau')}
+          className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg border transition flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${
+            isFullscreen ? 'bg-[#202223] text-white border-[#202223]' : 'border-[#E1E3E5] text-[#202223] hover:bg-[#F6F6F7]'
+          }`}
+          title={isFullscreen ? 'Tutup Pratinjau' : t('preview', 'Pratinjau')}
         >
-          <Eye className="w-3.5 h-3.5 text-[#8C9196]" />
-          <span className="hidden sm:inline">{t('preview', 'Pratinjau')}</span>
+          {isFullscreen ? (
+            <EyeOff className="w-3.5 h-3.5" />
+          ) : (
+            <Eye className="w-3.5 h-3.5 text-[#8C9196]" />
+          )}
+          <span className="hidden sm:inline">{isFullscreen ? 'Tutup Pratinjau' : t('preview', 'Pratinjau')}</span>
         </button>
 
-        {/* Fullscreen */}
-        {onToggleFullscreen && (
-          <button
-            type="button"
-            onClick={onToggleFullscreen}
-            className={`p-1.5 rounded-lg border transition cursor-pointer ${
-              isFullscreen
-                ? 'bg-[#202223] text-white border-[#202223]'
-                : 'border-[#E1E3E5] text-[#5C5F62] hover:bg-[#F6F6F7]'
-            }`}
-            title={isFullscreen ? 'Normal' : 'Layar Penuh'}
-          >
-            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-          </button>
-        )}
+        {/* Publish */}
+        <button
+          type="button"
+          onClick={onPublish}
+          className="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Publikasikan</span>
+        </button>
 
         {/* Save */}
         <button
@@ -265,7 +269,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           } ${isSaving ? 'opacity-70 cursor-wait' : ''}`}
         >
           <Save className="w-3.5 h-3.5" />
-          <span>{isSaving ? 'Menyimpan...' : 'Simpan'}</span>
+          <span className="hidden sm:inline">{isSaving ? 'Menyimpan...' : 'Simpan'}</span>
         </button>
       </div>
     </header>

@@ -362,7 +362,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 />
               </div>
 
-              {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'featured_products' || selectedSection.id === 'newsletter' || selectedSection.id === 'footer' || selectedSection.id === 'rich_text') && (
+              {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'featured_products' || selectedSection.id === 'newsletter' || selectedSection.id === 'footer' || selectedSection.id === 'rich_text' || selectedSection.id === 'craftsmanship_story' || selectedSection.id === 'private_collection' || selectedSection.id === 'brand_story' || selectedSection.id === 'ingredient_story' || selectedSection.id === 'sustainability' || selectedSection.id === 'store_benefits' || selectedSection.id === 'community_board') && (
                 <div className="space-y-1">
                   <label className="text-[12px] font-bold text-[#202223]">
                     {selectedSection.id === 'footer' ? 'Teks Footer' : 'Deskripsi'}
@@ -400,7 +400,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             </div>
 
             {/* ── BUTTONS / CTA ── */}
-            {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter') && (
+            {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' || selectedSection.id === 'signature_collection' || selectedSection.id === 'craftsmanship_story' || selectedSection.id === 'private_collection' || selectedSection.id === 'innovation_cta' || selectedSection.id === 'limited_release' || selectedSection.id === 'community_board' || selectedSection.id === 'latest_drop' || selectedSection.id === 'asymmetric_showcase') && (
               <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
                 <label className="text-[12px] font-bold text-[#202223]">Tombol Utama</label>
                 <div className="space-y-2">
