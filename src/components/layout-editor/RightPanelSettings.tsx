@@ -31,6 +31,7 @@ import {
 import { Store, StoreSectionConfig, StoreSectionOptions } from '../../types';
 import { CURATED_BANNER_PRESETS, DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
 import { GlobalThemeSettingsPanel } from './GlobalThemeSettingsPanel';
+import { useCmsStore } from '../../cms/useCmsStore';
 
 interface RightPanelSettingsProps {
   store: Store;
@@ -63,6 +64,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   showGlobalSettings,
 }) => {
   const [activeTab, setActiveTab] = useState<'konten' | 'tampilan' | 'lanjutan'>('konten');
+  const cmsProducts = useCmsStore(state => state.products);
+  const updateProduct = useCmsStore(state => state.updateProduct);
   const [showImagePresets, setShowImagePresets] = useState(false);
   const [customImageUrlInput, setCustomImageUrlInput] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
@@ -508,6 +511,53 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     />
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── INLINE PRODUCT EDITOR ── */}
+            {(selectedSection.id === 'featured_products' || selectedSection.id === 'product_grid') && (
+              <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
+                <div className="flex items-center justify-between">
+                  <label className="text-[12px] font-bold text-[#202223]">Data Produk (Edit Langsung)</label>
+                  <span className="text-[10px] text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded font-semibold">Tersimpan Otomatis</span>
+                </div>
+                <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                  {cmsProducts.map(product => (
+                    <div key={product.id} className="p-3 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg space-y-2">
+                      <div className="flex gap-2">
+                        <img 
+                          src={product.imageUrl || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=300'} 
+                          alt={product.name}
+                          className="w-12 h-12 object-cover rounded-md border border-[#E1E3E5] shrink-0"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="flex-1 space-y-1.5 min-w-0">
+                          <input
+                            type="text"
+                            value={product.name}
+                            onChange={(e) => updateProduct({ ...product, name: e.target.value })}
+                            className="w-full px-2 py-1 text-[12px] font-semibold text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
+                            placeholder="Nama Produk"
+                          />
+                          <input
+                            type="number"
+                            value={product.price}
+                            onChange={(e) => updateProduct({ ...product, price: Number(e.target.value) })}
+                            className="w-full px-2 py-1 text-[12px] text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
+                            placeholder="Harga"
+                          />
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        value={product.imageUrl || ''}
+                        onChange={(e) => updateProduct({ ...product, imageUrl: e.target.value })}
+                        className="w-full px-2 py-1 text-[11px] text-[#6D7175] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
+                        placeholder="URL Gambar"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

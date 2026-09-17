@@ -25,6 +25,7 @@ interface CmsState {
 
   // Actions
   loadThemeData: (themeId: string) => void;
+  updateProduct: (product: CmsProduct) => void;
 
   // Selectors/Helpers
   getProductBySlug: (slug: string) => CmsProduct | undefined;
@@ -45,6 +46,10 @@ export const useCmsStore = create<CmsState>((set, get) => ({
   getProductsByCategory: (categoryId: string) => get().products.filter(p => p.categoryId === categoryId),
   getNewsBySlug: (slug: string) => get().news.find(n => n.slug === slug),
   getPageBySlug: (slug: string) => get().pages.find(p => p.slug === slug),
+
+  updateProduct: (updatedProduct: CmsProduct) => set(state => ({
+    products: state.products.map(p => p.id === updatedProduct.id ? updatedProduct : p)
+  })),
 
   loadThemeData: (themeId: string) => {
     // Only load if the theme is in our data map
