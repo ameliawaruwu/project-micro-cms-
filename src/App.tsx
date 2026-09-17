@@ -1073,6 +1073,8 @@ export default function App() {
                   onShowNotification={addToast}
                   onBack={() => setActiveTab('beranda')}
                   onNavigateDashboard={() => setActiveTab('beranda')}
+                  onNavigateBilling={() => setActiveTab('billing')}
+                  onNavigateDomain={() => setActiveTab('domain')}
                 />
               )}
 

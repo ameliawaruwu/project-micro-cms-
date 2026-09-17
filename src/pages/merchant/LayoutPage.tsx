@@ -33,6 +33,8 @@ interface LayoutPageProps {
   onShowNotification: (msg: string) => void;
   onBack?: () => void;
   onNavigateDashboard?: () => void;
+  onNavigateBilling?: () => void;
+  onNavigateDomain?: () => void;
 }
 
 export const LayoutPage: React.FC<LayoutPageProps> = ({
@@ -44,6 +46,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   onShowNotification,
   onBack,
   onNavigateDashboard,
+  onNavigateBilling,
+  onNavigateDomain,
 }) => {
   const [currentStore, setCurrentStore] = useState<Store>(store);
   const cmsProducts = useCmsStore(state => state.products);
@@ -914,6 +918,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             isOpen={isPublishModalOpen}
             onClose={() => setIsPublishModalOpen(false)}
             store={currentStore}
+            onNavigateBilling={onNavigateBilling}
+            onNavigateDomain={onNavigateDomain}
           />
         </div>
       )}
