@@ -1,8 +1,9 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 
-export const FuturisticHero: React.FC = () => {
+export const FuturisticHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
+  const bgImage = sectionOptions?.imageUrl || sectionOptions?.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2000&q=80";
 
   return (
     <section className="relative w-full min-h-[500px] md:h-[90vh] md:min-h-[700px] py-16 md:py-0 flex items-center justify-center overflow-hidden bg-white font-['Space_Grotesk',sans-serif]">
@@ -12,7 +13,7 @@ export const FuturisticHero: React.FC = () => {
       {/* Cyberpunk Glitch Image */}
       <div className="absolute inset-0 z-0 flex items-center justify-center opacity-10 mix-blend-multiply filter contrast-125 saturate-150">
         <img 
-          src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2000&q=80" 
+          src={bgImage} 
           alt="Hero" 
           className="w-full h-full object-cover"
         />

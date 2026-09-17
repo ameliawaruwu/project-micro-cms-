@@ -52,10 +52,11 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any }> = ({ section
 };
 
 export const ProfessionalHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "Professional B2B Solutions";
   const subheading = sectionOptions.subheading || "Streamline your procurement process with our enterprise-grade supplies and dedicated account management.";
   const buttonLabel = sectionOptions.buttonLabel || "Request a Quote";
-  const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1600&q=80";
+  const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1600&q=80";
 
   return (
     <section className="relative w-full min-h-[75vh] flex items-center bg-gray-50 border-b border-gray-200">

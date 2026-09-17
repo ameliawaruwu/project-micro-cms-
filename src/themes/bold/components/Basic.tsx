@@ -33,10 +33,11 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
 };
 
 export const BoldHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "LOUD & CLEAR";
   const subheading = sectionOptions.subheading || "The New Standard in Streetwear";
   const buttonLabel = sectionOptions.buttonLabel || "Shop Now";
-  const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1600&q=80";
+  const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1600&q=80";
 
   // Split heading by space to style parts differently if there are multiple words
   const headingParts = heading.split(' ');

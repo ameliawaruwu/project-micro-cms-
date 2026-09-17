@@ -40,10 +40,11 @@ export const NatureNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOption
 };
 
 export const NatureHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "Raw Ingredients.";
   const subheading = sectionOptions.subheading || "Simple Rituals.";
   const buttonLabel = sectionOptions.buttonLabel || "Explore Collection";
-  const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=1600&q=80";
+  const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=1600&q=80";
 
   return (
     <section className="relative w-full min-h-[80vh] flex items-center justify-center bg-[#F9F6F0] p-4 md:p-8">

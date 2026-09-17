@@ -63,7 +63,7 @@ export const BoldLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOption
         {[1, 2, 3].map(i => (
           <div key={i} className="relative group overflow-hidden bg-[#DC2626] border-4 sm:border-8 border-black transform transition-transform hover:-translate-y-2 sm:hover:-translate-y-4 shadow-[8px_8px_0_0_#000] sm:shadow-[16px_16px_0_0_#000]">
             <img 
-              src={`https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=800&q=80&random=${i}`} 
+              src={sectionOptions.imageUrl || sectionOptions.bannerUrl || `https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=800&q=80&random=${i}`} 
               alt="Lookbook" 
               className="w-full aspect-[3/4] object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 mix-blend-multiply group-hover:mix-blend-normal transition-all duration-500" 
             />

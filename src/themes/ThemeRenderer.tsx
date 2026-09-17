@@ -17,28 +17,37 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
   const sections = getStoreSections(store.layoutSettings);
   const activeThemeId = (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist';
 
+  const renderCanvas = (activePage: string) => (
+    <CenterPreviewCanvas 
+      store={store}
+      products={products}
+      sections={sections}
+      selectedSectionKey={null}
+      onSelectSection={() => {}}
+      deviceMode="desktop"
+      onDeviceModeChange={() => {}}
+      primaryAccent={store.layoutSettings?.primaryAccent || '#1A1A1A'}
+      readonly={true}
+      activeThemeId={activeThemeId as any}
+      activePage={activePage}
+    />
+  );
+
   return (
     <MemoryRouter initialEntries={['/']}>
       <div className="min-h-screen relative font-sans w-full bg-white">
         <Routes>
-          <Route 
-            path="/" 
-            element={
-              <CenterPreviewCanvas 
-                store={store}
-                products={products}
-                sections={sections}
-                selectedSectionKey={null}
-                onSelectSection={() => {}}
-                deviceMode="desktop"
-                onDeviceModeChange={() => {}}
-                primaryAccent={store.layoutSettings?.primaryAccent || '#1A1A1A'}
-                readonly={true}
-                activeThemeId={activeThemeId as any}
-              />
-            } 
-          />
-          {/* Add more routes here as needed for catalog, about, etc */}
+          <Route path="/" element={renderCanvas('homepage')} />
+          <Route path="/products" element={renderCanvas('catalog')} />
+          <Route path="/catalog" element={renderCanvas('catalog')} />
+          <Route path="/product/:id" element={renderCanvas('product')} />
+          <Route path="/cart" element={renderCanvas('cart')} />
+          <Route path="/about" element={renderCanvas('about')} />
+          <Route path="/checkout" element={renderCanvas('checkout')} />
+          <Route path="/orders" element={renderCanvas('orders')} />
+          <Route path="/profile" element={renderCanvas('profile')} />
+          <Route path="/login" element={renderCanvas('login')} />
+          <Route path="/contact" element={renderCanvas('contact')} />
         </Routes>
       </div>
     </MemoryRouter>

@@ -2,8 +2,9 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Sparkles } from 'lucide-react';
 
-export const CuteHero: React.FC = () => {
+export const CuteHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
+  const bgImage = sectionOptions?.imageUrl || sectionOptions?.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80";
 
   return (
     <section className="relative w-full py-12 px-6 font-['Outfit',sans-serif]">
@@ -40,7 +41,7 @@ export const CuteHero: React.FC = () => {
         <div className="flex-1 w-full h-[400px] md:h-[600px] relative p-6">
           <div className="w-full h-full rounded-[2.5rem] overflow-hidden border-8 border-white shadow-lg bg-white relative group">
             <img 
-              src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80" 
+              src={bgImage} 
               alt="Hero" 
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />

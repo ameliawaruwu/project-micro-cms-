@@ -346,10 +346,24 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
     );
   };
 
-  const pageLabel = activePage === 'homepage' ? 'Halaman Utama' :
-    activePage === 'catalog' ? 'Katalog Produk' :
-    activePage === 'product' ? 'Detail Produk' :
-    activePage === 'about' ? 'Tentang Toko' : 'Halaman';
+  const pageLabels: Record<string, string> = {
+    homepage: 'Halaman Utama',
+    catalog: 'Katalog Produk',
+    product: 'Detail Produk',
+    about: 'Tentang Toko',
+    contact: 'Kontak',
+    checkout: 'Checkout',
+    thank_you: 'Terima kasih',
+    login: 'Masuk',
+    orders: 'Pesanan',
+    order_status: 'Status pesanan',
+    profile: 'Profil',
+  };
+
+  const pageLabel = pageLabels[activePage] || 'Halaman Utama';
+
+  // Custom pages hierarchy configuration
+  const customPageConfig = PAGE_SECTION_GROUPS[activePage];
 
   return (
     <aside className="w-full lg:w-[280px] bg-white border-r border-[#E1E3E5] flex flex-col h-full shrink-0 font-sans select-none">
@@ -357,9 +371,11 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
       <div className="px-4 py-3 border-b border-[#E1E3E5]">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-[13px] font-bold text-[#202223]">{pageLabel}</h2>
+            <h2 className="text-[13px] font-bold text-[#202223] flex items-center gap-1.5">
+              <span>{pageLabel}</span>
+            </h2>
             <p className="text-[11px] text-[#8C9196] mt-0.5">
-              {sections.filter(s => s.isVisible).length} dari {sections.length} bagian aktif
+              Edit bagian halaman secara khusus
             </p>
           </div>
           {onOpenThemeSettings && (
@@ -376,9 +392,72 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
 
       {/* Sections List */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2.5 space-y-3">
-        {renderGroup('header', 'Header', headerSections)}
-        {renderGroup('content', 'Konten', contentSections)}
-        {renderGroup('footer', 'Footer', footerSections)}
+        {customPageConfig ? (
+          // Render Custom Page Section Groups (e.g. Checkout, Thank You, Login, etc.)
+          customPageConfig.groups.map(group => {
+            const isCollapsed = collapsedGroups[group.id];
+            return (
+              <div key={group.id}>
+                <button
+                  onClick={() => toggleGroup(group.id)}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-bold text-[#8C9196] uppercase tracking-wider hover:text-[#202223] transition cursor-pointer"
+                >
+                  <span>{group.label}</span>
+                  <ChevronDown className={`w-3 h-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+                </button>
+
+                {!isCollapsed && (
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const isSelected = selectedSectionKey === item.key;
+                      const Icon = getSectionIcon(item.id);
+
+                      // Find matching section in store sections or create virtual section handler
+                      const matchingSection = sections.find(s => s.key === item.key || s.id === item.id) || {
+                        id: item.id,
+                        key: item.key,
+                        title: item.title,
+                        isVisible: true,
+                        options: {},
+                      };
+
+                      return (
+                        <div
+                          key={item.key}
+                          onClick={() => onSelectSection(item.key)}
+                          className={`group relative flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] transition select-none cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#F1F8FF] text-[#2C6ECB] font-semibold shadow-2xs border border-[#2C6ECB]/20'
+                              : 'text-[#202223] hover:bg-[#F6F6F7] font-medium'
+                          }`}
+                        >
+                          <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${
+                            isSelected ? 'text-[#2C6ECB]' : 'text-[#8C9196]'
+                          }`}>
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+
+                          <span className="flex-1 truncate text-[13px]">
+                            {item.title}
+                          </span>
+
+                          <Edit2 className="w-3.5 h-3.5 text-[#8C9196] opacity-0 group-hover:opacity-100 transition shrink-0" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          // Default Homepage Sections List
+          <>
+            {renderGroup('header', 'Header', headerSections)}
+            {renderGroup('content', 'Konten', contentSections)}
+            {renderGroup('footer', 'Footer', footerSections)}
+          </>
+        )}
       </div>
 
       {/* Add Section Button */}
@@ -394,4 +473,282 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
       </div>
     </aside>
   );
+};
+
+export const PAGE_SECTION_GROUPS: Record<string, {
+  label: string;
+  groups: {
+    id: string;
+    label: string;
+    items: {
+      key: string;
+      id: StoreSectionType;
+      title: string;
+    }[];
+  }[];
+}> = {
+  checkout: {
+    label: 'Checkout',
+    groups: [
+      {
+        id: 'header',
+        label: 'Header',
+        items: [
+          { key: 'checkout_logo', id: 'header', title: 'Logo Toko' },
+          { key: 'checkout_cart_link', id: 'header', title: 'Tautan Keranjang' },
+        ],
+      },
+      {
+        id: 'main',
+        label: 'Utama',
+        items: [
+          { key: 'checkout_contact', id: 'contact', title: 'Kontak (Email / No HP)' },
+          { key: 'checkout_payment', id: 'promo_banner', title: 'Opsi Pembayaran' },
+          { key: 'checkout_address', id: 'store_info', title: 'Alamat Penagihan' },
+          { key: 'checkout_submit', id: 'cta', title: 'Bayar Sekarang' },
+        ],
+      },
+      {
+        id: 'summary',
+        label: 'Ringkasan Pesanan',
+        items: [
+          { key: 'checkout_summary_items', id: 'featured_products', title: 'Item di Keranjang' },
+          { key: 'checkout_summary_total', id: 'rich_text', title: 'Total & Rincian' },
+        ],
+      },
+    ],
+  },
+  thank_you: {
+    label: 'Terima Kasih',
+    groups: [
+      {
+        id: 'header',
+        label: 'Header',
+        items: [
+          { key: 'thankyou_header', id: 'header', title: 'Logo Toko' },
+        ],
+      },
+      {
+        id: 'confirmation',
+        label: 'Konfirmasi Pesanan',
+        items: [
+          { key: 'thankyou_badge', id: 'announcement', title: 'Status Pesanan Sukses' },
+          { key: 'thankyou_number', id: 'rich_text', title: 'Nomor Pesanan' },
+        ],
+      },
+      {
+        id: 'details',
+        label: 'Rincian Pembayaran',
+        items: [
+          { key: 'thankyou_bank', id: 'store_info', title: 'Metode & Rekening Bank' },
+          { key: 'thankyou_items', id: 'featured_products', title: 'Ringkasan Produk' },
+          { key: 'thankyou_back_btn', id: 'cta', title: 'Kembali ke Toko' },
+        ],
+      },
+    ],
+  },
+  login: {
+    label: 'Masuk (Akun Pelanggan)',
+    groups: [
+      {
+        id: 'header',
+        label: 'Header',
+        items: [
+          { key: 'login_logo', id: 'header', title: 'Logo & Brand' },
+        ],
+      },
+      {
+        id: 'form',
+        label: 'Formulir Masuk',
+        items: [
+          { key: 'login_inputs', id: 'contact', title: 'Input Email & Kata Sandi' },
+          { key: 'login_btn', id: 'cta', title: 'Tombol Masuk' },
+        ],
+      },
+      {
+        id: 'help',
+        label: 'Bantuan & Pendaftaran',
+        items: [
+          { key: 'login_links', id: 'rich_text', title: 'Tautan Lupa Sandi & Buat Akun' },
+        ],
+      },
+    ],
+  },
+  orders: {
+    label: 'Pesanan Pelanggan',
+    groups: [
+      {
+        id: 'header',
+        label: 'Header',
+        items: [
+          { key: 'orders_header', id: 'header', title: 'Header & Navigasi' },
+        ],
+      },
+      {
+        id: 'content',
+        label: 'Daftar Pesanan',
+        items: [
+          { key: 'orders_list', id: 'featured_products', title: 'Riwayat Pesanan Pelanggan' },
+          { key: 'orders_status_filter', id: 'search_category', title: 'Filter Status Pesanan' },
+        ],
+      },
+    ],
+  },
+  order_status: {
+    label: 'Status Pesanan',
+    groups: [
+      {
+        id: 'header',
+        label: 'Header',
+        items: [
+          { key: 'status_header', id: 'header', title: 'Header Toko' },
+        ],
+      },
+      {
+        id: 'tracking',
+        label: 'Lacak Pengiriman',
+        items: [
+          { key: 'status_timeline', id: 'store_benefits', title: 'Timeline Pengiriman' },
+          { key: 'status_courier', id: 'store_info', title: 'Kurir & Nomor Resi' },
+        ],
+      },
+    ],
+  },
+  profile: {
+    label: 'Profil Pelanggan',
+    groups: [
+      {
+        id: 'header',
+        label: 'Header',
+        items: [
+          { key: 'profile_header', id: 'header', title: 'Header & Navigasi' },
+        ],
+      },
+      {
+        id: 'info',
+        label: 'Informasi Akun',
+        items: [
+          { key: 'profile_data', id: 'contact', title: 'Nama, Email & No HP' },
+          { key: 'profile_addresses', id: 'store_info', title: 'Daftar Alamat Pengiriman' },
+        ],
+      },
+    ],
+  },
+  catalog: {
+    label: 'Katalog Produk',
+    groups: [
+      {
+        id: 'header',
+        label: 'Header',
+        items: [
+          { key: 'announcement', id: 'announcement', title: 'Pengumuman' },
+          { key: 'header', id: 'header', title: 'Header & Navigasi' },
+        ],
+      },
+      {
+        id: 'filter',
+        label: 'Pencarian & Filter',
+        items: [
+          { key: 'catalog_search', id: 'search_category', title: 'Pencarian & Filter Kategori' },
+        ],
+      },
+      {
+        id: 'grid',
+        label: 'Daftar Produk',
+        items: [
+          { key: 'product_grid', id: 'product_grid', title: 'Katalog Grid Produk' },
+        ],
+      },
+      {
+        id: 'footer',
+        label: 'Footer',
+        items: [
+          { key: 'footer', id: 'footer', title: 'Footer Toko' },
+        ],
+      },
+    ],
+  },
+  product: {
+    label: 'Detail Produk',
+    groups: [
+      {
+        id: 'header',
+        label: 'Header',
+        items: [
+          { key: 'header', id: 'header', title: 'Header & Navigasi' },
+        ],
+      },
+      {
+        id: 'product_main',
+        label: 'Detail Produk',
+        items: [
+          { key: 'product_gallery', id: 'gallery', title: 'Galeri Foto Produk' },
+          { key: 'product_info', id: 'rich_text', title: 'Nama, Harga & Varian' },
+          { key: 'product_buy_btn', id: 'cta', title: 'Tombol Beli / Keranjang' },
+          { key: 'product_desc', id: 'image_with_text', title: 'Deskripsi & Spesifikasi' },
+        ],
+      },
+      {
+        id: 'footer',
+        label: 'Footer',
+        items: [
+          { key: 'footer', id: 'footer', title: 'Footer Toko' },
+        ],
+      },
+    ],
+  },
+  about: {
+    label: 'Tentang Toko',
+    groups: [
+      {
+        id: 'header',
+        label: 'Header',
+        items: [
+          { key: 'header', id: 'header', title: 'Header & Navigasi' },
+        ],
+      },
+      {
+        id: 'about_story',
+        label: 'Kisah Toko',
+        items: [
+          { key: 'about_hero', id: 'hero_banner', title: 'Banner Tentang Kami' },
+          { key: 'about_text', id: 'rich_text', title: 'Visi & Misi Toko' },
+        ],
+      },
+      {
+        id: 'footer',
+        label: 'Footer',
+        items: [
+          { key: 'footer', id: 'footer', title: 'Footer Toko' },
+        ],
+      },
+    ],
+  },
+  contact: {
+    label: 'Kontak',
+    groups: [
+      {
+        id: 'header',
+        label: 'Header',
+        items: [
+          { key: 'header', id: 'header', title: 'Header & Navigasi' },
+        ],
+      },
+      {
+        id: 'contact_form',
+        label: 'Formulir Kontak',
+        items: [
+          { key: 'contact_details', id: 'store_info', title: 'Alamat, Email & Telepon' },
+          { key: 'contact_inputs', id: 'contact', title: 'Formulir Kirim Pesan' },
+        ],
+      },
+      {
+        id: 'footer',
+        label: 'Footer',
+        items: [
+          { key: 'footer', id: 'footer', title: 'Footer Toko' },
+        ],
+      },
+    ],
+  },
 };

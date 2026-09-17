@@ -28,6 +28,8 @@ import {
   Grid,
   Maximize2,
   Minimize2,
+  ShoppingCart,
+  Check,
 } from 'lucide-react';
 import { Store, StoreSectionConfig, Product, StoreSectionOptions, NavMenuItem } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
@@ -37,6 +39,7 @@ import { InlineEditableImage } from './InlineEditableImage';
 import { InlineEditableButton } from './InlineEditableButton';
 import { ThemeId, ThemeRegistry } from '../../themes/ThemeRegistry';
 import { ThemeSectionRenderer } from './ThemeSectionRenderer';
+import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage } from '../../themes/pages';
 
 const hasThemeComponent = (themeId: ThemeId, sectionId: string) => {
   const theme = ThemeRegistry[themeId];
@@ -161,11 +164,115 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     }
   };
 
+  const renderPageCustomContent = (pageId: string) => {
+    if (pageId === 'homepage') return null;
+
+    if (pageId === 'catalog' || pageId === 'katalog') {
+      return (
+        <ShopPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'product') {
+      return (
+        <ProductDetailPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'cart') {
+      return (
+        <CartPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'about') {
+      return (
+        <AboutPage 
+          themeId={activeThemeId}
+          store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'checkout' || pageId === 'thank_you') {
+      return (
+        <CheckoutPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'orders' || pageId === 'order_status') {
+      return (
+        <OrdersPage 
+          themeId={activeThemeId}
+          store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'profile') {
+      return (
+        <ProfilePage 
+          themeId={activeThemeId}
+          store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'login') {
+      return (
+        <LoginPage 
+          themeId={activeThemeId}
+          store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'contact') {
+      return (
+        <ContactPage 
+          themeId={activeThemeId}
+          store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    return null;
+  };
+
   // If readonly, we skip the device chrome and just render the content container
   if (readonly) {
+    const customContent = renderPageCustomContent(activePage);
+
     return (
       <div className="flex-1 w-full bg-white relative pb-32" onClick={handleCanvasClick}>
-        {activePage === 'katalog' ? (
+        {customContent ? (
+          customContent
+        ) : activePage === 'katalog' ? (
            <div className="flex flex-col min-h-full pb-32">
              <div className="pointer-events-none">
                {ThemeRegistry[activeThemeId!]?.Navbar && React.createElement(ThemeRegistry[activeThemeId!].Navbar)}
@@ -1132,44 +1239,14 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
       >
         {/* Device Outer Frame */}
         <div
-          className={`bg-white shadow-xl transition-all overflow-hidden flex flex-col ${
+          className={`bg-white transition-all overflow-hidden flex flex-col ${
             isMobile
               ? 'rounded-[44px] border-[10px] border-slate-900 ring-1 ring-slate-800 shadow-slate-900/30'
               : isTablet
-              ? 'rounded-[32px] border-[10px] border-slate-800 ring-1 ring-slate-700 shadow-slate-900/25'
-              : 'rounded-xl border border-[#D5CEC9] shadow-md'
+              ? 'rounded-[32px] border-[10px] border-slate-800 ring-1 ring-slate-700 shadow-slate-900/25 shadow-xl'
+              : 'rounded-none border-none shadow-none'
           }`}
         >
-          {/* Desktop Browser Chrome Bar */}
-          {isDesktop && (
-            <div className="bg-[#F0ECE9] border-b border-[#E0D8D4] px-4 py-2 flex items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-1.5 shrink-0">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] border border-[#E0443E]"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] border border-[#DEA123]"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-[#27C93F] border border-[#1AAB29]"></div>
-              </div>
-              <div className="flex-1 max-w-sm mx-auto bg-white rounded-lg px-3 py-1 text-[11px] text-[#706866] flex items-center justify-center gap-1.5 border border-[#E5E0DD] shadow-2xs truncate">
-                <Lock className="w-3 h-3 text-emerald-600 shrink-0" />
-                <span className="font-mono text-[#241A1A]">https://{store.slug || 'toko'}.katalogumkm.id</span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>Live Pratinjau</span>
-                </div>
-                {onToggleFullscreen && (
-                  <button
-                    type="button"
-                    onClick={onToggleFullscreen}
-                    className="p-1 rounded-md text-[#706866] hover:text-[#241A1A] hover:bg-white/80 border border-[#E0D8D4] transition cursor-pointer"
-                    title={isFullscreen ? 'Keluar Layar Penuh (Esc)' : 'Mode Layar Penuh (Fullscreen)'}
-                  >
-                    {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Tablet Status Bar */}
           {isTablet && (
@@ -1201,7 +1278,9 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
 
           {/* STOREFRONT PREVIEW SCROLLABLE CONTENT */}
           <div className="bg-white min-h-[620px] max-h-[calc(100vh-130px)] overflow-y-auto custom-scrollbar relative selection:bg-[#F5E8EA]" onClick={handleCanvasClick}>
-            {activePage === 'katalog' ? (
+            {renderPageCustomContent(activePage) ? (
+              renderPageCustomContent(activePage)
+            ) : activePage === 'katalog' ? (
                <div className="flex flex-col min-h-full pb-32">
                  <div>
                    {ThemeRegistry[activeThemeId!]?.Navbar && React.createElement(ThemeRegistry[activeThemeId!].Navbar)}

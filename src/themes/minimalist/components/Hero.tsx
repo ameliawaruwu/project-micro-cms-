@@ -8,8 +8,8 @@ export const MinimalistHero: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   const subheading = sectionOptions.subheading || storeInfo.description;
   const buttonLabel = sectionOptions.buttonLabel || 'View Collection';
   const buttonLink = sectionOptions.buttonLink || '/products';
-  // Use bannerUrl from options if available, else a minimalist default
-  const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=2000&q=80";
+  // Use imageUrl/bannerUrl from options if available, else a minimalist default
+  const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=2000&q=80";
 
   return (
     <section className="relative w-full min-h-[60vh] md:min-h-[85vh] py-12 md:py-0 flex items-center justify-center overflow-hidden bg-[#fafafa]">

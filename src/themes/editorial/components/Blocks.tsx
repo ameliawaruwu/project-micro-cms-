@@ -42,7 +42,7 @@ export const EditorialCampaign: React.FC<{ sectionOptions?: any }> = ({ sectionO
   return (
     <section className="w-full min-h-[70vh] bg-gray-900 text-white flex flex-col items-center justify-center text-center p-8 relative overflow-hidden my-12">
       <div className="absolute inset-0 opacity-40 mix-blend-overlay">
-        <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&q=80" alt="Campaign Background" className="w-full h-full object-cover object-center grayscale" />
+        <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&q=80"} alt="Campaign Background" className="w-full h-full object-cover object-center grayscale" />
       </div>
       <div className="relative z-10 max-w-2xl px-6 py-20 bg-gray-900/40 backdrop-blur-sm border border-white/10">
         <h2 className="text-4xl md:text-6xl lg:text-7xl font-serif italic mb-10 drop-shadow-lg">{heading}</h2>
