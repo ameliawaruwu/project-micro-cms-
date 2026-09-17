@@ -26,7 +26,13 @@ function midtransDevPlugin(): Plugin {
         req.on('end', async () => {
           try {
             const data = JSON.parse(body || '{}');
-            const serverKey = process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-zR9u3M2vX8pLk1A0yW4t';
+            const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+            if (!serverKey) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'MIDTRANS_SERVER_KEY tidak ditemukan di .env' }));
+              return;
+            }
             const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
             const apiUrl =
               env === 'production'

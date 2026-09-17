@@ -253,7 +253,8 @@ export const shippingService = {
     try {
       const apiKey =
         (import.meta as any).env?.VITE_BITESHIP_API_KEY ||
-        'biteship_test.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiVGVzdGluZyBNaWNyb0NNUyIsInVzZXJJZCI6IjZhYTc0ZjBlZjQyZTNkMzE1NDY2YmI1YSIsImlhdCI6MTc4OTM1MDA1MX0.TEmKBLYc6Ei-L4FfuCSH2JtNBAxrWR_imx3P9WddciA';
+        (import.meta as any).env?.BITESHIP_API_KEY ||
+        '';
 
       if (apiKey && apiKey.startsWith('biteship_')) {
         const branches = await branchService.getBranches();
