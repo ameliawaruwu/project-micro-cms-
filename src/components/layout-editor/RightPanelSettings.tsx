@@ -157,6 +157,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   }
 
   const sectionKey = selectedSection.key || `${selectedSection.id}-0`;
+  const opts = selectedSection.options || {};
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleOptionChange = (newOpts: Partial<StoreSectionOptions>) => {
