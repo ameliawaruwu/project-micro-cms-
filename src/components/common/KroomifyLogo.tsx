@@ -20,20 +20,20 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
 }) => {
   // Dimensions for full logo (height set, width auto to maintain natural 4.4:1 ratio)
   const fullDimensions = {
-    xs: { h: 'h-7 sm:h-8', badge: 'text-[9px] px-1.5 py-0.5' },
-    sm: { h: 'h-9 sm:h-10', badge: 'text-[10px] px-1.5 py-0.5' },
-    md: { h: 'h-10 sm:h-11', badge: 'text-[10px] px-2 py-0.5' },
-    lg: { h: 'h-12 sm:h-14', badge: 'text-[11px] px-2 py-0.5' },
-    xl: { h: 'h-16 sm:h-18', badge: 'text-xs px-2.5 py-1' },
+    xs: { h: 'h-6 sm:h-6.5', badge: 'text-[9px] px-1.5 py-0.5' },
+    sm: { h: 'h-7.5 sm:h-8', badge: 'text-[10px] px-1.5 py-0.5' },
+    md: { h: 'h-8.5 sm:h-9', badge: 'text-[10px] px-2 py-0.5' },
+    lg: { h: 'h-10 sm:h-11', badge: 'text-[11px] px-2 py-0.5' },
+    xl: { h: 'h-13 sm:h-14', badge: 'text-xs px-2.5 py-1' },
   };
 
   // Dimensions for collapsed / icon-only mode
   const iconDimensions = {
-    xs: { box: 'w-7 h-7' },
-    sm: { box: 'w-9 h-9' },
-    md: { box: 'w-10 h-10' },
-    lg: { box: 'w-12 h-12' },
-    xl: { box: 'w-14 h-14' },
+    xs: { box: 'w-6 h-6' },
+    sm: { box: 'w-7.5 h-7.5' },
+    md: { box: 'w-8.5 h-8.5' },
+    lg: { box: 'w-10 h-10' },
+    xl: { box: 'w-12 h-12' },
   };
 
   const currentFull = fullDimensions[size] || fullDimensions.md;
