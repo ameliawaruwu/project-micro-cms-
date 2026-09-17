@@ -107,7 +107,7 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
 
       {/* TAB 1: CABANG & GUDANG ASAL */}
       {activeSubTab === 'branches' && (
-        <BranchManagement onShowNotification={onShowNotification} />
+        <BranchManagement storeId={store?.id} onShowNotification={onShowNotification} />
       )}
 
       {/* TAB 2: PILIHAN KURIR EKSPEDISI */}

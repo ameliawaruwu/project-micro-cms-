@@ -121,31 +121,36 @@ export const shippingService = {
   },
 
   /**
-   * Panggil Supabase Edge Function 'check-shipping-rates' dengan Biteship API
+   * Panggil Supabase Edge Function 'check-shipping-rates' atau direct Biteship API
    */
   async checkBiteshipRates(params: {
+    storeId?: string;
     branchId?: string;
     destinationPostalCode: string | number;
     weight: number;
     couriers?: string;
   }): Promise<{ rates: BiteshipRateOption[]; originBranch?: ShippingBranch }> {
-    const { branchId, destinationPostalCode, weight, couriers = 'jnt,jne,sicepat' } = params;
+    const { storeId, branchId, destinationPostalCode, weight, couriers = 'jnt,jne,sicepat' } = params;
 
     let branch: ShippingBranch | undefined;
     if (branchId) {
       branch = await branchService.getBranchById(branchId);
     }
     if (!branch) {
-      branch = await branchService.getDefaultBranch();
+      branch = await branchService.getDefaultBranch(storeId);
     }
 
+    const packageWeight = Math.max(100, weight || 500);
+    const originPostal = branch?.postalCode || '12730';
+
+    // 1. Coba via Supabase Edge Function
     try {
       const { data, error } = await supabase.functions.invoke('check-shipping-rates', {
         body: {
           branch_id: branch?.id,
-          origin_postal_code: branch?.postalCode,
+          origin_postal_code: originPostal,
           destination_postal_code: destinationPostalCode,
-          weight: Math.max(100, weight || 500),
+          weight: packageWeight,
           couriers,
         },
       });
@@ -160,8 +165,63 @@ export const shippingService = {
       console.warn('[Supabase Edge Function] check-shipping-rates fallback:', err);
     }
 
-    // Fallback simulation bila Edge Function belum dideploy atau Biteship offline
-    const originPostal = branch?.postalCode || '12730';
+    // 2. Coba direct Biteship API bila VITE_BITESHIP_API_KEY tersedia
+    try {
+      const apiKey =
+        (import.meta as any).env?.VITE_BITESHIP_API_KEY ||
+        (import.meta as any).env?.BITESHIP_API_KEY ||
+        '';
+
+      if (apiKey && apiKey.startsWith('biteship_')) {
+        const biteshipRes = await fetch('https://api.biteship.com/v1/rates/couriers', {
+          method: 'POST',
+          headers: {
+            Authorization: apiKey.startsWith('Bearer ') ? apiKey : `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            origin_postal_code: Number(originPostal),
+            destination_postal_code: Number(destinationPostalCode),
+            couriers,
+            items: [
+              {
+                name: 'Paket Pesanan Toko',
+                value: 100000,
+                weight: packageWeight,
+                quantity: 1,
+              },
+            ],
+          }),
+        });
+
+        if (biteshipRes.ok) {
+          const biteshipData = await biteshipRes.json();
+          if (biteshipData?.pricing && Array.isArray(biteshipData.pricing) && biteshipData.pricing.length > 0) {
+            const mappedRates: BiteshipRateOption[] = biteshipData.pricing.map((p: any) => ({
+              courier_name: p.courier_name || p.company,
+              courier_code: p.courier_code || p.courier,
+              courier_service_name: p.courier_service_name || p.service_type,
+              courier_service_code: p.courier_service_code || p.type,
+              tier: p.tier || 'standard',
+              description: p.description || `${p.courier_name} ${p.courier_service_name}`,
+              service_type: p.service_type || 'standard',
+              shipping_type: p.shipping_type || 'parcel',
+              price: Number(p.price) || 0,
+              etd: p.duration || p.etd || '1-3 Hari',
+            }));
+
+            return {
+              rates: mappedRates,
+              originBranch: branch,
+            };
+          }
+        }
+      }
+    } catch (directErr) {
+      console.warn('[Biteship Direct Rates] Fallback to simulated rates:', directErr);
+    }
+
+    // 3. Fallback simulation bila Edge Function belum dideploy atau Biteship offline / sandbox balance 0
     const isNearby = String(originPostal).slice(0, 2) === String(destinationPostalCode).slice(0, 2);
     const weightKg = Math.max(1, Math.ceil(weight / 1000));
 

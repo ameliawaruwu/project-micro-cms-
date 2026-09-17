@@ -1,5 +1,6 @@
 import { ShippingBranch } from '../types';
 import { supabase } from './supabaseClient';
+import { storeService } from './storeService';
 
 const BRANCHES_STORAGE_KEY = 'microcms_shipping_branches_v1';
 
@@ -85,11 +86,20 @@ class BranchService {
     }
   }
 
-  private saveBranches(branches: ShippingBranch[]) {
-    localStorage.setItem(BRANCHES_STORAGE_KEY, JSON.stringify(branches));
+  private saveBranches(branchesToSave: ShippingBranch[]) {
+    const existing = this.getStoredBranches();
+    const map = new Map<string, ShippingBranch>();
+    existing.forEach((b) => {
+      if (b && b.id) map.set(b.id, b);
+    });
+    branchesToSave.forEach((b) => {
+      if (b && b.id) map.set(b.id, b);
+    });
+    localStorage.setItem(BRANCHES_STORAGE_KEY, JSON.stringify(Array.from(map.values())));
   }
 
   async getBranches(storeId?: string): Promise<ShippingBranch[]> {
+    // 1. Ambil dari Supabase Database
     try {
       let query = supabase.from('shipping_branches').select('*').order('is_default', { ascending: false });
       if (storeId) {
@@ -105,11 +115,71 @@ class BranchService {
       console.warn('[Supabase Database] Falling back to local branch storage:', err);
     }
 
+    // 2. Ambil dari LocalStorage
     const localBranches = this.getStoredBranches();
     if (storeId) {
-      const filtered = localBranches.filter((b) => !b.storeId || b.storeId === storeId);
-      return filtered.length > 0 ? filtered : localBranches;
+      const filtered = localBranches.filter((b) => b.storeId === storeId);
+      if (filtered.length > 0) {
+        return filtered;
+      }
+
+      // Khusus toko demo bawaan
+      if (storeId === 'store-andhika') {
+        const demoBranches = initialBranches.filter((b) => b.storeId === storeId);
+        this.saveBranches(demoBranches);
+        return demoBranches;
+      }
+
+      // Untuk akun toko baru: Inisialisasi otomatis "Gudang Utama" dari data toko mereka
+      try {
+        const currentStore = await storeService.getStoreById(storeId);
+        if (currentStore) {
+          const defaultBranch: ShippingBranch = {
+            id: `brn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            storeId,
+            branchName: `Gudang Utama (${currentStore.name})`,
+            picName: currentStore.name,
+            picPhone: currentStore.phoneWhatsApp || '081234567890',
+            address: currentStore.address || 'Jl. Pusat Operasional Toko',
+            subdistrict: '',
+            city: currentStore.city ? currentStore.city.split(',')[0].trim() : 'Jakarta Selatan',
+            province: currentStore.province || 'DKI Jakarta',
+            postalCode: '12730',
+            isDefault: true,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          this.saveBranches([defaultBranch]);
+
+          // Simpan ke database Supabase
+          await supabase.from('shipping_branches').insert([
+            {
+              id: defaultBranch.id,
+              store_id: storeId,
+              branch_name: defaultBranch.branchName,
+              pic_name: defaultBranch.picName,
+              pic_phone: defaultBranch.picPhone,
+              address: defaultBranch.address,
+              subdistrict: defaultBranch.subdistrict,
+              city: defaultBranch.city,
+              province: defaultBranch.province,
+              postal_code: defaultBranch.postalCode,
+              is_default: true,
+              is_active: true,
+            },
+          ]);
+
+          return [defaultBranch];
+        }
+      } catch (e) {
+        console.warn('Could not auto-create default warehouse for store:', e);
+      }
+
+      return [];
     }
+
     return localBranches;
   }
 
@@ -120,7 +190,12 @@ class BranchService {
 
   async getDefaultBranch(storeId?: string): Promise<ShippingBranch> {
     const branches = await this.getBranches(storeId);
-    return branches.find((b) => b.isDefault && b.isActive) || branches.find((b) => b.isDefault) || branches[0] || initialBranches[0];
+    return (
+      branches.find((b) => b.isDefault && b.isActive) ||
+      branches.find((b) => b.isDefault) ||
+      branches[0] ||
+      initialBranches[0]
+    );
   }
 
   async createBranch(
