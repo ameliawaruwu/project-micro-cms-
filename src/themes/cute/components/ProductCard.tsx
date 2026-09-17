@@ -1,8 +1,8 @@
 import React from 'react';
 import { CmsProduct } from '../../../cms/mockCmsData';
 import { useCmsStore } from '../../../cms/useCmsStore';
-import { InlineEditableText } from '../../layout-editor/InlineEditableText';
-import { InlineEditableImage } from '../../layout-editor/InlineEditableImage';
+import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
+import { InlineEditableImage } from '../../../components/layout-editor/InlineEditableImage';
 
 interface ProductCardProps {
   product: CmsProduct;

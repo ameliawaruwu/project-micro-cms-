@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { CuteProductCard } from './ProductCard';
-import { InlineEditableText } from '../../layout-editor/InlineEditableText';
+import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 
 export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey }) => {
   const allProducts = useCmsStore(state => state.products);
