@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Sliders,
   Type,
@@ -26,6 +26,7 @@ import {
   ChevronLeft,
   ArrowUp,
   ArrowDown,
+  Upload,
 } from 'lucide-react';
 import { Store, StoreSectionConfig, StoreSectionOptions } from '../../types';
 import { CURATED_BANNER_PRESETS, DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
@@ -156,20 +157,43 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   }
 
   const sectionKey = selectedSection.key || `${selectedSection.id}-0`;
-  const opts = selectedSection.options || {};
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleOptionChange = (newOpts: Partial<StoreSectionOptions>) => {
     onUpdateSectionOptions(sectionKey, newOpts);
+  };
+
+  const handleLocalFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        if (dataUrl) {
+          handleOptionChange({ imageUrl: dataUrl, bannerUrl: dataUrl });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const hasImage =
     selectedSection.id === 'hero_banner' ||
     selectedSection.id === 'promo_banner' ||
     selectedSection.id === 'image_with_text' ||
-    selectedSection.id === 'gallery';
+    selectedSection.id === 'gallery' ||
+    selectedSection.id === 'brand_philosophy' ||
+    selectedSection.id === 'craftsmanship_story' ||
+    selectedSection.id === 'lookbook' ||
+    selectedSection.id === 'brand_story' ||
+    selectedSection.id === 'ingredient_story' ||
+    selectedSection.id === 'sustainability' ||
+    selectedSection.id === 'latest_drop' ||
+    selectedSection.id === 'floating_showcase';
 
   const currentImageUrl =
     opts.imageUrl ||
+    opts.bannerUrl ||
     (selectedSection.id === 'hero_banner'
       ? store.bannerUrl || 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1600&q=80'
       : '');
@@ -273,30 +297,64 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     />
                     <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
                       <button 
-                        onClick={() => handleOptionChange({ imageUrl: '' })}
-                        className="p-2 bg-white rounded-full text-red-600 hover:scale-105 transition"
+                        onClick={() => handleOptionChange({ imageUrl: '', bannerUrl: '' })}
+                        className="p-2 bg-white rounded-full text-red-600 hover:scale-105 transition cursor-pointer"
+                        title="Hapus Gambar"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="aspect-video rounded-lg border-2 border-dashed border-[#E1E3E5] bg-[#F6F6F7] flex flex-col items-center justify-center gap-2">
-                    <ImageIcon className="w-6 h-6 text-[#8C9196]" />
-                    <span className="text-[11px] text-[#6D7175]">Belum ada gambar</span>
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-video rounded-lg border-2 border-dashed border-[#E1E3E5] bg-[#F6F6F7] hover:bg-[#F1F8FF] hover:border-[#2C6ECB] transition cursor-pointer flex flex-col items-center justify-center gap-2 p-3 text-center"
+                  >
+                    <Upload className="w-6 h-6 text-[#2C6ECB]" />
+                    <span className="text-[11px] font-bold text-[#2C6ECB]">Upload Foto dari Perangkat / Galeri</span>
+                    <span className="text-[10px] text-[#8C9196]">Atau klik tombol Upload di bawah</span>
                   </div>
                 )}
 
-                <div className="flex gap-2 pt-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLocalFileUpload}
+                  className="hidden"
+                />
+
+                <div className="grid grid-cols-3 gap-1.5 pt-1">
                   <button
-                    onClick={() => setShowImagePresets(!showImagePresets)}
-                    className="flex-1 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer"
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="py-1.5 px-2 rounded-lg border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center justify-center gap-1 shrink-0"
+                    title="Upload gambar dari galeri HP atau komputer"
                   >
-                    Pilih dari Galeri
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload</span>
                   </button>
                   <button
-                    onClick={() => setShowUrlInput(!showUrlInput)}
-                    className="flex-1 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer"
+                    type="button"
+                    onClick={() => {
+                      setShowImagePresets(!showImagePresets);
+                      setShowUrlInput(false);
+                    }}
+                    className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${
+                      showImagePresets ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
+                    }`}
+                  >
+                    Pilih Galeri
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUrlInput(!showUrlInput);
+                      setShowImagePresets(false);
+                    }}
+                    className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${
+                      showUrlInput ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
+                    }`}
                   >
                     Input URL
                   </button>
@@ -314,7 +372,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     <button
                       onClick={() => {
                         if (customImageUrlInput.trim()) {
-                          handleOptionChange({ imageUrl: customImageUrlInput.trim() });
+                          handleOptionChange({ imageUrl: customImageUrlInput.trim(), bannerUrl: customImageUrlInput.trim() });
                           setShowUrlInput(false);
                         }
                       }}
@@ -326,19 +384,29 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 )}
 
                 {showImagePresets && (
-                  <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto mt-2">
-                    {CURATED_BANNER_PRESETS.map((preset) => (
-                      <button
-                        key={preset.id}
-                        onClick={() => {
-                          handleOptionChange({ imageUrl: preset.url });
-                          setShowImagePresets(false);
-                        }}
-                        className="group relative rounded-lg overflow-hidden aspect-video border border-[#E1E3E5] hover:border-[#2C6ECB] transition cursor-pointer"
-                      >
-                        <img src={preset.url} alt={preset.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                      </button>
-                    ))}
+                  <div className="space-y-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-2 px-3 rounded-lg border-2 border-dashed border-[#2C6ECB]/40 bg-[#F1F8FF] hover:bg-[#2C6ECB]/10 text-[11px] font-bold text-[#2C6ECB] flex items-center justify-center gap-2 transition cursor-pointer"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>+ Upload Foto Sendiri dari Perangkat</span>
+                    </button>
+                    <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
+                      {CURATED_BANNER_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          onClick={() => {
+                            handleOptionChange({ imageUrl: preset.url, bannerUrl: preset.url });
+                            setShowImagePresets(false);
+                          }}
+                          className="group relative rounded-lg overflow-hidden aspect-video border border-[#E1E3E5] hover:border-[#2C6ECB] transition cursor-pointer"
+                        >
+                          <img src={preset.url} alt={preset.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
