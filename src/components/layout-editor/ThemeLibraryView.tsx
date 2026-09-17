@@ -363,23 +363,17 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
             {TEMPLATE_CATEGORIES.map((cat) => {
               const Icon = cat.icon;
               const isActive = activeCategory === cat.id;
-              const count = cat.id === 'all'
-                ? TEMPLATE_GALLERY_ITEMS.length
-                : TEMPLATE_GALLERY_ITEMS.filter(t => t.categories.includes(cat.id)).length;
               return (
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
                   className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-semibold border transition-all cursor-pointer ${isActive
-                      ? 'bg-[#202223] text-white border-[#202223] shadow-sm'
-                      : 'bg-white text-[#6D7175] border-[#E1E3E5] hover:border-[#8C9196] hover:text-[#202223]'
+                      ? 'bg-[#FEF2F2] text-[#DC2626] border-[#DC2626] shadow-sm'
+                      : 'bg-white text-[#6D7175] border-[#E1E3E5] hover:border-[#DC2626] hover:text-[#DC2626] hover:bg-[#FEF2F2]'
                     }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   <span>{cat.label}</span>
-                  {count > 0 && !isActive && (
-                    <span className="text-[11px] text-[#8C9196] ml-0.5">({count})</span>
-                  )}
                 </button>
               );
             })}
