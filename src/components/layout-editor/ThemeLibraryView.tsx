@@ -81,9 +81,6 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
               <Palette className="w-5 h-5 text-[#66000E]" />
               <span>{t('nav_template_website', 'Template Website')}</span>
             </h1>
-            <p className="text-xs sm:text-sm text-[#777777] mt-1">
-              Pilih desain yang sesuai dengan karakter bisnis Anda. Setiap template bisa dikustomisasi sepenuhnya di visual editor.
-            </p>
           </div>
 
           <div className="flex items-center gap-2.5 self-start sm:self-center">
