@@ -3,6 +3,7 @@ import { Plus, Minus, Edit2, Tag } from 'lucide-react';
 import { Product } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
 import { StockBadge } from './StockBadge';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ProductMobileCardProps {
   products: Product[];
@@ -16,6 +17,9 @@ export const ProductMobileCard: React.FC<ProductMobileCardProps> = ({
   products,
   onEditProduct,
 }) => {
+  const { language, t } = useLanguage();
+  const isEn = language === 'en';
+
   return (
     <div className="space-y-3 pb-20 font-sans">
       {/* List of Mobile Product Cards */}
@@ -67,7 +71,7 @@ export const ProductMobileCard: React.FC<ProductMobileCardProps> = ({
           {/* Bottom Bar: Stock Info and Edit Button */}
           <div className="pt-3 border-t border-[#E5E0DD] flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-xs text-[#706866]">
-              <span>Stok:</span>
+              <span>{t('stock_label', 'Stok:')}</span>
               <span className={`font-mono ${
                 prod.stock <= 5
                   ? 'font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200'
@@ -83,7 +87,7 @@ export const ProductMobileCard: React.FC<ProductMobileCardProps> = ({
               className="px-3 py-1.5 rounded-xl bg-[#FAF7F7] hover:bg-[#F9EDEF] hover:text-[#66000E] text-[#241A1A] border border-[#E5E0DD] hover:border-[#66000E]/40 font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
             >
               <Edit2 className="w-3.5 h-3.5" />
-              <span>Ubah Produk</span>
+              <span>{t('manage_products', 'Ubah Produk')}</span>
             </button>
           </div>
         </div>

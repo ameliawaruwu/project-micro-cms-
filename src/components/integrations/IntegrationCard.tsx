@@ -24,15 +24,15 @@ interface IntegrationCardProps {
 }
 
 // Concise short descriptions for list items
-const CONCISE_DESCRIPTIONS: Record<string, string> = {
-  'int-midtrans': 'Virtual Account BCA/Mandiri/BRI, QRIS, E-Wallet & Kartu Kredit',
-  'int-qris': 'Scan QRIS otomatis dari semua E-Wallet & Mobile Banking',
-  'int-stripe': 'Kartu kredit & debit internasional (Visa, Mastercard, AMEX)',
-  'int-jnt': 'Layanan EZ (Reguler), J&T Super, & J&T Economy dengan jemput kurir',
-  'int-jne': 'Layanan REG (Reguler), YES (Yakin Esok Sampai), & JTR Trucking',
-  'int-sicepat': 'Layanan hemat HALU, SIUNTUNG (Reguler), & BEST Sameday',
-  'int-gosend': 'Kurir motor instan 1-2 jam & same day khusus area dalam kota',
-  'int-biteship': 'Satu gateway API terpusat untuk 25+ ekspedisi logistik Indonesia',
+const CONCISE_DESCRIPTIONS: Record<string, { id: string; en: string }> = {
+  'int-midtrans': { id: 'Virtual Account BCA/Mandiri/BRI, QRIS, E-Wallet & Kartu Kredit', en: 'Virtual Account BCA/Mandiri/BRI, QRIS, E-Wallet & Credit Card' },
+  'int-qris': { id: 'Scan QRIS otomatis dari semua E-Wallet & Mobile Banking', en: 'Automated QRIS scan from all E-Wallets & Mobile Banking' },
+  'int-stripe': { id: 'Kartu kredit & debit internasional (Visa, Mastercard, AMEX)', en: 'International credit & debit cards (Visa, Mastercard, AMEX)' },
+  'int-jnt': { id: 'Layanan EZ (Reguler), J&T Super, & J&T Economy dengan jemput kurir', en: 'EZ (Regular), J&T Super, & J&T Economy services with courier pickup' },
+  'int-jne': { id: 'Layanan REG (Reguler), YES (Yakin Esok Sampai), & JTR Trucking', en: 'REG (Regular), YES (Next Day Delivery), & JTR Trucking services' },
+  'int-sicepat': { id: 'Layanan hemat HALU, SIUNTUNG (Reguler), & BEST Sameday', en: 'HALU economy, SIUNTUNG (Regular), & BEST Sameday services' },
+  'int-gosend': { id: 'Kurir motor instan 1-2 jam & same day khusus area dalam kota', en: 'Instant 1-2h & same-day motorcycle courier for inner-city area' },
+  'int-biteship': { id: 'Satu gateway API terpusat untuk 25+ ekspedisi logistik Indonesia', en: 'Unified gateway API for 25+ Indonesian logistics couriers' },
 };
 
 // Preset available services for each courier provider
@@ -67,7 +67,8 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
   onSaveConfig,
   onShowNotification,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
   const [showConfigModal, setShowConfigModal] = useState(false);
 
   // Form State: Payment Integrations
@@ -124,7 +125,8 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
     );
   };
 
-  const shortDesc = CONCISE_DESCRIPTIONS[integration.id] || integration.description;
+  const descObj = CONCISE_DESCRIPTIONS[integration.id];
+  const shortDesc = descObj ? (isEn ? descObj.en : descObj.id) : integration.description;
 
   return (
     <>

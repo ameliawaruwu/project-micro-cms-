@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle, ArrowRight, PackageX, CheckCircle2, PlusCircle } from 'lucide-react';
 import { Product } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface StockAlertCardProps {
   products: Product[];
@@ -16,6 +17,8 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
   count,
   onManageStock,
 }) => {
+  const { language, t } = useLanguage();
+  const isEn = language === 'en';
   const lowStockItems = providedLowStock || products.filter((p) => Number(p.stock) <= 5);
   const totalLowStock = count !== undefined ? count : lowStockItems.length;
 
@@ -38,7 +41,7 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
             )}
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-800">Stok Menipis</h3>
+            <h3 className="text-sm font-semibold text-slate-800">{t('stat_low_stock', 'Stok Menipis')}</h3>
           </div>
         </div>
 
@@ -49,7 +52,7 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
               : 'bg-emerald-50 text-emerald-700 border-emerald-200'
           }`}
         >
-          {totalLowStock} Produk
+          {totalLowStock} {isEn ? 'Products' : 'Produk'}
         </span>
       </div>
 
@@ -60,8 +63,8 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-2 text-emerald-600">
               <PackageX className="w-5 h-5" />
             </div>
-            <p className="font-medium text-slate-800">Semua stok produk aman</p>
-            <p className="text-[11px] text-[#706866] mt-0.5">Tidak ada produk dengan stok di bawah 5</p>
+            <p className="font-medium text-slate-800">{t('all_stock_safe', 'Semua stok produk aman')}</p>
+            <p className="text-[11px] text-[#706866] mt-0.5">{t('no_stock_below_5', 'Tidak ada produk dengan stok di bawah 5')}</p>
           </div>
         ) : (
           lowStockItems.slice(0, 5).map((prod) => (
@@ -86,11 +89,11 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
 
               <div className="flex items-center gap-2 shrink-0">
                 <span className="inline-block px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-[#800000] text-xs font-semibold">
-                  Sisa {prod.stock}
+                  {t('stock_remaining', 'Sisa')} {prod.stock}
                 </span>
                 <button
                   onClick={onManageStock}
-                  title="Restock produk ini"
+                  title={isEn ? 'Restock this product' : 'Restock produk ini'}
                   className="p-1 rounded-lg hover:bg-rose-50 text-[#706866] hover:text-[#800000] transition cursor-pointer"
                 >
                   <PlusCircle className="w-4 h-4" />
@@ -107,7 +110,7 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
           onClick={onManageStock}
           className="w-full py-2.5 min-h-[40px] rounded-xl bg-white hover:bg-rose-50/70 border border-[#E5E0DD] hover:border-rose-200 text-[#800000] font-medium text-xs flex items-center justify-center gap-2 transition cursor-pointer active:scale-98 shadow-2xs"
         >
-          <span>Kelola Stok & Restock</span>
+          <span>{t('manage_stock_restock', 'Kelola Stok & Restock')}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>

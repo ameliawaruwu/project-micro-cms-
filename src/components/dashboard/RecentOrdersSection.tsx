@@ -2,6 +2,7 @@ import React from 'react';
 import { ShoppingBag, ArrowRight, ChevronRight } from 'lucide-react';
 import { Order } from '../../types';
 import { formatRupiah, formatDateIndo, getStatusBadgeColor } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface RecentOrdersSectionProps {
   orders: Order[];
@@ -14,7 +15,26 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
   onViewAllOrders,
   onSelectOrder,
 }) => {
+  const { language, t } = useLanguage();
+  const isEn = language === 'en';
   const latestOrders = orders.slice(0, 5);
+
+  const getShippingStatusLabel = (status: string) => {
+    switch (status) {
+      case 'Baru': return isEn ? 'New' : 'Baru';
+      case 'Diproses': return isEn ? 'Processing' : 'Diproses';
+      case 'Dikirim': return isEn ? 'Shipped' : 'Dikirim';
+      case 'Selesai': return isEn ? 'Completed' : 'Selesai';
+      case 'Dibatalkan': return isEn ? 'Cancelled' : 'Dibatalkan';
+      default: return status;
+    }
+  };
+
+  const formatOrderDate = (dateStr: string) => {
+    return isEn
+      ? new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+      : formatDateIndo(dateStr);
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-[#E5E0DD] p-4 sm:p-5 lg:p-6 shadow-2xs font-sans text-left">
@@ -24,7 +44,9 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
             <ShoppingBag className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm sm:text-base font-semibold text-[#241A1A]">Pesanan Terbaru</h2>
+            <h2 className="text-sm sm:text-base font-semibold text-[#241A1A]">
+              {t('recent_orders', 'Pesanan Terbaru')}
+            </h2>
           </div>
         </div>
 
@@ -32,7 +54,7 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
           onClick={onViewAllOrders}
           className="text-xs font-medium text-[#66000E] hover:text-[#801010] flex items-center gap-1 hover:underline cursor-pointer"
         >
-          <span>Lihat Semua</span>
+          <span>{t('view_all', 'Lihat Semua')}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -40,7 +62,7 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
       {latestOrders.length === 0 ? (
         <div className="py-12 text-center text-[#706866]">
           <ShoppingBag className="w-10 h-10 mx-auto mb-2 text-[#E5E0DD]" />
-          <p className="text-xs font-normal">Belum ada pesanan masuk hari ini.</p>
+          <p className="text-xs font-normal">{t('no_orders_today', 'Belum ada pesanan masuk hari ini.')}</p>
         </div>
       ) : (
         <>
@@ -49,13 +71,13 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-[#E5E0DD] text-[#706866] font-medium uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-3">No. Pesanan</th>
-                  <th className="py-3 px-3">Pembeli</th>
-                  <th className="py-3 px-3">Produk</th>
-                  <th className="py-3 px-3">Total</th>
-                  <th className="py-3 px-3">Metode Bayar</th>
-                  <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3 text-right">Aksi</th>
+                  <th className="py-3 px-3">{t('table_order_no', 'No. Pesanan')}</th>
+                  <th className="py-3 px-3">{t('table_customer', 'Pembeli')}</th>
+                  <th className="py-3 px-3">{t('table_product', 'Produk')}</th>
+                  <th className="py-3 px-3">{t('table_total', 'Total')}</th>
+                  <th className="py-3 px-3">{t('table_payment_method', 'Metode Bayar')}</th>
+                  <th className="py-3 px-3">{t('table_status', 'Status')}</th>
+                  <th className="py-3 px-3 text-right">{t('table_action', 'Aksi')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E0DD] font-normal text-[#241A1A]">
@@ -73,7 +95,7 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
                           {order.orderNumber}
                         </span>
                         <span className="block text-[10px] text-[#706866] font-normal">
-                          {formatDateIndo(order.createdAt)}
+                          {formatOrderDate(order.createdAt)}
                         </span>
                       </td>
 
@@ -94,11 +116,11 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
                           )}
                           <div className="truncate">
                             <p className="truncate text-[#241A1A] font-normal">
-                              {firstItem?.productName || 'Produk'}
+                              {firstItem?.productName || (isEn ? 'Product' : 'Produk')}
                             </p>
                             {order.items.length > 1 && (
                               <span className="text-[10px] text-[#706866] font-normal">
-                                +{order.items.length - 1} item lainnya
+                                +{order.items.length - 1} {t('other_items', 'item lainnya')}
                               </span>
                             )}
                           </div>
@@ -119,7 +141,7 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
 
                       <td className="py-3 px-3">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium border ${badge.bg}`}>
-                          {order.shippingStatus}
+                          {getShippingStatusLabel(order.shippingStatus)}
                         </span>
                       </td>
 
@@ -131,7 +153,7 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
                           }}
                           className="px-2.5 py-1.5 rounded-lg bg-[#FAF7F7] hover:bg-white hover:border-[#66000E] hover:text-[#66000E] text-[#241A1A] font-medium text-xs border border-[#E5E0DD] transition inline-flex items-center gap-1 cursor-pointer"
                         >
-                          <span>Rincian</span>
+                          <span>{t('details', 'Rincian')}</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                         </button>
                       </td>
@@ -158,10 +180,10 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
                       <span className="font-mono font-medium text-xs text-[#241A1A]">
                         {order.orderNumber}
                       </span>
-                      <p className="text-[10px] text-[#706866] font-normal">{formatDateIndo(order.createdAt)}</p>
+                      <p className="text-[10px] text-[#706866] font-normal">{formatOrderDate(order.createdAt)}</p>
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${badge.bg}`}>
-                      {order.shippingStatus}
+                      {getShippingStatusLabel(order.shippingStatus)}
                     </span>
                   </div>
 
@@ -188,7 +210,7 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
                       {order.paymentMethod} • {order.courier}
                     </span>
                     <span className="font-medium text-[#66000E] flex items-center gap-1 text-xs">
-                      <span>Kelola Pesanan</span>
+                      <span>{t('manage_order', 'Kelola Pesanan')}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </span>
                   </div>

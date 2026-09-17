@@ -1,6 +1,7 @@
 import React from 'react';
 import { PackageOpen, TrendingUp, PackageCheck, AlertTriangle, ArrowUpRight } from 'lucide-react';
 import { formatRupiah } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export type MetricType = 'orders' | 'sales' | 'products' | 'stock_alert';
 
@@ -18,6 +19,8 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   subtitle,
   onClick,
 }) => {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
   const isStockAlert = type === 'stock_alert';
   const numericValue = typeof value === 'number' ? value : parseInt(String(value), 10) || 0;
   const hasLowStock = isStockAlert && numericValue > 0;
@@ -26,43 +29,43 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     switch (type) {
       case 'orders':
         return {
-          title: 'Pesanan Masuk',
-          displayValue: typeof value === 'number' ? `${value} Pesanan` : value,
+          title: isEn ? 'Incoming Orders' : 'Pesanan Masuk',
+          displayValue: typeof value === 'number' ? `${value} ${isEn ? 'Orders' : 'Pesanan'}` : value,
           icon: PackageOpen,
           iconColor: 'text-[#800000]',
           iconBg: 'bg-rose-50 border border-rose-200',
           valueColor: 'text-slate-900 group-hover:text-[#800000]',
-          helper: subtitle || 'Segera kemas & kirimkan resi',
+          helper: subtitle || (isEn ? 'Pack & ship tracking number' : 'Segera kemas & kirimkan resi'),
         };
       case 'sales':
         return {
-          title: 'Penjualan Hari Ini',
+          title: isEn ? "Today's Sales" : 'Penjualan Hari Ini',
           displayValue: typeof value === 'number' ? formatRupiah(value) : value,
           icon: TrendingUp,
           iconColor: 'text-emerald-700',
           iconBg: 'bg-emerald-50 border border-emerald-200',
           valueColor: 'text-slate-900 group-hover:text-emerald-700',
-          helper: subtitle || 'Total omset transaksi sukses',
+          helper: subtitle || (isEn ? 'Total completed transaction revenue' : 'Total omset transaksi sukses'),
         };
       case 'products':
         return {
-          title: 'Total Produk',
-          displayValue: typeof value === 'number' ? `${value} Produk` : value,
+          title: isEn ? 'Total Products' : 'Total Produk',
+          displayValue: typeof value === 'number' ? `${value} ${isEn ? 'Products' : 'Produk'}` : value,
           icon: PackageCheck,
           iconColor: 'text-[#800000]',
           iconBg: 'bg-rose-50/70 border border-rose-200/80',
           valueColor: 'text-slate-900 group-hover:text-[#800000]',
-          helper: subtitle || 'Barang aktif di etalase',
+          helper: subtitle || (isEn ? 'Active items in storefront' : 'Barang aktif di etalase'),
         };
       case 'stock_alert':
         return {
-          title: 'Stok Menipis',
-          displayValue: typeof value === 'number' ? `${value} Produk` : value,
+          title: isEn ? 'Low Stock' : 'Stok Menipis',
+          displayValue: typeof value === 'number' ? `${value} ${isEn ? 'Products' : 'Produk'}` : value,
           icon: AlertTriangle,
           iconColor: hasLowStock ? 'text-[#800000]' : 'text-emerald-700',
           iconBg: hasLowStock ? 'bg-rose-50 border border-rose-200' : 'bg-emerald-50 border border-emerald-200',
           valueColor: hasLowStock ? 'text-[#800000] group-hover:text-[#7A0C0C]' : 'text-slate-900',
-          helper: subtitle || (hasLowStock ? 'Segera lakukan restock barang' : 'Semua stok produk aman'),
+          helper: subtitle || (hasLowStock ? (isEn ? 'Restock items soon' : 'Segera lakukan restock barang') : (isEn ? 'All product stock is safe' : 'Semua stok produk aman')),
         };
     }
   };
