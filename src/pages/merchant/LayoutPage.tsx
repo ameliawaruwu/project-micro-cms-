@@ -684,29 +684,28 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             </div>
 
             {/* Floating Compact Action Bar at Bottom */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 sm:gap-4 bg-white/95 backdrop-blur-xl px-4 sm:px-5 py-2.5 rounded-full shadow-2xl border border-gray-200/90 animate-in fade-in slide-in-from-bottom-4 max-w-fit">
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 sm:gap-4 bg-white/95 backdrop-blur-xl px-5 py-2 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.15)] border border-gray-200/80 animate-in fade-in slide-in-from-bottom-4 max-w-fit">
               {/* Template Title & Badge */}
               <div className="flex items-center gap-2 px-1 shrink-0">
-                <span className="font-extrabold text-gray-900 text-xs sm:text-sm">{previewTemplate.name}</span>
-                <span className="text-[11px] text-gray-400 font-medium">Gratis</span>
+                <span className="font-extrabold text-gray-900 text-sm tracking-tight">{previewTemplate.name}</span>
+                <span className="text-xs text-gray-500 font-medium">Gratis</span>
               </div>
 
-              <div className="w-px h-4 bg-gray-200 shrink-0"></div>
+              <div className="w-px h-5 bg-gray-200 shrink-0 mx-1"></div>
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => { setPageMode('library'); setPreviewTemplate(null); }}
-                  className="px-3.5 py-1.5 rounded-full border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition cursor-pointer"
+                  className="px-4 py-1.5 rounded-full border border-gray-300 text-xs font-bold text-gray-800 bg-white hover:bg-gray-50 transition cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   onClick={() => handleApplyAndEdit(previewTemplate)}
-                  className="px-4 sm:px-5 py-2 rounded-full text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition-all shadow-md shadow-red-600/25 hover:shadow-lg active:scale-95 cursor-pointer flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-full text-xs font-extrabold text-white bg-[#E60023] hover:bg-red-700 transition-all shadow-sm active:scale-95 cursor-pointer"
                 >
-                  <span>Coba & Edit Tema</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  Coba tema
                 </button>
               </div>
             </div>
