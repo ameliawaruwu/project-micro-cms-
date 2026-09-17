@@ -29,12 +29,17 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOp
 };
 
 export const FuturisticHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "Next Gen Hardware";
   const subheading = sectionOptions.subheading || "Engineered for the future. Equip your battle station with uncompromising technology.";
   const buttonLabel = sectionOptions.buttonLabel || "Initialize Sequence";
+  const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2000&q=80";
   
   return (
     <section className="relative w-full min-h-[90vh] flex items-center justify-center bg-[#050505] overflow-hidden">
+      <div className="absolute inset-0 z-0 opacity-20 mix-blend-luminosity">
+        <img src={bgImage} alt="Hero" className="w-full h-full object-cover" />
+      </div>
       <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-transparent"></div>
       <div className="absolute w-[60vw] h-[60vw] bg-purple-600/10 rounded-full blur-[120px] -top-1/4 -left-1/4 animate-pulse"></div>
       <div className="absolute w-[40vw] h-[40vw] bg-blue-600/10 rounded-full blur-[100px] bottom-0 right-0 animate-pulse" style={{ animationDelay: '2s' }}></div>

@@ -12,7 +12,7 @@ export const NatureIngredientStory: React.FC<{ sectionOptions?: any }> = ({ sect
           <div className="relative">
             <div className="absolute inset-0 bg-[#E8E4DB] rounded-t-full translate-x-4 translate-y-4"></div>
             <img 
-              src="https://images.unsplash.com/photo-1541535881962-3bb3ec24564c?w=800&q=80" 
+              src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1541535881962-3bb3ec24564c?w=800&q=80"} 
               alt="Ingredients" 
               className="relative w-full aspect-[3/4] object-cover rounded-t-full rounded-b-3xl shadow-lg hover:scale-[1.02] transition-transform duration-700 ease-out" 
             />

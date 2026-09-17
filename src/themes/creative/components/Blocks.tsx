@@ -53,7 +53,7 @@ export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any }> = ({ s
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="h-[400px] bg-white rounded-[40px] transform -rotate-3 hover:rotate-0 transition-transform duration-500 p-2 shadow-2xl relative">
             <div className="absolute -top-6 -right-6 w-16 h-16 bg-yellow-300 rounded-full z-20 animate-bounce"></div>
-            <img src="https://images.unsplash.com/photo-1549490349-8643362247b5?w=800&q=80" className="w-full h-full object-cover rounded-[32px]" alt="Showcase" />
+            <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1549490349-8643362247b5?w=800&q=80"} className="w-full h-full object-cover rounded-[32px]" alt="Showcase" />
           </div>
           <div className="text-left">
             <h3 className="text-3xl font-bold mb-6 text-yellow-300">Pushing Boundaries</h3>

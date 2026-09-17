@@ -19,19 +19,45 @@ import {
 import { Store } from '../../types';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
 
+import {
+  ShoppingCart,
+  CheckCircle2,
+  Key,
+  Package,
+  RefreshCw,
+  User,
+  Store as StoreIcon,
+  ShoppingBag,
+  Box,
+  Info,
+  Phone,
+  Sparkles,
+} from 'lucide-react';
+
 // ── Page Definitions ─────────────────────────────────────────────────
 export interface EditorPage {
   id: string;
   label: string;
-  sectionCount?: number;
+  category: 'Checkout' | 'Pasca-pembelian' | 'Akun pelanggan' | 'Toko online';
+  icon?: any;
 }
 
 export const DEFAULT_EDITOR_PAGES: EditorPage[] = [
-  { id: 'homepage', label: 'Halaman Utama' },
-  { id: 'catalog', label: 'Katalog Produk' },
-  { id: 'product', label: 'Detail Produk' },
-  { id: 'about', label: 'Tentang Toko' },
-  { id: 'contact', label: 'Kontak' },
+  { id: 'homepage', label: 'Home / Beranda', category: 'Toko online', icon: StoreIcon },
+  { id: 'catalog', label: 'Katalog Produk', category: 'Toko online', icon: ShoppingBag },
+  { id: 'product', label: 'Detail Produk', category: 'Toko online', icon: Box },
+  { id: 'about', label: 'Tentang Toko', category: 'Toko online', icon: Info },
+  { id: 'promo', label: 'Promo Spesial', category: 'Toko online', icon: Sparkles },
+  { id: 'contact', label: 'Kontak', category: 'Toko online', icon: Phone },
+  { id: 'cart', label: 'Keranjang Belanja', category: 'Toko online', icon: ShoppingCart },
+  { id: 'checkout', label: 'Checkout', category: 'Checkout', icon: ShoppingCart },
+  { id: 'thank_you', label: 'Terima Kasih / Success', category: 'Pasca-pembelian', icon: CheckCircle2 },
+  { id: 'login', label: 'Masuk (Login)', category: 'Akun pelanggan', icon: Key },
+  { id: 'register', label: 'Daftar (Register)', category: 'Akun pelanggan', icon: User },
+  { id: 'forgot_password', label: 'Lupa Password', category: 'Akun pelanggan', icon: RefreshCw },
+  { id: 'orders', label: 'Riwayat Pesanan', category: 'Akun pelanggan', icon: Package },
+  { id: 'order_detail', label: 'Detail Pesanan', category: 'Akun pelanggan', icon: FileText },
+  { id: 'profile', label: 'Profil Saya', category: 'Akun pelanggan', icon: User },
 ];
 
 interface EditorTopBarProps {
@@ -94,7 +120,13 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const currentPage = pages.find(p => p.id === activePage) || pages[0];
+  const currentPage = pages.find(
+    (p) =>
+      p.id === activePage ||
+      (activePage === 'katalog' && p.id === 'catalog') ||
+      (activePage === 'catalog' && p.id === 'catalog') ||
+      (activePage === 'produk' && p.id === 'catalog')
+  ) || pages[0];
 
   const deviceModes = [
     { mode: 'desktop' as const, icon: Monitor, label: 'Desktop' },
@@ -177,27 +209,49 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           </button>
 
           {isPageDropdownOpen && (
-            <div className="absolute top-full left-0 mt-1.5 w-56 bg-white rounded-xl border border-[#E1E3E5] shadow-xl z-50 py-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
-              <div className="px-3 py-1.5 text-[11px] font-semibold text-[#8C9196] uppercase tracking-wider">
-                Halaman
-              </div>
-              {pages.map((page) => (
-                <button
-                  key={page.id}
-                  onClick={() => {
-                    onPageChange?.(page.id);
-                    setIsPageDropdownOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2 text-[13px] transition cursor-pointer ${
-                    activePage === page.id
-                      ? 'bg-[#F1F8FF] text-[#2C6ECB] font-semibold'
-                      : 'text-[#202223] hover:bg-[#F6F6F7] font-medium'
-                  }`}
-                >
-                  <span>{page.label}</span>
-                  {activePage === page.id && <Check className="w-3.5 h-3.5" />}
-                </button>
-              ))}
+            <div className="absolute top-full left-0 mt-1.5 w-64 bg-white rounded-2xl border border-[#E1E3E5] shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-1 duration-150 max-h-[80vh] overflow-y-auto custom-scrollbar">
+              {(['Toko online', 'Akun pelanggan', 'Checkout', 'Pasca-pembelian'] as const).map((catName) => {
+                const catPages = pages.filter(p => p.category === catName);
+                if (catPages.length === 0) return null;
+
+                return (
+                  <div key={catName} className="mb-2 last:mb-0">
+                    <div className="px-3.5 py-1 text-[11px] font-bold text-[#8C9196] uppercase tracking-wider">
+                      {catName}
+                    </div>
+                    <div className="mt-0.5 space-y-0.5 px-1.5">
+                      {catPages.map((page) => {
+                        const Icon = page.icon || FileText;
+                        const isActive =
+                          activePage === page.id ||
+                          (activePage === 'katalog' && page.id === 'catalog') ||
+                          (activePage === 'catalog' && page.id === 'katalog') ||
+                          (activePage === 'produk' && page.id === 'catalog');
+                        return (
+                          <button
+                            key={page.id}
+                            onClick={() => {
+                              onPageChange?.(page.id);
+                              setIsPageDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] transition cursor-pointer ${
+                              isActive
+                                ? 'bg-[#F1F8FF] text-[#2C6ECB] font-semibold'
+                                : 'text-[#202223] hover:bg-[#F6F6F7] font-medium'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <Icon className={`w-4 h-4 ${isActive ? 'text-[#2C6ECB]' : 'text-[#6D7175]'}`} />
+                              <span>{page.label}</span>
+                            </div>
+                            {isActive && <Check className="w-3.5 h-3.5 text-[#2C6ECB]" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

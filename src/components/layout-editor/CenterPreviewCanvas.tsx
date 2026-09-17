@@ -28,6 +28,8 @@ import {
   Grid,
   Maximize2,
   Minimize2,
+  ShoppingCart,
+  Check,
 } from 'lucide-react';
 import { Store, StoreSectionConfig, Product, StoreSectionOptions, NavMenuItem } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
@@ -35,11 +37,13 @@ import { DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
 import { InlineEditableText } from './InlineEditableText';
 import { InlineEditableImage } from './InlineEditableImage';
 import { InlineEditableButton } from './InlineEditableButton';
-import { ThemeId, ThemeRegistry } from '../../themes/ThemeRegistry';
+import { ThemeId, ThemeRegistry, normalizeThemeId } from '../../themes/ThemeRegistry';
 import { ThemeSectionRenderer } from './ThemeSectionRenderer';
+import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage } from '../../themes/pages';
 
-const hasThemeComponent = (themeId: ThemeId, sectionId: string) => {
-  const theme = ThemeRegistry[themeId];
+const hasThemeComponent = (themeId: any, sectionId: string) => {
+  const normalizedId = normalizeThemeId(themeId);
+  const theme = ThemeRegistry[normalizedId] || ThemeRegistry[themeId as ThemeId];
   if (!theme) return false;
   const specialMap: Record<string, string> = {
     'header': 'Navbar',
@@ -118,40 +122,157 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     return matchCat && matchSearch;
   });
 
-  const handleNavClick = (href: string) => {
-    let targetSectionId: string | null = null;
-    if (href === '#beranda' || href === '/' || href === '/beranda') {
+  const handleNavClick = (href: string, anchorText?: string) => {
+    const cleanHref = (href || '').toLowerCase().trim();
+    const text = (anchorText || '').toLowerCase().trim();
+
+    // 1. Homepage / Beranda
+    if (cleanHref === '/' || cleanHref === '/beranda' || cleanHref === '#beranda' || text === 'beranda' || text === 'home') {
       if (onPageChange) onPageChange('homepage');
-      targetSectionId = 'hero_banner';
-    } else {
-      // Anything else (Katalog, Promo, Kontak), redirect to catalog to show products as fallback
-      if (onPageChange) onPageChange('katalog');
-      targetSectionId = 'product_grid';
+      const el = document.getElementById('preview-hero_banner');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      return;
     }
-  
-    if (targetSectionId) {
-      const targetSection = sections.find(s => s.id === targetSectionId && s.isVisible);
-      if (targetSection) {
-         const sectionIndex = sections.indexOf(targetSection);
-         const sectionKey = targetSection.key || `${targetSection.id}-${sectionIndex}`;
-         const el = document.getElementById(`preview-${sectionKey}`);
-         if (el) {
-           el.scrollIntoView({ behavior: 'smooth' });
-         }
+
+    // 2. Katalog / Shop / Products / Collection / Drops / Gadget / Wearables / Fine Necklaces
+    if (
+      cleanHref.includes('/katalog') || cleanHref.includes('/products') || cleanHref.includes('/catalog') || cleanHref === '#katalog' ||
+      text.includes('shop') || text.includes('katalog') || text.includes('produk') || text.includes('collection') || text.includes('drop') || 
+      text.includes('gadget') || text.includes('jewelry') || text.includes('new arrival') || text.includes('explore') || text.includes('koleksi') || text.includes('etalase')
+    ) {
+      if (onPageChange) onPageChange('katalog');
+      return;
+    }
+
+    // 3. Product Detail
+    if (cleanHref.includes('/product/')) {
+      if (onPageChange) onPageChange('product');
+      return;
+    }
+
+    // 4. About / Philosophy / Brand Story / Story / Archive / Kisah Kami / B2B / Craftsmanship
+    if (
+      cleanHref.includes('/about') || cleanHref.includes('/tentang') || cleanHref.includes('/archive') || cleanHref === '#about' ||
+      text.includes('about') || text.includes('tentang') || text.includes('philosophy') || text.includes('story') || text.includes('archive') || 
+      text.includes('kisah kami') || text.includes('b2b') || text.includes('craftsmanship') || text.includes('behind the scenes') || text.includes('brand')
+    ) {
+      if (onPageChange) onPageChange('about');
+      return;
+    }
+
+    // 5. Contact / Support / Bantuan / Store Locator / Private Fitting
+    if (
+      cleanHref.includes('/contact') || cleanHref.includes('/kontak') || cleanHref === '#kontak' ||
+      text.includes('kontak') || text.includes('contact') || text.includes('support') || text.includes('bantuan') || 
+      text.includes('store locator') || text.includes('fitting')
+    ) {
+      if (onPageChange) onPageChange('contact');
+      return;
+    }
+
+    // 6. Cart / Keranjang
+    if (
+      cleanHref.includes('/cart') || cleanHref.includes('/keranjang') || cleanHref === '#cart' ||
+      text.includes('cart') || text.includes('keranjang')
+    ) {
+      if (onPageChange) onPageChange('cart');
+      return;
+    }
+
+    // 7. Checkout / Bayar
+    if (
+      cleanHref.includes('/checkout') || cleanHref === '#checkout' ||
+      text.includes('checkout') || text.includes('bayar')
+    ) {
+      if (onPageChange) onPageChange('checkout');
+      return;
+    }
+
+    // 8. Orders / Pesanan / Status
+    if (
+      cleanHref.includes('/orders') || cleanHref.includes('/pesanan') || cleanHref === '#orders' ||
+      text.includes('orders') || text.includes('pesanan')
+    ) {
+      if (onPageChange) onPageChange('orders');
+      return;
+    }
+
+    // 9. Profile / Profil / Account / User
+    if (
+      cleanHref.includes('/profile') || cleanHref.includes('/profil') || cleanHref === '#profile' ||
+      text.includes('profile') || text.includes('profil') || text.includes('akun')
+    ) {
+      if (onPageChange) onPageChange('profile');
+      return;
+    }
+
+    // 10. Login / Masuk
+    if (
+      cleanHref.includes('/login') || cleanHref === '#login' ||
+      text.includes('login') || text.includes('masuk')
+    ) {
+      if (onPageChange) onPageChange('login');
+      return;
+    }
+
+    // 11. Journal / Berita / Stories / Lookbook / Resep
+    if (
+      cleanHref.includes('/berita') || cleanHref.includes('/lookbook') || cleanHref.includes('/journal') ||
+      text.includes('journal') || text.includes('berita') || text.includes('lookbook') || text.includes('resep')
+    ) {
+      const lookbookSec = sections.find(s => s.id === 'lookbook' || s.id === 'journal');
+      if (lookbookSec) {
+        if (onPageChange && activePage !== 'homepage') onPageChange('homepage');
+        const idx = sections.indexOf(lookbookSec);
+        const secKey = lookbookSec.key || `${lookbookSec.id}-${idx}`;
+        setTimeout(() => {
+          const el = document.getElementById(`preview-${secKey}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+        return;
+      }
+      if (onPageChange) onPageChange('about');
+      return;
+    }
+
+    // Hash section scroll fallback
+    if (cleanHref.startsWith('#')) {
+      const targetId = cleanHref.replace('#', '');
+      const targetSec = sections.find(s => s.id === targetId || (s.id && s.id.includes(targetId)));
+      if (targetSec) {
+        const idx = sections.indexOf(targetSec);
+        const secKey = targetSec.key || `${targetSec.id}-${idx}`;
+        const el = document.getElementById(`preview-${secKey}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
       }
     }
+
+    // Default fallback: navigate to katalog
+    if (onPageChange) onPageChange('katalog');
   };
 
-  // Intercept anchor clicks to fake routing
+  // Intercept anchor and button clicks to fake routing
   const handleCanvasClick = (e: React.MouseEvent) => {
-    // Find the closest anchor tag
     const target = e.target as HTMLElement;
     const anchor = target.closest('a');
-    
-    if (anchor && anchor.getAttribute('href')) {
+    const button = target.closest('button');
+
+    if (anchor) {
       e.preventDefault();
-      const href = anchor.getAttribute('href')!;
-      handleNavClick(href);
+      const href = anchor.getAttribute('href') || '';
+      const text = anchor.textContent || '';
+      handleNavClick(href, text);
+      return;
+    }
+
+    if (button) {
+      const href = button.getAttribute('data-href') || button.getAttribute('href') || '';
+      const text = button.textContent || '';
+      handleNavClick(href, text);
+      return;
     }
   };
 
@@ -161,86 +282,192 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     }
   };
 
+  const renderPageCustomContent = (pageId: string) => {
+    if (pageId === 'homepage') return null;
+
+    if (pageId === 'catalog' || pageId === 'katalog') {
+      return (
+        <ShopPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'product') {
+      return (
+        <ProductDetailPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'cart') {
+      return (
+        <CartPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'about') {
+      return (
+        <AboutPage 
+          themeId={activeThemeId}
+          store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'checkout' || pageId === 'thank_you') {
+      return (
+        <CheckoutPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'orders' || pageId === 'order_status') {
+      return (
+        <OrdersPage 
+          themeId={activeThemeId}
+          store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'profile') {
+      return (
+        <ProfilePage 
+          themeId={activeThemeId}
+          store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'login') {
+      return (
+        <LoginPage 
+          themeId={activeThemeId}
+          store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'register') {
+      return (
+        <LoginPage 
+          themeId={activeThemeId}
+          store={store}
+          isRegister={true}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'promo') {
+      return (
+        <ShopPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'contact') {
+      return (
+        <ContactPage 
+          themeId={activeThemeId}
+          store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'forgot_password') {
+      return (
+        <LoginPage 
+          themeId={activeThemeId}
+          store={store}
+          mode="forgot_password"
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'order_detail') {
+      return (
+        <OrdersPage 
+          themeId={activeThemeId}
+          store={store}
+          isDetailView={true}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'category') {
+      return (
+        <ShopPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'address') {
+      return (
+        <ProfilePage 
+          themeId={activeThemeId}
+          store={store}
+          tab="address"
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'wishlist') {
+      return (
+        <ShopPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          isWishlist={true}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    return null;
+  };
+
   // If readonly, we skip the device chrome and just render the content container
   if (readonly) {
+    const customContent = renderPageCustomContent(activePage);
+
     return (
       <div className="flex-1 w-full bg-white relative pb-32" onClick={handleCanvasClick}>
-        {activePage === 'katalog' ? (
-           <div className="flex flex-col min-h-full pb-32">
-             <div className="pointer-events-none">
-               {ThemeRegistry[activeThemeId!]?.Navbar && React.createElement(ThemeRegistry[activeThemeId!].Navbar)}
-             </div>
-             
-             <div className="flex-1 py-16 px-6">
-               <div className="max-w-7xl mx-auto">
-                 <h1 className="text-3xl font-bold mb-8 text-center text-gray-900">Katalog Produk</h1>
-                 
-                 {/* Search & Categories */}
-                 <div className="mb-12 space-y-6">
-                   <div className="max-w-md mx-auto relative">
-                     <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                     <input
-                       type="text"
-                       value={searchPreviewQuery}
-                       onChange={(e) => setSearchPreviewQuery(e.target.value)}
-                       placeholder="Cari produk..."
-                       className="w-full pl-12 pr-4 py-3 rounded-full bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black"
-                     />
-                   </div>
-                   
-                   <div className="flex flex-wrap justify-center gap-2">
-                     {categories.map((cat) => (
-                       <button
-                         key={cat}
-                         onClick={() => setActiveCategoryFilter(cat)}
-                         className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                           activeCategoryFilter === cat 
-                             ? 'bg-black text-white' 
-                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                         }`}
-                       >
-                         {cat}
-                       </button>
-                     ))}
-                   </div>
-                 </div>
-
-                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                   {filteredProducts.map(p => {
-                     // Normalize product to handle both Product and CmsProduct structures
-                     const normalizedProduct = {
-                       ...p,
-                       image: p.imageUrl || (p as any).image,
-                       categoryName: p.category || (p as any).categoryName,
-                     };
-                     
-                     const CustomCard = ThemeRegistry[activeThemeId!]?.ProductCard;
-                     
-                     return (
-                       <div key={p.id} className="pointer-events-none">
-                         {CustomCard ? (
-                           <CustomCard product={normalizedProduct} />
-                         ) : (
-                           /* Generic Fallback Product Card */
-                           <div className="group cursor-pointer">
-                             <div className="relative aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden mb-3">
-                               <img src={normalizedProduct.image} alt={normalizedProduct.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                             </div>
-                             <h3 className="font-semibold text-gray-900 truncate">{normalizedProduct.name}</h3>
-                             <p className="text-gray-500 text-sm">Rp {normalizedProduct.price.toLocaleString('id-ID')}</p>
-                           </div>
-                         )}
-                       </div>
-                     );
-                   })}
-                 </div>
-               </div>
-             </div>
-
-             <div className="mt-auto">
-               {ThemeRegistry[activeThemeId!]?.Footer && React.createElement(ThemeRegistry[activeThemeId!].Footer)}
-             </div>
-           </div>
+        {customContent ? (
+          customContent
         ) : visibleSections.length === 0 ? (
           <div className="py-24 text-center text-xs text-[#706866] p-6 space-y-2">
             <p className="font-bold text-[#241A1A]">Toko sedang dalam perbaikan</p>
@@ -255,16 +482,30 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
               paddingBottom: opts.paddingBottom !== undefined ? `${opts.paddingBottom}px` : undefined,
             };
 
+            const isSelected = selectedSectionKey === sectionKey || selectedSectionKey === section.id;
+
             return (
               <div
                 key={sectionKey}
                 id={`preview-${sectionKey}`}
-                className="relative"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectSection(sectionKey);
+                }}
+                className={`relative cursor-pointer transition-all duration-150 ${
+                  isSelected
+                    ? 'ring-2 ring-[#2C6ECB] ring-offset-2 z-10 shadow-sm'
+                    : 'hover:ring-1 hover:ring-[#2C6ECB]/50'
+                }`}
                 style={customPaddingStyle}
               >
                 {activeThemeId && hasThemeComponent(activeThemeId, section.id) ? (
                   <div>
-                    <ThemeSectionRenderer themeId={activeThemeId} section={section} />
+                    <ThemeSectionRenderer 
+                      themeId={activeThemeId} 
+                      section={{ ...section, key: sectionKey }} 
+                      onUpdateSectionOptions={onUpdateSectionOptions}
+                    />
                   </div>
                 ) : (
                   <>
@@ -693,17 +934,15 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                           <InlineEditableText
                             tagName="h3"
                             value={opts.featuredTitle || '⭐ Produk Unggulan & Pilihan Toko'}
-                            onSave={() => {}}
+                            onSave={(val) => onUpdateSectionOptions(section.key || section.id, { featuredTitle: val })}
                             className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
-                            readonly={true}
                           />
                         </div>
                         <InlineEditableText
                           tagName="p"
                           value={opts.featuredSubtitle || 'Produk pilihan terbaik dengan kualitas terjamin'}
-                          onSave={() => {}}
+                          onSave={(val) => onUpdateSectionOptions(section.key || section.id, { featuredSubtitle: val })}
                           className="text-[10px] sm:text-[11px] text-[#706866] mt-0.5 font-normal block"
-                          readonly={true}
                         />
                       </div>
                       <span className="text-[11px] sm:text-xs font-bold text-[#66000E] hover:underline flex items-center gap-0.5 shrink-0">
@@ -814,71 +1053,141 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                         <InlineEditableText
                           tagName="h3"
                           value={opts.heading || 'Katalog Semua Produk'}
-                          onSave={() => {}}
+                          onSave={(val) => onUpdateSectionOptions(section.key || section.id, { heading: val })}
                           className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
-                          readonly={true}
                         />
+                        {opts.subheading && (
+                          <InlineEditableText
+                            tagName="p"
+                            value={opts.subheading}
+                            onSave={(val) => onUpdateSectionOptions(section.key || section.id, { subheading: val })}
+                            className="text-[10px] sm:text-[11px] text-[#706866] mt-0.5"
+                          />
+                        )}
                         <p className="text-[10px] sm:text-[11px] text-[#706866]">
-                          {filteredProducts.length} produk siap dipesan
+                          {(() => {
+                            let displayList = [...products];
+                            if (opts.selectedCategoryId && opts.selectedCategoryId !== 'all') {
+                              displayList = displayList.filter(p => (p.category || p.categoryName) === opts.selectedCategoryId);
+                            }
+                            if (opts.selectedProductIds && opts.selectedProductIds.length > 0) {
+                              displayList = displayList.filter(p => opts.selectedProductIds.includes(p.id));
+                            }
+                            return displayList.length;
+                          })()} produk siap dipesan
                         </p>
                       </div>
                     </div>
 
-                    {filteredProducts.length === 0 ? (
-                      <div className="py-8 text-center text-xs text-[#706866] bg-[#FAF7F7] rounded-2xl border border-[#E5E0DD] p-4">
-                        Tidak ada produk pada kategori ini.
-                      </div>
-                    ) : (
-                      <div
-                        className={`grid ${
-                          isMobile
-                            ? 'grid-cols-2 gap-2.5'
-                            : isTablet
-                            ? 'grid-cols-3 gap-3'
-                            : opts.gridColumns === 2
-                            ? 'grid-cols-2 gap-4'
-                            : opts.gridColumns === 3
-                            ? 'grid-cols-3 gap-4'
-                            : 'grid-cols-4 gap-4'
-                        }`}
-                      >
-                        {filteredProducts.map((p) => (
-                          <div
-                            key={p.id}
-                            className="bg-white rounded-2xl border border-[#E5E0DD] p-2 sm:p-2.5 flex flex-col justify-between shadow-2xs hover:shadow-xs transition"
-                          >
-                            <div className="space-y-1 sm:space-y-1.5">
-                              <div className="relative rounded-xl overflow-hidden aspect-square bg-[#FAF7F7]">
-                                <img
-                                  src={p.imageUrl}
-                                  alt={p.name}
-                                  className="w-full h-full object-cover"
-                                  referrerPolicy="no-referrer"
-                                />
-                                {opts.showStockBadge !== false && (
-                                  <span className="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-white text-[8px] font-semibold px-1.5 py-0.5 rounded">
-                                    Stok {p.stock}
+                    {(() => {
+                      let displayList = [...products];
+                      if (opts.selectedCategoryId && opts.selectedCategoryId !== 'all') {
+                        displayList = displayList.filter(p => (p.category || p.categoryName) === opts.selectedCategoryId);
+                      }
+                      if (opts.selectedProductIds && opts.selectedProductIds.length > 0) {
+                        displayList = displayList.filter(p => opts.selectedProductIds.includes(p.id));
+                      }
+                      if (opts.sortOrder === 'price-asc') {
+                        displayList.sort((a, b) => a.price - b.price);
+                      } else if (opts.sortOrder === 'price-desc') {
+                        displayList.sort((a, b) => b.price - a.price);
+                      } else if (opts.sortOrder === 'name-asc') {
+                        displayList.sort((a, b) => a.name.localeCompare(b.name));
+                      }
+                      const limit = opts.productCount || 8;
+                      displayList = displayList.slice(0, limit);
+
+                      if (displayList.length === 0) {
+                        return (
+                          <div className="py-8 text-center text-xs text-[#706866] bg-[#FAF7F7] rounded-2xl border border-[#E5E0DD] p-4">
+                            Tidak ada produk pada kategori ini.
+                          </div>
+                        );
+                      }
+
+                      const colsClass = 
+                        isMobile ? (opts.mobileColumns === 2 ? 'grid-cols-2 gap-2.5' : 'grid-cols-1 gap-3') :
+                        isTablet ? 'grid-cols-3 gap-3' :
+                        opts.gridColumns === 2 ? 'grid-cols-2 gap-4' :
+                        opts.gridColumns === 3 ? 'grid-cols-3 gap-4' :
+                        opts.gridColumns === 5 ? 'grid-cols-5 gap-3' :
+                        opts.gridColumns === 6 ? 'grid-cols-6 gap-2.5' :
+                        'grid-cols-4 gap-4';
+
+                      const aspectClass =
+                        opts.imageRatio === '4:3' ? 'aspect-[4/3]' :
+                        opts.imageRatio === '16:9' ? 'aspect-[16/9]' :
+                        opts.imageRatio === 'auto' ? 'aspect-auto' :
+                        'aspect-square';
+
+                      const cardStyleClass =
+                        opts.cardStyle === 'border' ? 'bg-white rounded-xl border-2 border-[#241A1A] p-2.5 shadow-none' :
+                        opts.cardStyle === 'shadow' ? 'bg-white rounded-2xl border-0 p-3 shadow-lg' :
+                        opts.cardStyle === 'minimal' ? 'bg-transparent border-0 p-0 shadow-none' :
+                        opts.cardStyle === 'flat' ? 'bg-[#FAF7F7] rounded-xl border border-[#E5E0DD] p-2.5 shadow-none' :
+                        'bg-white rounded-2xl border border-[#E5E0DD] p-2 sm:p-2.5 shadow-2xs hover:shadow-xs';
+
+                      return (
+                        <div className={`grid ${colsClass}`}>
+                          {displayList.map((p) => (
+                            <div key={p.id} className={`${cardStyleClass} flex flex-col justify-between transition`}>
+                              <div className="space-y-1 sm:space-y-1.5">
+                                <div className={`relative rounded-xl overflow-hidden ${aspectClass} bg-[#FAF7F7]`}>
+                                  <img
+                                    src={p.imageUrl || (p as any).image}
+                                    alt={p.name}
+                                    className="w-full h-full object-cover"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  {opts.showBadge !== false && p.isFeatured && (
+                                    <span className="absolute top-1.5 left-1.5 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-xs">
+                                      Unggulan
+                                    </span>
+                                  )}
+                                  {opts.showStockBadge !== false && p.stock !== undefined && (
+                                    <span className="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-white text-[8px] font-semibold px-1.5 py-0.5 rounded">
+                                      Stok {p.stock}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {opts.showCategory !== false && (p.category || (p as any).categoryName) && (
+                                  <span className="text-[9px] font-bold text-[#706866] uppercase tracking-wider block">
+                                    {p.category || (p as any).categoryName}
                                   </span>
                                 )}
+
+                                <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] line-clamp-1">
+                                  {p.name}
+                                </h4>
+
+                                {opts.showRating !== false && (
+                                  <div className="flex items-center gap-0.5 text-amber-400 text-[10px]">
+                                    ★ ★ ★ ★ ★ <span className="text-gray-400 text-[9px] ml-1">(5.0)</span>
+                                  </div>
+                                )}
+
+                                {opts.showPrice !== false && (
+                                  <div className="text-[11px] sm:text-xs font-extrabold text-[#66000E]">
+                                    {formatRupiah(p.price)}
+                                  </div>
+                                )}
                               </div>
-                              <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] line-clamp-1">
-                                {p.name}
-                              </h4>
-                              <div className="text-[11px] sm:text-xs font-extrabold text-[#66000E]">
-                                {formatRupiah(p.price)}
-                              </div>
+
+                              {opts.showAddToCart !== false && (
+                                <button
+                                  type="button"
+                                  className="w-full mt-1.5 sm:mt-2 py-1.5 rounded-xl text-[10px] font-bold bg-[#66000E] text-white hover:bg-[#801010] transition cursor-pointer"
+                                  style={{ backgroundColor: primaryAccent }}
+                                >
+                                  + Beli Sekarang
+                                </button>
+                              )}
                             </div>
-                            <button
-                              type="button"
-                              className="w-full mt-1.5 sm:mt-2 py-1.5 rounded-xl text-[10px] font-bold bg-[#66000E] text-white hover:bg-[#801010] transition cursor-pointer"
-                              style={{ backgroundColor: primaryAccent }}
-                            >
-                              Beli Sekarang
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -1132,44 +1441,14 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
       >
         {/* Device Outer Frame */}
         <div
-          className={`bg-white shadow-xl transition-all overflow-hidden flex flex-col ${
+          className={`bg-white transition-all overflow-hidden flex flex-col ${
             isMobile
               ? 'rounded-[44px] border-[10px] border-slate-900 ring-1 ring-slate-800 shadow-slate-900/30'
               : isTablet
-              ? 'rounded-[32px] border-[10px] border-slate-800 ring-1 ring-slate-700 shadow-slate-900/25'
-              : 'rounded-xl border border-[#D5CEC9] shadow-md'
+              ? 'rounded-[32px] border-[10px] border-slate-800 ring-1 ring-slate-700 shadow-slate-900/25 shadow-xl'
+              : 'rounded-none border-none shadow-none'
           }`}
         >
-          {/* Desktop Browser Chrome Bar */}
-          {isDesktop && (
-            <div className="bg-[#F0ECE9] border-b border-[#E0D8D4] px-4 py-2 flex items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-1.5 shrink-0">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] border border-[#E0443E]"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] border border-[#DEA123]"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-[#27C93F] border border-[#1AAB29]"></div>
-              </div>
-              <div className="flex-1 max-w-sm mx-auto bg-white rounded-lg px-3 py-1 text-[11px] text-[#706866] flex items-center justify-center gap-1.5 border border-[#E5E0DD] shadow-2xs truncate">
-                <Lock className="w-3 h-3 text-emerald-600 shrink-0" />
-                <span className="font-mono text-[#241A1A]">https://{store.slug || 'toko'}.katalogumkm.id</span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>Live Pratinjau</span>
-                </div>
-                {onToggleFullscreen && (
-                  <button
-                    type="button"
-                    onClick={onToggleFullscreen}
-                    className="p-1 rounded-md text-[#706866] hover:text-[#241A1A] hover:bg-white/80 border border-[#E0D8D4] transition cursor-pointer"
-                    title={isFullscreen ? 'Keluar Layar Penuh (Esc)' : 'Mode Layar Penuh (Fullscreen)'}
-                  >
-                    {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Tablet Status Bar */}
           {isTablet && (
@@ -1201,7 +1480,9 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
 
           {/* STOREFRONT PREVIEW SCROLLABLE CONTENT */}
           <div className="bg-white min-h-[620px] max-h-[calc(100vh-130px)] overflow-y-auto custom-scrollbar relative selection:bg-[#F5E8EA]" onClick={handleCanvasClick}>
-            {activePage === 'katalog' ? (
+            {renderPageCustomContent(activePage) ? (
+              renderPageCustomContent(activePage)
+            ) : activePage === 'katalog' ? (
                <div className="flex flex-col min-h-full pb-32">
                  <div>
                    {ThemeRegistry[activeThemeId!]?.Navbar && React.createElement(ThemeRegistry[activeThemeId!].Navbar)}
@@ -1381,7 +1662,11 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
 
                     {activeThemeId && hasThemeComponent(activeThemeId, section.id) ? (
                       <div>
-                        <ThemeSectionRenderer themeId={activeThemeId} section={section} />
+                        <ThemeSectionRenderer 
+                          themeId={activeThemeId} 
+                          section={section} 
+                          onUpdateSectionOptions={onUpdateSectionOptions}
+                        />
                       </div>
                     ) : (
                       <>

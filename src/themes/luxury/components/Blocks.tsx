@@ -73,7 +73,7 @@ export const LuxuryCraftsmanship: React.FC<{ sectionOptions?: any }> = ({ sectio
     <section className={`py-32 md:py-48 px-8 md:px-16 ${bgColor} flex flex-col md:flex-row items-center gap-16 md:gap-24 transition-colors duration-500`}>
       <div className="w-full md:w-1/2 flex justify-center order-2 md:order-1">
         <div className="relative w-full max-w-lg aspect-[4/5] overflow-hidden group">
-          <img src="https://images.unsplash.com/photo-1594938298596-eb5fd3822758?w=800&q=80" alt="Craftsmanship" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[15s] ease-out grayscale-[20%]" />
+          <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1594938298596-eb5fd3822758?w=800&q=80"} alt="Craftsmanship" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[15s] ease-out grayscale-[20%]" />
         </div>
       </div>
       <div className="w-full md:w-1/2 order-1 md:order-2">

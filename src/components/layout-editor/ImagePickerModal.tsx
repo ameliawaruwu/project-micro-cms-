@@ -246,6 +246,19 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
 
               {/* Photos Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                <label className="group relative rounded-xl border-2 border-dashed border-[#66000E]/40 hover:border-[#66000E] bg-[#F5E8EA]/40 hover:bg-[#F5E8EA] aspect-4/3 cursor-pointer flex flex-col items-center justify-center p-2 text-center transition">
+                  <div className="w-8 h-8 rounded-full bg-[#66000E] text-white flex items-center justify-center mb-1 group-hover:scale-110 transition">
+                    <Upload className="w-4 h-4" />
+                  </div>
+                  <span className="text-[11px] font-bold text-[#66000E] leading-tight">Upload Foto Sendiri</span>
+                  <span className="text-[9px] text-[#706866] mt-0.5">Dari HP / Komputer</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
                 {activeGallery?.images.map((img, idx) => {
                   const isCurrent = currentImageUrl === img.url;
                   return (

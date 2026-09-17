@@ -1,15 +1,16 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 
-export const ElegantHero: React.FC = () => {
+export const ElegantHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
+  const bgImage = sectionOptions?.imageUrl || sectionOptions?.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=2000&q=80";
 
   return (
     <section className="relative w-full min-h-screen flex font-['Cormorant_Garamond',serif] bg-[#FAF9F6]">
       {/* Editorial Layout: Image left/center, text offset */}
       <div className="absolute inset-0 md:left-[10%] md:right-[10%] top-0 md:top-12 md:bottom-12 overflow-hidden shadow-2xl">
         <img 
-          src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=2000&q=80" 
+          src={bgImage} 
           alt="Elegant Hero" 
           className="w-full h-full object-cover"
         />

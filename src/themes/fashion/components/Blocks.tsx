@@ -15,7 +15,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOpt
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
           <div className="md:col-span-7">
             <div className="relative group overflow-hidden h-[60vh] md:h-[80vh]">
-              <img src="https://images.unsplash.com/photo-1550614000-4b95d415d183?w=1200&q=80" alt="Lookbook 1" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+              <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1550614000-4b95d415d183?w=1200&q=80"} alt="Lookbook 1" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500"></div>
               <div className="absolute bottom-8 left-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                 <p className="text-xs uppercase tracking-widest mb-2">Look 01</p>
@@ -90,7 +90,7 @@ export const FashionPromoBanner: React.FC<{ sectionOptions?: any }> = ({ section
   return (
     <section className="w-full h-[60vh] relative flex items-center justify-center bg-[#18181B] text-white">
       <div className="absolute inset-0 z-0">
-        <img src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1600&q=80" alt="Sale" className="w-full h-full object-cover opacity-40 grayscale" />
+        <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1600&q=80"} alt="Sale" className="w-full h-full object-cover opacity-40 grayscale" />
       </div>
       <div className="relative z-10 text-center p-8 bg-black/40 backdrop-blur-sm border border-white/20">
         <h2 className="text-5xl md:text-7xl font-serif italic mb-6">{heading}</h2>

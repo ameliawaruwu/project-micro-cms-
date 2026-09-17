@@ -2,152 +2,259 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { ThemeSchema } from '../schema';
 import { Product } from '../../types';
-
 import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
-import { ShoppingCart } from 'lucide-react';
+import { ThemeRegistry } from '../ThemeRegistry';
+import { ShoppingCart, Heart, ShieldCheck, Truck, Star, ArrowRight, Sparkles } from 'lucide-react';
+
+import { useCmsStore } from '../../cms/useCmsStore';
 
 interface ProductDetailPageProps {
-  themeData: ThemeSchema;
+  themeData?: ThemeSchema;
+  themeId?: string;
+  store?: any;
   products?: Product[];
+  productId?: string;
+  onNavigate?: (pageId: string) => void;
 }
 
-export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ themeData, products }) => {
-  const { id } = useParams<{ id: string }>();
-  const { settings, themeId, sections } = themeData;
+export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ 
+  themeData, 
+  themeId: propThemeId, 
+  store, 
+  products = [], 
+  productId: propProductId,
+  onNavigate 
+}) => {
+  const cmsProducts = useCmsStore(state => state.products);
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = propProductId || paramId;
+  const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
+  
+  const settings = themeData?.settings || {
+    backgroundColor: '#FFFFFF',
+    textColor: '#1A1A1A',
+    primaryColor: '#1A1A1A',
+    fontFamily: 'sans-serif'
+  };
 
-  const product = products?.find(p => p.id === id) || {
-    name: 'Sample Premium Product',
-    price: 499000,
-    description: 'This is a beautifully crafted sample product designed to showcase the layout of your new theme. Enjoy the crisp typography, clear spacing, and seamless integration.',
+  const displayProducts = (products && products.length > 0) ? products : (cmsProducts && cmsProducts.length > 0 ? (cmsProducts as any[]) : []);
+
+  const product = displayProducts?.find(p => p.id === id) || displayProducts[0] || {
+    id: 'sample-1',
+    name: 'Produk Unggulan Premium',
+    price: 349000,
+    description: 'Produk dibuat dengan material pilihan berkualitas tinggi. Memiliki daya tahan ekstra dan desain yang sangat stylish untuk menunjang penampilan harian Anda.',
     imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop'
   };
 
+  const sections = themeData?.sections || {};
   const headerSection = Object.values(sections).find(s => s.type === 'Header');
   const footerSection = Object.values(sections).find(s => s.type === 'Footer');
 
-  return (
-    <div className="flex flex-col w-full min-h-screen bg-white">
-      {headerSection && (
-        <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={themeId} />
-      )}
+  const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
+  const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
 
-      {/* --- PRODUCT DETAIL VARIANT RENDERER --- */}
-      
-      {themeId.includes('compact') ? (
-        <div className="pt-24 pb-16 bg-[#F3F4F6] flex-1">
-          <div className="max-w-7xl mx-auto px-4 md:flex gap-8">
-            <div className="w-full md:w-1/2 bg-white p-4 rounded-md shadow-sm border border-gray-200">
-              <img src={product.imageUrl} alt={product.name} className="w-full h-auto object-cover rounded mix-blend-multiply" />
+  const renderProductContent = () => {
+    // 1. BOLD THEME
+    if (activeThemeId === 'bold') {
+      return (
+        <div className="pt-24 pb-24 bg-white text-black border-b-8 border-black">
+          <div className="max-w-7xl mx-auto px-6 md:flex items-center gap-16">
+            <div className="w-full md:w-1/2 border-8 border-black p-4 shadow-[16px_16px_0px_rgba(0,0,0,1)] bg-white">
+              <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-auto object-cover border-4 border-black" />
             </div>
-            <div className="w-full md:w-1/2 mt-6 md:mt-0 bg-white p-6 md:p-8 rounded-md shadow-sm border border-gray-200">
-              <span className="px-3 py-1 bg-yellow-400 text-black text-xs font-black uppercase tracking-widest rounded-sm">Hot Item</span>
-              <h1 className="text-3xl font-black mt-4 uppercase tracking-tight text-gray-900">{product.name}</h1>
-              <p className="text-[#0055FF] text-3xl font-black mt-2">Rp {product.price.toLocaleString('id-ID')}</p>
-              
-              <div className="my-6 border-t border-b py-4">
-                <p className="text-sm text-gray-600 font-medium leading-relaxed">{product.description}</p>
+            <div className="w-full md:w-1/2 mt-12 md:mt-0">
+              <span className="px-4 py-2 bg-[#FF0000] text-white font-black text-sm uppercase tracking-widest border-2 border-black inline-block mb-4 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
+                HOT DROP 🔥
+              </span>
+              <h1 className="text-5xl md:text-7xl font-black text-black uppercase tracking-tighter leading-none mb-6">
+                {product.name}
+              </h1>
+              <p className="text-4xl md:text-5xl font-black text-black uppercase tracking-tighter mb-8 bg-yellow-300 inline-block px-4 py-2 border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)]">
+                Rp {product.price.toLocaleString('id-ID')}
+              </p>
+              <p className="text-lg font-bold uppercase tracking-wide text-gray-800 leading-relaxed mb-8 border-l-8 border-[#FF0000] pl-6">
+                {product.description}
+              </p>
+              <div className="space-y-4">
+                <button className="w-full py-6 bg-black text-white text-2xl font-black uppercase tracking-widest hover:bg-[#FF0000] transition-all border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)]">
+                  BELI SEKARANG 🛒
+                </button>
               </div>
-
-              <button className="w-full py-4 bg-[#0055FF] text-white font-black uppercase tracking-widest rounded shadow-[4px_4px_0px_rgba(0,0,0,0.2)] hover:bg-yellow-400 hover:text-black hover:shadow-none transition-all flex items-center justify-center gap-2">
-                <ShoppingCart className="w-5 h-5" /> Masukkan Keranjang
-              </button>
             </div>
           </div>
         </div>
-      ) : themeId.includes('editorial') ? (
-        <div className="pt-32 pb-32 bg-[#FAF7F7] flex-1">
+      );
+    }
+
+    // 2. EDITORIAL THEME
+    if (activeThemeId === 'editorial') {
+      return (
+        <div className="pt-32 pb-32 bg-[#FAF7F7] text-[#241A1A]">
           <div className="max-w-6xl mx-auto px-6 lg:px-12 flex flex-col md:flex-row gap-16 items-center">
             <div className="w-full md:w-5/12 order-2 md:order-1">
-              <h1 className="text-5xl lg:text-7xl font-normal text-[#241A1A] mb-8 leading-tight" style={{ fontFamily: settings.fontFamily }}>
+              <span className="text-xs uppercase tracking-[0.3em] text-[#706866] block mb-3 font-serif italic">Edition N°01</span>
+              <h1 className="text-4xl lg:text-6xl font-normal font-serif mb-6 leading-tight">
                 {product.name}
               </h1>
-              <p className="text-xl text-[#706866] italic mb-12 tracking-wide" style={{ fontFamily: settings.fontFamily }}>
+              <p className="text-2xl text-[#706866] font-serif italic mb-8">
                 Rp {product.price.toLocaleString('id-ID')}
               </p>
-              <p className="text-base text-[#241A1A] leading-loose mb-12">
+              <p className="text-base text-[#241A1A] leading-loose mb-10 font-serif">
                 {product.description}
               </p>
-              <button className="px-12 py-4 border border-[#241A1A] text-[#241A1A] uppercase tracking-[0.2em] hover:bg-[#241A1A] hover:text-white transition-colors duration-500">
+              <button className="w-full py-4 border border-[#241A1A] text-[#241A1A] font-serif uppercase tracking-[0.2em] hover:bg-[#241A1A] hover:text-white transition-colors duration-500">
                 Add to Cart
               </button>
             </div>
             <div className="w-full md:w-7/12 order-1 md:order-2">
-              <img src={product.imageUrl} alt={product.name} className="w-full h-auto object-cover shadow-2xl" />
-            </div>
-          </div>
-        </div>
-      ) : themeId.includes('bold') ? (
-        <div className="pt-24 pb-24 bg-white flex-1 border-b-8 border-black">
-          <div className="max-w-7xl mx-auto px-6 md:flex items-center gap-16">
-            <div className="w-full md:w-1/2 border-8 border-black p-4 shadow-[16px_16px_0px_rgba(0,0,0,1)]">
-              <img src={product.imageUrl} alt={product.name} className="w-full h-auto object-cover border-4 border-black filter contrast-125 grayscale hover:grayscale-0 transition-all duration-500" />
-            </div>
-            <div className="w-full md:w-1/2 mt-16 md:mt-0">
-              <h1 className="text-6xl md:text-8xl font-black text-black uppercase tracking-tighter leading-none mb-6" style={{ fontFamily: settings.fontFamily }}>
-                {product.name}
-              </h1>
-              <p className="text-4xl md:text-5xl font-black text-black uppercase tracking-tighter mb-8">
-                Rp {product.price.toLocaleString('id-ID')}
-              </p>
-              <p className="text-xl font-bold uppercase tracking-widest text-gray-700 leading-relaxed mb-12 border-l-8 border-[#FF0000] pl-6">
-                {product.description}
-              </p>
-              <button className="w-full py-6 bg-black text-white text-2xl font-black uppercase tracking-widest hover:bg-[#FF0000] hover:scale-105 transition-transform border-4 border-black">
-                ADD TO CART
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : themeId.includes('lifestyle') ? (
-        <div className="pt-24 pb-24 bg-[#FDFBF7] flex-1">
-          <div className="max-w-6xl mx-auto px-6 md:flex items-center gap-16">
-            <div className="w-full md:w-1/2">
-              <div className="aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl bg-white">
-                <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover object-center" />
+              <div className="p-4 bg-white shadow-xl border border-[#241A1A]/10">
+                <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-auto object-cover" />
               </div>
             </div>
-            <div className="w-full md:w-1/2 mt-12 md:mt-0">
-              <p className="text-[#D9A05B] font-medium tracking-widest uppercase text-sm mb-4">New Arrival</p>
-              <h1 className="text-4xl md:text-5xl font-medium text-[#3E3E3E] mb-6 tracking-tight" style={{ fontFamily: settings.fontFamily }}>
-                {product.name}
-              </h1>
-              <p className="text-2xl text-[#3E3E3E]/80 font-light mb-8">Rp {product.price.toLocaleString('id-ID')}</p>
-              <div className="w-16 h-px bg-[#D9A05B] mb-8"></div>
-              <p className="text-gray-500 font-light leading-relaxed mb-10 text-lg">
-                {product.description}
-              </p>
-              <button className="w-full py-4 bg-[#D9A05B] text-white text-sm font-semibold rounded-full hover:bg-[#c28e4e] transition-colors shadow-lg hover:shadow-xl">
-                Add to Bag
-              </button>
-            </div>
           </div>
         </div>
-      ) : (
-        /* MINIMALIST (Default) */
-        <div className="pt-32 pb-24 bg-white flex-1">
-          <div className="max-w-5xl mx-auto px-6 md:flex gap-16">
-            <div className="w-full md:w-1/2">
-              <div className="aspect-[4/5] bg-gray-50 overflow-hidden">
-                <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover object-center" />
-              </div>
-            </div>
-            <div className="w-full md:w-1/2 flex flex-col justify-center mt-10 md:mt-0">
-              <h1 className="text-4xl font-light text-[#1A1A1A] tracking-tight mb-4">{product.name}</h1>
-              <p className="text-xl text-gray-500 font-light mb-8">Rp {product.price.toLocaleString('id-ID')}</p>
-              <div className="w-12 h-px bg-gray-300 mb-8"></div>
-              <p className="text-gray-500 font-light leading-relaxed mb-10">{product.description}</p>
-              
-              <button className="w-full py-4 bg-[#1A1A1A] text-white text-sm font-bold uppercase tracking-[0.2em] hover:bg-gray-800 transition-colors">
-                Add to Cart
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      );
+    }
 
-      {footerSection && (
-        <FooterSection settings={footerSection.settings} themeSettings={settings} themeId={themeId} />
+    // 3. FUTURISTIC / MODERN THEME
+    if (activeThemeId === 'futuristic' || activeThemeId === 'modern') {
+      return (
+        <div className="pt-28 pb-24 bg-[#0B0F19] text-white min-h-screen font-mono relative overflow-hidden">
+          <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="bg-slate-900/60 border border-cyan-500/30 rounded-3xl p-6 backdrop-blur-md relative">
+              <div className="aspect-square rounded-2xl overflow-hidden bg-slate-950">
+                <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-full object-cover" />
+              </div>
+              <span className="absolute top-10 left-10 px-3 py-1 bg-cyan-500/20 text-cyan-300 border border-cyan-400 text-xs rounded-full">
+                [VERIFIED_ITEM]
+              </span>
+            </div>
+            <div className="space-y-6">
+              <span className="text-xs text-cyan-400 uppercase tracking-widest">[ITEM_CODE: #PROD-{product.id || '881'}]</span>
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
+                {product.name}
+              </h1>
+              <p className="text-3xl font-bold text-cyan-300">Rp {product.price.toLocaleString('id-ID')}</p>
+              <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-xl text-slate-300 text-sm leading-relaxed">
+                {product.description}
+              </div>
+              <div className="pt-4 space-y-3">
+                <button className="w-full py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-xl font-bold text-sm uppercase tracking-wider text-white shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:opacity-90">
+                  ACQUIRE ITEM
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // 4. NATURE THEME
+    if (activeThemeId === 'nature') {
+      return (
+        <div className="pt-28 pb-24 bg-[#F4F7F4] text-[#1B3B2B] min-h-screen">
+          <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="bg-white rounded-3xl p-6 shadow-md border border-[#2D5A27]/10">
+              <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-auto object-cover rounded-2xl" />
+            </div>
+            <div className="space-y-6">
+              <span className="px-4 py-1.5 bg-[#2D5A27]/10 text-[#2D5A27] rounded-full text-xs font-bold uppercase tracking-wider inline-block">
+                🌿 Bahan Alami Pilihan
+              </span>
+              <h1 className="text-4xl md:text-5xl font-extrabold text-[#1B3B2B]">{product.name}</h1>
+              <p className="text-3xl font-extrabold text-[#2D5A27]">Rp {product.price.toLocaleString('id-ID')}</p>
+              <p className="text-[#1B3B2B]/80 text-base leading-relaxed">{product.description}</p>
+              <button className="w-full py-4 bg-[#2D5A27] text-white rounded-2xl font-bold text-base hover:bg-[#1B3B2B] transition-colors shadow-lg">
+                Beli Sekarang 🍃
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // 5. LUXURY THEME
+    if (activeThemeId === 'luxury') {
+      return (
+        <div className="pt-32 pb-32 bg-[#0F172A] text-white min-h-screen font-serif">
+          <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+            <div className="border border-[#D4AF37]/40 p-4 rounded bg-[#1E293B]/40">
+              <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-auto object-cover rounded" />
+            </div>
+            <div className="space-y-6">
+              <span className="text-xs uppercase tracking-[0.4em] text-[#D4AF37] font-mono">Masterpiece Collection</span>
+              <h1 className="text-4xl md:text-6xl font-light text-white">{product.name}</h1>
+              <p className="text-3xl font-mono text-[#D4AF37]">Rp {product.price.toLocaleString('id-ID')}</p>
+              <div className="w-20 h-0.5 bg-[#D4AF37]/50"></div>
+              <p className="text-slate-300 text-base leading-relaxed font-sans">{product.description}</p>
+              <button className="w-full py-4 border border-[#D4AF37] text-[#D4AF37] font-sans text-xs uppercase tracking-[0.2em] hover:bg-[#D4AF37] hover:text-black transition-colors">
+                Order Private Reserve
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // 6. CUTE THEME
+    if (activeThemeId === 'cute') {
+      return (
+        <div className="pt-28 pb-24 bg-[#FFF5F8] text-[#4A154B]">
+          <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="bg-white rounded-3xl p-6 shadow-xl shadow-pink-100 border border-pink-100">
+              <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-auto object-cover rounded-2xl" />
+            </div>
+            <div className="space-y-6">
+              <span className="px-4 py-1.5 bg-pink-200 text-pink-700 rounded-full text-xs font-bold uppercase tracking-wider inline-block">
+                💖 Pilihan Favorit
+              </span>
+              <h1 className="text-4xl md:text-5xl font-black text-[#4A154B]">{product.name}</h1>
+              <p className="text-3xl font-black text-pink-500">Rp {product.price.toLocaleString('id-ID')}</p>
+              <p className="text-[#4A154B]/80 text-base leading-relaxed">{product.description}</p>
+              <button className="w-full py-4 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-base shadow-lg shadow-pink-200 hover:scale-102 transition-transform">
+                Masukkan Keranjang Belanja 🛍️
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // 7. DEFAULT / MINIMALIST / CREATIVE / PROFESSIONAL / ELEGANT / FASHION
+    return (
+      <div className="pt-32 pb-24 bg-white text-[#1A1A1A]">
+        <div className="max-w-5xl mx-auto px-6 md:flex gap-16 items-center">
+          <div className="w-full md:w-1/2">
+            <div className="aspect-[4/5] bg-gray-50 overflow-hidden rounded-xl">
+              <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-full object-cover" />
+            </div>
+          </div>
+          <div className="w-full md:w-1/2 flex flex-col justify-center mt-10 md:mt-0 space-y-6">
+            <h1 className="text-4xl font-light text-[#1A1A1A] tracking-tight">{product.name}</h1>
+            <p className="text-2xl text-gray-900 font-bold">Rp {product.price.toLocaleString('id-ID')}</p>
+            <div className="w-12 h-px bg-gray-300"></div>
+            <p className="text-gray-600 text-sm leading-relaxed">{product.description}</p>
+            <button className="w-full py-4 bg-[#1A1A1A] text-white text-sm font-bold uppercase tracking-[0.2em] hover:bg-gray-800 transition-colors rounded-lg">
+              Tambah ke Keranjang
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col w-full min-h-screen">
+      {CustomNavbar ? <CustomNavbar /> : headerSection && (
+        <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
+      )}
+      
+      <div className="flex-1">{renderProductContent()}</div>
+
+      {CustomFooter ? <CustomFooter /> : footerSection && (
+        <FooterSection settings={footerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
     </div>
   );

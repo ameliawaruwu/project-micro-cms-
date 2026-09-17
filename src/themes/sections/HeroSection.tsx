@@ -42,10 +42,11 @@ export const HeroSection: React.FC<Props> = ({ settings, themeSettings, themeId 
 
   // --- 2. EDITORIAL / STORYTELLING THEME ---
   if (themeId && themeId.includes('editorial')) {
+    const bgImage = settings.imageUrl || (settings as any).bannerUrl || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&q=80";
     return (
       <section className="relative w-full h-[90vh] min-h-[600px] flex items-center justify-center overflow-hidden bg-[#1a1515] group">
         <div className="absolute inset-0 z-0">
-          <img src={settings.imageUrl} alt={settings.heading} className="w-full h-full object-cover opacity-80 mix-blend-luminosity scale-100 group-hover:scale-105 transition-transform duration-[10s] ease-out" />
+          <img src={bgImage} alt={settings.heading} className="w-full h-full object-cover opacity-80 mix-blend-luminosity scale-100 group-hover:scale-105 transition-transform duration-[10s] ease-out" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1a1515]/90 via-[#1a1515]/40 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#1a1515]/80 via-transparent to-transparent" />
         </div>
@@ -103,7 +104,7 @@ export const HeroSection: React.FC<Props> = ({ settings, themeSettings, themeId 
         <div className="absolute bottom-0 left-0 w-[30vw] h-[30vw] bg-[#8B9B8B]/5 rounded-full blur-[80px] translate-y-1/4 -translate-x-1/4"></div>
         
         <div className="w-full max-w-6xl aspect-[21/10] md:aspect-[21/9] rounded-[2rem] overflow-hidden relative mb-16 shadow-2xl group">
-          <img src={settings.imageUrl} alt={settings.heading} className="w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-[3s] ease-out" />
+          <img src={settings.imageUrl || (settings as any).bannerUrl} alt={settings.heading} className="w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-[3s] ease-out" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10"></div>
         </div>
         
@@ -148,7 +149,7 @@ export const HeroSection: React.FC<Props> = ({ settings, themeSettings, themeId 
       
       <div className="w-full lg:w-1/2 relative h-[60vh] lg:h-full order-1 lg:order-2 overflow-hidden bg-gray-50">
         <div className="absolute inset-0 bg-[#1A1A1A]/5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-        <img src={settings.imageUrl} alt={settings.heading} className="absolute inset-0 w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-[4s] ease-out" />
+        <img src={settings.imageUrl || (settings as any).bannerUrl} alt={settings.heading} className="absolute inset-0 w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-[4s] ease-out" />
       </div>
     </section>
   );

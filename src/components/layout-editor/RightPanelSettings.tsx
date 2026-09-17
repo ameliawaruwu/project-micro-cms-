@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Sliders,
   Type,
@@ -26,10 +26,12 @@ import {
   ChevronLeft,
   ArrowUp,
   ArrowDown,
+  Upload,
 } from 'lucide-react';
 import { Store, StoreSectionConfig, StoreSectionOptions } from '../../types';
 import { CURATED_BANNER_PRESETS, DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
 import { GlobalThemeSettingsPanel } from './GlobalThemeSettingsPanel';
+import { useCmsStore } from '../../cms/useCmsStore';
 
 interface RightPanelSettingsProps {
   store: Store;
@@ -62,12 +64,15 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   showGlobalSettings,
 }) => {
   const [activeTab, setActiveTab] = useState<'konten' | 'tampilan' | 'lanjutan'>('konten');
+  const cmsProducts = useCmsStore(state => state.products);
+  const updateProduct = useCmsStore(state => state.updateProduct);
   const [showImagePresets, setShowImagePresets] = useState(false);
   const [customImageUrlInput, setCustomImageUrlInput] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [newMenuLabel, setNewMenuLabel] = useState('');
   const [newMenuHref, setNewMenuHref] = useState('');
   const [showAddMenuForm, setShowAddMenuForm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // If no section is selected, show Global Theme Settings
   if (!selectedSection || showGlobalSettings) {
@@ -162,14 +167,37 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
     onUpdateSectionOptions(sectionKey, newOpts);
   };
 
+  const handleLocalFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        if (dataUrl) {
+          handleOptionChange({ imageUrl: dataUrl, bannerUrl: dataUrl });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const hasImage =
     selectedSection.id === 'hero_banner' ||
     selectedSection.id === 'promo_banner' ||
     selectedSection.id === 'image_with_text' ||
-    selectedSection.id === 'gallery';
+    selectedSection.id === 'gallery' ||
+    selectedSection.id === 'brand_philosophy' ||
+    selectedSection.id === 'craftsmanship_story' ||
+    selectedSection.id === 'lookbook' ||
+    selectedSection.id === 'brand_story' ||
+    selectedSection.id === 'ingredient_story' ||
+    selectedSection.id === 'sustainability' ||
+    selectedSection.id === 'latest_drop' ||
+    selectedSection.id === 'floating_showcase';
 
   const currentImageUrl =
     opts.imageUrl ||
+    opts.bannerUrl ||
     (selectedSection.id === 'hero_banner'
       ? store.bannerUrl || 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1600&q=80'
       : '');
@@ -273,30 +301,64 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     />
                     <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
                       <button 
-                        onClick={() => handleOptionChange({ imageUrl: '' })}
-                        className="p-2 bg-white rounded-full text-red-600 hover:scale-105 transition"
+                        onClick={() => handleOptionChange({ imageUrl: '', bannerUrl: '' })}
+                        className="p-2 bg-white rounded-full text-red-600 hover:scale-105 transition cursor-pointer"
+                        title="Hapus Gambar"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="aspect-video rounded-lg border-2 border-dashed border-[#E1E3E5] bg-[#F6F6F7] flex flex-col items-center justify-center gap-2">
-                    <ImageIcon className="w-6 h-6 text-[#8C9196]" />
-                    <span className="text-[11px] text-[#6D7175]">Belum ada gambar</span>
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-video rounded-lg border-2 border-dashed border-[#E1E3E5] bg-[#F6F6F7] hover:bg-[#F1F8FF] hover:border-[#2C6ECB] transition cursor-pointer flex flex-col items-center justify-center gap-2 p-3 text-center"
+                  >
+                    <Upload className="w-6 h-6 text-[#2C6ECB]" />
+                    <span className="text-[11px] font-bold text-[#2C6ECB]">Upload Foto dari Perangkat / Galeri</span>
+                    <span className="text-[10px] text-[#8C9196]">Atau klik tombol Upload di bawah</span>
                   </div>
                 )}
 
-                <div className="flex gap-2 pt-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLocalFileUpload}
+                  className="hidden"
+                />
+
+                <div className="grid grid-cols-3 gap-1.5 pt-1">
                   <button
-                    onClick={() => setShowImagePresets(!showImagePresets)}
-                    className="flex-1 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer"
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="py-1.5 px-2 rounded-lg border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center justify-center gap-1 shrink-0"
+                    title="Upload gambar dari galeri HP atau komputer"
                   >
-                    Pilih dari Galeri
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload</span>
                   </button>
                   <button
-                    onClick={() => setShowUrlInput(!showUrlInput)}
-                    className="flex-1 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer"
+                    type="button"
+                    onClick={() => {
+                      setShowImagePresets(!showImagePresets);
+                      setShowUrlInput(false);
+                    }}
+                    className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${
+                      showImagePresets ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
+                    }`}
+                  >
+                    Pilih Galeri
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUrlInput(!showUrlInput);
+                      setShowImagePresets(false);
+                    }}
+                    className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${
+                      showUrlInput ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
+                    }`}
                   >
                     Input URL
                   </button>
@@ -314,7 +376,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     <button
                       onClick={() => {
                         if (customImageUrlInput.trim()) {
-                          handleOptionChange({ imageUrl: customImageUrlInput.trim() });
+                          handleOptionChange({ imageUrl: customImageUrlInput.trim(), bannerUrl: customImageUrlInput.trim() });
                           setShowUrlInput(false);
                         }
                       }}
@@ -326,19 +388,29 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 )}
 
                 {showImagePresets && (
-                  <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto mt-2">
-                    {CURATED_BANNER_PRESETS.map((preset) => (
-                      <button
-                        key={preset.id}
-                        onClick={() => {
-                          handleOptionChange({ imageUrl: preset.url });
-                          setShowImagePresets(false);
-                        }}
-                        className="group relative rounded-lg overflow-hidden aspect-video border border-[#E1E3E5] hover:border-[#2C6ECB] transition cursor-pointer"
-                      >
-                        <img src={preset.url} alt={preset.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                      </button>
-                    ))}
+                  <div className="space-y-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-2 px-3 rounded-lg border-2 border-dashed border-[#2C6ECB]/40 bg-[#F1F8FF] hover:bg-[#2C6ECB]/10 text-[11px] font-bold text-[#2C6ECB] flex items-center justify-center gap-2 transition cursor-pointer"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>+ Upload Foto Sendiri dari Perangkat</span>
+                    </button>
+                    <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
+                      {CURATED_BANNER_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          onClick={() => {
+                            handleOptionChange({ imageUrl: preset.url, bannerUrl: preset.url });
+                            setShowImagePresets(false);
+                          }}
+                          className="group relative rounded-lg overflow-hidden aspect-video border border-[#E1E3E5] hover:border-[#2C6ECB] transition cursor-pointer"
+                        >
+                          <img src={preset.url} alt={preset.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -441,6 +513,316 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 )}
               </div>
             )}
+
+            {/* ── HEADER / NAVBAR SPECIFIC SETTINGS ── */}
+            {selectedSection.id === 'header' && (
+              <div className="space-y-4 pt-4 border-t border-[#E1E3E5]">
+                <div className="space-y-2">
+                  <label className="text-[12px] font-bold text-[#202223]">Pengaturan Header & Logo</label>
+                  <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
+                    <span className="text-[12px] text-[#202223]">Tampilkan Logo</span>
+                    <input
+                      type="checkbox"
+                      checked={opts.showLogo !== false}
+                      onChange={(e) => handleOptionChange({ showLogo: e.target.checked })}
+                      className="w-4 h-4 rounded text-[#202223]"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
+                    <span className="text-[12px] text-[#202223]">Header Sticky / Melayang</span>
+                    <input
+                      type="checkbox"
+                      checked={opts.stickyHeader !== false}
+                      onChange={(e) => handleOptionChange({ stickyHeader: e.target.checked })}
+                      className="w-4 h-4 rounded text-[#202223]"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
+                    <span className="text-[12px] text-[#202223]">Bar Pencarian Produk</span>
+                    <input
+                      type="checkbox"
+                      checked={opts.showSearchBar !== false}
+                      onChange={(e) => handleOptionChange({ showSearchBar: e.target.checked })}
+                      className="w-4 h-4 rounded text-[#202223]"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
+                    <span className="text-[12px] text-[#202223]">Icon Keranjang Belanja</span>
+                    <input
+                      type="checkbox"
+                      checked={opts.showCartBadge !== false}
+                      onChange={(e) => handleOptionChange({ showCartBadge: e.target.checked })}
+                      className="w-4 h-4 rounded text-[#202223]"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
+                    <span className="text-[12px] text-[#202223]">Tombol Kontak WhatsApp</span>
+                    <input
+                      type="checkbox"
+                      checked={opts.showWhatsAppButton !== false}
+                      onChange={(e) => handleOptionChange({ showWhatsAppButton: e.target.checked })}
+                      className="w-4 h-4 rounded text-[#202223]"
+                    />
+                  </label>
+                </div>
+
+                {/* Navigation Menu Editor */}
+                <div className="space-y-2 pt-3 border-t border-[#E1E3E5]">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[12px] font-bold text-[#202223]">Menu Navigasi</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddMenuForm(!showAddMenuForm)}
+                      className="text-[11px] font-bold text-[#2C6ECB] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Tambah Menu
+                    </button>
+                  </div>
+
+                  {showAddMenuForm && (
+                    <div className="p-2.5 bg-[#F1F8FF] border border-[#BAE0FF] rounded-lg space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Nama Menu (mis: Katalog)"
+                        value={newMenuLabel}
+                        onChange={(e) => setNewMenuLabel(e.target.value)}
+                        className="w-full px-2.5 py-1 text-[12px] bg-white border border-[#E1E3E5] rounded"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Link Tujuan (mis: #katalog atau /produk)"
+                        value={newMenuHref}
+                        onChange={(e) => setNewMenuHref(e.target.value)}
+                        className="w-full px-2.5 py-1 text-[12px] bg-white border border-[#E1E3E5] rounded"
+                      />
+                      <div className="flex justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddMenuForm(false)}
+                          className="px-2.5 py-1 text-[11px] border border-[#E1E3E5] bg-white rounded"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newMenuLabel.trim()) {
+                              const currentItems = opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS;
+                              const updatedItems = [
+                                ...currentItems,
+                                { id: `nav-${Date.now()}`, label: newMenuLabel.trim(), href: newMenuHref.trim() || '#' }
+                              ];
+                              handleOptionChange({ navMenuItems: updatedItems });
+                              setNewMenuLabel('');
+                              setNewMenuHref('');
+                              setShowAddMenuForm(false);
+                            }
+                          }}
+                          className="px-2.5 py-1 text-[11px] font-bold bg-[#202223] text-white rounded"
+                        >
+                          Simpan
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
+                    {(opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS).map((item: any, idx: number) => (
+                      <div key={item.id || idx} className="flex items-center justify-between p-2 rounded border border-[#E1E3E5] bg-white text-[12px]">
+                        <span className="font-semibold text-[#202223] truncate">{item.label}</span>
+                        <span className="text-[10px] text-[#8C9196] truncate max-w-[80px]">{item.href}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentItems = opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS;
+                            const updatedItems = currentItems.filter((_: any, i: number) => i !== idx);
+                            handleOptionChange({ navMenuItems: updatedItems });
+                          }}
+                          className="text-red-500 hover:text-red-700 p-0.5"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── KATALOG PRODUK / FEATURED PRODUCTS SPECIFIC SETTINGS (TAB KONTEN) ── */}
+            {(selectedSection.id === 'featured_products' || selectedSection.id === 'product_grid') && (
+              <div className="space-y-4 pt-4 border-t border-[#E1E3E5]">
+                {/* Filter Kategori */}
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-bold text-[#202223]">Filter Kategori Produk</label>
+                  <select
+                    value={opts.selectedCategoryId || 'all'}
+                    onChange={(e) => handleOptionChange({ selectedCategoryId: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                  >
+                    <option value="all">Semua Kategori Produk</option>
+                    {Array.from(new Set(cmsProducts.map(p => (p as any).category || p.categoryName).filter(Boolean))).map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Jumlah Produk Slider */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[12px] font-bold text-[#202223]">Jumlah Produk Ditampilkan</label>
+                    <span className="text-[11px] font-bold text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded">
+                      {opts.productCount || 4} Produk
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    step="1"
+                    value={opts.productCount || 4}
+                    onChange={(e) => handleOptionChange({ productCount: parseInt(e.target.value) })}
+                    className="w-full h-1.5 bg-[#E1E3E5] rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+
+                {/* Urutan Produk */}
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-bold text-[#202223]">Urutan Produk</label>
+                  <select
+                    value={opts.sortOrder || 'default'}
+                    onChange={(e) => handleOptionChange({ sortOrder: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                  >
+                    <option value="default">Default (Sesuai Urutan Store)</option>
+                    <option value="price-asc">Harga: Termurah ke Termahal</option>
+                    <option value="price-desc">Harga: Termahal ke Termurah</option>
+                    <option value="name-asc">Nama Produk: A - Z</option>
+                    <option value="newest">Produk Terbaru</option>
+                  </select>
+                </div>
+
+                {/* Manual Product Selection (Pick Specific Products) */}
+                <div className="space-y-2 pt-3 border-t border-[#E1E3E5]">
+                  <label className="text-[12px] font-bold text-[#202223]">Pilih Produk Spesifik (Manual)</label>
+                  <p className="text-[10px] text-[#8C9196]">Centang produk yang ingin ditampilkan khusus pada section ini:</p>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar p-2 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg">
+                    {cmsProducts.map(product => {
+                      const selectedIds = opts.selectedProductIds || [];
+                      const isChecked = selectedIds.length === 0 || selectedIds.includes(product.id);
+                      return (
+                        <label key={product.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-white transition cursor-pointer text-[11px] text-[#202223]">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              let newIds = [...(opts.selectedProductIds || cmsProducts.map(p => p.id))];
+                              if (e.target.checked) {
+                                if (!newIds.includes(product.id)) newIds.push(product.id);
+                              } else {
+                                newIds = newIds.filter(id => id !== product.id);
+                              }
+                              handleOptionChange({ selectedProductIds: newIds });
+                            }}
+                            className="w-3.5 h-3.5 rounded text-[#202223]"
+                          />
+                          <span className="truncate flex-1 font-medium">{product.name}</span>
+                          <span className="text-[#8C9196] font-mono shrink-0">Rp {product.price.toLocaleString('id-ID')}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Data Produk Direct Editor */}
+                <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[12px] font-bold text-[#202223]">Data Produk (Edit Teks & Gambar)</label>
+                    <span className="text-[10px] text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded font-semibold">Real-time CMS</span>
+                  </div>
+                  <div className="space-y-3 max-h-[260px] overflow-y-auto custom-scrollbar pr-1">
+                    {cmsProducts.map(product => (
+                      <div key={product.id} className="p-3 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg space-y-2">
+                        <div className="flex gap-2">
+                          <div className="relative group w-12 h-12 shrink-0 cursor-pointer">
+                            <img 
+                              src={product.image || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=300'} 
+                              alt={product.name}
+                              className="w-full h-full object-cover rounded-md border border-[#E1E3E5]"
+                              referrerPolicy="no-referrer"
+                            />
+                            <label 
+                              htmlFor={`product-img-upload-${product.id}`}
+                              className="absolute inset-0 bg-black/50 text-white rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                              title="Ganti Foto dari Perangkat"
+                            >
+                              <Upload className="w-4 h-4" />
+                            </label>
+                          </div>
+                          
+                          <div className="flex-1 space-y-1.5 min-w-0">
+                            <input
+                              type="text"
+                              value={product.name}
+                              onChange={(e) => updateProduct({ ...product, name: e.target.value })}
+                              className="w-full px-2 py-1 text-[12px] font-semibold text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
+                              placeholder="Nama Produk"
+                            />
+                            <input
+                              type="number"
+                              value={product.price}
+                              onChange={(e) => updateProduct({ ...product, price: Number(e.target.value) })}
+                              className="w-full px-2 py-1 text-[12px] text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
+                              placeholder="Harga"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Upload Button + URL Input Combo */}
+                        <div className="flex items-center gap-1.5">
+                          <label
+                            htmlFor={`product-img-upload-${product.id}`}
+                            className="py-1 px-2 rounded border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center gap-1 shrink-0"
+                            title="Upload foto dari galeri HP atau komputer"
+                          >
+                            <Upload className="w-3 h-3" />
+                            <span>Upload Foto</span>
+                          </label>
+                          
+                          <input
+                            type="file"
+                            id={`product-img-upload-${product.id}`}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const dataUrl = event.target?.result as string;
+                                  if (dataUrl) {
+                                    updateProduct({ ...product, image: dataUrl } as any);
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+
+                          <input
+                            type="text"
+                            value={product.image || ''}
+                            onChange={(e) => updateProduct({ ...product, image: e.target.value } as any)}
+                            className="flex-1 min-w-0 px-2 py-1 text-[11px] text-[#6D7175] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
+                            placeholder="Atau Tempel URL Gambar"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -449,97 +831,131 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
         {/* ========================================================================= */}
         {activeTab === 'tampilan' && (
           <div className="space-y-5">
-            {/* Layout & Alignment */}
-            <div className="space-y-2.5">
-              <label className="text-[12px] font-bold text-[#202223]">Perataan Teks</label>
-              <div className="flex bg-[#F6F6F7] p-1 rounded-lg border border-[#E1E3E5]">
-                {[
-                  { id: 'left', icon: AlignLeft, label: 'Kiri' },
-                  { id: 'center', icon: AlignCenter, label: 'Tengah' },
-                  { id: 'right', icon: AlignRight, label: 'Kanan' },
-                ].map(align => (
-                  <button
-                    key={align.id}
-                    onClick={() => handleOptionChange({ textAlignment: align.id as any })}
-                    className={`flex-1 py-1.5 flex items-center justify-center rounded-md transition ${
-                      (opts.textAlignment || 'left') === align.id
-                        ? 'bg-white shadow-sm font-semibold'
-                        : 'text-[#6D7175] hover:text-[#202223]'
-                    }`}
-                  >
-                    <align.icon className="w-4 h-4" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Scheme/Background Color */}
-            <div className="space-y-2.5">
-              <label className="text-[12px] font-bold text-[#202223]">Skema Warna</label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'scheme-1', label: 'Latar Putih', bg: 'bg-white border-[#E1E3E5]', text: 'text-black' },
-                  { id: 'scheme-2', label: 'Latar Terang', bg: 'bg-[#F6F6F7] border-[#E1E3E5]', text: 'text-black' },
-                  { id: 'scheme-3', label: 'Latar Gelap', bg: 'bg-[#1A1A1A] border-[#1A1A1A]', text: 'text-white' },
-                  { id: 'scheme-4', label: 'Warna Aksen', bg: 'bg-[#2C6ECB] border-[#2C6ECB]', text: 'text-white' },
-                ].map(scheme => (
-                  <button
-                    key={scheme.id}
-                    onClick={() => handleOptionChange({ colorScheme: scheme.id as any })}
-                    className={`p-2 rounded-lg border-2 flex flex-col items-start gap-1 transition ${
-                      (opts.colorScheme || 'scheme-1') === scheme.id
-                        ? 'border-[#202223] shadow-sm'
-                        : 'border-transparent hover:border-[#E1E3E5]'
-                    } ${scheme.bg} shadow-xs border`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className={`w-3 h-3 rounded-full ${scheme.text === 'text-white' ? 'bg-white' : 'bg-black'} opacity-20`}></span>
-                      {(opts.colorScheme || 'scheme-1') === scheme.id && <Check className={`w-3 h-3 ${scheme.text}`} />}
-                    </div>
-                    <span className={`text-[10px] font-semibold ${scheme.text}`}>{scheme.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Overlay Opacity for Images */}
-            {hasImage && (
-              <div className="space-y-2.5 pt-4 border-t border-[#E1E3E5]">
-                <div className="flex justify-between items-center">
-                  <label className="text-[12px] font-bold text-[#202223]">Opasitas Overlay Gambar</label>
-                  <span className="text-[11px] font-semibold text-[#6D7175]">{opts.overlayOpacity || 50}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="10"
-                  value={opts.overlayOpacity || 50}
-                  onChange={(e) => handleOptionChange({ overlayOpacity: parseInt(e.target.value) })}
-                  className="w-full h-1 bg-[#E1E3E5] rounded-lg appearance-none cursor-pointer"
-                />
-                <p className="text-[10px] text-[#8C9196]">Meningkatkan opasitas akan menggelapkan gambar agar teks lebih terbaca.</p>
-              </div>
-            )}
-            
-            {/* Products Layout */}
+            {/* KATALOG PRODUK SPECIFIC DISPLAY OPTIONS */}
             {(selectedSection.id === 'featured_products' || selectedSection.id === 'product_grid') && (
-              <div className="space-y-2.5 pt-4 border-t border-[#E1E3E5]">
-                <label className="text-[12px] font-bold text-[#202223]">Jumlah Kolom (Desktop)</label>
-                <div className="flex gap-2">
-                  {[2, 3, 4].map(cols => (
-                    <button
-                      key={cols}
-                      onClick={() => handleOptionChange({ gridColumns: cols as any })}
-                      className={`flex-1 py-1.5 rounded-lg border text-[12px] font-semibold transition ${
-                        (opts.gridColumns || 3) === cols
-                          ? 'border-[#202223] bg-[#202223] text-white'
-                          : 'border-[#E1E3E5] bg-white text-[#6D7175] hover:bg-[#F6F6F7]'
-                      }`}
-                    >
-                      {cols} Kolom
-                    </button>
-                  ))}
+              <div className="space-y-4 pb-4 border-b border-[#E1E3E5]">
+                {/* Desktop Columns */}
+                <div className="space-y-2">
+                  <label className="text-[12px] font-bold text-[#202223]">Jumlah Kolom (Desktop)</label>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {[2, 3, 4, 5, 6].map(cols => (
+                      <button
+                        key={cols}
+                        type="button"
+                        onClick={() => handleOptionChange({ gridColumns: cols })}
+                        className={`py-1.5 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
+                          (opts.gridColumns || 4) === cols
+                            ? 'border-[#202223] bg-[#202223] text-white shadow-xs'
+                            : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
+                        }`}
+                      >
+                        {cols}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mobile Columns */}
+                <div className="space-y-2">
+                  <label className="text-[12px] font-bold text-[#202223]">Jumlah Kolom (Mobile)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[1, 2].map(mCols => (
+                      <button
+                        key={mCols}
+                        type="button"
+                        onClick={() => handleOptionChange({ mobileColumns: mCols })}
+                        className={`py-1.5 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
+                          (opts.mobileColumns || 1) === mCols
+                            ? 'border-[#202223] bg-[#202223] text-white'
+                            : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
+                        }`}
+                      >
+                        {mCols} Kolom
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Card Layout / Style */}
+                <div className="space-y-2">
+                  <label className="text-[12px] font-bold text-[#202223]">Gaya Card Produk</label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { id: 'standard', label: 'Standar' },
+                      { id: 'border', label: 'Garis Tepi' },
+                      { id: 'shadow', label: 'Bayangan' },
+                      { id: 'minimal', label: 'Minimalis' },
+                      { id: 'flat', label: 'Flat' },
+                    ].map(style => (
+                      <button
+                        key={style.id}
+                        type="button"
+                        onClick={() => handleOptionChange({ cardStyle: style.id })}
+                        className={`py-1.5 px-2 rounded-lg border text-[10px] font-bold truncate transition cursor-pointer ${
+                          (opts.cardStyle || 'standard') === style.id
+                            ? 'border-[#202223] bg-[#202223] text-white'
+                            : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
+                        }`}
+                      >
+                        {style.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Image Ratio */}
+                <div className="space-y-2">
+                  <label className="text-[12px] font-bold text-[#202223]">Rasio Foto Produk</label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { id: '1:1', label: '1:1 (Persegi)' },
+                      { id: '4:3', label: '4:3' },
+                      { id: '16:9', label: '16:9' },
+                      { id: 'auto', label: 'Auto' },
+                    ].map(ratio => (
+                      <button
+                        key={ratio.id}
+                        type="button"
+                        onClick={() => handleOptionChange({ imageRatio: ratio.id })}
+                        className={`py-1.5 px-1 rounded-lg border text-[10px] font-bold truncate text-center transition cursor-pointer ${
+                          (opts.imageRatio || '1:1') === ratio.id
+                            ? 'border-[#202223] bg-[#202223] text-white'
+                            : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
+                        }`}
+                      >
+                        {ratio.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* DISPLAY TOGGLES (PRIORITAS USER) */}
+                <div className="space-y-2 pt-3 border-t border-[#E1E3E5]">
+                  <label className="text-[12px] font-bold text-[#202223]">Elemen Tampilan Card</label>
+                  <div className="space-y-1.5 bg-[#F6F6F7] p-2.5 rounded-lg border border-[#E1E3E5]">
+                    {[
+                      { key: 'showPrice', label: 'Tampilkan Harga Produk' },
+                      { key: 'showCategory', label: 'Tampilkan Kategori' },
+                      { key: 'showRating', label: 'Tampilkan Rating Bintang' },
+                      { key: 'showAddToCart', label: 'Tampilkan Tombol "Beli / Add to Cart"' },
+                      { key: 'showQuickView', label: 'Tampilkan Tombol Quick View' },
+                      { key: 'showWishlist', label: 'Tampilkan Icon Wishlist' },
+                      { key: 'showBadge', label: 'Tampilkan Badge Promo' },
+                      { key: 'showStockBadge', label: 'Tampilkan Status Stok' },
+                      { key: 'showCategoryTabs', label: 'Tampilkan Tab Kategori' },
+                      { key: 'showSearchBar', label: 'Tampilkan Bar Pencarian' },
+                    ].map(toggle => (
+                      <label key={toggle.key} className="flex items-center justify-between cursor-pointer p-1 rounded hover:bg-white transition text-[11px] text-[#202223]">
+                        <span className="font-semibold">{toggle.label}</span>
+                        <input
+                          type="checkbox"
+                          checked={opts[toggle.key] !== false}
+                          onChange={(e) => handleOptionChange({ [toggle.key]: e.target.checked })}
+                          className="w-4 h-4 rounded text-[#202223] focus:ring-[#202223]"
+                        />
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

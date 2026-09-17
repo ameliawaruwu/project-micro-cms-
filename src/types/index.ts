@@ -206,24 +206,48 @@ export interface StoreSectionOptions {
   announcementLink?: string;
   showIcon?: boolean;
 
-  // Products
+  // Products & Catalog Options
   featuredTitle?: string;
   featuredSubtitle?: string;
   productCount?: number;
-  gridColumns?: 2 | 3 | 4;
+  gridColumns?: number; // 2, 3, 4, 5, 6
+  tabletColumns?: number; // 1, 2, 3
+  mobileColumns?: number; // 1, 2
+  layoutType?: 'grid' | 'horizontal' | 'featured' | string;
+  imageRatio?: '1:1' | '4:3' | '16:9' | 'auto' | string;
+  cardStyle?: 'standard' | 'border' | 'shadow' | 'minimal' | 'flat' | string;
+  selectedCategoryId?: string;
+  selectedProductIds?: string[];
+  sortOrder?: 'default' | 'price-asc' | 'price-desc' | 'name-asc' | 'newest' | string;
+  
+  // Product Card Display Toggles
+  showPrice?: boolean;
+  showCategory?: boolean;
+  showRating?: boolean;
+  showAddToCart?: boolean;
+  showQuickView?: boolean;
+  showWishlist?: boolean;
   showStockBadge?: boolean;
+  showBadge?: boolean;
   showCategoryTabs?: boolean;
   showSearchBar?: boolean;
+
+  // Category Section
+  categoryCount?: number;
+  categoryColumns?: number;
+  categoryLayout?: 'tiles' | 'cards' | 'circles' | string;
+  selectedCategoryIds?: string[];
 
   // Promo Banner
   discountBadge?: string;
   highlightText?: string;
 
-  // Testimonials
+  // Testimonials & Reviews
   testimonialsTitle?: string;
   testimonialsList?: TestimonialItem[];
+  testimonialLayout?: 'grid' | 'carousel' | string;
 
-  // Newsletter
+  // Newsletter & CTA
   newsletterTitle?: string;
   newsletterSubtitle?: string;
   newsletterPlaceholder?: string;
@@ -232,7 +256,8 @@ export interface StoreSectionOptions {
 
   // Header / Navbar
   stickyHeader?: boolean;
-  headerStyle?: 'standard' | 'brand' | 'minimal' | 'transparent';
+  headerStyle?: 'standard' | 'brand' | 'minimal' | 'transparent' | string;
+  headerLayout?: 'standard' | 'centered' | 'minimal' | string;
   showLogo?: boolean;
   showTagline?: boolean;
   showNavMenu?: boolean;
@@ -240,10 +265,12 @@ export interface StoreSectionOptions {
   navMenuItems?: NavMenuItem[];
   showCartBadge?: boolean;
   showWhatsAppButton?: boolean;
+  showProfileIcon?: boolean;
 
   // Footer
   copyrightText?: string;
   showSocialLinks?: boolean;
+  footerColumns?: number;
 
   // Custom Theme Properties
   [key: string]: any;
@@ -263,7 +290,8 @@ export interface StoreSectionConfig {
 export interface StoreLayoutSettings {
   sections: StoreSectionConfig[];
   primaryAccent?: string;
-  themeStyle?: 'minimal' | 'modern' | 'compact';
+  themeStyle?: 'minimal' | 'modern' | 'compact' | string;
+  activeThemeId?: string;
   globalThemeSettings?: GlobalThemeSettings;
   pages?: ThemePage[];
   activePage?: string;

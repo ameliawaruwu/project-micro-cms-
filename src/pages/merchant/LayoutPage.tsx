@@ -21,7 +21,7 @@ import { AddSectionModal } from '../../components/layout-editor/AddSectionModal'
 import { StoreLayoutSetupWizard } from '../../components/layout-editor/StoreLayoutSetupWizard';
 import { ThemeLibraryView, TemplateGalleryItem, TEMPLATE_GALLERY_ITEMS } from '../../components/layout-editor/ThemeLibraryView';
 import { PublishStoreModal } from '../../components/layout-editor/PublishStoreModal';
-import { ArrowLeft, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 
 interface LayoutPageProps {
@@ -51,6 +51,160 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 }) => {
   const [currentStore, setCurrentStore] = useState<Store>(store);
   const cmsProducts = useCmsStore(state => state.products);
+
+  const initialSections = useMemo(
+    () => getStoreSections(store.layoutSettings),
+    [store.layoutSettings]
+  );
+
+  const [sections, setSections] = useState<StoreSectionConfig[]>(initialSections);
+  const [selectedSectionKey, setSelectedSectionKey] = useState<string | null>(
+    initialSections.length > 0 ? (initialSections[0].key || `${initialSections[0].id}-0`) : null
+  );
+  const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [activePreset, setActivePreset] = useState<string>('standard');
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addModalCategoryFilter, setAddModalCategoryFilter] = useState<string | undefined>(undefined);
+  const [primaryAccent, setPrimaryAccent] = useState<string>(
+    store.layoutSettings?.primaryAccent || '#66000E'
+  );
+  const [isSaving, setIsSaving] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [activeLeftPane, setActiveLeftPane] = useState<'sections' | 'settings'>('sections');
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  
+  // Theme Library vs Editor Mode
+  const [pageMode, setPageMode] = useState<'library' | 'preview' | 'loading' | 'editor'>('library');
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateGalleryItem | null>(null);
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingTemplateName, setLoadingTemplateName] = useState('');
+  const [activePage, setActivePage] = useState('homepage');
+
+  const [activeThemeId, setActiveThemeId] = useState<any>(
+    (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist'
+  );
+  const [showGlobalSettings, setShowGlobalSettings] = useState(false);
+  const [globalSettings, setGlobalSettings] = useState<any>(
+    store.layoutSettings?.globalThemeSettings || {
+      colors: { primary: '#2C6ECB', secondary: '#1E40AF', background: '#FFFFFF', surface: '#F6F6F7', text: '#202223', mutedText: '#6D7175', border: '#E1E3E5' },
+      typography: { headingFont: 'Inter', bodyFont: 'Inter', headingSize: 'md', bodySize: 'md' },
+      buttons: { radius: 'md', style: 'solid' },
+      cards: { radius: 'lg', shadow: 'sm', border: true },
+      layout: { contentWidth: 'normal', sectionSpacing: 'normal' }
+    }
+  );
+
+  const displayProducts = (pageMode === 'preview' || !products || products.length === 0) 
+    ? cmsProducts 
+    : products;
+
+  // Multi-page sections map state
+  const [pageSectionsMap, setPageSectionsMap] = useState<Record<string, StoreSectionConfig[]>>(() => {
+    const defaultMap: Record<string, StoreSectionConfig[]> = {
+      homepage: initialSections,
+      catalog: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'search_category-0', id: 'search_category', title: 'Bilah Pencarian & Kategori', isVisible: true },
+        {
+          key: 'product_grid-0',
+          id: 'product_grid',
+          title: 'Katalog Produk Lengkap',
+          isVisible: true,
+          options: {
+            heading: 'Katalog Produk Lengkap',
+            subheading: 'Temukan produk pilihan Anda dengan kualitas terbaik',
+            gridColumns: 4,
+            productCount: 12,
+            showPrice: true,
+            showCategory: true,
+            showRating: true,
+            showAddToCart: true,
+            showStockBadge: true,
+            showCategoryTabs: true,
+            showSearchBar: true,
+          }
+        },
+        { key: 'store_benefits-0', id: 'store_benefits', title: 'Keunggulan Toko', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      product: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'featured_products-0', id: 'featured_products', title: 'Produk Terkait & Rekomendasi', isVisible: true, options: { featuredTitle: 'Produk Terkait & Rekomendasi', productCount: 4 } },
+        { key: 'store_benefits-0', id: 'store_benefits', title: 'Keunggulan Toko', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      about: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'brand_story-0', id: 'brand_story', title: 'Kisah & Filosofi Toko', isVisible: true, options: { heading: 'Tentang Toko Kami', description: store.description || store.tagline || 'Produsen & Pengrajin lokal tepercaya dengan standar mutu tertinggi.' } },
+        { key: 'store_benefits-0', id: 'store_benefits', title: 'Keunggulan Layanan', isVisible: true },
+        { key: 'testimonials-0', id: 'testimonials', title: 'Ulasan Pelanggan', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      promo: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'promo_banner-0', id: 'promo_banner', title: 'Banner Promo Spesial', isVisible: true, options: { heading: 'Promo Spesial Hari Ini', description: 'Nikmati potongan harga eksklusif untuk produk UMKM pilihan', discountBadge: 'DISKON HINGGA 50%' } },
+        { key: 'featured_products-0', id: 'featured_products', title: 'Produk Diskon Spesial', isVisible: true, options: { featuredTitle: 'Produk Diskon Terlaris', productCount: 8 } },
+        { key: 'newsletter-0', id: 'newsletter', title: 'Newsletter Voucher', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      contact: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'store_info-0', id: 'store_info', title: 'Info & Kontak Toko', isVisible: true, options: { heading: 'Hubungi Kami', description: `Alamat: ${store.address || store.city || 'Indonesia'}. WhatsApp: ${store.phoneWhatsApp || ''}` } },
+        { key: 'store_benefits-0', id: 'store_benefits', title: 'Layanan Pelanggan', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      login: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      register: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      forgot_password: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      cart: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      checkout: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      thank_you: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      orders: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      order_detail: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ],
+      profile: [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ]
+    };
+
+    if (store.layoutSettings?.pages && Array.isArray(store.layoutSettings.pages)) {
+      store.layoutSettings.pages.forEach((p) => {
+        if (p.slug && p.sections && p.sections.length > 0) {
+          defaultMap[p.slug] = p.sections.map((s, idx) => ({ ...s, key: s.key || `${s.id}-${idx}` }));
+        }
+      });
+    }
+
+    return defaultMap;
+  });
+
   useEffect(() => {
     setCurrentStore(store);
   }, [store]);
@@ -88,51 +242,115 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   }, [currentStore.slug]);
 
-  const initialSections = useMemo(
-    () => getStoreSections(store.layoutSettings),
-    [store.layoutSettings]
-  );
+  const handlePageChange = (newPageId: string) => {
+    if (newPageId === activePage) return;
+    setPageSectionsMap((prevMap) => {
+      const updatedMap = { ...prevMap, [activePage]: sections };
+      const aliasKey = newPageId === 'catalog' ? 'catalog' : newPageId === 'katalog' ? 'catalog' : newPageId;
+      const targetSections = updatedMap[aliasKey] || updatedMap[newPageId] || [
+        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { key: 'product_grid-0', id: 'product_grid', title: 'Katalog Produk', isVisible: true, options: { gridColumns: 4, productCount: 8, showPrice: true, showAddToCart: true } },
+        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+      ];
+      setSections(targetSections);
+      setSelectedSectionKey(targetSections.length > 0 ? (targetSections[0].key || `${targetSections[0].id}-0`) : null);
+      return updatedMap;
+    });
+    setActivePage(newPageId);
+  };
 
-  const [sections, setSections] = useState<StoreSectionConfig[]>(initialSections);
-  const [selectedSectionKey, setSelectedSectionKey] = useState<string | null>(
-    initialSections.length > 0 ? (initialSections[0].key || `${initialSections[0].id}-0`) : null
-  );
-  const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [activePreset, setActivePreset] = useState<string>('standard');
-  const [hasChanges, setHasChanges] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [addModalCategoryFilter, setAddModalCategoryFilter] = useState<string | undefined>(undefined);
-  const [primaryAccent, setPrimaryAccent] = useState<string>(
-    store.layoutSettings?.primaryAccent || '#66000E'
-  );
-  const [isSaving, setIsSaving] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [activeLeftPane, setActiveLeftPane] = useState<'sections' | 'settings'>('sections');
-  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
-  
-  // Theme Library vs Editor Mode
-  const [pageMode, setPageMode] = useState<'library' | 'preview' | 'loading' | 'editor'>('library');
-  const [previewTemplate, setPreviewTemplate] = useState<TemplateGalleryItem | null>(null);
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [loadingTemplateName, setLoadingTemplateName] = useState('');
-  const [activePage, setActivePage] = useState('homepage');
-  const [activeThemeId, setActiveThemeId] = useState<any>('minimalist');
-  const [showGlobalSettings, setShowGlobalSettings] = useState(false);
-  const [globalSettings, setGlobalSettings] = useState<any>(
-    store.layoutSettings?.globalThemeSettings || {
-      colors: { primary: '#2C6ECB', secondary: '#1E40AF', background: '#FFFFFF', surface: '#F6F6F7', text: '#202223', mutedText: '#6D7175', border: '#E1E3E5' },
-      typography: { headingFont: 'Inter', bodyFont: 'Inter', headingSize: 'md', bodySize: 'md' },
-      buttons: { radius: 'md', style: 'solid' },
-      cards: { radius: 'lg', shadow: 'sm', border: true },
-      layout: { contentWidth: 'normal', sectionSpacing: 'normal' }
+  // Auto-sync current editor draft state to sessionStorage & localStorage for preview tab
+  useEffect(() => {
+    const updatedMap = { ...pageSectionsMap, [activePage]: sections };
+    const pagesConfig = Object.entries(updatedMap).map(([slug, secs]) => ({
+      id: slug,
+      title: slug === 'homepage' ? 'Halaman Utama' : slug.charAt(0).toUpperCase() + slug.slice(1),
+      slug,
+      sections: secs,
+    }));
+
+    const cmsProducts = useCmsStore.getState().products;
+
+    const draftStore = {
+      ...currentStore,
+      layoutSettings: {
+        ...currentStore.layoutSettings,
+        sections: updatedMap['homepage'] || sections,
+        primaryAccent,
+        globalThemeSettings: globalSettings,
+        activeThemeId,
+        themeStyle: activeThemeId,
+        pages: pagesConfig,
+        activePage,
+      },
+      products: cmsProducts,
+    };
+
+    try {
+      sessionStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
+      localStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
+      if (cmsProducts && cmsProducts.length > 0) {
+        sessionStorage.setItem('microcms_cms_products', JSON.stringify(cmsProducts));
+        localStorage.setItem('microcms_cms_products', JSON.stringify(cmsProducts));
+      }
+      window.dispatchEvent(new Event('cms_draft_updated'));
+    } catch (e) {
+      console.error('Failed to sync preview draft:', e);
     }
-  );
+  }, [sections, pageSectionsMap, activePage, primaryAccent, globalSettings, activeThemeId, currentStore]);
 
-  const displayProducts = (pageMode === 'preview' || !products || products.length === 0) 
-    ? cmsProducts 
-    : products;
+  const handleOpenPreviewTab = () => {
+    const updatedMap = { ...pageSectionsMap, [activePage]: sections };
+    const pagesConfig = Object.entries(updatedMap).map(([slug, secs]) => ({
+      id: slug,
+      title: slug === 'homepage' ? 'Halaman Utama' : slug.charAt(0).toUpperCase() + slug.slice(1),
+      slug,
+      sections: secs,
+    }));
+
+    const cmsProducts = useCmsStore.getState().products;
+
+    const draftStore = {
+      ...currentStore,
+      layoutSettings: {
+        ...currentStore.layoutSettings,
+        sections: updatedMap['homepage'] || sections,
+        primaryAccent,
+        globalThemeSettings: globalSettings,
+        activeThemeId,
+        themeStyle: activeThemeId,
+        pages: pagesConfig,
+        activePage,
+      },
+      products: cmsProducts,
+    };
+
+    sessionStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
+    localStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
+    if (cmsProducts && cmsProducts.length > 0) {
+      sessionStorage.setItem('microcms_cms_products', JSON.stringify(cmsProducts));
+      localStorage.setItem('microcms_cms_products', JSON.stringify(cmsProducts));
+    }
+    window.dispatchEvent(new Event('cms_draft_updated'));
+    window.open(`/${currentStore.slug}?preview=true`, '_blank');
+  };
+
+  const [savedThemes, setSavedThemes] = useState<TemplateGalleryItem[]>([
+    TEMPLATE_GALLERY_ITEMS[0],
+  ]);
+
+  const handleAddSavedTheme = (template: TemplateGalleryItem) => {
+    const isExist = savedThemes.some((t) => t.id === template.id);
+    if (!isExist) {
+      setSavedThemes((prev) => [template, ...prev]);
+      onShowNotification(`Tema "${template.name}" berhasil ditambahkan ke Pustaka Tema (Draf).`);
+    }
+  };
+
+  // Handle clicking a template card → redirect to new tab like Canva
+  const handlePreviewTemplate = (template: TemplateGalleryItem) => {
+    window.open(`/?previewTheme=${template.storeTemplate.id}&toko=${currentStore.slug}`, '_blank');
+  };
 
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
@@ -141,28 +359,14 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   };
 
-  const handleOpenPreviewTab = () => {
-    const draftStore = {
-      ...currentStore,
-      layoutSettings: {
-        ...currentStore.layoutSettings,
-        sections,
-        primaryAccent,
-        globalThemeSettings: globalSettings,
-        activeThemeId
-      }
-    };
-    sessionStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
-    window.open(`/${currentStore.slug}?preview=true`, '_blank');
-  };
-
-  // Handle clicking a template card → redirect to new tab like Canva
-  const handlePreviewTemplate = (template: TemplateGalleryItem) => {
-    window.open(`/?previewTheme=${template.storeTemplate.id}&toko=${currentStore.slug}`, '_blank');
+  const handleUpdateStore = (updates: Partial<Store>) => {
+    setCurrentStore((prev) => ({ ...prev, ...updates }));
+    setHasChanges(true);
   };
 
   // Handle "Coba tema" → show loading then go to editor
   const handleApplyAndEdit = (template: TemplateGalleryItem) => {
+    handleAddSavedTheme(template);
     setLoadingTemplateName(template.name);
     setLoadingProgress(0);
     setPageMode('loading');
@@ -241,11 +445,6 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen]);
 
-  const handleUpdateStore = (updates: Partial<Store>) => {
-    setCurrentStore((prev) => ({ ...prev, ...updates }));
-    setHasChanges(true);
-  };
-
   const handleWizardComplete = (data: {
     storeUpdates: Partial<Store>;
     layoutSettings: StoreLayoutSettings;
@@ -313,7 +512,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     if (!selectedSectionKey) return null;
     return (
       sections.find(
-        (s, idx) => (s.key || `${s.id}-${idx}`) === selectedSectionKey
+        (s, idx) =>
+          s.key === selectedSectionKey ||
+          s.id === selectedSectionKey ||
+          (s.key || `${s.id}-${idx}`) === selectedSectionKey
       ) || null
     );
   }, [sections, selectedSectionKey]);
@@ -503,17 +705,33 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   // Save layout
   const handleSave = () => {
     setIsSaving(true);
+    const updatedMap = {
+      ...pageSectionsMap,
+      [activePage]: sections,
+    };
+
+    const pagesConfig = Object.entries(updatedMap).map(([slug, secs]) => ({
+      id: slug,
+      title: slug === 'homepage' ? 'Halaman Utama' : slug.charAt(0).toUpperCase() + slug.slice(1),
+      slug,
+      sections: secs,
+    }));
+
     const layoutSettings: StoreLayoutSettings = {
-      sections,
-      themeStyle: store.layoutSettings?.themeStyle || 'minimal',
+      sections: updatedMap['homepage'] || sections,
+      themeStyle: activeThemeId,
       primaryAccent,
+      activeThemeId,
+      globalThemeSettings: globalSettings,
+      pages: pagesConfig,
+      activePage,
     };
 
     onSaveLayout(layoutSettings);
     setHasChanges(false);
     setTimeout(() => {
       setIsSaving(false);
-      onShowNotification('Tata letak etalase toko berhasil disimpan!');
+      onShowNotification('Tata letak & konfigurasi seluruh halaman toko berhasil disimpan!');
     }, 200);
   };
 
@@ -589,6 +807,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             onApplyTemplate={(template: TemplateGalleryItem) => {
               handleApplyAndEdit(template);
             }}
+            savedThemes={savedThemes}
+            onAddSavedTheme={handleAddSavedTheme}
           />
         </div>
       )}
@@ -597,7 +817,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       {pageMode === 'preview' && previewTemplate && (
         <div className="fixed inset-0 z-[60] bg-white flex flex-col font-sans animate-in fade-in duration-200">
           {/* Shopify Theme Store Top Bar */}
-          <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0">
+          {/* Preview Modal Header Bar */}
+          <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0 z-50">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => { setPageMode('library'); setPreviewTemplate(null); }}
@@ -607,7 +828,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="w-px h-6 bg-gray-200"></div>
-              <h2 className="text-base font-bold text-gray-900">{previewTemplate.name}</h2>
+              <div>
+                <h2 className="text-base font-bold text-gray-900 leading-none">{previewTemplate.name}</h2>
+                <span className="text-xs text-gray-500 font-medium">Gratis • Multi-Page</span>
+              </div>
             </div>
 
             {/* Device Switcher */}
@@ -630,12 +854,15 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 </button>
               ))}
             </div>
+
+            {/* Empty right placeholder for balance */}
+            <div className="w-16"></div>
           </div>
 
           {/* Preview Canvas */}
-          <div className="flex-1 overflow-y-auto bg-gray-100 flex justify-center py-4 sm:py-8 px-4">
+          <div className="flex-1 overflow-y-auto bg-gray-100 flex justify-center py-4 sm:py-8 px-4 relative">
             <div
-              className={`transition-all duration-300 ${
+              className={`transition-all duration-300 pb-20 ${
                 previewDevice === 'desktop'
                   ? 'w-full max-w-6xl'
                   : 'max-w-[390px] w-full'
@@ -648,8 +875,6 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     : 'rounded-t-xl border border-gray-300'
                 }`}
               >
-                {/* Faux Browser Chrome dihapus berdasarkan permintaan user agar tampilan terlihat biasa saja */}
-
                 {/* Mobile Status Bar */}
                 {previewDevice === 'mobile' && (
                   <div className="bg-gray-900 pt-2.5 pb-1.5 px-6 flex items-center justify-between text-white text-[10px]">
@@ -677,6 +902,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     sections={previewTemplate.storeTemplate.sections.map((s, idx) => ({
                       ...s,
                       key: s.key || `${s.id}-${idx}`,
+                      isVisible: s.isVisible !== false,
                     }))}
                     selectedSectionKey={null}
                     onSelectSection={() => {}}
@@ -684,7 +910,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     onDeviceModeChange={() => {}}
                     primaryAccent={previewTemplate.primaryAccent}
                     readonly={true}
-                    activeThemeId={activeThemeId}
+                    activeThemeId={previewTemplate.storeTemplate.id as any}
                   />
                 </div>
 
@@ -696,27 +922,32 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 )}
               </div>
             </div>
-          </div>
 
-          {/* Shopify-Style Floating Bottom Bar */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white rounded-full shadow-2xl border border-gray-200 px-3 py-2.5 flex items-center gap-4 sm:gap-6 text-sm">
-            <div className="hidden sm:flex items-center gap-4 border-r border-gray-200 pl-3 pr-6">
-              <h3 className="font-bold text-gray-900 text-base whitespace-nowrap">{previewTemplate.name}</h3>
-              <span className="text-sm font-semibold text-gray-600">Gratis</span>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3 pr-1 pl-1 sm:pl-0">
-              <button
-                onClick={() => {}}
-                className="px-5 py-2.5 font-semibold text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors cursor-default whitespace-nowrap"
-              >
-                Lihat demo
-              </button>
-              <button
-                onClick={() => handleApplyAndEdit(previewTemplate)}
-                className="px-6 py-2.5 font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors cursor-pointer whitespace-nowrap"
-              >
-                Coba tema
-              </button>
+            {/* Floating Compact Action Bar at Bottom */}
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 sm:gap-4 bg-white/95 backdrop-blur-xl px-5 py-2 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.15)] border border-gray-200/80 animate-in fade-in slide-in-from-bottom-4 max-w-fit">
+              {/* Template Title & Badge */}
+              <div className="flex items-center gap-2 px-1 shrink-0">
+                <span className="font-extrabold text-gray-900 text-sm tracking-tight">{previewTemplate.name}</span>
+                <span className="text-xs text-gray-500 font-medium">Gratis</span>
+              </div>
+
+              <div className="w-px h-5 bg-gray-200 shrink-0 mx-1"></div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => { setPageMode('library'); setPreviewTemplate(null); }}
+                  className="px-4 py-1.5 rounded-full border border-gray-300 text-xs font-bold text-gray-800 bg-white hover:bg-gray-50 transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => handleApplyAndEdit(previewTemplate)}
+                  className="px-5 py-2 rounded-full text-xs font-extrabold text-white bg-[#E60023] hover:bg-red-700 transition-all shadow-sm active:scale-95 cursor-pointer"
+                >
+                  Coba tema
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -808,7 +1039,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             isFullscreen={isFullscreen}
             onToggleFullscreen={toggleFullscreen}
             activePage={activePage}
-            onPageChange={setActivePage}
+            onPageChange={handlePageChange}
             onPublish={handlePublish}
           />
 
@@ -857,7 +1088,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 onToggleFullscreen={toggleFullscreen}
                 activeThemeId={activeThemeId}
                 activePage={activePage}
-                onPageChange={setActivePage}
+                onPageChange={handlePageChange}
               />
             </div>
 
@@ -865,7 +1096,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             <div className={`lg:block ${(selectedSectionKey || showGlobalSettings) && !isFullscreen ? 'block absolute lg:relative right-0 inset-y-0 shadow-2xl lg:shadow-none' : 'hidden'} h-full shrink-0 z-20 w-[320px] bg-white border-l border-[#E1E3E5]`}>
               <RightPanelSettings
                 store={currentStore}
-                selectedSection={selectedSectionKey ? sections.find((s) => s.key === selectedSectionKey) || null : null}
+                selectedSection={selectedSection}
                 onUpdateSectionOptions={handleUpdateSectionOptions}
                 onUpdateSectionTitle={handleRenameSection}
                 onToggleVisibility={handleToggleVisibility}

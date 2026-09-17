@@ -39,12 +39,15 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     AsymmetricShowcase: EditorialAsymmetricShowcase,
     BrandStory: EditorialBrandStory,
     Journal: EditorialJournal,
+    FeaturedProducts: CuteFeaturedProducts,
+    ProductGrid: CuteFeaturedProducts,
   },
   futuristic: {
     Navbar: FuturisticNavbar,
     Hero: FuturisticHero,
     Footer: FuturisticFooter,
     FeaturedProducts: FuturisticFeaturedProducts,
+    ProductGrid: FuturisticFeaturedProducts,
     TechFeatures: FuturisticTechFeatures,
     ProductComparison: FuturisticProductComparison,
     FloatingShowcase: FuturisticFloatingShowcase,
@@ -56,6 +59,8 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     Footer: NatureFooter,
     IngredientStory: NatureIngredientStory,
     Sustainability: NatureSustainability,
+    FeaturedProducts: CuteFeaturedProducts,
+    ProductGrid: CuteFeaturedProducts,
   },
   luxury: {
     Navbar: LuxuryNavbar,
@@ -64,6 +69,8 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     SignatureCollection: LuxurySignatureCollection,
     CraftsmanshipStory: LuxuryCraftsmanship,
     PrivateCollection: LuxuryPrivateCollection,
+    FeaturedProducts: CuteFeaturedProducts,
+    ProductGrid: CuteFeaturedProducts,
   },
   bold: {
     Navbar: BoldNavbar,
@@ -74,16 +81,17 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     Lookbook: BoldLookbook,
     LimitedRelease: BoldLimitedRelease,
     CommunityBoard: BoldCommunityBoard,
+    FeaturedProducts: FuturisticFeaturedProducts,
+    ProductGrid: FuturisticFeaturedProducts,
   },
-  
-  // Maps for the existing ones
-  cute: { Navbar: CuteNavbar, Hero: CuteHero, Footer: CuteFooter, FeaturedProducts: CuteFeaturedProducts },
-  elegant: { Navbar: ElegantNavbar, Hero: ElegantHero, Footer: ElegantFooter, FeaturedProducts: ElegantFeaturedProducts },
+  cute: { Navbar: CuteNavbar, Hero: CuteHero, Footer: CuteFooter, FeaturedProducts: CuteFeaturedProducts, ProductGrid: CuteFeaturedProducts },
+  elegant: { Navbar: ElegantNavbar, Hero: ElegantHero, Footer: ElegantFooter, FeaturedProducts: ElegantFeaturedProducts, ProductGrid: ElegantFeaturedProducts },
   modern: { 
     Navbar: FuturisticNavbar, 
     Hero: FuturisticHero, 
     Footer: FuturisticFooter,
     FeaturedProducts: FuturisticFeaturedProducts,
+    ProductGrid: FuturisticFeaturedProducts,
     PromoBanner: FuturisticInnovationCta
   },
   creative: { 
@@ -91,7 +99,9 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     Hero: CreativeHero, 
     Footer: CreativeFooter,
     Lookbook: CreativeLookbook,
-    FloatingShowcase: CreativeFloatingShowcase
+    FloatingShowcase: CreativeFloatingShowcase,
+    FeaturedProducts: CuteFeaturedProducts,
+    ProductGrid: CuteFeaturedProducts,
   },
   professional: { 
     Navbar: ProfessionalNavbar, 
@@ -99,6 +109,7 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     Footer: ProfessionalFooter,
     StoreBenefits: ProfessionalStoreBenefits,
     ProductGrid: ProfessionalProductGrid,
+    FeaturedProducts: ProfessionalProductGrid,
     Testimonials: ProfessionalTestimonials
   },
   fashion: { 
@@ -107,6 +118,43 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     Footer: FashionFooter,
     Lookbook: FashionLookbook,
     FeaturedProducts: FashionFeaturedProducts,
+    ProductGrid: FashionFeaturedProducts,
     PromoBanner: FashionPromoBanner
   },
 };
+
+export const normalizeThemeId = (id?: string): ThemeId => {
+  if (!id) return 'minimalist';
+  const cleanId = id.toLowerCase().trim();
+
+  if (cleanId === 'bold' || cleanId === 'bold_market' || cleanId.includes('bold')) return 'bold';
+  if (cleanId === 'minimalist' || cleanId === 'minimalist_clean' || cleanId === 'minimal_store' || cleanId.includes('minimal')) return 'minimalist';
+  if (cleanId === 'modern' || cleanId === 'gadget_tech' || cleanId === 'nova_commerce' || cleanId.includes('modern')) return 'modern';
+  if (cleanId === 'futuristic' || cleanId === 'futuristic_dark' || cleanId === 'future_shop' || cleanId.includes('futur')) return 'futuristic';
+  if (cleanId === 'luxury' || cleanId === 'editorial_luxury' || cleanId === 'maison' || cleanId.includes('luxury')) return 'luxury';
+  if (cleanId === 'editorial' || cleanId === 'editorial_commerce' || cleanId.includes('editorial')) return 'editorial';
+  if (cleanId === 'nature' || cleanId === 'nature_organic' || cleanId === 'green_market' || cleanId.includes('nature')) return 'nature';
+  if (cleanId === 'creative' || cleanId === 'creative_studio' || cleanId.includes('creative')) return 'creative';
+  if (cleanId === 'professional' || cleanId === 'pro_corporate' || cleanId === 'pro_commerce' || cleanId.includes('pro')) return 'professional';
+  if (cleanId === 'cute' || cleanId === 'cute_store' || cleanId.includes('cute')) return 'cute';
+  if (cleanId === 'fashion' || cleanId === 'fashion_store' || cleanId.includes('fashion')) return 'fashion';
+  if (cleanId === 'elegant' || cleanId === 'elegant_store' || cleanId.includes('elegant')) return 'elegant';
+
+  return 'minimalist';
+};
+
+// Register preset ID aliases on ThemeRegistry
+(ThemeRegistry as any)['bold_market'] = ThemeRegistry['bold'];
+(ThemeRegistry as any)['minimalist_clean'] = ThemeRegistry['minimalist'];
+(ThemeRegistry as any)['gadget_tech'] = ThemeRegistry['modern'];
+(ThemeRegistry as any)['futuristic_dark'] = ThemeRegistry['futuristic'];
+(ThemeRegistry as any)['editorial_luxury'] = ThemeRegistry['luxury'];
+(ThemeRegistry as any)['editorial_commerce'] = ThemeRegistry['editorial'];
+(ThemeRegistry as any)['nature_organic'] = ThemeRegistry['nature'];
+(ThemeRegistry as any)['creative_studio'] = ThemeRegistry['creative'];
+(ThemeRegistry as any)['pro_corporate'] = ThemeRegistry['professional'];
+(ThemeRegistry as any)['chic_fashion'] = ThemeRegistry['fashion'];
+(ThemeRegistry as any)['cute_store'] = ThemeRegistry['cute'];
+(ThemeRegistry as any)['fashion_store'] = ThemeRegistry['fashion'];
+(ThemeRegistry as any)['elegant_store'] = ThemeRegistry['elegant'];
+

@@ -1,14 +1,16 @@
 import React from 'react';
 import { StoreSectionConfig } from '../../types';
-import { ThemeRegistry, ThemeId } from '../../themes/ThemeRegistry';
+import { ThemeRegistry, ThemeId, normalizeThemeId } from '../../themes/ThemeRegistry';
 
 interface ThemeSectionRendererProps {
-  themeId: ThemeId;
+  themeId: ThemeId | string;
   section: StoreSectionConfig;
+  onUpdateSectionOptions?: (key: string, newOptions: Partial<any>) => void;
 }
 
-export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ themeId, section }) => {
-  const themeComponents = ThemeRegistry[themeId];
+export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ themeId, section, onUpdateSectionOptions }) => {
+  const normalizedId = normalizeThemeId(themeId);
+  const themeComponents = ThemeRegistry[normalizedId] || ThemeRegistry[themeId as ThemeId];
 
   if (!themeComponents) {
     return <div className="p-4 bg-red-100 text-red-600">Theme not found: {themeId}</div>;
@@ -34,7 +36,8 @@ export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ them
   const Component = themeComponents[componentName] as React.FC<any>;
 
   if (Component) {
-    return <Component sectionOptions={section.options} />;
+    const secKey = section.key || `${section.id}-0`;
+    return <Component sectionOptions={section.options} onUpdateSectionOptions={onUpdateSectionOptions} sectionKey={secKey} />;
   }
 
   // Final fallback to original generic rendering if no custom component exists
