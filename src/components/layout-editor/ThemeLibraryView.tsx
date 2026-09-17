@@ -22,6 +22,7 @@ import {
   Palette,
   Layers,
   Settings2,
+  Trash2,
 } from 'lucide-react';
 
 // ─── Template Category Definitions ───────────────────────────────────
@@ -196,6 +197,7 @@ interface ThemeLibraryViewProps {
   onPreviewTemplate?: (template: TemplateGalleryItem) => void;
   savedThemes?: TemplateGalleryItem[];
   onAddSavedTheme?: (template: TemplateGalleryItem) => void;
+  onRemoveSavedTheme?: (themeId: string) => void;
 }
 
 // ─── Component ───────────────────────────────────────────────────────
@@ -210,10 +212,12 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   onPreviewTemplate,
   savedThemes = [],
   onAddSavedTheme,
+  onRemoveSavedTheme,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [showAllDrafts, setShowAllDrafts] = useState(false);
+  const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null);
 
   const currentTemplateId = store.layoutSettings?.activeTemplateId;
 
@@ -323,12 +327,44 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto relative">
                           <button
+                            type="button"
+                            onClick={() => setActionMenuOpenId(actionMenuOpenId === savedTmpl.id ? null : savedTmpl.id)}
                             className="px-4 py-2 rounded-lg text-[13px] font-semibold text-[#202223] bg-white border border-[#C9CCCF] hover:bg-[#F6F6F7] hover:border-[#8C9196] transition cursor-pointer shadow-xs"
                           >
                             Tindakan
                           </button>
+                          {actionMenuOpenId === savedTmpl.id && (
+                            <div className="absolute right-0 top-full mt-1.5 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
+                              {onPreviewTemplate && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActionMenuOpenId(null);
+                                    onPreviewTemplate(savedTmpl);
+                                  }}
+                                  className="w-full text-left px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-gray-500" />
+                                  <span>Pratinjau draf</span>
+                                </button>
+                              )}
+                              {onRemoveSavedTheme && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActionMenuOpenId(null);
+                                    onRemoveSavedTheme(savedTmpl.id);
+                                  }}
+                                  className="w-full text-left px-3.5 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                  <span>Hapus dari draf</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
                           <button
                             onClick={() => onApplyTemplate?.(savedTmpl)}
                             className="px-4 py-2 rounded-lg text-[13px] font-semibold bg-[#202223] hover:bg-black text-white transition cursor-pointer shadow-xs"

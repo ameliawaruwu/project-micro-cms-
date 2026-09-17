@@ -335,16 +335,55 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     window.open(`/${currentStore.slug}?preview=true`, '_blank');
   };
 
-  const [savedThemes, setSavedThemes] = useState<TemplateGalleryItem[]>([
-    TEMPLATE_GALLERY_ITEMS[0],
-  ]);
+  const [savedThemes, setSavedThemes] = useState<TemplateGalleryItem[]>(() => {
+    try {
+      const stored = localStorage.getItem(`microcms_saved_themes_${store.id}`);
+      if (stored) {
+        const parsedIds: string[] = JSON.parse(stored);
+        if (Array.isArray(parsedIds) && parsedIds.length > 0) {
+          const found = TEMPLATE_GALLERY_ITEMS.filter((t) => parsedIds.includes(t.id));
+          if (found.length > 0) return found;
+        }
+      }
+      // If store specifically has an activeTemplateId already saved, include it
+      if (store.layoutSettings?.activeTemplateId) {
+        const activeTmpl = TEMPLATE_GALLERY_ITEMS.find(
+          (t) => t.id === store.layoutSettings?.activeTemplateId || t.storeTemplate.id === store.layoutSettings?.activeTemplateId
+        );
+        if (activeTmpl) return [activeTmpl];
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
 
   const handleAddSavedTheme = (template: TemplateGalleryItem) => {
-    const isExist = savedThemes.some((t) => t.id === template.id);
-    if (!isExist) {
-      setSavedThemes((prev) => [template, ...prev]);
-      onShowNotification(`Tema "${template.name}" berhasil ditambahkan ke Pustaka Tema (Draf).`);
-    }
+    setSavedThemes((prev) => {
+      const isExist = prev.some((t) => t.id === template.id);
+      if (isExist) return prev;
+      const next = [template, ...prev];
+      try {
+        localStorage.setItem(`microcms_saved_themes_${currentStore.id}`, JSON.stringify(next.map((t) => t.id)));
+      } catch (e) {
+        // ignore
+      }
+      return next;
+    });
+    onShowNotification(`Tema "${template.name}" berhasil ditambahkan ke Pustaka Tema (Draf).`);
+  };
+
+  const handleRemoveSavedTheme = (templateId: string) => {
+    setSavedThemes((prev) => {
+      const next = prev.filter((t) => t.id !== templateId);
+      try {
+        localStorage.setItem(`microcms_saved_themes_${currentStore.id}`, JSON.stringify(next.map((t) => t.id)));
+      } catch (e) {
+        // ignore
+      }
+      return next;
+    });
+    onShowNotification('Tema berhasil dihapus dari Pustaka Tema.');
   };
 
   // Handle clicking a template card → redirect to new tab like Canva
@@ -809,6 +848,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             }}
             savedThemes={savedThemes}
             onAddSavedTheme={handleAddSavedTheme}
+            onRemoveSavedTheme={handleRemoveSavedTheme}
           />
         </div>
       )}
