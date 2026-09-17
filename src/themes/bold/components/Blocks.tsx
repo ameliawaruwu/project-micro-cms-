@@ -3,8 +3,12 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 
 export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { products } = useCmsStore();
-  const product = products[0];
-  if (!product) return null;
+  const product = products[0] || {
+    name: 'HEAVYWEIGHT OVERSIZED HOODIE',
+    price: 499000,
+    image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&q=80',
+    description: '500GSM Ultra-heavyweight French Terry Cotton. Custom acid wash finish. Oversized drop-shoulder boxy fit.'
+  };
   const heading = sectionOptions.heading || "LATEST DROP";
 
   return (

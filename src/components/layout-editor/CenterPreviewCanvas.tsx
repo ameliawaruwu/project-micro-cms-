@@ -37,12 +37,13 @@ import { DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
 import { InlineEditableText } from './InlineEditableText';
 import { InlineEditableImage } from './InlineEditableImage';
 import { InlineEditableButton } from './InlineEditableButton';
-import { ThemeId, ThemeRegistry } from '../../themes/ThemeRegistry';
+import { ThemeId, ThemeRegistry, normalizeThemeId } from '../../themes/ThemeRegistry';
 import { ThemeSectionRenderer } from './ThemeSectionRenderer';
 import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage } from '../../themes/pages';
 
-const hasThemeComponent = (themeId: ThemeId, sectionId: string) => {
-  const theme = ThemeRegistry[themeId];
+const hasThemeComponent = (themeId: any, sectionId: string) => {
+  const normalizedId = normalizeThemeId(themeId);
+  const theme = ThemeRegistry[normalizedId] || ThemeRegistry[themeId as ThemeId];
   if (!theme) return false;
   const specialMap: Record<string, string> = {
     'header': 'Navbar',

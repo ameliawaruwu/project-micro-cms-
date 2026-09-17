@@ -632,6 +632,71 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Preview Canvas */}
+          <div className="flex-1 overflow-y-auto bg-gray-100 flex justify-center py-4 sm:py-8 px-4">
+            <div
+              className={`transition-all duration-300 ${
+                previewDevice === 'desktop'
+                  ? 'w-full max-w-6xl'
+                  : 'max-w-[390px] w-full'
+              }`}
+            >
+              <div
+                className={`bg-white overflow-hidden shadow-2xl ${
+                  previewDevice === 'mobile'
+                    ? 'rounded-[40px] border-[6px] border-gray-800'
+                    : 'rounded-t-xl border border-gray-300'
+                }`}
+              >
+                {/* Mobile Status Bar */}
+                {previewDevice === 'mobile' && (
+                  <div className="bg-gray-900 pt-2.5 pb-1.5 px-6 flex items-center justify-between text-white text-[10px]">
+                    <span className="font-semibold">09:41</span>
+                    <div className="w-16 h-4 bg-black rounded-full"></div>
+                    <span>5G 100%</span>
+                  </div>
+                )}
+
+                {/* Template Preview Content */}
+                <div 
+                  className="w-full h-full relative" 
+                  style={{ 
+                    minHeight: previewDevice === 'mobile' ? '500px' : '600px',
+                    fontFamily: previewTemplate.fontFamily 
+                  }}
+                >
+                  <CenterPreviewCanvas
+                    store={{
+                      ...currentStore,
+                      bannerUrl: previewTemplate.storeTemplate.bannerUrl,
+                      tagline: previewTemplate.storeTemplate.tagline,
+                    }}
+                    products={displayProducts}
+                    sections={previewTemplate.storeTemplate.sections.map((s, idx) => ({
+                      ...s,
+                      key: s.key || `${s.id}-${idx}`,
+                      isVisible: s.isVisible !== false,
+                    }))}
+                    selectedSectionKey={null}
+                    onSelectSection={() => {}}
+                    deviceMode={previewDevice}
+                    onDeviceModeChange={() => {}}
+                    primaryAccent={previewTemplate.primaryAccent}
+                    readonly={true}
+                    activeThemeId={previewTemplate.storeTemplate.id as any}
+                  />
+                </div>
+
+                {/* Mobile bottom bar */}
+                {previewDevice === 'mobile' && (
+                  <div className="bg-gray-900 py-2 flex items-center justify-center">
+                    <div className="w-28 h-1 bg-white/40 rounded-full"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

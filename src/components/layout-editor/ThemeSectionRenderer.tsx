@@ -1,14 +1,15 @@
 import React from 'react';
 import { StoreSectionConfig } from '../../types';
-import { ThemeRegistry, ThemeId } from '../../themes/ThemeRegistry';
+import { ThemeRegistry, ThemeId, normalizeThemeId } from '../../themes/ThemeRegistry';
 
 interface ThemeSectionRendererProps {
-  themeId: ThemeId;
+  themeId: ThemeId | string;
   section: StoreSectionConfig;
 }
 
 export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ themeId, section }) => {
-  const themeComponents = ThemeRegistry[themeId];
+  const normalizedId = normalizeThemeId(themeId);
+  const themeComponents = ThemeRegistry[normalizedId] || ThemeRegistry[themeId as ThemeId];
 
   if (!themeComponents) {
     return <div className="p-4 bg-red-100 text-red-600">Theme not found: {themeId}</div>;
