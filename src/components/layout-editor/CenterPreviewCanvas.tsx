@@ -362,7 +362,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           customContent
         ) : activePage === 'katalog' ? (
            <div className="flex flex-col min-h-full pb-32">
-             <div className="pointer-events-none">
+             <div>
                {ThemeRegistry[activeThemeId!]?.Navbar && React.createElement(ThemeRegistry[activeThemeId!].Navbar)}
              </div>
              
@@ -412,7 +412,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                      const CustomCard = ThemeRegistry[activeThemeId!]?.ProductCard;
                      
                      return (
-                       <div key={p.id} className="pointer-events-none">
+                       <div key={p.id} onClick={() => onPageChange && onPageChange('product')}>
                          {CustomCard ? (
                            <CustomCard product={normalizedProduct} />
                          ) : (
