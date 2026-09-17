@@ -31,6 +31,7 @@ import {
   Box,
   Info,
   Phone,
+  Sparkles,
 } from 'lucide-react';
 
 // ── Page Definitions ─────────────────────────────────────────────────
@@ -42,18 +43,21 @@ export interface EditorPage {
 }
 
 export const DEFAULT_EDITOR_PAGES: EditorPage[] = [
-  { id: 'checkout', label: 'Checkout', category: 'Checkout', icon: ShoppingCart },
-  { id: 'thank_you', label: 'Terima kasih', category: 'Pasca-pembelian', icon: CheckCircle2 },
-  { id: 'login', label: 'Masuk', category: 'Akun pelanggan', icon: Key },
-  { id: 'orders', label: 'Pesanan', category: 'Akun pelanggan', icon: Package },
-  { id: 'order_status', label: 'Status pesanan', category: 'Akun pelanggan', icon: RefreshCw },
-  { id: 'profile', label: 'Profil', category: 'Akun pelanggan', icon: User },
-  { id: 'homepage', label: 'Halaman Utama', category: 'Toko online', icon: StoreIcon },
+  { id: 'homepage', label: 'Home / Beranda', category: 'Toko online', icon: StoreIcon },
   { id: 'catalog', label: 'Katalog Produk', category: 'Toko online', icon: ShoppingBag },
   { id: 'product', label: 'Detail Produk', category: 'Toko online', icon: Box },
-  { id: 'cart', label: 'Keranjang Belanja', category: 'Toko online', icon: ShoppingCart },
   { id: 'about', label: 'Tentang Toko', category: 'Toko online', icon: Info },
+  { id: 'promo', label: 'Promo Spesial', category: 'Toko online', icon: Sparkles },
   { id: 'contact', label: 'Kontak', category: 'Toko online', icon: Phone },
+  { id: 'cart', label: 'Keranjang Belanja', category: 'Toko online', icon: ShoppingCart },
+  { id: 'checkout', label: 'Checkout', category: 'Checkout', icon: ShoppingCart },
+  { id: 'thank_you', label: 'Terima Kasih / Success', category: 'Pasca-pembelian', icon: CheckCircle2 },
+  { id: 'login', label: 'Masuk (Login)', category: 'Akun pelanggan', icon: Key },
+  { id: 'register', label: 'Daftar (Register)', category: 'Akun pelanggan', icon: User },
+  { id: 'forgot_password', label: 'Lupa Password', category: 'Akun pelanggan', icon: RefreshCw },
+  { id: 'orders', label: 'Riwayat Pesanan', category: 'Akun pelanggan', icon: Package },
+  { id: 'order_detail', label: 'Detail Pesanan', category: 'Akun pelanggan', icon: FileText },
+  { id: 'profile', label: 'Profil Saya', category: 'Akun pelanggan', icon: User },
 ];
 
 interface EditorTopBarProps {
@@ -116,7 +120,13 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const currentPage = pages.find(p => p.id === activePage) || pages[0];
+  const currentPage = pages.find(
+    (p) =>
+      p.id === activePage ||
+      (activePage === 'katalog' && p.id === 'catalog') ||
+      (activePage === 'catalog' && p.id === 'catalog') ||
+      (activePage === 'produk' && p.id === 'catalog')
+  ) || pages[0];
 
   const deviceModes = [
     { mode: 'desktop' as const, icon: Monitor, label: 'Desktop' },
@@ -200,7 +210,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
 
           {isPageDropdownOpen && (
             <div className="absolute top-full left-0 mt-1.5 w-64 bg-white rounded-2xl border border-[#E1E3E5] shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-top-1 duration-150 max-h-[80vh] overflow-y-auto custom-scrollbar">
-              {(['Checkout', 'Pasca-pembelian', 'Akun pelanggan', 'Toko online'] as const).map((catName) => {
+              {(['Toko online', 'Akun pelanggan', 'Checkout', 'Pasca-pembelian'] as const).map((catName) => {
                 const catPages = pages.filter(p => p.category === catName);
                 if (catPages.length === 0) return null;
 
@@ -212,7 +222,11 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
                     <div className="mt-0.5 space-y-0.5 px-1.5">
                       {catPages.map((page) => {
                         const Icon = page.icon || FileText;
-                        const isActive = activePage === page.id;
+                        const isActive =
+                          activePage === page.id ||
+                          (activePage === 'katalog' && page.id === 'catalog') ||
+                          (activePage === 'catalog' && page.id === 'katalog') ||
+                          (activePage === 'produk' && page.id === 'catalog');
                         return (
                           <button
                             key={page.id}

@@ -34,9 +34,19 @@ interface CmsState {
   getPageBySlug: (slug: string) => CmsPage | undefined;
 }
 
+const getInitialProducts = () => {
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+  }
+  return mockProducts;
+};
+
 export const useCmsStore = create<CmsState>((set, get) => ({
   storeInfo: mockStoreInfo,
-  products: mockProducts,
+  products: getInitialProducts(),
   categories: mockCategories,
   news: mockNews,
   navigation: mockNavigation.sort((a, b) => a.order - b.order),
@@ -47,17 +57,34 @@ export const useCmsStore = create<CmsState>((set, get) => ({
   getNewsBySlug: (slug: string) => get().news.find(n => n.slug === slug),
   getPageBySlug: (slug: string) => get().pages.find(p => p.slug === slug),
 
-  updateProduct: (updatedProduct: CmsProduct) => set(state => ({
-    products: state.products.map(p => p.id === updatedProduct.id ? updatedProduct : p)
-  })),
+  updateProduct: (updatedProduct: CmsProduct) => set(state => {
+    const newProducts = state.products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('microcms_cms_products', JSON.stringify(newProducts));
+        localStorage.setItem('microcms_cms_products', JSON.stringify(newProducts));
+        window.dispatchEvent(new Event('cms_draft_updated'));
+      } catch (e) {}
+    }
+    return { products: newProducts };
+  }),
 
   loadThemeData: (themeId: string) => {
-    // Only load if the theme is in our data map
+    // Check if user has saved custom edited products in session
+    let activeProds: CmsProduct[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
+        if (saved) activeProds = JSON.parse(saved);
+      } catch (e) {}
+    }
+
     const themeData = THEME_DATA_MAP[themeId as keyof typeof THEME_DATA_MAP];
     if (themeData) {
+      const finalProducts = activeProds.length > 0 ? activeProds : themeData.products;
       set({
         storeInfo: themeData.storeInfo,
-        products: themeData.products,
+        products: finalProducts,
         categories: themeData.categories,
         navigation: themeData.navigation.sort((a, b) => a.order - b.order),
       });

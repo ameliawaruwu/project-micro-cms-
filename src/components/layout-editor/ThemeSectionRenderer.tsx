@@ -36,7 +36,8 @@ export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ them
   const Component = themeComponents[componentName] as React.FC<any>;
 
   if (Component) {
-    return <Component sectionOptions={section.options} onUpdateSectionOptions={onUpdateSectionOptions} sectionKey={section.key} />;
+    const secKey = section.key || `${section.id}-0`;
+    return <Component sectionOptions={section.options} onUpdateSectionOptions={onUpdateSectionOptions} sectionKey={secKey} />;
   }
 
   // Final fallback to original generic rendering if no custom component exists

@@ -39,12 +39,15 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     AsymmetricShowcase: EditorialAsymmetricShowcase,
     BrandStory: EditorialBrandStory,
     Journal: EditorialJournal,
+    FeaturedProducts: CuteFeaturedProducts,
+    ProductGrid: CuteFeaturedProducts,
   },
   futuristic: {
     Navbar: FuturisticNavbar,
     Hero: FuturisticHero,
     Footer: FuturisticFooter,
     FeaturedProducts: FuturisticFeaturedProducts,
+    ProductGrid: FuturisticFeaturedProducts,
     TechFeatures: FuturisticTechFeatures,
     ProductComparison: FuturisticProductComparison,
     FloatingShowcase: FuturisticFloatingShowcase,
@@ -56,6 +59,8 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     Footer: NatureFooter,
     IngredientStory: NatureIngredientStory,
     Sustainability: NatureSustainability,
+    FeaturedProducts: CuteFeaturedProducts,
+    ProductGrid: CuteFeaturedProducts,
   },
   luxury: {
     Navbar: LuxuryNavbar,
@@ -64,6 +69,8 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     SignatureCollection: LuxurySignatureCollection,
     CraftsmanshipStory: LuxuryCraftsmanship,
     PrivateCollection: LuxuryPrivateCollection,
+    FeaturedProducts: CuteFeaturedProducts,
+    ProductGrid: CuteFeaturedProducts,
   },
   bold: {
     Navbar: BoldNavbar,
@@ -74,16 +81,17 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     Lookbook: BoldLookbook,
     LimitedRelease: BoldLimitedRelease,
     CommunityBoard: BoldCommunityBoard,
+    FeaturedProducts: FuturisticFeaturedProducts,
+    ProductGrid: FuturisticFeaturedProducts,
   },
-  
-  // Maps for the existing ones
-  cute: { Navbar: CuteNavbar, Hero: CuteHero, Footer: CuteFooter, FeaturedProducts: CuteFeaturedProducts },
-  elegant: { Navbar: ElegantNavbar, Hero: ElegantHero, Footer: ElegantFooter, FeaturedProducts: ElegantFeaturedProducts },
+  cute: { Navbar: CuteNavbar, Hero: CuteHero, Footer: CuteFooter, FeaturedProducts: CuteFeaturedProducts, ProductGrid: CuteFeaturedProducts },
+  elegant: { Navbar: ElegantNavbar, Hero: ElegantHero, Footer: ElegantFooter, FeaturedProducts: ElegantFeaturedProducts, ProductGrid: ElegantFeaturedProducts },
   modern: { 
     Navbar: FuturisticNavbar, 
     Hero: FuturisticHero, 
     Footer: FuturisticFooter,
     FeaturedProducts: FuturisticFeaturedProducts,
+    ProductGrid: FuturisticFeaturedProducts,
     PromoBanner: FuturisticInnovationCta
   },
   creative: { 
@@ -91,7 +99,9 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     Hero: CreativeHero, 
     Footer: CreativeFooter,
     Lookbook: CreativeLookbook,
-    FloatingShowcase: CreativeFloatingShowcase
+    FloatingShowcase: CreativeFloatingShowcase,
+    FeaturedProducts: CuteFeaturedProducts,
+    ProductGrid: CuteFeaturedProducts,
   },
   professional: { 
     Navbar: ProfessionalNavbar, 
@@ -99,6 +109,7 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     Footer: ProfessionalFooter,
     StoreBenefits: ProfessionalStoreBenefits,
     ProductGrid: ProfessionalProductGrid,
+    FeaturedProducts: ProfessionalProductGrid,
     Testimonials: ProfessionalTestimonials
   },
   fashion: { 
@@ -107,6 +118,7 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     Footer: FashionFooter,
     Lookbook: FashionLookbook,
     FeaturedProducts: FashionFeaturedProducts,
+    ProductGrid: FashionFeaturedProducts,
     PromoBanner: FashionPromoBanner
   },
 };

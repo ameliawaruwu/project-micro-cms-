@@ -28,7 +28,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ themeData, themeId: 
     { id: '2', name: 'Produk Unggulan 2', price: 95000, imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop' },
   ];
 
-  const subtotal = sampleItems.reduce((acc, item) => acc + item.price, 0);
+  const subtotal: number = (sampleItems as any[]).reduce((acc: number, item: any) => acc + Number(item.price || 0), 0);
   const shippingFee = 15000;
   const total = subtotal + shippingFee;
 

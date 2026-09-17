@@ -9,10 +9,11 @@ interface OrdersPageProps {
   themeData?: ThemeSchema;
   themeId?: string;
   store?: any;
+  isDetailView?: boolean;
   onNavigate?: (pageId: string) => void;
 }
 
-export const OrdersPage: React.FC<OrdersPageProps> = ({ themeData, themeId: propThemeId, store, onNavigate }) => {
+export const OrdersPage: React.FC<OrdersPageProps> = ({ themeData, themeId: propThemeId, store, isDetailView, onNavigate }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',

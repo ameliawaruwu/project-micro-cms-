@@ -7,6 +7,8 @@ import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
 import { ShoppingCart, Heart, ShieldCheck, Truck, Star, ArrowRight, Sparkles } from 'lucide-react';
 
+import { useCmsStore } from '../../cms/useCmsStore';
+
 interface ProductDetailPageProps {
   themeData?: ThemeSchema;
   themeId?: string;
@@ -24,6 +26,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   productId: propProductId,
   onNavigate 
 }) => {
+  const cmsProducts = useCmsStore(state => state.products);
   const { id: paramId } = useParams<{ id: string }>();
   const id = propProductId || paramId;
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
@@ -35,7 +38,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     fontFamily: 'sans-serif'
   };
 
-  const product = products?.find(p => p.id === id) || products[0] || {
+  const displayProducts = (products && products.length > 0) ? products : (cmsProducts && cmsProducts.length > 0 ? (cmsProducts as any[]) : []);
+
+  const product = displayProducts?.find(p => p.id === id) || displayProducts[0] || {
     id: 'sample-1',
     name: 'Produk Unggulan Premium',
     price: 349000,

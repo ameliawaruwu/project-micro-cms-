@@ -8,3 +8,8 @@ export * from './OrdersPage';
 export * from './ProfilePage';
 export * from './LoginPage';
 export * from './ContactPage';
+export * from './ForgotPasswordPage';
+export * from './CategoryPage';
+export * from './OrderDetailPage';
+export * from './AddressPage';
+export * from './WishlistPage';

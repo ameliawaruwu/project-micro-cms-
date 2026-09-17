@@ -98,6 +98,7 @@ import { StoreProductCard } from './components/storefront/StoreProductCard';
 import { ProductDetailModal as StorefrontProductDetailModal } from './components/storefront/ProductDetailModal';
 import { CartDrawer } from './components/storefront/CartDrawer';
 import { ThemeRenderer } from './themes/ThemeRenderer';
+import { useCmsStore } from './cms/useCmsStore';
 
 export default function App() {
   // Auth Context Hook
@@ -263,8 +264,27 @@ export default function App() {
   // Direct URL routing for buyers/customers (e.g. localhost:3000/?toko=toko-andhikagonzales or ?mode=storefront)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const pathSlug = window.location.pathname.length > 1 ? window.location.pathname.substring(1) : null;
-    const tokoParam = params.get('toko') || params.get('store') || pathSlug;
+    const pathSlug = window.location.pathname.length > 1 ? window.location.pathname.substring(1).split('/')[0] : null;
+
+    const KNOWN_PAGE_ROUTES = [
+      'homepage', 'home', 'beranda',
+      'katalog', 'catalog', 'products', 'produk',
+      'product', 'detail-produk',
+      'about', 'tentang',
+      'contact', 'kontak',
+      'promo',
+      'login', 'masuk',
+      'register', 'daftar',
+      'cart', 'keranjang',
+      'checkout',
+      'orders', 'pesanan',
+      'profile', 'profil',
+      'thank_you', 'terima-kasih'
+    ];
+
+    const isKnownRoute = pathSlug ? KNOWN_PAGE_ROUTES.includes(pathSlug.toLowerCase()) : false;
+    const storeSlugFromPath = (pathSlug && !isKnownRoute) ? pathSlug : null;
+    const tokoParam = params.get('toko') || params.get('store') || storeSlugFromPath;
     const modeParam = params.get('mode') || params.get('view');
     const previewThemeParam = params.get('previewTheme');
 
@@ -281,23 +301,39 @@ export default function App() {
       return;
     }
 
-    if (tokoParam || modeParam === 'storefront') {
+    if (tokoParam || modeParam === 'storefront' || isKnownRoute) {
       setViewMode('storefront-live');
       
       const isPreview = params.get('preview') === 'true';
       if (isPreview) {
         try {
-          const draftStr = sessionStorage.getItem('microcms_preview_draft');
+          const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
           if (draftStr) {
             const draftStore = JSON.parse(draftStr);
             setActiveStore(draftStore);
+
+            if (draftStore.layoutSettings?.activeThemeId) {
+              useCmsStore.getState().loadThemeData(draftStore.layoutSettings.activeThemeId);
+            }
+
+            const savedProdsStr = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
+            let initialProducts: any[] = [];
+            if (savedProdsStr) {
+              try {
+                initialProducts = JSON.parse(savedProdsStr);
+                useCmsStore.setState({ products: initialProducts });
+              } catch (e) {}
+            } else if (draftStore.products) {
+              initialProducts = draftStore.products;
+              useCmsStore.setState({ products: initialProducts });
+            }
             
             Promise.all([
               productService.getProductsByStore(draftStore.id),
               orderService.getOrdersByStore(draftStore.id),
             ]).then(([storeProducts, storeOrders]) => {
               const initialCart = cartService.getCart(draftStore.slug);
-              setProducts(storeProducts);
+              setProducts(initialProducts.length > 0 ? initialProducts : storeProducts);
               setOrders(storeOrders);
               setCartItems(initialCart);
             });
@@ -308,20 +344,75 @@ export default function App() {
         }
       }
 
-      storeService.getStoreBySlug(tokoParam || '').then(async (targetStore) => {
-        if (targetStore) {
+      if (tokoParam) {
+        storeService.getStoreBySlug(tokoParam).then(async (targetStore) => {
+          if (targetStore) {
+            setActiveStore(targetStore);
+            const [storeProducts, storeOrders] = await Promise.all([
+              productService.getProductsByStore(targetStore.id),
+              orderService.getOrdersByStore(targetStore.id),
+            ]);
+            const initialCart = cartService.getCart(targetStore.slug);
+            setProducts(storeProducts);
+            setOrders(storeOrders);
+            setCartItems(initialCart);
+          }
+        });
+      } else {
+        // Fallback to active store or default store for page routes without explicit toko param
+        storeService.getStores().then(async (allStores) => {
+          const targetStore = activeStore || allStores[0] || initialStores[0];
           setActiveStore(targetStore);
           const [storeProducts, storeOrders] = await Promise.all([
             productService.getProductsByStore(targetStore.id),
             orderService.getOrdersByStore(targetStore.id),
           ]);
-          const initialCart = cartService.getCart(targetStore.slug);
           setProducts(storeProducts);
           setOrders(storeOrders);
-          setCartItems(initialCart);
-        }
-      });
+        });
+      }
     }
+  }, []);
+
+  // Live cross-tab & in-tab sync listener for Preview mode
+  useEffect(() => {
+    const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+    if (!isPreview) return;
+
+    const syncPreviewData = () => {
+      try {
+        const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
+        if (draftStr) {
+          const draftStore = JSON.parse(draftStr);
+          setActiveStore(draftStore);
+
+          const savedProds = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
+          if (savedProds) {
+            try {
+              const parsed = JSON.parse(savedProds);
+              useCmsStore.setState({ products: parsed });
+              setProducts(parsed);
+            } catch (e) {}
+          } else if (draftStore.products) {
+            useCmsStore.setState({ products: draftStore.products });
+            setProducts(draftStore.products);
+          }
+
+          if (draftStore.layoutSettings?.activeThemeId) {
+            useCmsStore.getState().loadThemeData(draftStore.layoutSettings.activeThemeId);
+          }
+        }
+      } catch (e) {
+        console.error("Failed syncing preview data", e);
+      }
+    };
+
+    window.addEventListener('storage', syncPreviewData);
+    window.addEventListener('cms_draft_updated', syncPreviewData);
+    return () => {
+      window.removeEventListener('storage', syncPreviewData);
+      window.removeEventListener('cms_draft_updated', syncPreviewData);
+    };
   }, []);
 
   useEffect(() => {

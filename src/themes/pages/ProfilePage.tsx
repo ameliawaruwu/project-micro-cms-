@@ -9,10 +9,11 @@ interface ProfilePageProps {
   themeData?: ThemeSchema;
   themeId?: string;
   store?: any;
+  tab?: string;
   onNavigate?: (pageId: string) => void;
 }
 
-export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: propThemeId, store, onNavigate }) => {
+export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: propThemeId, store, tab, onNavigate }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',

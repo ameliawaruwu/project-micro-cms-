@@ -148,23 +148,54 @@ export const SECTION_TEMPLATES: SectionTemplateDef[] = [
       featuredSubtitle: 'Rekomendasi terbaik dengan rating dan ulasan tertinggi pelanggan',
       productCount: 4,
       gridColumns: 4,
+      tabletColumns: 2,
+      mobileColumns: 1,
+      layoutType: 'grid',
+      imageRatio: '1:1',
+      cardStyle: 'standard',
+      sortOrder: 'default',
+      showPrice: true,
+      showCategory: true,
+      showRating: true,
+      showAddToCart: true,
+      showQuickView: true,
+      showWishlist: true,
       showStockBadge: true,
+      showBadge: true,
+      buttonText: 'Lihat Semua Produk',
+      buttonLink: '#katalog',
     },
   },
   {
     id: 'product_grid',
-    title: 'Koleksi Semua Produk (Product Grid)',
+    title: 'Katalog Produk (Product Grid)',
     category: 'products',
     categoryLabel: 'Produk & Koleksi',
     subtitle: 'Etalase utama daftar produk lengkap dengan filter kategori & pencarian',
     badge: 'Utama',
     defaultOptions: {
-      heading: 'Semua Koleksi Etalase',
-      subheading: 'Temukan produk kebutuhan Anda dengan harga terbaik',
+      heading: 'Katalog Produk Lengkap',
+      subheading: 'Temukan produk kebutuhan Anda dengan kualitas terbaik',
+      productCount: 8,
       gridColumns: 4,
+      tabletColumns: 2,
+      mobileColumns: 1,
+      layoutType: 'grid',
+      imageRatio: '1:1',
+      cardStyle: 'standard',
+      sortOrder: 'default',
+      showPrice: true,
+      showCategory: true,
+      showRating: true,
+      showAddToCart: true,
+      showQuickView: true,
+      showWishlist: true,
       showStockBadge: true,
+      showBadge: true,
       showCategoryTabs: true,
       showSearchBar: true,
+      buttonText: 'Lihat Detail',
+      buttonLink: '#katalog',
     },
   },
   {
@@ -741,6 +772,41 @@ export const STORE_TEMPLATES: StoreTemplate[] = [
     ]
   }
 ];
+
+export const getStoreSectionsForPage = (
+  layoutSettings?: StoreLayoutSettings,
+  pageId: string = 'homepage'
+): StoreSectionConfig[] => {
+  if (!layoutSettings) return DEFAULT_STORE_SECTIONS;
+
+  const pageAliasMap: Record<string, string> = {
+    'catalog': 'katalog',
+    'produk': 'katalog',
+    'products': 'katalog',
+    'tentang': 'about',
+    'kontak': 'contact',
+    'masuk': 'login',
+    'daftar': 'register',
+    'keranjang': 'cart',
+    'pesanan': 'orders',
+    'profil': 'profile',
+    'terima-kasih': 'thank_you',
+  };
+
+  const normalizedPageId = pageAliasMap[pageId.toLowerCase()] || pageId.toLowerCase();
+
+  if (layoutSettings.pages && Array.isArray(layoutSettings.pages)) {
+    const pageConfig = layoutSettings.pages.find((p) => {
+      const pSlug = (pageAliasMap[p.slug?.toLowerCase()] || p.slug || p.id).toLowerCase();
+      return pSlug === normalizedPageId || p.id === pageId || p.slug === pageId;
+    });
+    if (pageConfig && pageConfig.sections && pageConfig.sections.length > 0) {
+      return getStoreSections({ ...layoutSettings, sections: pageConfig.sections });
+    }
+  }
+
+  return getStoreSections(layoutSettings);
+};
 
 export const getStoreSections = (layoutSettings?: StoreLayoutSettings): StoreSectionConfig[] => {
   if (!layoutSettings || !layoutSettings.sections || layoutSettings.sections.length === 0) {

@@ -6,16 +6,27 @@ import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
 import { Search, Filter, ShoppingBag, Sparkles, ArrowRight } from 'lucide-react';
 
+import { THEME_DATA_MAP } from '../themeData';
+import { mockProducts } from '../../cms/mockCmsData';
+
+import { useCmsStore } from '../../cms/useCmsStore';
+
 interface ShopPageProps {
   themeData?: ThemeSchema;
   themeId?: string;
   store?: any;
   products?: Product[];
+  isWishlist?: boolean;
   onNavigate?: (pageId: string) => void;
 }
 
-export const ShopPage: React.FC<ShopPageProps> = ({ themeData, themeId: propThemeId, store, products = [], onNavigate }) => {
+export const ShopPage: React.FC<ShopPageProps> = ({ themeData, themeId: propThemeId, store, products = [], isWishlist, onNavigate }) => {
+  const cmsProducts = useCmsStore(state => state.products);
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
+  const fallbackThemeData = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['minimalist'];
+  const themeProducts = fallbackThemeData?.products && fallbackThemeData.products.length > 0 ? fallbackThemeData.products : mockProducts;
+  const displayProducts = (products && products.length > 0) ? products : (cmsProducts && cmsProducts.length > 0 ? (cmsProducts as any[]) : (themeProducts as any[]));
+
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',
     textColor: '#1A1A1A',
@@ -30,12 +41,12 @@ export const ShopPage: React.FC<ShopPageProps> = ({ themeData, themeId: propThem
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
 
-  const categories = ['Semua', ...Array.from(new Set(products.map((p: any) => p.category || p.categoryName).filter(Boolean)))];
+  const categories = ['Semua', ...Array.from(new Set(displayProducts.map((p: any) => p.category || p.categoryName).filter(Boolean)))];
 
-  const filteredProducts = products.filter(p => {
+  const filteredProducts = displayProducts.filter(p => {
     const cat = p.category || (p as any).categoryName;
     const matchCat = selectedCategory === 'Semua' || cat === selectedCategory;
-    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
                         (p.description || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchCat && matchSearch;
   });

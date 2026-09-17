@@ -369,11 +369,89 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
       );
     }
 
+    if (pageId === 'register') {
+      return (
+        <LoginPage 
+          themeId={activeThemeId}
+          store={store}
+          isRegister={true}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'promo') {
+      return (
+        <ShopPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
     if (pageId === 'contact') {
       return (
         <ContactPage 
           themeId={activeThemeId}
           store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'forgot_password') {
+      return (
+        <LoginPage 
+          themeId={activeThemeId}
+          store={store}
+          mode="forgot_password"
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'order_detail') {
+      return (
+        <OrdersPage 
+          themeId={activeThemeId}
+          store={store}
+          isDetailView={true}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'category') {
+      return (
+        <ShopPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'address') {
+      return (
+        <ProfilePage 
+          themeId={activeThemeId}
+          store={store}
+          tab="address"
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+        />
+      );
+    }
+
+    if (pageId === 'wishlist') {
+      return (
+        <ShopPage 
+          themeId={activeThemeId}
+          store={store}
+          products={products}
+          isWishlist={true}
           onNavigate={(p) => onPageChange && onPageChange(p)}
         />
       );
@@ -390,82 +468,6 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
       <div className="flex-1 w-full bg-white relative pb-32" onClick={handleCanvasClick}>
         {customContent ? (
           customContent
-        ) : activePage === 'katalog' ? (
-           <div className="flex flex-col min-h-full pb-32">
-             <div>
-               {ThemeRegistry[activeThemeId!]?.Navbar && React.createElement(ThemeRegistry[activeThemeId!].Navbar)}
-             </div>
-             
-             <div className="flex-1 py-16 px-6">
-               <div className="max-w-7xl mx-auto">
-                 <h1 className="text-3xl font-bold mb-8 text-center text-gray-900">Katalog Produk</h1>
-                 
-                 {/* Search & Categories */}
-                 <div className="mb-12 space-y-6">
-                   <div className="max-w-md mx-auto relative">
-                     <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                     <input
-                       type="text"
-                       value={searchPreviewQuery}
-                       onChange={(e) => setSearchPreviewQuery(e.target.value)}
-                       placeholder="Cari produk..."
-                       className="w-full pl-12 pr-4 py-3 rounded-full bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black"
-                     />
-                   </div>
-                   
-                   <div className="flex flex-wrap justify-center gap-2">
-                     {categories.map((cat) => (
-                       <button
-                         key={cat}
-                         onClick={() => setActiveCategoryFilter(cat)}
-                         className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                           activeCategoryFilter === cat 
-                             ? 'bg-black text-white' 
-                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                         }`}
-                       >
-                         {cat}
-                       </button>
-                     ))}
-                   </div>
-                 </div>
-
-                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                   {filteredProducts.map(p => {
-                     // Normalize product to handle both Product and CmsProduct structures
-                     const normalizedProduct = {
-                       ...p,
-                       image: p.imageUrl || (p as any).image,
-                       categoryName: p.category || (p as any).categoryName,
-                     };
-                     
-                     const CustomCard = ThemeRegistry[activeThemeId!]?.ProductCard;
-                     
-                     return (
-                       <div key={p.id} onClick={() => onPageChange && onPageChange('product')}>
-                         {CustomCard ? (
-                           <CustomCard product={normalizedProduct} />
-                         ) : (
-                           /* Generic Fallback Product Card */
-                           <div className="group cursor-pointer">
-                             <div className="relative aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden mb-3">
-                               <img src={normalizedProduct.image} alt={normalizedProduct.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                             </div>
-                             <h3 className="font-semibold text-gray-900 truncate">{normalizedProduct.name}</h3>
-                             <p className="text-gray-500 text-sm">Rp {normalizedProduct.price.toLocaleString('id-ID')}</p>
-                           </div>
-                         )}
-                       </div>
-                     );
-                   })}
-                 </div>
-               </div>
-             </div>
-
-             <div className="mt-auto">
-               {ThemeRegistry[activeThemeId!]?.Footer && React.createElement(ThemeRegistry[activeThemeId!].Footer)}
-             </div>
-           </div>
         ) : visibleSections.length === 0 ? (
           <div className="py-24 text-center text-xs text-[#706866] p-6 space-y-2">
             <p className="font-bold text-[#241A1A]">Toko sedang dalam perbaikan</p>
@@ -480,16 +482,30 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
               paddingBottom: opts.paddingBottom !== undefined ? `${opts.paddingBottom}px` : undefined,
             };
 
+            const isSelected = selectedSectionKey === sectionKey || selectedSectionKey === section.id;
+
             return (
               <div
                 key={sectionKey}
                 id={`preview-${sectionKey}`}
-                className="relative"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectSection(sectionKey);
+                }}
+                className={`relative cursor-pointer transition-all duration-150 ${
+                  isSelected
+                    ? 'ring-2 ring-[#2C6ECB] ring-offset-2 z-10 shadow-sm'
+                    : 'hover:ring-1 hover:ring-[#2C6ECB]/50'
+                }`}
                 style={customPaddingStyle}
               >
                 {activeThemeId && hasThemeComponent(activeThemeId, section.id) ? (
                   <div>
-                    <ThemeSectionRenderer themeId={activeThemeId} section={section} />
+                    <ThemeSectionRenderer 
+                      themeId={activeThemeId} 
+                      section={{ ...section, key: sectionKey }} 
+                      onUpdateSectionOptions={onUpdateSectionOptions}
+                    />
                   </div>
                 ) : (
                   <>
@@ -1037,71 +1053,141 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                         <InlineEditableText
                           tagName="h3"
                           value={opts.heading || 'Katalog Semua Produk'}
-                          onSave={() => {}}
+                          onSave={(val) => onUpdateSectionOptions(section.key || section.id, { heading: val })}
                           className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
-                          readonly={true}
                         />
+                        {opts.subheading && (
+                          <InlineEditableText
+                            tagName="p"
+                            value={opts.subheading}
+                            onSave={(val) => onUpdateSectionOptions(section.key || section.id, { subheading: val })}
+                            className="text-[10px] sm:text-[11px] text-[#706866] mt-0.5"
+                          />
+                        )}
                         <p className="text-[10px] sm:text-[11px] text-[#706866]">
-                          {filteredProducts.length} produk siap dipesan
+                          {(() => {
+                            let displayList = [...products];
+                            if (opts.selectedCategoryId && opts.selectedCategoryId !== 'all') {
+                              displayList = displayList.filter(p => (p.category || p.categoryName) === opts.selectedCategoryId);
+                            }
+                            if (opts.selectedProductIds && opts.selectedProductIds.length > 0) {
+                              displayList = displayList.filter(p => opts.selectedProductIds.includes(p.id));
+                            }
+                            return displayList.length;
+                          })()} produk siap dipesan
                         </p>
                       </div>
                     </div>
 
-                    {filteredProducts.length === 0 ? (
-                      <div className="py-8 text-center text-xs text-[#706866] bg-[#FAF7F7] rounded-2xl border border-[#E5E0DD] p-4">
-                        Tidak ada produk pada kategori ini.
-                      </div>
-                    ) : (
-                      <div
-                        className={`grid ${
-                          isMobile
-                            ? 'grid-cols-2 gap-2.5'
-                            : isTablet
-                            ? 'grid-cols-3 gap-3'
-                            : opts.gridColumns === 2
-                            ? 'grid-cols-2 gap-4'
-                            : opts.gridColumns === 3
-                            ? 'grid-cols-3 gap-4'
-                            : 'grid-cols-4 gap-4'
-                        }`}
-                      >
-                        {filteredProducts.map((p) => (
-                          <div
-                            key={p.id}
-                            className="bg-white rounded-2xl border border-[#E5E0DD] p-2 sm:p-2.5 flex flex-col justify-between shadow-2xs hover:shadow-xs transition"
-                          >
-                            <div className="space-y-1 sm:space-y-1.5">
-                              <div className="relative rounded-xl overflow-hidden aspect-square bg-[#FAF7F7]">
-                                <img
-                                  src={p.imageUrl}
-                                  alt={p.name}
-                                  className="w-full h-full object-cover"
-                                  referrerPolicy="no-referrer"
-                                />
-                                {opts.showStockBadge !== false && (
-                                  <span className="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-white text-[8px] font-semibold px-1.5 py-0.5 rounded">
-                                    Stok {p.stock}
+                    {(() => {
+                      let displayList = [...products];
+                      if (opts.selectedCategoryId && opts.selectedCategoryId !== 'all') {
+                        displayList = displayList.filter(p => (p.category || p.categoryName) === opts.selectedCategoryId);
+                      }
+                      if (opts.selectedProductIds && opts.selectedProductIds.length > 0) {
+                        displayList = displayList.filter(p => opts.selectedProductIds.includes(p.id));
+                      }
+                      if (opts.sortOrder === 'price-asc') {
+                        displayList.sort((a, b) => a.price - b.price);
+                      } else if (opts.sortOrder === 'price-desc') {
+                        displayList.sort((a, b) => b.price - a.price);
+                      } else if (opts.sortOrder === 'name-asc') {
+                        displayList.sort((a, b) => a.name.localeCompare(b.name));
+                      }
+                      const limit = opts.productCount || 8;
+                      displayList = displayList.slice(0, limit);
+
+                      if (displayList.length === 0) {
+                        return (
+                          <div className="py-8 text-center text-xs text-[#706866] bg-[#FAF7F7] rounded-2xl border border-[#E5E0DD] p-4">
+                            Tidak ada produk pada kategori ini.
+                          </div>
+                        );
+                      }
+
+                      const colsClass = 
+                        isMobile ? (opts.mobileColumns === 2 ? 'grid-cols-2 gap-2.5' : 'grid-cols-1 gap-3') :
+                        isTablet ? 'grid-cols-3 gap-3' :
+                        opts.gridColumns === 2 ? 'grid-cols-2 gap-4' :
+                        opts.gridColumns === 3 ? 'grid-cols-3 gap-4' :
+                        opts.gridColumns === 5 ? 'grid-cols-5 gap-3' :
+                        opts.gridColumns === 6 ? 'grid-cols-6 gap-2.5' :
+                        'grid-cols-4 gap-4';
+
+                      const aspectClass =
+                        opts.imageRatio === '4:3' ? 'aspect-[4/3]' :
+                        opts.imageRatio === '16:9' ? 'aspect-[16/9]' :
+                        opts.imageRatio === 'auto' ? 'aspect-auto' :
+                        'aspect-square';
+
+                      const cardStyleClass =
+                        opts.cardStyle === 'border' ? 'bg-white rounded-xl border-2 border-[#241A1A] p-2.5 shadow-none' :
+                        opts.cardStyle === 'shadow' ? 'bg-white rounded-2xl border-0 p-3 shadow-lg' :
+                        opts.cardStyle === 'minimal' ? 'bg-transparent border-0 p-0 shadow-none' :
+                        opts.cardStyle === 'flat' ? 'bg-[#FAF7F7] rounded-xl border border-[#E5E0DD] p-2.5 shadow-none' :
+                        'bg-white rounded-2xl border border-[#E5E0DD] p-2 sm:p-2.5 shadow-2xs hover:shadow-xs';
+
+                      return (
+                        <div className={`grid ${colsClass}`}>
+                          {displayList.map((p) => (
+                            <div key={p.id} className={`${cardStyleClass} flex flex-col justify-between transition`}>
+                              <div className="space-y-1 sm:space-y-1.5">
+                                <div className={`relative rounded-xl overflow-hidden ${aspectClass} bg-[#FAF7F7]`}>
+                                  <img
+                                    src={p.imageUrl || (p as any).image}
+                                    alt={p.name}
+                                    className="w-full h-full object-cover"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  {opts.showBadge !== false && p.isFeatured && (
+                                    <span className="absolute top-1.5 left-1.5 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-xs">
+                                      Unggulan
+                                    </span>
+                                  )}
+                                  {opts.showStockBadge !== false && p.stock !== undefined && (
+                                    <span className="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-white text-[8px] font-semibold px-1.5 py-0.5 rounded">
+                                      Stok {p.stock}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {opts.showCategory !== false && (p.category || (p as any).categoryName) && (
+                                  <span className="text-[9px] font-bold text-[#706866] uppercase tracking-wider block">
+                                    {p.category || (p as any).categoryName}
                                   </span>
                                 )}
+
+                                <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] line-clamp-1">
+                                  {p.name}
+                                </h4>
+
+                                {opts.showRating !== false && (
+                                  <div className="flex items-center gap-0.5 text-amber-400 text-[10px]">
+                                    ★ ★ ★ ★ ★ <span className="text-gray-400 text-[9px] ml-1">(5.0)</span>
+                                  </div>
+                                )}
+
+                                {opts.showPrice !== false && (
+                                  <div className="text-[11px] sm:text-xs font-extrabold text-[#66000E]">
+                                    {formatRupiah(p.price)}
+                                  </div>
+                                )}
                               </div>
-                              <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] line-clamp-1">
-                                {p.name}
-                              </h4>
-                              <div className="text-[11px] sm:text-xs font-extrabold text-[#66000E]">
-                                {formatRupiah(p.price)}
-                              </div>
+
+                              {opts.showAddToCart !== false && (
+                                <button
+                                  type="button"
+                                  className="w-full mt-1.5 sm:mt-2 py-1.5 rounded-xl text-[10px] font-bold bg-[#66000E] text-white hover:bg-[#801010] transition cursor-pointer"
+                                  style={{ backgroundColor: primaryAccent }}
+                                >
+                                  + Beli Sekarang
+                                </button>
+                              )}
                             </div>
-                            <button
-                              type="button"
-                              className="w-full mt-1.5 sm:mt-2 py-1.5 rounded-xl text-[10px] font-bold bg-[#66000E] text-white hover:bg-[#801010] transition cursor-pointer"
-                              style={{ backgroundColor: primaryAccent }}
-                            >
-                              Beli Sekarang
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 

@@ -1,7 +1,8 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 
-export const BoldNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string }> = ({ sectionOptions = {} }) => {
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
@@ -33,7 +34,7 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   );
 };
 
-export const BoldHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "LOUD & CLEAR";
   const subheading = sectionOptions.subheading || "The New Standard in Streetwear & Modern Aesthetics";
@@ -62,17 +63,35 @@ export const BoldHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = 
 
         <h1 className="text-6xl sm:text-8xl md:text-9xl font-black tracking-tighter uppercase text-white leading-none mb-8 text-center max-w-full drop-shadow-2xl">
           <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
-            {heading}
+            <InlineEditableText
+              tagName="span"
+              value={heading}
+              onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { heading: val })}
+              readonly={!onUpdateSectionOptions}
+            />
           </span>
         </h1>
         
         <p className="text-base sm:text-xl font-medium text-zinc-300 max-w-2xl mx-auto mb-10 tracking-wide leading-relaxed">
-          {subheading}
+          <InlineEditableText
+            tagName="span"
+            value={subheading}
+            onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { subheading: val })}
+            readonly={!onUpdateSectionOptions}
+          />
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md">
-          <button className="w-full sm:w-auto px-10 py-4 bg-red-600 hover:bg-red-500 text-white font-extrabold uppercase tracking-widest text-sm rounded-xl transition-all duration-300 shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 cursor-pointer">
-            {buttonLabel} →
+          <button 
+            className="w-full sm:w-auto px-10 py-4 bg-red-600 hover:bg-red-500 text-white font-extrabold uppercase tracking-widest text-sm rounded-xl transition-all duration-300 shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 cursor-pointer"
+            onClick={(e) => { if (onUpdateSectionOptions) e.preventDefault(); }}
+          >
+            <InlineEditableText
+              tagName="span"
+              value={buttonLabel}
+              onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { buttonLabel: val })}
+              readonly={!onUpdateSectionOptions}
+            /> →
           </button>
           <button className="w-full sm:w-auto px-8 py-4 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 font-bold uppercase tracking-widest text-sm rounded-xl transition-all duration-300 backdrop-blur-md hover:border-zinc-500">
             Lookbook

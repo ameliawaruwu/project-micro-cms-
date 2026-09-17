@@ -7,8 +7,8 @@ export interface ThemeSettings {
   backgroundColor: string;
   textColor: string;
   fontFamily: string;
-  containerWidth: 'max-w-5xl' | 'max-w-6xl' | 'max-w-7xl' | 'w-full';
-  borderRadius: 'none' | 'sm' | 'md' | 'lg' | 'full';
+  containerWidth?: 'max-w-5xl' | 'max-w-6xl' | 'max-w-7xl' | 'w-full';
+  borderRadius?: 'none' | 'sm' | 'md' | 'lg' | 'full';
 }
 
 // Base configuration for any Section
