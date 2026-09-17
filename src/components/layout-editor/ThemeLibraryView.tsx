@@ -296,11 +296,10 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-semibold border transition-all cursor-pointer ${
-                    isActive
+                  className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-semibold border transition-all cursor-pointer ${isActive
                       ? 'bg-[#202223] text-white border-[#202223] shadow-sm'
                       : 'bg-white text-[#6D7175] border-[#E1E3E5] hover:border-[#8C9196] hover:text-[#202223]'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   <span>{cat.label}</span>
@@ -359,84 +358,154 @@ const MiniTemplatePreview: React.FC<{
   template: TemplateGalleryItem;
   themeData: any;
 }> = ({ template, themeData }) => {
-  const products = themeData?.products || [
-    { name: 'Produk Premium A', price: 150000, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80' },
-    { name: 'Produk Premium B', price: 299000, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80' },
-    { name: 'Produk Premium C', price: 189000, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80' },
-  ];
+  const sections = template.storeTemplate.sections || [];
+  const products = themeData?.products || [];
 
-  const isDark = template.category === 'futuristic' || template.id === 'future_shop';
+  const headerSection = sections.find((s) => s.id === 'header');
+  const heroSection = sections.find((s) => s.id === 'hero_banner');
+  const productSection = sections.find((s) =>
+    ['product_grid', 'featured_products', 'collection_grid', 'lookbook', 'signature_collection', 'asymmetric_showcase', 'latest_drop'].includes(s.id)
+  );
+
+  const headerStyle = headerSection?.options?.headerStyle || 'standard';
+  const heroStyle = heroSection?.options?.bannerStyle || 'normal';
+
+  let productLayout = 'grid';
+  let gridCols = 3;
+  if (productSection) {
+    if (
+      (productSection.options as any)?.layout === 'masonry' ||
+      (productSection.options as any)?.layout === 'asymmetric' ||
+      productSection.id === 'asymmetric_showcase' ||
+      productSection.id === 'lookbook'
+    ) {
+      productLayout = 'asymmetric';
+    } else {
+      productLayout = 'grid';
+      gridCols = productSection.options?.gridColumns || 3;
+      // Ensure gridCols is 2, 3, or 4 for preview rendering
+      if (gridCols > 4) gridCols = 4;
+      if (gridCols < 2) gridCols = 2;
+    }
+  }
 
   return (
-    <div className={`w-full h-full flex flex-col pointer-events-none transition-transform duration-500 group-hover:scale-[1.02] ${
-      isDark ? 'bg-[#0B0F19] text-white' : 'bg-white text-gray-900'
-    }`}>
-      {/* Sleek Header Mockup */}
-      <div className={`h-8 px-3.5 flex items-center justify-between shrink-0 border-b ${
-        isDark ? 'bg-[#0D1117] border-cyan-500/20' : 'bg-white border-gray-100'
-      }`}>
-        <div className="flex items-center gap-1.5">
-          <span className={`font-black text-[11px] uppercase tracking-wider ${isDark ? 'text-cyan-400' : 'text-gray-900'}`} style={{ fontFamily: template.fontFamily }}>
-            {template.name}
-          </span>
+    <div className="w-full h-full flex flex-col bg-white pointer-events-none transition-transform duration-700 group-hover:scale-[1.03]">
+
+      {/* Dynamic Header */}
+      {headerStyle === 'brand' ? (
+        <div className="h-6 flex items-center justify-center shrink-0" style={{ backgroundColor: template.primaryAccent }}>
+          <div className="w-12 h-1.5 bg-white/80 rounded-full"></div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isDark ? 'bg-cyan-400' : 'bg-gray-400'}`} />
-          <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-            isDark ? 'border-cyan-500/40 text-cyan-400' : 'border-gray-300 text-gray-500'
-          }`}>
-            <span className="text-[8px] font-bold">🛒</span>
+      ) : headerStyle === 'minimal' ? (
+        <div className="h-7 border-b border-gray-100 flex items-center px-4 justify-between shrink-0">
+          <div className="flex gap-2">
+            <div className="w-5 h-1 bg-gray-200 rounded-full"></div>
+            <div className="w-5 h-1 bg-gray-200 rounded-full"></div>
+          </div>
+          <div className="w-10 h-1.5 bg-gray-300 rounded-full"></div>
+          <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
+        </div>
+      ) : (
+        <div className="h-7 border-b border-gray-100 flex items-center px-4 gap-3 shrink-0">
+          <div className="w-4 h-4 rounded-full bg-gray-200"></div>
+          <div className="flex gap-2.5 ml-auto">
+            <div className="w-6 h-1 bg-gray-100 rounded-full"></div>
+            <div className="w-6 h-1 bg-gray-100 rounded-full"></div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Hero Preview Section */}
-      <div className="h-[42%] relative shrink-0 overflow-hidden bg-slate-900">
-        <img 
-          src={template.thumbnailUrl} 
-          alt={template.name} 
-          className="w-full h-full object-cover transition duration-700 group-hover:scale-105" 
-          loading="lazy" 
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-3.5">
-          <span className="text-[9px] uppercase tracking-widest text-white/80 font-semibold mb-0.5">
-            {template.designTraits.join(' • ')}
-          </span>
-          <h4 
-            className="text-white font-black text-lg leading-tight tracking-tight drop-shadow-md"
-            style={{ fontFamily: template.fontFamily }}
+      {/* Dynamic Hero */}
+      {(heroStyle as string) === 'split' ? (
+        <div className="h-[40%] shrink-0 flex">
+          <div className="w-1/2 h-full bg-[#F6F6F7] flex flex-col justify-center px-4 gap-2 border-r border-white relative overflow-hidden">
+            <div className="w-4/5 h-2.5 bg-gray-300 rounded-sm"></div>
+            <div className="w-3/5 h-1.5 bg-gray-200 rounded-sm"></div>
+            <div className="w-1/3 h-2 mt-1 rounded-sm" style={{ backgroundColor: template.primaryAccent }}></div>
+          </div>
+          <div className="w-1/2 h-full">
+            <img src={template.thumbnailUrl} className="w-full h-full object-cover" loading="lazy" />
+          </div>
+        </div>
+      ) : (heroStyle as string) === 'typographic' ? (
+        <div className="h-[40%] relative shrink-0 bg-[#FAFAFA] flex flex-col items-center justify-center p-4 text-center overflow-hidden">
+          <img src={template.thumbnailUrl} className="absolute inset-0 w-full h-full object-cover opacity-20" loading="lazy" />
+          <h4
+            className="relative z-10 font-extrabold text-2xl md:text-3xl uppercase tracking-tighter leading-none"
+            style={{ fontFamily: template.fontFamily, color: template.primaryAccent }}
           >
             {template.name}
           </h4>
+          <div className="relative z-10 w-1/2 h-1.5 bg-gray-300 rounded-full mt-3"></div>
         </div>
+      ) : heroStyle === 'compact' ? (
+        <div className="h-[25%] relative shrink-0">
+          <img src={template.thumbnailUrl} className="w-full h-full object-cover" loading="lazy" />
+          <div className="absolute inset-0 bg-black/30 flex items-center px-5">
+            <h4 className="text-white font-bold text-lg" style={{ fontFamily: template.fontFamily }}>
+              {template.name}
+            </h4>
+          </div>
+        </div>
+      ) : (
+        /* Normal, Full, Editorial, Campaign */
+        <div className="h-[45%] relative shrink-0">
+          <img src={template.thumbnailUrl} className="w-full h-full object-cover" loading="lazy" />
+          <div className="absolute inset-0 bg-black/25 flex flex-col items-center justify-center p-4">
+            <h4
+              className="text-white font-bold text-xl md:text-2xl tracking-wide drop-shadow-md text-center"
+              style={{ fontFamily: template.fontFamily }}
+            >
+              {template.name}
+            </h4>
+          </div>
+        </div>
+      )}
+
+      {/* Dynamic Content / Products */}
+      <div className="flex-1 p-4 flex flex-col bg-white">
+        {productLayout === 'asymmetric' ? (
+          <div className="flex gap-3 h-full">
+            <div className="w-[55%] h-full bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+              {products[0] && <img src={products[0].image} className="w-full h-full object-cover" />}
+            </div>
+            <div className="w-[45%] flex flex-col gap-3">
+              <div className="flex-1 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+                {products[1] && <img src={products[1].image} className="w-full h-full object-cover" />}
+              </div>
+              <div className="h-[35%] bg-gray-50 rounded-lg overflow-hidden border border-gray-100 relative">
+                {products[2] && <img src={products[2].image} className="absolute inset-0 w-full h-full object-cover opacity-60" />}
+                <div className="absolute inset-0 p-2.5 flex flex-col gap-1.5 justify-end bg-gradient-to-t from-black/30 to-transparent">
+                  <div className="w-full h-1.5 bg-white/90 rounded-full"></div>
+                  <div className="w-1/2 h-1.5 bg-white/70 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col h-full gap-3">
+            <div className="w-20 h-1.5 bg-gray-200 rounded-full self-center"></div>
+            <div
+              className="grid gap-3 flex-1"
+              style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+            >
+              {products.slice(0, gridCols).map((p: any, i: number) => (
+                <div key={i} className="flex flex-col gap-2">
+                  <div className="flex-1 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+                    <img src={p.image} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex flex-col gap-1 items-center">
+                    <div className="h-1.5 w-4/5 bg-gray-200 rounded-full"></div>
+                    <div className="h-1 w-1/2 bg-gray-100 rounded-full"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Product Items Preview Section */}
-      <div className={`flex-1 p-3 flex flex-col ${isDark ? 'bg-[#0B0F19]' : 'bg-gray-50/50'}`}>
-        <div className="flex items-center justify-between mb-2">
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-cyan-400' : 'text-gray-500'}`}>
-            Koleksi Terbaru
-          </span>
-          <span className="text-[9px] text-gray-400">Lihat Semua →</span>
-        </div>
-        <div className="grid grid-cols-3 gap-2 flex-1">
-          {products.slice(0, 3).map((p: any, i: number) => (
-            <div key={i} className={`flex flex-col rounded-lg overflow-hidden border p-1 transition-all ${
-              isDark ? 'bg-slate-900/80 border-cyan-500/20' : 'bg-white border-gray-100 shadow-2xs'
-            }`}>
-              <div className="aspect-square bg-gray-100 rounded overflow-hidden mb-1">
-                <img src={p.image || p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-              </div>
-              <p className={`text-[9px] font-bold truncate ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
-                {p.name}
-              </p>
-              <p className={`text-[9px] font-semibold ${isDark ? 'text-cyan-400' : 'text-gray-500'}`}>
-                Rp {(p.price || 150000).toLocaleString('id-ID')}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
@@ -452,90 +521,38 @@ const TemplateCard: React.FC<{
   const themeData = THEME_DATA_MAP[template.storeTemplate.id] || THEME_DATA_MAP['minimalist'];
 
   return (
-    <div className={`group font-sans bg-white rounded-3xl border transition-all duration-300 overflow-hidden flex flex-col ${
-      isActive ? 'border-[#2C6ECB] ring-2 ring-[#2C6ECB]/20 shadow-md' : 'border-[#E1E3E5] hover:border-gray-400 hover:shadow-xl'
-    }`}>
-      {/* Thumbnail Container */}
-      <div className="relative aspect-[16/11] bg-gray-100 overflow-hidden cursor-pointer" onClick={onPreview}>
+    <div className="group font-sans flex flex-col gap-4">
+      {/* Thumbnail */}
+      <div
+        className={`relative aspect-[4/3] sm:aspect-[16/12] bg-white overflow-hidden cursor-pointer rounded-2xl border border-[#E1E3E5] shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-[#C9CCCF] ${isActive ? 'ring-2 ring-[#2C6ECB] border-transparent' : ''
+          }`}
+        onClick={onPreview}
+      >
         <MiniTemplatePreview template={template} themeData={themeData} />
 
-        {/* Active Badge on Top Left */}
-        {isActive && (
-          <div className="absolute top-3 left-3 z-20 px-3 py-1 bg-emerald-500 text-white rounded-full text-[11px] font-bold shadow-md flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-            <span>Template Aktif</span>
-          </div>
-        )}
-
-        {/* Category Pill Tag on Top Right */}
-        <div className="absolute top-3 right-3 z-20 px-2.5 py-1 bg-black/60 backdrop-blur-md text-white rounded-full text-[10px] font-bold uppercase tracking-wider">
-          {template.category}
-        </div>
-
-        {/* Hover Overlay with Action Buttons */}
-        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-3 p-4 z-30">
-          <button
-            onClick={(e) => { e.stopPropagation(); onPreview(); }}
-            className="px-4 py-2.5 rounded-xl bg-white/90 text-gray-900 text-xs font-bold shadow-lg hover:bg-white transition flex items-center gap-1.5 cursor-pointer"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Pratinjau</span>
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onUse(); }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition flex items-center gap-1.5 cursor-pointer ${
-              isActive 
-                ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
-                : 'bg-black text-white hover:bg-gray-800'
-            }`}
-          >
-            <Wand2 className="w-3.5 h-3.5" />
-            <span>{isActive ? 'Gunakan' : 'Pilih Template'}</span>
-          </button>
-        </div>
+        {/* Hover overlay - Subtle */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
       </div>
 
-      {/* Info Row Below Thumbnail */}
-      <div className="p-5 flex flex-col gap-3 flex-1 justify-between bg-white">
+      {/* Info Row (Title + Button) */}
+      <div className="flex items-start justify-between px-1">
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
-              {template.name}
-            </h3>
-            <span className="text-xs text-gray-400 font-medium">
-              {template.sectionCount} Seksi
-            </span>
-          </div>
-          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
-            {template.description}
+          <h3 className="font-bold text-[16px] text-[#202223] leading-tight">
+            {template.name}
+          </h3>
+          <p className="text-[14px] text-[#6D7175] mt-1">
+            oleh MicroCMS
           </p>
         </div>
-
-        {/* Design Traits Badges */}
-        <div className="flex flex-wrap gap-1.5 pt-1">
-          {template.designTraits.map((trait, i) => (
-            <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-semibold rounded-md">
-              #{trait}
-            </span>
-          ))}
-        </div>
-
-        {/* Action Bar Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <span className="text-xs text-gray-400 font-medium">
-            Oleh MicroCMS
-          </span>
-          <button
-            onClick={(e) => { e.stopPropagation(); onUse(); }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              isActive
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                : 'bg-gray-900 text-white hover:bg-black shadow-xs'
+        <button
+          onClick={(e) => { e.stopPropagation(); onUse(); }}
+          className={`px-4 py-2 rounded-xl border text-[13px] font-semibold shadow-sm transition-colors cursor-pointer ${isActive
+              ? 'bg-[#202223] text-white border-[#202223]'
+              : 'bg-white border-[#E1E3E5] text-[#202223] hover:bg-[#F6F6F7]'
             }`}
-          >
-            {isActive ? '✓ Aktif' : 'Gunakan'}
-          </button>
-        </div>
+        >
+          {isActive ? 'Aktif' : 'Tambahkan'}
+        </button>
       </div>
     </div>
   );

@@ -7,23 +7,24 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   const showNav = sectionOptions.showNavMenu ?? true;
 
   return (
-    <nav className="w-full px-6 py-4 flex flex-col md:flex-row justify-between items-center bg-[#DC2626] text-white border-b-8 border-black sticky top-0 z-50">
-      <div className="w-full md:w-1/3 flex justify-center md:justify-start">
+    <nav className="w-full px-6 py-3 flex flex-col md:flex-row justify-between items-center bg-black text-white border-b-4 border-[#DC2626] sticky top-0 z-50">
+      <div className="w-full md:w-1/3 flex justify-center md:justify-start items-center">
         {showLogo && (
-          <a href="/" className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase mb-4 md:mb-0 hover:scale-105 transition-transform origin-left">
-            {storeInfo.name}
+          <a href="/" className="flex items-center gap-2 font-black italic tracking-tighter uppercase text-2xl md:text-3xl text-white hover:text-[#DC2626] transition-colors">
+            <span className="px-2 py-0.5 bg-[#DC2626] text-white text-sm not-italic rounded-sm">RAW</span>
+            <span>{storeInfo.name || 'RAWSTATE'}</span>
           </a>
         )}
       </div>
       
       {showNav && (
-        <div className="w-full md:w-2/3 flex flex-wrap justify-center md:justify-end gap-6 font-bold uppercase tracking-widest text-sm md:text-base">
+        <div className="w-full md:w-2/3 flex flex-wrap justify-center md:justify-end items-center gap-6 font-black uppercase tracking-widest text-xs md:text-sm">
           {navigation.map(nav => (
-            <a key={nav.id} href={nav.route} className="hover:text-black hover:bg-white px-2 py-1 transition-colors">
+            <a key={nav.id} href={nav.route} className="text-gray-300 hover:text-white hover:underline underline-offset-4 transition-colors">
               {nav.label}
             </a>
           ))}
-          <button className="text-black bg-white px-4 py-1 hover:bg-black hover:text-white transition-colors border-2 border-transparent">
+          <button className="bg-[#DC2626] text-white px-4 py-2 text-xs font-black uppercase border-2 border-black hover:bg-white hover:text-black transition-all shadow-[3px_3px_0_0_#000]">
             CART [0]
           </button>
         </div>
@@ -39,44 +40,39 @@ export const BoldHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = 
   const buttonLabel = sectionOptions.buttonLabel || "Shop Now";
   const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1600&q=80";
 
-  // Split heading by space to style parts differently if there are multiple words
-  const headingParts = heading.split(' ');
-  const firstWord = headingParts[0] || "LOUD";
-  const restWords = headingParts.slice(1).join(' ') || "& CLEAR";
-
   return (
-    <section className="relative w-full min-h-[90vh] flex flex-col items-center justify-center bg-black text-white overflow-hidden border-b-[16px] border-[#DC2626]">
+    <section className="relative w-full min-h-[85vh] flex flex-col items-center justify-center bg-black text-white overflow-hidden border-b-8 border-[#DC2626]">
       <div className="absolute inset-0">
         <img 
           src={bgImage} 
           alt="Bold Market" 
-          className="w-full h-full object-cover opacity-60 mix-blend-luminosity scale-105 animate-[pulse_10s_ease-in-out_infinite]"
+          className="w-full h-full object-cover opacity-50 filter contrast-125"
         />
-        <div className="absolute inset-0 bg-[#DC2626]/20 mix-blend-color"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
       </div>
       
-      <div className="z-10 text-center relative w-full px-4 flex flex-col items-center justify-center flex-grow">
-        <div className="text-[120px] md:text-[200px] font-black italic tracking-tighter leading-none text-transparent bg-clip-text bg-gradient-to-b from-white/20 to-transparent absolute inset-0 -top-20 flex justify-center items-center scale-150 blur-[2px] select-none pointer-events-none">
-          {firstWord}
-        </div>
-        
-        <h1 className="text-7xl md:text-9xl lg:text-[12rem] font-black italic tracking-tighter mb-6 uppercase relative z-10 text-[#DC2626] drop-shadow-[6px_6px_0_white] md:drop-shadow-[10px_10px_0_white] leading-none text-center px-4 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
+      <div className="z-10 text-center relative w-full px-6 max-w-6xl mx-auto flex flex-col items-center justify-center flex-grow py-20">
+        <span className="px-4 py-1.5 bg-[#DC2626] text-white font-black text-xs uppercase tracking-[0.3em] mb-6 rounded-sm border border-black shadow-[3px_3px_0_0_#000]">
+          STREETWEAR COLLECTION 2026
+        </span>
+
+        <h1 className="text-5xl sm:text-7xl md:text-9xl font-black italic tracking-tighter uppercase text-white drop-shadow-[4px_4px_0_#DC2626] leading-none mb-6 text-center max-w-full">
           {heading}
         </h1>
         
-        <p className="text-xl md:text-3xl font-black uppercase tracking-widest mb-12 relative z-10 bg-white text-black inline-block px-6 py-3 transform -skew-x-12 border-4 border-black">
-          <span className="transform skew-x-12 inline-block">{subheading}</span>
+        <p className="text-base sm:text-2xl font-black uppercase tracking-widest mb-10 bg-white text-black px-6 py-2.5 rounded-sm border-2 border-black shadow-[4px_4px_0_0_#DC2626]">
+          {subheading}
         </p>
         
-        <button className="relative z-10 px-16 py-6 bg-[#DC2626] text-white font-black uppercase tracking-widest text-2xl border-[6px] border-black hover:bg-white hover:text-black hover:scale-110 transition-all shadow-[12px_12px_0_0_#000]">
-          {buttonLabel}
+        <button className="px-10 sm:px-14 py-4 sm:py-5 bg-[#DC2626] text-white font-black uppercase tracking-widest text-lg sm:text-xl border-4 border-black hover:bg-white hover:text-black transition-all shadow-[6px_6px_0_0_#000] cursor-pointer">
+          {buttonLabel} →
         </button>
       </div>
       
-      <div className="absolute bottom-0 w-full overflow-hidden bg-[#DC2626] py-3 z-20 whitespace-nowrap border-t-[6px] border-black">
-        <div className="animate-marquee font-black uppercase tracking-widest text-black text-2xl">
+      <div className="w-full overflow-hidden bg-black text-[#DC2626] py-2.5 z-20 whitespace-nowrap border-t-4 border-b-4 border-[#DC2626]">
+        <div className="animate-marquee font-black uppercase tracking-widest text-sm sm:text-base">
           {[...Array(10)].map((_, i) => (
-            <span key={i} className="mx-4">{heading} — </span>
+            <span key={i} className="mx-6">🔥 {heading} — LIMITED DROP 2026 </span>
           ))}
         </div>
       </div>
@@ -89,19 +85,16 @@ export const BoldFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name} WORLDWIDE`;
 
   return (
-    <footer className="w-full px-8 py-24 bg-black text-white text-center border-t-[16px] border-[#DC2626] relative overflow-hidden">
-      <div className="absolute -left-20 -top-20 text-[250px] font-black italic text-white/5 pointer-events-none select-none">
-        {storeInfo.name}
-      </div>
-      <h2 className="text-7xl md:text-9xl font-black italic tracking-tighter uppercase mb-12 relative z-10 text-white drop-shadow-[4px_4px_0_#DC2626]">
-        {storeInfo.name}
+    <footer className="w-full px-8 py-16 bg-black text-white text-center border-t-8 border-[#DC2626] relative overflow-hidden">
+      <h2 className="text-4xl md:text-7xl font-black italic tracking-tighter uppercase mb-6 text-white">
+        {storeInfo.name || 'RAWSTATE'}
       </h2>
-      <div className="flex flex-wrap justify-center gap-6 md:gap-12 font-black uppercase tracking-widest text-lg md:text-2xl text-[#DC2626] mb-20 relative z-10">
-        <a href="#" className="hover:text-white hover:bg-[#DC2626] px-4 py-2 transition-colors">Instagram</a>
-        <a href="#" className="hover:text-white hover:bg-[#DC2626] px-4 py-2 transition-colors">Twitter</a>
-        <a href="#" className="hover:text-white hover:bg-[#DC2626] px-4 py-2 transition-colors">TikTok</a>
+      <div className="flex flex-wrap justify-center gap-6 font-black uppercase tracking-widest text-sm text-[#DC2626] mb-8">
+        <a href="#" className="hover:text-white transition-colors">Instagram</a>
+        <a href="#" className="hover:text-white transition-colors">Twitter</a>
+        <a href="#" className="hover:text-white transition-colors">TikTok</a>
       </div>
-      <p className="font-bold uppercase tracking-widest text-xl opacity-50 relative z-10">{copyrightText}</p>
+      <p className="font-bold uppercase tracking-widest text-xs text-gray-500">{copyrightText}</p>
     </footer>
   );
 };

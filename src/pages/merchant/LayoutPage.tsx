@@ -577,7 +577,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       {pageMode === 'preview' && previewTemplate && (
         <div className="fixed inset-0 z-[60] bg-white flex flex-col font-sans animate-in fade-in duration-200">
           {/* Shopify Theme Store Top Bar */}
-          <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0">
+          {/* Preview Modal Header Bar */}
+          <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0 z-50">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => { setPageMode('library'); setPreviewTemplate(null); }}
@@ -587,7 +588,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="w-px h-6 bg-gray-200"></div>
-              <h2 className="text-base font-bold text-gray-900">{previewTemplate.name}</h2>
+              <div>
+                <h2 className="text-base font-bold text-gray-900 leading-none">{previewTemplate.name}</h2>
+                <span className="text-xs text-gray-500 font-medium">Gratis • Multi-Page</span>
+              </div>
             </div>
 
             {/* Device Switcher */}
@@ -610,92 +614,21 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Preview Canvas */}
-          <div className="flex-1 overflow-y-auto bg-gray-100 flex justify-center py-4 sm:py-8 px-4">
-            <div
-              className={`transition-all duration-300 ${
-                previewDevice === 'desktop'
-                  ? 'w-full max-w-6xl'
-                  : 'max-w-[390px] w-full'
-              }`}
-            >
-              <div
-                className={`bg-white overflow-hidden shadow-2xl ${
-                  previewDevice === 'mobile'
-                    ? 'rounded-[40px] border-[6px] border-gray-800'
-                    : 'rounded-t-xl border border-gray-300'
-                }`}
-              >
-                {/* Faux Browser Chrome dihapus berdasarkan permintaan user agar tampilan terlihat biasa saja */}
-
-                {/* Mobile Status Bar */}
-                {previewDevice === 'mobile' && (
-                  <div className="bg-gray-900 pt-2.5 pb-1.5 px-6 flex items-center justify-between text-white text-[10px]">
-                    <span className="font-semibold">09:41</span>
-                    <div className="w-16 h-4 bg-black rounded-full"></div>
-                    <span>5G 100%</span>
-                  </div>
-                )}
-
-                {/* Template Preview Content */}
-                <div 
-                  className="w-full h-full relative" 
-                  style={{ 
-                    minHeight: previewDevice === 'mobile' ? '500px' : '600px',
-                    fontFamily: previewTemplate.fontFamily 
-                  }}
-                >
-                  <CenterPreviewCanvas
-                    store={{
-                      ...currentStore,
-                      bannerUrl: previewTemplate.storeTemplate.bannerUrl,
-                      tagline: previewTemplate.storeTemplate.tagline,
-                    }}
-                    products={displayProducts}
-                    sections={previewTemplate.storeTemplate.sections.map((s, idx) => ({
-                      ...s,
-                      key: s.key || `${s.id}-${idx}`,
-                    }))}
-                    selectedSectionKey={null}
-                    onSelectSection={() => {}}
-                    deviceMode={previewDevice}
-                    onDeviceModeChange={() => {}}
-                    primaryAccent={previewTemplate.primaryAccent}
-                    readonly={true}
-                    activeThemeId={activeThemeId}
-                  />
-                </div>
-
-                {/* Mobile bottom bar */}
-                {previewDevice === 'mobile' && (
-                  <div className="bg-gray-900 py-2 flex items-center justify-center">
-                    <div className="w-28 h-1 bg-white/40 rounded-full"></div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Shopify-Style Floating Bottom Bar */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white rounded-full shadow-2xl border border-gray-200 px-3 py-2.5 flex items-center gap-4 sm:gap-6 text-sm">
-            <div className="hidden sm:flex items-center gap-4 border-r border-gray-200 pl-3 pr-6">
-              <h3 className="font-bold text-gray-900 text-base whitespace-nowrap">{previewTemplate.name}</h3>
-              <span className="text-sm font-semibold text-gray-600">Gratis</span>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3 pr-1 pl-1 sm:pl-0">
+            {/* Action Buttons in Header */}
+            <div className="flex items-center gap-3">
               <button
-                onClick={() => {}}
-                className="px-5 py-2.5 font-semibold text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors cursor-default whitespace-nowrap"
+                onClick={() => { setPageMode('library'); setPreviewTemplate(null); }}
+                className="px-4 py-2 rounded-xl border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition cursor-pointer"
               >
-                Lihat demo
+                Batal
               </button>
               <button
                 onClick={() => handleApplyAndEdit(previewTemplate)}
-                className="px-6 py-2.5 font-bold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors cursor-pointer whitespace-nowrap"
+                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-black hover:bg-gray-800 transition shadow-sm cursor-pointer flex items-center gap-1.5"
               >
-                Coba tema
+                <span>Coba & Edit Tema</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
