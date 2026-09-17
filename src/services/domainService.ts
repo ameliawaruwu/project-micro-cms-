@@ -158,6 +158,68 @@ class DomainService {
       return { connected: false };
     }
   }
+
+  /**
+   * Putuskan/Hapus custom domain dari Cloudflare Tunnel dan kembalikan ke random subdomain
+   */
+  async disconnectCustomDomain(storeId: string, hostname: string): Promise<DomainConnectResult> {
+    const cleanHost = hostname.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+    try {
+      // 1. Panggil API Cloudflare Tunnel untuk menghapus rute
+      await fetch('/api/cloudflare/disconnect-domain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          hostname: cleanHost,
+        }),
+      });
+
+      // 2. Update storeService
+      await storeService.updateStore(storeId, {
+        customDomain: undefined,
+        domainType: 'random',
+        domainStatus: 'connected',
+      });
+
+      // 3. Update Supabase
+      try {
+        await supabase
+          .from('stores')
+          .update({
+            custom_domain: null,
+            updated_at: new Date().toISOString(),
+          } as any)
+          .eq('id', storeId);
+      } catch (dbErr) {
+        console.warn('Supabase store disconnect notice:', dbErr);
+      }
+
+      return {
+        success: true,
+        message: `Domain ${cleanHost} berhasil diputuskan. Toko kini menggunakan domain sistem kembali.`,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err.message || 'Gagal memutuskan custom domain.',
+      };
+    }
+  }
+
+  /**
+   * Cek kesehatan Cloudflare API & Tunnels
+   */
+  async getCloudflareHealth(): Promise<any> {
+    try {
+      const res = await fetch('/api/cloudflare/health');
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
 }
 
 export const domainService = new DomainService();

@@ -312,6 +312,91 @@ function cloudflareDevPlugin(): Plugin {
           }
         });
       });
+
+      server.middlewares.use('/api/cloudflare/disconnect-domain', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+
+        let body = '';
+        req.on('data', (chunk) => {
+          body += chunk;
+        });
+        req.on('end', async () => {
+          try {
+            const { hostname } = JSON.parse(body || '{}');
+            if (!hostname) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Hostname wajib diisi' }));
+              return;
+            }
+
+            const cleanHost = hostname
+              .trim()
+              .toLowerCase()
+              .replace(/^https?:\/\//, '')
+              .replace(/\/+$/, '');
+            const panelUrl = process.env.KROOMBOX_PANEL_URL || 'https://panel.kroombox.com';
+            const token = process.env.KROOMBOX_API_TOKEN || '';
+            const tunnelId = process.env.KROOMBOX_TUNNEL_ID || '9743ab8b-d18a-47ac-aeac-87cc6d177db2';
+
+            const delRes = await fetch(
+              `${panelUrl}/api/admin/cloudflare/tunnels/${tunnelId}/routes`,
+              {
+                method: 'DELETE',
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  hostname: cleanHost,
+                }),
+              }
+            );
+
+            const delData = await delRes.json();
+            res.statusCode = delRes.status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(delData));
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: err.message || 'Internal server error' }));
+          }
+        });
+      });
+
+      server.middlewares.use('/api/cloudflare/health', async (req, res) => {
+        if (req.method !== 'GET') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+        try {
+          const panelUrl = process.env.KROOMBOX_PANEL_URL || 'https://panel.kroombox.com';
+          const token = process.env.KROOMBOX_API_TOKEN || '';
+
+          const response = await fetch(`${panelUrl}/api/admin/cloudflare/health`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          const data = await response.json();
+          res.statusCode = response.status;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(data));
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: err.message }));
+        }
+      });
     },
   };
 }
