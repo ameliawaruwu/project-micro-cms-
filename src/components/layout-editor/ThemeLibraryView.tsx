@@ -368,8 +368,8 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
                   className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-semibold border transition-all cursor-pointer ${isActive
-                      ? 'bg-[#FEF2F2] text-[#DC2626] border-[#DC2626] shadow-sm'
-                      : 'bg-white text-[#6D7175] border-[#E1E3E5] hover:border-[#DC2626] hover:text-[#DC2626] hover:bg-[#FEF2F2]'
+                      ? 'bg-[#DC2626] text-white border-[#DC2626] shadow-sm'
+                      : 'bg-white text-[#6D7175] border-[#E1E3E5] hover:border-[#DC2626] hover:text-[#DC2626]'
                     }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
