@@ -1301,17 +1301,23 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                   <div
                     key={sectionKey}
                     id={`preview-${sectionKey}`}
-                    onClick={() => onSelectSection(sectionKey)}
-                    className={`relative group transition-all duration-150 cursor-pointer ${
-                      isSelected
-                        ? 'ring-2.5 ring-[#2271B1] ring-inset z-20 shadow-xs'
-                        : 'hover:ring-1.5 hover:ring-[#2271B1]/60 hover:ring-inset'
-                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectSection(sectionKey);
+                    }}
+                    className="relative group transition-all duration-150 cursor-pointer"
                     style={customPaddingStyle}
                   >
+                    {/* Universal Selection Overlay to prevent child backgrounds from covering the ring */}
+                    <div className={`absolute inset-0 z-[100] pointer-events-none transition-all duration-200 ${
+                      isSelected
+                        ? 'ring-2 ring-[#2271B1] ring-inset bg-[#2271B1]/5 shadow-xs'
+                        : 'group-hover:ring-2 group-hover:ring-[#2271B1]/50 group-hover:ring-inset'
+                    }`} />
+
                     {/* Shopify-style Floating Label Badge on Top Left */}
                     {isSelected && (
-                      <div className="absolute top-0 left-0 z-30 bg-[#2271B1] text-white px-2.5 py-0.5 rounded-br-md text-[10px] font-bold shadow-xs flex items-center gap-1">
+                      <div className="absolute top-0 left-0 z-[110] bg-[#2271B1] text-white px-2.5 py-0.5 rounded-br-md text-[10px] font-bold shadow-xs flex items-center gap-1">
                         <Edit3 className="w-2.5 h-2.5" />
                         <span>{section.title}</span>
                       </div>

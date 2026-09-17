@@ -71,6 +71,7 @@ import { BillingPage } from './pages/merchant/BillingPage';
 import { IntegrationListPage } from './pages/merchant/IntegrationListPage';
 import { SettingsPage } from './pages/merchant/SettingsPage';
 import { LayoutPage } from './pages/merchant/LayoutPage';
+import { DomainPage } from './pages/merchant/DomainPage';
 
 // Admin Pages
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
@@ -184,6 +185,9 @@ export default function App() {
 
   // Initial Data Loading
   const loadData = async (targetStoreId?: string) => {
+    if (new URLSearchParams(window.location.search).get('preview') === 'true') {
+      return;
+    }
     try {
       if (!user) {
         const params = new URLSearchParams(window.location.search);
@@ -259,7 +263,8 @@ export default function App() {
   // Direct URL routing for buyers/customers (e.g. localhost:3000/?toko=toko-andhikagonzales or ?mode=storefront)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const tokoParam = params.get('toko') || params.get('store');
+    const pathSlug = window.location.pathname.length > 1 ? window.location.pathname.substring(1) : null;
+    const tokoParam = params.get('toko') || params.get('store') || pathSlug;
     const modeParam = params.get('mode') || params.get('view');
     const previewThemeParam = params.get('previewTheme');
 
@@ -278,6 +283,31 @@ export default function App() {
 
     if (tokoParam || modeParam === 'storefront') {
       setViewMode('storefront-live');
+      
+      const isPreview = params.get('preview') === 'true';
+      if (isPreview) {
+        try {
+          const draftStr = sessionStorage.getItem('microcms_preview_draft');
+          if (draftStr) {
+            const draftStore = JSON.parse(draftStr);
+            setActiveStore(draftStore);
+            
+            Promise.all([
+              productService.getProductsByStore(draftStore.id),
+              orderService.getOrdersByStore(draftStore.id),
+            ]).then(([storeProducts, storeOrders]) => {
+              const initialCart = cartService.getCart(draftStore.slug);
+              setProducts(storeProducts);
+              setOrders(storeOrders);
+              setCartItems(initialCart);
+            });
+            return;
+          }
+        } catch (e) {
+          console.error("Failed to load preview draft", e);
+        }
+      }
+
       storeService.getStoreBySlug(tokoParam || '').then(async (targetStore) => {
         if (targetStore) {
           setActiveStore(targetStore);
@@ -842,16 +872,18 @@ export default function App() {
       {viewMode === 'storefront-live' && (
         <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative">
           {/* Subtle Floating Switcher back to Dashboard */}
-          <div className="fixed bottom-4 left-4 z-50">
-            <button
-              onClick={() => setViewMode('merchant-desktop')}
-              className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
-              title="Kembali ke Dashboard Merchant"
-            >
-              <Monitor className="w-3.5 h-3.5" />
-              <span>Dashboard</span>
-            </button>
-          </div>
+          {new URLSearchParams(window.location.search).get('preview') !== 'true' && (
+            <div className="fixed bottom-4 left-4 z-50">
+              <button
+                onClick={() => setViewMode('merchant-desktop')}
+                className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
+                title="Kembali ke Dashboard Merchant"
+              >
+                <Monitor className="w-3.5 h-3.5" />
+                <span>Dashboard</span>
+              </button>
+            </div>
+          )}
           {renderStorefrontContent()}
         </div>
       )}
@@ -1040,6 +1072,11 @@ export default function App() {
                   onShowNotification={addToast}
                   onBack={() => setActiveTab('beranda')}
                 />
+              )}
+
+              {/* TAB: DOMAIN */}
+              {activeTab === 'domain' && (
+                <DomainPage store={currentStore} />
               )}
 
               {/* TAB 5: PEMBAYARAN */}

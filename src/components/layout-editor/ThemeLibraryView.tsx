@@ -375,8 +375,8 @@ const MiniTemplatePreview: React.FC<{
   let gridCols = 3;
   if (productSection) {
     if (
-      productSection.options?.layout === 'masonry' ||
-      productSection.options?.layout === 'asymmetric' ||
+      (productSection.options as any)?.layout === 'masonry' ||
+      (productSection.options as any)?.layout === 'asymmetric' ||
       productSection.id === 'asymmetric_showcase' ||
       productSection.id === 'lookbook'
     ) {
@@ -418,7 +418,7 @@ const MiniTemplatePreview: React.FC<{
       )}
 
       {/* Dynamic Hero */}
-      {heroStyle === 'split' ? (
+      {(heroStyle as string) === 'split' ? (
         <div className="h-[40%] shrink-0 flex">
           <div className="w-1/2 h-full bg-[#F6F6F7] flex flex-col justify-center px-4 gap-2 border-r border-white relative overflow-hidden">
             <div className="w-4/5 h-2.5 bg-gray-300 rounded-sm"></div>
@@ -429,7 +429,7 @@ const MiniTemplatePreview: React.FC<{
             <img src={template.thumbnailUrl} className="w-full h-full object-cover" loading="lazy" />
           </div>
         </div>
-      ) : heroStyle === 'typographic' ? (
+      ) : (heroStyle as string) === 'typographic' ? (
         <div className="h-[40%] relative shrink-0 bg-[#FAFAFA] flex flex-col items-center justify-center p-4 text-center overflow-hidden">
           <img src={template.thumbnailUrl} className="absolute inset-0 w-full h-full object-cover opacity-20" loading="lazy" />
           <h4 

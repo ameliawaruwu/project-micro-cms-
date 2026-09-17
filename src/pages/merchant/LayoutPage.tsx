@@ -20,6 +20,7 @@ import { RightPanelSettings } from '../../components/layout-editor/RightPanelSet
 import { AddSectionModal } from '../../components/layout-editor/AddSectionModal';
 import { StoreLayoutSetupWizard } from '../../components/layout-editor/StoreLayoutSetupWizard';
 import { ThemeLibraryView, TemplateGalleryItem, TEMPLATE_GALLERY_ITEMS } from '../../components/layout-editor/ThemeLibraryView';
+import { PublishStoreModal } from '../../components/layout-editor/PublishStoreModal';
 import { ArrowLeft, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 
@@ -102,6 +103,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [activeLeftPane, setActiveLeftPane] = useState<'sections' | 'settings'>('sections');
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   
   // Theme Library vs Editor Mode
   const [pageMode, setPageMode] = useState<'library' | 'preview' | 'loading' | 'editor'>('library');
@@ -131,6 +133,21 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     if (!isFullscreen) {
       onShowNotification('Mode Layar Penuh aktif. Tekan Esc atau tombol Layar Penuh untuk keluar.');
     }
+  };
+
+  const handleOpenPreviewTab = () => {
+    const draftStore = {
+      ...currentStore,
+      layoutSettings: {
+        ...currentStore.layoutSettings,
+        sections,
+        primaryAccent,
+        globalThemeSettings: globalSettings,
+        activeThemeId
+      }
+    };
+    sessionStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
+    window.open(`/${currentStore.slug}?preview=true`, '_blank');
   };
 
   // Handle clicking a template card → redirect to new tab like Canva
@@ -749,6 +766,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           className="fixed inset-0 z-[60] flex flex-col h-screen w-screen bg-[#FAF7F7] font-sans animate-in fade-in duration-200 overflow-hidden"
         >
           {/* 1. TOP BAR */}
+          {/* 1. TOP BAR */}
           <EditorTopBar
             store={currentStore}
             hasChanges={hasChanges}
@@ -756,7 +774,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             onDeviceModeChange={setDeviceMode}
             onSave={handleSave}
             onReset={handleReset}
-            onOpenStorefront={onOpenStorefront}
+            onOpenStorefront={handleOpenPreviewTab}
             onBack={() => setPageMode('library')}
             isSaving={isSaving}
             canUndo={canUndo}
@@ -767,6 +785,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             onToggleFullscreen={toggleFullscreen}
             activePage={activePage}
             onPageChange={setActivePage}
+            onPublish={() => setIsPublishModalOpen(true)}
           />
 
           {/* 2. THREE-PANEL WORKSPACE */}
@@ -869,6 +888,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               onCancel={() => setIsWizardOpen(false)}
             />
           )}
+
+          {/* Publish Store Modal */}
+          <PublishStoreModal
+            isOpen={isPublishModalOpen}
+            onClose={() => setIsPublishModalOpen(false)}
+            store={currentStore}
+          />
         </div>
       )}
     </>
