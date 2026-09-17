@@ -69,6 +69,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   const [newMenuLabel, setNewMenuLabel] = useState('');
   const [newMenuHref, setNewMenuHref] = useState('');
   const [showAddMenuForm, setShowAddMenuForm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // If no section is selected, show Global Theme Settings
   if (!selectedSection || showGlobalSettings) {
@@ -158,7 +159,6 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
 
   const sectionKey = selectedSection.key || `${selectedSection.id}-0`;
   const opts = selectedSection.options || {};
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleOptionChange = (newOpts: Partial<StoreSectionOptions>) => {
     onUpdateSectionOptions(sectionKey, newOpts);
