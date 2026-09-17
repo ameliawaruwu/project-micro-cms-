@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Store, Product, ThemeTemplate } from '../../types';
 import { STORE_TEMPLATES, StoreTemplate } from '../../utils/layoutConstants';
+import { THEME_DATA_MAP } from '../../themes/themeData';
 import {
   Search,
   X,
@@ -118,7 +119,7 @@ export const TEMPLATE_GALLERY_ITEMS: TemplateGalleryItem[] = [
     categories: ['bold'],
     description: 'Tipografi besar dan tebal, kontras tinggi, hero kuat, dan CTA agresif yang mencolok.',
     sectionCount: 5,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#DC2626',
     fontFamily: 'Anton',
     designTraits: ['Kontras Tinggi', 'Bold Type', 'Agresif'],
@@ -132,7 +133,7 @@ export const TEMPLATE_GALLERY_ITEMS: TemplateGalleryItem[] = [
     categories: ['editorial'],
     description: 'Layout majalah, asymmetric grid, storytelling sections, dan tipografi large serif yang elegan.',
     sectionCount: 6,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=1200&auto=format&fit=crop',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#66000E',
     fontFamily: 'Lora',
     designTraits: ['Magazine', 'Storytelling', 'Asymmetric'],
@@ -146,7 +147,7 @@ export const TEMPLATE_GALLERY_ITEMS: TemplateGalleryItem[] = [
     categories: ['nature'],
     description: 'Warna earth tone hangat, elemen organik, rounded shapes, dan image-driven layout untuk produk alam.',
     sectionCount: 7,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=1200&auto=format&fit=crop',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#059669',
     fontFamily: 'DM Sans',
     designTraits: ['Organik', 'Earth Tone', 'Rounded'],
@@ -160,7 +161,7 @@ export const TEMPLATE_GALLERY_ITEMS: TemplateGalleryItem[] = [
     categories: ['creative'],
     description: 'Layout eksperimental, komposisi dinamis, visual storytelling, dan palet warna colorful.',
     sectionCount: 5,
-    thumbnailUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1200&auto=format&fit=crop',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=1200&auto=format&fit=crop',
     primaryAccent: '#E11D48',
     fontFamily: 'Sora',
     designTraits: ['Eksperimental', 'Colorful', 'Dynamic'],
@@ -353,6 +354,164 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   );
 };
 
+// ─── Mini Template Preview ─────────────────────────────────────────────
+const MiniTemplatePreview: React.FC<{
+  template: TemplateGalleryItem;
+  themeData: any;
+}> = ({ template, themeData }) => {
+  const sections = template.storeTemplate.sections || [];
+  const products = themeData?.products || [];
+
+  const headerSection = sections.find((s) => s.id === 'header');
+  const heroSection = sections.find((s) => s.id === 'hero_banner');
+  const productSection = sections.find((s) =>
+    ['product_grid', 'featured_products', 'collection_grid', 'lookbook', 'signature_collection', 'asymmetric_showcase', 'latest_drop'].includes(s.id)
+  );
+
+  const headerStyle = headerSection?.options?.headerStyle || 'standard';
+  const heroStyle = heroSection?.options?.bannerStyle || 'normal';
+  
+  let productLayout = 'grid';
+  let gridCols = 3;
+  if (productSection) {
+    if (
+      productSection.options?.layout === 'masonry' ||
+      productSection.options?.layout === 'asymmetric' ||
+      productSection.id === 'asymmetric_showcase' ||
+      productSection.id === 'lookbook'
+    ) {
+      productLayout = 'asymmetric';
+    } else {
+      productLayout = 'grid';
+      gridCols = productSection.options?.gridColumns || 3;
+      // Ensure gridCols is 2, 3, or 4 for preview rendering
+      if (gridCols > 4) gridCols = 4;
+      if (gridCols < 2) gridCols = 2;
+    }
+  }
+
+  return (
+    <div className="w-full h-full flex flex-col bg-white pointer-events-none transition-transform duration-700 group-hover:scale-[1.03]">
+      
+      {/* Dynamic Header */}
+      {headerStyle === 'brand' ? (
+        <div className="h-6 flex items-center justify-center shrink-0" style={{ backgroundColor: template.primaryAccent }}>
+          <div className="w-12 h-1.5 bg-white/80 rounded-full"></div>
+        </div>
+      ) : headerStyle === 'minimal' ? (
+        <div className="h-7 border-b border-gray-100 flex items-center px-4 justify-between shrink-0">
+          <div className="flex gap-2">
+            <div className="w-5 h-1 bg-gray-200 rounded-full"></div>
+            <div className="w-5 h-1 bg-gray-200 rounded-full"></div>
+          </div>
+          <div className="w-10 h-1.5 bg-gray-300 rounded-full"></div>
+          <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
+        </div>
+      ) : (
+        <div className="h-7 border-b border-gray-100 flex items-center px-4 gap-3 shrink-0">
+          <div className="w-4 h-4 rounded-full bg-gray-200"></div>
+          <div className="flex gap-2.5 ml-auto">
+            <div className="w-6 h-1 bg-gray-100 rounded-full"></div>
+            <div className="w-6 h-1 bg-gray-100 rounded-full"></div>
+          </div>
+        </div>
+      )}
+
+      {/* Dynamic Hero */}
+      {heroStyle === 'split' ? (
+        <div className="h-[40%] shrink-0 flex">
+          <div className="w-1/2 h-full bg-[#F6F6F7] flex flex-col justify-center px-4 gap-2 border-r border-white relative overflow-hidden">
+            <div className="w-4/5 h-2.5 bg-gray-300 rounded-sm"></div>
+            <div className="w-3/5 h-1.5 bg-gray-200 rounded-sm"></div>
+            <div className="w-1/3 h-2 mt-1 rounded-sm" style={{ backgroundColor: template.primaryAccent }}></div>
+          </div>
+          <div className="w-1/2 h-full">
+            <img src={template.thumbnailUrl} className="w-full h-full object-cover" loading="lazy" />
+          </div>
+        </div>
+      ) : heroStyle === 'typographic' ? (
+        <div className="h-[40%] relative shrink-0 bg-[#FAFAFA] flex flex-col items-center justify-center p-4 text-center overflow-hidden">
+          <img src={template.thumbnailUrl} className="absolute inset-0 w-full h-full object-cover opacity-20" loading="lazy" />
+          <h4 
+            className="relative z-10 font-extrabold text-2xl md:text-3xl uppercase tracking-tighter leading-none"
+            style={{ fontFamily: template.fontFamily, color: template.primaryAccent }}
+          >
+            {template.name}
+          </h4>
+          <div className="relative z-10 w-1/2 h-1.5 bg-gray-300 rounded-full mt-3"></div>
+        </div>
+      ) : heroStyle === 'compact' ? (
+        <div className="h-[25%] relative shrink-0">
+          <img src={template.thumbnailUrl} className="w-full h-full object-cover" loading="lazy" />
+          <div className="absolute inset-0 bg-black/30 flex items-center px-5">
+            <h4 className="text-white font-bold text-lg" style={{ fontFamily: template.fontFamily }}>
+              {template.name}
+            </h4>
+          </div>
+        </div>
+      ) : (
+        /* Normal, Full, Editorial, Campaign */
+        <div className="h-[45%] relative shrink-0">
+          <img src={template.thumbnailUrl} className="w-full h-full object-cover" loading="lazy" />
+          <div className="absolute inset-0 bg-black/25 flex flex-col items-center justify-center p-4">
+            <h4 
+              className="text-white font-bold text-xl md:text-2xl tracking-wide drop-shadow-md text-center"
+              style={{ fontFamily: template.fontFamily }}
+            >
+              {template.name}
+            </h4>
+          </div>
+        </div>
+      )}
+
+      {/* Dynamic Content / Products */}
+      <div className="flex-1 p-4 flex flex-col bg-white">
+        {productLayout === 'asymmetric' ? (
+          <div className="flex gap-3 h-full">
+            <div className="w-[55%] h-full bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+              {products[0] && <img src={products[0].image} className="w-full h-full object-cover" />}
+            </div>
+            <div className="w-[45%] flex flex-col gap-3">
+              <div className="flex-1 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+                {products[1] && <img src={products[1].image} className="w-full h-full object-cover" />}
+              </div>
+              <div className="h-[35%] bg-gray-50 rounded-lg overflow-hidden border border-gray-100 relative">
+                {products[2] && <img src={products[2].image} className="absolute inset-0 w-full h-full object-cover opacity-60" />}
+                <div className="absolute inset-0 p-2.5 flex flex-col gap-1.5 justify-end bg-gradient-to-t from-black/30 to-transparent">
+                  <div className="w-full h-1.5 bg-white/90 rounded-full"></div>
+                  <div className="w-1/2 h-1.5 bg-white/70 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col h-full gap-3">
+            <div className="w-20 h-1.5 bg-gray-200 rounded-full self-center"></div>
+            <div 
+              className="grid gap-3 flex-1" 
+              style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+            >
+              {products.slice(0, gridCols).map((p: any, i: number) => (
+                <div key={i} className="flex flex-col gap-2">
+                  <div className="flex-1 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+                    <img src={p.image} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex flex-col gap-1 items-center">
+                    <div className="h-1.5 w-4/5 bg-gray-200 rounded-full"></div>
+                    <div className="h-1 w-1/2 bg-gray-100 rounded-full"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+    </div>
+  );
+};
+
+
 // ─── Template Card ───────────────────────────────────────────────────
 const TemplateCard: React.FC<{
   template: TemplateGalleryItem;
@@ -360,93 +519,43 @@ const TemplateCard: React.FC<{
   onPreview: () => void;
   onUse: () => void;
 }> = ({ template, isActive, onPreview, onUse }) => {
+  const themeData = THEME_DATA_MAP[template.storeTemplate.id] || THEME_DATA_MAP['minimalist'];
+
   return (
-    <div className="group font-sans">
+    <div className="group font-sans flex flex-col gap-4">
       {/* Thumbnail */}
       <div
-        className={`relative aspect-[4/3] bg-[#F6F6F7] overflow-hidden cursor-pointer rounded-2xl border-2 transition-all duration-200 ${
-          isActive
-            ? 'border-[#2C6ECB] ring-2 ring-[#2C6ECB]/20'
-            : 'border-transparent hover:border-[#AEB4B9]'
+        className={`relative aspect-[4/3] sm:aspect-[16/12] bg-white overflow-hidden cursor-pointer rounded-2xl border border-[#E1E3E5] shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-[#C9CCCF] ${
+          isActive ? 'ring-2 ring-[#2C6ECB] border-transparent' : ''
         }`}
         onClick={onPreview}
       >
-        <img
-          src={template.thumbnailUrl}
-          alt={template.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
-          loading="lazy"
-        />
+        <MiniTemplatePreview template={template} themeData={themeData} />
 
-        {/* Active badge */}
-        {isActive && (
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#2C6ECB] text-white text-[11px] font-bold shadow-md">
-            <Palette className="w-3 h-3" />
-            <span>Template Aktif</span>
-          </div>
-        )}
-
-        {/* Badge Free */}
-        {!isActive && (
-          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-sm text-[11px] font-bold text-[#202223] shadow-sm border border-white/50">
-            Gratis
-          </div>
-        )}
-
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <div className="flex items-center gap-2.5 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-            <button
-              onClick={(e) => { e.stopPropagation(); onPreview(); }}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/95 backdrop-blur-sm text-[#202223] text-[13px] font-bold shadow-lg hover:bg-white transition cursor-pointer"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              Pratinjau
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onUse(); }}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#202223] text-white text-[13px] font-bold shadow-lg hover:bg-black transition cursor-pointer"
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-              Gunakan
-            </button>
-          </div>
-        </div>
+        {/* Hover overlay - Subtle */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
       </div>
 
-      {/* Info */}
-      <div className="pt-4 px-0.5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="font-bold text-[15px] text-[#202223] leading-tight truncate">
-              {template.name}
-            </h3>
-            <p className="text-[13px] text-[#6D7175] mt-0.5 line-clamp-2 leading-relaxed">
-              {template.description}
-            </p>
-          </div>
+      {/* Info Row (Title + Button) */}
+      <div className="flex items-start justify-between px-1">
+        <div>
+          <h3 className="font-bold text-[16px] text-[#202223] leading-tight">
+            {template.name}
+          </h3>
+          <p className="text-[14px] text-[#6D7175] mt-1">
+            oleh MicroCMS
+          </p>
         </div>
-
-        {/* Design traits */}
-        <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
-          {template.designTraits.map((trait) => (
-            <span
-              key={trait}
-              className="px-2 py-0.5 rounded-md bg-[#F6F6F7] text-[11px] font-medium text-[#6D7175] border border-[#E1E3E5]"
-            >
-              {trait}
-            </span>
-          ))}
-          <span className="px-2 py-0.5 rounded-md bg-[#F6F6F7] text-[11px] font-medium text-[#6D7175] border border-[#E1E3E5]">
-            {template.sectionCount} bagian
-          </span>
-        </div>
-
-        {/* Pages list */}
-        <div className="flex items-center gap-1 mt-2 text-[11px] text-[#8C9196]">
-          <Layers className="w-3 h-3 shrink-0" />
-          <span className="truncate">{template.pageNames.join(' · ')}</span>
-        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onUse(); }}
+          className={`px-4 py-2 rounded-xl border text-[13px] font-semibold shadow-sm transition-colors cursor-pointer ${
+            isActive 
+              ? 'bg-[#202223] text-white border-[#202223]' 
+              : 'bg-white border-[#E1E3E5] text-[#202223] hover:bg-[#F6F6F7]'
+          }`}
+        >
+          {isActive ? 'Aktif' : 'Tambahkan'}
+        </button>
       </div>
     </div>
   );
