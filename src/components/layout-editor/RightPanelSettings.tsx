@@ -24,9 +24,12 @@ import {
   FileText,
   SlidersHorizontal,
   ChevronLeft,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { Store, StoreSectionConfig, StoreSectionOptions } from '../../types';
 import { CURATED_BANNER_PRESETS, DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
+import { GlobalThemeSettingsPanel } from './GlobalThemeSettingsPanel';
 
 interface RightPanelSettingsProps {
   store: Store;
@@ -39,6 +42,9 @@ interface RightPanelSettingsProps {
   primaryAccent: string;
   onChangePrimaryAccent: (color: string) => void;
   onBack?: () => void;
+  globalSettings?: any;
+  onUpdateGlobalSettings?: (newSettings: any) => void;
+  showGlobalSettings?: boolean;
 }
 
 export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
@@ -51,6 +57,9 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   primaryAccent,
   onChangePrimaryAccent,
   onBack,
+  globalSettings,
+  onUpdateGlobalSettings,
+  showGlobalSettings,
 }) => {
   const [activeTab, setActiveTab] = useState<'konten' | 'tampilan' | 'lanjutan'>('konten');
   const [showImagePresets, setShowImagePresets] = useState(false);
@@ -61,51 +70,62 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   const [showAddMenuForm, setShowAddMenuForm] = useState(false);
 
   // If no section is selected, show Global Theme Settings
-  if (!selectedSection) {
+  if (!selectedSection || showGlobalSettings) {
+    if (showGlobalSettings && globalSettings && onUpdateGlobalSettings) {
+      return (
+        <GlobalThemeSettingsPanel 
+          settings={globalSettings} 
+          onUpdate={onUpdateGlobalSettings} 
+          onClose={onBack} 
+        />
+      );
+    }
+    
+    // Fallback if no specific panel is created yet
     return (
-      <aside className="w-full lg:w-80 xl:w-88 bg-white border-l border-[#E5E0DD] flex flex-col h-full shrink-0 font-sans select-none">
-        <div className="p-3.5 border-b border-[#E5E0DD] bg-white flex items-center justify-between">
+      <aside className="w-full lg:w-[320px] bg-white border-l border-[#E1E3E5] flex flex-col h-full shrink-0 font-sans select-none shadow-2xs">
+        <div className="p-3 border-b border-[#E1E3E5] bg-white flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center">
+            <div className="w-7 h-7 rounded flex items-center justify-center bg-[#F1F8FF] text-[#2C6ECB]">
               <Palette className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-xs font-bold text-[#241A1A]">Tema Toko</h2>
-            </div>
+            <h2 className="text-[13px] font-bold text-[#202223]">Pengaturan Tema</h2>
           </div>
         </div>
 
-        <div className="p-4 space-y-4 overflow-y-auto custom-scrollbar flex-1 text-xs">
+        <div className="p-4 space-y-4 overflow-y-auto custom-scrollbar flex-1">
           {/* Brand Accent Color */}
-          <div className="space-y-2.5 bg-[#FAF7F7] p-3.5 rounded-2xl border border-[#E5E0DD]">
-            <label className="font-bold text-[#241A1A] flex items-center gap-1.5">
-              <Paintbrush className="w-3.5 h-3.5 text-[#66000E]" />
-              <span>Aksen Warna Toko</span>
+          <div className="space-y-2.5">
+            <label className="text-[13px] font-bold text-[#202223] flex items-center gap-1.5">
+              <Paintbrush className="w-3.5 h-3.5" />
+              Aksen Warna Utama
             </label>
             <div className="grid grid-cols-2 gap-2">
               {[
+                { name: 'Biru (Default)', color: '#2C6ECB' },
                 { name: 'Maroon', color: '#66000E' },
-                { name: 'Navy', color: '#0F172A' },
                 { name: 'Emerald', color: '#027A48' },
                 { name: 'Amber', color: '#B54708' },
+                { name: 'Hitam', color: '#1A1A1A' },
+                { name: 'Ungu', color: '#7C3AED' },
               ].map((c) => (
                 <button
                   key={c.color}
                   type="button"
                   onClick={() => onChangePrimaryAccent(c.color)}
-                  className={`p-2.5 rounded-xl border flex items-center gap-2 transition cursor-pointer ${
+                  className={`p-2 rounded-lg border flex items-center gap-2 transition cursor-pointer ${
                     primaryAccent === c.color
-                      ? 'border-[#66000E] bg-white ring-2 ring-[#66000E]/20 shadow-xs'
-                      : 'border-[#E5E0DD] bg-white hover:bg-slate-50'
+                      ? 'border-[#2C6ECB] bg-[#F1F8FF] shadow-xs'
+                      : 'border-[#E1E3E5] bg-white hover:bg-[#F6F6F7]'
                   }`}
                 >
                   <span
-                    className="w-4 h-4 rounded-full border border-black/10 flex items-center justify-center text-white shrink-0 shadow-2xs"
+                    className="w-4 h-4 rounded-full border border-black/10 flex items-center justify-center text-white shrink-0"
                     style={{ backgroundColor: c.color }}
                   >
                     {primaryAccent === c.color && <Check className="w-2.5 h-2.5" />}
                   </span>
-                  <span className="text-[11px] font-semibold text-[#241A1A]">
+                  <span className="text-[11px] font-semibold text-[#202223]">
                     {c.name}
                   </span>
                 </button>
@@ -113,11 +133,21 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             </div>
           </div>
 
-          {/* Direct Canvas Tip */}
-          <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/70 text-[#5A5250] flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-            <span className="text-[11px] text-[#706866]">
-              Klik elemen di kanvas tengah atau daftar kiri untuk mengedit.
+          {/* Typography */}
+          <div className="space-y-2.5 pt-4 border-t border-[#E1E3E5]">
+            <label className="text-[13px] font-bold text-[#202223] flex items-center gap-1.5">
+              <Type className="w-3.5 h-3.5" />
+              Tipografi
+            </label>
+            <div className="p-3 rounded-xl bg-[#F6F6F7] border border-[#E1E3E5] text-center">
+              <p className="text-[11px] text-[#8C9196]">Tipografi diatur secara global pada level tema.</p>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-lg bg-[#F1F8FF] border border-[#BAE0FF] flex gap-2">
+            <Sparkles className="w-4 h-4 text-[#2C6ECB] shrink-0 mt-0.5" />
+            <span className="text-[11px] text-[#202223] leading-relaxed">
+              Pilih sebuah section dari panel kiri atau klik di kanvas untuk menyesuaikan konten spesifik.
             </span>
           </div>
         </div>
@@ -134,7 +164,9 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
 
   const hasImage =
     selectedSection.id === 'hero_banner' ||
-    selectedSection.id === 'promo_banner';
+    selectedSection.id === 'promo_banner' ||
+    selectedSection.id === 'image_with_text' ||
+    selectedSection.id === 'gallery';
 
   const currentImageUrl =
     opts.imageUrl ||
@@ -143,147 +175,130 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
       : '');
 
   return (
-    <aside className="w-full lg:w-80 xl:w-88 bg-white border-r border-[#E5E0DD] flex flex-col h-full shrink-0 font-sans shadow-2xs select-none">
+    <aside className="w-full lg:w-[320px] bg-white border-l border-[#E1E3E5] flex flex-col h-full shrink-0 font-sans shadow-2xs select-none">
       {/* 1. COMPACT SECTION HEADER WITH BACK BUTTON */}
-      <div className="p-3 border-b border-[#E5E0DD] bg-[#FAF7F7] shrink-0 space-y-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center min-w-0 gap-2">
+      <div className="px-3 pt-3 pb-0 border-b border-[#E1E3E5] bg-white shrink-0">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center min-w-0 gap-1.5">
             {onBack && (
               <button
                 type="button"
                 onClick={onBack}
-                className="p-1.5 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-[#E5E0DD] shrink-0 flex items-center justify-center cursor-pointer text-[#706866] hover:text-[#241A1A]"
-                title="Kembali ke Daftar Section"
+                className="p-1 rounded text-[#8C9196] hover:text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer shrink-0"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
             )}
-            <h2 className="text-sm font-bold text-[#241A1A] truncate flex items-center gap-1.5">
-              <span>{selectedSection.title}</span>
+            <h2 className="text-[13px] font-bold text-[#202223] truncate">
+              {selectedSection.title || selectedSection.id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </h2>
           </div>
 
           {/* Action Icons */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0">
             <button
               type="button"
               onClick={() => onDuplicateSection(sectionKey)}
-              className="p-1.5 rounded-lg text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] border border-[#E5E0DD] transition cursor-pointer"
+              className="p-1.5 rounded text-[#8C9196] hover:text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer"
               title="Duplikasi"
             >
               <Copy className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
-              onClick={() => onToggleVisibility(sectionKey)}
-              className={`p-1.5 rounded-lg border transition cursor-pointer ${
-                selectedSection.isVisible
-                  ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200 hover:bg-emerald-100/60'
-                  : 'text-[#706866] bg-[#FAF7F7] border-[#E5E0DD] hover:text-[#241A1A]'
-              }`}
-              title={selectedSection.isVisible ? 'Sembunyikan' : 'Tampilkan'}
+              onClick={() => onDeleteSection(sectionKey)}
+              className="p-1.5 rounded text-[#8C9196] hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+              title="Hapus"
             >
-              {selectedSection.isVisible ? (
-                <Eye className="w-3.5 h-3.5" />
-              ) : (
-                <EyeOff className="w-3.5 h-3.5" />
-              )}
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
         {/* Dynamic Segmented Tab Switcher */}
-        <div className="flex items-center bg-[#F4F0EE] p-0.5 rounded-xl border border-[#E5E0DD]">
+        <div className="flex items-center border-b-2 border-transparent">
           <button
-            type="button"
             onClick={() => setActiveTab('konten')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            className={`flex-1 pb-2.5 text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer border-b-2 ${
               activeTab === 'konten'
-                ? 'bg-white text-[#66000E] shadow-2xs font-bold'
-                : 'text-[#706866] hover:text-[#241A1A]'
+                ? 'text-[#202223] border-[#202223]'
+                : 'text-[#8C9196] border-transparent hover:text-[#202223]'
             }`}
           >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Konten</span>
+            Konten
           </button>
           <button
-            type="button"
             onClick={() => setActiveTab('tampilan')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            className={`flex-1 pb-2.5 text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer border-b-2 ${
               activeTab === 'tampilan'
-                ? 'bg-white text-[#66000E] shadow-2xs font-bold'
-                : 'text-[#706866] hover:text-[#241A1A]'
+                ? 'text-[#202223] border-[#202223]'
+                : 'text-[#8C9196] border-transparent hover:text-[#202223]'
             }`}
           >
-            <Paintbrush className="w-3.5 h-3.5" />
-            <span>Tampilan</span>
+            Tampilan
           </button>
           <button
-            type="button"
             onClick={() => setActiveTab('lanjutan')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            className={`flex-1 pb-2.5 text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer border-b-2 ${
               activeTab === 'lanjutan'
-                ? 'bg-white text-[#66000E] shadow-2xs font-bold'
-                : 'text-[#706866] hover:text-[#241A1A]'
+                ? 'text-[#202223] border-[#202223]'
+                : 'text-[#8C9196] border-transparent hover:text-[#202223]'
             }`}
           >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Lanjutan</span>
+            Lanjutan
           </button>
         </div>
       </div>
 
       {/* 2. TAB CONTENT CONTAINER */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-3.5 space-y-3.5 text-xs">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
         
         {/* ========================================================================= */}
         {/* TAB 1: KONTEN */}
         {/* ========================================================================= */}
         {activeTab === 'konten' && (
-          <div className="space-y-3.5">
-            {/* Banner Image Preview */}
+          <div className="space-y-4">
+            
+            {/* ── IMAGE SECTION ── */}
             {hasImage && (
-              <div className="space-y-2 bg-[#FAF7F7] p-3 rounded-2xl border border-[#E5E0DD]">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#241A1A] flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5 text-[#66000E]" />
-                    <span>Gambar Banner</span>
-                  </span>
-                  {currentImageUrl && (
-                    <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">
-                      Aktif
-                    </span>
-                  )}
-                </div>
-
-                {currentImageUrl && (
-                  <div className="relative rounded-xl overflow-hidden aspect-video border border-[#E5E0DD] bg-black/5 shadow-2xs">
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-[#202223]">Gambar Utama</label>
+                
+                {currentImageUrl ? (
+                  <div className="relative rounded-lg overflow-hidden aspect-video border border-[#E1E3E5] bg-[#F6F6F7]">
                     <img
                       src={currentImageUrl}
-                      alt="Banner Preview"
+                      alt="Preview"
                       className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
                     />
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                      <button 
+                        onClick={() => handleOptionChange({ imageUrl: '' })}
+                        className="p-2 bg-white rounded-full text-red-600 hover:scale-105 transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="aspect-video rounded-lg border-2 border-dashed border-[#E1E3E5] bg-[#F6F6F7] flex flex-col items-center justify-center gap-2">
+                    <ImageIcon className="w-6 h-6 text-[#8C9196]" />
+                    <span className="text-[11px] text-[#6D7175]">Belum ada gambar</span>
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                <div className="flex gap-2 pt-1">
                   <button
-                    type="button"
                     onClick={() => setShowImagePresets(!showImagePresets)}
-                    className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-[#E5E0DD] text-[#241A1A] font-semibold text-[11px] transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                    className="flex-1 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer"
                   >
-                    <FolderOpen className="w-3.5 h-3.5 text-[#66000E]" />
-                    <span>Galeri UMKM</span>
+                    Pilih dari Galeri
                   </button>
-
                   <button
-                    type="button"
                     onClick={() => setShowUrlInput(!showUrlInput)}
-                    className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-[#E5E0DD] text-[#241A1A] font-semibold text-[11px] transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                    className="flex-1 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer"
                   >
-                    <LinkIcon className="w-3.5 h-3.5 text-[#706866]" />
-                    <span>Ganti URL</span>
+                    Input URL
                   </button>
                 </div>
 
@@ -294,598 +309,321 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       value={customImageUrlInput}
                       onChange={(e) => setCustomImageUrlInput(e.target.value)}
                       placeholder="https://..."
-                      className="flex-1 px-2.5 py-1.5 rounded-xl bg-white border border-[#E5E0DD] text-xs text-[#241A1A] focus:outline-none focus:border-[#66000E]"
+                      className="flex-1 px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] focus:border-[#2C6ECB] focus:ring-1 focus:ring-[#2C6ECB]"
                     />
                     <button
-                      type="button"
                       onClick={() => {
                         if (customImageUrlInput.trim()) {
                           handleOptionChange({ imageUrl: customImageUrlInput.trim() });
                           setShowUrlInput(false);
                         }
                       }}
-                      className="px-3 py-1.5 bg-[#66000E] text-white font-semibold rounded-xl text-xs cursor-pointer"
+                      className="px-3 py-1.5 bg-[#202223] text-white font-semibold rounded-lg text-[12px] cursor-pointer"
                     >
-                      Pakai
+                      Ok
                     </button>
                   </div>
                 )}
 
                 {showImagePresets && (
-                  <div className="pt-2 border-t border-[#E5E0DD] space-y-1.5">
-                    <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto custom-scrollbar">
-                      {CURATED_BANNER_PRESETS.map((preset) => (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => {
-                            handleOptionChange({ imageUrl: preset.url });
-                            setShowImagePresets(false);
-                          }}
-                          className="group relative rounded-lg overflow-hidden aspect-video border border-[#E5E0DD] hover:border-[#66000E] transition text-left cursor-pointer"
-                        >
-                          <img
-                            src={preset.url}
-                            alt={preset.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition duration-150"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition flex items-end p-1">
-                            <span className="text-[9px] font-semibold text-white truncate">
-                              {preset.name}
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                  <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto mt-2">
+                    {CURATED_BANNER_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        onClick={() => {
+                          handleOptionChange({ imageUrl: preset.url });
+                          setShowImagePresets(false);
+                        }}
+                        className="group relative rounded-lg overflow-hidden aspect-video border border-[#E1E3E5] hover:border-[#2C6ECB] transition cursor-pointer"
+                      >
+                        <img src={preset.url} alt={preset.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Title / Heading Input */}
-            <div className="space-y-1.5 bg-white p-3 rounded-2xl border border-[#E5E0DD]">
-              <label className="font-bold text-[#241A1A] flex items-center gap-1.5">
-                <Type className="w-3.5 h-3.5 text-[#66000E]" />
-                <span>Teks Judul</span>
-              </label>
-              <input
-                type="text"
-                value={opts.heading || opts.featuredTitle || opts.announcementText || opts.testimonialsTitle || opts.newsletterTitle || ''}
-                onChange={(e) => {
-                  if (selectedSection.id === 'announcement') {
-                    handleOptionChange({ announcementText: e.target.value });
-                  } else if (selectedSection.id === 'featured_products') {
-                    handleOptionChange({ featuredTitle: e.target.value });
-                  } else if (selectedSection.id === 'testimonials') {
-                    handleOptionChange({ testimonialsTitle: e.target.value });
-                  } else if (selectedSection.id === 'newsletter') {
-                    handleOptionChange({ newsletterTitle: e.target.value });
-                  } else {
-                    handleOptionChange({ heading: e.target.value });
-                  }
-                }}
-                placeholder="Masukkan judul..."
-                className="w-full px-3 py-2 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] text-xs text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E]"
-              />
-            </div>
-
-            {/* Subtitle / Description */}
-            {(selectedSection.id === 'hero_banner' ||
-              selectedSection.id === 'promo_banner' ||
-              selectedSection.id === 'featured_products' ||
-              selectedSection.id === 'newsletter' ||
-              selectedSection.id === 'footer') && (
-              <div className="space-y-1.5 bg-white p-3 rounded-2xl border border-[#E5E0DD]">
-                <label className="font-bold text-[#241A1A]">
-                  {selectedSection.id === 'footer' ? 'Hak Cipta' : 'Deskripsi'}
-                </label>
-                <textarea
-                  rows={2}
-                  value={
-                    selectedSection.id === 'footer'
-                      ? opts.copyrightText || ''
-                      : opts.subheading || opts.description || opts.featuredSubtitle || opts.newsletterSubtitle || ''
-                  }
-                  onChange={(e) => {
-                    if (selectedSection.id === 'featured_products') {
-                      handleOptionChange({ featuredSubtitle: e.target.value });
-                    } else if (selectedSection.id === 'newsletter') {
-                      handleOptionChange({ newsletterSubtitle: e.target.value });
-                    } else if (selectedSection.id === 'footer') {
-                      handleOptionChange({ copyrightText: e.target.value });
-                    } else {
-                      handleOptionChange({ subheading: e.target.value, description: e.target.value });
-                    }
-                  }}
-                  placeholder={selectedSection.id === 'footer' ? 'Hak Cipta Dilindungi...' : 'Tulis keterangan...'}
-                  className="w-full px-3 py-2 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] text-xs text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E]"
-                />
-              </div>
-            )}
-
-            {/* Badge Highlight */}
-            {(selectedSection.id === 'hero_banner' ||
-              selectedSection.id === 'promo_banner' ||
-              selectedSection.id === 'newsletter') && (
-              <div className="space-y-1.5 bg-white p-3 rounded-2xl border border-[#E5E0DD]">
-                <label className="font-bold text-[#241A1A]">Label Sorotan (Badge)</label>
+            {/* ── TEXT CONTENT ── */}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[12px] font-bold text-[#202223]">Teks Judul</label>
                 <input
                   type="text"
-                  value={opts.badgeText || opts.discountBadge || opts.incentiveBadge || ''}
+                  value={opts.heading || opts.featuredTitle || opts.announcementText || opts.testimonialsTitle || opts.newsletterTitle || ''}
                   onChange={(e) => {
-                    if (selectedSection.id === 'promo_banner') {
-                      handleOptionChange({ discountBadge: e.target.value });
-                    } else if (selectedSection.id === 'newsletter') {
-                      handleOptionChange({ incentiveBadge: e.target.value });
-                    } else {
-                      handleOptionChange({ badgeText: e.target.value });
-                    }
+                    if (selectedSection.id === 'announcement') handleOptionChange({ announcementText: e.target.value });
+                    else if (selectedSection.id === 'featured_products') handleOptionChange({ featuredTitle: e.target.value });
+                    else if (selectedSection.id === 'testimonials') handleOptionChange({ testimonialsTitle: e.target.value });
+                    else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterTitle: e.target.value });
+                    else handleOptionChange({ heading: e.target.value });
                   }}
-                  placeholder="Contoh: PROMO SPESIAL"
-                  className="w-full px-3 py-2 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] text-xs text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E]"
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB] focus:ring-1 focus:ring-[#2C6ECB]"
                 />
               </div>
-            )}
 
-            {/* Action Buttons (CTA) */}
-            {(selectedSection.id === 'hero_banner' ||
-              selectedSection.id === 'promo_banner' ||
-              selectedSection.id === 'newsletter') && (
-              <div className="space-y-2 bg-white p-3 rounded-2xl border border-[#E5E0DD]">
-                <span className="font-bold text-[#241A1A] flex items-center gap-1.5">
-                  <LinkIcon className="w-3.5 h-3.5 text-[#66000E]" />
-                  <span>Tombol Utama</span>
-                </span>
-                <div className="grid grid-cols-2 gap-2">
+              {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'featured_products' || selectedSection.id === 'newsletter' || selectedSection.id === 'footer' || selectedSection.id === 'rich_text') && (
+                <div className="space-y-1">
+                  <label className="text-[12px] font-bold text-[#202223]">
+                    {selectedSection.id === 'footer' ? 'Teks Footer' : 'Deskripsi'}
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={selectedSection.id === 'footer' ? opts.copyrightText || '' : opts.subheading || opts.description || opts.featuredSubtitle || opts.newsletterSubtitle || ''}
+                    onChange={(e) => {
+                      if (selectedSection.id === 'featured_products') handleOptionChange({ featuredSubtitle: e.target.value });
+                      else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterSubtitle: e.target.value });
+                      else if (selectedSection.id === 'footer') handleOptionChange({ copyrightText: e.target.value });
+                      else handleOptionChange({ subheading: e.target.value, description: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB] focus:ring-1 focus:ring-[#2C6ECB]"
+                  />
+                </div>
+              )}
+
+              {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter') && (
+                <div className="space-y-1">
+                  <label className="text-[12px] font-bold text-[#202223]">Label Badge</label>
+                  <input
+                    type="text"
+                    value={opts.badgeText || opts.discountBadge || opts.incentiveBadge || ''}
+                    onChange={(e) => {
+                      if (selectedSection.id === 'promo_banner') handleOptionChange({ discountBadge: e.target.value });
+                      else if (selectedSection.id === 'newsletter') handleOptionChange({ incentiveBadge: e.target.value });
+                      else handleOptionChange({ badgeText: e.target.value });
+                    }}
+                    placeholder="Contoh: PROMO SPESIAL"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* ── BUTTONS / CTA ── */}
+            {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter') && (
+              <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
+                <label className="text-[12px] font-bold text-[#202223]">Tombol Utama</label>
+                <div className="space-y-2">
                   <input
                     type="text"
                     value={opts.buttonLabel || opts.buttonText || ''}
                     onChange={(e) => handleOptionChange({ buttonLabel: e.target.value, buttonText: e.target.value })}
                     placeholder="Teks Tombol"
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] text-xs text-[#241A1A] focus:bg-white"
+                    className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                   />
                   <input
                     type="text"
-                    value={opts.buttonLink || '#katalog'}
+                    value={opts.buttonLink || '#'}
                     onChange={(e) => handleOptionChange({ buttonLink: e.target.value })}
-                    placeholder="Tautan (#katalog)"
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] text-xs text-[#241A1A] focus:bg-white"
+                    placeholder="Link Tujuan (URL atau #id)"
+                    className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                   />
                 </div>
 
-                {/* Secondary Button for Hero */}
                 {selectedSection.id === 'hero_banner' && (
-                  <div className="pt-2 border-t border-[#F2ECE9] space-y-1.5">
-                    <span className="text-[11px] font-semibold text-[#5A5250]">Tombol Kedua</span>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={opts.secondaryButtonLabel || ''}
-                        onChange={(e) => handleOptionChange({ secondaryButtonLabel: e.target.value })}
-                        placeholder="WhatsApp Toko"
-                        className="w-full px-2.5 py-1.5 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] text-xs text-[#241A1A] focus:bg-white"
-                      />
-                      <input
-                        type="text"
-                        value={opts.secondaryButtonLink || '#kontak'}
-                        onChange={(e) => handleOptionChange({ secondaryButtonLink: e.target.value })}
-                        placeholder="#kontak"
-                        className="w-full px-2.5 py-1.5 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] text-xs text-[#241A1A] focus:bg-white"
-                      />
-                    </div>
+                  <div className="pt-3 space-y-2">
+                    <label className="text-[12px] font-bold text-[#202223]">Tombol Sekunder</label>
+                    <input
+                      type="text"
+                      value={opts.secondaryButtonLabel || ''}
+                      onChange={(e) => handleOptionChange({ secondaryButtonLabel: e.target.value })}
+                      placeholder="Teks Tombol Kedua"
+                      className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
+                    />
+                    <input
+                      type="text"
+                      value={opts.secondaryButtonLink || '#'}
+                      onChange={(e) => handleOptionChange({ secondaryButtonLink: e.target.value })}
+                      placeholder="Link Tujuan (URL atau #id)"
+                      className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
+                    />
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Header / Navbar specific content */}
-            {selectedSection.id === 'header' && (
-              <div className="space-y-3 bg-white p-3 rounded-2xl border border-[#E5E0DD]">
-                <span className="font-bold text-xs text-[#241A1A] block">Menu & Fitur Navbar</span>
-
-                {/* Navbar links list */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-[#5A5250]">Daftar Menu Navigasi</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddMenuForm(!showAddMenuForm)}
-                      className="text-[11px] font-bold text-[#66000E] hover:underline flex items-center gap-0.5 cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>Tambah</span>
-                    </button>
-                  </div>
-
-                  {showAddMenuForm && (
-                    <div className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] space-y-2">
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <input
-                          type="text"
-                          value={newMenuLabel}
-                          onChange={(e) => setNewMenuLabel(e.target.value)}
-                          placeholder="Label Menu"
-                          className="px-2 py-1 text-xs rounded-lg bg-white border border-[#E5E0DD]"
-                        />
-                        <input
-                          type="text"
-                          value={newMenuHref}
-                          onChange={(e) => setNewMenuHref(e.target.value)}
-                          placeholder="Link (#promo)"
-                          className="px-2 py-1 text-xs rounded-lg bg-white border border-[#E5E0DD]"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (newMenuLabel.trim()) {
-                            const current = opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS;
-                            handleOptionChange({
-                              navMenuItems: [...current, { id: `nav-${Date.now()}`, label: newMenuLabel.trim(), href: newMenuHref.trim() || '#' }],
-                            });
-                            setNewMenuLabel('');
-                            setNewMenuHref('');
-                            setShowAddMenuForm(false);
-                          }
-                        }}
-                        className="w-full py-1.5 bg-[#66000E] text-white font-semibold rounded-lg text-xs cursor-pointer"
-                      >
-                        Simpan Menu
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="space-y-1 max-h-36 overflow-y-auto custom-scrollbar">
-                    {(opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS).map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-2 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] text-xs"
-                      >
-                        <span className="font-semibold text-[#241A1A]">{item.label}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const filtered = (opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS).filter((n) => n.id !== item.id);
-                            handleOptionChange({ navMenuItems: filtered });
-                          }}
-                          className="text-[#706866] hover:text-red-600 p-1 cursor-pointer"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Quick Toggle Switches */}
-                <div className="space-y-2 pt-2 border-t border-[#F2ECE9]">
-                  {[
-                    { label: 'Kolom Pencarian', key: 'showSearchBar', current: opts.showSearchBar !== false },
-                    { label: 'Keranjang Belanja', key: 'showCartBadge', current: opts.showCartBadge !== false },
-                    { label: 'Chat WhatsApp', key: 'showWhatsAppButton', current: opts.showWhatsAppButton !== false },
-                  ].map((t) => (
-                    <div key={t.key} className="flex items-center justify-between py-1">
-                      <span className="text-[11px] text-[#5A5250]">{t.label}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleOptionChange({ [t.key]: !t.current })}
-                        className={`w-8 h-5 flex items-center rounded-full p-0.5 transition cursor-pointer ${
-                          t.current ? 'bg-[#66000E] justify-end' : 'bg-slate-300 justify-start'
-                        }`}
-                      >
-                        <span className="bg-white w-4 h-4 rounded-full shadow-md"></span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Announcement toggle */}
-            {selectedSection.id === 'announcement' && (
-              <div className="bg-white p-3 rounded-2xl border border-[#E5E0DD] flex items-center justify-between">
-                <span className="font-bold text-[#241A1A]">Ikon Berkilau</span>
-                <button
-                  type="button"
-                  onClick={() => handleOptionChange({ showIcon: opts.showIcon === false ? true : false })}
-                  className={`w-8 h-5 flex items-center rounded-full p-0.5 transition cursor-pointer ${
-                    opts.showIcon !== false ? 'bg-[#66000E] justify-end' : 'bg-slate-300 justify-start'
-                  }`}
-                >
-                  <span className="bg-white w-4 h-4 rounded-full shadow-md"></span>
-                </button>
               </div>
             )}
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 2: TAMPILAN & GAYA */}
+        {/* TAB 2: TAMPILAN */}
         {/* ========================================================================= */}
         {activeTab === 'tampilan' && (
-          <div className="space-y-3.5">
-            {/* Visual Color Scheme Selector */}
-            <div className="space-y-2 bg-white p-3.5 rounded-2xl border border-[#E5E0DD]">
-              <label className="font-bold text-[#241A1A] flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5 text-[#66000E]" />
-                <span>Skema Warna</span>
-              </label>
-
-              <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-5">
+            {/* Layout & Alignment */}
+            <div className="space-y-2.5">
+              <label className="text-[12px] font-bold text-[#202223]">Perataan Teks</label>
+              <div className="flex bg-[#F6F6F7] p-1 rounded-lg border border-[#E1E3E5]">
                 {[
-                  { id: 'scheme-1', name: 'Terang', bg: 'bg-white', border: 'border-slate-300' },
-                  { id: 'scheme-2', name: 'Gelap', bg: 'bg-slate-900', border: 'border-slate-800' },
-                  { id: 'scheme-3', name: 'Aksen Marun', bg: 'bg-[#66000E]', border: 'border-[#66000E]' },
-                  { id: 'scheme-4', name: 'Amber', bg: 'bg-amber-50', border: 'border-amber-200' },
-                ].map((sc) => {
-                  const isSelected = (opts.colorScheme || 'scheme-1') === sc.id;
-                  return (
-                    <button
-                      key={sc.id}
-                      type="button"
-                      onClick={() => handleOptionChange({ colorScheme: sc.id as any })}
-                      className={`p-2.5 rounded-xl border flex items-center gap-2 transition cursor-pointer ${
-                        isSelected
-                          ? 'border-[#66000E] bg-[#FAF7F7] ring-2 ring-[#66000E]/20 shadow-xs'
-                          : 'border-[#E5E0DD] bg-white hover:bg-slate-50'
-                      }`}
-                    >
-                      <span className={`w-4 h-4 rounded-full border ${sc.bg} flex items-center justify-center shrink-0 shadow-2xs`}>
-                        {isSelected && <span className={`w-1.5 h-1.5 rounded-full ${sc.id === 'scheme-2' || sc.id === 'scheme-3' ? 'bg-white' : 'bg-[#66000E]'}`} />}
-                      </span>
-                      <span className="text-[11px] font-semibold text-[#241A1A]">
-                        {sc.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Text Alignment */}
-            <div className="space-y-2 bg-white p-3.5 rounded-2xl border border-[#E5E0DD]">
-              <label className="font-bold text-[#241A1A]">Perataan Teks</label>
-              <div className="grid grid-cols-3 gap-1 bg-[#FAF7F7] p-1 rounded-xl border border-[#E5E0DD]">
-                <button
-                  type="button"
-                  onClick={() => handleOptionChange({ textAlignment: 'left' })}
-                  className={`py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition cursor-pointer ${
-                    (opts.textAlignment || 'left') === 'left'
-                      ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]'
-                      : 'text-[#706866] hover:text-[#241A1A]'
-                  }`}
-                >
-                  <AlignLeft className="w-3.5 h-3.5" />
-                  <span>Kiri</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleOptionChange({ textAlignment: 'center' })}
-                  className={`py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition cursor-pointer ${
-                    opts.textAlignment === 'center'
-                      ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]'
-                      : 'text-[#706866] hover:text-[#241A1A]'
-                  }`}
-                >
-                  <AlignCenter className="w-3.5 h-3.5" />
-                  <span>Tengah</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleOptionChange({ textAlignment: 'right' })}
-                  className={`py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition cursor-pointer ${
-                    opts.textAlignment === 'right'
-                      ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]'
-                      : 'text-[#706866] hover:text-[#241A1A]'
-                  }`}
-                >
-                  <AlignRight className="w-3.5 h-3.5" />
-                  <span>Kanan</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Section Height (Hero / Promo) */}
-            {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner') && (
-              <div className="space-y-2 bg-white p-3.5 rounded-2xl border border-[#E5E0DD]">
-                <label className="font-bold text-[#241A1A]">Tinggi Banner</label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[
-                    { id: 'compact', label: 'Ringkas' },
-                    { id: 'normal', label: 'Standar' },
-                    { id: 'tall', label: 'Tinggi' },
-                  ].map((h) => (
-                    <button
-                      key={h.id}
-                      type="button"
-                      onClick={() => handleOptionChange({ sectionHeight: h.id as any })}
-                      className={`py-1.5 px-2 rounded-xl text-xs font-semibold border transition cursor-pointer text-center ${
-                        (opts.sectionHeight || 'normal') === h.id
-                          ? 'border-[#66000E] bg-[#F5E8EA] text-[#66000E] font-bold shadow-2xs'
-                          : 'border-[#E5E0DD] bg-[#FAF7F7] text-[#5A5250] hover:bg-white'
-                      }`}
-                    >
-                      {h.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Animation Selector */}
-            <div className="space-y-2 bg-white p-3.5 rounded-2xl border border-[#E5E0DD]">
-              <label className="font-bold text-[#241A1A]">Efek Animasi</label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {[
-                  { id: 'none', label: 'Tanpa Animasi' },
-                  { id: 'fade-in', label: 'Pudar Masuk' },
-                  { id: 'slide-up', label: 'Geser Naik' },
-                  { id: 'zoom-in', label: 'Zoom Halus' },
-                ].map((an) => (
+                  { id: 'left', icon: AlignLeft, label: 'Kiri' },
+                  { id: 'center', icon: AlignCenter, label: 'Tengah' },
+                  { id: 'right', icon: AlignRight, label: 'Kanan' },
+                ].map(align => (
                   <button
-                    key={an.id}
-                    type="button"
-                    onClick={() => handleOptionChange({ animation: an.id as any })}
-                    className={`py-1.5 px-2.5 rounded-xl text-xs font-semibold border transition cursor-pointer text-center ${
-                      (opts.animation || 'none') === an.id
-                        ? 'border-[#66000E] bg-[#F5E8EA] text-[#66000E] font-bold shadow-2xs'
-                        : 'border-[#E5E0DD] bg-[#FAF7F7] text-[#5A5250] hover:bg-white'
+                    key={align.id}
+                    onClick={() => handleOptionChange({ textAlignment: align.id as any })}
+                    className={`flex-1 py-1.5 flex items-center justify-center rounded-md transition ${
+                      (opts.textAlignment || 'left') === align.id
+                        ? 'bg-white shadow-sm font-semibold'
+                        : 'text-[#6D7175] hover:text-[#202223]'
                     }`}
                   >
-                    {an.label}
+                    <align.icon className="w-4 h-4" />
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Overlay Opacity (if Image) */}
+            {/* Scheme/Background Color */}
+            <div className="space-y-2.5">
+              <label className="text-[12px] font-bold text-[#202223]">Skema Warna</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'scheme-1', label: 'Latar Putih', bg: 'bg-white border-[#E1E3E5]', text: 'text-black' },
+                  { id: 'scheme-2', label: 'Latar Terang', bg: 'bg-[#F6F6F7] border-[#E1E3E5]', text: 'text-black' },
+                  { id: 'scheme-3', label: 'Latar Gelap', bg: 'bg-[#1A1A1A] border-[#1A1A1A]', text: 'text-white' },
+                  { id: 'scheme-4', label: 'Warna Aksen', bg: 'bg-[#2C6ECB] border-[#2C6ECB]', text: 'text-white' },
+                ].map(scheme => (
+                  <button
+                    key={scheme.id}
+                    onClick={() => handleOptionChange({ colorScheme: scheme.id as any })}
+                    className={`p-2 rounded-lg border-2 flex flex-col items-start gap-1 transition ${
+                      (opts.colorScheme || 'scheme-1') === scheme.id
+                        ? 'border-[#202223] shadow-sm'
+                        : 'border-transparent hover:border-[#E1E3E5]'
+                    } ${scheme.bg} shadow-xs border`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className={`w-3 h-3 rounded-full ${scheme.text === 'text-white' ? 'bg-white' : 'bg-black'} opacity-20`}></span>
+                      {(opts.colorScheme || 'scheme-1') === scheme.id && <Check className={`w-3 h-3 ${scheme.text}`} />}
+                    </div>
+                    <span className={`text-[10px] font-semibold ${scheme.text}`}>{scheme.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Overlay Opacity for Images */}
             {hasImage && (
-              <div className="space-y-2 bg-white p-3.5 rounded-2xl border border-[#E5E0DD]">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-[#241A1A]">Gelap Overlay</label>
-                  <span className="font-mono text-xs text-[#66000E] font-bold">
-                    {opts.overlayOpacity !== undefined ? opts.overlayOpacity : 35}%
-                  </span>
+              <div className="space-y-2.5 pt-4 border-t border-[#E1E3E5]">
+                <div className="flex justify-between items-center">
+                  <label className="text-[12px] font-bold text-[#202223]">Opasitas Overlay Gambar</label>
+                  <span className="text-[11px] font-semibold text-[#6D7175]">{opts.overlayOpacity || 50}%</span>
                 </div>
                 <input
                   type="range"
-                  min={0}
-                  max={90}
-                  step={5}
-                  value={opts.overlayOpacity !== undefined ? opts.overlayOpacity : 35}
+                  min="0"
+                  max="100"
+                  step="10"
+                  value={opts.overlayOpacity || 50}
                   onChange={(e) => handleOptionChange({ overlayOpacity: parseInt(e.target.value) })}
-                  className="w-full accent-[#66000E] cursor-pointer"
+                  className="w-full h-1 bg-[#E1E3E5] rounded-lg appearance-none cursor-pointer"
                 />
+                <p className="text-[10px] text-[#8C9196]">Meningkatkan opasitas akan menggelapkan gambar agar teks lebih terbaca.</p>
               </div>
             )}
-
-            {/* Clean Toggles */}
-            <div className="space-y-2 bg-white p-3.5 rounded-2xl border border-[#E5E0DD]">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-[#241A1A]">Bingkai Kontainer</span>
-                <button
-                  type="button"
-                  onClick={() => handleOptionChange({ enableContainer: !opts.enableContainer })}
-                  className={`w-8 h-5 flex items-center rounded-full p-0.5 transition cursor-pointer ${
-                    opts.enableContainer ? 'bg-[#66000E] justify-end' : 'bg-slate-300 justify-start'
-                  }`}
-                >
-                  <span className="bg-white w-4 h-4 rounded-full shadow-md"></span>
-                </button>
+            
+            {/* Products Layout */}
+            {(selectedSection.id === 'featured_products' || selectedSection.id === 'product_grid') && (
+              <div className="space-y-2.5 pt-4 border-t border-[#E1E3E5]">
+                <label className="text-[12px] font-bold text-[#202223]">Jumlah Kolom (Desktop)</label>
+                <div className="flex gap-2">
+                  {[2, 3, 4].map(cols => (
+                    <button
+                      key={cols}
+                      onClick={() => handleOptionChange({ gridColumns: cols as any })}
+                      className={`flex-1 py-1.5 rounded-lg border text-[12px] font-semibold transition ${
+                        (opts.gridColumns || 3) === cols
+                          ? 'border-[#202223] bg-[#202223] text-white'
+                          : 'border-[#E1E3E5] bg-white text-[#6D7175] hover:bg-[#F6F6F7]'
+                      }`}
+                    >
+                      {cols} Kolom
+                    </button>
+                  ))}
+                </div>
               </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-[#F2ECE9]">
-                <span className="font-bold text-[#241A1A]">Tumpuk Vertikal di HP</span>
-                <button
-                  type="button"
-                  onClick={() => handleOptionChange({ mobileStackImages: !opts.mobileStackImages })}
-                  className={`w-8 h-5 flex items-center rounded-full p-0.5 transition cursor-pointer ${
-                    opts.mobileStackImages ? 'bg-[#66000E] justify-end' : 'bg-slate-300 justify-start'
-                  }`}
-                >
-                  <span className="bg-white w-4 h-4 rounded-full shadow-md"></span>
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 3: PENGATURAN LANJUTAN */}
+        {/* TAB 3: LANJUTAN */}
         {/* ========================================================================= */}
         {activeTab === 'lanjutan' && (
-          <div className="space-y-3.5">
-            {/* Spacing Padding */}
-            <div className="space-y-3 bg-white p-3.5 rounded-2xl border border-[#E5E0DD]">
-              <span className="font-bold text-[#241A1A] block">Jarak Spasi (Padding)</span>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#5A5250]">Atas</span>
-                    <span className="font-mono text-[#66000E] font-bold">
-                      {opts.paddingTop !== undefined ? opts.paddingTop : 0}px
-                    </span>
-                  </div>
+          <div className="space-y-5">
+            {/* Padding Controls */}
+            <div className="space-y-3">
+              <label className="text-[12px] font-bold text-[#202223]">Jarak Bagian (Padding)</label>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[11px] text-[#6D7175]">Jarak Atas (px)</label>
                   <input
-                    type="range"
-                    min={0}
-                    max={60}
-                    step={4}
-                    value={opts.paddingTop !== undefined ? opts.paddingTop : 0}
-                    onChange={(e) => handleOptionChange({ paddingTop: parseInt(e.target.value) })}
-                    className="w-full accent-[#66000E] cursor-pointer"
+                    type="number"
+                    value={opts.paddingTop ?? ''}
+                    onChange={(e) => handleOptionChange({ paddingTop: parseInt(e.target.value) || 0 })}
+                    placeholder="Auto"
+                    className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                   />
                 </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#5A5250]">Bawah</span>
-                    <span className="font-mono text-[#66000E] font-bold">
-                      {opts.paddingBottom !== undefined ? opts.paddingBottom : 0}px
-                    </span>
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] text-[#6D7175]">Jarak Bawah (px)</label>
                   <input
-                    type="range"
-                    min={0}
-                    max={60}
-                    step={4}
-                    value={opts.paddingBottom !== undefined ? opts.paddingBottom : 0}
-                    onChange={(e) => handleOptionChange({ paddingBottom: parseInt(e.target.value) })}
-                    className="w-full accent-[#66000E] cursor-pointer"
+                    type="number"
+                    value={opts.paddingBottom ?? ''}
+                    onChange={(e) => handleOptionChange({ paddingBottom: parseInt(e.target.value) || 0 })}
+                    placeholder="Auto"
+                    className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Visibility Toggle */}
-            <div className="bg-white p-3.5 rounded-2xl border border-[#E5E0DD] flex items-center justify-between">
-              <div>
-                <span className="font-bold text-[#241A1A] block">Visibilitas Bagian</span>
-                <span className="text-[10px] text-[#706866]">Tampilkan di etalase</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => onToggleVisibility(sectionKey)}
-                className={`w-9 h-5.5 flex items-center rounded-full p-0.5 transition cursor-pointer ${
-                  selectedSection.isVisible ? 'bg-[#66000E] justify-end' : 'bg-slate-300 justify-start'
-                }`}
-              >
-                <span className="bg-white w-4.5 h-4.5 rounded-full shadow-md"></span>
-              </button>
+            {/* Layout Options */}
+            <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
+              <label className="text-[12px] font-bold text-[#202223]">Opsi Tata Letak</label>
+              
+              <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-[#F6F6F7]">
+                <input
+                  type="checkbox"
+                  checked={opts.enableContainer !== false}
+                  onChange={(e) => handleOptionChange({ enableContainer: e.target.checked })}
+                  className="w-4 h-4 rounded border-[#E1E3E5] text-[#202223] focus:ring-[#202223]"
+                />
+                <span className="text-[12px] text-[#202223]">Gunakan Container Lebar Maksimal</span>
+              </label>
+              
+              {hasImage && (
+                <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-[#F6F6F7]">
+                  <input
+                    type="checkbox"
+                    checked={opts.mobileStackImages !== false}
+                    onChange={(e) => handleOptionChange({ mobileStackImages: e.target.checked })}
+                    className="w-4 h-4 rounded border-[#E1E3E5] text-[#202223] focus:ring-[#202223]"
+                  />
+                  <span className="text-[12px] text-[#202223]">Susun Gambar Vertikal di Mobile</span>
+                </label>
+              )}
             </div>
 
             {/* Custom CSS */}
-            <div className="space-y-1.5 bg-white p-3.5 rounded-2xl border border-[#E5E0DD]">
-              <label className="font-bold text-[#241A1A] flex items-center gap-1.5">
-                <Code2 className="w-3.5 h-3.5 text-[#66000E]" />
-                <span>Custom CSS</span>
+            <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
+              <label className="text-[12px] font-bold text-[#202223] flex items-center gap-1.5">
+                <Code2 className="w-3.5 h-3.5" />
+                CSS Kustom (Opsional)
               </label>
               <textarea
-                rows={3}
+                rows={4}
                 value={opts.customCss || ''}
                 onChange={(e) => handleOptionChange({ customCss: e.target.value })}
-                placeholder=".section-custom { border-radius: 20px; }"
-                className="w-full font-mono text-[11px] p-2.5 rounded-xl bg-slate-900 text-emerald-400 border border-slate-700 focus:outline-none"
+                placeholder=".section-container { ... }"
+                className="w-full px-3 py-2 rounded-lg bg-[#1A1A1A] text-[#E1E3E5] font-mono text-[11px] border border-[#E1E3E5] focus:outline-none focus:border-[#2C6ECB]"
+                spellCheck={false}
               />
+              <p className="text-[10px] text-[#8C9196]">Tambahkan CSS class Tailwind tambahan atau kustom CSS.</p>
             </div>
           </div>
         )}
-      </div>
-
-      {/* 3. FOOTER: Red "Hapus section" button */}
-      <div className="p-3 border-t border-[#E5E0DD] bg-white shrink-0">
-        <button
-          type="button"
-          onClick={() => onDeleteSection(sectionKey)}
-          className="w-full py-2 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          <span>Hapus Section</span>
-        </button>
       </div>
     </aside>
   );
