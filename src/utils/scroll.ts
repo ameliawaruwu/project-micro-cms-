@@ -34,35 +34,11 @@ export const scrollToLandingSection = (id: string, customOffset: number = 0, dur
   }, duration + 200);
 };
 
-export const smoothScrollToY = (targetY: number, duration: number = 550) => {
-  const startY = window.scrollY || window.pageYOffset;
-  const distance = targetY - startY;
-
-  if (Math.abs(distance) < 5) {
-    window.scrollTo(0, targetY);
-    return;
-  }
-
-  let startTime: number | null = null;
-  let animationFrameId: number;
-
-  const step = (currentTime: number) => {
-    if (!startTime) startTime = currentTime;
-    const timeElapsed = currentTime - startTime;
-    const progress = Math.min(timeElapsed / duration, 1);
-    const easeProgress = easeInOutCubic(progress);
-
-    window.scrollTo(0, startY + distance * easeProgress);
-
-    if (progress < 1) {
-      animationFrameId = requestAnimationFrame(step);
-    }
-  };
-
-  // Cancel any prior listener conflict
-  cancelAnimationFrame(window.__kroomboxScrollRafId || 0);
-  animationFrameId = requestAnimationFrame(step);
-  window.__kroomboxScrollRafId = animationFrameId;
+export const smoothScrollToY = (targetY: number, _duration?: number) => {
+  window.scrollTo({
+    top: targetY,
+    behavior: 'smooth',
+  });
 };
 
 // Global declaration for TS

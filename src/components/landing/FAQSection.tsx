@@ -32,79 +32,89 @@ export const FAQSection: React.FC = () => {
   return (
     <section 
       id="faq" 
-      className="min-h-[calc(100svh-124px)] min-h-[calc(100dvh-124px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center py-10 sm:py-14 lg:py-20 bg-white border-b border-[#E8DDDE] scroll-mt-16 sm:scroll-mt-20 font-sans relative"
+      className="min-h-[calc(100svh-124px)] min-h-[calc(100dvh-124px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center py-6 sm:py-8 lg:py-4 xl:py-8 bg-white border-b border-[#E8DDDE] scroll-mt-16 sm:scroll-mt-20 font-sans relative"
     >
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-4 sm:mb-6 lg:mb-8">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-medium mb-2 shadow-2xs">
-            <HelpCircle className="w-3.5 h-3.5 text-[#66000E]" />
-            <span>{t('faq_section_badge', 'Tanya Jawab')}</span>
-          </div>
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-[#241A1A] tracking-tight leading-snug mb-1.5">
-            {t('faq_section_title', 'Pertanyaan Umum')}
-          </h2>
-          <p className="text-[#5F5652] text-xs sm:text-sm leading-relaxed font-normal max-w-md mx-auto">
-            {t('faq_section_desc', 'Jawaban untuk hal-hal yang sering ditanyakan seputar Kroombox.')}
-          </p>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start max-w-[1100px] xl:max-w-6xl mx-auto">
+          
+          {/* Left Column: Title, Subtitle, & WhatsApp Support Card */}
+          <div className="lg:col-span-5 space-y-3 sm:space-y-4 text-center lg:text-left">
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-medium shadow-2xs">
+              <HelpCircle className="w-3.5 h-3.5 text-[#66000E]" />
+              <span>{t('faq_section_badge', 'Tanya Jawab')}</span>
+            </div>
 
-        {/* 4 Accordions in max-w-3xl */}
-        <div className="max-w-3xl mx-auto space-y-2.5">
-          {faqs.map((faq, idx) => {
-            const isOpen = openIdx === idx;
-            return (
-              <div
-                key={idx}
-                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
-                  isOpen
-                    ? 'bg-[#FAF7F7] border-[#66000E]/30 shadow-xs'
-                    : 'bg-white border-[#E8DDDE] hover:border-[#66000E]/20'
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => toggle(idx)}
-                  className="w-full p-3.5 sm:p-4 text-left flex items-center justify-between gap-3 cursor-pointer min-h-[44px]"
-                  aria-expanded={isOpen}
-                >
-                  <span className="font-medium text-xs sm:text-sm text-[#241A1A] leading-snug">
-                    {faq.q}
-                  </span>
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 ${
-                      isOpen ? 'rotate-180 bg-[#F5E8EA] text-[#66000E]' : 'bg-[#FAF7F7] text-[#857C76]'
-                    }`}
-                  >
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </div>
-                </button>
+            <h2 className="text-lg sm:text-2xl lg:text-2xl font-semibold text-[#241A1A] tracking-tight leading-snug">
+              {t('faq_section_title', 'Pertanyaan Umum')}
+            </h2>
 
-                {isOpen && (
-                  <div className="px-3.5 pb-3.5 sm:px-4 sm:pb-4 text-xs sm:text-sm text-[#5F5652] leading-relaxed font-normal border-t border-[#E8DDDE] pt-2.5 animate-in fade-in duration-150">
-                    {faq.a}
-                  </div>
-                )}
+            <p className="text-[#5F5652] text-xs sm:text-sm leading-relaxed font-normal max-w-md mx-auto lg:mx-0">
+              {t('faq_section_desc', 'Jawaban untuk hal-hal yang sering ditanyakan seputar Kroombox.')}
+            </p>
+
+            {/* WhatsApp Quick Help Card */}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF7F7] border border-[#E8DDDE] text-left space-y-2 mt-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#241A1A]">
+                <MessageCircle className="w-4 h-4 text-emerald-600" />
+                <span>{t('faq_more_help', 'Butuh bantuan lebih lanjut?')}</span>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Bottom WhatsApp Support */}
-        <div className="mt-8 sm:mt-10 text-center">
-          <div className="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] text-xs text-[#5F5652]">
-            <span>{t('faq_more_help', 'Butuh bantuan lebih lanjut?')}</span>
-            <a
-              href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroombox,%20saya%20ingin%20tanya%20seputar%20pembuatan%20toko%20online"
-              target="_blank"
-              rel="noreferrer"
-              className="font-bold text-[#66000E] hover:text-[#801010] hover:underline flex items-center gap-1"
-            >
-              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{t('faq_cs_whatsapp', 'Hubungi CS WhatsApp')}</span>
-            </a>
+              <p className="text-[11px] sm:text-xs text-[#5F5652] leading-relaxed">
+                Tim CS Kroombox siap membantu panduan setting toko dan pertanyaan teknis Anda.
+              </p>
+              <a
+                href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroombox,%20saya%20ingin%20tanya%20seputar%20pembuatan%20toko%20online"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition cursor-pointer active:scale-[0.98] shadow-xs"
+              >
+                <MessageCircle className="w-4 h-4 text-white" />
+                <span>{t('faq_cs_whatsapp', 'Hubungi CS WhatsApp')}</span>
+              </a>
+            </div>
           </div>
+
+          {/* Right Column: 4 Accordions */}
+          <div className="lg:col-span-7 space-y-2">
+            {faqs.map((faq, idx) => {
+              const isOpen = openIdx === idx;
+              return (
+                <div
+                  key={idx}
+                  className={`rounded-xl sm:rounded-2xl border transition-all duration-200 overflow-hidden ${
+                    isOpen
+                      ? 'bg-[#FAF7F7] border-[#66000E]/30 shadow-xs'
+                      : 'bg-white border-[#E8DDDE] hover:border-[#66000E]/20'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggle(idx)}
+                    className="w-full p-3 sm:p-3.5 text-left flex items-center justify-between gap-3 cursor-pointer min-h-[42px]"
+                    aria-expanded={isOpen}
+                  >
+                    <span className="font-semibold text-xs sm:text-sm text-[#241A1A] leading-snug">
+                      {faq.q}
+                    </span>
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 ${
+                        isOpen ? 'rotate-180 bg-[#F5E8EA] text-[#66000E]' : 'bg-[#FAF7F7] text-[#857C76]'
+                      }`}
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </div>
+                  </button>
+
+                  {isOpen && (
+                    <div className="px-3 pb-3 sm:px-3.5 sm:pb-3.5 text-[11px] sm:text-xs text-[#5F5652] leading-relaxed font-normal border-t border-[#E8DDDE] pt-2 animate-in fade-in duration-150">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
         </div>
 
       </div>
