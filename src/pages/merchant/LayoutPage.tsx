@@ -153,6 +153,18 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     window.open(`/${currentStore.slug}?preview=true`, '_blank');
   };
 
+  const [savedThemes, setSavedThemes] = useState<TemplateGalleryItem[]>([
+    TEMPLATE_GALLERY_ITEMS[0],
+  ]);
+
+  const handleAddSavedTheme = (template: TemplateGalleryItem) => {
+    setSavedThemes((prev) => {
+      if (prev.some((t) => t.id === template.id)) return prev;
+      onShowNotification(`Tema "${template.name}" berhasil ditambahkan ke Pustaka Tema (Draf).`);
+      return [template, ...prev];
+    });
+  };
+
   // Handle clicking a template card → redirect to new tab like Canva
   const handlePreviewTemplate = (template: TemplateGalleryItem) => {
     window.open(`/?previewTheme=${template.storeTemplate.id}&toko=${currentStore.slug}`, '_blank');
@@ -160,6 +172,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
   // Handle "Coba tema" → show loading then go to editor
   const handleApplyAndEdit = (template: TemplateGalleryItem) => {
+    handleAddSavedTheme(template);
     setLoadingTemplateName(template.name);
     setLoadingProgress(0);
     setPageMode('loading');
@@ -569,6 +582,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             onApplyTemplate={(template: TemplateGalleryItem) => {
               handleApplyAndEdit(template);
             }}
+            savedThemes={savedThemes}
+            onAddSavedTheme={handleAddSavedTheme}
           />
         </div>
       )}

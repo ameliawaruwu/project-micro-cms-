@@ -193,6 +193,8 @@ interface ThemeLibraryViewProps {
   onPreviewTheme: (themeId: string) => void;
   onApplyTemplate?: (template: TemplateGalleryItem) => void;
   onPreviewTemplate?: (template: TemplateGalleryItem) => void;
+  savedThemes?: TemplateGalleryItem[];
+  onAddSavedTheme?: (template: TemplateGalleryItem) => void;
 }
 
 // ─── Component ───────────────────────────────────────────────────────
@@ -204,6 +206,8 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   onPreviewTheme,
   onApplyTemplate,
   onPreviewTemplate,
+  savedThemes = [],
+  onAddSavedTheme,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -225,6 +229,9 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   }, [activeCategory, searchQuery]);
 
   const handleUseTemplate = (template: TemplateGalleryItem) => {
+    if (onAddSavedTheme) {
+      onAddSavedTheme(template);
+    }
     if (onApplyTemplate) {
       onApplyTemplate(template);
     } else {
@@ -263,6 +270,45 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
               </div>
             </div>
           </div>
+
+          {/* ── PUSTAKA TEMA TERSIMPAN (SAVED DRAFT THEMES) ── */}
+          {savedThemes.length > 0 && (
+            <div className="mb-6 p-5 bg-[#F6F6F7] border border-[#E1E3E5] rounded-2xl">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-extrabold text-sm text-[#1A1A1A] tracking-tight">Pustaka Tema Tersimpan (Draf)</h3>
+                  <span className="px-2 py-0.5 bg-[#202223] text-white text-[11px] font-bold rounded-md">{savedThemes.length} Salinan</span>
+                </div>
+                <span className="text-xs text-[#6D7175]">Edit draf tema tanpa mengubah tampilan toko aktif Anda</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {savedThemes.map((savedTmpl) => {
+                  const isCurrentActive = currentTemplateId === savedTmpl.storeTemplate.id;
+                  return (
+                    <div key={savedTmpl.id} className="p-3 bg-white rounded-xl border border-[#E1E3E5] flex items-center justify-between gap-3 shadow-xs">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-gray-200">
+                          <img src={savedTmpl.thumbnailUrl} alt={savedTmpl.name} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-xs text-[#202223] truncate">{savedTmpl.name}</h4>
+                          <span className="text-[11px] text-[#6D7175] font-medium block">{isCurrentActive ? '🟢 Tema Aktif' : '⚪ Salinan Draf'}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => onApplyTemplate?.(savedTmpl)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#202223] hover:bg-black text-white transition cursor-pointer"
+                        >
+                          {isCurrentActive ? 'Edit' : 'Edit Draf'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ── SEARCH BAR ── */}
           <div className="relative max-w-2xl">
