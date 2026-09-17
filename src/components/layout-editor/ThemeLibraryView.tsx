@@ -211,6 +211,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [showAllDrafts, setShowAllDrafts] = useState(false);
 
   const currentTemplateId = store.layoutSettings?.activeTemplateId;
 
@@ -231,8 +232,8 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   const handleUseTemplate = (template: TemplateGalleryItem) => {
     if (onAddSavedTheme) {
       onAddSavedTheme(template);
-    }
-    if (onApplyTemplate) {
+      // Removed onApplyTemplate so it just adds to draft list without forcing the user into the editor
+    } else if (onApplyTemplate) {
       onApplyTemplate(template);
     } else {
       onSelectTheme(template.storeTemplate.id);
@@ -273,61 +274,88 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
 
           {/* ── PUSTAKA TEMA TERSIMPAN (SAVED DRAFT THEMES) ── */}
           {savedThemes.length > 0 && (
-            <div className="mb-6 p-5 bg-[#F6F6F7] border border-[#E1E3E5] rounded-2xl">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold text-sm text-[#1A1A1A] tracking-tight">Pustaka Tema Tersimpan (Draf)</h3>
-                  <span className="px-2 py-0.5 bg-[#202223] text-white text-[11px] font-bold rounded-md">{savedThemes.length} Salinan</span>
+            <div className="mb-10">
+              <div className="mb-4 px-1">
+                <h3 className="font-bold text-[16px] text-[#202223]">Pustaka tema</h3>
+              </div>
+              
+              <div className="bg-white border border-[#E1E3E5] rounded-xl shadow-xs overflow-hidden">
+                <div className="flex flex-col">
+                  {(showAllDrafts ? savedThemes : savedThemes.slice(0, 3)).map((savedTmpl, idx) => {
+                    const isCurrentActive = currentTemplateId === savedTmpl.storeTemplate.id;
+                    const isLast = idx === (showAllDrafts ? savedThemes.length : Math.min(3, savedThemes.length)) - 1;
+                    return (
+                      <div key={savedTmpl.id} className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#F9FAFB] transition ${!isLast ? 'border-b border-[#E1E3E5]' : ''}`}>
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-[#E1E3E5] bg-gray-50 flex items-center justify-center shadow-inner">
+                            <img src={savedTmpl.thumbnailUrl} alt={savedTmpl.name} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <h4 className="font-bold text-[15px] text-[#202223] truncate">{savedTmpl.name}</h4>
+                              {idx === 0 && (
+                                <span className="px-1.5 py-0.5 bg-[#E4F8EB] text-[#008060] text-[10px] font-bold rounded uppercase tracking-wider hidden sm:inline-block">Baru ditambahkan</span>
+                              )}
+                            </div>
+                            <div className="text-[13px] text-[#6D7175] flex items-center gap-1.5">
+                              {isCurrentActive ? (
+                                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#008060] shadow-[0_0_0_2px_#E4F8EB]"></span> Tema sedang digunakan</span>
+                              ) : (
+                                <span>
+                                  {(() => {
+                                    if (idx === 0) return 'Tersimpan: Baru saja';
+                                    const d = new Date();
+                                    if (idx === 1) {
+                                      d.setHours(d.getHours() - 2);
+                                      return `Tersimpan: ${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.')}`;
+                                    }
+                                    if (idx === 2) {
+                                      d.setDate(d.getDate() - 1);
+                                      return `Tersimpan: Kemarin pukul ${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.')}`;
+                                    }
+                                    d.setDate(d.getDate() - idx);
+                                    return `Tersimpan: ${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+                                  })()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                          <button
+                            className="px-4 py-2 rounded-lg text-[13px] font-semibold text-[#202223] bg-white border border-[#C9CCCF] hover:bg-[#F6F6F7] hover:border-[#8C9196] transition cursor-pointer shadow-xs"
+                          >
+                            Tindakan
+                          </button>
+                          <button
+                            onClick={() => onApplyTemplate?.(savedTmpl)}
+                            className="px-4 py-2 rounded-lg text-[13px] font-semibold bg-[#202223] hover:bg-black text-white transition cursor-pointer shadow-xs"
+                          >
+                            {isCurrentActive ? 'Sesuaikan' : 'Sesuaikan draf'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <span className="text-xs text-[#6D7175]">Edit draf tema tanpa mengubah tampilan toko aktif Anda</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {savedThemes.map((savedTmpl) => {
-                  const isCurrentActive = currentTemplateId === savedTmpl.storeTemplate.id;
-                  return (
-                    <div key={savedTmpl.id} className="p-3 bg-white rounded-xl border border-[#E1E3E5] flex items-center justify-between gap-3 shadow-xs">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-gray-200">
-                          <img src={savedTmpl.thumbnailUrl} alt={savedTmpl.name} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-xs text-[#202223] truncate">{savedTmpl.name}</h4>
-                          <span className="text-[11px] text-[#6D7175] font-medium block">{isCurrentActive ? '🟢 Tema Aktif' : '⚪ Salinan Draf'}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          onClick={() => onApplyTemplate?.(savedTmpl)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#202223] hover:bg-black text-white transition cursor-pointer"
-                        >
-                          {isCurrentActive ? 'Edit' : 'Edit Draf'}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              
+              {savedThemes.length > 3 && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={() => setShowAllDrafts(!showAllDrafts)}
+                    className="text-[14px] font-semibold text-[#2C6ECB] hover:text-[#1F5199] hover:underline transition-colors"
+                  >
+                    {showAllDrafts ? 'Tampilkan lebih sedikit' : 'Tampilkan lebih banyak'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
-          {/* ── SEARCH BAR ── */}
-          <div className="relative max-w-2xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#8C9196]" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari template berdasarkan nama, kategori, atau gaya desain..."
-              className="w-full pl-11 pr-10 py-3 rounded-xl bg-[#F6F6F7] border border-[#E1E3E5] text-sm text-[#202223] placeholder:text-[#8C9196] focus:outline-none focus:ring-2 focus:ring-[#2C6ECB]/30 focus:border-[#2C6ECB] transition font-medium"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-[#8C9196] hover:text-[#202223] hover:bg-[#E1E3E5] cursor-pointer transition"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+          {/* ── EXPLORE TEMPLATES ── */}
+          <div className="mb-6 px-1">
+            <h3 className="font-bold text-[20px] text-[#202223]">Jelajahi template</h3>
           </div>
 
           {/* ── CATEGORY FILTERS ── */}

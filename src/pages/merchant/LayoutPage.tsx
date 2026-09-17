@@ -158,11 +158,11 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   ]);
 
   const handleAddSavedTheme = (template: TemplateGalleryItem) => {
-    setSavedThemes((prev) => {
-      if (prev.some((t) => t.id === template.id)) return prev;
+    const isExist = savedThemes.some((t) => t.id === template.id);
+    if (!isExist) {
+      setSavedThemes((prev) => [template, ...prev]);
       onShowNotification(`Tema "${template.name}" berhasil ditambahkan ke Pustaka Tema (Draf).`);
-      return [template, ...prev];
-    });
+    }
   };
 
   // Handle clicking a template card → redirect to new tab like Canva
