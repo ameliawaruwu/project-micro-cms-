@@ -112,7 +112,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingTemplateName, setLoadingTemplateName] = useState('');
   const [activePage, setActivePage] = useState('homepage');
-  const [activeThemeId, setActiveThemeId] = useState<any>('minimalist');
+  const [activeThemeId, setActiveThemeId] = useState<any>(
+    (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist'
+  );
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [globalSettings, setGlobalSettings] = useState<any>(
     store.layoutSettings?.globalThemeSettings || {
@@ -143,7 +145,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         sections,
         primaryAccent,
         globalThemeSettings: globalSettings,
-        activeThemeId
+        activeThemeId,
+        themeStyle: activeThemeId,
       }
     };
     sessionStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
@@ -499,8 +502,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setIsSaving(true);
     const layoutSettings: StoreLayoutSettings = {
       sections,
-      themeStyle: store.layoutSettings?.themeStyle || 'minimal',
+      themeStyle: activeThemeId,
       primaryAccent,
+      ...( { activeThemeId, globalThemeSettings: globalSettings } as any ),
     };
 
     onSaveLayout(layoutSettings);

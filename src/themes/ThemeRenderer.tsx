@@ -11,10 +11,11 @@ interface ThemeRendererProps {
 
 export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = [] }) => {
   if (!store) {
-    return <div>Store tidak ditemukan.</div>;
+    return <div className="p-8 text-center text-gray-500">Store tidak ditemukan.</div>;
   }
 
   const sections = getStoreSections(store.layoutSettings);
+  const activeThemeId = (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist';
 
   return (
     <MemoryRouter initialEntries={['/']}>
@@ -33,6 +34,7 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
                 onDeviceModeChange={() => {}}
                 primaryAccent={store.layoutSettings?.primaryAccent || '#1A1A1A'}
                 readonly={true}
+                activeThemeId={activeThemeId as any}
               />
             } 
           />

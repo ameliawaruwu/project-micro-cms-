@@ -261,7 +261,8 @@ export interface StoreSectionConfig {
 export interface StoreLayoutSettings {
   sections: StoreSectionConfig[];
   primaryAccent?: string;
-  themeStyle?: 'minimal' | 'modern' | 'compact';
+  themeStyle?: 'minimal' | 'modern' | 'compact' | string;
+  activeThemeId?: string;
   globalThemeSettings?: GlobalThemeSettings;
   pages?: ThemePage[];
   activePage?: string;
