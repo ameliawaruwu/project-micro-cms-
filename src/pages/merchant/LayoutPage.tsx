@@ -21,7 +21,7 @@ import { AddSectionModal } from '../../components/layout-editor/AddSectionModal'
 import { StoreLayoutSetupWizard } from '../../components/layout-editor/StoreLayoutSetupWizard';
 import { ThemeLibraryView, TemplateGalleryItem, TEMPLATE_GALLERY_ITEMS } from '../../components/layout-editor/ThemeLibraryView';
 import { PublishStoreModal } from '../../components/layout-editor/PublishStoreModal';
-import { ArrowLeft, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 
 interface LayoutPageProps {
