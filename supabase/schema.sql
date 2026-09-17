@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS stores (
     postal_code VARCHAR(16),
     address TEXT,
     category VARCHAR(64) DEFAULT 'Fashion & Retail',
-    plan VARCHAR(32) DEFAULT 'free' CHECK (plan IN ('free', 'starter', 'premium')),
+    plan VARCHAR(32) DEFAULT 'free' CHECK (plan IN ('free', 'starter', 'premium', 'personal', 'community', 'corporate', 'startup')),
     balance BIGINT DEFAULT 0,
     theme_settings JSONB DEFAULT '{}'::jsonb,
     is_suspended BOOLEAN DEFAULT FALSE,
@@ -346,6 +346,30 @@ CREATE INDEX IF NOT EXISTS idx_store_subscriptions_store_id ON store_subscriptio
 CREATE INDEX IF NOT EXISTS idx_store_subscriptions_status ON store_subscriptions(status);
 
 -- ============================================================================
+-- 12. TABEL: DOMAIN_REQUESTS (PERMINTAAN & APPROVAL CUSTOM DOMAIN TOKO)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS domain_requests (
+    id VARCHAR(64) PRIMARY KEY DEFAULT 'dom_' || replace(gen_random_uuid()::text, '-', ''),
+    store_id VARCHAR(64) NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    store_name VARCHAR(255) NOT NULL,
+    requested_domain VARCHAR(255) NOT NULL,
+    tld VARCHAR(16) NOT NULL CHECK (tld IN ('.com', '.id', '.online', '.org', '.top')),
+    tld_price BIGINT NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'active')),
+    admin_notes TEXT,
+    suggestions JSONB DEFAULT '[]'::jsonb,
+    invoice_number VARCHAR(64),
+    payment_status VARCHAR(32) DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'paid', 'expired')),
+    requested_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    approved_at TIMESTAMP WITH TIME ZONE,
+    activated_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_domain_requests_store_id ON domain_requests(store_id);
+CREATE INDEX IF NOT EXISTS idx_domain_requests_status ON domain_requests(status);
+
+-- ============================================================================
 -- DATA INISIALISASI DASAR (AKUN, TOKO, GUDANG, & MASTER BILLING PLANS)
 -- ============================================================================
 INSERT INTO platform_settings (id) VALUES ('global_config') ON CONFLICT (id) DO NOTHING;
@@ -403,10 +427,17 @@ INSERT INTO shipping_branches (
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO billing_plans (id, name, slug, tagline, price_monthly, price_yearly, features, is_active, sort_order) VALUES
-('plan_free', 'Starter (Gratis)', 'free', 'Cocok untuk toko baru yang mulai berjualan online', 0, 0, '["Katalog produk hingga 25 item", "Checkout otomatis via Midtrans (QRIS & VA)", "Cek ongkir otomatis ekspedisi (J&T, JNE)", "Watermark resmi Kroombox di footer toko"]'::jsonb, true, 1),
-('plan_pro', 'Pro UMKM', 'premium', 'Fitur lengkap tanpa batas untuk meningkatkan omset toko', 99000, 950000, '["Unlimited katalog produk & varian", "Bebas watermark (white-label brand sendiri)", "Semua metode pembayaran Midtrans (QRIS, VA Bank, Kartu Kredit)", "Visual layout builder & kustomisasi banner toko", "Cetak label pengiriman thermal massal", "Laporan analitik penjualan & omset real-time", "Prioritas bantuan customer support"]'::jsonb, true, 2),
-('plan_scaleup', 'Bisnis Scale-Up', 'business', 'Untuk bisnis UMKM berkembang dengan tim & cabang', 249000, 2400000, '["Semua fitur paket Pro UMKM", "Akses multi-staf pengelola toko (hingga 5 admin)", "Dukungan custom domain toko (.com / .id)", "Notifikasi otomatis WhatsApp bot ke pembeli", "Dedicated Account Manager 24/7"]'::jsonb, true, 3)
-ON CONFLICT (id) DO NOTHING;
+('plan_free', 'Paket Free', 'free', 'Cocok untuk toko baru yang baru mulai belajar online', 0, 0, '["Subdomain gratis [slug].kroombox.com", "Katalog produk hingga 15 item", "Checkout katalog & order WhatsApp", "Watermark Kroombox di footer toko", "Manual shipping & payment"]'::jsonb, true, 1),
+('plan_personal', 'Personal Toko', 'personal', 'Cocok untuk bisnis individu & toko retail mandiri', 35000, 350000, '["Hosting Server: Rp 200.000 / tahun", "Jasa Micro CMS: Rp 150.000 / tahun", "Dukungan Custom Domain (.top, .online, .org, .com, .id)", "Katalog produk hingga 100 item", "Automated Midtrans (QRIS, VA Bank, E-Wallet)", "Integrasi Ekspedisi Logistik (JNE, J&T via Biteship)", "White-label tanpa watermark"]'::jsonb, true, 2),
+('plan_community', 'Community UMKM', 'community', 'Pilihan terbaik untuk UMKM & komunitas bisnis berkembang', 100000, 1000000, '["Hosting Server: Rp 700.000 / tahun", "Jasa Micro CMS: Rp 300.000 / tahun", "Pilihan Terbaik UMKM (Rekomendasi Utama)", "Dukungan Custom Domain (.top, .online, .org, .com, .id)", "Unlimited katalog produk & varian", "Prioritas DNS setup & SSL otomatis", "Semua channel Midtrans & Biteship aktif", "Multi-gudang & multi-cabang pengiriman", "Laporan analitik omset & export data"]'::jsonb, true, 3),
+('plan_corporate', 'Bisnis Corporate', 'corporate', 'Solusi perusahaan retail skala menengah dengan multi-cabang', 250000, 2500000, '["Hosting Server: Rp 1.800.000 / tahun", "Jasa Micro CMS: Rp 700.000 / tahun", "Server dedicated cloud berkecepatan tinggi", "Kustomisasi tema & visual layout builder tingkat lanjut", "Multi-cabang gudang tidak terbatas", "Notifikasi otomatis WhatsApp bot ke pembeli", "Dedicated Account Manager 24/7"]'::jsonb, true, 4),
+('plan_startup', 'Startup Scale', 'startup', 'Infrastruktur cloud enterprise untuk brand skala nasional', 300000, 3000000, '["Hosting Server: Rp 2.000.000 / tahun", "Jasa Micro CMS: Rp 1.000.000 / tahun", "Traffic kapasitas tinggi hingga ratusan ribu order/hari", "API akses webhook langsung & integrasi ERP", "Prioritas domain deployment & DNS propagation", "Garansi uptime SLA 99.9%", "Prioritas engineering support"]'::jsonb, true, 5)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    tagline = EXCLUDED.tagline,
+    price_yearly = EXCLUDED.price_yearly,
+    features = EXCLUDED.features,
+    sort_order = EXCLUDED.sort_order;
 
 -- ============================================================================
 -- KONFIGURASI PERIZINAN ROW LEVEL SECURITY (RLS) UNTUK FRONTEND
@@ -422,6 +453,7 @@ ALTER TABLE IF EXISTS wallet_transactions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS withdrawals DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS billing_plans DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS store_subscriptions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS domain_requests DISABLE ROW LEVEL SECURITY;
 
 GRANT ALL ON TABLE products TO anon, authenticated, service_role;
 GRANT ALL ON TABLE stores TO anon, authenticated, service_role;
@@ -434,6 +466,7 @@ GRANT ALL ON TABLE wallet_transactions TO anon, authenticated, service_role;
 GRANT ALL ON TABLE withdrawals TO anon, authenticated, service_role;
 GRANT ALL ON TABLE billing_plans TO anon, authenticated, service_role;
 GRANT ALL ON TABLE store_subscriptions TO anon, authenticated, service_role;
+GRANT ALL ON TABLE domain_requests TO anon, authenticated, service_role;
 
 -- ============================================================================
 -- KONFIGURASI SUPABASE REALTIME (WEBSOCKET) UNTUK ORDERS & SHIPPING_BRANCHES
@@ -448,6 +481,13 @@ END $$;
 DO $$
 BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE domain_requests;
 EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;

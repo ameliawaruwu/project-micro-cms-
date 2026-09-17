@@ -288,7 +288,7 @@ export interface Store {
   category: string;
   currency: string;
   balance: number;
-  plan?: 'free' | 'starter' | 'premium';
+  plan?: 'free' | 'personal' | 'community' | 'corporate' | 'startup' | 'starter' | 'premium' | string;
   themeColor?: string;
   layoutSettings?: StoreLayoutSettings;
   customDomain?: string;
@@ -586,6 +586,9 @@ export interface BillingPlan {
   tagline: string;
   priceMonthly: number;
   priceYearly: number;
+  hostingPriceYearly?: number;
+  cmsPriceYearly?: number;
+  badge?: string;
   features: string[];
   isActive: boolean;
   sortOrder: number;

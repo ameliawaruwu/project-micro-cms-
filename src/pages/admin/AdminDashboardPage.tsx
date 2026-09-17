@@ -8,6 +8,7 @@ import {
   Receipt,
   Settings as SettingsIcon,
   LayoutDashboard,
+  Globe,
 } from 'lucide-react';
 import { Store, WithdrawalRequest, AdminPlatformStats, Order, BillingPlan, BillingSubscription, User } from '../../types';
 import { adminService } from '../../services/adminService';
@@ -20,6 +21,7 @@ import { AdminHeader } from './components/AdminHeader';
 import { AdminOrderDetailModal } from './components/AdminOrderDetailModal';
 import { AdminOverviewTab } from './tabs/AdminOverviewTab';
 import { AdminStoresTab } from './tabs/AdminStoresTab';
+import { AdminDomainRequestsTab } from './tabs/AdminDomainRequestsTab';
 import { AdminWithdrawalsTab } from './tabs/AdminWithdrawalsTab';
 import { AdminPlansTab } from './tabs/AdminPlansTab';
 import { AdminOrdersShippingTab } from './tabs/AdminOrdersShippingTab';
@@ -312,6 +314,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     { id: 'overview', label: language === 'en' ? 'Overview' : 'Ringkasan', icon: LayoutDashboard },
     { id: 'stores', label: language === 'en' ? 'Manage Stores' : 'Kelola Toko', icon: StoreIcon, count: stores.length },
     {
+      id: 'domain-requests',
+      label: language === 'en' ? 'Domain Requests' : 'Permintaan Domain',
+      icon: Globe,
+    },
+    {
       id: 'withdrawals',
       label: language === 'en' ? 'Payouts' : 'Pencairan Dana',
       icon: Wallet,
@@ -388,6 +395,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               onOpenStorefront={onOpenStorefront}
               language={language}
               isEn={isEn}
+            />
+          )}
+
+          {activeTab === 'domain-requests' && (
+            <AdminDomainRequestsTab
+              language={language}
+              onShowToast={(msg) => setToastMessage(msg)}
             />
           )}
 

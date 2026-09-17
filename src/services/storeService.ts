@@ -1,5 +1,6 @@
 import { Store } from '../types';
 import { initialStores } from './mockData';
+import { supabase } from './supabaseClient';
 
 const STORE_KEY = 'microcms_stores_v2';
 const ACTIVE_STORE_KEY = 'microcms_active_store_id';
@@ -155,6 +156,20 @@ class StoreService {
       ...updates,
     };
     this.saveStores(stores);
+
+    // Sync to Supabase stores table
+    try {
+      const dbUpdates: any = { updated_at: new Date().toISOString() };
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.slug !== undefined) dbUpdates.slug = updates.slug;
+      if (updates.plan !== undefined) dbUpdates.plan = updates.plan;
+      if (updates.customDomain !== undefined) dbUpdates.custom_domain = updates.customDomain;
+      if (updates.layoutSettings !== undefined) dbUpdates.theme_settings = updates.layoutSettings;
+      await supabase.from('stores').update(dbUpdates).eq('id', storeId);
+    } catch (err) {
+      console.warn('Supabase store update notice:', err);
+    }
+
     return stores[index];
   }
 

@@ -249,34 +249,16 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             <Crown className="w-5 h-5 text-[#66000E]" />
             <span>{t('nav_billing', 'Paket Langganan')}</span>
           </h1>
+          <p className="text-xs text-[#706866] mt-0.5">
+            Pilih paket langganan tahunan terbaik untuk toko online Anda. Seluruh paket berbayar sudah termasuk biaya hosting server & platform Micro CMS.
+          </p>
         </div>
 
-        {/* Top Controls: Switcher, Current Plan Status & Riwayat Berlangganan Button */}
+        {/* Top Controls: Current Plan Status & Riwayat Berlangganan Button */}
         <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-          {/* Toggle Switch */}
-          <div className="flex items-center gap-1 bg-[#FAF7F7] p-1 rounded-xl border border-[#E5E0DD]">
-            <button
-              type="button"
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                billingCycle === 'monthly'
-                  ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]'
-                  : 'text-[#706866] hover:text-[#241A1A]'
-              }`}
-            >
-              {isEn ? 'Monthly' : 'Bulanan'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setBillingCycle('yearly')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                billingCycle === 'yearly'
-                  ? 'bg-[#66000E] text-white shadow-2xs'
-                  : 'text-[#706866] hover:text-[#241A1A]'
-              }`}
-            >
-              {isEn ? 'Yearly' : 'Tahunan'}
-            </button>
+          <div className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900 flex items-center gap-1.5 shadow-2xs">
+            <span>📅</span>
+            <span>{isEn ? 'Yearly Billing (12 Months)' : 'Langganan Tahunan (12 Bulan Penuh)'}</span>
           </div>
 
           <button
@@ -288,7 +270,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   subs.map((s) => ({
                     id: s.invoiceNumber,
                     plan: s.planName,
-                    cycle: s.cycle === 'yearly' ? (isEn ? 'Yearly' : 'Tahunan') : (isEn ? 'Monthly' : 'Bulanan'),
+                    cycle: isEn ? 'Yearly' : 'Tahunan',
                     date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
                     amount: s.amount,
                     status: s.status === 'paid' ? (isEn ? 'Paid (Midtrans)' : 'Lunas (Midtrans)') : s.status,
@@ -297,7 +279,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
               }
               setIsHistoryOpen(true);
             }}
-            className="px-3.5 py-1.5 rounded-full bg-white hover:bg-[#FAF7F7] border border-[#E5E0DD] text-xs font-semibold text-[#241A1A] hover:text-[#66000E] hover:border-[#66000E] transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#FAF7F7] border border-[#E5E0DD] text-xs font-semibold text-[#241A1A] hover:text-[#66000E] hover:border-[#66000E] transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5 text-[#66000E]" />
             <span>{isEn ? 'Subscription History' : 'Riwayat Berlangganan'}</span>
@@ -306,21 +288,36 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       </div>
 
       {/* 2. Pricing Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pt-2">
         {plans.map((plan) => {
-          const isCurrent = (plan.slug === 'premium' && currentPlan === 'premium') || (plan.slug === 'free' && currentPlan === 'free') || (plan.slug === store.plan);
-          const price = billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+          const isCurrent =
+            (plan.slug === 'premium' && currentPlan === 'premium') ||
+            (plan.slug === 'free' && currentPlan === 'free') ||
+            plan.slug === store.plan ||
+            plan.id === store.plan;
+          const price = plan.priceYearly;
 
           return (
             <div
               key={plan.id}
-              className={`rounded-2xl bg-white p-5 sm:p-6 border transition-all duration-200 flex flex-col justify-between relative shadow-2xs ${
+              className={`rounded-2xl bg-white p-5 sm:p-6 border transition-all duration-200 flex flex-col justify-between relative shadow-2xs hover:shadow-md ${
                 isCurrent
                   ? 'border-2 border-[#66000E] ring-4 ring-[#66000E]/5'
+                  : plan.badge
+                  ? 'border-amber-400 ring-2 ring-amber-400/20'
                   : 'border-[#E5E0DD]'
               }`}
             >
               <div>
+                {/* Top Badge */}
+                {plan.badge && (
+                  <div className="mb-2">
+                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500 text-white shadow-xs inline-block">
+                      ★ {plan.badge}
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <h3 className="font-extrabold text-base text-[#241A1A]">{getPlanName(plan.name)}</h3>
                   {isCurrent && (
@@ -333,34 +330,55 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 <p className="text-xs text-[#706866] mt-1 min-h-[32px]">{getPlanTagline(plan.tagline)}</p>
 
                 {/* Price */}
-                <div className="py-4 border-y border-[#FAF7F7] my-3">
+                <div className="py-3 border-y border-[#FAF7F7] my-3">
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl sm:text-3xl font-black text-[#241A1A]">
                       {price === 0 ? (isEn ? 'Free' : 'Gratis') : formatRupiah(price)}
                     </span>
                     <span className="text-xs text-[#706866]">
-                      {price === 0 ? '' : billingCycle === 'yearly' ? (isEn ? '/ year' : '/ tahun') : (isEn ? '/ month' : '/ bulan')}
+                      {price === 0 ? '' : isEn ? '/ year' : '/ tahun'}
                     </span>
                   </div>
-                  {billingCycle === 'yearly' && price > 0 && (
+                  {price > 0 && (
                     <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
                       {isEn
-                        ? `Equivalent to ${formatRupiah(Math.round(price / 12))}/month (Save 2 months)`
-                        : `Setara ${formatRupiah(Math.round(price / 12))}/bulan (Hemat 2 bulan)`}
+                        ? `Equivalent to ${formatRupiah(Math.round(price / 12))}/month`
+                        : `Setara ${formatRupiah(Math.round(price / 12))}/bulan`}
                     </span>
                   )}
                 </div>
 
+                {/* Transparent Breakdown (Hosting Server + Jasa Micro CMS) */}
+                {plan.hostingPriceYearly !== undefined && plan.cmsPriceYearly !== undefined && price > 0 && (
+                  <div className="bg-[#FAF7F7] p-2.5 rounded-xl border border-[#E5E0DD]/80 mb-4 text-[11px] space-y-1">
+                    <div className="flex justify-between text-[#706866]">
+                      <span>Biaya Hosting Server:</span>
+                      <span className="font-semibold text-[#241A1A]">{formatRupiah(plan.hostingPriceYearly)}</span>
+                    </div>
+                    <div className="flex justify-between text-[#706866]">
+                      <span>Biaya Jasa Micro CMS:</span>
+                      <span className="font-semibold text-[#241A1A]">{formatRupiah(plan.cmsPriceYearly)}</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Features List */}
                 <ul className="space-y-2.5 text-xs text-[#241A1A] pb-4">
-                  {plan.features.map((feat, idx) => (
-                    <li key={idx} className="flex items-start gap-2 leading-snug">
-                      <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="w-2.5 h-2.5 stroke-[3]" />
-                      </div>
-                      <span>{getPlanFeature(feat)}</span>
-                    </li>
-                  ))}
+                  {plan.features.map((feat, idx) => {
+                    const isNegative = feat.startsWith('❌');
+                    return (
+                      <li key={idx} className={`flex items-start gap-2 leading-snug ${isNegative ? 'text-gray-400 line-through' : ''}`}>
+                        <div
+                          className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                            isNegative ? 'bg-gray-100 text-gray-400' : 'bg-emerald-100 text-emerald-700'
+                          }`}
+                        >
+                          {isNegative ? <X className="w-2.5 h-2.5 stroke-[3]" /> : <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </div>
+                        <span>{getPlanFeature(feat.replace(/^❌\s*/, ''))}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
 

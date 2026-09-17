@@ -1084,6 +1084,8 @@ export default function App() {
               {/* TAB 5: PEMBAYARAN */}
               {activeTab === 'pembayaran' && (
                 <PaymentListPage
+                  store={currentStore}
+                  onNavigateBilling={() => setActiveTab('billing')}
                   onShowNotification={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
                 />
@@ -1092,6 +1094,8 @@ export default function App() {
               {/* TAB 6: PENGIRIMAN */}
               {activeTab === 'pengiriman' && (
                 <ShippingListPage
+                  store={currentStore}
+                  onNavigateBilling={() => setActiveTab('billing')}
                   integrations={integrations}
                   onToggleIntegration={handleToggleIntegration}
                   onSaveConfig={handleSaveIntegrationConfig}
@@ -1103,6 +1107,8 @@ export default function App() {
               {/* TAB FALLBACK: INTEGRASI */}
               {activeTab === 'integrasi' && (
                 <PaymentListPage
+                  store={currentStore}
+                  onNavigateBilling={() => setActiveTab('billing')}
                   onShowNotification={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
                 />
