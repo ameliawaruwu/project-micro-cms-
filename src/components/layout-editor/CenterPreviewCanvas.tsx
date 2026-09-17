@@ -122,63 +122,104 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     return matchCat && matchSearch;
   });
 
-  const handleNavClick = (href: string) => {
-    if (!href) return;
-    const cleanHref = href.toLowerCase().trim();
+  const handleNavClick = (href: string, anchorText?: string) => {
+    const cleanHref = (href || '').toLowerCase().trim();
+    const text = (anchorText || '').toLowerCase().trim();
 
-    if (cleanHref === '/' || cleanHref === '/beranda' || cleanHref === '#beranda') {
+    // 1. Homepage / Beranda
+    if (cleanHref === '/' || cleanHref === '/beranda' || cleanHref === '#beranda' || text === 'beranda' || text === 'home') {
       if (onPageChange) onPageChange('homepage');
       const el = document.getElementById('preview-hero_banner');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
       return;
     }
 
-    if (cleanHref.includes('/katalog') || cleanHref.includes('/products') || cleanHref.includes('/catalog') || cleanHref === '#katalog') {
+    // 2. Katalog / Shop / Products / Collection / Drops / Gadget / Wearables / Fine Necklaces
+    if (
+      cleanHref.includes('/katalog') || cleanHref.includes('/products') || cleanHref.includes('/catalog') || cleanHref === '#katalog' ||
+      text.includes('shop') || text.includes('katalog') || text.includes('produk') || text.includes('collection') || text.includes('drop') || 
+      text.includes('gadget') || text.includes('jewelry') || text.includes('new arrival') || text.includes('explore') || text.includes('koleksi') || text.includes('etalase')
+    ) {
       if (onPageChange) onPageChange('katalog');
       return;
     }
 
+    // 3. Product Detail
     if (cleanHref.includes('/product/')) {
       if (onPageChange) onPageChange('product');
       return;
     }
 
-    if (cleanHref.includes('/about') || cleanHref.includes('/tentang') || cleanHref.includes('/archive') || cleanHref === '#about') {
+    // 4. About / Philosophy / Brand Story / Story / Archive / Kisah Kami / B2B / Craftsmanship
+    if (
+      cleanHref.includes('/about') || cleanHref.includes('/tentang') || cleanHref.includes('/archive') || cleanHref === '#about' ||
+      text.includes('about') || text.includes('tentang') || text.includes('philosophy') || text.includes('story') || text.includes('archive') || 
+      text.includes('kisah kami') || text.includes('b2b') || text.includes('craftsmanship') || text.includes('behind the scenes') || text.includes('brand')
+    ) {
       if (onPageChange) onPageChange('about');
       return;
     }
 
-    if (cleanHref.includes('/contact') || cleanHref.includes('/kontak') || cleanHref === '#kontak') {
+    // 5. Contact / Support / Bantuan / Store Locator / Private Fitting
+    if (
+      cleanHref.includes('/contact') || cleanHref.includes('/kontak') || cleanHref === '#kontak' ||
+      text.includes('kontak') || text.includes('contact') || text.includes('support') || text.includes('bantuan') || 
+      text.includes('store locator') || text.includes('fitting')
+    ) {
       if (onPageChange) onPageChange('contact');
       return;
     }
 
-    if (cleanHref.includes('/cart') || cleanHref.includes('/keranjang') || cleanHref === '#cart') {
+    // 6. Cart / Keranjang
+    if (
+      cleanHref.includes('/cart') || cleanHref.includes('/keranjang') || cleanHref === '#cart' ||
+      text.includes('cart') || text.includes('keranjang')
+    ) {
       if (onPageChange) onPageChange('cart');
       return;
     }
 
-    if (cleanHref.includes('/checkout') || cleanHref === '#checkout') {
+    // 7. Checkout / Bayar
+    if (
+      cleanHref.includes('/checkout') || cleanHref === '#checkout' ||
+      text.includes('checkout') || text.includes('bayar')
+    ) {
       if (onPageChange) onPageChange('checkout');
       return;
     }
 
-    if (cleanHref.includes('/orders') || cleanHref.includes('/pesanan') || cleanHref === '#orders') {
+    // 8. Orders / Pesanan / Status
+    if (
+      cleanHref.includes('/orders') || cleanHref.includes('/pesanan') || cleanHref === '#orders' ||
+      text.includes('orders') || text.includes('pesanan')
+    ) {
       if (onPageChange) onPageChange('orders');
       return;
     }
 
-    if (cleanHref.includes('/profile') || cleanHref.includes('/profil') || cleanHref === '#profile') {
+    // 9. Profile / Profil / Account / User
+    if (
+      cleanHref.includes('/profile') || cleanHref.includes('/profil') || cleanHref === '#profile' ||
+      text.includes('profile') || text.includes('profil') || text.includes('akun')
+    ) {
       if (onPageChange) onPageChange('profile');
       return;
     }
 
-    if (cleanHref.includes('/login') || cleanHref === '#login') {
+    // 10. Login / Masuk
+    if (
+      cleanHref.includes('/login') || cleanHref === '#login' ||
+      text.includes('login') || text.includes('masuk')
+    ) {
       if (onPageChange) onPageChange('login');
       return;
     }
 
-    if (cleanHref.includes('/berita') || cleanHref.includes('/lookbook') || cleanHref.includes('/journal')) {
+    // 11. Journal / Berita / Stories / Lookbook / Resep
+    if (
+      cleanHref.includes('/berita') || cleanHref.includes('/lookbook') || cleanHref.includes('/journal') ||
+      text.includes('journal') || text.includes('berita') || text.includes('lookbook') || text.includes('resep')
+    ) {
       const lookbookSec = sections.find(s => s.id === 'lookbook' || s.id === 'journal');
       if (lookbookSec) {
         if (onPageChange && activePage !== 'homepage') onPageChange('homepage');
@@ -194,7 +235,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
       return;
     }
 
-    // Hash section scroll
+    // Hash section scroll fallback
     if (cleanHref.startsWith('#')) {
       const targetId = cleanHref.replace('#', '');
       const targetSec = sections.find(s => s.id === targetId || (s.id && s.id.includes(targetId)));
@@ -219,30 +260,19 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     const anchor = target.closest('a');
     const button = target.closest('button');
 
-    if (anchor && anchor.getAttribute('href')) {
+    if (anchor) {
       e.preventDefault();
-      const href = anchor.getAttribute('href')!;
-      handleNavClick(href);
+      const href = anchor.getAttribute('href') || '';
+      const text = anchor.textContent || '';
+      handleNavClick(href, text);
       return;
     }
 
     if (button) {
-      const btnText = (button.textContent || '').toLowerCase().trim();
-      if (btnText.includes('cart') || btnText.includes('keranjang')) {
-        e.preventDefault();
-        if (onPageChange) onPageChange('cart');
-        return;
-      }
-      if (btnText.includes('checkout') || btnText.includes('bayar')) {
-        e.preventDefault();
-        if (onPageChange) onPageChange('checkout');
-        return;
-      }
-      if (btnText.includes('shop') || btnText.includes('katalog') || btnText.includes('cop now') || btnText.includes('jelajahi')) {
-        e.preventDefault();
-        if (onPageChange) onPageChange('katalog');
-        return;
-      }
+      const href = button.getAttribute('data-href') || button.getAttribute('href') || '';
+      const text = button.textContent || '';
+      handleNavClick(href, text);
+      return;
     }
   };
 
