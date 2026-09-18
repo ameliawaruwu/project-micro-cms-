@@ -35,6 +35,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [devToken, setDevToken] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (resendCooldown > 0) {
@@ -59,6 +60,9 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
     try {
       setIsLoading(true);
       await forgotPassword(email.trim());
+      const cleanInput = email.trim().toLowerCase();
+      const latestToken = localStorage.getItem(`reset_token_latest_${cleanInput}`) || localStorage.getItem(`reset_token_${cleanInput}`);
+      if (latestToken) setDevToken(latestToken);
       setResendCooldown(30);
       setStep('token');
     } catch (err: any) {
@@ -75,6 +79,9 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
     try {
       setIsLoading(true);
       await forgotPassword(email.trim());
+      const cleanInput = email.trim().toLowerCase();
+      const latestToken = localStorage.getItem(`reset_token_latest_${cleanInput}`) || localStorage.getItem(`reset_token_${cleanInput}`);
+      if (latestToken) setDevToken(latestToken);
       setResendCooldown(30);
     } catch (err: any) {
       setError(err?.message || 'Gagal mengirim ulang token. Periksa kembali email/username Anda.');
@@ -322,6 +329,8 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
 
               {step === 'token' && (
                 <form onSubmit={handleVerifyToken} className="space-y-4 w-full animate-in fade-in" noValidate>
+
+
                   <div className="space-y-1.5 text-left">
                     <label
                       htmlFor="forgot-token"

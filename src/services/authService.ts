@@ -683,6 +683,49 @@ class AuthService {
     localStorage.setItem(`reset_token_latest_${cleanInput}`, token);
     localStorage.setItem(`reset_token_time_${targetEmail}`, Date.now().toString());
 
+    console.log(`[AUTH RESET TOKEN] Email Target: ${targetEmail} | Kode Token OTP: ${token}`);
+
+    // Dispatch email notification via /api/send-email
+    try {
+      const emailSubject = 'Kode Token Verifikasi Reset Password Kroombox';
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <span style="font-size: 26px; font-weight: 900; color: #66000E;">Kroombox</span>
+          </div>
+          <h2 style="font-size: 18px; font-weight: bold; color: #1A1110; margin-bottom: 8px;">Atur Ulang Kata Sandi</h2>
+          <p style="font-size: 14px; color: #4a5568; line-height: 1.5; margin-bottom: 16px;">
+            Halo <strong>${account.user.name || targetEmail}</strong>,<br/>
+            Kami menerima permintaan untuk mengatur ulang kata sandi akun Kroombox Anda. Masukkan kode token verifikasi 6-digit berikut pada halaman verifikasi:
+          </p>
+          <div style="background-color: #FFF1F0; border: 1px dashed #FFA39E; border-radius: 12px; padding: 18px; text-align: center; margin: 20px 0;">
+            <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #66000E; font-family: monospace;">${token}</span>
+          </div>
+          <p style="font-size: 12px; color: #718096; line-height: 1.4; margin-bottom: 20px;">
+            Kode token ini bersifat rahasia dan berlaku selama 15 menit. Jika Anda tidak melakukan permintaan ini, abaikan pesan ini.
+          </p>
+          <hr style="border: none; border-top: 1px solid #edf2f7; margin: 20px 0;" />
+          <p style="font-size: 11px; color: #a0aec0; text-align: center; margin: 0;">
+            &copy; ${new Date().getFullYear()} Kroombox Platform. All rights reserved.
+          </p>
+        </div>
+      `;
+
+      await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: targetEmail,
+          subject: emailSubject,
+          html: emailHtml,
+        }),
+      }).catch((err) => {
+        console.warn('[EmailService] API send-email fetch warning:', err);
+      });
+    } catch (e) {
+      console.warn('[EmailService] Gagal mengirim email reset password:', e);
+    }
+
     return true;
   }
 
