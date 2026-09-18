@@ -1,7 +1,6 @@
 import React from 'react';
 import { FooterSettings, ThemeSettings } from '../schema';
 import { Instagram, Twitter, Facebook, Mail, Phone, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 interface Props {
   settings: FooterSettings;
@@ -31,20 +30,20 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
             <div>
               <h4 className="text-white font-bold mb-6 uppercase tracking-wider">Perusahaan</h4>
               <ul className="space-y-3">
-                <li><Link to="/about" className="hover:text-white transition-colors">Tentang Kami</Link></li>
-                <li><Link to="/about" className="hover:text-white transition-colors">Karir</Link></li>
-                <li><Link to="/about" className="hover:text-white transition-colors">Blog</Link></li>
-                <li><Link to="/about" className="hover:text-white transition-colors">Mitra</Link></li>
+                <li><a href="/about" className="hover:text-white transition-colors">Tentang Kami</a></li>
+                <li><a href="/about" className="hover:text-white transition-colors">Karir</a></li>
+                <li><a href="/about" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="/about" className="hover:text-white transition-colors">Mitra</a></li>
               </ul>
             </div>
 
             <div>
               <h4 className="text-white font-bold mb-6 uppercase tracking-wider">Bantuan</h4>
               <ul className="space-y-3">
-                <li><Link to="/about" className="hover:text-white transition-colors">Pusat Bantuan</Link></li>
-                <li><Link to="/about" className="hover:text-white transition-colors">Cara Belanja</Link></li>
-                <li><Link to="/about" className="hover:text-white transition-colors">Lacak Pesanan</Link></li>
-                <li><Link to="/about" className="hover:text-white transition-colors">Pengembalian</Link></li>
+                <li><a href="/about" className="hover:text-white transition-colors">Pusat Bantuan</a></li>
+                <li><a href="/about" className="hover:text-white transition-colors">Cara Belanja</a></li>
+                <li><a href="/about" className="hover:text-white transition-colors">Lacak Pesanan</a></li>
+                <li><a href="/about" className="hover:text-white transition-colors">Pengembalian</a></li>
               </ul>
             </div>
 
@@ -85,10 +84,10 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
           </h2>
           
           <div className="flex flex-wrap justify-center gap-8 md:gap-16 mb-24 text-[#241A1A]">
-            <Link to="/about" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Journal</Link>
-            <Link to="/products" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Collections</Link>
-            <Link to="/about" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Our Story</Link>
-            <Link to="/about" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Contact</Link>
+            <a href="/about" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Journal</a>
+            <a href="/products" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Collections</a>
+            <a href="/about" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Our Story</a>
+            <a href="/about" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Contact</a>
           </div>
 
           <div className="w-full flex flex-col md:flex-row items-center justify-between border-t border-[#241A1A]/10 pt-8 mt-auto">
@@ -137,9 +136,9 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
             <div>
               <h4 className="text-xl font-black uppercase mb-8 tracking-widest text-[#FF0000]">Explore</h4>
               <ul className="space-y-4">
-                <li><Link to="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Shop All</Link></li>
-                <li><Link to="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Trending</Link></li>
-                <li><Link to="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Sale</Link></li>
+                <li><a href="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Shop All</a></li>
+                <li><a href="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Trending</a></li>
+                <li><a href="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Sale</a></li>
               </ul>
             </div>
 
@@ -191,17 +190,17 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
             <div>
               <h4 className="font-semibold mb-6">Shop</h4>
               <ul className="space-y-4 font-light text-white/70">
-                <li><Link to="/products" className="hover:text-[#D9A05B] transition-colors">All Products</Link></li>
-                <li><Link to="/products" className="hover:text-[#D9A05B] transition-colors">New Arrivals</Link></li>
-                <li><Link to="/products" className="hover:text-[#D9A05B] transition-colors">Collections</Link></li>
+                <li><a href="/products" className="hover:text-[#D9A05B] transition-colors">All Products</a></li>
+                <li><a href="/products" className="hover:text-[#D9A05B] transition-colors">New Arrivals</a></li>
+                <li><a href="/products" className="hover:text-[#D9A05B] transition-colors">Collections</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-6">About</h4>
               <ul className="space-y-4 font-light text-white/70">
-                <li><Link to="/" className="hover:text-[#D9A05B] transition-colors">Our Story</Link></li>
-                <li><Link to="/" className="hover:text-[#D9A05B] transition-colors">Journal</Link></li>
-                <li><Link to="/" className="hover:text-[#D9A05B] transition-colors">Contact</Link></li>
+                <li><a href="/" className="hover:text-[#D9A05B] transition-colors">Our Story</a></li>
+                <li><a href="/" className="hover:text-[#D9A05B] transition-colors">Journal</a></li>
+                <li><a href="/" className="hover:text-[#D9A05B] transition-colors">Contact</a></li>
               </ul>
             </div>
             <div>
@@ -223,43 +222,84 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
 
   // --- 5. MINIMALIST CLEAN THEME (Default) ---
   return (
-    <footer className="bg-gray-50 pt-20 pb-10 border-t border-gray-200">
-      <div className={`mx-auto px-6 lg:px-12 ${themeSettings.containerWidth}`}>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-          <div className="col-span-1">
-            <Link to="/" className="font-light text-2xl tracking-tighter" style={{ fontFamily: themeSettings.fontFamily }}>
-              Minimal.
-            </Link>
+    <footer className="bg-gray-900 text-gray-300 pt-16 pb-10 border-t border-gray-800">
+      <div className={`mx-auto px-6 lg:px-12 ${themeSettings.containerWidth || 'max-w-7xl'}`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12 border-b border-gray-800 pb-12">
+          
+          {/* Brand Info */}
+          <div className="lg:col-span-2 space-y-4">
+            <a href="/" className="font-extrabold text-2xl tracking-tight text-white block" style={{ fontFamily: themeSettings.fontFamily }}>
+              KROOM<span className="text-purple-500">STORE</span>
+            </a>
+            <p className="text-xs text-gray-400 leading-relaxed max-w-sm">
+              Toko Online Hardware & Perangkat Komputer Terlengkap. Menjual VGA, PC Gaming, Accessories, dan Components Original Bergaransi Resmi.
+            </p>
+            <div className="space-y-1.5 text-xs text-gray-400">
+              <p className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-purple-400" /> Jakarta, Indonesia</p>
+              <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-purple-400" /> +62 812-3456-7890</p>
+              <p className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-purple-400" /> support@kroomstore.id</p>
+            </div>
           </div>
+
+          {/* Kategori Hardware */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-6">Shop</h4>
-            <ul className="space-y-3">
-              <li><Link to="/products" className="text-sm text-gray-500 hover:text-black transition-colors">All Products</Link></li>
-              <li><Link to="/products" className="text-sm text-gray-500 hover:text-black transition-colors">New Arrivals</Link></li>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-4">Kategori Produk</h4>
+            <ul className="space-y-2.5 text-xs text-gray-400">
+              <li><a href="/katalog" className="hover:text-white transition-colors">VGA Card & GPU</a></li>
+              <li><a href="/katalog" className="hover:text-white transition-colors">Processor & Mobo</a></li>
+              <li><a href="/katalog" className="hover:text-white transition-colors">RAM & Storage SSD</a></li>
+              <li><a href="/katalog" className="hover:text-white transition-colors">Keyboard & Mouse</a></li>
+              <li><a href="/katalog" className="hover:text-white transition-colors">Cooling & Casing</a></li>
             </ul>
           </div>
+
+          {/* Layanan & Bantuan */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-6">Support</h4>
-            <ul className="space-y-3">
-              <li><Link to="/" className="text-sm text-gray-500 hover:text-black transition-colors">FAQ</Link></li>
-              <li><Link to="/" className="text-sm text-gray-500 hover:text-black transition-colors">Contact</Link></li>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-4">Bantuan Pelanggan</h4>
+            <ul className="space-y-2.5 text-xs text-gray-400">
+              <li><a href="/tentang" className="hover:text-white transition-colors">Lacak Pesanan</a></li>
+              <li><a href="/tentang" className="hover:text-white transition-colors">Garansi & Retur</a></li>
+              <li><a href="/tentang" className="hover:text-white transition-colors">Cara Pembayaran</a></li>
+              <li><a href="/tentang" className="hover:text-white transition-colors">Syarat & Ketentuan</a></li>
+              <li><a href="/tentang" className="hover:text-white transition-colors">Kebijakan Privasi</a></li>
             </ul>
           </div>
-          <div>
-            {settings.showSocials && (
-              <>
-                <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-6">Social</h4>
-                <div className="flex gap-4">
-                  <a href="#" className="text-gray-500 hover:text-black transition-colors"><Instagram className="w-5 h-5" /></a>
-                  <a href="#" className="text-gray-500 hover:text-black transition-colors"><Facebook className="w-5 h-5" /></a>
-                  <a href="#" className="text-gray-500 hover:text-black transition-colors"><Twitter className="w-5 h-5" /></a>
-                </div>
-              </>
-            )}
+
+          {/* Pembayaran & Ekspedisi */}
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-2.5">Pembayaran</h4>
+              <div className="flex flex-wrap gap-1.5 text-[11px] font-bold text-gray-300">
+                <span className="px-2 py-1 bg-gray-800 rounded">BCA</span>
+                <span className="px-2 py-1 bg-gray-800 rounded">Mandiri</span>
+                <span className="px-2 py-1 bg-gray-800 rounded text-cyan-400">QRIS</span>
+                <span className="px-2 py-1 bg-gray-800 rounded text-emerald-400">GoPay</span>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-2.5">Pengiriman</h4>
+              <div className="flex flex-wrap gap-1.5 text-[11px] font-bold text-gray-300">
+                <span className="px-2 py-1 bg-gray-800 rounded text-red-400">JNE</span>
+                <span className="px-2 py-1 bg-gray-800 rounded text-amber-400">J&T</span>
+                <span className="px-2 py-1 bg-gray-800 rounded text-purple-400">SiCepat</span>
+                <span className="px-2 py-1 bg-gray-800 rounded text-emerald-400">GoSend</span>
+              </div>
+            </div>
           </div>
+
         </div>
-        <div className="text-center md:text-left text-xs text-gray-400 font-light tracking-wide pt-8 border-t border-gray-200">
-          {settings.copyrightText}
+
+        {/* Bottom copyright */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400">
+          <p>{settings.copyrightText || `© ${new Date().getFullYear()} Kroombox Store. Hak cipta dilindungi.`}</p>
+          {settings.showSocials && (
+            <div className="flex gap-4">
+              <a href="#" className="hover:text-white transition-colors"><Instagram className="w-4 h-4" /></a>
+              <a href="#" className="hover:text-white transition-colors"><Facebook className="w-4 h-4" /></a>
+              <a href="#" className="hover:text-white transition-colors"><Twitter className="w-4 h-4" /></a>
+            </div>
+          )}
         </div>
       </div>
     </footer>

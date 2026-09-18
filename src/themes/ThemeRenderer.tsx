@@ -4,6 +4,7 @@ import { getStoreSections, getStoreSectionsForPage } from '../utils/layoutConsta
 import { CenterPreviewCanvas } from '../components/layout-editor/CenterPreviewCanvas';
 import { mockProducts } from '../cms/mockCmsData';
 import { THEME_DATA_MAP } from './themeData';
+import { normalizeThemeId } from './ThemeRegistry';
 
 import { useCmsStore } from '../cms/useCmsStore';
 
@@ -18,7 +19,8 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
   }
 
   const cmsProducts = useCmsStore(state => state.products);
-  const activeThemeId = (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist';
+  const rawThemeId = (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist';
+  const activeThemeId = normalizeThemeId(rawThemeId);
   const themeData = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['minimalist'];
   const themeProducts = themeData?.products && themeData.products.length > 0 ? themeData.products : mockProducts;
   const displayProducts = (products && products.length > 0) ? products : (cmsProducts && cmsProducts.length > 0 ? (cmsProducts as any[]) : (themeProducts as any[]));

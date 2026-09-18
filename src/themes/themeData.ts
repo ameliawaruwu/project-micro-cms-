@@ -972,6 +972,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
 THEME_DATA_MAP["minimalist_clean"] = THEME_DATA_MAP["minimalist"];
 THEME_DATA_MAP["gadget_tech"] = THEME_DATA_MAP["modern"];
 THEME_DATA_MAP["futuristic_dark"] = THEME_DATA_MAP["futuristic"];
+THEME_DATA_MAP["future_shop"] = THEME_DATA_MAP["futuristic"];
 THEME_DATA_MAP["editorial_luxury"] = THEME_DATA_MAP["luxury"];
 THEME_DATA_MAP["bold_market"] = THEME_DATA_MAP["bold"];
 THEME_DATA_MAP["editorial_commerce"] = THEME_DATA_MAP["editorial"];

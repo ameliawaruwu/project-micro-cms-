@@ -63,97 +63,114 @@ export interface CmsPage {
   content: string; // Can be rich text or blocks, but for now just string
 }
 
-// ─── MOCK DATA (Toko Alya Permata) ───────────────────────────────
+// ─── MOCK DATA (Toko NEON//CORE Electronics) ───────────────────────────────
 
 export const mockStoreInfo: CmsStoreInfo = {
-  name: "Alya Permata",
-  description: "Menyediakan pakaian wanita premium dengan bahan berkualitas dan desain eksklusif yang tak lekang oleh waktu.",
-  address: "Jl. Sudirman No. 123, Jakarta Selatan, 12190",
-  email: "hello@alyapermata.com",
-  phone: "+62 812 3456 7890",
+  name: "NEON//CORE Electronics",
+  description: "Pusat Komponen Komputer, PC Gaming High-End, GPU RTX Series, dan Perangkat Elektronik Futuristik Bergaransi Resmi.",
+  address: "Mall Cyber Park Lt. 3 No. 88, Jakarta Selatan, 12190",
+  email: "sales@neoncore.id",
+  phone: "+62 812 8888 9999",
   socials: {
-    instagram: "@alyapermata",
-    tiktok: "@alyapermata.official",
+    instagram: "@neoncore.hardware",
+    tiktok: "@neoncore.official",
   }
 };
 
 export const mockCategories: CmsCategory[] = [
-  { id: "c1", name: "Dress", slug: "dress", image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80" },
-  { id: "c2", name: "Atasan", slug: "atasan", image: "https://images.unsplash.com/photo-1551163943-3f6a855d1153?auto=format&fit=crop&w=600&q=80" },
-  { id: "c3", name: "Bawahan", slug: "bawahan", image: "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?auto=format&fit=crop&w=600&q=80" },
-  { id: "c4", name: "Outerwear", slug: "outerwear", image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=600&q=80" }
+  { id: "c1", name: "Graphics Card", slug: "graphics-card", image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=600&q=80" },
+  { id: "c2", name: "Keyboard & Mouse", slug: "keyboard-mouse", image: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=600&q=80" },
+  { id: "c3", name: "Monitor & Display", slug: "monitor-display", image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80" },
+  { id: "c4", name: "Audio & Headset", slug: "audio-headset", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80" },
+  { id: "c5", name: "Storage & Components", slug: "storage-components", image: "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=600&q=80" }
 ];
 
 export const mockProducts: CmsProduct[] = [
   {
     id: "p1",
-    name: "Amaryllis Floral Dress",
-    slug: "amaryllis-floral-dress",
-    price: 350000,
-    image: "https://images.unsplash.com/photo-1612336307429-8a898d10e223?auto=format&fit=crop&w=800&q=80",
+    name: "NVIDIA GeForce RTX 4090 OC 24GB",
+    slug: "rtx-4090-oc-24gb",
+    price: 28950000,
+    originalPrice: 31000000,
+    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=800&q=80",
     categoryId: "c1",
-    categoryName: "Dress",
-    description: "Dress motif floral yang cantik dengan bahan rayon premium yang adem dan jatuh. Cocok untuk acara santai maupun semi-formal.",
+    categoryName: "Graphics Card",
+    description: "Kartu grafis flagship arsitektur Ada Lovelace dengan VRAM 24GB GDDR6X, 16384 CUDA Cores, DLSS 3.5, dan sistem pendingin tri-fan vapor chamber untuk performa 4K gaming & AI rendering tanpa batas.",
     status: 'active',
     isFeatured: true,
     isNew: true,
-    stock: 25
+    stock: 12
   },
   {
     id: "p2",
-    name: "Classic White Blouse",
-    slug: "classic-white-blouse",
-    price: 180000,
-    originalPrice: 200000,
-    image: "https://images.unsplash.com/photo-1598554747436-c9293d6a588f?auto=format&fit=crop&w=800&q=80",
+    name: "Cyber Matrix RGB Wireless Mechanical Keyboard",
+    slug: "cyber-matrix-mech-keyboard",
+    price: 2150000,
+    originalPrice: 2400000,
+    image: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=800&q=80",
     categoryId: "c2",
-    categoryName: "Atasan",
-    description: "Blus putih klasik dengan potongan loose. Bahan katun poplin yang menyerap keringat. Wajib ada di lemari Anda.",
+    categoryName: "Keyboard & Mouse",
+    description: "Keyboard mekanikal nirkabel 75% translucent gasket mount dengan switch linear hot-swappable, piringan alumunium anodized, dan layar OLED mini yang dapat disesuaikan.",
+    status: 'active',
+    isFeatured: true,
+    isNew: false,
+    stock: 45
+  },
+  {
+    id: "p3",
+    name: "UltraWide Curved Gaming Monitor 34\" 175Hz OLED",
+    slug: "ultrawide-curved-monitor-34",
+    price: 9450000,
+    originalPrice: 10500000,
+    image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80",
+    categoryId: "c3",
+    categoryName: "Monitor & Display",
+    description: "Monitor gaming lengkung QD-OLED 34 inci UWQHD (3440x1440), response time 0.03ms GTG, refresh rate 175Hz, VESA DisplayHDR True Black 400 untuk warna hitam sempurna.",
+    status: 'active',
+    isFeatured: true,
+    isNew: true,
+    stock: 18
+  },
+  {
+    id: "p4",
+    name: "Quantum Wireless Gaming Headset 7.1 Surround",
+    slug: "quantum-wireless-gaming-headset",
+    price: 1650000,
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
+    categoryId: "c4",
+    categoryName: "Audio & Headset",
+    description: "Headset gaming nirkabel lossless 2.4GHz dengan driver Neodymium 50mm, mikrofon cardioid berperedam bising AI, dan daya tahan baterai hingga 50 jam.",
+    status: 'active',
+    isFeatured: false,
+    isNew: false,
+    stock: 35
+  },
+  {
+    id: "p5",
+    name: "NVMe M.2 Gen4 x4 SSD 2TB UltraSpeed",
+    slug: "nvme-gen4-ssd-2tb",
+    price: 2350000,
+    image: "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=800&q=80",
+    categoryId: "c5",
+    categoryName: "Storage & Components",
+    description: "Solid State Drive PCIe 4.0 NVMe M.2 2TB dengan kecepatan baca hingga 7.450 MB/s dan heatsink alumunium bawaan yang kompatibel untuk PC High-End & PS5.",
     status: 'active',
     isFeatured: true,
     isNew: false,
     stock: 50
   },
   {
-    id: "p3",
-    name: "Cinnamon Knit Cardigan",
-    slug: "cinnamon-knit-cardigan",
-    price: 285000,
-    image: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=800&q=80",
-    categoryId: "c4",
-    categoryName: "Outerwear",
-    description: "Kardigan rajut halus dengan warna kayu manis yang hangat. Potongan oversized yang nyaman dipakai seharian.",
+    id: "p6",
+    name: "Titanium Custom Water-Cooled PC Case",
+    slug: "titanium-watercooled-pc-case",
+    price: 4250000,
+    image: "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=800&q=80",
+    categoryId: "c5",
+    categoryName: "Storage & Components",
+    description: "Casing PC Dual-Chamber tempered glass berbahan alumunium titanium penerbangan dengan dukungan radiator 360mm ganda dan manajemen kabel tersembunyi.",
     status: 'active',
     isFeatured: true,
     isNew: true,
-    stock: 15
-  },
-  {
-    id: "p4",
-    name: "Palazzo Wide Pants",
-    slug: "palazzo-wide-pants",
-    price: 220000,
-    image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=800&q=80",
-    categoryId: "c3",
-    categoryName: "Bawahan",
-    description: "Celana panjang berpotongan lebar yang memberikan kesan jenjang dan elegan. Bahan scuba ringan yang melar.",
-    status: 'active',
-    isFeatured: false,
-    isNew: false,
-    stock: 30
-  },
-  {
-    id: "p5",
-    name: "Silk Slip Dress",
-    slug: "silk-slip-dress",
-    price: 420000,
-    image: "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?auto=format&fit=crop&w=800&q=80",
-    categoryId: "c1",
-    categoryName: "Dress",
-    description: "Dress slip bahan silk satin premium. Tampak sangat mewah untuk acara malam hari.",
-    status: 'active',
-    isFeatured: true,
-    isNew: false,
     stock: 10
   }
 ];
@@ -161,21 +178,21 @@ export const mockProducts: CmsProduct[] = [
 export const mockNews: CmsNews[] = [
   {
     id: "n1",
-    title: "Tren Warna Pakaian Wanita di Tahun Ini",
-    slug: "tren-warna-pakaian-wanita",
-    thumbnail: "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=800&q=80",
+    title: "Panduan Memilih Kartu Grafis RTX Series untuk 4K Gaming & Rendering AI",
+    slug: "panduan-memilih-vga-rtx",
+    thumbnail: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=800&q=80",
     date: "12 Okt 2026",
-    content: "Tahun ini warna-warna earth tone seperti terracotta, olive, dan sand mendominasi panggung mode...",
-    category: "Fashion Tips"
+    content: "Memilih VGA card yang tepat sangat krusial untuk kestabilan framerate 4K serta akselerasi AI. Simak ulasan arsitektur Ada Lovelace terbaru...",
+    category: "Hardware Review"
   },
   {
     id: "n2",
-    title: "Cara Merawat Baju Berbahan Silk Agar Awet",
-    slug: "cara-merawat-baju-silk",
-    thumbnail: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=800&q=80",
+    title: "Tips Merawat Thermal Paste & Liquid Cooling System PC Gaming",
+    slug: "tips-merawat-liquid-cooling",
+    thumbnail: "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=800&q=80",
     date: "05 Okt 2026",
-    content: "Pakaian berbahan silk satin membutuhkan perawatan khusus agar kilapnya tidak hilang. Hindari mencuci dengan mesin...",
-    category: "Perawatan"
+    content: "Suhu proccessor yang stabil menjaga performa boosting CPU tetap maksimal. Pelajari cara mengganti coolant dan memilih thermal paste kualitas tinggi...",
+    category: "PC Maintenance"
   }
 ];
 
@@ -192,18 +209,18 @@ export const mockPages: CmsPage[] = [
     id: "pg1",
     title: "Tentang Kami",
     slug: "tentang",
-    content: "Alya Permata dimulai dari sebuah garasi kecil pada tahun 2020. Misi kami adalah memberdayakan wanita melalui pakaian yang nyaman dan elegan..."
+    content: "NEON//CORE Electronics berdiri sejak 2022 sebagai distributor utama komponen hardware PC, GPU gaming kelas atas, monitor OLED high-refresh, dan peripheral profesional bergaransi resmi di Indonesia."
   },
   {
     id: "pg2",
     title: "Keunggulan Kami",
     slug: "keunggulan",
-    content: "1. Bahan Premium\n2. Jahitan Rapi\n3. Desain Eksklusif"
+    content: "1. 100% Produk Original & BNIB\n2. Garansi Resmi Distributor\n3. Layanan Konsultasi Rakit PC 24/7"
   },
   {
     id: "pg3",
     title: "Hubungi Kami",
     slug: "kontak",
-    content: "Alamat: Jl. Sudirman No. 123\nEmail: hello@alyapermata.com"
+    content: "Alamat: Mall Cyber Park Lt. 3 No. 88, Jakarta Selatan\nEmail: sales@neoncore.id"
   }
 ];

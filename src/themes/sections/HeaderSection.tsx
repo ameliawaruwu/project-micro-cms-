@@ -265,27 +265,27 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
     >
       <div className={`mx-auto px-6 lg:px-12 ${themeSettings.containerWidth}`}>
         <div className="flex items-center justify-between h-16">
-          <div className="flex-shrink-0 flex items-center">
+          <div className="flex-shrink-0 mr-8 lg:mr-12 flex items-center">
             {settings.showLogo && (
-              <Link to="/" className="font-light text-2xl md:text-3xl tracking-tighter flex items-center hover:opacity-70 transition-opacity" style={{ fontFamily: themeSettings.fontFamily }}>
+              <Link to="/" className="font-light text-2xl md:text-3xl tracking-tighter flex items-center hover:opacity-70 transition-opacity whitespace-nowrap" style={{ fontFamily: themeSettings.fontFamily }}>
                 <span className="font-medium mr-1">M</span>inimal.
               </Link>
             )}
           </div>
 
-          <nav className="hidden md:flex items-center justify-center space-x-12 flex-1">
+          <nav className="hidden md:flex items-center justify-center space-x-6 lg:space-x-12 px-4 flex-1">
             {navLinks.map((link, idx) => (
               <Link 
                 key={idx} 
                 to={link.url} 
-                className="text-[12px] font-medium uppercase tracking-[0.25em] opacity-60 hover:opacity-100 transition-all hover:scale-105"
+                className="text-[12px] font-medium uppercase tracking-[0.25em] opacity-60 hover:opacity-100 transition-all hover:scale-105 whitespace-nowrap"
               >
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          <div className="flex items-center space-x-6 sm:space-x-8">
+          <div className="flex-shrink-0 ml-8 lg:ml-12 flex items-center space-x-6 sm:space-x-8">
             <button aria-label="Search" className="opacity-60 hover:opacity-100 hover:rotate-90 transition-all duration-300">
               <Search className="w-5 h-5 stroke-[1.2]" />
             </button>

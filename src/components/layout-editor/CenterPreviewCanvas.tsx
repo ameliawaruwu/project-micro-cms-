@@ -555,7 +555,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                     style={opts.headerStyle === 'brand' ? { backgroundColor: primaryAccent } : undefined}
                   >
                     <div className={`flex items-center justify-between gap-2.5 ${isMobile ? 'px-3.5 py-2.5' : isTablet ? 'px-5 py-3' : 'px-6 py-3'}`}>
-                      <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 min-w-0">
+                      <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 min-w-0 mr-4 lg:mr-8">
                         {opts.showLogo !== false && (
                           <div
                             className={`rounded-xl overflow-hidden shadow-2xs shrink-0 border ${
@@ -607,7 +607,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                       </div>
 
                       {isDesktop && opts.showNavMenu !== false && (opts.navMenuType === 'landing_style' || opts.navMenuType === 'custom' || !opts.navMenuType) && (
-                        <nav className="hidden md:flex items-center gap-1">
+                        <nav className="hidden md:flex items-center justify-center flex-1 gap-1 xl:gap-2 px-2">
                           {(opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS).map((item, mIdx) => (
                             <span
                               key={item.id || mIdx}
@@ -1719,7 +1719,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                         {/* Main Navbar Bar */}
                         <div className={`flex items-center justify-between gap-2.5 ${isMobile ? 'px-3.5 py-2.5' : isTablet ? 'px-5 py-3' : 'px-6 py-3'}`}>
                           {/* Brand Logo & Name */}
-                          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 min-w-0">
+                          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 min-w-0 mr-4 lg:mr-8">
                             {opts.showLogo !== false && (
                               <div
                                 className={`rounded-xl overflow-hidden shadow-2xs shrink-0 border ${
@@ -1778,7 +1778,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
 
                           {/* Desktop Navbar Menu (Shown ONLY on Desktop mode) */}
                           {isDesktop && opts.showNavMenu !== false && (opts.navMenuType === 'landing_style' || opts.navMenuType === 'custom' || !opts.navMenuType) && (
-                            <nav className="hidden md:flex items-center gap-1">
+                            <nav className="hidden md:flex items-center justify-center flex-1 gap-1 xl:gap-2 px-2">
                               {(opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS).map((item, mIdx) => (
                                 <span
                                   key={item.id || mIdx}

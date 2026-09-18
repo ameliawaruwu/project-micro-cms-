@@ -63,7 +63,6 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   onUpdateGlobalSettings,
   showGlobalSettings,
 }) => {
-  const [activeTab, setActiveTab] = useState<'konten' | 'tampilan' | 'lanjutan'>('konten');
   const cmsProducts = useCmsStore(state => state.products);
   const updateProduct = useCmsStore(state => state.updateProduct);
   const [showImagePresets, setShowImagePresets] = useState(false);
@@ -78,14 +77,14 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   if (!selectedSection || showGlobalSettings) {
     if (showGlobalSettings && globalSettings && onUpdateGlobalSettings) {
       return (
-        <GlobalThemeSettingsPanel 
-          settings={globalSettings} 
-          onUpdate={onUpdateGlobalSettings} 
-          onClose={onBack} 
+        <GlobalThemeSettingsPanel
+          settings={globalSettings}
+          onUpdate={onUpdateGlobalSettings}
+          onClose={onBack}
         />
       );
     }
-    
+
     // Fallback if no specific panel is created yet
     return (
       <aside className="w-full lg:w-[320px] bg-white border-l border-[#E1E3E5] flex flex-col h-full shrink-0 font-sans select-none shadow-2xs">
@@ -118,11 +117,10 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   key={c.color}
                   type="button"
                   onClick={() => onChangePrimaryAccent(c.color)}
-                  className={`p-2 rounded-lg border flex items-center gap-2 transition cursor-pointer ${
-                    primaryAccent === c.color
+                  className={`p-2 rounded-lg border flex items-center gap-2 transition cursor-pointer ${primaryAccent === c.color
                       ? 'border-[#2C6ECB] bg-[#F1F8FF] shadow-xs'
                       : 'border-[#E1E3E5] bg-white hover:bg-[#F6F6F7]'
-                  }`}
+                    }`}
                 >
                   <span
                     className="w-4 h-4 rounded-full border border-black/10 flex items-center justify-center text-white shrink-0"
@@ -243,55 +241,17 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
           </div>
         </div>
 
-        {/* Dynamic Segmented Tab Switcher */}
-        <div className="flex items-center border-b-2 border-transparent">
-          <button
-            onClick={() => setActiveTab('konten')}
-            className={`flex-1 pb-2.5 text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer border-b-2 ${
-              activeTab === 'konten'
-                ? 'text-[#202223] border-[#202223]'
-                : 'text-[#8C9196] border-transparent hover:text-[#202223]'
-            }`}
-          >
-            Konten
-          </button>
-          <button
-            onClick={() => setActiveTab('tampilan')}
-            className={`flex-1 pb-2.5 text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer border-b-2 ${
-              activeTab === 'tampilan'
-                ? 'text-[#202223] border-[#202223]'
-                : 'text-[#8C9196] border-transparent hover:text-[#202223]'
-            }`}
-          >
-            Tampilan
-          </button>
-          <button
-            onClick={() => setActiveTab('lanjutan')}
-            className={`flex-1 pb-2.5 text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer border-b-2 ${
-              activeTab === 'lanjutan'
-                ? 'text-[#202223] border-[#202223]'
-                : 'text-[#8C9196] border-transparent hover:text-[#202223]'
-            }`}
-          >
-            Lanjutan
-          </button>
-        </div>
       </div>
 
-      {/* 2. TAB CONTENT CONTAINER */}
+      {/* 2. CONTENT CONTAINER */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
-        
-        {/* ========================================================================= */}
-        {/* TAB 1: KONTEN */}
-        {/* ========================================================================= */}
-        {activeTab === 'konten' && (
-          <div className="space-y-4">
-            
+        <div className="space-y-4">
+
             {/* ── IMAGE SECTION ── */}
             {hasImage && (
               <div className="space-y-2">
                 <label className="text-[12px] font-bold text-[#202223]">Gambar Utama</label>
-                
+
                 {currentImageUrl ? (
                   <div className="relative rounded-lg overflow-hidden aspect-video border border-[#E1E3E5] bg-[#F6F6F7]">
                     <img
@@ -300,7 +260,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-                      <button 
+                      <button
                         onClick={() => handleOptionChange({ imageUrl: '', bannerUrl: '' })}
                         className="p-2 bg-white rounded-full text-red-600 hover:scale-105 transition cursor-pointer"
                         title="Hapus Gambar"
@@ -310,7 +270,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div 
+                  <div
                     onClick={() => fileInputRef.current?.click()}
                     className="aspect-video rounded-lg border-2 border-dashed border-[#E1E3E5] bg-[#F6F6F7] hover:bg-[#F1F8FF] hover:border-[#2C6ECB] transition cursor-pointer flex flex-col items-center justify-center gap-2 p-3 text-center"
                   >
@@ -344,9 +304,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       setShowImagePresets(!showImagePresets);
                       setShowUrlInput(false);
                     }}
-                    className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${
-                      showImagePresets ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
-                    }`}
+                    className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${showImagePresets ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
+                      }`}
                   >
                     Pilih Galeri
                   </button>
@@ -356,9 +315,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       setShowUrlInput(!showUrlInput);
                       setShowImagePresets(false);
                     }}
-                    className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${
-                      showUrlInput ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
-                    }`}
+                    className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${showUrlInput ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
+                      }`}
                   >
                     Input URL
                   </button>
@@ -745,13 +703,13 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       <div key={product.id} className="p-3 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg space-y-2">
                         <div className="flex gap-2">
                           <div className="relative group w-12 h-12 shrink-0 cursor-pointer">
-                            <img 
-                              src={product.image || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=300'} 
+                            <img
+                              src={product.image || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=300'}
                               alt={product.name}
                               className="w-full h-full object-cover rounded-md border border-[#E1E3E5]"
                               referrerPolicy="no-referrer"
                             />
-                            <label 
+                            <label
                               htmlFor={`product-img-upload-${product.id}`}
                               className="absolute inset-0 bg-black/50 text-white rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
                               title="Ganti Foto dari Perangkat"
@@ -759,7 +717,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                               <Upload className="w-4 h-4" />
                             </label>
                           </div>
-                          
+
                           <div className="flex-1 space-y-1.5 min-w-0">
                             <input
                               type="text"
@@ -788,7 +746,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                             <Upload className="w-3 h-3" />
                             <span>Upload Foto</span>
                           </label>
-                          
+
                           <input
                             type="file"
                             id={`product-img-upload-${product.id}`}
@@ -823,223 +781,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 2: TAMPILAN */}
-        {/* ========================================================================= */}
-        {activeTab === 'tampilan' && (
-          <div className="space-y-5">
-            {/* KATALOG PRODUK SPECIFIC DISPLAY OPTIONS */}
-            {(selectedSection.id === 'featured_products' || selectedSection.id === 'product_grid') && (
-              <div className="space-y-4 pb-4 border-b border-[#E1E3E5]">
-                {/* Desktop Columns */}
-                <div className="space-y-2">
-                  <label className="text-[12px] font-bold text-[#202223]">Jumlah Kolom (Desktop)</label>
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {[2, 3, 4, 5, 6].map(cols => (
-                      <button
-                        key={cols}
-                        type="button"
-                        onClick={() => handleOptionChange({ gridColumns: cols })}
-                        className={`py-1.5 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
-                          (opts.gridColumns || 4) === cols
-                            ? 'border-[#202223] bg-[#202223] text-white shadow-xs'
-                            : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
-                        }`}
-                      >
-                        {cols}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Mobile Columns */}
-                <div className="space-y-2">
-                  <label className="text-[12px] font-bold text-[#202223]">Jumlah Kolom (Mobile)</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[1, 2].map(mCols => (
-                      <button
-                        key={mCols}
-                        type="button"
-                        onClick={() => handleOptionChange({ mobileColumns: mCols })}
-                        className={`py-1.5 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
-                          (opts.mobileColumns || 1) === mCols
-                            ? 'border-[#202223] bg-[#202223] text-white'
-                            : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
-                        }`}
-                      >
-                        {mCols} Kolom
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Card Layout / Style */}
-                <div className="space-y-2">
-                  <label className="text-[12px] font-bold text-[#202223]">Gaya Card Produk</label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[
-                      { id: 'standard', label: 'Standar' },
-                      { id: 'border', label: 'Garis Tepi' },
-                      { id: 'shadow', label: 'Bayangan' },
-                      { id: 'minimal', label: 'Minimalis' },
-                      { id: 'flat', label: 'Flat' },
-                    ].map(style => (
-                      <button
-                        key={style.id}
-                        type="button"
-                        onClick={() => handleOptionChange({ cardStyle: style.id })}
-                        className={`py-1.5 px-2 rounded-lg border text-[10px] font-bold truncate transition cursor-pointer ${
-                          (opts.cardStyle || 'standard') === style.id
-                            ? 'border-[#202223] bg-[#202223] text-white'
-                            : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
-                        }`}
-                      >
-                        {style.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Image Ratio */}
-                <div className="space-y-2">
-                  <label className="text-[12px] font-bold text-[#202223]">Rasio Foto Produk</label>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[
-                      { id: '1:1', label: '1:1 (Persegi)' },
-                      { id: '4:3', label: '4:3' },
-                      { id: '16:9', label: '16:9' },
-                      { id: 'auto', label: 'Auto' },
-                    ].map(ratio => (
-                      <button
-                        key={ratio.id}
-                        type="button"
-                        onClick={() => handleOptionChange({ imageRatio: ratio.id })}
-                        className={`py-1.5 px-1 rounded-lg border text-[10px] font-bold truncate text-center transition cursor-pointer ${
-                          (opts.imageRatio || '1:1') === ratio.id
-                            ? 'border-[#202223] bg-[#202223] text-white'
-                            : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
-                        }`}
-                      >
-                        {ratio.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* DISPLAY TOGGLES (PRIORITAS USER) */}
-                <div className="space-y-2 pt-3 border-t border-[#E1E3E5]">
-                  <label className="text-[12px] font-bold text-[#202223]">Elemen Tampilan Card</label>
-                  <div className="space-y-1.5 bg-[#F6F6F7] p-2.5 rounded-lg border border-[#E1E3E5]">
-                    {[
-                      { key: 'showPrice', label: 'Tampilkan Harga Produk' },
-                      { key: 'showCategory', label: 'Tampilkan Kategori' },
-                      { key: 'showRating', label: 'Tampilkan Rating Bintang' },
-                      { key: 'showAddToCart', label: 'Tampilkan Tombol "Beli / Add to Cart"' },
-                      { key: 'showQuickView', label: 'Tampilkan Tombol Quick View' },
-                      { key: 'showWishlist', label: 'Tampilkan Icon Wishlist' },
-                      { key: 'showBadge', label: 'Tampilkan Badge Promo' },
-                      { key: 'showStockBadge', label: 'Tampilkan Status Stok' },
-                      { key: 'showCategoryTabs', label: 'Tampilkan Tab Kategori' },
-                      { key: 'showSearchBar', label: 'Tampilkan Bar Pencarian' },
-                    ].map(toggle => (
-                      <label key={toggle.key} className="flex items-center justify-between cursor-pointer p-1 rounded hover:bg-white transition text-[11px] text-[#202223]">
-                        <span className="font-semibold">{toggle.label}</span>
-                        <input
-                          type="checkbox"
-                          checked={opts[toggle.key] !== false}
-                          onChange={(e) => handleOptionChange({ [toggle.key]: e.target.checked })}
-                          className="w-4 h-4 rounded text-[#202223] focus:ring-[#202223]"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 3: LANJUTAN */}
-        {/* ========================================================================= */}
-        {activeTab === 'lanjutan' && (
-          <div className="space-y-5">
-            {/* Padding Controls */}
-            <div className="space-y-3">
-              <label className="text-[12px] font-bold text-[#202223]">Jarak Bagian (Padding)</label>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[11px] text-[#6D7175]">Jarak Atas (px)</label>
-                  <input
-                    type="number"
-                    value={opts.paddingTop ?? ''}
-                    onChange={(e) => handleOptionChange({ paddingTop: parseInt(e.target.value) || 0 })}
-                    placeholder="Auto"
-                    className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] text-[#6D7175]">Jarak Bawah (px)</label>
-                  <input
-                    type="number"
-                    value={opts.paddingBottom ?? ''}
-                    onChange={(e) => handleOptionChange({ paddingBottom: parseInt(e.target.value) || 0 })}
-                    placeholder="Auto"
-                    className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Layout Options */}
-            <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
-              <label className="text-[12px] font-bold text-[#202223]">Opsi Tata Letak</label>
-              
-              <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-[#F6F6F7]">
-                <input
-                  type="checkbox"
-                  checked={opts.enableContainer !== false}
-                  onChange={(e) => handleOptionChange({ enableContainer: e.target.checked })}
-                  className="w-4 h-4 rounded border-[#E1E3E5] text-[#202223] focus:ring-[#202223]"
-                />
-                <span className="text-[12px] text-[#202223]">Gunakan Container Lebar Maksimal</span>
-              </label>
-              
-              {hasImage && (
-                <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-[#F6F6F7]">
-                  <input
-                    type="checkbox"
-                    checked={opts.mobileStackImages !== false}
-                    onChange={(e) => handleOptionChange({ mobileStackImages: e.target.checked })}
-                    className="w-4 h-4 rounded border-[#E1E3E5] text-[#202223] focus:ring-[#202223]"
-                  />
-                  <span className="text-[12px] text-[#202223]">Susun Gambar Vertikal di Mobile</span>
-                </label>
-              )}
-            </div>
-
-            {/* Custom CSS */}
-            <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
-              <label className="text-[12px] font-bold text-[#202223] flex items-center gap-1.5">
-                <Code2 className="w-3.5 h-3.5" />
-                CSS Kustom (Opsional)
-              </label>
-              <textarea
-                rows={4}
-                value={opts.customCss || ''}
-                onChange={(e) => handleOptionChange({ customCss: e.target.value })}
-                placeholder=".section-container { ... }"
-                className="w-full px-3 py-2 rounded-lg bg-[#1A1A1A] text-[#E1E3E5] font-mono text-[11px] border border-[#E1E3E5] focus:outline-none focus:border-[#2C6ECB]"
-                spellCheck={false}
-              />
-              <p className="text-[10px] text-[#8C9196]">Tambahkan CSS class Tailwind tambahan atau kustom CSS.</p>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </aside>
   );

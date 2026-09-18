@@ -23,6 +23,7 @@ import { ThemeLibraryView, TemplateGalleryItem, SavedThemeItem, TEMPLATE_GALLERY
 import { PublishStoreModal } from '../../components/layout-editor/PublishStoreModal';
 import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
+import { normalizeThemeId } from '../../themes/ThemeRegistry';
 
 interface LayoutPageProps {
   store: Store;
@@ -77,9 +78,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const [loadingTemplateName, setLoadingTemplateName] = useState('');
   const [activePage, setActivePage] = useState('homepage');
 
-  const [activeThemeId, setActiveThemeId] = useState<any>(
-    (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist'
-  );
+  const [activeThemeId, setActiveThemeId] = useState<any>(() => {
+    const raw = (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist';
+    return normalizeThemeId(raw);
+  });
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [globalSettings, setGlobalSettings] = useState<any>(
     store.layoutSettings?.globalThemeSettings || {
@@ -208,22 +210,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     const params = new URLSearchParams(window.location.search);
     const themeId = params.get('previewTheme');
     if (themeId) {
-      const template = TEMPLATE_GALLERY_ITEMS.find((t) => t.storeTemplate.id === themeId);
+      const template = TEMPLATE_GALLERY_ITEMS.find((t) => t.storeTemplate.id === themeId || t.id === themeId);
       if (template) {
         setPreviewTemplate(template);
-        
-        const mappedThemeId = {
-          'minimalist_clean': 'minimalist',
-          'gadget_tech': 'modern',
-          'futuristic_dark': 'futuristic',
-          'editorial_luxury': 'luxury',
-          'bold_market': 'bold',
-          'editorial_commerce': 'editorial',
-          'nature_organic': 'nature',
-          'creative_studio': 'creative',
-          'pro_corporate': 'professional',
-          'chic_fashion': 'fashion',
-        }[template.storeTemplate.id] || 'minimalist';
+        const mappedThemeId = normalizeThemeId(template.storeTemplate?.id || template.id);
         useCmsStore.getState().loadThemeData(mappedThemeId);
         setActiveThemeId(mappedThemeId);
         
@@ -383,18 +373,32 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
   const handlePublishTheme = (theme: SavedThemeItem) => {
     const storeTemplateId = theme.storeTemplate?.id || theme.id;
+    const mappedThemeId = normalizeThemeId(theme.customLayoutSettings?.activeThemeId || storeTemplateId);
     const nowIso = new Date().toISOString();
     
+    setActiveThemeId(mappedThemeId);
+    useCmsStore.getState().loadThemeData(mappedThemeId);
+
     // Set as active theme layout
     onSaveLayout({
       ...store.layoutSettings,
       activeTemplateId: storeTemplateId,
+      activeThemeId: mappedThemeId,
+      themeStyle: mappedThemeId,
       primaryAccent: theme.primaryAccent,
       sections: theme.customLayoutSettings?.sections || theme.storeTemplate.sections,
     });
     
     setSavedThemes((prev) =>
-      prev.map((t) => (t.id === theme.id ? { ...t, updatedAt: nowIso } : t))
+      prev.map((t) => (t.id === theme.id ? { 
+        ...t, 
+        updatedAt: nowIso,
+        customLayoutSettings: {
+          ...(t.customLayoutSettings || {}),
+          activeThemeId: mappedThemeId,
+          themeStyle: mappedThemeId,
+        }
+      } : t))
     );
     setEditingDraftId(theme.id);
     onShowNotification(`🎉 Tema "${theme.name}" berhasil dipublikasikan sebagai Tema Utama toko!`);
@@ -425,7 +429,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
   // Handle clicking a template card → redirect to new tab like Canva
   const handlePreviewTemplate = (template: TemplateGalleryItem) => {
-    window.open(`/?previewTheme=${template.storeTemplate.id}&toko=${currentStore.slug}`, '_blank');
+    const mappedThemeId = normalizeThemeId(template.storeTemplate?.id || template.id);
+    window.open(`/?previewTheme=${mappedThemeId}&toko=${currentStore.slug}`, '_blank');
   };
 
   const toggleFullscreen = () => {
@@ -448,6 +453,12 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setLoadingProgress(0);
     setPageMode('loading');
 
+    const rawId = template.customLayoutSettings?.activeThemeId || 
+                  template.storeTemplate?.id || 
+                  template.id;
+    const mappedThemeId = normalizeThemeId(rawId);
+    setActiveThemeId(mappedThemeId);
+
     // If template has customized layout settings saved, restore them!
     if (template.customLayoutSettings && template.customLayoutSettings.sections) {
       const restoredSections = template.customLayoutSettings.sections;
@@ -458,9 +469,6 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       }
       if (template.customLayoutSettings.globalThemeSettings) {
         setGlobalSettings(template.customLayoutSettings.globalThemeSettings);
-      }
-      if (template.customLayoutSettings.activeThemeId) {
-        setActiveThemeId(template.customLayoutSettings.activeThemeId);
       }
       if (template.customPageSectionsMap) {
         setPageSectionsMap(template.customPageSectionsMap);
@@ -479,33 +487,23 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       setSections(newSections);
       setSelectedSectionKey(newSections[0]?.key || null);
       setPrimaryAccent(template.primaryAccent);
-      
-      const themeMap: Record<string, any> = {
-        'minimalist_clean': 'minimalist',
-        'gadget_tech': 'modern',
-        'futuristic_dark': 'futuristic',
-        'editorial_luxury': 'luxury',
-        'bold_market': 'bold',
-        'editorial_commerce': 'editorial',
-        'nature_organic': 'nature',
-        'creative_studio': 'creative',
-        'pro_corporate': 'professional',
-        'chic_fashion': 'fashion',
-        'brand': 'minimalist',
-        'classic': 'elegant'
-      };
-      const mappedThemeId = themeMap[template.storeTemplate.id] || 'minimalist';
-      setActiveThemeId(mappedThemeId);
-      
-      useCmsStore.getState().loadThemeData(mappedThemeId);
 
       handleUpdateStore({
         bannerUrl: storeTemplate.bannerUrl,
         tagline: storeTemplate.tagline,
+        layoutSettings: {
+          ...store.layoutSettings,
+          activeThemeId: mappedThemeId,
+          themeStyle: mappedThemeId,
+          primaryAccent: template.primaryAccent,
+          sections: newSections,
+        }
       });
 
       onSaveLayout({
         ...store.layoutSettings,
+        activeThemeId: mappedThemeId,
+        themeStyle: mappedThemeId,
         primaryAccent: template.primaryAccent,
         sections: newSections,
       });
@@ -513,6 +511,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       setHistoryIndex(0);
       setHasChanges(false);
     }
+
+    useCmsStore.getState().loadThemeData(mappedThemeId);
 
     // Animate progress bar over ~1.5 seconds, then switch to editor
     let progress = 0;
@@ -877,33 +877,31 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                   key: s.key || `${s.id}-${idx}`,
                   order: s.order !== undefined ? s.order : idx,
                 }));
+                const mappedThemeId = normalizeThemeId(themeId);
+                setActiveThemeId(mappedThemeId);
                 setSections(newSections);
                 setSelectedSectionKey(newSections[0]?.key || null);
                 setPrimaryAccent(storeTemplate.primaryAccent);
                 handleUpdateStore({
                   bannerUrl: storeTemplate.bannerUrl,
                   tagline: storeTemplate.tagline,
+                  layoutSettings: {
+                    ...store.layoutSettings,
+                    activeThemeId: mappedThemeId,
+                    themeStyle: mappedThemeId,
+                    primaryAccent: storeTemplate.primaryAccent,
+                    sections: newSections,
+                  }
                 });
                 onSaveLayout({
                   ...store.layoutSettings,
+                  activeThemeId: mappedThemeId,
+                  themeStyle: mappedThemeId,
                   primaryAccent: storeTemplate.primaryAccent,
                   sections: newSections,
                 });
                 setHistory([newSections]);
                 setHistoryIndex(0);
-                const themeMap: Record<string, any> = {
-                  'minimalist_clean': 'minimalist',
-                  'gadget_tech': 'modern',
-                  'futuristic_dark': 'futuristic',
-                  'editorial_luxury': 'luxury',
-                  'bold_market': 'bold',
-                  'editorial_commerce': 'editorial',
-                  'nature_organic': 'nature',
-                  'creative_studio': 'creative',
-                  'pro_corporate': 'professional',
-                  'chic_fashion': 'fashion',
-                };
-                const mappedThemeId = themeMap[themeId] || themeId || 'minimalist';
                 useCmsStore.getState().loadThemeData(mappedThemeId);
                 onShowNotification(`Template "${storeTemplate.name}" berhasil diterapkan!`);
               }

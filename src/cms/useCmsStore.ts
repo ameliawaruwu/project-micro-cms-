@@ -38,7 +38,20 @@ const getInitialProducts = () => {
   if (typeof window !== 'undefined') {
     try {
       const saved = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // If cached data contains old fashion products, clear cache and return new hardware mock products
+        const hasFashion = Array.isArray(parsed) && parsed.some(p => 
+          /dress|blouse|cardigan|pants|skirt|fashion|amaryllis|knit/i.test(p.name || '') ||
+          /dress|atasan|outerwear|bawahan/i.test(p.categoryName || '')
+        );
+        if (hasFashion) {
+          sessionStorage.removeItem('microcms_cms_products');
+          localStorage.removeItem('microcms_cms_products');
+          return mockProducts;
+        }
+        return parsed;
+      }
     } catch (e) {}
   }
   return mockProducts;
@@ -75,11 +88,20 @@ export const useCmsStore = create<CmsState>((set, get) => ({
     if (typeof window !== 'undefined') {
       try {
         const saved = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
-        if (saved) activeProds = JSON.parse(saved);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const hasFashion = Array.isArray(parsed) && parsed.some(p => 
+            /dress|blouse|cardigan|pants|skirt|fashion|amaryllis|knit/i.test(p.name || '')
+          );
+          if (!hasFashion) {
+            activeProds = parsed;
+          }
+        }
       } catch (e) {}
     }
 
-    const themeData = THEME_DATA_MAP[themeId as keyof typeof THEME_DATA_MAP];
+    const cleanThemeId = themeId === 'future_shop' || themeId === 'futuristic_dark' ? 'futuristic' : themeId;
+    const themeData = THEME_DATA_MAP[cleanThemeId as keyof typeof THEME_DATA_MAP] || THEME_DATA_MAP['futuristic'];
     if (themeData) {
       const finalProducts = activeProds.length > 0 ? activeProds : themeData.products;
       set({

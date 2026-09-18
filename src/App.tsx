@@ -98,6 +98,7 @@ import { StoreProductCard } from './components/storefront/StoreProductCard';
 import { ProductDetailModal as StorefrontProductDetailModal } from './components/storefront/ProductDetailModal';
 import { CartDrawer } from './components/storefront/CartDrawer';
 import { ThemeRenderer } from './themes/ThemeRenderer';
+import { normalizeThemeId } from './themes/ThemeRegistry';
 import { useCmsStore } from './cms/useCmsStore';
 
 export default function App() {
@@ -313,7 +314,8 @@ export default function App() {
             setActiveStore(draftStore);
 
             if (draftStore.layoutSettings?.activeThemeId) {
-              useCmsStore.getState().loadThemeData(draftStore.layoutSettings.activeThemeId);
+              const normalizedTheme = normalizeThemeId(draftStore.layoutSettings.activeThemeId);
+              useCmsStore.getState().loadThemeData(normalizedTheme);
             }
 
             const savedProdsStr = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
@@ -399,7 +401,8 @@ export default function App() {
           }
 
           if (draftStore.layoutSettings?.activeThemeId) {
-            useCmsStore.getState().loadThemeData(draftStore.layoutSettings.activeThemeId);
+            const normalizedTheme = normalizeThemeId(draftStore.layoutSettings.activeThemeId);
+            useCmsStore.getState().loadThemeData(normalizedTheme);
           }
         }
       } catch (e) {

@@ -52,7 +52,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
 
               <div className="px-3 py-1 rounded-lg bg-white/10 text-white font-mono text-xs flex items-center gap-1.5 flex-1 sm:flex-initial">
                 <Store className="w-3.5 h-3.5 text-[#F5E8EA]" />
-                <span className="font-normal">kroombox.id/toko-batik</span>
+                <span className="font-normal">kroombox.id/kroom-hardware</span>
               </div>
             </div>
 
@@ -79,26 +79,26 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
           <div className="p-4 sm:p-6 lg:p-8 space-y-6 bg-[#FAF7F7]">
             
             {/* Store Banner & Brand Header */}
-            <div className="relative rounded-2xl bg-[#241A1A] text-white p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 shadow-xs overflow-hidden">
+            <div className="relative rounded-2xl bg-[#0B0F19] text-white p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 shadow-xs overflow-hidden">
               <img
-                src="https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=160&auto=format&fit=crop&q=80"
-                alt="Logo Toko"
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-[#66000E] shadow-sm shrink-0"
+                src="https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=160&auto=format&fit=crop&q=80"
+                alt="Logo Toko Hardware"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-purple-500 shadow-sm shrink-0"
               />
               <div className="text-center sm:text-left flex-1">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-                  <h3 className="text-xl sm:text-2xl font-bold text-white">Toko Batik Kirana</h3>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F5E8EA] text-[#66000E]">
-                    ✓ Resmi Terverifikasi
+                  <h3 className="text-xl sm:text-2xl font-bold text-white">Kroom Tech Hardware</h3>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 border border-purple-500/30">
+                    ✓ Distributor Resmi
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-neutral-300 font-normal">
-                  Batik Lokal Berkualitas • Asli Pekalongan & Solo
+                  Pusat Component PC Gaming, VGA Card, SSD & Peripherals Original Bergaransi
                 </p>
                 <div className="mt-2.5 flex items-center justify-center sm:justify-start gap-3 text-xs text-neutral-300 font-normal">
-                  <span>📍 Pekalongan, Jawa Tengah</span>
+                  <span>📍 Jakarta Selatan</span>
                   <span>•</span>
-                  <span>⭐ 4.9 (140+ Ulasan)</span>
+                  <span>⭐ 4.9 (520+ Ulasan)</span>
                 </div>
               </div>
             </div>
@@ -109,16 +109,16 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
                 <Search className="w-4 h-4 text-[#857C76] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Cari motif batik favorit..."
+                  placeholder="Cari hardware (VGA, Keyboard, Monitor)..."
                   readOnly
                   className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-white border border-[#E8DDDE] text-[#241A1A] font-normal"
                 />
               </div>
 
               <div className="flex items-center gap-1.5 text-xs overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-                <span className="px-3 py-1.5 rounded-lg bg-[#66000E] text-white font-semibold shadow-xs">Semua Produk</span>
-                <span className="px-3 py-1.5 rounded-lg bg-white text-[#5F5652] font-normal border border-[#E8DDDE]">Batik Tulis</span>
-                <span className="px-3 py-1.5 rounded-lg bg-white text-[#5F5652] font-normal border border-[#E8DDDE]">Kemeja Pria</span>
+                <span className="px-3 py-1.5 rounded-lg bg-[#241A1A] text-white font-semibold shadow-xs">Semua Hardware</span>
+                <span className="px-3 py-1.5 rounded-lg bg-white text-[#5F5652] font-normal border border-[#E8DDDE]">VGA Card</span>
+                <span className="px-3 py-1.5 rounded-lg bg-white text-[#5F5652] font-normal border border-[#E8DDDE]">Peripherals</span>
               </div>
             </div>
 
@@ -128,19 +128,19 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
               {/* Product 1 */}
               <div className="p-3.5 rounded-2xl bg-white border border-[#E8DDDE] shadow-xs hover:shadow-md transition space-y-2">
                 <img
-                  src="https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&auto=format&fit=crop&q=80"
-                  alt="Batik Parang"
+                  src="https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400&auto=format&fit=crop&q=80"
+                  alt="NVIDIA RTX 4090"
                   className="w-full h-36 rounded-xl object-cover"
                 />
                 <div>
-                  <span className="text-[10px] font-semibold text-[#66000E] bg-[#F5E8EA] px-2 py-0.5 rounded-full border border-[#E8DDDE]">
+                  <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
                     Terlaris
                   </span>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#241A1A] mt-1.5 truncate">Batik Parang Pekalongan</h4>
-                  <p className="text-xs text-[#5F5652] font-normal line-clamp-1">Kain katun primisima halus dan adem</p>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#241A1A] mt-1.5 truncate">NVIDIA RTX 4090 OC 24GB</h4>
+                  <p className="text-xs text-[#5F5652] font-normal line-clamp-1">VGA Gaming flagship DLSS 3.5 & Ray Tracing</p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 150.000</span>
+                  <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 28.500.000</span>
                   <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px]">
                     <ShoppingBag className="w-3 h-3" />
                     <span>Beli</span>
@@ -151,19 +151,19 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
               {/* Product 2 */}
               <div className="p-3.5 rounded-2xl bg-white border border-[#E8DDDE] shadow-xs hover:shadow-md transition space-y-2">
                 <img
-                  src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=400&auto=format&fit=crop&q=80"
-                  alt="Batik Mega Mendung"
+                  src="https://images.unsplash.com/photo-1595225476474-87563907a212?w=400&auto=format&fit=crop&q=80"
+                  alt="Keyboard Wireless Mech"
                   className="w-full h-36 rounded-xl object-cover"
                 />
                 <div>
                   <span className="text-[10px] font-semibold text-[#241A1A] bg-[#FAF7F7] px-2 py-0.5 rounded-full border border-[#E8DDDE]">
-                    Koleksi Baru
+                    Baru
                   </span>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#241A1A] mt-1.5 truncate">Batik Mega Mendung Sutra</h4>
-                  <p className="text-xs text-[#5F5652] font-normal line-clamp-1">Motif khas Cirebon modern</p>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#241A1A] mt-1.5 truncate">Cyber Matrix RGB Mech Keyboard</h4>
+                  <p className="text-xs text-[#5F5652] font-normal line-clamp-1">Hot-swappable wireless mechanical keyboard</p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 175.000</span>
+                  <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 2.100.000</span>
                   <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px]">
                     <ShoppingBag className="w-3 h-3" />
                     <span>Beli</span>
@@ -174,19 +174,19 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
               {/* Product 3 */}
               <div className="p-3.5 rounded-2xl bg-white border border-[#E8DDDE] shadow-xs hover:shadow-md transition space-y-2 hidden md:block">
                 <img
-                  src="https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&auto=format&fit=crop&q=80"
-                  alt="Kemeja Batik"
+                  src="https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&auto=format&fit=crop&q=80"
+                  alt="Gaming Monitor OLED"
                   className="w-full h-36 rounded-xl object-cover"
                 />
                 <div>
                   <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                    Siap Kirim
+                    Garansi 3 Thn
                   </span>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#241A1A] mt-1.5 truncate">Kemeja Batik Solo Premium</h4>
-                  <p className="text-xs text-[#5F5652] font-normal line-clamp-1">Jahitan dobel furing sangat nyaman dipakai</p>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#241A1A] mt-1.5 truncate">Curved OLED Gaming Monitor 34"</h4>
+                  <p className="text-xs text-[#5F5652] font-normal line-clamp-1">UltraWide 240Hz 0.03ms HDR True Black</p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 225.000</span>
+                  <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 14.200.000</span>
                   <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px]">
                     <ShoppingBag className="w-3 h-3" />
                     <span>Beli</span>

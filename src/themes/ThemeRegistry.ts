@@ -137,7 +137,7 @@ export const normalizeThemeId = (id?: string): ThemeId => {
   if (cleanId === 'creative' || cleanId === 'creative_studio' || cleanId.includes('creative')) return 'creative';
   if (cleanId === 'professional' || cleanId === 'pro_corporate' || cleanId === 'pro_commerce' || cleanId.includes('pro')) return 'professional';
   if (cleanId === 'cute' || cleanId === 'cute_store' || cleanId.includes('cute')) return 'cute';
-  if (cleanId === 'fashion' || cleanId === 'fashion_store' || cleanId.includes('fashion')) return 'fashion';
+  if (cleanId === 'fashion' || cleanId === 'fashion_store' || cleanId === 'chic_fashion' || cleanId.includes('fashion')) return 'fashion';
   if (cleanId === 'elegant' || cleanId === 'elegant_store' || cleanId.includes('elegant')) return 'elegant';
 
   return 'minimalist';

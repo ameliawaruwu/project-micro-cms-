@@ -116,7 +116,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
       {/* Main Header / Navbar Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3 sm:gap-4">
         {/* Brand / Logo & Name */}
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 mr-4 lg:mr-8">
           {showLogo && (
             <div
               className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl overflow-hidden shadow-2xs shrink-0 border ${
@@ -135,7 +135,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
             <a
               href="#beranda"
               onClick={(e) => handleNavClick(e, '#beranda')}
-              className={`font-bold text-sm sm:text-base tracking-tight leading-tight line-clamp-1 block hover:opacity-85 transition ${
+              className={`font-bold text-sm sm:text-base tracking-tight leading-tight line-clamp-1 block hover:opacity-85 transition whitespace-nowrap ${
                 isBrandStyle ? 'text-white' : 'text-[#1F1F1F]'
               }`}
             >
@@ -156,7 +156,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
 
         {/* Desktop Navbar Menu (Landing Page Links) */}
         {showNavMenu && (navMenuType === 'landing_style' || navMenuType === 'custom') && (
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+          <nav className="hidden lg:flex items-center justify-center flex-1 gap-1.5 xl:gap-3 px-2">
             {navItems.map((item) => (
               <a
                 key={item.id}
