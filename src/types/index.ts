@@ -311,12 +311,18 @@ export interface Store {
   city: string;
   province?: string;
   district?: string;
+  subdistrict?: string;
+  village?: string;
+  addressDetail?: string;
   postalCode?: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   category: string;
   currency: string;
   balance: number;
   plan?: 'free' | 'personal' | 'community' | 'corporate' | 'startup' | 'starter' | 'premium' | string;
+  isPublished?: boolean;
   themeColor?: string;
   layoutSettings?: StoreLayoutSettings;
   customDomain?: string;
@@ -632,7 +638,8 @@ export interface BillingSubscription {
   planName: string;
   cycle: 'monthly' | 'yearly';
   amount: number;
-  status: 'paid' | 'pending' | 'expired' | 'failed';
+  status: 'paid' | 'pending' | 'expired' | 'failed' | 'cancelled';
+  orderId?: string;
   paymentMethod: string;
   invoiceNumber: string;
   paidAt: string;

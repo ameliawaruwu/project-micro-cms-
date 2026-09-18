@@ -15,7 +15,7 @@ export const DEFAULT_BILLING_PLANS: BillingPlan[] = [
     hostingPriceYearly: 0,
     cmsPriceYearly: 0,
     features: [
-      'Subdomain pratinjau: namatoko.kroomify.com',
+      'Subdomain pratinjau: namatoko.kroombox.com',
       'Katalog produk dasar (maksimal 10 produk)',
       '❌ Tanpa Checkout Otomatis Midtrans (Manual/WA saja)',
       '❌ Tanpa Ekspedisi Kurir Otomatis Biteship',
@@ -352,6 +352,63 @@ class BillingPlanService {
     }
 
     return newSub;
+  }
+
+  /**
+   * Get subscriptions for a specific store
+   */
+  getStoreSubscriptions(storeId: string): BillingSubscription[] {
+    return this.getSubscriptions().filter((s) => s.storeId === storeId);
+  }
+
+  /**
+   * Get pending subscription for a specific store if any
+   */
+  getPendingSubscription(storeId: string): BillingSubscription | undefined {
+    return this.getSubscriptions().find((s) => s.storeId === storeId && s.status === 'pending');
+  }
+
+  /**
+   * Update the status of a subscription (e.g. from pending to paid or cancelled)
+   */
+  async updateSubscriptionStatus(
+    identifier: string,
+    status: 'paid' | 'pending' | 'failed' | 'cancelled',
+    extra?: Partial<BillingSubscription>
+  ): Promise<BillingSubscription | null> {
+    const subs = this.getSubscriptions();
+    const index = subs.findIndex(
+      (s) => s.id === identifier || s.invoiceNumber === identifier || (s.orderId && s.orderId === identifier)
+    );
+
+    if (index === -1) return null;
+
+    const existing = subs[index];
+    const updated: BillingSubscription = {
+      ...existing,
+      ...extra,
+      status,
+      paidAt: status === 'paid' ? new Date().toISOString() : existing.paidAt,
+    };
+
+    subs[index] = updated;
+    localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subs));
+
+    // Sync to Supabase
+    try {
+      await supabase
+        .from('store_subscriptions')
+        .update({
+          status: updated.status,
+          paid_at: updated.paidAt,
+          expires_at: updated.expiresAt,
+        })
+        .eq('id', updated.id);
+    } catch (err) {
+      console.warn('Failed to update subscription status in Supabase:', err);
+    }
+
+    return updated;
   }
 }
 

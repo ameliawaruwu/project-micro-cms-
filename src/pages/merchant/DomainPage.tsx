@@ -50,7 +50,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
   const [activeRequest, setActiveRequest] = useState<DomainRequest | null>(null);
   const [isConnected, setIsConnected] = useState(store.domainStatus === 'connected' && !!store.customDomain);
 
-  const randomDomain = `${store.slug || 'toko'}.kroomify.com`;
+  const randomDomain = `${store.slug || 'toko'}.kroombox.com`;
 
   // Fetch request domain dari Supabase / service
   const loadDomainRequest = async () => {
@@ -192,15 +192,11 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
         }
       );
     } catch (err: any) {
-      console.warn('Fallback simulated payment for domain:', err);
-      await domainRequestService.markAsPaidAndActivate(activeRequest.id);
-      await domainService.connectCustomDomain(store.id, activeRequest.fullDomain);
-      await loadDomainRequest();
-      setIsConnected(true);
+      console.error('Payment error for domain invoice:', err);
       setIsPaying(false);
       setAlert({
-        type: 'success',
-        message: `Pembayaran berhasil disimulasikan! Domain ${activeRequest.fullDomain} aktif.`,
+        type: 'error',
+        message: 'Gagal membuka pembayaran Midtrans: ' + (err?.message || 'Terjadi kesalahan.'),
       });
     }
   };

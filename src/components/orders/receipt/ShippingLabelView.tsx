@@ -85,7 +85,7 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
             {store.city || 'Kota Toko'}
           </div>
           <div className="text-[9px] text-gray-500 font-mono">
-            kroomify.id/{store.slug}
+            {store.customDomain || `${store.slug}.kroombox.com`}
           </div>
         </div>
       </div>

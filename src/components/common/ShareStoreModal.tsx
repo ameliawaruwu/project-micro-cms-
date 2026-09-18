@@ -19,7 +19,7 @@ export const ShareStoreModal: React.FC<ShareStoreModalProps> = ({
 
   if (!isOpen) return null;
 
-  const storeUrl = `https://kroomify.id/${store.slug}`;
+  const storeUrl = store.customDomain ? `https://${store.customDomain}` : `https://${store.slug || 'toko'}.kroombox.com`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(storeUrl);

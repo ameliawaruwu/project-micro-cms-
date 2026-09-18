@@ -78,7 +78,7 @@ export const ThermalReceiptView: React.FC<ThermalReceiptViewProps> = ({
       {/* Footer */}
       <div className="text-center pt-2 text-[9px] text-gray-500 space-y-0.5">
         <p>Terima kasih telah berbelanja!</p>
-        <p>kroomify.id/{store.slug}</p>
+        <p>{store.customDomain || `${store.slug}.kroombox.com`}</p>
       </div>
     </div>
   );

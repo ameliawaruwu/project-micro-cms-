@@ -41,7 +41,7 @@ const PLANS: PlanDetail[] = [
     priceYearly: 0,
     features: [
       'Katalog produk dasar (maks 10 produk)',
-      'Subdomain gratis namatoko.kroomify.com',
+      'Subdomain gratis namatoko.kroombox.com',
       '❌ Tanpa Checkout Otomatis Midtrans',
       '❌ Tanpa Kurir Ekspedisi Otomatis Biteship',
       '❌ Tanpa Deploy/Publikasi Online Toko',
@@ -165,9 +165,11 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                 await completeUpgradeProcess(planId);
               },
               onPending: async () => {
-                await completeUpgradeProcess(planId);
+                setIsProcessing(false);
+                alert('Menunggu pembayaran Midtrans. Silakan selesaikan pembayaran Anda via Virtual Account / QRIS yang telah dibuat.');
               },
-              onError: () => {
+              onError: (err) => {
+                console.error('Midtrans payment failed:', err);
                 alert('Pembayaran Midtrans dibatalkan atau belum selesai.');
                 setIsProcessing(false);
               },
@@ -177,9 +179,10 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
             }
           );
           return;
-        } catch (snapErr) {
-          console.warn('Midtrans Snap fallback mode:', snapErr);
-          await completeUpgradeProcess(planId);
+        } catch (snapErr: any) {
+          console.error('Midtrans Snap error:', snapErr);
+          setIsProcessing(false);
+          alert('Gagal membuka payment gateway Midtrans: ' + (snapErr?.message || 'Silakan coba beberapa saat lagi.'));
           return;
         }
       }

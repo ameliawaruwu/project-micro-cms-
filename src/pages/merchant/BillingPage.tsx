@@ -8,9 +8,12 @@ import {
   FileText,
   Download,
   X,
+  Clock,
+  RefreshCw,
+  Zap,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Store as StoreType, BillingPlan } from '../../types';
+import { Store as StoreType, BillingPlan, BillingSubscription } from '../../types';
 import { storeService } from '../../services/storeService';
 import { midtransService } from '../../services/midtransService';
 import { billingPlanService } from '../../services/billingPlanService';
@@ -94,26 +97,33 @@ export const BillingPage: React.FC<BillingPageProps> = ({
   const getPlanFeature = (feat: string) => (isEn && PLAN_FEATURE_MAP[feat] ? PLAN_FEATURE_MAP[feat] : feat);
 
   const [plans, setPlans] = useState<BillingPlan[]>(billingPlanService.getActivePlans());
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const billingCycle = 'yearly';
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<BillingPlan | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [viewingInvoice, setViewingInvoice] = useState<InvoiceItem | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'qris' | 'bca_va'>('qris');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Active Pending Subscription if merchant has an unpaid bill
+  const [pendingSubscription, setPendingSubscription] = useState<BillingSubscription | null>(() => {
+    return billingPlanService.getPendingSubscription(store.id) || null;
+  });
+
   const [invoices, setInvoices] = useState<InvoiceItem[]>(() => {
     const subs = billingPlanService.getSubscriptions().filter((s) => s.storeId === store.id);
     if (subs.length > 0) {
       return subs.map((s) => ({
         id: s.invoiceNumber,
         plan: s.planName,
-        cycle: s.cycle === 'yearly' ? (isEn ? 'Yearly' : 'Tahunan') : (isEn ? 'Monthly' : 'Bulanan'),
+        cycle: isEn ? 'Yearly' : 'Tahunan',
         date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
         amount: s.amount,
-        status: s.status === 'paid' ? (isEn ? 'Paid (Midtrans)' : 'Lunas (Midtrans)') : s.status,
+        status: s.status === 'paid' ? (isEn ? 'Paid (Midtrans)' : 'Lunas (Midtrans)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
       }));
     }
-    return INITIAL_INVOICES;
+    return [];
   });
 
   useEffect(() => {
@@ -132,12 +142,117 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     setIsModalOpen(true);
   };
 
+  /**
+   * Activate plan immediately on merchant store & mark subscription as paid
+   */
+  const handleActivatePlan = async (sub: BillingSubscription) => {
+    const planSlug = sub.planId.replace(/^plan_/, '');
+    
+    // 1. Update store record & notify parent state (App.tsx)
+    const updated = await storeService.updateStore(store.id, { plan: planSlug as any });
+    onUpdateStore(updated);
+
+    // 2. Mark subscription as paid
+    await billingPlanService.updateSubscriptionStatus(sub.id, 'paid', {
+      paidAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + (sub.cycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
+    });
+
+    // 3. Clear pending state
+    setPendingSubscription(null);
+
+    // 4. Refresh invoice list
+    const subs = billingPlanService.getStoreSubscriptions(store.id);
+    setInvoices(
+      subs.map((s) => ({
+        id: s.invoiceNumber,
+        plan: s.planName,
+        cycle: s.cycle === 'yearly' ? (isEn ? 'Yearly' : 'Tahunan') : (isEn ? 'Monthly' : 'Bulanan'),
+        date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        amount: s.amount,
+        status: s.status === 'paid' ? (isEn ? 'Paid (Midtrans)' : 'Lunas (Midtrans)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
+      }))
+    );
+
+    if (onShowNotification) {
+      onShowNotification(
+        isEn
+          ? `🎉 Congratulations! Your store is now active on ${sub.planName} plan!`
+          : `🎉 Selamat! Paket ${sub.planName} toko Anda sudah aktif dan semua fitur premium dapat langsung digunakan!`
+      );
+    }
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+  };
+
+  /**
+   * Query status from Midtrans and activate plan if settlement is detected
+   */
+  const handleCheckPaymentStatus = async (sub: BillingSubscription, forceActivateDev = false) => {
+    setIsVerifying(true);
+    try {
+      if (forceActivateDev) {
+        await handleActivatePlan(sub);
+        return;
+      }
+
+      if (!sub.orderId) {
+        if (import.meta.env.DEV || (import.meta.env.VITE_MIDTRANS_ENV as string) === 'sandbox') {
+          await handleActivatePlan(sub);
+          return;
+        }
+        if (onShowNotification) {
+          onShowNotification(isEn ? 'Order ID not found for status verification.' : 'ID pesanan tidak valid untuk pengecekan status.');
+        }
+        return;
+      }
+
+      const checkRes = await midtransService.checkTransactionStatus(sub.orderId);
+      if (checkRes.isPaid) {
+        await handleActivatePlan(sub);
+      } else {
+        if (onShowNotification) {
+          onShowNotification(
+            checkRes.transactionStatus
+              ? (isEn ? `Midtrans status: "${checkRes.transactionStatus}". Payment not completed yet.` : `Status transaksi Midtrans: "${checkRes.transactionStatus}". Pembayaran belum lunas.`)
+              : (isEn ? 'Payment not detected yet in Midtrans. Please complete your transaction.' : 'Pembayaran belum terdeteksi. Silakan selesaikan pembayaran di aplikasi bank/e-wallet Anda.')
+          );
+        }
+      }
+    } catch (err: any) {
+      console.error('Error verifying payment:', err);
+      if (onShowNotification) onShowNotification(isEn ? 'Failed to verify payment status.' : 'Gagal memeriksa status pembayaran. Silakan coba lagi.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  /**
+   * Cancel pending subscription
+   */
+  const handleCancelPendingSubscription = async (sub: BillingSubscription) => {
+    if (!window.confirm(isEn ? 'Cancel this pending invoice?' : 'Batalkan tagihan yang sedang menunggu pembayaran ini?')) return;
+    await billingPlanService.updateSubscriptionStatus(sub.id, 'cancelled');
+    setPendingSubscription(null);
+    const subs = billingPlanService.getStoreSubscriptions(store.id);
+    setInvoices(
+      subs.map((s) => ({
+        id: s.invoiceNumber,
+        plan: s.planName,
+        cycle: s.cycle === 'yearly' ? (isEn ? 'Yearly' : 'Tahunan') : (isEn ? 'Monthly' : 'Bulanan'),
+        date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        amount: s.amount,
+        status: s.status === 'paid' ? (isEn ? 'Paid (Midtrans)' : 'Lunas (Midtrans)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
+      }))
+    );
+    if (onShowNotification) onShowNotification(isEn ? 'Pending invoice cancelled.' : 'Tagihan berhasil dibatalkan.');
+  };
+
   const handleExecuteUpgrade = async () => {
     if (!selectedPlanForUpgrade) return;
     setIsProcessing(true);
 
     const targetPlan = selectedPlanForUpgrade.slug;
-    const price = selectedPlanForUpgrade.priceYearly;
+    const price = targetPlan === 'free' ? 0 : selectedPlanForUpgrade.priceYearly;
 
     if (price === 0 || targetPlan === 'free') {
       // Set to Free
@@ -150,6 +265,36 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     }
 
     const orderId = `BILL-${Date.now()}`;
+    const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+
+    // Record subscription immediately so merchant has an invoice and orderId
+    const recordedPending = await billingPlanService.recordSubscription({
+      storeId: store.id,
+      storeName: store.name,
+      planId: `plan_${targetPlan}`,
+      planName: selectedPlanForUpgrade.name,
+      cycle: 'yearly',
+      amount: price,
+      status: 'pending',
+      paymentMethod: paymentMethod === 'qris' ? 'Midtrans QRIS' : 'Midtrans VA',
+      invoiceNumber,
+      orderId,
+      paidAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    });
+
+    setPendingSubscription(recordedPending);
+    setInvoices((prev) => [
+      {
+        id: invoiceNumber,
+        plan: selectedPlanForUpgrade.name,
+        cycle: isEn ? 'Yearly' : 'Tahunan',
+        date: new Date().toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        amount: price,
+        status: isEn ? 'Pending Payment' : 'Menunggu Pembayaran',
+      },
+      ...prev,
+    ]);
 
     try {
       await midtransService.payWithSnap(
@@ -158,77 +303,45 @@ export const BillingPage: React.FC<BillingPageProps> = ({
           grossAmount: price,
           customerName: store.name,
           customerPhone: store.phoneWhatsApp,
+          enabledPayments: paymentMethod === 'qris'
+            ? ['gopay', 'qris', 'shopeepay']
+            : ['bca_va', 'bni_va', 'bri_va', 'echannel', 'permata_va', 'other_va'],
         },
         {
           onSuccess: async () => {
-            const updated = await storeService.updateStore(store.id, { plan: targetPlan as any });
-            onUpdateStore(updated);
-            setInvoices((prev) => [
-              {
-                id: `INV-${Date.now().toString().slice(-6)}`,
-                plan: selectedPlanForUpgrade.name,
-                cycle: billingCycle === 'yearly' ? 'Tahunan' : 'Bulanan',
-                date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-                amount: price,
-                status: 'Lunas (Midtrans)',
-              },
-              ...prev,
-            ]);
+            await handleActivatePlan(recordedPending);
             setIsProcessing(false);
             setIsModalOpen(false);
-            if (onShowNotification) onShowNotification(`Selamat! Akun toko Anda resmi aktif di Paket ${selectedPlanForUpgrade.name}!`);
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
           },
           onPending: async () => {
-            const updated = await storeService.updateStore(store.id, { plan: targetPlan as any });
-            onUpdateStore(updated);
             setIsProcessing(false);
             setIsModalOpen(false);
-            if (onShowNotification) onShowNotification('Pembayaran langganan sedang diverifikasi.');
+            if (onShowNotification) {
+              onShowNotification(
+                isEn 
+                  ? 'Invoice created. Complete payment and click "Check Status & Activate" button.' 
+                  : 'Kode pembayaran Midtrans diterbitkan. Selesaikan pembayaran lalu klik "Cek Status & Aktifkan Paket".'
+              );
+            }
           },
           onError: () => {
-            alert('Pembayaran dibatalkan atau gagal.');
+            alert(isEn ? 'Midtrans payment cancelled or failed.' : 'Pembayaran Midtrans dibatalkan atau gagal.');
             setIsProcessing(false);
           },
-          onClose: () => {
+          onClose: async () => {
             setIsProcessing(false);
+            // On popup close, check if the payment was already settled
+            const res = await midtransService.checkTransactionStatus(orderId);
+            if (res.isPaid) {
+              await handleActivatePlan(recordedPending);
+            }
           },
         }
       );
-    } catch (err) {
-      console.warn('Fallback simulator mode for billing upgrade:', err);
-      const updated = await storeService.updateStore(store.id, { plan: targetPlan as any });
-      onUpdateStore(updated);
-
-      const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
-      await billingPlanService.recordSubscription({
-        storeId: store.id,
-        storeName: store.name,
-        planId: selectedPlanForUpgrade.id,
-        planName: selectedPlanForUpgrade.name,
-        cycle: billingCycle,
-        amount: price,
-        status: 'paid',
-        paymentMethod: paymentMethod === 'qris' ? 'Midtrans QRIS' : 'Midtrans BCA VA',
-        invoiceNumber,
-        paidAt: new Date().toISOString(),
-      });
-
-      setInvoices((prev) => [
-        {
-          id: invoiceNumber,
-          plan: selectedPlanForUpgrade.name,
-          cycle: billingCycle === 'yearly' ? 'Tahunan' : 'Bulanan',
-          date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-          amount: price,
-          status: 'Lunas (Midtrans)',
-        },
-        ...prev,
-      ]);
+    } catch (err: any) {
+      console.error('Midtrans payment error:', err);
       setIsProcessing(false);
-      setIsModalOpen(false);
-      if (onShowNotification) onShowNotification(`Berhasil beralih ke Paket ${selectedPlanForUpgrade.name}!`);
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      alert('Gagal membuka pembayaran Midtrans: ' + (err?.message || 'Terjadi kesalahan.'));
     }
   };
 
@@ -283,6 +396,76 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         </div>
       </div>
 
+      {/* Pending Subscription Banner */}
+      {pendingSubscription && (
+        <div className="rounded-2xl border border-[#E5E0DD] border-l-4 border-l-amber-500 bg-white p-5 shadow-2xs text-left transition hover:shadow-xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                <Clock className="w-5 h-5 animate-pulse text-amber-600" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                    {isEn ? 'Payment Pending' : 'Menunggu Pembayaran'}
+                  </span>
+                  <span className="text-xs font-mono font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                    {pendingSubscription.invoiceNumber}
+                  </span>
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                    {isEn ? '1 Year (Annual)' : '1 Tahun (Tahunan)'}
+                  </span>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-[#1F1F1F] flex items-center gap-2 flex-wrap">
+                  <span>{pendingSubscription.planName}</span>
+                  <span className="text-[#66000E] font-black text-base">
+                    ({formatRupiah(pendingSubscription.amount === 35000 ? 350000 : (pendingSubscription.amount === 99000 ? 1000000 : pendingSubscription.amount))} / tahun)
+                  </span>
+                </h3>
+                <p className="text-xs text-[#706866] leading-relaxed">
+                  Metode: <strong className="text-[#1F1F1F]">{pendingSubscription.paymentMethod}</strong> • Selesaikan pembayaran agar paket aktif dan dapat langsung digunakan untuk buka toko, checkout & integrasi ekspedisi.
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap shrink-0 pt-2 lg:pt-0">
+              <button
+                type="button"
+                disabled={isVerifying}
+                onClick={() => handleCheckPaymentStatus(pendingSubscription)}
+                className="px-4 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-xs transition flex items-center gap-2 cursor-pointer disabled:opacity-60"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? 'animate-spin' : ''}`} />
+                <span>{isVerifying ? (isEn ? 'Verifying...' : 'Memverifikasi...') : (isEn ? 'Check Status & Activate' : 'Cek Status & Aktifkan Paket')}</span>
+              </button>
+
+              {/* Dev / Sandbox instant activation button */}
+              {(import.meta.env.DEV || (import.meta.env.VITE_MIDTRANS_ENV as string) === 'sandbox') && (
+                <button
+                  type="button"
+                  title="Aktivasi langsung untuk pengujian Sandbox tanpa menunggu simulasi bank"
+                  onClick={() => handleCheckPaymentStatus(pendingSubscription, true)}
+                  className="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-600 fill-current" />
+                  <span>{isEn ? 'Instant Test (Sandbox)' : '⚡ Aktifkan Langsung (Sandbox)'}</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => handleCancelPendingSubscription(pendingSubscription)}
+                className="px-3 py-2.5 rounded-xl bg-white hover:bg-red-50 text-gray-600 hover:text-red-700 border border-[#E5E0DD] hover:border-red-200 text-xs font-semibold transition cursor-pointer"
+              >
+                {isEn ? 'Cancel' : 'Batalkan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 2. Pricing Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pt-2">
         {plans.map((plan) => {
@@ -334,13 +517,6 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                       {price === 0 ? '' : isEn ? '/ year' : '/ tahun'}
                     </span>
                   </div>
-                  {price > 0 && (
-                    <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
-                      {isEn
-                        ? `Equivalent to ${formatRupiah(Math.round(price / 12))}/month`
-                        : `Setara ${formatRupiah(Math.round(price / 12))}/bulan`}
-                    </span>
-                  )}
                 </div>
 
                 {/* Transparent Breakdown (Hosting Server + Jasa Micro CMS) */}
@@ -447,7 +623,11 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                       <td className="py-3 px-3 text-[#706866]">{inv.date}</td>
                       <td className="py-3 px-3 font-bold text-[#66000E]">{formatRupiah(inv.amount)}</td>
                       <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          inv.status.includes('Lunas') || inv.status.includes('Paid')
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}>
                           {inv.status}
                         </span>
                       </td>
@@ -506,14 +686,17 @@ export const BillingPage: React.FC<BillingPageProps> = ({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[#706866]">{isEn ? 'Billing Cycle:' : 'Siklus Tagihan:'}</span>
-                <span className="font-medium text-[#241A1A]">
-                  {billingCycle === 'yearly' ? (isEn ? 'Yearly (Save 20%)' : 'Tahunan (Hemat 20%)') : (isEn ? 'Monthly' : 'Bulanan')}
+                <span className="font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                  {isEn ? '1 Year (Annual)' : '1 Tahun (Tahunan)'}
                 </span>
               </div>
               <div className="pt-2 border-t border-[#E5E0DD] flex items-center justify-between">
                 <span className="font-bold text-[#241A1A]">{isEn ? 'Total Cost:' : 'Total Biaya:'}</span>
                 <span className="text-base font-black text-[#66000E]">
-                  {formatRupiah(billingCycle === 'yearly' ? selectedPlanForUpgrade.priceYearly : selectedPlanForUpgrade.priceMonthly)}
+                  {formatRupiah(selectedPlanForUpgrade.slug === 'free' ? 0 : selectedPlanForUpgrade.priceYearly)}
+                  <span className="text-xs font-normal text-[#706866] ml-1">
+                    {selectedPlanForUpgrade.slug === 'free' ? '' : (isEn ? '/ year' : '/ tahun')}
+                  </span>
                 </span>
               </div>
             </div>

@@ -30,7 +30,7 @@ export const InvoiceA4View: React.FC<InvoiceA4ViewProps> = ({
           </h1>
           <p className="text-xs text-gray-600 mt-0.5">{store.city || 'Indonesia'}</p>
           <p className="text-xs text-gray-600 font-mono">WA: {store.phoneWhatsApp || '-'}</p>
-          <p className="text-xs text-gray-500 font-mono">kroomify.id/{store.slug}</p>
+          <p className="text-xs text-gray-500 font-mono">{store.customDomain || `${store.slug}.kroombox.com`}</p>
         </div>
 
         <div className="text-right">

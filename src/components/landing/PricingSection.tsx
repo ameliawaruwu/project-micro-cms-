@@ -61,7 +61,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                   <div className="w-4.5 h-4.5 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span>Subdomain namatoko.kroomify.com</span>
+                  <span>Subdomain namatoko.kroombox.com</span>
                 </div>
                 <div className="flex items-center gap-2 text-[#857C76]">
                   <div className="w-4.5 h-4.5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center shrink-0">

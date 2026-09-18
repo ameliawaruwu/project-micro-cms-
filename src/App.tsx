@@ -21,6 +21,7 @@ import {
   User as UserIcon,
   LogIn,
   LayoutTemplate,
+  Store as StoreIcon,
   Star,
   ShieldCheck,
   MessageCircle,
@@ -91,6 +92,7 @@ import { OrderDetailModal } from './components/orders/OrderDetailModal';
 import { MerchantWalletModal } from './components/wallet/MerchantWalletModal';
 import { UpgradePlanModal } from './components/billing/UpgradePlanModal';
 import { StoreLayoutSetupWizard } from './components/layout-editor/StoreLayoutSetupWizard';
+import { StoreNameSetupModal } from './components/common/StoreNameSetupModal';
 
 // Storefront Components
 import { StoreHeader } from './components/storefront/StoreHeader';
@@ -102,7 +104,7 @@ import { useCmsStore } from './cms/useCmsStore';
 
 export default function App() {
   // Auth Context Hook
-  const { user, store: authStore, isAuthenticated, logout } = useAuth();
+  const { user, store: authStore, isAuthenticated, isLoading: isAuthLoading, logout } = useAuth();
 
   // State: Authentication View
   const [authView, setAuthView] = useState<'login' | 'register' | 'forgot_password' | null>(null);
@@ -156,6 +158,7 @@ export default function App() {
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [isUpgradePlanModalOpen, setIsUpgradePlanModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+  const [isCreateStoreWizardOpen, setIsCreateStoreWizardOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('500000');
   const [bankAccount, setBankAccount] = useState('BCA - 8920192811');
 
@@ -188,10 +191,30 @@ export default function App() {
     };
   }, []);
 
-  const currentStore = activeStore || initialStores[0];
+  const EMPTY_STORE: Store = useMemo(() => ({
+    id: '',
+    name: 'Belum Memiliki Toko',
+    slug: '',
+    tagline: '',
+    description: '',
+    logoUrl: '',
+    bannerUrl: '',
+    phoneWhatsApp: '',
+    city: '',
+    address: '',
+    category: '',
+    currency: 'IDR',
+    balance: 0,
+    isPublished: false,
+    onboarding: { storeNameSet: false, productUploaded: false, paymentConnected: false },
+    createdAt: '',
+  }), []);
+
+  const currentStore = activeStore || (user ? EMPTY_STORE : initialStores[0]);
 
   // Initial Data Loading
   const loadData = async (targetStoreId?: string) => {
+    if (isAuthLoading) return;
     if (new URLSearchParams(window.location.search).get('preview') === 'true') {
       return;
     }
@@ -250,11 +273,6 @@ export default function App() {
       setActiveStore(finalStore || null);
 
       if (finalStore) {
-        // Otomatis buka onboarding setup jika nama toko belum diatur (khususnya user Google baru)
-        if (user && (!finalStore.onboarding?.storeNameSet || finalStore.name.startsWith('Toko usr_'))) {
-          setIsOnboardingModalOpen(true);
-        }
-
         const [storeProducts, storeOrders, storeIntegrations] = await Promise.all([
           productService.getProductsByStore(finalStore.id),
           orderService.getOrdersByStore(finalStore.id),
@@ -428,8 +446,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [isAuthenticated, authStore, user?.id]);
+    if (!isAuthLoading) {
+      loadData();
+    }
+  }, [isAuthenticated, authStore, user?.id, isAuthLoading]);
 
   // Real-time synchronization for orders via Supabase WebSocket
   useEffect(() => {
@@ -646,12 +666,60 @@ export default function App() {
     setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
   };
 
+  const handleCreateStoreFromSettings = async (data: Partial<Store>) => {
+    if (!user) return;
+    try {
+      const newStore = await storeService.createStore({
+        merchantId: user.id,
+        name: data.name || `Toko ${user.name || 'UMKM'}`,
+        slug: data.slug || `toko-${user.id.slice(-6)}`,
+        tagline: data.tagline || 'Katalog resmi UMKM.',
+        description: data.description || '',
+        logoUrl: user.avatarUrl || '',
+        bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+        phoneWhatsApp: data.phoneWhatsApp || user.phoneWhatsApp || '',
+        address: data.address || '',
+        addressDetail: data.addressDetail || '',
+        village: data.village || '',
+        subdistrict: data.subdistrict || '',
+        district: data.district || '',
+        city: data.city || 'Indonesia',
+        province: data.province || '',
+        postalCode: data.postalCode || '',
+        latitude: data.latitude,
+        longitude: data.longitude,
+        category: 'Kuliner & Minuman',
+        currency: 'IDR',
+      });
+      setActiveStore(newStore);
+      setStores([newStore]);
+      addToast(`🎉 Toko "${newStore.name}" berhasil dibuat!`);
+    } catch (err) {
+      console.error('Error creating store:', err);
+      addToast('Gagal membuat toko. Silakan coba lagi.', 'error');
+    }
+  };
+
   const handleSaveLayout = async (layoutSettings: StoreLayoutSettings) => {
     if (!activeStore) return;
-    const updated = await storeService.updateStore(activeStore.id, { layoutSettings });
+    const updated = await storeService.updateStore(activeStore.id, { layoutSettings, isPublished: true });
     setActiveStore(updated);
     setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-    addToast('Tata letak halaman toko berhasil disimpan!');
+    addToast('Tata letak halaman toko berhasil disimpan dan dipublikasikan!');
+  };
+
+  const handlePublishStore = async (storeId?: string) => {
+    const targetId = storeId || activeStore?.id || currentStore?.id;
+    if (!targetId) return;
+    try {
+      const updated = await storeService.updateStore(targetId, { isPublished: true });
+      setActiveStore(updated);
+      setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+      addToast('🎉 Selamat! Toko online Anda resmi dipublikasikan dan live!');
+    } catch (err) {
+      console.error('Error publishing store:', err);
+      addToast('Gagal mempublikasikan toko.', 'error');
+    }
   };
 
   const handleWithdrawSubmit = async (e: React.FormEvent) => {
@@ -841,6 +909,17 @@ export default function App() {
     return <ThemeRenderer store={currentStore} products={products} />;
   };
 
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F7] flex flex-col items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-9 h-9 border-3 border-[#66000E] border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xs font-semibold text-[#706866] tracking-wide">Memuat...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FAF7F7] text-[#241A1A] font-sans antialiased flex flex-col selection:bg-[#F5E8EA] selection:text-[#66000E]">
       {/* 1. PUBLIC STOREFRONT VIEW (WITH RESPONSIVE DEVICE SWITCHER) */}
@@ -972,24 +1051,102 @@ export default function App() {
       )}
 
       {/* 2. PURE STANDALONE STOREFRONT (100% FULL SCREEN - NO PREVIEW / NO FRAMES) */}
-      {viewMode === 'storefront-live' && (
-        <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative">
-          {/* Subtle Floating Switcher back to Dashboard */}
-          {new URLSearchParams(window.location.search).get('preview') !== 'true' && (
-            <div className="fixed bottom-4 left-4 z-50">
-              <button
-                onClick={() => setViewMode('merchant-desktop')}
-                className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
-                title="Kembali ke Dashboard Merchant"
-              >
-                <Monitor className="w-3.5 h-3.5" />
-                <span>Dashboard</span>
-              </button>
+      {viewMode === 'storefront-live' && (() => {
+        const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+        const isPublished = currentStore.isPublished !== false;
+
+        // Jika toko belum dipublikasikan dan pengunjung bukan di mode preview
+        if (!isPublished && !isPreview) {
+          const isOwner = user && activeStore && activeStore.id === currentStore.id;
+          return (
+            <div className="min-h-screen w-full bg-[#FAF7F7] flex flex-col items-center justify-center p-4 font-sans text-center">
+              <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 border border-[#E5E0DD] shadow-lg space-y-5 animate-in fade-in duration-200">
+                <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-[#66000E] flex items-center justify-center mx-auto shadow-xs">
+                  <StoreIcon className="w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-semibold border border-amber-200">
+                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                    Toko Sedang Disiapkan
+                  </span>
+                  <h1 className="text-xl sm:text-2xl font-bold text-[#241A1A]">
+                    {currentStore.name || 'Toko Online'}
+                  </h1>
+                  <p className="text-xs sm:text-sm text-[#706866] leading-relaxed">
+                    Halo! Toko online ini sedang dalam tahap persiapan dan belum resmi dibuka untuk umum. Silakan berkunjung kembali nanti.
+                  </p>
+                </div>
+
+                {isOwner ? (
+                  <div className="space-y-3 pt-3 border-t border-[#E5E0DD]">
+                    <p className="text-[11px] text-[#706866] font-medium">
+                      Anda adalah pemilik toko ini. Anda dapat melihat draf atau mempublikasikannya sekarang.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <button
+                        onClick={() => setViewMode('merchant-desktop')}
+                        className="flex-1 px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#241A1A] text-xs font-bold transition cursor-pointer"
+                      >
+                        Ke Dashboard
+                      </button>
+                      <button
+                        onClick={() => handlePublishStore(currentStore.id)}
+                        className="flex-1 px-4 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                      >
+                        Publikasikan Toko
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  currentStore.phoneWhatsApp && (
+                    <a
+                      href={`https://wa.me/${currentStore.phoneWhatsApp.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                    >
+                      <span>Hubungi Penjual via WhatsApp</span>
+                    </a>
+                  )
+                )}
+              </div>
             </div>
-          )}
-          {renderStorefrontContent()}
-        </div>
-      )}
+          );
+        }
+
+        return (
+          <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative">
+            {/* Owner Draft Warning Banner in Preview Mode */}
+            {!isPublished && isPreview && (
+              <div className="bg-amber-500 text-white text-xs font-semibold px-4 py-2 text-center flex items-center justify-center gap-2 sticky top-0 z-50 shadow-xs">
+                <span>⚠️ Mode Pratinjau Draf: Toko ini belum dibuka untuk umum.</span>
+                {user && (
+                  <button
+                    onClick={() => handlePublishStore(currentStore.id)}
+                    className="ml-2 px-2.5 py-0.5 bg-white text-amber-900 rounded-lg text-[11px] font-bold hover:bg-amber-50 cursor-pointer transition"
+                  >
+                    Publikasikan Sekarang
+                  </button>
+                )}
+              </div>
+            )}
+            {/* Subtle Floating Switcher back to Dashboard */}
+            {new URLSearchParams(window.location.search).get('preview') !== 'true' && (
+              <div className="fixed bottom-4 left-4 z-50">
+                <button
+                  onClick={() => setViewMode('merchant-desktop')}
+                  className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
+                  title="Kembali ke Dashboard Merchant"
+                >
+                  <Monitor className="w-3.5 h-3.5" />
+                  <span>Dashboard</span>
+                </button>
+              </div>
+            )}
+            {renderStorefrontContent()}
+          </div>
+        );
+      })()}
 
       {/* 3. PUBLIC STOREFRONT PHONE SIMULATOR */}
       {viewMode === 'storefront-phone' && (
@@ -1015,8 +1172,8 @@ export default function App() {
         />
       )}
 
-      {/* 4. ONBOARDING STORE CREATION (IF MERCHANT HAS NO STORE YET) */}
-      {(viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile') && user && user.role !== 'admin' && !activeStore && (
+      {/* 4. CREATE STORE WIZARD MODAL (only when user explicitly clicks "Buat Toko") */}
+      {isCreateStoreWizardOpen && user && user.role !== 'admin' && (
         <StoreLayoutSetupWizard
           currentStore={{
             id: '',
@@ -1048,9 +1205,9 @@ export default function App() {
                 currency: 'IDR',
                 layoutSettings: data.layoutSettings,
               });
-
               setActiveStore(newStore);
               setStores([newStore]);
+              setIsCreateStoreWizardOpen(false);
               setActiveTab('layout');
               addToast(`🎉 Selamat! Toko "${newStore.name}" berhasil dibuat dan siap diatur.`);
             } catch (err) {
@@ -1058,11 +1215,12 @@ export default function App() {
               addToast('Gagal membuat toko. Silakan coba lagi.', 'error');
             }
           }}
+          onCancel={() => setIsCreateStoreWizardOpen(false)}
         />
       )}
 
       {/* 5. MERCHANT DASHBOARD VIEW (Desktop & Mobile Admin) */}
-      {(viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile') && (!user || user.role === 'admin' || !!activeStore) && (
+      {(viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile') && (!user || !!user) && (
         <div className="flex h-screen w-full max-w-full overflow-hidden bg-[#FAF7F7]">
           {/* Desktop Left Sidebar & Mobile/Tablet Drawer */}
           <Sidebar
@@ -1121,6 +1279,8 @@ export default function App() {
                   onOpenShareStore={() => setIsShareModalOpen(true)}
                   onOpenWithdraw={() => setWithdrawModalOpen(true)}
                   onSelectOrder={(ord) => setSelectedOrderDetail(ord)}
+                  onCreateStore={user && !activeStore?.id ? () => setActiveTab('pengaturan') : undefined}
+                  onPublishStore={() => handlePublishStore(currentStore.id)}
                 />
               )}
 
@@ -1171,6 +1331,7 @@ export default function App() {
                   store={currentStore}
                   products={products}
                   onSaveLayout={handleSaveLayout}
+                  onPublishStore={() => handlePublishStore(currentStore.id)}
                   onOpenStorefront={() => setViewMode('storefront')}
                   onOpenPhoneSimulator={() => setViewMode('storefront-phone')}
                   onShowNotification={addToast}
@@ -1237,6 +1398,8 @@ export default function App() {
                 <SettingsPage
                   store={currentStore}
                   onUpdateStore={handleUpdateStore}
+                  onCreateStore={user && !activeStore?.id ? handleCreateStoreFromSettings : undefined}
+                  onPublishStore={() => handlePublishStore(currentStore.id)}
                   onOpenWithdraw={() => setWithdrawModalOpen(true)}
                   onOpenShareModal={() => setIsShareModalOpen(true)}
                   onNavigateBilling={() => setActiveTab('billing')}
@@ -1379,30 +1542,29 @@ export default function App() {
         }}
       />
 
-      {/* 11. Store Setup / Onboarding Wizard Modal */}
-      {isOnboardingModalOpen && currentStore && (
-        <StoreLayoutSetupWizard
-          currentStore={currentStore}
-          onComplete={async ({ storeUpdates, layoutSettings }) => {
-            try {
-              const updated = await storeService.updateStore(currentStore.id, {
-                ...storeUpdates,
-                layoutSettings,
-                onboarding: {
-                  ...currentStore.onboarding,
-                  storeNameSet: true,
-                },
-              });
-              setActiveStore(updated);
-              setIsOnboardingModalOpen(false);
-              addToast(`Identitas toko "${updated.name}" berhasil disimpan ke cloud!`);
-            } catch (err: any) {
-              addToast('Gagal menyimpan identitas toko: ' + (err?.message || err), 'error');
-            }
-          }}
-          onCancel={() => setIsOnboardingModalOpen(false)}
-        />
-      )}
+      {/* 11. Store Name Onboarding Modal (for new Google users or stores with placeholder names) */}
+      <StoreNameSetupModal
+        isOpen={isOnboardingModalOpen && !isAuthLoading && !!currentStore?.id}
+        currentStore={currentStore}
+        onSave={async (name, slug) => {
+          try {
+            const updated = await storeService.updateStore(currentStore.id, {
+              name,
+              slug,
+              onboarding: {
+                ...currentStore.onboarding,
+                storeNameSet: true,
+              },
+            });
+            setActiveStore(updated);
+            setIsOnboardingModalOpen(false);
+            addToast(`🎉 Nama toko "${updated.name}" berhasil disimpan!`);
+          } catch (err: any) {
+            addToast('Gagal menyimpan nama toko: ' + (err?.message || err), 'error');
+          }
+        }}
+        onCancel={() => setIsOnboardingModalOpen(false)}
+      />
 
       {/* Global Toast Notification Container */}
       <Toast toasts={toasts} onDismiss={removeToast} />

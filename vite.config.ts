@@ -97,6 +97,75 @@ function midtransDevPlugin(): Plugin {
           }
         });
       });
+
+      server.middlewares.use('/api/midtrans/status', async (req, res) => {
+        if (req.method !== 'GET' && req.method !== 'POST') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+
+        let orderId = '';
+        if (req.method === 'GET') {
+          const url = new URL(req.url || '', 'http://localhost');
+          orderId = url.searchParams.get('orderId') || '';
+        } else {
+          let body = '';
+          await new Promise<void>((resolve) => {
+            req.on('data', (chunk) => (body += chunk));
+            req.on('end', () => resolve());
+          });
+          try {
+            const parsed = JSON.parse(body || '{}');
+            orderId = parsed.orderId || '';
+          } catch {
+            orderId = '';
+          }
+        }
+
+        if (!orderId) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'orderId is required' }));
+          return;
+        }
+
+        try {
+          const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+          const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
+          const apiUrl =
+            env === 'production'
+              ? `https://api.midtrans.com/v2/${encodeURIComponent(orderId)}/status`
+              : `https://api.sandbox.midtrans.com/v2/${encodeURIComponent(orderId)}/status`;
+
+          const midtransRes = await fetch(apiUrl, {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Basic ${Buffer.from(serverKey + ':').toString('base64')}`,
+            },
+          });
+
+          const midtransData = await midtransRes.json();
+          const txStatus = midtransData.transaction_status || '';
+          const isPaid = txStatus === 'settlement' || txStatus === 'capture';
+
+          res.setHeader('Content-Type', 'application/json');
+          res.statusCode = 200;
+          res.end(
+            JSON.stringify({
+              success: true,
+              isPaid,
+              transactionStatus: txStatus,
+              data: midtransData,
+            })
+          );
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: true, message: err?.message || 'Server error' }));
+        }
+      });
     },
   };
 }

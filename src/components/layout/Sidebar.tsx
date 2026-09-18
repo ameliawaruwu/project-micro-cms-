@@ -213,10 +213,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               if (onCloseMobile) onCloseMobile();
             }}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-gray-600 hover:text-[#800000] hover:bg-rose-50/50 transition cursor-pointer"
-            title={t('nav_logout', 'Keluar (Logout)')}
+            title={t('nav_logout', 'Keluar')}
           >
             <LogOut className="w-3.5 h-3.5 text-gray-400" />
-            <span className="truncate">{t('nav_logout', 'Keluar (Logout)')}</span>
+            <span className="truncate">{t('nav_logout', 'Keluar')}</span>
           </button>
         ) : (
           <div className="flex justify-center">
@@ -224,7 +224,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               type="button"
               onClick={onLogout}
               className="w-8 h-8 rounded-md text-gray-400 hover:text-[#800000] hover:bg-rose-50/50 flex items-center justify-center transition cursor-pointer"
-              title={t('nav_logout', 'Keluar (Logout)')}
+              title={t('nav_logout', 'Keluar')}
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>

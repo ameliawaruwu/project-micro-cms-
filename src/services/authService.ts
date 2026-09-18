@@ -187,7 +187,7 @@ class AuthService {
 
     let user: User;
     let merchant: Merchant;
-    let storeToUse: Store;
+    let storeToUse: Store | undefined;
 
     if (account) {
       user = account.user;
@@ -198,27 +198,8 @@ class AuthService {
       if (userStores.length > 0) {
         storeToUse = userStores.find((s) => s.id === account!.storeId) || userStores[0];
       } else {
-        // Find in all stores or create fresh
-        const fallbackStore = await storeService.getStoreById(account.storeId);
-        if (fallbackStore) {
-          storeToUse = { ...fallbackStore, merchantId: user.id };
-          await storeService.createStore(storeToUse);
-        } else {
-          storeToUse = await storeService.createStore({
-            merchantId: user.id,
-            name: `Toko ${user.name}`,
-            slug: `toko-${user.id.slice(-6)}`,
-            tagline: `Toko Resmi ${user.name}`,
-            description: 'Katalog online dan pemesanan praktis via WhatsApp.',
-            logoUrl: user.avatarUrl,
-            bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-            phoneWhatsApp: user.phoneWhatsApp || '',
-            city: 'Indonesia',
-            address: 'Pusat Usaha UMKM',
-            category: 'Bisnis UMKM',
-            currency: 'IDR',
-          });
-        }
+        // Merchant has not created a store yet
+        storeToUse = undefined;
       }
     } else {
       // Account exists in Supabase DB but not yet in localStorage
@@ -241,28 +222,14 @@ class AuthService {
       if (userStores.length > 0) {
         storeToUse = userStores[0];
       } else {
-        const storeName = `Toko ${userName}`;
-        const storeSlug = `toko-${cleanEmail.split('@')[0].replace(/[^a-z0-9]/g, '')}`;
-        storeToUse = await storeService.createStore({
-          merchantId: userId,
-          name: storeName,
-          slug: storeSlug,
-          tagline: `Katalog Resmi ${storeName}`,
-          description: 'Pusat belanja online praktis dan cepat.',
-          logoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(storeName)}&background=FFD358&color=002A45&bold=true`,
-          bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-          phoneWhatsApp: dbUser.phone || '',
-          city: 'Indonesia',
-          address: 'Pusat Usaha UMKM',
-          category: 'Bisnis UMKM',
-          currency: 'IDR',
-        });
+        // Merchant has not created a store yet
+        storeToUse = undefined;
       }
 
       merchant = {
         id: `merch-${userId}`,
         userId: userId,
-        storeId: storeToUse.id,
+        storeId: storeToUse?.id || '',
         plan: 'free',
         isVerified: true,
       };
@@ -335,6 +302,7 @@ class AuthService {
       category: params.businessCategory,
       currency: 'IDR',
       balance: 0,
+      isPublished: false,
       onboarding: {
         storeNameSet: true,
         productUploaded: false,
@@ -474,34 +442,13 @@ class AuthService {
       createdAt: new Date().toISOString(),
     };
 
-    const store: Store = {
-      id: storeId,
-      merchantId: userId,
-      name: finalStoreName,
-      slug: storeSlug,
-      tagline: `Toko Resmi ${finalStoreName}`,
-      description: 'Pusat belanja produk berkualitas dengan pemesanan mudah dan cepat.',
-      logoUrl: userAvatar,
-      bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-      phoneWhatsApp: '',
-      city: 'Indonesia',
-      address: 'Pusat Usaha UMKM',
-      category: 'Bisnis UMKM',
-      currency: 'IDR',
-      balance: 0,
-      plan: 'free',
-      onboarding: {
-        storeNameSet: hasCustomStoreName,
-        productUploaded: false,
-        paymentConnected: false,
-      },
-      createdAt: new Date().toISOString(),
-    };
+    const userStores = await storeService.getStoresForUser(userId);
+    const existingStore = userStores.length > 0 ? userStores[0] : undefined;
 
     const merchant: Merchant = {
       id: `merch-${userId}`,
       userId: userId,
-      storeId: storeId,
+      storeId: existingStore?.id || '',
       plan: 'free',
       isVerified: true,
     };
@@ -518,30 +465,9 @@ class AuthService {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
-      await supabase.from('stores').upsert({
-        id: store.id,
-        user_id: userId,
-        name: finalStoreName,
-        slug: storeSlug,
-        tagline: `Toko Resmi ${finalStoreName}`,
-        description: store.description,
-        phone_whatsapp: '',
-        category: 'Bisnis UMKM',
-        city: 'Indonesia',
-        address: 'Pusat Usaha UMKM',
-        plan: 'free',
-        balance: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
     } catch (e) {
       console.warn('Supabase Google auth insert warning:', e);
     }
-
-    // Save newly created store to storeService
-    await storeService.createStore(store);
-
-    // New stores start clean with 0 products
 
     const newAccountRecord: StoredAccount = {
       id: userId,
@@ -549,13 +475,13 @@ class AuthService {
       password: 'google-oauth-managed',
       user,
       merchant,
-      storeId: store.id,
+      storeId: merchant.storeId,
     };
 
     accounts.push(newAccountRecord);
     this.saveAccounts(accounts);
 
-    return { user, merchant, store };
+    return { user, merchant, store: existingStore };
   }
 
 

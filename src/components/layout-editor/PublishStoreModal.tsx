@@ -27,6 +27,7 @@ interface PublishStoreModalProps {
   store: Store;
   onNavigateBilling?: () => void;
   onNavigateDomain?: () => void;
+  onPublish?: () => void;
 }
 
 export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
@@ -35,6 +36,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
   store,
   onNavigateBilling,
   onNavigateDomain,
+  onPublish,
 }) => {
   const [step, setStep] = useState<'checklist' | 'published'>('checklist');
   const [copied, setCopied] = useState(false);
@@ -80,7 +82,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   const friendlyDisplayUrl = (selectedDomainType === 'custom' && activeCustomDomainName)
     ? activeCustomDomainName
-    : `${store.slug}.kroomify.com`;
+    : `${store.slug}.kroombox.com`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(liveStoreUrl);
@@ -97,6 +99,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   const handleConfirmPublish = () => {
     setIsPublishing(true);
+    if (onPublish) onPublish();
     setTimeout(() => {
       setIsPublishing(false);
       setStep('published');
@@ -140,7 +143,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
           {/* ═══════════ STEP 1: PILIHAN DOMAIN RINGKAS ═══════════ */}
           {step === 'checklist' && (
             <div className="space-y-3">
-              {/* Opsi 1: Domain Random (Subdomain Kroomify) */}
+              {/* Opsi 1: Domain Random (Subdomain Kroombox) */}
               <div
                 onClick={() => setSelectedDomainType('random')}
                 className={`p-3.5 sm:p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 ${
@@ -163,7 +166,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                       </span>
                     </div>
                     <p className="text-[11px] text-gray-500 font-mono truncate mt-0.5">
-                      https://{store.slug}.kroomify.com
+                      https://{store.slug}.kroombox.com
                     </p>
                   </div>
                 </div>

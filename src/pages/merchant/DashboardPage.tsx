@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, ArrowUpRight, RefreshCw, LayoutDashboard } from 'lucide-react';
+import { Wallet, ArrowUpRight, RefreshCw, LayoutDashboard, ExternalLink } from 'lucide-react';
 import { Store as StoreType, Order, Product, MerchantTab } from '../../types';
 import { MetricCard } from '../../components/dashboard/MetricCard';
 import { SalesAnalyticsSection } from '../../components/dashboard/SalesAnalyticsSection';
@@ -19,6 +19,8 @@ interface DashboardPageProps {
   onOpenShareStore?: () => void;
   onOpenWithdraw?: () => void;
   onSelectOrder: (order: Order) => void;
+  onCreateStore?: () => void;
+  onPublishStore?: () => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
@@ -27,7 +29,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   products,
   onNavigateTab,
   onOpenWithdraw,
+  onOpenStorefront,
   onSelectOrder,
+  onCreateStore,
+  onPublishStore,
 }) => {
   const { t, language } = useLanguage();
   const isEn = language === 'en';
@@ -51,7 +56,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   return (
     <div className="space-y-5 sm:space-y-6 animate-in fade-in duration-300 font-sans pb-24 lg:pb-6 relative text-left">
-      
+
+
+      {/* NORMAL DASHBOARD (always shown) */}
+      {(
+        <>
       {/* 1. Store Greeting & Real-Time Status Header */}
       <div className="pb-3 border-b border-[#E5E0DD] flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
@@ -60,19 +69,43 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <LayoutDashboard className="w-5 h-5 text-[#66000E]" />
               <span>{t('dashboard_title', 'Dashboard')}</span>
             </h1>
-            {/* Live store badge */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-medium shadow-2xs">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span>{t('live_store_active', 'Toko Online Aktif')}</span>
-            </div>
+            {/* Store Status Badge */}
+            {!store.id ? (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-medium shadow-2xs">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-400"></span>
+                <span>Belum Memiliki Toko</span>
+              </div>
+            ) : !store.isPublished && store.domainStatus !== 'connected' ? (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium shadow-2xs">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
+                <span>Toko Belum Publikasi (Draf)</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-medium shadow-2xs">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span>{t('live_store_active', 'Toko Online Aktif')}</span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Real-time date & quick refresh trigger */}
+        {/* Real-time date, Buka Web Toko (jika sudah dipublikasikan), & quick refresh trigger */}
         <div className="flex items-center gap-2 shrink-0">
+          {store.slug && store.id && (store.isPublished || store.domainStatus === 'connected') && (
+            <a
+              href={store.customDomain ? `https://${store.customDomain}` : `${window.location.origin}/?toko=${store.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200/80 text-[#800000] text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+              title="Buka Website Toko Anda di Tab Baru"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Buka Web Toko</span>
+            </a>
+          )}
           <button
             onClick={refresh}
             title={isEn ? 'Reload real-time metrics' : 'Muat ulang metrik real-time'}
@@ -84,8 +117,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </div>
 
-      {/* 2. Quick Store Wallet Banner */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8DDDE] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#800000]/30 transition">
+      {/* QUICK STORE WALLET BANNER (Saldo Toko Aktif) */}
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8DDDE] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#800000]/30 transition min-h-[90px]">
         <div className="flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-2xl bg-rose-50 text-[#800000] border border-rose-200/60 flex items-center justify-center font-semibold shadow-2xs shrink-0">
             <Wallet className="w-5 h-5 stroke-[1.8]" />
@@ -180,6 +213,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           />
         </div>
       </div>
+
+      </> )} {/* end !!store.id conditional */}
 
     </div>
   );

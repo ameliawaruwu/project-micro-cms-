@@ -7,6 +7,8 @@ import { ThemeRegistry } from '../ThemeRegistry';
 import { ShoppingCart, Check, CreditCard, Truck, ShieldCheck, ArrowRight, Loader2, MessageCircle } from 'lucide-react';
 import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
+import { midtransService } from '../../services/midtransService';
+import { storeService } from '../../services/storeService';
 
 interface CheckoutPageProps {
   themeData?: ThemeSchema;
@@ -42,6 +44,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [isCompleted, setIsCompleted] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
 
+  const isFreePlan = !store?.plan || store.plan === 'free';
+
   // Cart / sample items
   const cartItemsFromStorage = store?.slug ? cartService.getCart(store.slug) : [];
   const sampleItems = cartItemsFromStorage.length > 0
@@ -76,6 +80,47 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
   const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
 
+  const finalizeOrder = async (isPaid: boolean, methodDesc: string) => {
+    const orderItems: OrderItem[] = sampleItems.map((s) => ({
+      productId: s.id,
+      productName: s.name,
+      productImage: s.imageUrl,
+      price: s.price,
+      quantity: s.quantity || 1,
+      subtotal: s.price * (s.quantity || 1),
+    }));
+
+    const newOrder = await orderService.createOrder({
+      storeId: store?.id || 'store-andhika',
+      customerName: customerName.trim(),
+      customerPhone: customerPhone.trim(),
+      customerEmail: customerEmail.trim() || undefined,
+      customerAddress: customerAddress.trim(),
+      customerCity: customerCity.trim() || 'Indonesia',
+      items: orderItems,
+      subtotal,
+      shippingCost: shippingFee,
+      discount: 0,
+      grandTotal: total,
+      paymentMethod: methodDesc as any,
+      paymentStatus: isPaid ? 'Sudah Dibayar' : 'Belum Dibayar',
+      courier: 'J&T',
+      shippingStatus: 'Baru',
+      notes: `Pesanan checkout via tema storefront: ${activeThemeId}`,
+    });
+
+    if (isPaid && store?.id) {
+      const currentBalance = store.balance || 0;
+      await storeService.updateStore(store.id, { balance: currentBalance + total });
+    }
+
+    setCreatedOrder(newOrder);
+    setIsCompleted(true);
+    if (store?.slug) {
+      cartService.clearCart(store.slug);
+    }
+  };
+
   const handleProcessCheckout = async () => {
     if (!customerName.trim() || !customerPhone.trim() || !customerAddress.trim()) {
       alert('Silakan lengkapi Nama Lengkap, Nomor WhatsApp, dan Alamat Pengiriman.');
@@ -84,41 +129,50 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
     setIsSubmitting(true);
     try {
-      const orderItems: OrderItem[] = sampleItems.map((s) => ({
-        productId: s.id,
-        productName: s.name,
-        productImage: s.imageUrl,
-        price: s.price,
-        quantity: s.quantity || 1,
-        subtotal: s.price * (s.quantity || 1),
-      }));
-
-      const newOrder = await orderService.createOrder({
-        storeId: store?.id || 'store-andhika',
-        customerName: customerName.trim(),
-        customerPhone: customerPhone.trim(),
-        customerEmail: customerEmail.trim() || undefined,
-        customerAddress: customerAddress.trim(),
-        customerCity: customerCity.trim() || 'Indonesia',
-        items: orderItems,
-        subtotal,
-        shippingCost: shippingFee,
-        discount: 0,
-        grandTotal: total,
-        paymentMethod: paymentMethod === 'qris' ? 'QRIS' : paymentMethod === 'bank' ? 'Transfer Bank' : 'COD',
-        paymentStatus: paymentMethod === 'qris' ? 'Sudah Dibayar' : 'Belum Dibayar',
-        courier: 'J&T',
-        shippingStatus: 'Baru',
-        notes: `Pesanan checkout via tema storefront: ${activeThemeId}`,
-      });
-
-      setCreatedOrder(newOrder);
-      setIsCompleted(true);
-      if (store?.slug) {
-        cartService.clearCart(store.slug);
+      if (!isFreePlan && (paymentMethod === 'qris' || paymentMethod === 'bank')) {
+        const orderId = `THEME-${Date.now()}`;
+        await midtransService.payWithSnap(
+          {
+            orderId,
+            grossAmount: total,
+            customerName: customerName.trim(),
+            customerEmail: customerEmail.trim() || 'customer@example.com',
+            customerPhone: customerPhone.trim(),
+            items: sampleItems.map((s) => ({
+              id: s.id,
+              name: s.name,
+              price: s.price,
+              quantity: s.quantity || 1,
+            })),
+          },
+          {
+            onSuccess: async (result) => {
+              await finalizeOrder(true, `Midtrans (${result.payment_type || paymentMethod.toUpperCase()})`);
+              setIsSubmitting(false);
+            },
+            onPending: async (result) => {
+              await finalizeOrder(false, `Midtrans Pending (${result.payment_type || paymentMethod.toUpperCase()})`);
+              setIsSubmitting(false);
+            },
+            onError: (err) => {
+              console.error('Midtrans Snap error:', err);
+              setIsSubmitting(false);
+              alert('Pembayaran Midtrans dibatalkan atau belum selesai.');
+            },
+            onClose: () => {
+              setIsSubmitting(false);
+            },
+          }
+        );
+        return;
       }
+
+      // Manual / COD / Free Plan
+      const methodLabel = paymentMethod === 'cod' ? 'COD (Bayar di Tempat)' : paymentMethod === 'bank' ? 'Transfer Bank Manual' : 'QRIS Manual';
+      await finalizeOrder(false, methodLabel);
     } catch (err: any) {
-      alert('Terjadi kendala saat membuat pesanan: ' + err.message);
+      console.error('Checkout error:', err);
+      alert('Terjadi kendala saat membuat pesanan: ' + (err?.message || 'Silakan coba lagi.'));
     } finally {
       setIsSubmitting(false);
     }

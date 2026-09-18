@@ -154,7 +154,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     }
   };
 
-  const recordSuccessOrder = async (orderIdCode?: string, verifiedMethod?: string) => {
+  const recordSuccessOrder = async (orderIdCode?: string, verifiedMethod?: string, isPaid: boolean = true) => {
     const orderItems = items.map((item) => ({
       productId: item.product.id,
       productName: item.product.name,
@@ -189,29 +189,33 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       discount: 0,
       grandTotal,
       paymentMethod: finalMethod as PaymentMethod,
-      paymentStatus: 'Sudah Dibayar',
+      paymentStatus: isPaid ? 'Sudah Dibayar' : 'Belum Dibayar',
       courier,
       shippingStatus: 'Baru',
       notes: notes.trim() || undefined,
     });
 
-    // Credit the merchant store balance automatically
-    const currentBalance = store.balance || 0;
-    await storeService.updateStore(store.id, { balance: currentBalance + grandTotal });
+    // Credit the merchant store balance only if actually paid
+    if (isPaid) {
+      const currentBalance = store.balance || 0;
+      await storeService.updateStore(store.id, { balance: currentBalance + grandTotal });
+    }
 
     cartService.clearCart(store.slug);
     setCompletedOrder(newOrder);
     setStep('success');
     onOrderSuccess(newOrder);
 
-    try {
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
-    } catch {
-      // Confetti fallback
+    if (isPaid) {
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+      } catch {
+        // Confetti fallback
+      }
     }
   };
 
@@ -238,16 +242,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         },
         {
           onSuccess: async (result) => {
-            await recordSuccessOrder(result.order_id || orderId, `Midtrans (${result.payment_type})`);
+            await recordSuccessOrder(result.order_id || orderId, `Midtrans (${result.payment_type})`, true);
             setIsSubmitting(false);
           },
           onPending: async (result) => {
-            await recordSuccessOrder(result.order_id || orderId, `Midtrans Pending (${result.payment_type})`);
+            await recordSuccessOrder(result.order_id || orderId, `Midtrans Pending (${result.payment_type})`, false);
             setIsSubmitting(false);
           },
           onError: (err) => {
             console.error('Midtrans Snap error:', err);
             setIsSubmitting(false);
+            alert('Pembayaran Midtrans dibatalkan atau belum selesai. Silakan coba kembali.');
           },
           onClose: () => {
             setIsSubmitting(false);
@@ -271,7 +276,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       // Toko dengan Paket Free memproses order manual (Transfer/WA/COD)
       const orderId = `KB-${Date.now().toString().slice(-6)}`;
       const selectedName = selectedChannelId === 'cod' ? 'COD (Bayar di Tempat)' : selectedChannelId === 'wa' ? 'Pemesanan via WhatsApp' : 'Transfer Bank Manual';
-      recordSuccessOrder(orderId, selectedName);
+      recordSuccessOrder(orderId, selectedName, false);
       return;
     }
 
@@ -286,7 +291,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     setIsSubmitting(true);
     try {
       const orderId = `KROOM-${Date.now()}`;
-      await recordSuccessOrder(orderId, selectedChannel.name);
+      await recordSuccessOrder(orderId, selectedChannel.name, false);
     } catch {
       alert('Terjadi kesalahan saat memproses pesanan.');
     } finally {

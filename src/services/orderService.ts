@@ -83,15 +83,8 @@ class OrderService {
         }
       });
 
-      initialOrders.forEach((o) => {
-        if (!orderMap.has(o.id)) {
-          orderMap.set(o.id, o);
-          modified = true;
-        }
-      });
-
       const uniqueOrders = Array.from(orderMap.values());
-      if (modified || uniqueOrders.length !== parsed.length) {
+      if (modified) {
         this.saveOrders(uniqueOrders);
       }
       return uniqueOrders;
