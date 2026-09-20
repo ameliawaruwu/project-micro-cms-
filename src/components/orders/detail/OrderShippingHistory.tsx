@@ -23,20 +23,20 @@ export const OrderShippingHistory: React.FC<OrderShippingHistoryProps> = ({
   originCity,
 }) => {
   return (
-    <div className="p-3.5 sm:p-4 bg-white border-t border-[#EAEAEA] space-y-3">
+    <div className="p-3.5 sm:p-4 bg-white border-t border-[#E5E0DD] space-y-3 font-poppins">
       <div className="flex items-center justify-between">
         <span className="font-bold text-xs text-[#1F1F1F] flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5 text-[#9A0602]" />
+          <Clock className="w-3.5 h-3.5 text-[#66000E]" />
           <span>Riwayat Perjalanan Kurir</span>
         </span>
         <span className="text-[10px] text-[#777777]">Pembaruan Terkini</span>
       </div>
 
       {/* Realistic Checkpoints */}
-      <div className="relative pl-6 space-y-3.5 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#EAEAEA]">
+      <div className="relative pl-6 space-y-3.5 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#E5E0DD]">
         {/* Log 1: Currently active checkpoint */}
         <div className="relative">
-          <div className="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-[#9A0602] ring-4 ring-[#FFF1F0] flex items-center justify-center">
+          <div className="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-[#66000E] ring-4 ring-[#F5E8EA] flex items-center justify-center">
             <div className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
           </div>
           <div>

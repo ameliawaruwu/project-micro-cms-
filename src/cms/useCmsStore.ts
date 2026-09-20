@@ -14,6 +14,61 @@ import {
   mockPages
 } from './mockCmsData';
 import { THEME_DATA_MAP } from '../themes/themeData';
+import { Product } from '../types';
+import { productService } from '../services/productService';
+
+export function productToCmsProduct(p: Product): CmsProduct {
+  let cmsStatus: 'active' | 'draft' | 'archived' = 'active';
+  if (p.status === 'Nonaktif' || p.status === 'Habis') {
+    cmsStatus = 'draft';
+  }
+
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug || p.id,
+    price: p.price,
+    originalPrice: p.originalPrice,
+    image: p.imageUrl || (p.images && p.images[0]) || '',
+    images: p.images && p.images.length > 0 ? p.images : (p.imageUrl ? [p.imageUrl] : []),
+    categoryId: p.category || 'all',
+    categoryName: p.category || 'Umum',
+    description: p.description || '',
+    status: cmsStatus,
+    isFeatured: Boolean(p.isFeatured),
+    isNew: false,
+    stock: p.stock ?? 10,
+  };
+}
+
+export function cmsProductToProduct(cp: CmsProduct, storeId: string = 'store-andhika'): Product {
+  let merchantStatus: 'Tersedia' | 'Hampir Habis' | 'Habis' | 'Nonaktif' = 'Tersedia';
+  if (cp.status === 'draft' || cp.status === 'archived') {
+    merchantStatus = 'Nonaktif';
+  } else if ((cp.stock ?? 0) <= 0) {
+    merchantStatus = 'Habis';
+  } else if ((cp.stock ?? 0) <= 3) {
+    merchantStatus = 'Hampir Habis';
+  }
+
+  return {
+    id: cp.id,
+    storeId,
+    name: cp.name,
+    slug: cp.slug || cp.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+    description: cp.description || '',
+    price: cp.price,
+    originalPrice: cp.originalPrice,
+    stock: cp.stock ?? 10,
+    category: cp.categoryName || 'Umum',
+    imageUrl: cp.image || (cp.images && cp.images[0]) || '',
+    images: cp.images && cp.images.length > 0 ? cp.images : (cp.image ? [cp.image] : []),
+    status: merchantStatus,
+    sku: `SKU-${cp.id.slice(-4).toUpperCase()}`,
+    weightGrams: 250,
+    createdAt: new Date().toISOString(),
+  };
+}
 
 interface CmsState {
   storeInfo: CmsStoreInfo;
@@ -25,7 +80,10 @@ interface CmsState {
 
   // Actions
   loadThemeData: (themeId: string) => void;
-  updateProduct: (product: CmsProduct) => void;
+  updateProduct: (product: CmsProduct, storeId?: string) => void;
+  addProduct: (product: CmsProduct, storeId?: string) => void;
+  deleteProduct: (id: string) => void;
+  setProductsFromMerchant: (products: Product[]) => void;
 
   // Selectors/Helpers
   getProductBySlug: (slug: string) => CmsProduct | undefined;
@@ -57,17 +115,95 @@ export const useCmsStore = create<CmsState>((set, get) => ({
   getNewsBySlug: (slug: string) => get().news.find(n => n.slug === slug),
   getPageBySlug: (slug: string) => get().pages.find(p => p.slug === slug),
 
-  updateProduct: (updatedProduct: CmsProduct) => set(state => {
-    const newProducts = state.products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
+  setProductsFromMerchant: (merchantProducts: Product[]) => {
+    if (!merchantProducts || merchantProducts.length === 0) return;
+    const cmsList = merchantProducts.map(productToCmsProduct);
+    set({ products: cmsList });
     if (typeof window !== 'undefined') {
       try {
-        sessionStorage.setItem('microcms_cms_products', JSON.stringify(newProducts));
-        localStorage.setItem('microcms_cms_products', JSON.stringify(newProducts));
+        sessionStorage.setItem('microcms_cms_products', JSON.stringify(cmsList));
+        localStorage.setItem('microcms_cms_products', JSON.stringify(cmsList));
         window.dispatchEvent(new Event('cms_draft_updated'));
       } catch (e) {}
     }
-    return { products: newProducts };
-  }),
+  },
+
+  updateProduct: (updatedProduct: CmsProduct, storeId: string = 'store-andhika') => {
+    set(state => {
+      const newProducts = state.products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('microcms_cms_products', JSON.stringify(newProducts));
+          localStorage.setItem('microcms_cms_products', JSON.stringify(newProducts));
+          window.dispatchEvent(new Event('cms_draft_updated'));
+          window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: newProducts }));
+        } catch (e) {}
+      }
+      return { products: newProducts };
+    });
+
+    // Bidirectional sync to merchant ProductService
+    try {
+      productService.updateProduct(updatedProduct.id, {
+        name: updatedProduct.name,
+        price: updatedProduct.price,
+        imageUrl: updatedProduct.image,
+        category: updatedProduct.categoryName,
+        description: updatedProduct.description,
+        stock: updatedProduct.stock,
+      }).catch(() => {
+        // If product didn't exist in productService yet, create it
+        const newMerchantProd = cmsProductToProduct(updatedProduct, storeId);
+        productService.createProduct(storeId, newMerchantProd).catch(() => {});
+      });
+    } catch (e) {}
+  },
+
+  addProduct: (newProduct: CmsProduct, storeId: string = 'store-andhika') => {
+    set(state => {
+      const exists = state.products.some(p => p.id === newProduct.id);
+      const newProducts = exists
+        ? state.products.map(p => p.id === newProduct.id ? newProduct : p)
+        : [newProduct, ...state.products];
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('microcms_cms_products', JSON.stringify(newProducts));
+          localStorage.setItem('microcms_cms_products', JSON.stringify(newProducts));
+          window.dispatchEvent(new Event('cms_draft_updated'));
+          window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: newProducts }));
+        } catch (e) {}
+      }
+      return { products: newProducts };
+    });
+
+    // Bidirectional sync to merchant ProductService
+    try {
+      const merchantProduct = cmsProductToProduct(newProduct, storeId);
+      productService.createProduct(storeId, merchantProduct)
+        .catch(err => console.warn('[useCmsStore] addProduct sync error:', err));
+    } catch (e) {}
+  },
+
+  deleteProduct: (id: string) => {
+    set(state => {
+      const newProducts = state.products.filter(p => p.id !== id);
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('microcms_cms_products', JSON.stringify(newProducts));
+          localStorage.setItem('microcms_cms_products', JSON.stringify(newProducts));
+          window.dispatchEvent(new Event('cms_draft_updated'));
+          window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: newProducts }));
+        } catch (e) {}
+      }
+      return { products: newProducts };
+    });
+
+    // Bidirectional sync delete to merchant ProductService
+    try {
+      productService.deleteProduct(id)
+        .catch(err => console.warn('[useCmsStore] deleteProduct sync error:', err));
+    } catch (e) {}
+  },
 
   loadThemeData: (themeId: string) => {
     // Check if user has saved custom edited products in session

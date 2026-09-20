@@ -13,6 +13,7 @@ import {
 import { Store, WithdrawalRequest, AdminPlatformStats, Order, BillingPlan, BillingSubscription, User } from '../../types';
 import { adminService } from '../../services/adminService';
 import { billingPlanService } from '../../services/billingPlanService';
+import { domainRequestService, DomainRequest } from '../../services/domainRequestService';
 import { authService } from '../../services/authService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { AdminTab, AdminNavItem, PlanFormState } from './types';
@@ -51,6 +52,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [stats, setStats] = useState<AdminPlatformStats>(adminService.getPlatformStats());
   const [stores, setStores] = useState<Store[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
+  const [domainRequests, setDomainRequests] = useState<DomainRequest[]>([]);
   const [suspendedIds, setSuspendedIds] = useState<string[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -125,6 +127,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     setOrders(adminService.getAllOrders());
     setBillingPlans(billingPlanService.getPlans());
     setBillingSubscriptions(billingPlanService.getSubscriptions());
+    domainRequestService.getAllRequests().then((reqs) => {
+      if (reqs) setDomainRequests(reqs);
+    });
   };
 
   useEffect(() => {
@@ -269,6 +274,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   });
 
   const pendingWithdrawals = withdrawals.filter((w) => w.status === 'pending');
+  const pendingDomainRequests = domainRequests.filter((d) => d.status === 'pending');
 
   // Orders & Shipping filtering and metrics
   const totalOrdersCount = orders.length;
@@ -317,6 +323,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       id: 'domain-requests',
       label: language === 'en' ? 'Domain Requests' : 'Permintaan Domain',
       icon: Globe,
+      badge: pendingDomainRequests.length > 0 ? pendingDomainRequests.length : undefined,
     },
     {
       id: 'withdrawals',
@@ -377,6 +384,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               platformSettings={platformSettings}
               withdrawals={withdrawals}
               stores={stores}
+              pendingDomainRequestsCount={pendingDomainRequests.length}
               setActiveTab={setActiveTab}
               language={language}
             />
@@ -402,6 +410,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <AdminDomainRequestsTab
               language={language}
               onShowToast={(msg) => setToastMessage(msg)}
+              onRequestUpdated={loadData}
             />
           )}
 

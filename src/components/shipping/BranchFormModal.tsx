@@ -120,11 +120,11 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs font-poppins">
-      <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-200 overflow-hidden">
+      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-xl border border-[#E5E0DD] animate-in fade-in zoom-in duration-200 overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 sm:p-6 pb-3 sm:pb-4 border-b border-[#EAEAEA] shrink-0">
+        <div className="flex items-center justify-between p-5 sm:p-6 pb-3 sm:pb-4 border-b border-[#E5E0DD] shrink-0">
           <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-base">
-            <Building2 className="w-5 h-5 text-[#9A0602]" />
+            <Building2 className="w-5 h-5 text-[#66000E]" />
             <span>
               {editingBranch
                 ? t('branch_modal_edit_title', 'Edit Cabang / Gudang')
@@ -159,7 +159,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
               placeholder={t('branch_form_name_placeholder', 'Contoh: Gudang Pusat Jakarta, Cabang Bandung')}
               value={branchName}
               onChange={(e) => setBranchName(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs font-medium text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+              className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-medium text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
             />
           </div>
 
@@ -175,7 +175,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 placeholder={t('branch_form_pic_placeholder', 'Nama PIC penyerahan paket')}
                 value={picName}
                 onChange={(e) => setPicName(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
               />
             </div>
             <div>
@@ -188,7 +188,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 placeholder={t('branch_form_phone_placeholder', '0812xxxxxxxx (untuk kurir)')}
                 value={picPhone}
                 onChange={(e) => setPicPhone(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
               />
             </div>
           </div>
@@ -204,7 +204,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
               placeholder={t('branch_form_address_placeholder', 'Nama jalan, nomor gudang/ruko, RT/RW, patokan lokasi...')}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+              className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
             />
           </div>
 
@@ -219,7 +219,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 placeholder="Mampang Prapatan"
                 value={subdistrict}
                 onChange={(e) => setSubdistrict(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
               />
             </div>
             <div>
@@ -232,7 +232,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 placeholder="Jakarta Selatan"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
               />
             </div>
           </div>
@@ -248,7 +248,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 placeholder="DKI Jakarta"
                 value={province}
                 onChange={(e) => setProvince(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
               />
             </div>
             <div>
@@ -262,7 +262,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 placeholder="12730"
                 value={postalCode}
                 onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, ''))}
-                className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs font-mono font-bold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-mono font-bold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
               />
             </div>
           </div>
@@ -274,7 +274,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 type="checkbox"
                 checked={isDefault}
                 onChange={(e) => setIsDefault(e.target.checked)}
-                className="w-4 h-4 rounded text-[#9A0602] focus:ring-[#9A0602] border-[#CCCCCC]"
+                className="w-4 h-4 rounded text-[#66000E] focus:ring-[#66000E] border-[#CCCCCC]"
               />
               <div>
                 <span className="font-semibold text-xs text-[#1F1F1F]">
@@ -291,7 +291,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 rounded text-[#9A0602] focus:ring-[#9A0602] border-[#CCCCCC]"
+                className="w-4 h-4 rounded text-[#66000E] focus:ring-[#66000E] border-[#CCCCCC]"
               />
               <div>
                 <span className="font-semibold text-xs text-[#1F1F1F]">
@@ -305,18 +305,18 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
           </div>
 
           {/* Footer Buttons */}
-          <div className="pt-3 border-t border-[#EAEAEA] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5">
+          <div className="pt-3 border-t border-[#E5E0DD] grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 min-h-[40px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] font-semibold text-xs transition cursor-pointer text-center"
+              className="px-4 py-2.5 min-h-[40px] rounded-xl border border-[#E5E0DD] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] font-semibold text-xs transition cursor-pointer text-center"
             >
               {t('branch_form_cancel', 'Batal')}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs transition cursor-pointer disabled:opacity-50 text-center"
+              className="px-5 py-2.5 min-h-[40px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs transition cursor-pointer disabled:opacity-50 text-center"
             >
               {isSubmitting
                 ? t('branch_form_saving', 'Menyimpan...')

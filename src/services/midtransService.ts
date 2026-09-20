@@ -220,6 +220,7 @@ class MidtransService {
     success: boolean;
     isPaid: boolean;
     transactionStatus?: string;
+    isTimeout?: boolean;
     data?: any;
     error?: string;
   }> {

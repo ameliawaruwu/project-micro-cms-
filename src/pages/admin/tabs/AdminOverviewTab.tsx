@@ -1,10 +1,10 @@
-import React from 'react';
 import {
   Store as StoreIcon,
   TrendingUp,
   DollarSign,
   Clock,
   ChevronRight,
+  Globe,
 } from 'lucide-react';
 import { Store, WithdrawalRequest, AdminPlatformStats } from '../../../types';
 import { formatRupiah } from '../../../utils/formatters';
@@ -15,6 +15,7 @@ interface AdminOverviewTabProps {
   platformSettings: { platformFeePercent: number };
   withdrawals: WithdrawalRequest[];
   stores: Store[];
+  pendingDomainRequestsCount?: number;
   setActiveTab: (tab: AdminTab) => void;
   language: string;
 }
@@ -24,11 +25,42 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
   platformSettings,
   withdrawals,
   stores,
+  pendingDomainRequestsCount = 0,
   setActiveTab,
   language,
 }) => {
   return (
     <div className="space-y-5">
+      {/* Domain Request Notification Banner */}
+      {pendingDomainRequestsCount > 0 && (
+        <div className="bg-gradient-to-r from-red-50 to-amber-50 border border-red-200 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Globe className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-900">
+                {language === 'en'
+                  ? `${pendingDomainRequestsCount} Custom Domain Request(s) Pending`
+                  : `${pendingDomainRequestsCount} Permintaan Domain Baru Menunggu Konfirmasi`}
+              </p>
+              <p className="text-[11px] text-gray-600 mt-0.5">
+                {language === 'en'
+                  ? 'Merchant requested custom domain. Please verify availability and set status.'
+                  : 'Merchant mengajukan domain kustom. Segera periksa ketersediaan dan setujui atau beri saran alternatif.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab('domain-requests')}
+            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition shrink-0 cursor-pointer flex items-center gap-1.5 shadow-xs"
+          >
+            <span>{language === 'en' ? 'Review Requests' : 'Tinjau Sekarang'}</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* 4 Compact KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Total Stores */}

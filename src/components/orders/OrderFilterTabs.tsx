@@ -50,27 +50,27 @@ export const OrderFilterTabs: React.FC<OrderFilterTabsProps> = ({
       label: t('filter_all', 'Semua'),
       count: counts.Semua,
       icon: Layers,
-      activeGradient: 'from-[#9A0602] to-[#B91C1C]',
-      activeGlow: 'shadow-md shadow-[#9A0602]/25',
-      accentHover: 'hover:border-[#9A0602]/40 hover:text-[#9A0602]',
+      activeGradient: 'from-[#66000E] to-[#801010]',
+      activeGlow: 'shadow-md shadow-[#66000E]/25',
+      accentHover: 'hover:border-[#66000E]/40 hover:text-[#66000E]',
       badgeActive: 'bg-white/25 text-white border-white/30',
-      badgeInactive: 'bg-[#F4F4F5] text-[#52525B] border-[#E4E4E7]',
-      badgeHover: 'group-hover:bg-[#FFF1F0] group-hover:text-[#9A0602] group-hover:border-[#FECDCA]',
+      badgeInactive: 'bg-[#FAF7F7] text-[#706866] border-[#E5E0DD]',
+      badgeHover: 'group-hover:bg-[#F5E8EA] group-hover:text-[#66000E] group-hover:border-[#E8DDDE]',
     },
     {
       id: 'Baru',
       label: t('filter_new', 'Baru'),
       count: counts.Baru,
       icon: Sparkles,
-      activeGradient: 'from-[#9A0602] to-[#DC2626]',
-      activeGlow: 'shadow-md shadow-[#DC2626]/30',
-      accentHover: 'hover:border-[#DC2626]/40 hover:text-[#DC2626]',
-      badgeActive: 'bg-white text-[#9A0602] shadow-xs',
+      activeGradient: 'from-[#66000E] to-[#801010]',
+      activeGlow: 'shadow-md shadow-[#66000E]/25',
+      accentHover: 'hover:border-[#66000E]/40 hover:text-[#66000E]',
+      badgeActive: 'bg-white text-[#66000E] shadow-2xs',
       badgeInactive:
         counts.Baru > 0
-          ? 'bg-[#FFF1F0] text-[#DC2626] border-[#FECDCA] font-extrabold'
-          : 'bg-[#F4F4F5] text-[#52525B] border-[#E4E4E7]',
-      badgeHover: 'group-hover:bg-[#FFF1F0] group-hover:text-[#DC2626] group-hover:border-[#FECDCA]',
+          ? 'bg-[#F5E8EA] text-[#66000E] border-[#E8DDDE] font-bold'
+          : 'bg-[#FAF7F7] text-[#706866] border-[#E5E0DD]',
+      badgeHover: 'group-hover:bg-[#F5E8EA] group-hover:text-[#66000E] group-hover:border-[#E8DDDE]',
       hasAlertBadge: counts.Baru > 0,
     },
     {
@@ -206,10 +206,10 @@ export const OrderFilterTabs: React.FC<OrderFilterTabsProps> = ({
             <button
               type="button"
               onClick={() => onSelectStatus('Semua')}
-              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold text-[#777777] hover:text-[#9A0602] hover:bg-white border border-dashed border-[#D4D4D8] hover:border-[#9A0602]/50 whitespace-nowrap transition-all duration-200 shrink-0 cursor-pointer ml-auto active:scale-95 group"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold text-[#706866] hover:text-[#66000E] hover:bg-white border border-dashed border-[#E5E0DD] hover:border-[#66000E]/50 whitespace-nowrap transition-all duration-200 shrink-0 cursor-pointer ml-auto active:scale-95 group"
               title="Reset ke Semua Pesanan"
             >
-              <RotateCcw className="w-3 h-3 text-[#777777] group-hover:text-[#9A0602] group-hover:-rotate-90 transition-transform duration-300" />
+              <RotateCcw className="w-3 h-3 text-[#706866] group-hover:text-[#66000E] group-hover:-rotate-90 transition-transform duration-300" />
               <span>Reset</span>
             </button>
           )}

@@ -47,22 +47,77 @@
 
 /* Kroomify Modern Human-Designed SaaS Design Tokens */
 :root {
-  --color-primary: #DC2626;
-  --color-primary-hover: #B91C1C;
-  --color-primary-light: #FEF2F2;
-  --color-primary-border: #FEE2E2;
+  --color-primary: #66000E;
+  --color-primary-hover: #52000B;
+  --color-primary-light: #F5E8EA;
+  --color-primary-border: #E5E0DD;
   --color-background: #FAFAFA;
   --color-background-soft: #F4F4F5;
   --color-surface: #FFFFFF;
-  --color-surface-muted: #F9FAFB;
-  --color-text-primary: #111827;
-  --color-text-secondary: #4B5563;
-  --color-text-muted: #6B7280;
-  --color-border: #E5E7EB;
-  --color-border-subtle: #F3F4F6;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
+  --color-surface-muted: #FAF7F7;
+  --color-text-primary: #241A1A;
+  --color-text-secondary: #706866;
+  --color-text-muted: #948C8A;
+  --color-border: #E5E0DD;
+  --color-border-subtle: #F0ECEB;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+/* Kroomify Standard Reusable Card & Button Classes */
+.kroom-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E0DD;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+}
+@media (min-width: 640px) {
+  .kroom-card {
+    padding: 1.5rem;
+  }
+}
+
+.kroom-card-interactive {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E0DD;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease-in-out;
+}
+.kroom-card-interactive:hover {
+  border-color: rgba(102, 0, 14, 0.35);
+  box-shadow: 0 4px 12px 0 rgba(102, 0, 14, 0.04);
+}
+@media (min-width: 640px) {
+  .kroom-card-interactive {
+    padding: 1.5rem;
+  }
+}
+
+.kroom-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 42px;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.75rem;
+  background-color: #66000E;
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.kroom-btn-primary:hover {
+  background-color: #52000B;
+}
+.kroom-btn-primary:active {
+  transform: scale(0.98);
 }
 
 

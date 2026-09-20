@@ -105,7 +105,14 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
   };
 
   const completeUpgradeProcess = async (planId: 'free' | 'personal' | 'community') => {
-    await storeService.updateStore(store.id, { plan: planId });
+    const oneYearLater = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    const nowIso = new Date().toISOString();
+
+    await storeService.updateStore(store.id, { 
+      plan: planId,
+      planExpiresAt: planId === 'free' ? undefined : oneYearLater,
+      planSubscribedAt: planId === 'free' ? undefined : nowIso,
+    });
 
     // Record subscription transaction in database
     if (selectedPlan && planId !== 'free') {
@@ -120,8 +127,8 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
         status: 'paid',
         paymentMethod: paymentMethod === 'qris' ? 'Midtrans QRIS' : 'Midtrans BCA VA',
         invoiceNumber,
-        paidAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        paidAt: nowIso,
+        expiresAt: oneYearLater,
       });
     }
 
@@ -194,11 +201,11 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/50 backdrop-blur-xs animate-in fade-in duration-150 font-sans">
-      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-xl border border-gray-200 overflow-hidden flex flex-col max-h-[92vh] text-left">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/50 backdrop-blur-xs animate-in fade-in duration-150 font-poppins">
+      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-xl border border-[#E5E0DD] overflow-hidden flex flex-col max-h-[92vh] text-left">
         
         {/* Header */}
-        <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+        <div className="px-5 py-3.5 border-b border-[#E5E0DD] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold">
               <Crown className="w-4 h-4" />
@@ -241,8 +248,8 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                       key={plan.id}
                       className={`relative rounded-xl p-4 flex flex-col justify-between transition-all border ${
                         plan.highlight
-                          ? 'border-[#66000E] bg-[#FDF8F8] shadow-sm'
-                          : 'border-gray-200 bg-white hover:border-gray-300'
+                          ? 'border-[#66000E] bg-[#F5E8EA]/30 shadow-sm'
+                          : 'border-[#E5E0DD] bg-white hover:border-[#D5D0CD]'
                       }`}
                     >
                       {plan.badge && (
@@ -268,7 +275,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                           <span className="text-[11px] text-gray-500 ml-1">/ tahun</span>
                         </div>
 
-                        <div className="space-y-1.5 pt-2.5 border-t border-gray-100 text-xs text-gray-700">
+                        <div className="space-y-1.5 pt-2.5 border-t border-[#E5E0DD] text-xs text-gray-700">
                           {plan.features.map((feat, idx) => (
                             <div key={idx} className="flex items-start gap-1.5">
                               <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
@@ -285,10 +292,10 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                           onClick={() => handleSelectPlan(plan)}
                           className={`w-full py-2 rounded-lg font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-1 ${
                             isCurrent
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-[#E5E0DD]'
                               : plan.highlight
-                              ? 'bg-[#66000E] hover:bg-[#55000C] text-white shadow-xs'
-                              : 'bg-white hover:bg-gray-50 text-gray-800 border border-gray-200'
+                              ? 'bg-[#66000E] hover:bg-[#52000B] text-white shadow-xs'
+                              : 'bg-white hover:bg-gray-50 text-gray-800 border border-[#E5E0DD]'
                           }`}
                         >
                           <span>{isCurrent ? 'Paket Saat Ini' : `Pilih ${plan.name}`}</span>
@@ -308,7 +315,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
           {paymentStep === 'checkout' && selectedPlan && (
             <div className="max-w-md mx-auto space-y-4">
               
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-2 text-xs">
+              <div className="bg-gray-50 rounded-xl p-4 border border-[#E5E0DD] space-y-2 text-xs">
                 <div className="flex items-center justify-between text-gray-600">
                   <span>Paket Langganan:</span>
                   <span className="font-semibold text-gray-900">{selectedPlan.name} (1 Tahun)</span>
@@ -317,7 +324,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                   <span>Masa Aktif:</span>
                   <span className="font-semibold text-gray-900">365 Hari</span>
                 </div>
-                <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+                <div className="pt-2 border-t border-[#E5E0DD] flex items-center justify-between">
                   <span className="font-medium text-gray-900">Total Tagihan:</span>
                   <span className="text-base font-bold text-[#66000E]">
                     {formatRupiah(selectedPlan.priceYearly)}
@@ -346,7 +353,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                     className={`p-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-2 transition cursor-pointer ${
                       paymentMethod === 'qris'
                         ? 'border-[#66000E] bg-[#F5E8EA] text-[#66000E] font-bold shadow-2xs'
-                        : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                        : 'border-[#E5E0DD] bg-white text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     <QrCode className="w-4 h-4 text-[#66000E]" />
@@ -359,7 +366,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                     className={`p-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-2 transition cursor-pointer ${
                       paymentMethod === 'bca_va'
                         ? 'border-[#66000E] bg-[#F5E8EA] text-[#66000E] font-bold shadow-2xs'
-                        : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                        : 'border-[#E5E0DD] bg-white text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     <CreditCard className="w-4 h-4 text-[#66000E]" />
@@ -369,11 +376,11 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
               </div>
 
               {/* QRIS / VA Box */}
-              <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-xs text-center space-y-3">
+              <div className="bg-white rounded-xl p-4 border border-[#E5E0DD] shadow-xs text-center space-y-3">
                 {paymentMethod === 'qris' ? (
                   <>
                     <p className="text-xs text-gray-500">Scan kode QRIS resmi dengan m-Banking atau E-Wallet apa saja</p>
-                    <div className="w-36 h-36 mx-auto bg-white p-2 rounded-xl border border-gray-200 shadow-2xs flex items-center justify-center">
+                    <div className="w-36 h-36 mx-auto bg-white p-2 rounded-xl border border-[#E5E0DD] shadow-2xs flex items-center justify-center">
                       <img
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`MIDTRANS_SUB_${selectedPlan.id}_${Date.now()}`)}&color=66000E`}
                         alt="QRIS Tagihan Midtrans"
@@ -385,12 +392,12 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                 ) : (
                   <>
                     <p className="text-xs text-gray-500">Transfer ke Nomor Virtual Account Bank:</p>
-                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-1">
+                    <div className="p-3 bg-gray-50 rounded-xl border border-[#E5E0DD] space-y-1">
                       <div className="flex items-center justify-between text-[11px] text-gray-500">
                         <span>BCA Virtual Account (Midtrans):</span>
                         <span className="font-bold text-[#66000E] text-[10px]">Otomatis Terverifikasi</span>
                       </div>
-                      <div className="bg-white p-2 rounded-lg border border-gray-200 font-mono font-bold text-gray-900 text-sm tracking-wider">
+                      <div className="bg-white p-2 rounded-lg border border-[#E5E0DD] font-mono font-bold text-gray-900 text-sm tracking-wider">
                         8099 2819 0048 2910
                       </div>
                     </div>
@@ -401,7 +408,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                   type="button"
                   disabled={isProcessing}
                   onClick={() => handleConfirmUpgrade(selectedPlan.id)}
-                  className="w-full py-2.5 rounded-lg bg-[#66000E] hover:bg-[#55000C] text-white text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{isProcessing ? 'Memverifikasi Pembayaran...' : 'Konfirmasi Bayar Lunas (Midtrans)'}</span>

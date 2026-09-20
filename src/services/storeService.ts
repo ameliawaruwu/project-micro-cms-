@@ -145,6 +145,8 @@ class StoreService {
           currency: 'IDR',
           balance: Number(row.balance || 0),
           plan: row.plan || 'free',
+          planExpiresAt: row.plan_expires_at || row.theme_settings?.planExpiresAt || undefined,
+          planSubscribedAt: row.plan_subscribed_at || row.theme_settings?.planSubscribedAt || undefined,
           layoutSettings: row.theme_settings,
           customDomain: row.custom_domain,
           onboarding: {
@@ -273,7 +275,15 @@ class StoreService {
       if (updates.plan !== undefined) dbUpdates.plan = updates.plan;
       if (updates.balance !== undefined) dbUpdates.balance = updates.balance;
       if (updates.customDomain !== undefined) dbUpdates.custom_domain = updates.customDomain;
-      if (updates.layoutSettings !== undefined) dbUpdates.theme_settings = updates.layoutSettings;
+      
+      const combinedThemeSettings = {
+        ...(stores[index].layoutSettings || {}),
+        ...(updates.layoutSettings || {}),
+        ...(updates.planExpiresAt ? { planExpiresAt: updates.planExpiresAt } : {}),
+        ...(updates.planSubscribedAt ? { planSubscribedAt: updates.planSubscribedAt } : {}),
+      };
+      dbUpdates.theme_settings = combinedThemeSettings;
+      stores[index].layoutSettings = combinedThemeSettings;
       await supabase.from('stores').update(dbUpdates).eq('id', storeId);
       console.log(`[Supabase Database] Toko ${storeId} berhasil diperbarui di cloud.`);
     } catch (err) {

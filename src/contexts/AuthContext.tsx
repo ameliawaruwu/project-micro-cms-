@@ -48,16 +48,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // 1. Check local session
+        // 1. Check local session & validate with Supabase database
         const current = authService.getCurrentUser();
         if (current.user) {
-          setUser(current.user);
-          setMerchant(current.merchant);
-          setStore(current.store);
+          const isValid = await authService.validateSessionWithDatabase(current.user.id, current.user.email);
+          if (isValid) {
+            setUser(current.user);
+            setMerchant(current.merchant);
+            setStore(current.store);
+          } else {
+            console.warn('[AuthContext] Sesi dibatalkan karena akun telah dihapus dari database Supabase.');
+            setUser(null);
+            setMerchant(null);
+            setStore(null);
+          }
         }
-
-        // Background sync any existing local accounts to Supabase
-        authService.syncLocalAccountsToSupabase().catch((err) => console.warn('Background sync error:', err));
 
         // 2. Check Supabase OAuth session (if redirected from Google)
         const { data: { session } } = await supabase.auth.getSession();

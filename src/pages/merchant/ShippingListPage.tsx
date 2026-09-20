@@ -77,16 +77,16 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
       </div>
 
       {/* Subtab Navigation (Responsive Segmented Dock Container) */}
-      <div className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex items-center gap-1 sm:gap-2 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl bg-[#F8F9FA] border border-[#EAEAEA] shadow-2xs font-poppins">
+      <div className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex items-center gap-1 sm:gap-2 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl bg-[#F8F9FA] border border-[#E5E0DD] shadow-2xs font-poppins">
         <button
           onClick={() => setActiveSubTab('branches')}
           className={`group relative flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2 min-h-[38px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 ease-out cursor-pointer select-none active:scale-[0.97] ${
             activeSubTab === 'branches'
-              ? 'bg-gradient-to-r from-[#9A0602] to-[#B91C1C] text-white shadow-xs font-bold z-10'
-              : 'bg-white text-[#555555] hover:bg-white/95 border border-[#EAEAEA] hover:border-[#9A0602]/40 hover:text-[#9A0602]'
+              ? 'bg-gradient-to-r from-[#66000E] to-[#801010] text-white shadow-xs font-bold z-10'
+              : 'bg-white text-[#555555] hover:bg-white/95 border border-[#E5E0DD] hover:border-[#66000E]/40 hover:text-[#66000E]'
           }`}
         >
-          <Warehouse className={`w-3.5 h-3.5 shrink-0 transition-colors duration-200 ${activeSubTab === 'branches' ? 'text-white' : 'text-[#777777] group-hover:text-[#9A0602]'}`} />
+          <Warehouse className={`w-3.5 h-3.5 shrink-0 transition-colors duration-200 ${activeSubTab === 'branches' ? 'text-white' : 'text-[#777777] group-hover:text-[#66000E]'}`} />
           <span className="hidden sm:inline">{t('tab_branches', 'Cabang & Gudang Asal')}</span>
           <span className="sm:hidden">{t('tab_branches_short', 'Cabang Gudang')}</span>
         </button>
@@ -95,11 +95,11 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
           onClick={() => setActiveSubTab('couriers')}
           className={`group relative flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2 min-h-[38px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 ease-out cursor-pointer select-none active:scale-[0.97] ${
             activeSubTab === 'couriers'
-              ? 'bg-gradient-to-r from-[#9A0602] to-[#B91C1C] text-white shadow-xs font-bold z-10'
-              : 'bg-white text-[#555555] hover:bg-white/95 border border-[#EAEAEA] hover:border-[#9A0602]/40 hover:text-[#9A0602]'
+              ? 'bg-gradient-to-r from-[#66000E] to-[#801010] text-white shadow-xs font-bold z-10'
+              : 'bg-white text-[#555555] hover:bg-white/95 border border-[#E5E0DD] hover:border-[#66000E]/40 hover:text-[#66000E]'
           }`}
         >
-          <Truck className={`w-3.5 h-3.5 shrink-0 transition-colors duration-200 ${activeSubTab === 'couriers' ? 'text-white' : 'text-[#777777] group-hover:text-[#9A0602]'}`} />
+          <Truck className={`w-3.5 h-3.5 shrink-0 transition-colors duration-200 ${activeSubTab === 'couriers' ? 'text-white' : 'text-[#777777] group-hover:text-[#66000E]'}`} />
           <span className="hidden sm:inline">{t('tab_couriers', 'Pilihan Kurir & Ekspedisi')}</span>
           <span className="sm:hidden">{t('tab_couriers_short', 'Kurir & Ekspedisi')}</span>
         </button>

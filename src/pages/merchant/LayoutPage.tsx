@@ -148,9 +148,14 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   );
 
-  const displayProducts = (pageMode === 'preview' || !products || products.length === 0) 
-    ? cmsProducts 
-    : products;
+  // Keep useCmsStore synchronized when merchant products are updated
+  useEffect(() => {
+    if (products && products.length > 0) {
+      useCmsStore.getState().setProductsFromMerchant(products);
+    }
+  }, [products]);
+
+  const displayProducts = cmsProducts.length > 0 ? cmsProducts : (products || []);
 
   // Multi-page sections map state
   const [pageSectionsMap, setPageSectionsMap] = useState<Record<string, StoreSectionConfig[]>>(() => {

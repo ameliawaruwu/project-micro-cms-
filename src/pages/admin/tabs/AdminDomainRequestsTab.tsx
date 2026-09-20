@@ -25,11 +25,13 @@ import { formatRupiah } from '../../../utils/formatters';
 interface AdminDomainRequestsTabProps {
   language: string;
   onShowToast?: (msg: string) => void;
+  onRequestUpdated?: () => void;
 }
 
 export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
   language,
   onShowToast,
+  onRequestUpdated,
 }) => {
   const isEn = language === 'en';
 
@@ -78,6 +80,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
     if (!selectedRequestForApprove) return;
     await domainRequestService.approveRequest(selectedRequestForApprove.id, approvePrice);
     await loadRequests();
+    if (onRequestUpdated) onRequestUpdated();
     setSelectedRequestForApprove(null);
     if (onShowToast) onShowToast(`Permintaan domain ${selectedRequestForApprove.fullDomain} berhasil disetujui!`);
   };
@@ -97,6 +100,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
     const suggestions = [suggestion1, suggestion2, suggestion3].filter((s) => s.trim().length > 0);
     await domainRequestService.rejectRequest(selectedRequestForReject.id, suggestions, adminNotes);
     await loadRequests();
+    if (onRequestUpdated) onRequestUpdated();
     setSelectedRequestForReject(null);
     if (onShowToast) onShowToast(`Permintaan domain ${selectedRequestForReject.fullDomain} ditolak dengan saran.`);
   };

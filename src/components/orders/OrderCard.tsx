@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Send,
-  MessageCircle,
   Printer,
   Copy,
   Check,
@@ -12,7 +11,7 @@ import {
   Eye,
 } from 'lucide-react';
 import { Order } from '../../types';
-import { formatRupiah, formatDateIndo, generateWhatsAppLink, generateTrackingLink } from '../../utils/formatters';
+import { formatRupiah, formatDateIndo, generateTrackingLink } from '../../utils/formatters';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface OrderCardProps {
@@ -65,17 +64,17 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Baru':
-        return 'bg-[#FFF1F0] text-[#9A0602] border-[#FECDCA]';
+        return 'bg-[#F5E8EA] text-[#66000E] border-[#E8DDDE]';
       case 'Diproses':
-        return 'bg-[#F7F7F7] text-[#1F1F1F] border-[#EAEAEA]';
+        return 'bg-[#FFF7ED] text-[#C2410C] border-[#FFEDD5]';
       case 'Dikirim':
-        return 'bg-[#FFF1F0] text-[#9A0602] border-[#FECDCA]';
+        return 'bg-[#EFF8FF] text-[#175CD3] border-[#B2DDFF]';
       case 'Selesai':
         return 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]';
       case 'Dibatalkan':
         return 'bg-[#FEF3F2] text-[#B42318] border-[#FECDCA]';
       default:
-        return 'bg-[#F7F7F7] text-[#555555] border-[#EAEAEA]';
+        return 'bg-[#FAF7F7] text-[#706866] border-[#E5E0DD]';
     }
   };
 
@@ -83,26 +82,24 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     ? new Date(order.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : formatDateIndo(order.createdAt);
 
-  const waMessage = `Halo Kak ${order.customerName}, konfirmasi pesanan (${order.orderNumber}):\nTotal: ${formatRupiah(order.grandTotal)}\nStatus: ${order.shippingStatus}${order.resiNumber ? `\nNo. Resi: ${order.resiNumber}` : ''}\n\nTerima kasih sudah belanja di toko kami! 🙏`;
-
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl border border-[#EAEAEA] shadow-2xs hover:border-[#CCCCCC] transition-all p-3 sm:p-5 flex flex-col gap-2.5 sm:gap-4 font-sans">
+    <div className="bg-white rounded-2xl border border-[#E5E0DD] shadow-2xs hover:border-[#66000E]/30 transition-all p-3.5 sm:p-5 flex flex-col gap-2.5 sm:gap-4 font-sans">
       {/* Top row: Order Number, Customer, Date, Status */}
-      <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#F0F0F0]">
+      <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#E5E0DD]">
         <div
           onClick={() => onSelectOrder && onSelectOrder(order)}
           className={`flex items-center gap-1.5 sm:gap-2 min-w-0 ${onSelectOrder ? 'cursor-pointer group' : ''}`}
           title={onSelectOrder ? 'Klik untuk melihat detail lengkap & tracking pesanan' : undefined}
         >
-          <span className="font-bold text-xs sm:text-base text-[#1F1F1F] tracking-tight group-hover:text-[#9A0602] transition shrink-0">
+          <span className="font-bold text-xs sm:text-base text-[#241A1A] tracking-tight group-hover:text-[#66000E] transition shrink-0">
             #{order.orderNumber}
           </span>
-          <span className="text-[#CCCCCC] shrink-0">•</span>
-          <span className="font-semibold text-xs sm:text-sm text-[#555555] group-hover:text-[#1F1F1F] transition truncate">
+          <span className="text-[#706866] shrink-0">•</span>
+          <span className="font-semibold text-xs sm:text-sm text-[#706866] group-hover:text-[#241A1A] transition truncate">
             {order.customerName}
           </span>
           {onSelectOrder && (
-            <span className="text-[10px] text-[#777777] bg-[#F7F7F7] px-1.5 py-0.5 rounded-md border border-[#EAEAEA] group-hover:border-[#FECDCA] group-hover:text-[#9A0602] group-hover:bg-[#FFF1F0] transition hidden sm:inline-flex items-center gap-1 shrink-0">
+            <span className="text-[10px] text-[#706866] bg-[#FAF7F7] px-2 py-0.5 rounded-lg border border-[#E5E0DD] group-hover:border-[#E8DDDE] group-hover:text-[#66000E] group-hover:bg-[#F5E8EA] transition hidden sm:inline-flex items-center gap-1 shrink-0">
               <Eye className="w-3 h-3" />
               <span>{t('detail_short', 'Detail')}</span>
             </span>
@@ -164,11 +161,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         </div>
 
         {/* Customer Address & Courier */}
-        <div className="bg-[#F9F9F9] rounded-xl px-2.5 py-2 sm:p-3.5 border border-[#EAEAEA] text-xs space-y-1 sm:space-y-1.5 flex flex-col justify-between">
+        <div className="bg-[#F9F9F9] rounded-xl px-2.5 py-2 sm:p-3.5 border border-[#E5E0DD] text-xs space-y-1 sm:space-y-1.5 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-1.5">
               <div className="flex items-center gap-1.5 font-semibold text-[#1F1F1F] text-[11px] sm:text-xs truncate">
-                <MapPin className="w-3.5 h-3.5 text-[#9A0602] shrink-0" />
+                <MapPin className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
                 <span className="truncate">{order.customerCity}</span>
                 <span className="text-[#CCCCCC] hidden sm:inline">•</span>
                 <span className="text-[#555555] font-normal hidden sm:inline">{order.courier}</span>
@@ -181,7 +178,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             <p className="text-[11px] text-[#777777] font-mono mt-0.5 hidden sm:block">WA: {order.customerPhone}</p>
           </div>
 
-          <div className="pt-2 border-t border-[#EAEAEA] hidden sm:flex items-center justify-between">
+          <div className="pt-2 border-t border-[#E5E0DD] hidden sm:flex items-center justify-between">
             <span className="font-semibold text-[#1F1F1F]">{t('courier_colon', 'Kurir:')} {order.courier}</span>
             <span className="font-semibold text-[#027A48] bg-[#ECFDF3] border border-[#ABEFC6] px-2 py-0.5 rounded-md text-[10px]">
               {order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Sudah Dibayar') : (order.paymentStatus === 'Belum Dibayar' ? t('order_unpaid', 'Belum Dibayar') : order.paymentStatus)}
@@ -192,11 +189,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
       {/* Resi Box if shipped */}
       {order.resiNumber && (
-        <div className="p-2 sm:p-3 bg-[#F9F9F9] rounded-xl border border-[#EAEAEA] flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="p-2 sm:p-3 bg-[#F9F9F9] rounded-xl border border-[#E5E0DD] flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <Package className="w-3.5 h-3.5 text-[#9A0602]" />
+            <Package className="w-3.5 h-3.5 text-[#66000E]" />
             <span className="font-semibold text-[#1F1F1F] text-[11px] sm:text-xs">{t('resi_colon', 'Resi')} {order.courier}:</span>
-            <span className="font-mono font-bold text-[#1F1F1F] bg-white px-2 py-0.5 rounded border border-[#EAEAEA] text-[11px]">
+            <span className="font-mono font-bold text-[#1F1F1F] bg-white px-2 py-0.5 rounded border border-[#E5E0DD] text-[11px]">
               {order.resiNumber}
             </span>
           </div>
@@ -204,16 +201,16 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleCopyResi}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-[#EAEAEA] hover:bg-[#F7F7F7] text-[#1F1F1F] font-semibold text-[10px] sm:text-[11px] transition cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#E5E0DD] hover:bg-[#FAF7F7] text-[#241A1A] font-semibold text-[10px] sm:text-[11px] transition cursor-pointer"
             >
-              {copiedResi ? <Check className="w-3 h-3 text-[#027A48]" /> : <Copy className="w-3 h-3 text-[#777777]" />}
+              {copiedResi ? <Check className="w-3 h-3 text-[#027A48]" /> : <Copy className="w-3 h-3 text-[#706866]" />}
               <span>{copiedResi ? t('copied', 'Tersalin') : t('copy_resi', 'Salin')}</span>
             </button>
             <a
               href={generateTrackingLink(order.courier, order.resiNumber)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-[10px] sm:text-[11px] transition"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-[10px] sm:text-[11px] transition cursor-pointer active:scale-98"
             >
               <ExternalLink className="w-3 h-3" />
               <span>{t('check_tracking', 'Lacak')}</span>
@@ -223,16 +220,16 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       )}
 
       {/* Bottom Bar: Total & Actions */}
-      <div className="pt-2 sm:pt-3 border-t border-[#F0F0F0] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+      <div className="pt-2 sm:pt-3 border-t border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
         <div className="flex items-center justify-between sm:block">
           <div>
-            <span className="text-[10px] sm:text-[11px] text-[#777777] block font-medium leading-tight">{t('total_payment', 'Total Pembayaran')}</span>
-            <span className="font-bold text-sm sm:text-lg text-[#1F1F1F] block">
+            <span className="text-[10px] sm:text-[11px] text-[#706866] block font-medium leading-tight">{t('total_payment', 'Total Pembayaran')}</span>
+            <span className="font-bold text-sm sm:text-lg text-[#241A1A] block">
               {formatRupiah(order.grandTotal)}
             </span>
           </div>
 
-          {/* Mobile Quick Action Icons (Print & WhatsApp) */}
+          {/* Mobile Quick Action Icons (Print) */}
           <div className="flex sm:hidden items-center gap-1.5">
             {order.shippingLabelUrl ? (
               <a
@@ -243,7 +240,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 }
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-xl border border-[#FECDCA] bg-[#FFF1F0] text-[#9A0602] hover:bg-[#FEE4E2] transition cursor-pointer"
+                className="p-2 rounded-xl border border-[#E8DDDE] bg-[#F5E8EA] text-[#66000E] hover:bg-[#F9EDEF] transition cursor-pointer"
                 title="Cetak Label Pengiriman"
               >
                 <Printer className="w-4 h-4" />
@@ -251,22 +248,12 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             ) : (
               <button
                 onClick={() => onPrintReceipt(order)}
-                className="p-2 rounded-xl border border-[#EAEAEA] bg-white text-[#555555] hover:bg-[#F7F7F7] transition cursor-pointer"
+                className="p-2 rounded-xl border border-[#E5E0DD] bg-white text-[#706866] hover:bg-[#FAF7F7] transition cursor-pointer"
                 title="Cetak Struk"
               >
                 <Printer className="w-4 h-4" />
               </button>
             )}
-
-            <a
-              href={generateWhatsAppLink(order.customerPhone, waMessage)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 rounded-xl border border-[#ABEFC6] bg-white text-[#027A48] hover:bg-[#ECFDF3] transition"
-              title="Chat WhatsApp Pembeli"
-            >
-              <MessageCircle className="w-4 h-4" />
-            </a>
           </div>
         </div>
 
@@ -283,7 +270,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 }
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 px-2.5 py-2 min-h-[38px] rounded-xl border border-[#FECDCA] bg-[#FFF1F0] text-[#9A0602] hover:bg-[#FEE4E2] font-semibold text-xs transition cursor-pointer"
+                className="flex items-center gap-1 px-3 py-2 min-h-[38px] rounded-xl border border-[#E8DDDE] bg-[#F5E8EA] text-[#66000E] hover:bg-[#F9EDEF] font-semibold text-xs transition cursor-pointer"
                 title="Cetak Label Pengiriman PDF (Biteship)"
               >
                 <Printer className="w-4 h-4" />
@@ -292,7 +279,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             ) : (
               <button
                 onClick={() => onPrintReceipt(order)}
-                className="p-2.5 rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] transition cursor-pointer"
+                className="p-2.5 rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer"
                 title="Cetak Struk Thermal / Label"
               >
                 <Printer className="w-4 h-4" />
@@ -304,30 +291,19 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           {onSelectOrder && (
             <button
               onClick={() => onSelectOrder(order)}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-white hover:bg-[#F7F7F7] text-[#1F1F1F] font-semibold text-xs border border-[#EAEAEA] transition cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-white hover:bg-[#FAF7F7] text-[#241A1A] font-semibold text-xs border border-[#E5E0DD] transition cursor-pointer shadow-2xs"
               title="Lihat Detail Lengkap & Tracking"
             >
-              <Eye className="w-3.5 h-3.5 text-[#777777]" />
+              <Eye className="w-3.5 h-3.5 text-[#706866]" />
               <span>{t('detail_and_track', 'Detail & Lacak')}</span>
             </button>
           )}
-
-          {/* Desktop Contact WhatsApp */}
-          <a
-            href={generateWhatsAppLink(order.customerPhone, waMessage)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:flex items-center justify-center gap-1.5 px-3 py-2 min-h-[38px] rounded-xl bg-white hover:bg-[#F7F7F7] text-[#027A48] font-semibold text-xs border border-[#ABEFC6] transition"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>{t('chat_buyer', 'Chat Pembeli')}</span>
-          </a>
 
           {/* Primary Action Button */}
           {order.shippingStatus === 'Baru' || order.shippingStatus === 'Diproses' ? (
             <button
               onClick={() => onProcessShipping(order)}
-              className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{t('arrange_shipping', 'Atur Pengiriman')}</span>
@@ -335,7 +311,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           ) : (order.shippingStatus === 'Dikirim' || order.shippingStatus === 'ready_to_ship') && onMarkCompleted ? (
             <button
               onClick={() => onMarkCompleted(order.id)}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{t('mark_completed', 'Tandai Selesai')}</span>

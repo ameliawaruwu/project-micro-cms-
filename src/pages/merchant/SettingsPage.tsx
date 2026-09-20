@@ -397,7 +397,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1.5">
-                  Nama Toko UMKM <span className="text-[#9A0602]">*</span>
+                  Nama Toko UMKM <span className="text-[#66000E]">*</span>
                 </label>
                 <input
                   type="text"
@@ -405,7 +405,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Masukkan nama toko online Anda"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs font-semibold text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs font-semibold text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
                 />
               </div>
 
@@ -418,7 +418,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   value={formData.tagline}
                   onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
                   placeholder="Misal: Toko Resmi Oleh-oleh Khas Nusantara"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
                 />
               </div>
 
@@ -431,13 +431,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Tuliskan deskripsi singkat mengenai produk dan keunggulan toko Anda..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1.5">
-                  Nomor WhatsApp Toko <span className="text-[#9A0602]">*</span>
+                  Nomor WhatsApp Toko <span className="text-[#66000E]">*</span>
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-[#777777] absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -447,14 +447,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     value={formData.phoneWhatsApp}
                     onChange={(e) => setFormData({ ...formData, phoneWhatsApp: e.target.value })}
                     placeholder="Contoh: 081234567890"
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
                   />
                 </div>
               </div>
             </div>
 
             {/* SECTION 2: HIERARKI ALAMAT TOKO (MENGERUCUT DARI PROVINSI HINGGA DETAIL) */}
-            <div className="pt-4 border-t border-[#EAEAEA] space-y-4">
+            <div className="pt-4 border-t border-[#E5E0DD] space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-[#66000E]" />
@@ -472,14 +472,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 {/* Dropdown Provinsi */}
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1.5 flex items-center justify-between">
-                    <span>Provinsi <span className="text-[#9A0602]">*</span></span>
+                    <span>Provinsi <span className="text-[#66000E]">*</span></span>
                     {loadingProvinces && <Loader2 className="w-3 h-3 animate-spin text-[#66000E]" />}
                   </label>
                   <select
                     required
                     value={selectedProvinceId}
                     onChange={handleProvinceChange}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs font-medium text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
                   >
                     <option value="">-- Pilih Provinsi --</option>
                     {provinces.map((p) => (
@@ -496,7 +496,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 {/* Dropdown Kabupaten / Kota */}
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1.5 flex items-center justify-between">
-                    <span>Kabupaten / Kota <span className="text-[#9A0602]">*</span></span>
+                    <span>Kabupaten / Kota <span className="text-[#66000E]">*</span></span>
                     {loadingRegencies && <Loader2 className="w-3 h-3 animate-spin text-[#66000E]" />}
                   </label>
                   <select
@@ -504,7 +504,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     disabled={!selectedProvinceId && regencies.length === 0}
                     value={selectedRegencyId}
                     onChange={handleRegencyChange}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs font-medium text-[#1F1F1F] bg-white disabled:bg-gray-50 disabled:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#1F1F1F] bg-white disabled:bg-gray-50 disabled:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
                   >
                     <option value="">
                       {!selectedProvinceId ? '-- Pilih Provinsi Terlebih Dahulu --' : '-- Pilih Kabupaten / Kota --'}
@@ -526,7 +526,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 {/* Dropdown Kecamatan */}
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1.5 flex items-center justify-between">
-                    <span>Kecamatan <span className="text-[#9A0602]">*</span></span>
+                    <span>Kecamatan <span className="text-[#66000E]">*</span></span>
                     {loadingDistricts && <Loader2 className="w-3 h-3 animate-spin text-[#66000E]" />}
                   </label>
                   <select
@@ -534,7 +534,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     disabled={!selectedRegencyId && districts.length === 0}
                     value={selectedDistrictId}
                     onChange={handleDistrictChange}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs font-medium text-[#1F1F1F] bg-white disabled:bg-gray-50 disabled:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#1F1F1F] bg-white disabled:bg-gray-50 disabled:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
                   >
                     <option value="">
                       {!selectedRegencyId ? '-- Pilih Kabupaten Dahulu --' : '-- Pilih Kecamatan --'}
@@ -553,7 +553,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 {/* Dropdown Desa / Kelurahan */}
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1.5 flex items-center justify-between">
-                    <span>Desa / Kelurahan <span className="text-[#9A0602]">*</span></span>
+                    <span>Desa / Kelurahan <span className="text-[#66000E]">*</span></span>
                     {loadingVillages && <Loader2 className="w-3 h-3 animate-spin text-[#66000E]" />}
                   </label>
                   <select
@@ -561,7 +561,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     disabled={!selectedDistrictId && villages.length === 0}
                     value={selectedVillageId}
                     onChange={handleVillageChange}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs font-medium text-[#1F1F1F] bg-white disabled:bg-gray-50 disabled:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] cursor-pointer"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#1F1F1F] bg-white disabled:bg-gray-50 disabled:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
                   >
                     <option value="">
                       {!selectedDistrictId ? '-- Pilih Kecamatan Dahulu --' : '-- Pilih Desa / Kelurahan --'}
@@ -581,7 +581,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               {/* Kode Pos (Dropdown Pilihan) */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1.5 flex items-center gap-1.5">
-                  <span>Kode Pos <span className="text-[#9A0602]">*</span></span>
+                  <span>Kode Pos <span className="text-[#66000E]">*</span></span>
                   {loadingPostalCodes && (
                     <Loader2 className="w-3 h-3 animate-spin text-[#66000E]" />
                   )}
@@ -592,7 +592,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   disabled={!selectedVillageId && postalCodes.length === 0}
                   value={formData.postalCode}
                   onChange={handlePostalCodeChange}
-                  className="w-full sm:max-w-xs px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs font-medium text-[#1F1F1F] bg-white disabled:bg-gray-50 disabled:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] cursor-pointer"
+                  className="w-full sm:max-w-xs px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#1F1F1F] bg-white disabled:bg-gray-50 disabled:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
                 >
                   <option value="">
                     {!selectedVillageId
@@ -620,7 +620,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               {/* Alamat Jalan / Utama */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1.5">
-                  Alamat (Nama Jalan, No. Bangunan, RT/RW) <span className="text-[#9A0602]">*</span>
+                  Alamat (Nama Jalan, No. Bangunan, RT/RW) <span className="text-[#66000E]">*</span>
                 </label>
                 <input
                   type="text"
@@ -628,7 +628,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   placeholder="Contoh: Jl. Riau No. 112, RT 03/RW 02"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
                 />
               </div>
 
@@ -642,7 +642,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   value={formData.addressDetail}
                   onChange={(e) => setFormData({ ...formData, addressDetail: e.target.value })}
                   placeholder="Contoh: Ruko Sentra Niaga Blok B-12, Seberang Taman Fotografi"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
                 />
               </div>
 

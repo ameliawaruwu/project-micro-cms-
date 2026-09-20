@@ -131,7 +131,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
             placeholder={t('branch_search_placeholder', 'Cari nama gudang, kota, nama PIC, atau kode pos...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 sm:py-2.5 bg-white rounded-xl border border-[#EAEAEA] text-xs text-[#1F1F1F] placeholder:text-[#999999] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] shadow-2xs transition"
+            className="w-full pl-9 pr-8 py-2 sm:py-2.5 bg-white rounded-xl border border-[#E5E0DD] text-xs text-[#1F1F1F] placeholder:text-[#999999] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] shadow-2xs transition"
           />
           {searchQuery && (
             <button
@@ -144,13 +144,13 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
         </div>
 
         <div className="flex items-center gap-2 justify-between sm:justify-end shrink-0">
-          <div className="px-3 py-2 bg-white rounded-xl border border-[#EAEAEA] text-xs font-semibold text-[#555555] shadow-2xs whitespace-nowrap">
+          <div className="px-3 py-2 bg-white rounded-xl border border-[#E5E0DD] text-xs font-semibold text-[#555555] shadow-2xs whitespace-nowrap">
             {filteredBranches.length} {t('branch_count_label', 'Cabang')}
           </div>
 
           <button
             onClick={handleOpenAddModal}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl bg-gradient-to-r from-[#9A0602] to-[#B91C1C] hover:brightness-110 text-white font-semibold text-xs transition shadow-xs cursor-pointer active:scale-[0.98]"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl bg-gradient-to-r from-[#66000E] to-[#801010] hover:brightness-110 text-white font-semibold text-xs transition shadow-xs cursor-pointer active:scale-[0.98]"
           >
             <Plus className="w-4 h-4 shrink-0" />
             <span>{t('branch_add_button', 'Tambah Cabang')}</span>
@@ -160,12 +160,12 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
 
       {/* Branch List */}
       {isLoading ? (
-        <div className="p-8 text-center bg-white rounded-2xl border border-[#EAEAEA] text-xs text-[#777777]">
+        <div className="p-8 text-center bg-white rounded-2xl border border-[#E5E0DD] text-xs text-[#777777]">
           {t('branch_loading', 'Memuat data cabang gudang...')}
         </div>
       ) : filteredBranches.length === 0 ? (
         <div className="p-8 sm:p-10 text-center bg-white rounded-2xl border border-dashed border-[#CCCCCC] text-xs text-[#777777] space-y-3">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-[#FFF1F0] text-[#9A0602] flex items-center justify-center">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center">
             <Warehouse className="w-6 h-6" />
           </div>
           <p className="font-bold text-sm text-[#1F1F1F]">
@@ -179,7 +179,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
           {!searchQuery && (
             <button
               onClick={handleOpenAddModal}
-              className="mt-2 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#9A0602] to-[#B91C1C] hover:brightness-110 text-white font-semibold text-xs shadow-xs transition cursor-pointer active:scale-[0.98]"
+              className="mt-2 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#66000E] to-[#801010] hover:brightness-110 text-white font-semibold text-xs shadow-xs transition cursor-pointer active:scale-[0.98]"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Cabang / Gudang Pertama</span>
@@ -193,8 +193,8 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
               key={branch.id}
               className={`p-3.5 sm:p-4 rounded-2xl border transition-all bg-white relative flex flex-col justify-between gap-2.5 ${
                 branch.isDefault
-                  ? 'border-[#9A0602]/50 shadow-xs ring-1 ring-[#9A0602]/15 bg-gradient-to-b from-[#FFFDFD] to-white'
-                  : 'border-[#EAEAEA] hover:border-[#D5CEC9] shadow-2xs'
+                  ? 'border-[#66000E]/50 shadow-xs ring-1 ring-[#66000E]/15 bg-gradient-to-b from-[#FFFDFD] to-white'
+                  : 'border-[#E5E0DD] hover:border-[#D5CEC9] shadow-2xs'
               }`}
             >
               {/* Header Card: Name, PIC & Status */}
@@ -204,7 +204,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                     <div
                       className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
                         branch.isDefault
-                          ? 'bg-[#FFF1F0] text-[#9A0602]'
+                          ? 'bg-[#F5E8EA] text-[#66000E]'
                           : 'bg-[#F5F5F5] text-[#555555]'
                       }`}
                     >
@@ -217,22 +217,22 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                           {branch.branchName}
                         </h4>
                         {branch.isDefault && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#FFF1F0] text-[#9A0602] border border-[#FECDCA] text-[10px] font-bold shrink-0">
-                            <Star className="w-2.5 h-2.5 fill-[#9A0602]" />
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-[10px] font-bold shrink-0">
+                            <Star className="w-2.5 h-2.5 fill-[#66000E]" />
                             {t('branch_default_badge', 'Cabang Utama')}
                           </span>
                         )}
                       </div>
 
                       {/* PIC & Phone */}
-                      <div className="flex items-center gap-2 text-[11px] text-[#666666] mt-1 flex-wrap">
+                      <div className="flex items-center gap-2 text-[11px] text-[#66000E] mt-1 flex-wrap">
                         <span className="truncate">
                           <strong className="font-medium text-[#333333]">{t('branch_pic_label', 'PIC')}:</strong> {branch.picName}
                         </span>
                         <span className="text-[#D0D0D0] shrink-0">•</span>
                         <a
                           href={`tel:${branch.picPhone}`}
-                          className="inline-flex items-center gap-1 text-[#555555] hover:text-[#9A0602] transition shrink-0"
+                          className="inline-flex items-center gap-1 text-[#555555] hover:text-[#66000E] transition shrink-0"
                         >
                           <Phone className="w-2.5 h-2.5 text-[#888888]" />
                           <span>{branch.picPhone}</span>
@@ -260,7 +260,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
 
                 {/* Compact Address Box */}
                 <div className="mt-2.5 bg-[#FAF9F9] rounded-xl p-2.5 border border-[#F0EDED] text-xs text-[#555555] flex items-start gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-[#9A0602] shrink-0 mt-0.5" />
+                  <MapPin className="w-3.5 h-3.5 text-[#66000E] shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0 text-[11px] leading-relaxed">
                     <p className="line-clamp-1 text-[#241A1A] font-medium">{branch.address}</p>
                     <p className="text-[#777777] text-[10.5px] truncate mt-0.5">
@@ -278,14 +278,14 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
               <div className="pt-2 border-t border-[#F2F0EF] flex items-center justify-between gap-2">
                 <div>
                   {branch.isDefault ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#9A0602]">
-                      <Star className="w-3 h-3 fill-[#9A0602]" />
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#66000E]">
+                      <Star className="w-3 h-3 fill-[#66000E]" />
                       <span>{t('branch_main_origin', 'Gudang Utama')}</span>
                     </span>
                   ) : (
                     <button
                       onClick={() => handleSetDefault(branch)}
-                      className="text-[11px] font-semibold text-[#666666] hover:text-[#9A0602] hover:bg-[#FFF1F0] px-2 py-1 rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
+                      className="text-[11px] font-semibold text-[#66000E] hover:text-[#52000B] hover:bg-[#F5E8EA] px-2 py-1 rounded-lg transition inline-flex items-center gap-1 cursor-pointer"
                     >
                       <Star className="w-3 h-3" />
                       <span>{t('branch_set_default', 'Jadikan Utama')}</span>
@@ -298,7 +298,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
                     onClick={() => handleToggleActive(branch)}
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition cursor-pointer ${
                       branch.isActive
-                        ? 'border-[#EAEAEA] text-[#555555] hover:bg-[#F7F7F7]'
+                        ? 'border-[#E5E0DD] text-[#555555] hover:bg-[#F7F7F7]'
                         : 'border-[#ABEFC6] text-[#027A48] bg-[#ECFDF3] hover:bg-[#D1FADF]'
                     }`}
                   >
@@ -307,7 +307,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
 
                   <button
                     onClick={() => handleOpenEditModal(branch)}
-                    className="p-1.5 rounded-lg border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] transition cursor-pointer"
+                    className="p-1.5 rounded-lg border border-[#E5E0DD] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] transition cursor-pointer"
                     title={t('branch_edit', 'Ubah Cabang')}
                   >
                     <Edit2 className="w-3.5 h-3.5" />

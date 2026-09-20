@@ -176,7 +176,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
           {error && (
             <div
               id="register-error"
-              className="mb-4 p-3 rounded-2xl bg-[#FFF1F0] border border-[#FFA39E] text-[#66000E] text-xs font-semibold text-center animate-in fade-in duration-200"
+              className="mb-4 p-3 rounded-2xl bg-[#F5E8EA] border border-[#E8DDDE] text-[#66000E] text-xs font-semibold text-center animate-in fade-in duration-200"
             >
               {error}
             </div>

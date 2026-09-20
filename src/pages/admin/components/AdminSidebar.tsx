@@ -80,12 +80,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     isSidebarOpen ? 'justify-between px-2.5 py-2' : 'justify-center p-2'
                   } ${
                     isActive
-                      ? 'bg-rose-50 text-[#800000] font-semibold'
-                      : 'text-gray-600 hover:bg-rose-50/50 hover:text-[#800000]'
+                      ? 'bg-[#F5E8EA] text-[#66000E] font-semibold'
+                      : 'text-gray-600 hover:bg-[#F5E8EA]/50 hover:text-[#66000E]'
                   }`}
                 >
                   <div className={`flex items-center ${isSidebarOpen ? 'gap-2.5 min-w-0' : 'justify-center'}`}>
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-red-600' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#66000E]' : 'text-gray-400 group-hover:text-gray-600'}`} />
                     {isSidebarOpen && <span className="truncate">{item.label}</span>}
                   </div>
 
@@ -94,13 +94,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     isSidebarOpen ? (
                       <span
                         className={`px-1.5 py-0.2 rounded text-[10px] font-bold shrink-0 ${
-                          isActive ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700'
+                          isActive ? 'bg-[#66000E] text-white' : 'bg-[#F5E8EA] text-[#66000E]'
                         }`}
                       >
                         {item.badge}
                       </span>
                     ) : (
-                      <span className="w-2 h-2 rounded-full bg-red-600 absolute top-1 right-1" />
+                      <span className="w-2 h-2 rounded-full bg-[#66000E] absolute top-1 right-1" />
                     )
                   )}
                 </button>

@@ -63,47 +63,109 @@ class DomainRequestService {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
   }
 
+  private mapRowToDomainRequest(d: any): DomainRequest {
+    const domainName = d.requested_domain || d.domain_name || '';
+    const tld = d.tld || '.com';
+    const fullDomain = d.full_domain || `${domainName}${tld}`;
+    const price = Number(d.tld_price ?? d.price ?? 250000);
+    const suggestions = Array.isArray(d.suggestions)
+      ? d.suggestions
+      : Array.isArray(d.admin_suggestions)
+      ? d.admin_suggestions
+      : [];
+    const createdAt = d.requested_at || d.created_at || d.updated_at || new Date().toISOString();
+    const updatedAt = d.updated_at || d.requested_at || createdAt;
+
+    return {
+      id: d.id,
+      storeId: d.store_id,
+      storeName: d.store_name || 'Toko Kroomify',
+      domainName,
+      tld,
+      fullDomain,
+      price,
+      status: d.status || 'pending',
+      adminSuggestions: suggestions,
+      adminNotes: d.admin_notes || '',
+      invoiceNumber: d.invoice_number || '',
+      createdAt,
+      updatedAt,
+    };
+  }
+
   /**
    * Ambil semua data permohonan domain (Admin & Merchant)
    */
   async getAllRequests(): Promise<DomainRequest[]> {
-    // 1. Coba fetch dari Supabase stores.theme_settings atau tabel domain_requests
-    try {
-      const { data, error } = await supabase.from('domain_requests').select('*');
-      if (!error && data && data.length > 0) {
-        const mapped: DomainRequest[] = data.map((d: any) => ({
-          id: d.id,
-          storeId: d.store_id,
-          storeName: d.store_name,
-          domainName: d.domain_name,
-          tld: d.tld,
-          fullDomain: d.full_domain || `${d.domain_name}${d.tld}`,
-          price: Number(d.price || 0),
-          status: d.status,
-          adminSuggestions: d.admin_suggestions || [],
-          adminNotes: d.admin_notes || '',
-          invoiceNumber: d.invoice_number || '',
-          createdAt: d.created_at,
-          updatedAt: d.updated_at,
-        }));
-        this.saveStoredRequests(mapped);
-        return mapped.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      }
-    } catch {
-      // Fallback
+    const requestsMap = new Map<string, DomainRequest>();
+
+    // 1. Ambil dari local cache dulu
+    const stored = this.getStoredRequests();
+    for (const r of stored) {
+      requestsMap.set(r.id, r);
     }
 
-    return this.getStoredRequests().sort(
+    // 2. Ambil dari Supabase table domain_requests
+    try {
+      const { data, error } = await supabase
+        .from('domain_requests')
+        .select('*')
+        .order('requested_at', { ascending: false });
+
+      if (!error && Array.isArray(data)) {
+        for (const row of data) {
+          const mapped = this.mapRowToDomainRequest(row);
+          requestsMap.set(mapped.id, mapped);
+        }
+      } else if (error) {
+        console.warn('Supabase domain_requests query error:', error.message);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch from domain_requests table:', err);
+    }
+
+    // 3. Fallback/Sync dari stores.theme_settings jika ada request toko yang belum di tabel
+    try {
+      const stores = await storeService.getStores();
+      for (const s of stores) {
+        const req = (s as any).layoutSettings?.domainRequest as DomainRequest | undefined;
+        if (req && req.id && !requestsMap.has(req.id)) {
+          requestsMap.set(req.id, req);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    const all = Array.from(requestsMap.values()).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+
+    this.saveStoredRequests(all);
+    return all;
   }
 
   /**
    * Ambil permohonan domain untuk toko tertentu
    */
   async getRequestByStore(storeId: string): Promise<DomainRequest | null> {
-    const requests = await this.getAllRequests();
-    const match = requests.find((r) => r.storeId === storeId);
+    try {
+      const { data, error } = await supabase
+        .from('domain_requests')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('requested_at', { ascending: false })
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        return this.mapRowToDomainRequest(data[0]);
+      }
+    } catch {
+      // fallback
+    }
+
+    const all = await this.getAllRequests();
+    const match = all.find((r) => r.storeId === storeId);
     return match || null;
   }
 
@@ -127,7 +189,7 @@ class DomainRequestService {
 
     const price = DOMAIN_TLD_PRICES[tld].price;
     const fullDomain = `${cleanDomain}${tld}`;
-    const id = `req_${Date.now()}`;
+    const id = `dom_${Date.now()}`;
     const now = new Date().toISOString();
 
     const newRequest: DomainRequest = {
@@ -147,42 +209,51 @@ class DomainRequestService {
     const current = this.getStoredRequests().filter((r) => r.storeId !== storeId);
     this.saveStoredRequests([newRequest, ...current]);
 
-    // 2. Simpan ke Supabase stores (di kolom theme_settings)
+    // 2. Pastikan store ada di Supabase stores (Foreign Key domain_requests -> stores(id))
     try {
       const store = await storeService.getStoreById(storeId);
-      const updatedSettings = {
-        ...(store?.layoutSettings || {}),
-        domainRequest: newRequest,
-      };
-      await supabase
-        .from('stores')
-        .update({
-          theme_settings: updatedSettings as any,
+      if (store) {
+        await supabase.from('stores').upsert({
+          id: store.id,
+          user_id: store.merchantId,
+          name: store.name,
+          slug: store.slug,
+          theme_settings: {
+            ...(store.layoutSettings || {}),
+            domainRequest: newRequest,
+          } as any,
           updated_at: now,
-        })
-        .eq('id', storeId);
-    } catch (dbErr) {
-      console.warn('Supabase store domainRequest notice:', dbErr);
+        });
+      }
+    } catch (storeErr) {
+      console.warn('Store sync notice before domain request insert:', storeErr);
     }
 
-    // 3. Coba insert ke tabel domain_requests jika ada
+    // 3. Simpan ke tabel domain_requests Supabase dengan skema kolom yang tepat
     try {
-      await supabase.from('domain_requests').insert([
-        {
-          id: newRequest.id,
-          store_id: newRequest.storeId,
-          store_name: newRequest.storeName,
-          domain_name: newRequest.domainName,
-          tld: newRequest.tld,
-          full_domain: newRequest.fullDomain,
-          price: newRequest.price,
-          status: newRequest.status,
-          created_at: newRequest.createdAt,
-          updated_at: newRequest.updatedAt,
-        },
-      ]);
-    } catch {
-      // ignore if table doesn't exist yet
+      const { error } = await supabase.from('domain_requests').upsert({
+        id: newRequest.id,
+        store_id: newRequest.storeId,
+        store_name: newRequest.storeName,
+        requested_domain: newRequest.domainName,
+        tld: newRequest.tld,
+        tld_price: newRequest.price,
+        status: 'pending',
+        admin_notes: null,
+        suggestions: [],
+        invoice_number: null,
+        payment_status: 'unpaid',
+        requested_at: newRequest.createdAt,
+        updated_at: newRequest.updatedAt,
+      });
+
+      if (error) {
+        console.error('Supabase domain_requests insert error:', error);
+      } else {
+        console.log('Domain request successfully saved to Supabase:', newRequest.id);
+      }
+    } catch (dbErr) {
+      console.error('Supabase domain_requests unexpected error:', dbErr);
     }
 
     return {
@@ -198,57 +269,64 @@ class DomainRequestService {
   async approveRequest(requestId: string, price?: number): Promise<boolean> {
     const current = this.getStoredRequests();
     const index = current.findIndex((r) => r.id === requestId);
-    if (index === -1) return false;
+    const req = index !== -1 ? current[index] : null;
 
     const now = new Date().toISOString();
-    const req = current[index];
-    const finalPrice = price !== undefined ? price : req.price;
+    const finalPrice = price !== undefined ? price : req?.price || 250000;
     const invoiceNumber = `INV-DOM-${Date.now().toString().slice(-6)}`;
+    const adminNotes = 'Domain tersedia dan telah disetujui. Silakan lakukan pembayaran.';
 
-    const updated: DomainRequest = {
-      ...req,
-      price: finalPrice,
-      status: 'approved',
-      invoiceNumber,
-      adminNotes: 'Domain tersedia dan telah disetujui. Silakan lakukan pembayaran.',
-      updatedAt: now,
-    };
-
-    current[index] = updated;
-    this.saveStoredRequests(current);
-
-    // Sync ke Supabase store
-    try {
-      const store = await storeService.getStoreById(req.storeId);
-      const updatedSettings = {
-        ...(store?.layoutSettings || {}),
-        domainRequest: updated,
+    if (req && index !== -1) {
+      const updated: DomainRequest = {
+        ...req,
+        price: finalPrice,
+        status: 'approved',
+        invoiceNumber,
+        adminNotes,
+        updatedAt: now,
       };
-      await supabase
-        .from('stores')
-        .update({
-          theme_settings: updatedSettings as any,
-          updated_at: now,
-        })
-        .eq('id', req.storeId);
-    } catch (err) {
-      console.warn('Failed sync approve to Supabase:', err);
+
+      current[index] = updated;
+      this.saveStoredRequests(current);
+
+      // Sync ke Supabase store layoutSettings
+      try {
+        const store = await storeService.getStoreById(req.storeId);
+        const updatedSettings = {
+          ...(store?.layoutSettings || {}),
+          domainRequest: updated,
+        };
+        await supabase
+          .from('stores')
+          .update({
+            theme_settings: updatedSettings as any,
+            updated_at: now,
+          })
+          .eq('id', req.storeId);
+      } catch (err) {
+        console.warn('Failed sync approve to Supabase store:', err);
+      }
     }
 
-    // Sync ke domain_requests table jika ada
+    // Sync ke domain_requests table di Supabase
     try {
-      await supabase
+      const { error } = await supabase
         .from('domain_requests')
         .update({
           status: 'approved',
-          price: finalPrice,
+          tld_price: finalPrice,
           invoice_number: invoiceNumber,
-          admin_notes: updated.adminNotes,
+          admin_notes: adminNotes,
+          approved_at: now,
           updated_at: now,
         })
         .eq('id', requestId);
-    } catch {
-      // ignore
+
+      if (error) {
+        console.error('Supabase approve error:', error);
+      }
+    } catch (err) {
+      console.warn('Failed update Supabase domain_requests approve:', err);
     }
 
     return true;
@@ -264,40 +342,62 @@ class DomainRequestService {
   ): Promise<boolean> {
     const current = this.getStoredRequests();
     const index = current.findIndex((r) => r.id === requestId);
-    if (index === -1) return false;
+    const req = index !== -1 ? current[index] : null;
 
     const now = new Date().toISOString();
-    const req = current[index];
+    const cleanSuggestions = suggestions.filter((s) => s.trim().length > 0);
+    const finalNotes =
+      adminNotes ||
+      `Domain ${req?.fullDomain || ''} saat ini tidak tersedia. Silakan pilih salah satu saran domain alternatif berikut.`;
 
-    const updated: DomainRequest = {
-      ...req,
-      status: 'rejected',
-      adminSuggestions: suggestions.filter((s) => s.trim().length > 0),
-      adminNotes:
-        adminNotes ||
-        `Domain ${req.fullDomain} saat ini tidak tersedia. Silakan pilih salah satu saran domain alternatif berikut.`,
-      updatedAt: now,
-    };
-
-    current[index] = updated;
-    this.saveStoredRequests(current);
-
-    // Sync ke Supabase
-    try {
-      const store = await storeService.getStoreById(req.storeId);
-      const updatedSettings = {
-        ...(store?.layoutSettings || {}),
-        domainRequest: updated,
+    if (req && index !== -1) {
+      const updated: DomainRequest = {
+        ...req,
+        status: 'rejected',
+        adminSuggestions: cleanSuggestions,
+        adminNotes: finalNotes,
+        updatedAt: now,
       };
-      await supabase
-        .from('stores')
+
+      current[index] = updated;
+      this.saveStoredRequests(current);
+
+      // Sync ke store theme_settings
+      try {
+        const store = await storeService.getStoreById(req.storeId);
+        const updatedSettings = {
+          ...(store?.layoutSettings || {}),
+          domainRequest: updated,
+        };
+        await supabase
+          .from('stores')
+          .update({
+            theme_settings: updatedSettings as any,
+            updated_at: now,
+          })
+          .eq('id', req.storeId);
+      } catch (err) {
+        console.warn('Failed sync reject to Supabase store:', err);
+      }
+    }
+
+    // Sync ke Supabase domain_requests table
+    try {
+      const { error } = await supabase
+        .from('domain_requests')
         .update({
-          theme_settings: updatedSettings as any,
+          status: 'rejected',
+          suggestions: cleanSuggestions,
+          admin_notes: finalNotes,
           updated_at: now,
         })
-        .eq('id', req.storeId);
+        .eq('id', requestId);
+
+      if (error) {
+        console.error('Supabase reject error:', error);
+      }
     } catch (err) {
-      console.warn('Failed sync reject to Supabase:', err);
+      console.warn('Failed update Supabase domain_requests reject:', err);
     }
 
     return true;
@@ -309,35 +409,55 @@ class DomainRequestService {
   async markAsPaidAndActivate(requestId: string): Promise<boolean> {
     const current = this.getStoredRequests();
     const index = current.findIndex((r) => r.id === requestId);
-    if (index === -1) return false;
+    const req = index !== -1 ? current[index] : null;
 
     const now = new Date().toISOString();
-    const req = current[index];
 
-    const updated: DomainRequest = {
-      ...req,
-      status: 'active',
-      updatedAt: now,
-    };
+    if (req && index !== -1) {
+      const updated: DomainRequest = {
+        ...req,
+        status: 'active',
+        updatedAt: now,
+      };
 
-    current[index] = updated;
-    this.saveStoredRequests(current);
+      current[index] = updated;
+      this.saveStoredRequests(current);
 
-    // Update Store dengan custom domain aktif
-    await storeService.updateStore(req.storeId, {
-      customDomain: req.fullDomain,
-      domainType: 'custom',
-      domainStatus: 'connected',
-    });
+      // Update Store dengan custom domain aktif
+      await storeService.updateStore(req.storeId, {
+        customDomain: req.fullDomain,
+        domainType: 'custom',
+        domainStatus: 'connected',
+      });
+    }
 
+    // Update di Supabase stores
+    if (req) {
+      try {
+        await supabase
+          .from('stores')
+          .update({
+            custom_domain: req.fullDomain,
+            domain_status: 'connected',
+            updated_at: now,
+          })
+          .eq('id', req.storeId);
+      } catch {
+        // ignore
+      }
+    }
+
+    // Update di Supabase domain_requests table
     try {
       await supabase
-        .from('stores')
+        .from('domain_requests')
         .update({
-          custom_domain: req.fullDomain,
+          status: 'active',
+          payment_status: 'paid',
+          activated_at: now,
           updated_at: now,
         })
-        .eq('id', req.storeId);
+        .eq('id', requestId);
     } catch {
       // ignore
     }

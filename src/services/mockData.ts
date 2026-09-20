@@ -683,6 +683,21 @@ export const initialIntegrations: Integration[] = [
     },
   },
   {
+    id: 'int-anteraja',
+    type: 'shipping',
+    provider: 'anteraja',
+    name: 'Anteraja Regular Logistics',
+    logo: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=100&auto=format&fit=crop&q=80',
+    description: 'Layanan pengiriman terpercaya dengan jemput kurir Satria terintegrasi.',
+    isConnected: true,
+    statusText: 'Terhubung (Drop & Pick-up)',
+    config: {
+      enabledServices: ['reg'],
+      autoInsurance: false,
+      defaultHandoff: 'pickup',
+    },
+  },
+  {
     id: 'int-biteship',
     type: 'shipping',
     provider: 'biteship',

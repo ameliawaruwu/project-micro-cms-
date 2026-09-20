@@ -10,6 +10,19 @@ const AUTH_STORE_KEY = 'microcms_active_store';
 const ACCOUNTS_KEY = 'microcms_accounts_v1';
 const ACTIVE_STORE_ID_KEY = 'microcms_active_store_id';
 
+export async function hashPassword(plain: string): Promise<string> {
+  if (!plain) return '';
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(`kroomify_salt_v1_${plain}`);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return plain;
+  }
+}
+
 interface StoredAccount {
   id: string; // userId
   email: string;
@@ -77,9 +90,10 @@ class AuthService {
       const parsed: StoredAccount[] = JSON.parse(raw);
       // Merge with defaultAccounts if missing
       const existingIds = new Set(parsed.map((a) => a.id));
+      const existingEmails = new Set(parsed.map((a) => a.email.toLowerCase()));
       let changed = false;
       defaultAccounts.forEach((def) => {
-        if (!existingIds.has(def.id)) {
+        if (!existingIds.has(def.id) && !existingEmails.has(def.email.toLowerCase())) {
           parsed.push(def);
           changed = true;
         }
@@ -159,30 +173,57 @@ class AuthService {
 
     let account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
 
-    // Also check Supabase DB
-    let dbUser: any = null;
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-      if (!error && data) {
-        dbUser = data;
+    // 1. Coba verifikasi aman server-side via Supabase RPC verify_user_credentials
+    let verifiedDbUser: any = null;
+    if (_password && _password !== 'google-auth') {
+      try {
+        const { data: rpcRes, error: rpcErr } = await supabase.rpc('verify_user_credentials', {
+          p_email: cleanEmail,
+          p_password: _password,
+        });
+        if (!rpcErr && rpcRes) {
+          if (rpcRes.success && rpcRes.user) {
+            verifiedDbUser = rpcRes.user;
+          } else if (rpcRes.message === 'Kata sandi tidak sesuai') {
+            throw new Error('Kata sandi yang Anda masukkan salah.');
+          }
+        }
+      } catch (rpcEx: any) {
+        if (rpcEx.message === 'Kata sandi yang Anda masukkan salah.') throw rpcEx;
+        console.warn('verify_user_credentials RPC notice:', rpcEx);
       }
-    } catch (e) {
-      console.warn('Supabase query user warning:', e);
     }
 
-    // If account doesn't exist in local accounts AND not in Supabase DB:
+    // 2. Jika belum terverifikasi melalui RPC, cek metadata profil tanpa mengekspos hash
+    let dbUser: any = verifiedDbUser;
+    if (!dbUser && !account) {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, name, email, phone, role, created_at')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+        if (!error && data) {
+          dbUser = data;
+        }
+      } catch (e) {
+        console.warn('Supabase query user warning:', e);
+      }
+    }
+
+    // Jika akun tidak ditemukan baik di lokal maupun di database
     if (!account && !dbUser) {
       throw new Error('Akun belum terdaftar. Silakan lakukan registrasi terlebih dahulu.');
     }
 
-    // Password validation:
-    const expectedPassword = account?.password || dbUser?.password_hash;
-    if (_password && _password !== 'google-auth' && expectedPassword && _password !== expectedPassword) {
-      throw new Error('Kata sandi yang Anda masukkan salah.');
+    // 3. Verifikasi kata sandi untuk akun lokal / fallback
+    if (!verifiedDbUser && _password && _password !== 'google-auth') {
+      const hashedInput = await hashPassword(_password);
+      const expectedPassword = account?.password;
+      const isMatch = expectedPassword === _password || expectedPassword === hashedInput;
+      if (expectedPassword && !isMatch) {
+        throw new Error('Kata sandi yang Anda masukkan salah.');
+      }
     }
 
     let user: User;
@@ -237,10 +278,10 @@ class AuthService {
       const newAccount: StoredAccount = {
         id: userId,
         email: cleanEmail,
-        password: dbUser.password_hash || _password || 'password123',
+        password: await hashPassword(_password || 'password123'),
         user,
         merchant,
-        storeId: storeToUse.id,
+        storeId: storeToUse?.id || '',
       };
 
       accounts.push(newAccount);
@@ -249,10 +290,15 @@ class AuthService {
 
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
     localStorage.setItem(AUTH_MERCHANT_KEY, JSON.stringify(merchant));
-    localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(storeToUse));
-    localStorage.setItem(ACTIVE_STORE_ID_KEY, storeToUse.id);
+    if (storeToUse) {
+      localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(storeToUse));
+      localStorage.setItem(ACTIVE_STORE_ID_KEY, storeToUse.id);
+    } else {
+      localStorage.removeItem(AUTH_STORE_KEY);
+      localStorage.removeItem(ACTIVE_STORE_ID_KEY);
+    }
 
-    return { user, merchant, store: storeToUse };
+    return { user, merchant, store: (storeToUse || null) as any };
   }
 
   async register(params: {
@@ -319,11 +365,13 @@ class AuthService {
       isVerified: true,
     };
 
-    // 1. Sync User to Supabase Database
+    const hashedPassword = await hashPassword(params.password);
+
+    // 1. Sync User to Supabase Database with hashed password
     const { error: dbUserErr } = await supabase.from('users').upsert({
       id: userId,
       email: cleanEmail,
-      password_hash: params.password,
+      password_hash: hashedPassword,
       name: params.fullName.trim(),
       phone: params.phoneWhatsApp.trim() || null,
       role: 'merchant',
@@ -368,13 +416,13 @@ class AuthService {
 
     // New stores start clean with 0 products
 
-    // Save account into accounts repository
+    // Save account into accounts repository with hashed password
     const accounts = this.getStoredAccounts();
     const existingIndex = accounts.findIndex((a) => a.id === userId || a.email.toLowerCase() === cleanEmail);
     const newAccountRecord: StoredAccount = {
       id: userId,
       email: cleanEmail,
-      password: params.password,
+      password: hashedPassword,
       user,
       merchant,
       storeId: store.id,
@@ -598,30 +646,42 @@ class AuthService {
     localStorage.removeItem(AUTH_STORE_KEY);
     localStorage.removeItem(ACTIVE_STORE_ID_KEY);
     localStorage.setItem('microcms_explicit_logout', 'true');
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
+  }
+
+  async validateSessionWithDatabase(userId: string, email: string): Promise<boolean> {
+    try {
+      const cleanEmail = email.toLowerCase().trim();
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (error) {
+        // Jika ada kendala koneksi, tetap izinkan fallback lokal
+        return true;
+      }
+
+      // Jika user bernilai null di database Supabase (artinya user telah dihapus di DB)
+      if (!data) {
+        console.warn(`[authService] User ${email} tidak ditemukan di database Supabase (telah dihapus). Membersihkan sesi lokal...`);
+        const accounts = this.getStoredAccounts().filter((a) => a.email.toLowerCase() !== cleanEmail && a.id !== userId);
+        this.saveAccounts(accounts);
+        await this.logout();
+        return false;
+      }
+
+      return true;
+    } catch {
+      return true;
+    }
   }
 
   async syncLocalAccountsToSupabase(): Promise<void> {
-    const accounts = this.getStoredAccounts();
-    for (const acc of accounts) {
-      if (acc.email === 'admin@kroomify.id' || acc.email === 'admin@kroombox.id' || acc.email === 'andhika@gmail.com') continue;
-      try {
-        const { error: uErr } = await supabase.from('users').upsert({
-          id: acc.id,
-          email: acc.email,
-          password_hash: acc.password || 'password123',
-          name: acc.user.name,
-          phone: acc.user.phoneWhatsApp || null,
-          role: acc.user.role || 'merchant',
-          created_at: acc.user.createdAt || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        if (!uErr) {
-          console.log('🔄 Synced local user to Supabase:', acc.email);
-        }
-      } catch (e) {
-        console.warn('Sync local user warning:', e);
-      }
-    }
+    // Tidak lagi melakukan auto-resurrect akun yang sudah dihapus di database
   }
 
   updateActiveStore(store: Store): void {

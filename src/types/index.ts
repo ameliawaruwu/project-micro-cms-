@@ -288,7 +288,7 @@ export interface StoreSectionConfig {
 }
 
 export interface StoreLayoutSettings {
-  sections: StoreSectionConfig[];
+  sections?: StoreSectionConfig[];
   primaryAccent?: string;
   themeStyle?: 'minimal' | 'modern' | 'compact' | string;
   activeThemeId?: string;
@@ -296,6 +296,9 @@ export interface StoreLayoutSettings {
   pages?: ThemePage[];
   activePage?: string;
   activeTemplateId?: string;
+  planExpiresAt?: string;
+  planSubscribedAt?: string;
+  [key: string]: any;
 }
 
 export interface Store {
@@ -322,6 +325,8 @@ export interface Store {
   currency: string;
   balance: number;
   plan?: 'free' | 'personal' | 'community' | 'corporate' | 'startup' | 'starter' | 'premium' | string;
+  planExpiresAt?: string;
+  planSubscribedAt?: string;
   isPublished?: boolean;
   themeColor?: string;
   layoutSettings?: StoreLayoutSettings;
@@ -497,7 +502,7 @@ export interface Order {
 export interface Integration {
   id: string;
   type: 'payment' | 'shipping';
-  provider: 'midtrans' | 'stripe' | 'qris' | 'jnt' | 'jne' | 'sicepat' | 'gosend' | 'biteship';
+  provider: 'midtrans' | 'stripe' | 'qris' | 'jnt' | 'jne' | 'sicepat' | 'gosend' | 'anteraja' | 'biteship';
   name: string;
   logo: string;
   description: string;

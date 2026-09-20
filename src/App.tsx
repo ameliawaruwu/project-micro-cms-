@@ -49,7 +49,7 @@ import { orderService } from './services/orderService';
 import { integrationService } from './services/integrationService';
 import { cartService } from './services/cartService';
 import { initialStores } from './services/mockData';
-import { formatRupiah, generateWhatsAppLink } from './utils/formatters';
+import { formatRupiah } from './utils/formatters';
 import { getStoreSections } from './utils/layoutConstants';
 
 // Layout & Common Components
@@ -281,6 +281,9 @@ export default function App() {
         const initialCart = cartService.getCart(finalStore.slug);
 
         setProducts(storeProducts);
+        if (storeProducts && storeProducts.length > 0) {
+          useCmsStore.getState().setProductsFromMerchant(storeProducts);
+        }
         setOrders(storeOrders);
         setIntegrations(storeIntegrations);
         setCartItems(initialCart);
@@ -462,8 +465,33 @@ export default function App() {
       addToast(`Status pesanan #${updatedOrder.orderNumber} terupdate secara real-time!`, 'info');
     });
 
+    const handleOrderCreated = (e: any) => {
+      if (e.detail) {
+        setOrders((prev) => [e.detail, ...prev.filter((o) => o.id !== e.detail.id)]);
+      }
+    };
+    window.addEventListener('microcms_order_created', handleOrderCreated);
+
     return () => {
       unsubscribe();
+      window.removeEventListener('microcms_order_created', handleOrderCreated);
+    };
+  }, [activeStore?.id]);
+
+  // Real-time synchronization for products (bidirectional sync between Layout Editor & Product List)
+  useEffect(() => {
+    if (!activeStore?.id) return;
+
+    const handleProductsUpdated = async () => {
+      try {
+        const fresh = await productService.getProductsByStore(activeStore.id);
+        setProducts(fresh);
+      } catch (e) {}
+    };
+
+    window.addEventListener('microcms_products_updated', handleProductsUpdated);
+    return () => {
+      window.removeEventListener('microcms_products_updated', handleProductsUpdated);
     };
   }, [activeStore?.id]);
 
@@ -495,6 +523,9 @@ export default function App() {
     const initialCart = cartService.getCart(store.slug);
 
     setProducts(storeProducts);
+    if (storeProducts && storeProducts.length > 0) {
+      useCmsStore.getState().setProductsFromMerchant(storeProducts);
+    }
     setOrders(storeOrders);
     setCartItems(initialCart);
     addToast(`Berpindah ke toko ${store.name}`);
@@ -563,7 +594,11 @@ export default function App() {
     };
     const res = await productService.createProduct(activeStore.id, duplicatedData);
     const created = res.product;
-    setProducts((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
+    setProducts((prev) => {
+      const next = [created, ...prev.filter((p) => p.id !== created.id)];
+      useCmsStore.getState().setProductsFromMerchant(next);
+      return next;
+    });
     addToast(`Produk "${created.name}" berhasil disalin.`);
   };
 
@@ -583,12 +618,20 @@ export default function App() {
     if (!activeStore) return;
     if (productToEdit) {
       const updated = await productService.updateProduct(productToEdit.id, data);
-      setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      setProducts((prev) => {
+        const next = prev.map((p) => (p.id === updated.id ? updated : p));
+        useCmsStore.getState().setProductsFromMerchant(next);
+        return next;
+      });
       addToast(`Produk "${updated.name}" berhasil diperbarui.`);
     } else {
       const res = await productService.createProduct(activeStore.id, data);
       const created = res.product;
-      setProducts((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
+      setProducts((prev) => {
+        const next = [created, ...prev.filter((p) => p.id !== created.id)];
+        useCmsStore.getState().setProductsFromMerchant(next);
+        return next;
+      });
       if (res.syncedToCloud) {
         addToast(`Produk "${created.name}" berhasil disimpan & tersinkron ke Supabase Cloud!`);
       } else {
@@ -612,7 +655,11 @@ export default function App() {
     setIsDeletingProduct(true);
     try {
       await productService.deleteProduct(productToDelete.id);
-      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
+      setProducts((prev) => {
+        const next = prev.filter((p) => p.id !== productToDelete.id);
+        useCmsStore.getState().setProductsFromMerchant(next);
+        return next;
+      });
       if (selectedMerchantProduct?.id === productToDelete.id) {
         setSelectedMerchantProduct(null);
       }
@@ -630,7 +677,11 @@ export default function App() {
     if (!prod) return;
     const newStock = Math.max(0, prod.stock + delta);
     const updated = await productService.updateStock(id, newStock);
-    setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
+    setProducts((prev) => {
+      const next = prev.map((p) => (p.id === id ? updated : p));
+      useCmsStore.getState().setProductsFromMerchant(next);
+      return next;
+    });
     addToast(`Stok ${prod.name} diperbarui menjadi ${newStock}.`);
   };
 

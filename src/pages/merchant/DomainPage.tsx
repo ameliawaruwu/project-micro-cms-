@@ -24,6 +24,7 @@ import {
 } from '../../services/domainRequestService';
 import { midtransService } from '../../services/midtransService';
 import { formatRupiah } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 import confetti from 'canvas-confetti';
 
 interface DomainPageProps {
@@ -32,6 +33,8 @@ interface DomainPageProps {
 }
 
 export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling }) => {
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
   const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial';
   const [domainType, setDomainType] = useState<'random' | 'custom'>(
     store.domainType || (store.customDomain ? 'custom' : 'random')
@@ -88,7 +91,9 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
         setDomainType('random');
         setAlert({
           type: 'success',
-          message: `Berhasil menggunakan domain sistem: https://${randomDomain}`,
+          message: isEn
+            ? `Successfully active with system domain: https://${randomDomain}`
+            : `Berhasil menggunakan domain sistem: https://${randomDomain}`,
         });
       } else {
         setAlert({ type: 'error', message: res.message });
@@ -96,7 +101,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
     } catch (err: any) {
       setAlert({
         type: 'error',
-        message: err.message || 'Terjadi kesalahan saat mengaktifkan random domain.',
+        message: err.message || (isEn ? 'An error occurred while enabling random domain.' : 'Terjadi kesalahan saat mengaktifkan random domain.'),
       });
     } finally {
       setIsSettingRandom(false);
@@ -111,7 +116,9 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
     if (!cleanPrefix) {
       setAlert({
         type: 'error',
-        message: 'Silakan masukkan nama domain yang diinginkan (hanya huruf, angka, atau tanda minus).',
+        message: isEn
+          ? 'Please enter your desired domain name (letters, numbers, or dashes only).'
+          : 'Silakan masukkan nama domain yang diinginkan (hanya huruf, angka, atau tanda minus).',
       });
       return;
     }
@@ -140,7 +147,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
     } catch (err: any) {
       setAlert({
         type: 'error',
-        message: err.message || 'Gagal mengajukan permintaan domain.',
+        message: err.message || (isEn ? 'Failed to submit domain request.' : 'Gagal mengajukan permintaan domain.'),
       });
     } finally {
       setIsSubmitting(false);
@@ -171,7 +178,9 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
             setIsPaying(false);
             setAlert({
               type: 'success',
-              message: `Selamat! Pembayaran berhasil dan domain ${activeRequest.fullDomain} resmi aktif di toko Anda!`,
+              message: isEn
+                ? `Congratulations! Payment succeeded and ${activeRequest.fullDomain} is now officially active!`
+                : `Selamat! Pembayaran berhasil dan domain ${activeRequest.fullDomain} resmi aktif di toko Anda!`,
             });
             confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
           },
@@ -179,12 +188,17 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
             setIsPaying(false);
             setAlert({
               type: 'info',
-              message: 'Pembayaran invoice domain sedang diverifikasi oleh sistem.',
+              message: isEn
+                ? 'Domain payment is currently being verified by the system.'
+                : 'Pembayaran invoice domain sedang diverifikasi oleh sistem.',
             });
           },
           onError: () => {
             setIsPaying(false);
-            setAlert({ type: 'error', message: 'Pembayaran dibatalkan atau gagal.' });
+            setAlert({
+              type: 'error',
+              message: isEn ? 'Payment was cancelled or failed.' : 'Pembayaran dibatalkan atau gagal.',
+            });
           },
           onClose: () => {
             setIsPaying(false);
@@ -196,7 +210,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
       setIsPaying(false);
       setAlert({
         type: 'error',
-        message: 'Gagal membuka pembayaran Midtrans: ' + (err?.message || 'Terjadi kesalahan.'),
+        message: (isEn ? 'Failed to launch Midtrans checkout: ' : 'Gagal membuka pembayaran Midtrans: ') + (err?.message || ''),
       });
     }
   };
@@ -215,43 +229,53 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
         setIsConnected(false);
         setActiveRequest(null);
         setDomainType('random');
-        setAlert({ type: 'success', message: res.message });
+        setAlert({
+          type: 'success',
+          message: res.message || (isEn ? 'Domain successfully disconnected.' : 'Domain berhasil diputuskan.'),
+        });
       } else {
         setAlert({ type: 'error', message: res.message });
       }
     } catch (err: any) {
-      setAlert({ type: 'error', message: err.message || 'Gagal memutuskan domain.' });
+      setAlert({
+        type: 'error',
+        message: err.message || (isEn ? 'Failed to disconnect domain.' : 'Gagal memutuskan domain.'),
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16">
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16 font-sans">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 pb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E5E0DD] pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-            <Globe className="w-6 h-6 text-red-600" />
-            Pengaturan Alamat Domain Toko
+          <h1 className="text-xl sm:text-2xl font-bold text-[#241A1A] tracking-tight flex items-center gap-2">
+            <Globe className="w-6 h-6 text-[#66000E]" />
+            <span>{t('domain_page_title', 'Domain Toko')}</span>
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Gunakan domain gratis bawaan dari Kroomify atau ajukan custom domain profesional Anda sendiri.
+          <p className="text-xs sm:text-sm text-[#706866] mt-1">
+            {t('domain_page_subtitle', 'Atur alamat web toko online Anda agar profesional dan mudah diingat pelanggan')}
           </p>
         </div>
       </div>
 
       {/* FREE PLAN SANDBOX NOTICE */}
       {isFreePlan && (
-        <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-amber-100 rounded-lg text-amber-800 shrink-0 mt-0.5">
+            <div className="p-2 bg-amber-100 rounded-xl text-amber-800 shrink-0 mt-0.5">
               <Lock className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-sm text-amber-950">Paket Free: Toko Berstatus Sandbox Preview</h4>
+              <h4 className="font-bold text-sm text-amber-950">
+                {isEn ? 'Free Plan: Sandbox Preview Mode' : 'Paket Free: Toko Berstatus Sandbox Preview'}
+              </h4>
               <p className="text-xs text-amber-800 mt-0.5">
-                Fitur deploy publikasi live dan Custom Domain (.com / .id) terbuka di paket Personal Toko & Community UMKM.
+                {isEn
+                  ? 'Live deployment and custom domains (.com / .id) unlock with Starter or Pro plan.'
+                  : 'Fitur deploy publikasi live dan Custom Domain (.com / .id) terbuka di paket Personal Toko & Community UMKM.'}
               </p>
             </div>
           </div>
@@ -259,10 +283,10 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
             <button
               type="button"
               onClick={onNavigateBilling}
-              className="px-3.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-bold shrink-0 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              className="px-3.5 py-1.5 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-200" />
-              Upgrade Hosting
+              <span>{t('domain_upgrade_cta', 'Lihat Paket Langganan')}</span>
             </button>
           )}
         </div>
@@ -271,18 +295,18 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
       {/* ALERT NOTIFICATION */}
       {alert && (
         <div
-          className={`p-4 rounded-xl text-sm flex items-start gap-3 border transition-all ${
+          className={`p-4 rounded-2xl text-xs sm:text-sm flex items-start gap-3 border transition-all ${
             alert.type === 'success'
-              ? 'bg-green-50 border-green-200 text-green-800'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
               : alert.type === 'error'
-              ? 'bg-red-50 border-red-200 text-red-800'
+              ? 'bg-[#F5E8EA] border-[#E8DDDE] text-[#66000E]'
               : 'bg-blue-50 border-blue-200 text-blue-800'
           }`}
         >
           {alert.type === 'success' ? (
-            <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
           ) : alert.type === 'error' ? (
-            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-[#66000E] shrink-0 mt-0.5" />
           ) : (
             <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
           )}
@@ -291,42 +315,42 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
       )}
 
       {/* 2 MAIN CARDS: RANDOM VS CUSTOM DOMAIN */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 items-start">
         {/* CARD 1: RANDOM DOMAIN (GRATIS) */}
         <div
           onClick={() => setDomainType('random')}
-          className={`bg-white rounded-2xl border-2 p-6 transition-all cursor-pointer shadow-xs ${
+          className={`bg-white rounded-2xl border p-5 sm:p-6 transition-all cursor-pointer shadow-2xs ${
             domainType === 'random'
-              ? 'border-red-600 shadow-md ring-4 ring-red-50'
-              : 'border-gray-200 hover:border-gray-300'
+              ? 'border-[#66000E] ring-2 ring-[#66000E]/20 shadow-xs'
+              : 'border-[#E5E0DD] hover:border-[#66000E]/40'
           }`}
         >
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
               <div
                 className={`p-2.5 rounded-xl ${
-                  domainType === 'random' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-400'
+                  domainType === 'random' ? 'bg-[#F5E8EA] text-[#66000E]' : 'bg-[#FAF7F7] text-[#706866]'
                 }`}
               >
                 <Globe className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900">Random Subdomain</h3>
-                <p className="text-xs text-gray-500">Gratis selamanya dari sistem</p>
+                <h3 className="font-bold text-[#241A1A]">{t('domain_type_random', 'Random Subdomain')}</h3>
+                <p className="text-xs text-[#706866]">{t('domain_type_random_desc', 'Gratis selamanya dari sistem Kroomify')}</p>
               </div>
             </div>
             <div
               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                domainType === 'random' ? 'border-red-600' : 'border-gray-300'
+                domainType === 'random' ? 'border-[#66000E]' : 'border-[#E5E0DD]'
               }`}
             >
-              {domainType === 'random' && <div className="w-2.5 h-2.5 rounded-full bg-red-600" />}
+              {domainType === 'random' && <div className="w-2.5 h-2.5 rounded-full bg-[#66000E]" />}
             </div>
           </div>
 
-          <div className="bg-gray-50 p-3 rounded-xl border border-gray-200 mb-4 flex items-center justify-between gap-2">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              <span className="text-gray-400 font-normal">https://</span>
+          <div className="bg-[#FAF7F7] p-3 rounded-xl border border-[#E5E0DD] mb-4 flex items-center justify-between gap-2">
+            <p className="text-xs sm:text-sm font-medium text-[#241A1A] truncate">
+              <span className="text-[#706866] font-normal">https://</span>
               {randomDomain}
             </p>
             <div className="flex items-center gap-1 shrink-0">
@@ -336,18 +360,18 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
                   e.stopPropagation();
                   handleCopyRandomDomain();
                 }}
-                className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-200/60 rounded-md transition-colors"
-                title="Salin tautan"
+                className="p-1.5 text-[#706866] hover:text-[#241A1A] hover:bg-white rounded-lg transition-colors cursor-pointer border border-transparent hover:border-[#E5E0DD]"
+                title={t('actions_copy', 'Salin')}
               >
-                {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
               </button>
               <a
                 href={`https://${randomDomain}`}
                 target="_blank"
                 rel="noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-200/60 rounded-md transition-colors"
-                title="Buka toko"
+                className="p-1.5 text-[#706866] hover:text-[#241A1A] hover:bg-white rounded-lg transition-colors cursor-pointer border border-transparent hover:border-[#E5E0DD]"
+                title={t('actions_open_store', 'Buka Toko')}
               >
                 <ExternalLink className="w-4 h-4" />
               </a>
@@ -355,9 +379,9 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 px-2.5 py-1 rounded-md border border-green-200">
-              <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-              Tersedia & Siap Pakai
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{t('domain_available_ready', 'Tersedia & Siap Pakai')}</span>
             </div>
             {domainType === 'random' && (
               <button
@@ -367,15 +391,15 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
                   e.stopPropagation();
                   handleUseRandomDomain();
                 }}
-                className="text-sm font-bold text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
+                className="text-xs sm:text-sm font-bold text-[#66000E] hover:text-[#52000B] flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {isSettingRandom ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...
+                    <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_saving', 'Menyimpan...')}
                   </>
                 ) : (
                   <>
-                    Gunakan Domain <ArrowRight className="w-4 h-4" />
+                    <span>{t('domain_btn_use', 'Gunakan Domain')}</span> <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
@@ -386,32 +410,32 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
         {/* CARD 2: CUSTOM DOMAIN */}
         <div
           onClick={() => setDomainType('custom')}
-          className={`bg-white rounded-2xl border-2 p-6 transition-all cursor-pointer shadow-xs ${
+          className={`bg-white rounded-2xl border p-5 sm:p-6 transition-all cursor-pointer shadow-2xs ${
             domainType === 'custom'
-              ? 'border-red-600 shadow-md ring-4 ring-red-50'
-              : 'border-gray-200 hover:border-gray-300'
+              ? 'border-[#66000E] ring-2 ring-[#66000E]/20 shadow-xs'
+              : 'border-[#E5E0DD] hover:border-[#66000E]/40'
           }`}
         >
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
               <div
                 className={`p-2.5 rounded-xl ${
-                  domainType === 'custom' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-400'
+                  domainType === 'custom' ? 'bg-[#F5E8EA] text-[#66000E]' : 'bg-[#FAF7F7] text-[#706866]'
                 }`}
               >
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900">Custom Domain</h3>
-                <p className="text-xs text-gray-500">Miliki alamat brand sendiri (.com, .id, dll)</p>
+                <h3 className="font-bold text-[#241A1A]">{t('domain_type_custom', 'Custom Domain')}</h3>
+                <p className="text-xs text-[#706866]">{t('domain_type_custom_desc', 'Gunakan nama domain brand sendiri (.com, .id, dll)')}</p>
               </div>
             </div>
             <div
               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                domainType === 'custom' ? 'border-red-600' : 'border-gray-300'
+                domainType === 'custom' ? 'border-[#66000E]' : 'border-[#E5E0DD]'
               }`}
             >
-              {domainType === 'custom' && <div className="w-2.5 h-2.5 rounded-full bg-red-600" />}
+              {domainType === 'custom' && <div className="w-2.5 h-2.5 rounded-full bg-[#66000E]" />}
             </div>
           </div>
 
@@ -426,32 +450,32 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
                       : activeRequest.status === 'approved'
                       ? 'bg-blue-50/80 border-blue-200 text-blue-900'
                       : activeRequest.status === 'rejected'
-                      ? 'bg-red-50/80 border-red-200 text-red-900'
-                      : 'bg-green-50/80 border-green-200 text-green-900'
+                      ? 'bg-[#F5E8EA] border-[#E8DDDE] text-[#66000E]'
+                      : 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
                   }`}
                 >
                   <div className="flex items-center justify-between font-bold">
-                    <span className="flex items-center gap-1.5 text-sm">
+                    <span className="flex items-center gap-1.5 text-xs sm:text-sm">
                       <Globe className="w-4 h-4" /> {activeRequest.fullDomain}
                     </span>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-extrabold ${
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-extrabold ${
                         activeRequest.status === 'pending'
                           ? 'bg-amber-200 text-amber-800'
                           : activeRequest.status === 'approved'
                           ? 'bg-blue-200 text-blue-800'
                           : activeRequest.status === 'rejected'
-                          ? 'bg-red-200 text-red-800'
-                          : 'bg-green-200 text-green-800'
+                          ? 'bg-[#F5E8EA] text-[#66000E]'
+                          : 'bg-emerald-200 text-emerald-800'
                       }`}
                     >
                       {activeRequest.status === 'pending'
-                        ? 'Menunggu Review Admin'
+                        ? (isEn ? 'Pending Review' : 'Menunggu Review Admin')
                         : activeRequest.status === 'approved'
-                        ? 'Disetujui Admin'
+                        ? (isEn ? 'Approved' : 'Disetujui Admin')
                         : activeRequest.status === 'rejected'
-                        ? 'Tidak Tersedia'
-                        : 'Domain Aktif'}
+                        ? (isEn ? 'Unavailable' : 'Tidak Tersedia')
+                        : (isEn ? 'Domain Active' : 'Domain Aktif')}
                     </span>
                   </div>
 
@@ -461,8 +485,10 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
 
                   {/* KONDISI 1: REJECTED (Tampilkan Saran Domain Alternatif dari Admin) */}
                   {activeRequest.status === 'rejected' && activeRequest.adminSuggestions && activeRequest.adminSuggestions.length > 0 && (
-                    <div className="pt-2 border-t border-red-200/70">
-                      <p className="font-semibold mb-1.5 text-red-950">Saran Domain yang Tersedia:</p>
+                    <div className="pt-2 border-t border-[#E5E0DD]">
+                      <p className="font-semibold mb-1.5 text-[#66000E]">
+                        {isEn ? 'Suggested Available Domains:' : 'Saran Domain yang Tersedia:'}
+                      </p>
                       <div className="flex flex-wrap gap-1.5">
                         {activeRequest.adminSuggestions.map((sug, idx) => (
                           <button
@@ -475,10 +501,10 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
                                 setSelectedTld(`.${parts.slice(1).join('.')}`);
                               }
                             }}
-                            className="px-2.5 py-1 bg-white hover:bg-red-100/60 border border-red-300 rounded-lg text-red-800 font-bold text-[11px] transition cursor-pointer flex items-center gap-1"
+                            className="px-2.5 py-1 bg-white hover:bg-[#F5E8EA] border border-[#E5E0DD] rounded-lg text-[#66000E] font-bold text-[11px] transition cursor-pointer flex items-center gap-1"
                           >
                             <span>{sug}</span>
-                            <ArrowRight className="w-3 h-3 text-red-500" />
+                            <ArrowRight className="w-3 h-3 text-[#66000E]" />
                           </button>
                         ))}
                       </div>
@@ -489,7 +515,9 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
                   {activeRequest.status === 'approved' && (
                     <div className="pt-2 border-t border-blue-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                       <div>
-                        <span className="text-[11px] text-blue-700 block">Total Tagihan Domain (1 Tahun):</span>
+                        <span className="text-[11px] text-blue-700 block">
+                          {isEn ? 'Total Domain Invoice (1 Year):' : 'Total Tagihan Domain (1 Tahun):'}
+                        </span>
                         <span className="text-base font-black text-blue-950">
                           {formatRupiah(activeRequest.price)}
                         </span>
@@ -498,15 +526,15 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
                         type="button"
                         disabled={isPaying}
                         onClick={handlePayDomainInvoice}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-xs transition cursor-pointer disabled:opacity-50"
+                        className="px-4 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer disabled:opacity-50 active:scale-98"
                       >
                         {isPaying ? (
                           <>
-                            <Loader2 className="w-4 h-4 animate-spin" /> Memproses...
+                            <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_saving', 'Memproses...')}
                           </>
                         ) : (
                           <>
-                            <CreditCard className="w-4 h-4" /> Bayar via Midtrans
+                            <CreditCard className="w-4 h-4" /> {isEn ? 'Pay via Midtrans' : 'Bayar via Midtrans'}
                           </>
                         )}
                       </button>
@@ -515,16 +543,16 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
 
                   {/* KONDISI 3: ACTIVE */}
                   {activeRequest.status === 'active' && (
-                    <div className="pt-2 border-t border-green-200 flex justify-between items-center">
-                      <span className="text-green-800 font-semibold text-[11px]">
-                        Terhubung ke Cloudflare Tunnel Kroomify
+                    <div className="pt-2 border-t border-emerald-200 flex justify-between items-center">
+                      <span className="text-emerald-800 font-semibold text-[11px]">
+                        {isEn ? 'Connected to Kroomify Cloudflare Tunnel' : 'Terhubung ke Cloudflare Tunnel Kroomify'}
                       </span>
                       <button
                         type="button"
                         onClick={handleDisconnectDomain}
-                        className="text-xs text-red-600 hover:text-red-700 font-bold underline cursor-pointer"
+                        className="text-xs text-[#66000E] hover:text-[#52000B] font-bold underline cursor-pointer"
                       >
-                        Putuskan
+                        {isEn ? 'Disconnect' : 'Putuskan'}
                       </button>
                     </div>
                   )}
@@ -532,66 +560,69 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
               )}
 
               {isFreePlan ? (
-                <div className="p-5 rounded-xl bg-gray-50 border border-dashed border-gray-300 text-center space-y-3">
-                  <div className="w-10 h-10 mx-auto rounded-full bg-red-50 text-red-600 flex items-center justify-center">
+                <div className="p-5 rounded-2xl bg-[#FAF7F7] border border-dashed border-[#E5E0DD] text-center space-y-3">
+                  <div className="w-10 h-10 mx-auto rounded-full bg-[#F5E8EA] text-[#66000E] flex items-center justify-center">
                     <Lock className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-gray-900">Custom Domain Terkunci</h4>
-                    <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto leading-relaxed">
-                      Upgrade ke paket <span className="font-semibold text-gray-700">Personal Toko</span> atau <span className="font-semibold text-gray-700">Community UMKM</span> untuk menghubungkan domain brand sendiri (.com, .id, dll) lengkap dengan sertifikat SSL gratis.
+                    <h4 className="text-sm font-bold text-[#241A1A]">
+                      {t('domain_premium_required', 'Fitur Custom Domain Membutuhkan Paket Langganan')}
+                    </h4>
+                    <p className="text-xs text-[#706866] mt-1 max-w-sm mx-auto leading-relaxed">
+                      {t('domain_upgrade_hint', 'Upgrade ke paket Starter atau Pro untuk mengaktifkan custom domain nama toko Anda.')}
                     </p>
                   </div>
                   {onNavigateBilling && (
                     <button
                       type="button"
                       onClick={onNavigateBilling}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-2"
+                      className="px-4 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer inline-flex items-center gap-2 active:scale-98"
                     >
                       <Sparkles className="w-4 h-4 text-white" />
-                      Lihat Pilihan Paket
+                      <span>{t('domain_upgrade_cta', 'Lihat Paket Langganan')}</span>
                     </button>
                   )}
                 </div>
               ) : (
                 <form onSubmit={handleRequestDomain} className="space-y-3.5">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">
-                      Cari & Ajukan Nama Domain Toko
+                    <label className="block text-xs font-bold text-[#241A1A] mb-1">
+                      {t('domain_custom_title', 'Cari & Beli Domain Kustom Baru')}
                     </label>
-                    <div className="flex rounded-xl shadow-xs border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500">
+                    <div className="flex rounded-xl shadow-2xs border border-[#E5E0DD] overflow-hidden focus-within:ring-2 focus-within:ring-[#66000E]/20 focus-within:border-[#66000E]">
                       <input
                         type="text"
                         value={domainPrefix}
                         onChange={(e) => setDomainPrefix(e.target.value.toLowerCase())}
-                        placeholder="contoh: tokoroti-jaya"
-                        className="flex-1 px-3.5 py-2.5 text-sm outline-none font-medium text-gray-900 bg-white"
+                        placeholder={t('domain_input_placeholder', 'nama-brand-kamu')}
+                        className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm outline-none font-medium text-[#241A1A] bg-white placeholder:text-[#706866]"
                       />
                       <select
                         value={selectedTld}
                         onChange={(e) => setSelectedTld(e.target.value)}
-                        className="px-3 py-2.5 text-sm font-bold bg-gray-100 text-gray-800 border-l border-gray-300 outline-none cursor-pointer hover:bg-gray-200/70"
+                        className="px-3 py-2.5 text-xs sm:text-sm font-bold bg-[#FAF7F7] text-[#241A1A] border-l border-[#E5E0DD] outline-none cursor-pointer hover:bg-white transition"
                       >
-                        {Object.entries(DOMAIN_TLD_PRICES).map(([tld, info]) => (
+                        {Object.keys(DOMAIN_TLD_PRICES).map((tld) => (
                           <option key={tld} value={tld}>
-                            {tld} ({info.label})
+                            {tld}
                           </option>
                         ))}
                       </select>
                     </div>
                   </div>
 
-                  {/* INFO HARGA DAN ESTIMASI */}
-                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-200 text-xs flex justify-between items-center">
-                    <div>
-                      <span className="text-gray-500 block text-[11px]">Estimasi Biaya Domain:</span>
-                      <span className="font-extrabold text-gray-900 text-sm">
-                        {DOMAIN_TLD_PRICES[selectedTld]?.label || 'Rp 250.000 / thn'}
+                  {/* KETERANGAN BIAYA DOMAIN */}
+                  <div className="bg-[#FAF7F7] p-3.5 rounded-xl border border-[#E5E0DD] text-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div className="flex items-center gap-2 text-[#706866]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                      <span>
+                        {isEn ? 'Domain price depends on selected TLD extension.' : 'Biaya pendaftaran domain tergantung pada ekstensi domain yang dipilih.'}
                       </span>
                     </div>
-                    <div className="text-right">
-                      <span className="text-[10px] text-gray-400 block">Siklus: 1 Tahun Penuh</span>
-                      <span className="text-[11px] text-green-700 font-bold">Include DNS & SSL</span>
+                    <div className="text-right shrink-0">
+                      <span className="text-[11px] text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        Include DNS & SSL
+                      </span>
                     </div>
                   </div>
 
@@ -599,15 +630,15 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
                     <button
                       type="submit"
                       disabled={isSubmitting || !domainPrefix.trim()}
-                      className="bg-gray-900 hover:bg-black text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow hover:shadow-md disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                      className="bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-2xs disabled:opacity-50 flex items-center gap-2 cursor-pointer active:scale-98"
                     >
                       {isSubmitting ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" /> Mengajukan...
+                          <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_btn_checking', 'Memeriksa...')}
                         </>
                       ) : (
                         <>
-                          Ajukan Permintaan Domain <ArrowRight className="w-4 h-4" />
+                          <span>{t('domain_btn_check', 'Cek Ketersediaan')}</span> <ArrowRight className="w-4 h-4" />
                         </>
                       )}
                     </button>
@@ -616,8 +647,10 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
               )}
             </div>
           ) : (
-            <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-xs text-gray-400">
-              Pilih opsi ini untuk mengajukan domain resmi (.com, .id, .online, .org, .top).
+            <div className="bg-[#FAF7F7] p-3.5 rounded-xl border border-[#E5E0DD] text-xs text-[#706866]">
+              {isEn
+                ? 'Select this option to request an official domain (.com, .id, .online, .org, etc).'
+                : 'Pilih opsi ini untuk mengajukan domain resmi (.com, .id, .online, .org, .top).'}
             </div>
           )}
         </div>
@@ -625,3 +658,4 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
     </div>
   );
 };
+

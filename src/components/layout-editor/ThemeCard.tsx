@@ -166,11 +166,11 @@ export const TemplateCard: React.FC<{
   const themeData = THEME_DATA_MAP[template.storeTemplate.id] || THEME_DATA_MAP['minimalist'];
 
   return (
-    <div className="group font-poppins flex flex-col gap-3.5 bg-white p-3.5 rounded-2xl border border-[#EAEAEA] shadow-2xs hover:shadow-md hover:border-[#E5E0DD] transition-all">
+    <div className="group font-poppins flex flex-col gap-3.5 bg-white p-3.5 rounded-2xl border border-[#E5E0DD] shadow-2xs hover:shadow-md hover:border-[#D5D0CD] transition-all">
       {/* Thumbnail */}
       <div
-        className={`relative aspect-[4/3] sm:aspect-[16/12] bg-[#FAF7F7] overflow-hidden cursor-pointer rounded-xl border border-[#EAEAEA] transition-all duration-300 ${
-          isActive ? 'ring-2 ring-[#9A0602] border-transparent shadow-xs' : 'group-hover:border-[#D5D0CD]'
+        className={`relative aspect-[4/3] sm:aspect-[16/12] bg-[#FAF7F7] overflow-hidden cursor-pointer rounded-xl border border-[#E5E0DD] transition-all duration-300 ${
+          isActive ? 'ring-2 ring-[#66000E] border-transparent shadow-xs' : 'group-hover:border-[#D5D0CD]'
         }`}
         onClick={onPreview}
       >
@@ -195,8 +195,8 @@ export const TemplateCard: React.FC<{
           }}
           className={`shrink-0 px-3.5 py-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer ${
             isActive 
-              ? 'bg-[#9A0602] text-white border-[#9A0602] shadow-sm hover:bg-[#7D0502]' 
-              : 'bg-white border-[#EAEAEA] text-[#1F1F1F] hover:bg-[#FFF1F0] hover:text-[#9A0602] hover:border-[#FECDCA]'
+              ? 'bg-[#66000E] text-white border-[#66000E] shadow-sm hover:bg-[#52000B]' 
+              : 'bg-white border-[#E5E0DD] text-[#1F1F1F] hover:bg-[#F5E8EA] hover:text-[#66000E] hover:border-[#E8DDDE]'
           }`}
         >
           {isActive ? 'Aktif' : 'Tambahkan'}

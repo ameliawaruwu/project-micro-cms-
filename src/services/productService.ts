@@ -83,7 +83,13 @@ class ProductService {
         uniqueMap.set(p.id, p);
       }
     });
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(Array.from(uniqueMap.values())));
+    const finalProducts = Array.from(uniqueMap.values());
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(finalProducts));
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: finalProducts }));
+      window.dispatchEvent(new Event('cms_draft_updated'));
+    }
   }
 
   async getProductsByStore(storeId: string): Promise<Product[]> {
@@ -275,7 +281,11 @@ class ProductService {
     // 1. Delete from LocalStorage first
     let products = this.getStoredProducts();
     products = products.filter((p) => p.id !== id);
-    this.saveProducts(products);
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: products }));
+      window.dispatchEvent(new Event('cms_draft_updated'));
+    }
 
     // 2. Sync delete to Supabase Cloud Database
     try {

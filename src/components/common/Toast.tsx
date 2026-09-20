@@ -24,18 +24,18 @@ export const Toast: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className={`pointer-events-auto flex items-center justify-between p-4 rounded-xl shadow-lg border text-xs font-semibold font-sans ${
+            className={`pointer-events-auto flex items-center justify-between p-4 rounded-xl shadow-lg border text-xs font-semibold font-poppins ${
               t.type === 'success'
                 ? 'bg-[#ECFDF3] border-[#ABEFC6] text-[#027A48]'
                 : t.type === 'error'
-                ? 'bg-[#FFF1F0] border-[#FECDCA] text-[#9A0602]'
-                : 'bg-white border-[#EAEAEA] text-[#1F1F1F]'
+                ? 'bg-[#F5E8EA] border-[#E8DDDE] text-[#66000E]'
+                : 'bg-white border-[#E5E0DD] text-[#1F1F1F]'
             }`}
           >
             <div className="flex items-center gap-3">
               {t.type === 'success' && <CheckCircle2 className="w-5 h-5 text-[#027A48] shrink-0" />}
-              {t.type === 'error' && <AlertCircle className="w-5 h-5 text-[#9A0602] shrink-0" />}
-              {t.type === 'info' && <Info className="w-5 h-5 text-[#9A0602] shrink-0" />}
+              {t.type === 'error' && <AlertCircle className="w-5 h-5 text-[#66000E] shrink-0" />}
+              {t.type === 'info' && <Info className="w-5 h-5 text-[#66000E] shrink-0" />}
               <span>{t.message}</span>
             </div>
             <button

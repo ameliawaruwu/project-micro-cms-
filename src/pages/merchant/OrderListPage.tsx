@@ -96,15 +96,15 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
       />
 
       {/* Search and Secondary Filters */}
-      <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-[#EAEAEA] shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+      <div className="bg-white p-3 sm:p-4 rounded-2xl border border-[#E5E0DD] shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-[#777777] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#706866] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder={t('search_orders_placeholder', 'Cari nomor pesanan, nama pembeli, atau resi...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border border-[#EAEAEA] bg-[#F9F9F9] text-xs sm:text-sm text-[#1F1F1F] placeholder:text-[#999999] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] focus:bg-white transition"
+            className="w-full pl-9 pr-3 py-2 sm:py-2.5 rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-xs sm:text-sm text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] focus:bg-white transition"
           />
         </div>
 
@@ -114,7 +114,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
             aria-label="Filter metode pembayaran"
-            className="w-full sm:w-auto py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] truncate"
+            className="w-full sm:w-auto py-2 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs font-medium text-[#241A1A] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] truncate cursor-pointer"
           >
             <option value="all">{t('all_payments', 'Semua Bayar')}</option>
             <option value="QRIS">QRIS Instant</option>
@@ -127,7 +127,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
             value={courierFilter}
             onChange={(e) => setCourierFilter(e.target.value)}
             aria-label="Filter kurir ekspedisi"
-            className="w-full sm:w-auto py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl border border-[#EAEAEA] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] truncate"
+            className="w-full sm:w-auto py-2 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs font-medium text-[#241A1A] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] truncate cursor-pointer"
           >
             <option value="all">{t('all_couriers', 'Semua Kurir')}</option>
             <option value="J&T">J&T Express</option>

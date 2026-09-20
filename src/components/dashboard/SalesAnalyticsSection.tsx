@@ -90,7 +90,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
   return (
     <div
       id="sales-summary-section"
-      className="bg-white rounded-2xl border border-[#E5E0DD] p-4 sm:p-6 shadow-2xs font-sans text-left transition-all hover:border-[#800000]/20"
+      className="bg-white rounded-2xl border border-[#E5E0DD] p-4 sm:p-6 shadow-2xs font-sans text-left transition-all hover:border-[#66000E]/20"
     >
       {/* 1. Header & Period Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#E5E0DD]">
@@ -120,7 +120,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
                 onClick={() => setSelectedPeriod(p)}
                 className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer min-h-[34px] ${
                   isActive
-                    ? 'bg-white text-[#800000] shadow-2xs border border-[#E6DDDA] font-medium'
+                    ? 'bg-white text-[#66000E] shadow-2xs border border-[#E6DDDA] font-semibold'
                     : 'text-[#706866] hover:text-slate-900 font-normal'
                 }`}
               >
@@ -134,21 +134,21 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
         <div className="sm:hidden flex items-center justify-between pt-1">
           <button
             onClick={() => setShowMobilePeriodSheet(true)}
-            className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-rose-50/50 border border-rose-200/80 text-xs font-medium text-[#800000] shadow-2xs min-h-[38px] w-full"
+            className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-[#F5E8EA]/60 border border-[#E8DDDE] text-xs font-semibold text-[#66000E] shadow-2xs min-h-[38px] w-full"
           >
             <span>{t('period_prefix', 'Periode:')} {getPeriodLabel(selectedPeriod)}</span>
-            <ChevronDown className="w-4 h-4 text-[#800000]" />
+            <ChevronDown className="w-4 h-4 text-[#66000E]" />
           </button>
         </div>
       </div>
 
       {/* 2. Key Metrics Snapshot for Selected Period */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 py-3 border-b border-[#E5E0DD]/60">
-        <div className="bg-rose-50/40 rounded-xl p-2.5 border border-rose-100/80">
+        <div className="bg-[#F5E8EA]/40 rounded-xl p-2.5 border border-[#E8DDDE]/80">
           <span className="text-[11px] font-normal text-[#706866] block">
             {isEn ? `Total Revenue (${getPeriodLabel(selectedPeriod)})` : `Total Omset (${selectedPeriod})`}
           </span>
-          <p className="text-sm sm:text-base font-semibold text-[#800000] tracking-tight">
+          <p className="text-sm sm:text-base font-semibold text-[#66000E] tracking-tight">
             {formatRupiah(analytics.totalSales)}
           </p>
         </div>
@@ -178,7 +178,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
 
           {/* Simple Legend */}
           <div className="flex items-center gap-1.5 text-[11px]">
-            <span className="w-2.5 h-2.5 rounded-sm bg-[#800000]"></span>
+            <span className="w-2.5 h-2.5 rounded-sm bg-[#66000E]"></span>
             <span className="font-normal text-slate-600">{t('sales_nominal', 'Nominal Penjualan')}</span>
           </div>
         </div>
@@ -235,8 +235,8 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
                     className={`w-full max-w-[48px] rounded-t-xl transition-all duration-300 ${
                       d.sales > 0
                         ? isPrimary
-                          ? 'bg-[#800000] shadow-sm ring-2 ring-[#800000]/25'
-                          : 'bg-[#800000]/75 hover:bg-[#800000]'
+                          ? 'bg-[#66000E] shadow-sm ring-2 ring-[#66000E]/25'
+                          : 'bg-[#66000E]/75 hover:bg-[#66000E]'
                         : 'bg-neutral-200/80 hover:bg-neutral-300'
                     }`}
                   />
@@ -244,7 +244,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
                   {/* X-Axis Label */}
                   <span
                     className={`absolute -bottom-6 text-[10px] sm:text-[11px] transition-colors whitespace-nowrap ${
-                      isPrimary ? 'font-medium text-[#800000]' : 'font-normal text-[#706866]'
+                      isPrimary ? 'font-medium text-[#66000E]' : 'font-normal text-[#706866]'
                     }`}
                   >
                     {d.label}
@@ -287,12 +287,12 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
                     }}
                     className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-medium transition ${
                       isActive
-                        ? 'bg-rose-50 text-[#800000] border border-rose-200'
+                        ? 'bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE]'
                         : 'text-slate-800 hover:bg-slate-50'
                     }`}
                   >
                     <span>{getPeriodLabel(p)}</span>
-                    {isActive && <Check className="w-4 h-4 text-[#800000]" />}
+                    {isActive && <Check className="w-4 h-4 text-[#66000E]" />}
                   </button>
                 );
               })}

@@ -33,6 +33,28 @@ function midtransDevPlugin(): Plugin {
               res.end(JSON.stringify({ error: 'MIDTRANS_SERVER_KEY tidak ditemukan di .env' }));
               return;
             }
+
+            // Security Hardening: Validasi nominal transaksi di sisi server
+            const rawAmount = Number(data.grossAmount);
+            if (isNaN(rawAmount) || rawAmount <= 0) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Nominal transaksi tidak valid (harus lebih besar dari Rp 0)' }));
+              return;
+            }
+            if (rawAmount > 500_000_000) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Nominal transaksi melebihi batas yang diizinkan' }));
+              return;
+            }
+
+            // Sanitasi input teks
+            const sanitizedOrderId = String(data.orderId || `ORDER-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+            const sanitizedName = String(data.customerName || 'Pembeli').replace(/<[^>]*>/g, '').trim().slice(0, 100);
+            const sanitizedPhone = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
+            const sanitizedEmail = String(data.customerEmail || 'customer@example.com').trim().slice(0, 100);
+
             const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
             const apiUrl =
               env === 'production'
@@ -41,13 +63,13 @@ function midtransDevPlugin(): Plugin {
 
             const payload: any = {
               transaction_details: {
-                order_id: data.orderId || `ORDER-${Date.now()}`,
-                gross_amount: Math.round(data.grossAmount || 10000),
+                order_id: sanitizedOrderId,
+                gross_amount: Math.round(rawAmount),
               },
               customer_details: {
-                first_name: data.customerName || 'Pembeli',
-                phone: data.customerPhone || '08123456789',
-                email: data.customerEmail || 'customer@example.com',
+                first_name: sanitizedName,
+                phone: sanitizedPhone,
+                email: sanitizedEmail,
               },
             };
 
@@ -98,6 +120,51 @@ function midtransDevPlugin(): Plugin {
         });
       });
 
+      // Endpoint Webhook Notifikasi Midtrans dengan Verifikasi Signature SHA-512
+      server.middlewares.use('/api/midtrans/notification', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+
+        let body = '';
+        req.on('data', (chunk) => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const notif = JSON.parse(body || '{}');
+            const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+            const orderId = notif.order_id || '';
+            const statusCode = notif.status_code || '';
+            const grossAmount = notif.gross_amount || '';
+            const receivedSignature = notif.signature_key || '';
+
+            // Verifikasi Signature SHA-512
+            const crypto = await import('crypto');
+            const expectedSignature = crypto
+              .createHash('sha512')
+              .update(`${orderId}${statusCode}${grossAmount}${serverKey}`)
+              .digest('hex');
+
+            if (receivedSignature.toLowerCase() !== expectedSignature.toLowerCase()) {
+              res.statusCode = 403;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Invalid Midtrans Signature Key' }));
+              return;
+            }
+
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, message: 'Notification verified successfully' }));
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: err?.message || 'Webhook processing error' }));
+          }
+        });
+      });
+
       server.middlewares.use('/api/midtrans/status', async (req, res) => {
         if (req.method !== 'GET' && req.method !== 'POST') {
           res.statusCode = 405;
@@ -139,14 +206,36 @@ function midtransDevPlugin(): Plugin {
               ? `https://api.midtrans.com/v2/${encodeURIComponent(orderId)}/status`
               : `https://api.sandbox.midtrans.com/v2/${encodeURIComponent(orderId)}/status`;
 
-          const midtransRes = await fetch(apiUrl, {
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Basic ${Buffer.from(serverKey + ':').toString('base64')}`,
-            },
-          });
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-          const midtransData = await midtransRes.json();
+          let midtransData: any = {};
+          try {
+            const midtransRes = await fetch(apiUrl, {
+              headers: {
+                Accept: 'application/json',
+                Authorization: `Basic ${Buffer.from(serverKey + ':').toString('base64')}`,
+              },
+              signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            midtransData = await midtransRes.json().catch(() => ({}));
+          } catch (fetchErr: any) {
+            clearTimeout(timeoutId);
+            const isTimeout = fetchErr?.name === 'AbortError';
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(
+              JSON.stringify({
+                success: false,
+                isPaid: false,
+                isTimeout,
+                error: isTimeout ? 'Midtrans server timeout' : (fetchErr?.message || 'Network error'),
+              })
+            );
+            return;
+          }
+
           const txStatus = midtransData.transaction_status || '';
           const isPaid = txStatus === 'settlement' || txStatus === 'capture';
 
@@ -157,18 +246,93 @@ function midtransDevPlugin(): Plugin {
               success: true,
               isPaid,
               transactionStatus: txStatus,
+              statusCode: midtransData.status_code,
+              statusMessage: midtransData.status_message,
               data: midtransData,
             })
           );
         } catch (err: any) {
-          res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: true, message: err?.message || 'Server error' }));
+          res.statusCode = 200;
+          res.end(JSON.stringify({ success: false, isPaid: false, error: err?.message || 'Server error' }));
         }
       });
     },
   };
 }
+
+// Backend Proxy untuk Biteship API (Menyembunyikan BITESHIP_API_KEY dari browser client)
+function shippingDevPlugin(): Plugin {
+  return {
+    name: 'shipping-dev-server',
+    configureServer(server) {
+      server.middlewares.use('/api/shipping/rates', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+
+        let body = '';
+        req.on('data', (chunk) => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const apiKey = process.env.BITESHIP_API_KEY || '';
+            if (!apiKey) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'BITESHIP_API_KEY belum dikonfigurasi di server .env' }));
+              return;
+            }
+
+            const { origin_postal_code, destination_postal_code, couriers, weight } = data;
+            if (!origin_postal_code || !destination_postal_code) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Kode pos asal dan tujuan harus diisi' }));
+              return;
+            }
+
+            const biteshipRes = await fetch('https://api.biteship.com/v1/rates/couriers', {
+              method: 'POST',
+              headers: {
+                Authorization: apiKey.startsWith('Bearer ') ? apiKey : `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                origin_postal_code: Number(origin_postal_code),
+                destination_postal_code: Number(destination_postal_code),
+                couriers: couriers || 'jne,sicepat,jnt',
+                items: [
+                  {
+                    name: 'Paket Pesanan Toko',
+                    value: 100000,
+                    weight: Math.max(50, Number(weight) || 250),
+                    quantity: 1,
+                  },
+                ],
+              }),
+            });
+
+            const biteshipData = await biteshipRes.json();
+            res.statusCode = biteshipRes.status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(biteshipData));
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: err?.message || 'Gagal menghubungi Biteship API' }));
+          }
+        });
+      });
+    },
+  };
+}
+
+// In-memory rate limiting map untuk email (maksimal 10 email per menit per IP)
+const emailRateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 function emailDevPlugin(): Plugin {
   return {
@@ -180,6 +344,23 @@ function emailDevPlugin(): Plugin {
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ error: 'Method not allowed' }));
           return;
+        }
+
+        // Rate Limiting Check
+        const clientIp = req.socket.remoteAddress || 'unknown';
+        const now = Date.now();
+        const limitInfo = emailRateLimitMap.get(clientIp);
+
+        if (limitInfo && now < limitInfo.resetAt) {
+          if (limitInfo.count >= 10) {
+            res.statusCode = 429;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Terlalu banyak permintaan pengiriman email. Silakan coba lagi nanti.' }));
+            return;
+          }
+          limitInfo.count += 1;
+        } else {
+          emailRateLimitMap.set(clientIp, { count: 1, resetAt: now + 60_000 });
         }
 
         let body = '';
@@ -195,7 +376,30 @@ function emailDevPlugin(): Plugin {
             if (!to || !subject || !html) {
               res.statusCode = 400;
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'Missing required fields' }));
+              res.end(JSON.stringify({ error: 'Field to, subject, dan html wajib diisi' }));
+              return;
+            }
+
+            // Validasi format email & batas ukuran
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(String(to).trim())) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Format email tujuan tidak valid' }));
+              return;
+            }
+
+            if (String(subject).length > 200) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Subjek email maksimal 200 karakter' }));
+              return;
+            }
+
+            if (String(html).length > 100_000) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Ukuran konten email melebihi batas (maks 100KB)' }));
               return;
             }
 
@@ -205,7 +409,7 @@ function emailDevPlugin(): Plugin {
             if (!smtpEmail || !smtpPassword) {
               res.statusCode = 500;
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'Server configuration error' }));
+              res.end(JSON.stringify({ error: 'Konfigurasi SMTP belum tersedia di server .env' }));
               return;
             }
 
@@ -214,7 +418,7 @@ function emailDevPlugin(): Plugin {
             const transporter = nodemailer.createTransport({
               host: isGmail ? 'smtp.gmail.com' : 'smtp.ethereal.email',
               port: 587,
-              secure: false, // true for 465, false for other ports
+              secure: false,
               requireTLS: true,
               auth: {
                 user: smtpEmail,
@@ -222,22 +426,20 @@ function emailDevPlugin(): Plugin {
               },
             });
 
-
             const info = await transporter.sendMail({
               from: `"Kroomify" <${smtpEmail}>`,
-              to,
-              subject,
-              html,
+              to: String(to).trim(),
+              subject: String(subject).trim(),
+              html: String(html),
             });
 
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ success: true, messageId: info.messageId }));
           } catch (err: any) {
-            console.error('Email sending error:', err);
             res.statusCode = 500;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: err.message || 'Internal server error' }));
+            res.end(JSON.stringify({ error: err?.message || 'Gagal mengirim email' }));
           }
         });
       });
@@ -476,6 +678,7 @@ export default defineConfig(() => {
       react(),
       tailwindcss(),
       midtransDevPlugin(),
+      shippingDevPlugin(),
       emailDevPlugin(),
       cloudflareDevPlugin(),
     ],

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Order } from '../../../types';
 import { formatRupiah, formatDateIndo } from '../../../utils/formatters';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export interface TimelineStepItem {
   id: number;
@@ -64,76 +65,95 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
   onMarkCompleted,
   onPrintReceipt,
 }) => {
+  const { t, language } = useLanguage();
   const isPaid = order.paymentStatus === 'Sudah Dibayar';
   const isProcessed = order.shippingStatus !== 'Baru';
 
   const steps: TimelineStepItem[] = [
     {
       id: 1,
-      title: 'Pesanan Dibuat',
+      title: language === 'en' ? 'Order Placed' : 'Pesanan Dibuat',
       subtitle: formatDateIndo(order.createdAt),
       icon: ShoppingBag,
       completed: true,
       active: !isPaid,
-      statusLabel: 'Selesai Dibuat',
+      statusLabel: language === 'en' ? 'Created' : 'Selesai Dibuat',
       badgeColor: 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]',
-      description: `Pesanan #${order.orderNumber} berhasil dibuat oleh ${order.customerName}. Data belanja ${order.items?.length || 1} produk dan alamat pengiriman telah tersimpan aman di database toko.`,
+      description: language === 'en' 
+        ? `Order #${order.orderNumber} successfully created by ${order.customerName}. Data of ${order.items?.length || 1} products and destination address are securely stored.`
+        : `Pesanan #${order.orderNumber} berhasil dibuat oleh ${order.customerName}. Data belanja ${order.items?.length || 1} produk dan alamat pengiriman telah tersimpan aman di database toko.`,
       actionType: 'none',
     },
     {
       id: 2,
-      title: 'Pembayaran Diterima',
-      subtitle: isPaid ? `${order.paymentMethod} (Lunas)` : 'Menunggu Bayar',
+      title: language === 'en' ? 'Payment Received' : 'Pembayaran Diterima',
+      subtitle: isPaid ? `${order.paymentMethod} (${language === 'en' ? 'Paid' : 'Lunas'})` : (language === 'en' ? 'Awaiting Payment' : 'Menunggu Bayar'),
       icon: CreditCard,
       completed: isPaid,
       active: isPaid && !isProcessed,
-      statusLabel: isPaid ? 'Pembayaran Lunas' : 'Menunggu Verifikasi',
+      statusLabel: isPaid ? (language === 'en' ? 'Payment Completed' : 'Pembayaran Lunas') : (language === 'en' ? 'Awaiting Verification' : 'Menunggu Verifikasi'),
       badgeColor: isPaid ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]' : 'bg-[#FEFCE8] text-[#A16207] border-[#FEF08A]',
       description: isPaid
-        ? `Tagihan pesanan sebesar ${formatRupiah(order.grandTotal)} telah diverifikasi lunas melalui metode pembayaran ${order.paymentMethod}.`
-        : `Menunggu penyelesaian pembayaran sebesar ${formatRupiah(order.grandTotal)} dari pelanggan via ${order.paymentMethod}.`,
+        ? (language === 'en'
+            ? `Order bill of ${formatRupiah(order.grandTotal)} has been verified via ${order.paymentMethod}.`
+            : `Tagihan pesanan sebesar ${formatRupiah(order.grandTotal)} telah diverifikasi lunas melalui metode pembayaran ${order.paymentMethod}.`)
+        : (language === 'en'
+            ? `Waiting for payment of ${formatRupiah(order.grandTotal)} from customer via ${order.paymentMethod}.`
+            : `Menunggu penyelesaian pembayaran sebesar ${formatRupiah(order.grandTotal)} dari pelanggan via ${order.paymentMethod}.`),
       actionType: 'receipt',
     },
     {
       id: 3,
-      title: 'Sedang Diproses',
-      subtitle: isProcessed ? 'Selesai Dikemas' : 'Menunggu Diproses',
+      title: language === 'en' ? 'Processing' : 'Sedang Diproses',
+      subtitle: isProcessed ? (language === 'en' ? 'Packed' : 'Selesai Dikemas') : (language === 'en' ? 'Awaiting Process' : 'Menunggu Diproses'),
       icon: PackageCheck,
       completed: isProcessed,
       active: isProcessed && !isShipped,
-      statusLabel: isProcessed ? 'Selesai Dikemas' : 'Perlu Diproses',
-      badgeColor: isProcessed ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]' : 'bg-[#FFF1F0] text-[#9A0602] border-[#FECDCA]',
+      statusLabel: isProcessed ? (language === 'en' ? 'Packed' : 'Selesai Dikemas') : (language === 'en' ? 'Needs Processing' : 'Perlu Diproses'),
+      badgeColor: isProcessed ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]' : 'bg-[#F5E8EA] text-[#66000E] border-[#E8DDDE]',
       description: isProcessed
-        ? `Pesanan telah selesai dipacking rapi oleh penjual, label pengiriman telah tercetak dan siap diserahkan ke gerai kurir ${order.courier}.`
-        : `Pesanan belum diproses. Silakan klik tombol "Proses Pengiriman" untuk mencetak resi dan menyiapkan paket.`,
+        ? (language === 'en'
+            ? `Order is packed neatly by seller, shipping label printed and ready for ${order.courier} courier hand-over.`
+            : `Pesanan telah selesai dipacking rapi oleh penjual, label pengiriman telah tercetak dan siap diserahkan ke gerai kurir ${order.courier}.`)
+        : (language === 'en'
+            ? `Order has not been processed yet. Please click "Process Shipping" to print label and prepare package.`
+            : `Pesanan belum diproses. Silakan klik tombol "Proses Pengiriman" untuk mencetak resi dan menyiapkan paket.`),
       actionType: isProcessed ? 'receipt' : 'process',
     },
     {
       id: 4,
-      title: 'Dalam Pengiriman',
-      subtitle: order.resiNumber ? `Resi: ${order.resiNumber}` : 'Menunggu Kurir',
+      title: language === 'en' ? 'In Transit' : 'Dalam Pengiriman',
+      subtitle: order.resiNumber ? `${language === 'en' ? 'Waybill' : 'Resi'}: ${order.resiNumber}` : (language === 'en' ? 'Awaiting Courier' : 'Menunggu Kurir'),
       icon: Truck,
       completed: isShipped,
       active: isShipped && !isCompleted,
-      statusLabel: isShipped ? 'Dalam Perjalanan' : 'Menunggu Penyerahan',
+      statusLabel: isShipped ? (language === 'en' ? 'On The Way' : 'Dalam Perjalanan') : (language === 'en' ? 'Awaiting Hand-over' : 'Menunggu Penyerahan'),
       badgeColor: isShipped ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]' : 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]',
       description: isShipped
-        ? `Paket telah diserahterimakan dan sedang diantar oleh kurir ${order.courier} (${order.courierService || 'Reguler'}). Nomor resi resmi: ${order.resiNumber || '-'}.`
-        : `Paket menunggu penjemputan atau serah terima kepada kurir ${order.courier}. Nomor resi akan terbit otomatis saat diproses.`,
+        ? (language === 'en'
+            ? `Package has been handed over and is being delivered by ${order.courier} (${order.courierService || 'Reguler'}). Official tracking: ${order.resiNumber || '-'}.`
+            : `Paket telah diserahterimakan dan sedang diantar oleh kurir ${order.courier} (${order.courierService || 'Reguler'}). Nomor resi resmi: ${order.resiNumber || '-'}.`)
+        : (language === 'en'
+            ? `Package is waiting for pickup or handover to courier ${order.courier}. Tracking number will be generated upon processing.`
+            : `Paket menunggu penjemputan atau serah terima kepada kurir ${order.courier}. Nomor resi akan terbit otomatis saat diproses.`),
       actionType: isShipped ? 'tracking' : 'none',
     },
     {
       id: 5,
-      title: 'Pesanan Selesai',
-      subtitle: isCompleted ? 'Diterima Pembeli' : 'Tujuan Akhir',
+      title: language === 'en' ? 'Completed' : 'Pesanan Selesai',
+      subtitle: isCompleted ? (language === 'en' ? 'Received' : 'Diterima Pembeli') : (language === 'en' ? 'Final Destination' : 'Tujuan Akhir'),
       icon: CheckCircle2,
       completed: isCompleted,
       active: isCompleted,
-      statusLabel: isCompleted ? 'Pesanan Berhasil' : 'Menunggu Konfirmasi',
+      statusLabel: isCompleted ? (language === 'en' ? 'Successful' : 'Pesanan Berhasil') : (language === 'en' ? 'Awaiting Confirmation' : 'Menunggu Konfirmasi'),
       badgeColor: isCompleted ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]' : 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]',
       description: isCompleted
-        ? `Paket telah berhasil diterima oleh ${order.customerName} di ${order.customerCity}. Seluruh proses transaksi jual-beli telah selesai sempurna.`
-        : `Paket akan diserahterimakan ke alamat ${order.customerAddress}, ${order.customerCity}. Setelah diterima, penjual atau pembeli dapat menyelesaikan pesanan.`,
+        ? (language === 'en'
+            ? `Package has been received by ${order.customerName} in ${order.customerCity}. The transaction is complete.`
+            : `Paket telah berhasil diterima oleh ${order.customerName} di ${order.customerCity}. Seluruh proses transaksi jual-beli telah selesai sempurna.`)
+        : (language === 'en'
+            ? `Package will be handed over to ${order.customerAddress}, ${order.customerCity}. Once received, order can be marked completed.`
+            : `Paket akan diserahterimakan ke alamat ${order.customerAddress}, ${order.customerCity}. Setelah diterima, penjual atau pembeli dapat menyelesaikan pesanan.`),
       actionType: !isCompleted && isShipped ? 'complete' : 'none',
     },
   ];
@@ -141,19 +161,19 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
   const currentSelectedStep = steps.find((s) => s.id === selectedStepId) || steps[currentStepIndex];
 
   return (
-    <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FAFAFA] to-[#F7F7F7] border border-[#EAEAEA] shadow-2xs">
+    <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FAFAFA] to-[#F7F7F7] border border-[#E5E0DD] shadow-2xs font-poppins">
       {/* Header: Title, Progress Pill & Live Status Badge */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2.5">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#FFF1F0] border border-[#FECDCA] text-[#9A0602] flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg bg-[#F5E8EA] border border-[#E8DDDE] text-[#66000E] flex items-center justify-center">
             <Compass className="w-4 h-4" />
           </div>
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#1F1F1F]">
-              Status Perjalanan Pesanan
+              {language === 'en' ? 'Order Journey Status' : 'Status Perjalanan Pesanan'}
             </h4>
             <p className="text-[10px] text-[#777777]">
-              Klik tahapan di bawah untuk melihat rincian aktivitas & aksi cepat
+              {language === 'en' ? 'Click stages below to view details and quick actions' : 'Klik tahapan di bawah untuk melihat rincian aktivitas & aksi cepat'}
             </p>
           </div>
         </div>
@@ -161,9 +181,9 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
         {/* Progress & Live Badge */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Progress Pill Indicator */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#EAEAEA] shadow-2xs text-[11px] font-bold text-[#1F1F1F]">
-            <span className="w-2 h-2 rounded-full bg-[#9A0602]" />
-            <span>Tahap {currentStepIndex + 1} dari 5</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#E5E0DD] shadow-2xs text-[11px] font-bold text-[#1F1F1F]">
+            <span className="w-2 h-2 rounded-full bg-[#66000E]" />
+            <span>{language === 'en' ? `Step ${currentStepIndex + 1} of 5` : `Tahap ${currentStepIndex + 1} dari 5`}</span>
             <span className="text-[#777777] font-normal font-mono">• {progressPercentage}%</span>
           </div>
 
@@ -191,12 +211,12 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
       <div className="overflow-x-auto pt-4 pb-2.5 px-2 custom-scrollbar touch-pan-x">
         <div className="grid grid-cols-5 min-w-[460px] sm:min-w-[520px] relative">
           {/* 1. Inactive Background Track Line running from 10% to 90% */}
-          <div className="absolute top-5 left-[10%] right-[10%] h-1 bg-[#EAEAEA] rounded-full -translate-y-1/2" />
+          <div className="absolute top-5 left-[10%] right-[10%] h-1 bg-[#E5E0DD] rounded-full -translate-y-1/2" />
 
           {/* 2. Active Filled Animated Progress Line */}
           <div className="absolute top-5 left-[10%] right-[10%] h-1 rounded-full -translate-y-1/2 overflow-hidden pointer-events-none">
             <div
-              className="h-full bg-gradient-to-r from-[#9A0602] to-[#DC2626] transition-all duration-700 ease-out relative"
+              className="h-full bg-gradient-to-r from-[#66000E] to-[#801010] transition-all duration-700 ease-out relative"
               style={{ width: `${progressPercentage}%` }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse" />
@@ -214,27 +234,27 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
                 key={step.id}
                 type="button"
                 onClick={() => setSelectedStepId(step.id)}
-                title={`Klik untuk melihat detail: ${step.title}`}
+                title={`Detail: ${step.title}`}
                 className="group flex flex-col items-center text-center relative z-10 px-1 cursor-pointer select-none transition-transform duration-200 focus:outline-none"
               >
                 {/* Node Circle */}
                 <div className="relative flex items-center justify-center">
                   {/* Live Radar Pulse Halo for Active Step */}
                   {isCurrentActive && (
-                    <span className="absolute -inset-1.5 rounded-full bg-[#9A0602]/25 animate-ping pointer-events-none" />
+                    <span className="absolute -inset-1.5 rounded-full bg-[#66000E]/25 animate-ping pointer-events-none" />
                   )}
 
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
                       isSelected
-                        ? 'ring-4 ring-[#9A0602]/25 shadow-md scale-105'
-                        : 'ring-4 ring-white shadow-xs group-hover:ring-[#9A0602]/20'
+                        ? 'ring-4 ring-[#66000E]/25 shadow-md scale-105'
+                        : 'ring-4 ring-white shadow-xs group-hover:ring-[#66000E]/20'
                     } ${
                       step.completed
-                        ? 'bg-gradient-to-br from-[#9A0602] to-[#B91C1C] text-white'
+                        ? 'bg-gradient-to-br from-[#66000E] to-[#801010] text-white'
                         : isCurrentActive
-                        ? 'bg-gradient-to-br from-[#9A0602] to-[#DC2626] text-white animate-pulse'
-                        : 'bg-white text-[#999999] border-2 border-[#EAEAEA]'
+                        ? 'bg-gradient-to-br from-[#66000E] to-[#801010] text-white animate-pulse'
+                        : 'bg-white text-[#999999] border-2 border-[#E5E0DD]'
                     }`}
                   >
                     {step.completed ? (
@@ -250,9 +270,9 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
                   <span
                     className={`text-[10px] sm:text-[11px] font-bold leading-tight px-1.5 py-0.5 rounded-md transition-colors text-center break-words max-w-[85px] sm:max-w-none ${
                       isSelected
-                        ? 'text-[#9A0602] bg-[#FFF1F0]'
+                        ? 'text-[#66000E] bg-[#F5E8EA]'
                         : step.completed || step.active
-                        ? 'text-[#1F1F1F] group-hover:text-[#9A0602]'
+                        ? 'text-[#1F1F1F] group-hover:text-[#66000E]'
                         : 'text-[#777777] group-hover:text-[#1F1F1F]'
                     }`}
                   >
@@ -266,10 +286,10 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
       </div>
 
       {/* Interactive Step Detail Card */}
-      <div className="mt-2 p-3.5 sm:p-4 rounded-xl bg-white border border-[#EAEAEA] shadow-xs animate-in fade-in slide-in-from-top-1 duration-200">
+      <div className="mt-2 p-3.5 sm:p-4 rounded-xl bg-white border border-[#E5E0DD] shadow-xs animate-in fade-in slide-in-from-top-1 duration-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-[#F0F0F0]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#FFF1F0] text-[#9A0602] border border-[#FECDCA] flex items-center justify-center font-bold text-sm shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] flex items-center justify-center font-bold text-sm shrink-0">
               <currentSelectedStep.icon className="w-4 h-4" />
             </div>
             <div>
@@ -282,7 +302,7 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
                 </span>
               </div>
               <p className="text-[10px] text-[#777777] flex items-center gap-1 mt-0.5">
-                <Clock className="w-3 h-3 text-[#9A0602]" />
+                <Clock className="w-3 h-3 text-[#66000E]" />
                 <span>{currentSelectedStep.subtitle}</span>
               </p>
             </div>
@@ -294,19 +314,19 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
               type="button"
               disabled={currentSelectedStep.id === 1}
               onClick={() => setSelectedStepId((prev) => Math.max(1, prev - 1))}
-              className="p-1.5 rounded-lg border border-[#EAEAEA] text-[#777777] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              className="p-1.5 rounded-lg border border-[#E5E0DD] text-[#777777] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
               title="Tahap Sebelumnya"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <span className="text-[10px] font-mono text-[#777777] px-1 font-semibold">
-              Tahap {currentSelectedStep.id} / 5
+              {language === 'en' ? `Step ${currentSelectedStep.id} / 5` : `Tahap ${currentSelectedStep.id} / 5`}
             </span>
             <button
               type="button"
               disabled={currentSelectedStep.id === 5}
               onClick={() => setSelectedStepId((prev) => Math.min(5, prev + 1))}
-              className="p-1.5 rounded-lg border border-[#EAEAEA] text-[#777777] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              className="p-1.5 rounded-lg border border-[#E5E0DD] text-[#777777] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
               title="Tahap Selanjutnya"
             >
               <ChevronRight className="w-3.5 h-3.5" />
@@ -326,18 +346,18 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
               <button
                 type="button"
                 onClick={handleCopyResi}
-                className="px-2.5 py-1.5 rounded-lg bg-[#F7F7F7] hover:bg-[#EAEAEA] text-[#1F1F1F] font-semibold text-[11px] flex items-center gap-1 transition cursor-pointer border border-[#EAEAEA]"
+                className="px-2.5 py-1.5 rounded-lg bg-[#F7F7F7] hover:bg-[#EAEAEA] text-[#1F1F1F] font-semibold text-[11px] flex items-center gap-1 transition cursor-pointer border border-[#E5E0DD]"
               >
                 {copiedResi ? <Check className="w-3 h-3 text-[#027A48]" /> : <Copy className="w-3 h-3" />}
-                <span>{copiedResi ? 'Tersalin' : 'Salin Resi'}</span>
+                <span>{copiedResi ? (language === 'en' ? 'Copied' : 'Tersalin') : (language === 'en' ? 'Copy Waybill' : 'Salin Resi')}</span>
               </button>
               <a
                 href={biteshipTrackingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-2.5 py-1.5 rounded-lg bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-[11px] flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                className="px-2.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-[11px] flex items-center gap-1 transition cursor-pointer shadow-2xs"
               >
-                <span>Lacak Kurir</span>
+                <span>{language === 'en' ? 'Track Courier' : 'Lacak Kurir'}</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
@@ -347,10 +367,10 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
             <button
               type="button"
               onClick={() => onProcessShipping(order)}
-              className="px-3 py-1.5 rounded-lg bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 self-start sm:self-center"
+              className="px-3 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 self-start sm:self-center"
             >
               <Truck className="w-3.5 h-3.5" />
-              <span>Atur Pengiriman</span>
+              <span>{language === 'en' ? 'Process Shipping' : 'Atur Pengiriman'}</span>
             </button>
           )}
 
@@ -361,7 +381,7 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
               className="px-3 py-1.5 rounded-lg bg-[#027A48] hover:bg-[#059669] text-white font-semibold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 self-start sm:self-center"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Tandai Selesai</span>
+              <span>{language === 'en' ? 'Mark Completed' : 'Tandai Selesai'}</span>
             </button>
           )}
 
@@ -369,10 +389,10 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
             <button
               type="button"
               onClick={() => onPrintReceipt(order)}
-              className="px-2.5 py-1.5 rounded-lg bg-[#F7F7F7] hover:bg-[#EAEAEA] text-[#1F1F1F] font-semibold text-[11px] flex items-center gap-1 transition cursor-pointer border border-[#EAEAEA] shrink-0 self-start sm:self-center"
+              className="px-2.5 py-1.5 rounded-lg bg-[#F7F7F7] hover:bg-[#EAEAEA] text-[#1F1F1F] font-semibold text-[11px] flex items-center gap-1 transition cursor-pointer border border-[#E5E0DD] shrink-0 self-start sm:self-center"
             >
               <Printer className="w-3 h-3 text-[#555555]" />
-              <span>Struk Bayar</span>
+              <span>{language === 'en' ? 'Receipt' : 'Struk Bayar'}</span>
             </button>
           )}
         </div>

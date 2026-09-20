@@ -134,6 +134,44 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     });
   }, []);
 
+  // Auto-polling status from Midtrans while an invoice is pending
+  useEffect(() => {
+    if (!pendingSubscription || !pendingSubscription.orderId) return;
+
+    let isMounted = true;
+    let isChecking = false;
+
+    const checkStatus = async () => {
+      if (isChecking || isVerifying) return;
+      isChecking = true;
+      try {
+        const checkRes = await midtransService.checkTransactionStatus(pendingSubscription.orderId!);
+        if (checkRes.isPaid && isMounted) {
+          await handleActivatePlan(pendingSubscription);
+        }
+      } catch (err) {
+        // Silently skip background polling errors
+      } finally {
+        isChecking = false;
+      }
+    };
+
+    // Auto-check immediately when merchant refocuses the window
+    const handleFocus = () => {
+      checkStatus();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Poll every 5 seconds
+    const timer = setInterval(checkStatus, 5000);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(timer);
+    };
+  }, [pendingSubscription?.id, pendingSubscription?.orderId, isVerifying]);
+
   const currentPlan = store.plan || 'free';
 
   const handleOpenUpgrade = (plan: BillingPlan) => {
@@ -143,19 +181,34 @@ export const BillingPage: React.FC<BillingPageProps> = ({
   };
 
   /**
-   * Activate plan immediately on merchant store & mark subscription as paid
+   * Activate plan immediately on merchant store & mark subscription as paid for 1 year
    */
   const handleActivatePlan = async (sub: BillingSubscription) => {
     const planSlug = sub.planId.replace(/^plan_/, '');
     
+    // Calculate 1 Year (365 Days) Expiration Date
+    const now = new Date();
+    const oneYearLater = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+    const expiresAtIso = oneYearLater.toISOString();
+    const paidAtIso = now.toISOString();
+
     // 1. Update store record & notify parent state (App.tsx)
-    const updated = await storeService.updateStore(store.id, { plan: planSlug as any });
+    const updated = await storeService.updateStore(store.id, { 
+      plan: planSlug as any,
+      planExpiresAt: expiresAtIso,
+      planSubscribedAt: paidAtIso,
+      layoutSettings: {
+        ...(store.layoutSettings || {}),
+        planExpiresAt: expiresAtIso,
+        planSubscribedAt: paidAtIso,
+      }
+    });
     onUpdateStore(updated);
 
     // 2. Mark subscription as paid
     await billingPlanService.updateSubscriptionStatus(sub.id, 'paid', {
-      paidAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + (sub.cycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
+      paidAt: paidAtIso,
+      expiresAt: expiresAtIso,
     });
 
     // 3. Clear pending state
@@ -167,21 +220,27 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       subs.map((s) => ({
         id: s.invoiceNumber,
         plan: s.planName,
-        cycle: s.cycle === 'yearly' ? (isEn ? 'Yearly' : 'Tahunan') : (isEn ? 'Monthly' : 'Bulanan'),
+        cycle: isEn ? 'Yearly (1 Year)' : 'Tahunan (1 Tahun)',
         date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
         amount: s.amount,
         status: s.status === 'paid' ? (isEn ? 'Paid (Midtrans)' : 'Lunas (Midtrans)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
       }))
     );
 
+    const formattedExpiryDate = oneYearLater.toLocaleDateString(isEn ? 'en-US' : 'id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+
     if (onShowNotification) {
       onShowNotification(
         isEn
-          ? `🎉 Congratulations! Your store is now active on ${sub.planName} plan!`
-          : `🎉 Selamat! Paket ${sub.planName} toko Anda sudah aktif dan semua fitur premium dapat langsung digunakan!`
+          ? `🎉 Congratulations! Your store is now active on ${sub.planName} plan for 1 Year (valid until ${formattedExpiryDate})!`
+          : `🎉 Selamat! Paket ${sub.planName} toko Anda sudah AKTIF selama 1 TAHUN (berlaku hingga ${formattedExpiryDate})!`
       );
     }
-    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
   };
 
   /**
@@ -209,18 +268,29 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       const checkRes = await midtransService.checkTransactionStatus(sub.orderId);
       if (checkRes.isPaid) {
         await handleActivatePlan(sub);
-      } else {
+      } else if (checkRes.isTimeout) {
         if (onShowNotification) {
           onShowNotification(
-            checkRes.transactionStatus
-              ? (isEn ? `Midtrans status: "${checkRes.transactionStatus}". Payment not completed yet.` : `Status transaksi Midtrans: "${checkRes.transactionStatus}". Pembayaran belum lunas.`)
-              : (isEn ? 'Payment not detected yet in Midtrans. Please complete your transaction.' : 'Pembayaran belum terdeteksi. Silakan selesaikan pembayaran di aplikasi bank/e-wallet Anda.')
+            isEn 
+              ? 'Midtrans Sandbox is slow to respond. You can click "Instant Test (Sandbox)" to activate immediately.' 
+              : 'Koneksi ke Midtrans Sandbox sedang lambat. Silakan klik "⚡ Aktifkan Langsung (Sandbox)" untuk langsung mengaktifkan paket.'
           );
+        }
+      } else {
+        if (onShowNotification) {
+          const msg = checkRes.transactionStatus
+            ? (isEn ? `Status Midtrans: "${checkRes.transactionStatus}". Pembayaran belum lunas.` : `Status transaksi Midtrans: "${checkRes.transactionStatus}". Pembayaran belum lunas.`)
+            : (isEn ? 'Payment not detected yet. If you have paid or are testing in Sandbox, click "Instant Test (Sandbox)".' : 'Pembayaran belum terdeteksi di Midtrans Sandbox. Silakan selesaikan di simulator atau klik tombol "⚡ Aktifkan Langsung (Sandbox)".');
+          onShowNotification(msg);
         }
       }
     } catch (err: any) {
-      console.error('Error verifying payment:', err);
-      if (onShowNotification) onShowNotification(isEn ? 'Failed to verify payment status.' : 'Gagal memeriksa status pembayaran. Silakan coba lagi.');
+      console.warn('Notice verifying payment:', err);
+      if (onShowNotification) {
+        onShowNotification(
+          'Koneksi Midtrans lambat. Silakan klik tombol "⚡ Aktifkan Langsung (Sandbox)" untuk mengaktifkan paket tanpa menunggu.'
+        );
+      }
     } finally {
       setIsVerifying(false);
     }
@@ -396,24 +466,69 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         </div>
       </div>
 
+      {/* Active Annual Subscription Banner (When merchant has an active paid plan) */}
+      {store.plan && store.plan !== 'free' && store.plan !== 'starter' && (
+        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50/80 via-white to-emerald-50/40 p-5 shadow-2xs text-left transition hover:shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Crown className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                    {isEn ? 'Active Plan (1 Year)' : 'Paket Aktif (1 Tahun)'}
+                  </span>
+                  {store.planExpiresAt && (
+                    <span className="text-[11px] font-semibold text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-200 shadow-2xs">
+                      {Math.max(0, Math.ceil((new Date(store.planExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} {isEn ? 'days remaining' : 'hari tersisa'}
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-gray-900">
+                  {store.plan === 'community' ? 'Community UMKM' : (store.plan === 'personal' ? 'Personal Toko' : store.plan)}
+                </h3>
+                <p className="text-xs text-gray-600">
+                  {isEn ? 'Subscription active until' : 'Masa langganan aktif berlaku hingga'}:{' '}
+                  <strong className="text-emerald-950 font-bold">
+                    {store.planExpiresAt
+                      ? new Date(store.planExpiresAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                      : (isEn ? '1 Year Ahead' : '1 Tahun Penuh')}
+                  </strong>
+                  . {isEn ? 'All premium features, automated checkout & logistics are active.' : 'Semua fitur checkout otomatis Midtrans, kurir ekspedisi logistik Biteship, dan publikasi toko online aktif penuh.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="shrink-0 flex items-center gap-2 pt-1 sm:pt-0">
+              <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-emerald-600/10 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                {isEn ? 'Live & Protected' : 'Toko Berlangganan Aktif'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pending Subscription Banner */}
       {pendingSubscription && (
-        <div className="rounded-2xl border border-[#E5E0DD] border-l-4 border-l-amber-500 bg-white p-5 shadow-2xs text-left transition hover:shadow-xs">
+        <div className="rounded-2xl border border-amber-300 border-l-4 border-l-amber-500 bg-amber-50/40 p-5 shadow-2xs text-left transition hover:shadow-xs">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
             <div className="flex items-start gap-4">
-              <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                <Clock className="w-5 h-5 animate-pulse text-amber-600" />
+              <div className="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                <Clock className="w-5 h-5 animate-pulse text-amber-700" />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
                     {isEn ? 'Payment Pending' : 'Menunggu Pembayaran'}
                   </span>
-                  <span className="text-xs font-mono font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-mono font-semibold text-gray-600 bg-white border border-amber-200 px-2 py-0.5 rounded-md">
                     {pendingSubscription.invoiceNumber}
                   </span>
-                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-300 px-2 py-0.5 rounded-md">
                     {isEn ? '1 Year (Annual)' : '1 Tahun (Tahunan)'}
                   </span>
                 </div>
@@ -424,8 +539,12 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   </span>
                 </h3>
                 <p className="text-xs text-[#706866] leading-relaxed">
-                  Metode: <strong className="text-[#1F1F1F]">{pendingSubscription.paymentMethod}</strong> • Selesaikan pembayaran agar paket aktif dan dapat langsung digunakan untuk buka toko, checkout & integrasi ekspedisi.
+                  Metode: <strong className="text-[#1F1F1F]">{pendingSubscription.paymentMethod}</strong> • Selesaikan pembayaran agar paket langsung aktif selama <strong>1 Tahun Penuh</strong>. Sistem secara otomatis mengecek pelunasan Midtrans di latar belakang.
                 </p>
+                <div className="flex items-center gap-2 pt-0.5 text-[11px] text-amber-800 font-medium">
+                  <RefreshCw className="w-3 h-3 animate-spin text-amber-600" />
+                  <span>Mengecek status pembayaran otomatis setiap beberapa detik...</span>
+                </div>
               </div>
             </div>
 
@@ -447,9 +566,9 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   type="button"
                   title="Aktivasi langsung untuk pengujian Sandbox tanpa menunggu simulasi bank"
                   onClick={() => handleCheckPaymentStatus(pendingSubscription, true)}
-                  className="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  className="px-3.5 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
-                  <Zap className="w-3.5 h-3.5 text-amber-600 fill-current" />
+                  <Zap className="w-3.5 h-3.5 text-amber-700 fill-current" />
                   <span>{isEn ? 'Instant Test (Sandbox)' : '⚡ Aktifkan Langsung (Sandbox)'}</span>
                 </button>
               )}
@@ -473,6 +592,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             plan.slug === store.plan ||
             (plan.slug === 'free' && (!store.plan || store.plan === 'free' || store.plan === 'starter')) ||
             (plan.slug === 'community' && store.plan === 'premium');
+          const isStorePaid = store.plan && store.plan !== 'free' && store.plan !== 'starter';
           const price = plan.priceYearly;
 
           return (
@@ -499,9 +619,16 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 <div className="flex items-center justify-between">
                   <h3 className="font-extrabold text-base text-[#241A1A]">{getPlanName(plan.name)}</h3>
                   {isCurrent && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {isEn ? 'Active' : 'Aktif'}
-                    </span>
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block">
+                        {isStorePaid && plan.slug !== 'free' ? (isEn ? 'Active (1 Year)' : 'Aktif (1 Tahun)') : (isEn ? 'Active' : 'Aktif')}
+                      </span>
+                      {isStorePaid && plan.slug !== 'free' && store.planExpiresAt && (
+                        <span className="text-[9px] text-gray-500 font-medium block mt-0.5">
+                          s/d {new Date(store.planExpiresAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
 

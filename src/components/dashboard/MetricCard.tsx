@@ -32,9 +32,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           title: isEn ? 'Incoming Orders' : 'Pesanan Masuk',
           displayValue: typeof value === 'number' ? `${value} ${isEn ? 'Orders' : 'Pesanan'}` : value,
           icon: PackageOpen,
-          iconColor: 'text-[#800000]',
-          iconBg: 'bg-rose-50 border border-rose-200',
-          valueColor: 'text-slate-900 group-hover:text-[#800000]',
+          iconColor: 'text-[#66000E]',
+          iconBg: 'bg-[#F5E8EA] border border-[#E8DDDE]',
+          valueColor: 'text-slate-900 group-hover:text-[#66000E]',
           helper: subtitle || (isEn ? 'Pack & ship tracking number' : 'Segera kemas & kirimkan resi'),
         };
       case 'sales':
@@ -52,9 +52,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           title: isEn ? 'Total Products' : 'Total Produk',
           displayValue: typeof value === 'number' ? `${value} ${isEn ? 'Products' : 'Produk'}` : value,
           icon: PackageCheck,
-          iconColor: 'text-[#800000]',
-          iconBg: 'bg-rose-50/70 border border-rose-200/80',
-          valueColor: 'text-slate-900 group-hover:text-[#800000]',
+          iconColor: 'text-[#66000E]',
+          iconBg: 'bg-[#F5E8EA] border border-[#E8DDDE]',
+          valueColor: 'text-slate-900 group-hover:text-[#66000E]',
           helper: subtitle || (isEn ? 'Active items in storefront' : 'Barang aktif di etalase'),
         };
       case 'stock_alert':
@@ -62,9 +62,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           title: isEn ? 'Low Stock' : 'Stok Menipis',
           displayValue: typeof value === 'number' ? `${value} ${isEn ? 'Products' : 'Produk'}` : value,
           icon: AlertTriangle,
-          iconColor: hasLowStock ? 'text-[#800000]' : 'text-emerald-700',
-          iconBg: hasLowStock ? 'bg-rose-50 border border-rose-200' : 'bg-emerald-50 border border-emerald-200',
-          valueColor: hasLowStock ? 'text-[#800000] group-hover:text-[#7A0C0C]' : 'text-slate-900',
+          iconColor: hasLowStock ? 'text-[#66000E]' : 'text-emerald-700',
+          iconBg: hasLowStock ? 'bg-[#F5E8EA] border border-[#E8DDDE]' : 'bg-emerald-50 border border-emerald-200',
+          valueColor: hasLowStock ? 'text-[#66000E] group-hover:text-[#52000B]' : 'text-slate-900',
           helper: subtitle || (hasLowStock ? (isEn ? 'Restock items soon' : 'Segera lakukan restock barang') : (isEn ? 'All product stock is safe' : 'Semua stok produk aman')),
         };
     }
@@ -78,8 +78,8 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       onClick={onClick}
       className={`bg-white rounded-2xl p-4 sm:p-5 border transition-all duration-200 cursor-pointer flex flex-col justify-between font-sans text-left group relative overflow-hidden ${
         hasLowStock
-          ? 'border-rose-300 hover:border-[#800000] shadow-2xs hover:shadow-xs bg-gradient-to-b from-white to-rose-50/20'
-          : 'border-[#E5E0DD] hover:border-[#800000]/40 shadow-2xs hover:shadow-xs'
+          ? 'border-[#F0D5D8] hover:border-[#66000E] shadow-2xs hover:shadow-xs bg-gradient-to-b from-white to-[#F5E8EA]/30'
+          : 'border-[#E5E0DD] hover:border-[#66000E]/40 shadow-2xs hover:shadow-xs'
       }`}
     >
       <div>

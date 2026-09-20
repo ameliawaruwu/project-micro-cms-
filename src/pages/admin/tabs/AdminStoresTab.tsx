@@ -171,7 +171,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => setSelectedStore(store)}
-                          className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-[#800000] border border-rose-200 text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
+                          className="px-2 py-1 rounded bg-[#F5E8EA] hover:bg-[#E8DDDE] text-[#66000E] border border-[#E8DDDE] text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
                           title={isEn ? 'View Store & Address Details' : 'Lihat Detail Toko & Alamat'}
                         >
                           <Eye className="w-3.5 h-3.5" />

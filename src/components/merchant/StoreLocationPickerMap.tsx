@@ -85,11 +85,11 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddressString || 'Indonesia')}`;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs space-y-3 p-4 sm:p-5">
+    <div className="bg-white rounded-2xl border border-[#E5E0DD] overflow-hidden shadow-xs space-y-3 p-4 sm:p-5 font-poppins">
       {/* Header Titik Lokasi */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-gray-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[#E5E0DD]">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-rose-50 text-[#800000] border border-rose-200/60 flex items-center justify-center font-bold">
+          <div className="w-8 h-8 rounded-xl bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] flex items-center justify-center font-bold">
             <MapPin className="w-4 h-4" />
           </div>
           <div>
@@ -110,7 +110,7 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
           className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0 shadow-2xs ${
             gpsSuccess
               ? 'bg-emerald-600 text-white'
-              : 'bg-[#66000E] hover:bg-[#801010] text-white active:scale-95'
+              : 'bg-[#66000E] hover:bg-[#52000B] text-white active:scale-95'
           }`}
         >
           {isLocating ? (

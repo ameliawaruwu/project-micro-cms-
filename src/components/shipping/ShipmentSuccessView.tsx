@@ -55,7 +55,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrintLabel}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#FECDCA] bg-[#FFF1F0] text-[#9A0602] hover:bg-[#FEE4E2] font-semibold text-xs transition cursor-pointer"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#E8DDDE] bg-[#F5E8EA] text-[#66000E] hover:bg-[#F9EDEF] font-semibold text-xs transition cursor-pointer"
               title="Buka Pelacakan Online Biteship"
             >
               <ExternalLink className="w-3.5 h-3.5" />
@@ -63,7 +63,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
             </button>
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Cetak Label Thermal</span>
@@ -85,7 +85,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
   }
 
   return (
-    <div className="p-5 bg-[#FBFDFB] border border-[#ABEFC6] rounded-2xl space-y-4 text-center">
+    <div className="p-5 bg-[#FBFDFB] border border-[#ABEFC6] rounded-2xl space-y-4 text-center font-poppins">
       <div className="w-12 h-12 rounded-full bg-[#ECFDF3] text-[#027A48] flex items-center justify-center mx-auto">
         <CheckCircle2 className="w-7 h-7" />
       </div>
@@ -100,12 +100,12 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
       </div>
 
       {/* Box Nomor Resi */}
-      <div className="p-4 bg-white rounded-xl border border-[#EAEAEA] shadow-2xs space-y-2 text-left">
+      <div className="p-4 bg-white rounded-xl border border-[#E5E0DD] shadow-2xs space-y-2 text-left">
         <div className="flex items-center justify-between text-[#777777]">
           <span className="text-[11px] font-semibold">
             Nomor Resi / AWB ({dynamicCourierName} - {dynamicServiceName})
           </span>
-          <span className="text-[10px] uppercase font-bold bg-[#FFF1F0] text-[#9A0602] px-2 py-0.5 rounded">
+          <span className="text-[10px] uppercase font-bold bg-[#F5E8EA] text-[#66000E] px-2 py-0.5 rounded">
             Biteship Verified
           </span>
         </div>
@@ -141,7 +141,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
       <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
         <button
           onClick={handlePrintLabel}
-          className="w-full sm:flex-1 py-2.5 px-3.5 rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+          className="w-full sm:flex-1 py-2.5 px-3.5 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           <span>Cetak Label Pengiriman (PDF)</span>
@@ -149,7 +149,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
 
         <button
           onClick={() => setShowThermalPreview(true)}
-          className="w-full sm:flex-1 py-2.5 px-3.5 rounded-xl border border-[#9A0602] text-[#9A0602] hover:bg-[#FFF1F0] font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+          className="w-full sm:flex-1 py-2.5 px-3.5 rounded-xl border border-[#66000E] text-[#66000E] hover:bg-[#F5E8EA] font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
         >
           <Printer className="w-3.5 h-3.5" />
           <span>Pratinjau & Cetak Label Thermal</span>

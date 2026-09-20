@@ -99,33 +99,33 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               href={store.customDomain ? `https://${store.customDomain}` : `${window.location.origin}/?toko=${store.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200/80 text-[#800000] text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
-              title="Buka Website Toko Anda di Tab Baru"
+              className="px-3 py-1.5 rounded-xl bg-[#F5E8EA] hover:bg-[#F9EDEF] border border-[#E8DDDE] text-[#66000E] text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+              title={isEn ? "Open your store website in new tab" : "Buka Website Toko Anda di Tab Baru"}
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span>Buka Web Toko</span>
+              <span>{t('nav_view_store', 'Buka Web Toko')}</span>
             </a>
           )}
           <button
             onClick={refresh}
             title={isEn ? 'Reload real-time metrics' : 'Muat ulang metrik real-time'}
-            className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50/50 border border-[#E5E0DD] hover:border-rose-200 text-[#706866] hover:text-[#800000] text-xs font-medium shadow-2xs flex items-center gap-2 transition cursor-pointer active:scale-95"
+            className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#FAF7F7] border border-[#E5E0DD] hover:border-[#66000E]/40 text-[#706866] hover:text-[#66000E] text-xs font-medium shadow-2xs flex items-center gap-2 transition cursor-pointer active:scale-95"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#800000] ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-[#66000E] ${isLoading ? 'animate-spin' : ''}`} />
             <span>{t('auto_update', 'Auto Update')}</span>
           </button>
         </div>
       </div>
 
       {/* QUICK STORE WALLET BANNER (Saldo Toko Aktif) */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8DDDE] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#800000]/30 transition min-h-[90px]">
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E5E0DD] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#66000E]/30 transition min-h-[90px]">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-rose-50 text-[#800000] border border-rose-200/60 flex items-center justify-center font-semibold shadow-2xs shrink-0">
+          <div className="w-11 h-11 rounded-2xl bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] flex items-center justify-center font-semibold shadow-2xs shrink-0">
             <Wallet className="w-5 h-5 stroke-[1.8]" />
           </div>
           <div>
             <span className="text-xs text-[#706866] font-normal block">{t('wallet_active_balance', 'Saldo Toko Aktif (Siap Ditarik)')}</span>
-            <p className="text-xl sm:text-2xl font-semibold text-[#800000] tracking-tight">
+            <p className="text-xl sm:text-2xl font-semibold text-[#66000E] tracking-tight">
               {formatRupiah(balance)}
             </p>
           </div>
@@ -135,7 +135,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           {onOpenWithdraw && (
             <button
               onClick={onOpenWithdraw}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#800000] hover:bg-[#7A0C0C] text-white text-xs font-medium transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-medium transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
             >
               <ArrowUpRight className="w-4 h-4" />
               <span>{t('wallet_and_withdraw', 'Dompet & Tarik Dana')}</span>

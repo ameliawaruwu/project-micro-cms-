@@ -66,6 +66,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   const [activeTab, setActiveTab] = useState<'konten' | 'tampilan' | 'lanjutan'>('konten');
   const cmsProducts = useCmsStore(state => state.products);
   const updateProduct = useCmsStore(state => state.updateProduct);
+  const addProduct = useCmsStore(state => state.addProduct);
+  const deleteProduct = useCmsStore(state => state.deleteProduct);
   const [showImagePresets, setShowImagePresets] = useState(false);
   const [customImageUrlInput, setCustomImageUrlInput] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
@@ -737,88 +739,138 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 {/* Data Produk Direct Editor */}
                 <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
                   <div className="flex items-center justify-between">
-                    <label className="text-[12px] font-bold text-[#202223]">Data Produk (Edit Teks & Gambar)</label>
-                    <span className="text-[10px] text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded font-semibold">Real-time CMS</span>
+                    <div>
+                      <label className="text-[12px] font-bold text-[#202223] block">Data Produk</label>
+                      <span className="text-[10px] text-[#6D7175]">Sinkron otomatis dengan Kelola Produk</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newId = 'prod_' + Date.now();
+                        addProduct({
+                          id: newId,
+                          name: 'Produk Baru ' + (cmsProducts.length + 1),
+                          slug: newId,
+                          price: 50000,
+                          image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
+                          categoryId: 'all',
+                          categoryName: 'Umum',
+                          status: 'active',
+                          isFeatured: false,
+                          isNew: true,
+                          description: 'Deskripsi produk baru',
+                          stock: 10,
+                        }, store?.id);
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-white bg-[#008060] hover:bg-[#006e52] rounded-md shadow-xs transition cursor-pointer"
+                      title="Tambah produk baru yang otomatis muncul di Kelola Produk"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Tambah Produk</span>
+                    </button>
                   </div>
-                  <div className="space-y-3 max-h-[260px] overflow-y-auto custom-scrollbar pr-1">
-                    {cmsProducts.map(product => (
-                      <div key={product.id} className="p-3 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg space-y-2">
-                        <div className="flex gap-2">
-                          <div className="relative group w-12 h-12 shrink-0 cursor-pointer">
-                            <img 
-                              src={product.image || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=300'} 
-                              alt={product.name}
-                              className="w-full h-full object-cover rounded-md border border-[#E1E3E5]"
-                              referrerPolicy="no-referrer"
-                            />
-                            <label 
-                              htmlFor={`product-img-upload-${product.id}`}
-                              className="absolute inset-0 bg-black/50 text-white rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
-                              title="Ganti Foto dari Perangkat"
+                  
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                    {cmsProducts.length === 0 ? (
+                      <div className="p-4 text-center border border-dashed border-[#E1E3E5] rounded-lg text-xs text-[#8C9196]">
+                        Belum ada produk. Klik "+ Tambah Produk" di atas.
+                      </div>
+                    ) : (
+                      cmsProducts.map(product => (
+                        <div key={product.id} className="p-3 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg space-y-2 relative group/item">
+                          <div className="flex items-start justify-between gap-1 mb-1">
+                            <span className="text-[10px] font-mono text-[#8C9196] truncate max-w-[150px]">ID: {product.id}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Hapus produk "${product.name}"? Produk juga akan dihapus dari Kelola Produk.`)) {
+                                  deleteProduct(product.id);
+                                }
+                              }}
+                              className="p-1 text-[#8C9196] hover:text-[#D72C0D] hover:bg-[#FFF4F2] rounded transition cursor-pointer"
+                              title="Hapus Produk dari Toko & Kelola Produk"
                             >
-                              <Upload className="w-4 h-4" />
-                            </label>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
-                          
-                          <div className="flex-1 space-y-1.5 min-w-0">
+
+                          <div className="flex gap-2">
+                            <div className="relative group w-12 h-12 shrink-0 cursor-pointer">
+                              <img 
+                                src={product.image || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=300'} 
+                                alt={product.name}
+                                className="w-full h-full object-cover rounded-md border border-[#E1E3E5]"
+                                referrerPolicy="no-referrer"
+                              />
+                              <label 
+                                htmlFor={`product-img-upload-${product.id}`}
+                                className="absolute inset-0 bg-black/50 text-white rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                                title="Ganti Foto dari Perangkat"
+                              >
+                                <Upload className="w-4 h-4" />
+                              </label>
+                            </div>
+                            
+                            <div className="flex-1 space-y-1.5 min-w-0">
+                              <input
+                                type="text"
+                                value={product.name}
+                                onChange={(e) => updateProduct({ ...product, name: e.target.value }, store?.id)}
+                                className="w-full px-2 py-1 text-[12px] font-semibold text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
+                                placeholder="Nama Produk"
+                              />
+                              <input
+                                type="number"
+                                value={product.price}
+                                onChange={(e) => updateProduct({ ...product, price: Number(e.target.value) }, store?.id)}
+                                className="w-full px-2 py-1 text-[12px] text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
+                                placeholder="Harga"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Upload Button + URL Input Combo */}
+                          <div className="flex items-center gap-1.5">
+                            <label
+                              htmlFor={`product-img-upload-${product.id}`}
+                              className="py-1 px-2 rounded border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center gap-1 shrink-0"
+                              title="Upload foto dari galeri HP atau komputer"
+                            >
+                              <Upload className="w-3 h-3" />
+                              <span>Upload Foto</span>
+                            </label>
+                            
+                            <input
+                              type="file"
+                              id={`product-img-upload-${product.id}`}
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    const dataUrl = event.target?.result as string;
+                                    if (dataUrl) {
+                                      updateProduct({ ...product, image: dataUrl }, store?.id);
+                                    }
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+
                             <input
                               type="text"
-                              value={product.name}
-                              onChange={(e) => updateProduct({ ...product, name: e.target.value })}
-                              className="w-full px-2 py-1 text-[12px] font-semibold text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
-                              placeholder="Nama Produk"
-                            />
-                            <input
-                              type="number"
-                              value={product.price}
-                              onChange={(e) => updateProduct({ ...product, price: Number(e.target.value) })}
-                              className="w-full px-2 py-1 text-[12px] text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
-                              placeholder="Harga"
+                              value={product.image || ''}
+                              onChange={(e) => updateProduct({ ...product, image: e.target.value }, store?.id)}
+                              className="flex-1 min-w-0 px-2 py-1 text-[11px] text-[#6D7175] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
+                              placeholder="Atau Tempel URL Gambar"
                             />
                           </div>
                         </div>
-
-                        {/* Upload Button + URL Input Combo */}
-                        <div className="flex items-center gap-1.5">
-                          <label
-                            htmlFor={`product-img-upload-${product.id}`}
-                            className="py-1 px-2 rounded border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center gap-1 shrink-0"
-                            title="Upload foto dari galeri HP atau komputer"
-                          >
-                            <Upload className="w-3 h-3" />
-                            <span>Upload Foto</span>
-                          </label>
-                          
-                          <input
-                            type="file"
-                            id={`product-img-upload-${product.id}`}
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  const dataUrl = event.target?.result as string;
-                                  if (dataUrl) {
-                                    updateProduct({ ...product, image: dataUrl } as any);
-                                  }
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
-
-                          <input
-                            type="text"
-                            value={product.image || ''}
-                            onChange={(e) => updateProduct({ ...product, image: e.target.value } as any)}
-                            className="flex-1 min-w-0 px-2 py-1 text-[11px] text-[#6D7175] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
-                            placeholder="Atau Tempel URL Gambar"
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               </div>

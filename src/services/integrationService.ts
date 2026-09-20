@@ -22,23 +22,10 @@ class IntegrationService {
         }
       });
 
-      // Ensure key payment gateways are marked as connected
-      const normalized = parsed.map((item) => {
-        if ((item.id === 'int-midtrans' || item.id === 'int-qris' || item.id === 'int-stripe') && !item.isConnected) {
-          modified = true;
-          return {
-            ...item,
-            isConnected: true,
-            statusText: 'Terhubung & Aktif',
-          };
-        }
-        return item;
-      });
-
       if (modified) {
-        this.saveIntegrations(normalized);
+        this.saveIntegrations(parsed);
       }
-      return normalized;
+      return parsed;
     } catch {
       return initialIntegrations;
     }
@@ -46,6 +33,16 @@ class IntegrationService {
 
   private saveIntegrations(integrations: Integration[]) {
     localStorage.setItem(INTEGRATIONS_KEY, JSON.stringify(integrations));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('microcms_integrations_updated', { detail: integrations }));
+      try {
+        const bc = new BroadcastChannel('microcms_integrations_channel');
+        bc.postMessage({ type: 'integrations_updated', integrations });
+        bc.close();
+      } catch {
+        // ignore
+      }
+    }
   }
 
   async getIntegrations(): Promise<Integration[]> {

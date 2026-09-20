@@ -192,6 +192,16 @@ class PaymentChannelService {
 
   saveChannels(channels: PaymentChannel[]): void {
     localStorage.setItem(CHANNELS_STORAGE_KEY, JSON.stringify(channels));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('microcms_payment_channels_updated', { detail: channels }));
+      try {
+        const bc = new BroadcastChannel('microcms_payment_channel');
+        bc.postMessage({ type: 'payment_channels_updated', channels });
+        bc.close();
+      } catch {
+        // ignore
+      }
+    }
   }
 
   toggleChannel(id: string): { channels: PaymentChannel[]; updatedItem: PaymentChannel | undefined } {

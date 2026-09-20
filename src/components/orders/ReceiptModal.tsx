@@ -50,10 +50,10 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     <div id="modal-receipt" className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs font-poppins">
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-200 overflow-hidden">
         {/* Controls Header */}
-        <div className="p-4 border-b border-[#EAEAEA] print:hidden shrink-0 space-y-3 bg-[#FAFAFA]">
+        <div className="p-4 border-b border-[#E5E0DD] print:hidden shrink-0 space-y-3 bg-[#FAFAFA]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-[#1F1F1F] font-bold text-sm sm:text-base">
-              <Printer className="w-4 h-4 text-[#9A0602]" />
+              <Printer className="w-4 h-4 text-[#66000E]" />
               <span>{t('print_preview_title', 'Format Cetak & PDF Dokumen')}</span>
             </div>
             <button
@@ -71,7 +71,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               onClick={() => setFormat('shipping_label')}
               className={`py-1.5 px-1 sm:px-2 rounded-lg flex items-center justify-center gap-1 sm:gap-1.5 transition cursor-pointer ${
                 format === 'shipping_label'
-                  ? 'bg-white text-[#9A0602] shadow-xs font-bold'
+                  ? 'bg-white text-[#66000E] shadow-xs font-bold'
                   : 'text-[#555555] hover:text-[#1F1F1F]'
               }`}
             >
@@ -84,7 +84,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               onClick={() => setFormat('invoice_a4')}
               className={`py-1.5 px-1 sm:px-2 rounded-lg flex items-center justify-center gap-1 sm:gap-1.5 transition cursor-pointer ${
                 format === 'invoice_a4'
-                  ? 'bg-white text-[#9A0602] shadow-xs font-bold'
+                  ? 'bg-white text-[#66000E] shadow-xs font-bold'
                   : 'text-[#555555] hover:text-[#1F1F1F]'
               }`}
             >
@@ -97,7 +97,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               onClick={() => setFormat('thermal_receipt')}
               className={`py-1.5 px-1 sm:px-2 rounded-lg flex items-center justify-center gap-1 sm:gap-1.5 transition cursor-pointer ${
                 format === 'thermal_receipt'
-                  ? 'bg-white text-[#9A0602] shadow-xs font-bold'
+                  ? 'bg-white text-[#66000E] shadow-xs font-bold'
                   : 'text-[#555555] hover:text-[#1F1F1F]'
               }`}
             >
@@ -107,11 +107,11 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
           </div>
 
           {/* Helpful PDF / Print instruction note */}
-          <div className="flex items-start gap-2 bg-[#FFF9F9] border border-[#FECDCA] text-[#706866] text-[11px] p-2.5 rounded-xl leading-relaxed">
-            <Info className="w-3.5 h-3.5 text-[#9A0602] shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 bg-[#F5E8EA] border border-[#E8DDDE] text-[#706866] text-[11px] p-2.5 rounded-xl leading-relaxed">
+            <Info className="w-3.5 h-3.5 text-[#66000E] shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold text-[#1F1F1F]">Tips Cetak / PDF Bersih: </span>
-              Pada dialog browser print, pilih <strong className="text-[#1F1F1F]">Save as PDF</strong> atau printer Anda. Di bagian <span className="underline">More settings</span>, hilangkan centang <strong className="text-[#1F1F1F]">"Headers and footers"</strong> agar nama website & tanggal tidak muncul di atas/bawah kertas.
+              <span className="font-semibold text-[#1F1F1F]">{t('receipt_tips_title', 'Tips Cetak / PDF Bersih: ')}</span>
+              {t('receipt_tips_desc', 'Pada dialog browser print, pilih Save as PDF atau printer Anda. Di bagian More settings, hilangkan centang "Headers and footers" agar nama website & tanggal tidak muncul di atas/bawah kertas.')}
             </div>
           </div>
         </div>
@@ -150,17 +150,17 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         </div>
 
         {/* Action Footer Buttons */}
-        <div className="p-3 sm:p-4 border-t border-[#EAEAEA] bg-white flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 print:hidden shrink-0">
+        <div className="p-3 sm:p-4 border-t border-[#E5E0DD] bg-white flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 print:hidden shrink-0">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2.5 min-h-[40px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] font-semibold text-xs hover:bg-[#F7F7F7] transition cursor-pointer text-center"
+            className="w-full sm:w-auto px-4 py-2.5 min-h-[40px] rounded-xl border border-[#E5E0DD] text-[#555555] hover:text-[#1F1F1F] font-semibold text-xs hover:bg-[#F7F7F7] transition cursor-pointer text-center"
           >
             {t('close', 'Tutup')}
           </button>
 
           <button
             onClick={handlePrint}
-            className="w-full sm:w-auto px-5 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer text-center"
+            className="w-full sm:w-auto px-5 py-2.5 min-h-[40px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer text-center"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>

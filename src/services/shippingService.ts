@@ -165,60 +165,45 @@ export const shippingService = {
       console.warn('[Supabase Edge Function] check-shipping-rates fallback:', err);
     }
 
-    // 2. Coba direct Biteship API bila VITE_BITESHIP_API_KEY tersedia
+    // 2. Gunakan proxy server internal /api/shipping/rates untuk keamanan API key
     try {
-      const apiKey =
-        (import.meta as any).env?.VITE_BITESHIP_API_KEY ||
-        (import.meta as any).env?.BITESHIP_API_KEY ||
-        '';
+      const proxyRes = await fetch('/api/shipping/rates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          origin_postal_code: Number(originPostal),
+          destination_postal_code: Number(destinationPostalCode),
+          couriers,
+          weight: packageWeight,
+        }),
+      });
 
-      if (apiKey && apiKey.startsWith('biteship_')) {
-        const biteshipRes = await fetch('https://api.biteship.com/v1/rates/couriers', {
-          method: 'POST',
-          headers: {
-            Authorization: apiKey.startsWith('Bearer ') ? apiKey : `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            origin_postal_code: Number(originPostal),
-            destination_postal_code: Number(destinationPostalCode),
-            couriers,
-            items: [
-              {
-                name: 'Paket Pesanan Toko',
-                value: 100000,
-                weight: packageWeight,
-                quantity: 1,
-              },
-            ],
-          }),
-        });
+      if (proxyRes.ok) {
+        const biteshipData = await proxyRes.json();
+        if (biteshipData?.pricing && Array.isArray(biteshipData.pricing) && biteshipData.pricing.length > 0) {
+          const mappedRates: BiteshipRateOption[] = biteshipData.pricing.map((p: any) => ({
+            courier_name: p.courier_name || p.company,
+            courier_code: p.courier_code || p.courier,
+            courier_service_name: p.courier_service_name || p.service_type,
+            courier_service_code: p.courier_service_code || p.type,
+            tier: p.tier || 'standard',
+            description: p.description || `${p.courier_name} ${p.courier_service_name}`,
+            service_type: p.service_type || 'standard',
+            shipping_type: p.shipping_type || 'parcel',
+            price: Number(p.price) || 0,
+            etd: p.duration || p.etd || '1-3 Hari',
+          }));
 
-        if (biteshipRes.ok) {
-          const biteshipData = await biteshipRes.json();
-          if (biteshipData?.pricing && Array.isArray(biteshipData.pricing) && biteshipData.pricing.length > 0) {
-            const mappedRates: BiteshipRateOption[] = biteshipData.pricing.map((p: any) => ({
-              courier_name: p.courier_name || p.company,
-              courier_code: p.courier_code || p.courier,
-              courier_service_name: p.courier_service_name || p.service_type,
-              courier_service_code: p.courier_service_code || p.type,
-              tier: p.tier || 'standard',
-              description: p.description || `${p.courier_name} ${p.courier_service_name}`,
-              service_type: p.service_type || 'standard',
-              shipping_type: p.shipping_type || 'parcel',
-              price: Number(p.price) || 0,
-              etd: p.duration || p.etd || '1-3 Hari',
-            }));
-
-            return {
-              rates: mappedRates,
-              originBranch: branch,
-            };
-          }
+          return {
+            rates: mappedRates,
+            originBranch: branch,
+          };
         }
       }
-    } catch (directErr) {
-      console.warn('[Biteship Direct Rates] Fallback to simulated rates:', directErr);
+    } catch (proxyErr) {
+      console.warn('[Biteship Proxy Rates] Fallback to direct or simulated rates:', proxyErr);
     }
 
     // 3. Fallback simulation bila Edge Function belum dideploy atau Biteship offline / sandbox balance 0

@@ -48,14 +48,14 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
   return (
     <>
       {/* 1. Alamat Asal Penjemputan (Gudang Cabang) */}
-      <div className="p-3.5 bg-[#F9F9F9] rounded-2xl border border-[#EAEAEA] space-y-2">
+      <div className="p-3.5 bg-[#F9F9F9] rounded-2xl border border-[#E5E0DD] space-y-2">
         <div className="flex items-center justify-between">
           <span className="font-semibold text-xs text-[#1F1F1F] flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5 text-[#9A0602]" />
+            <Building2 className="w-3.5 h-3.5 text-[#66000E]" />
             <span>Alamat Asal Penjemputan (Shipper Origin)</span>
           </span>
           {selectedBranch?.isDefault && (
-            <span className="text-[10px] font-semibold text-[#9A0602] bg-[#FFF1F0] px-1.5 py-0.2 rounded border border-[#FECDCA]">
+            <span className="text-[10px] font-semibold text-[#66000E] bg-[#F5E8EA] px-1.5 py-0.2 rounded border border-[#E8DDDE]">
               Cabang Utama
             </span>
           )}
@@ -68,7 +68,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
               const b = branches.find((item) => item.id === e.target.value);
               if (b) setSelectedBranch(b);
             }}
-            className="w-full px-2.5 py-1.5 rounded-lg border border-[#CCCCCC] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:border-[#9A0602]"
+            className="w-full px-2.5 py-1.5 rounded-lg border border-[#CCCCCC] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:border-[#66000E]"
           >
             {branches.map((b) => (
               <option key={b.id} value={b.id}>
@@ -90,10 +90,10 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
       </div>
 
       {/* 2. Pilihan Kurir Ekspedisi Dinamis (Biteship API) */}
-      <div className="space-y-2 p-3.5 bg-white rounded-2xl border border-[#EAEAEA]">
+      <div className="space-y-2 p-3.5 bg-white rounded-2xl border border-[#E5E0DD]">
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-[#1F1F1F] flex items-center gap-1.5">
-            <Truck className="w-3.5 h-3.5 text-[#9A0602]" />
+            <Truck className="w-3.5 h-3.5 text-[#66000E]" />
             <span>Ekspedisi Pengiriman</span>
           </label>
           <span className="text-[11px] text-[#777777]">
@@ -108,7 +108,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
             const c = availableCouriers.find((item) => item.courier_code === e.target.value);
             if (c) handleCourierSelect(c);
           }}
-          className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] cursor-pointer"
+          className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
         >
           {availableCouriers.map((c) => (
             <option key={`${c.courier_code}-${c.courier_service_code}`} value={c.courier_code}>
@@ -128,8 +128,8 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
                 onClick={() => handleCourierSelect(c)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer border ${
                   isSelected
-                    ? 'bg-[#FFF1F0] text-[#9A0602] border-[#FECDCA] shadow-2xs'
-                    : 'bg-white text-[#555555] border-[#EAEAEA] hover:bg-[#F7F7F7]'
+                    ? 'bg-[#F5E8EA] text-[#66000E] border-[#E8DDDE] shadow-2xs'
+                    : 'bg-white text-[#555555] border-[#E5E0DD] hover:bg-[#F7F7F7]'
                 }`}
               >
                 {c.courier_name}
@@ -140,8 +140,8 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
       </div>
 
       {/* 3. Ringkasan Tujuan Pembeli */}
-      <div className="p-3 bg-white rounded-xl border border-[#EAEAEA] flex items-start gap-2.5">
-        <MapPin className="w-4 h-4 text-[#9A0602] shrink-0 mt-0.5" />
+      <div className="p-3 bg-white rounded-xl border border-[#E5E0DD] flex items-start gap-2.5">
+        <MapPin className="w-4 h-4 text-[#66000E] shrink-0 mt-0.5" />
         <div className="min-w-0">
           <span className="text-[10px] font-bold text-[#777777] uppercase">Tujuan Pengiriman</span>
           <p className="font-semibold text-xs text-[#1F1F1F]">{order.customerName} ({order.customerPhone})</p>
@@ -166,10 +166,10 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
                 }}
                 className={`p-3 rounded-2xl border-2 transition flex flex-col justify-between ${
                   !isDropOffAllowed
-                    ? 'opacity-40 bg-[#FAFAFA] border-[#EAEAEA] cursor-not-allowed'
+                    ? 'opacity-40 bg-[#FAFAFA] border-[#E5E0DD] cursor-not-allowed'
                     : deliveryType === 'drop_off'
-                    ? 'border-[#9A0602] bg-[#FFF1F0] cursor-pointer'
-                    : 'border-[#EAEAEA] bg-white hover:border-[#CCCCCC] cursor-pointer'
+                    ? 'border-[#66000E] bg-[#F5E8EA] cursor-pointer'
+                    : 'border-[#E5E0DD] bg-white hover:border-[#CCCCCC] cursor-pointer'
                 }`}
               >
                 <div>
@@ -178,7 +178,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
                     <div
                       className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
                         deliveryType === 'drop_off' && isDropOffAllowed
-                          ? 'border-[#9A0602] bg-[#9A0602]'
+                          ? 'border-[#66000E] bg-[#66000E]'
                           : 'border-[#CCCCCC]'
                       }`}
                     >
@@ -187,7 +187,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
                       )}
                     </div>
                   </div>
-                  <span className="text-[10px] font-semibold text-[#9A0602] bg-white px-1.5 py-0.2 rounded border border-[#FECDCA] inline-block mb-1">
+                  <span className="text-[10px] font-semibold text-[#66000E] bg-white px-1.5 py-0.2 rounded border border-[#E8DDDE] inline-block mb-1">
                     Drop-off
                   </span>
                   <p className="text-[11px] text-[#555555] leading-snug">
@@ -210,10 +210,10 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
                 }}
                 className={`p-3 rounded-2xl border-2 transition flex flex-col justify-between ${
                   !isPickupAllowed
-                    ? 'opacity-40 bg-[#FAFAFA] border-[#EAEAEA] cursor-not-allowed'
+                    ? 'opacity-40 bg-[#FAFAFA] border-[#E5E0DD] cursor-not-allowed'
                     : deliveryType === 'pickup'
-                    ? 'border-[#9A0602] bg-[#FFF1F0] cursor-pointer'
-                    : 'border-[#EAEAEA] bg-white hover:border-[#CCCCCC] cursor-pointer'
+                    ? 'border-[#66000E] bg-[#F5E8EA] cursor-pointer'
+                    : 'border-[#E5E0DD] bg-white hover:border-[#CCCCCC] cursor-pointer'
                 }`}
               >
                 <div>
@@ -222,7 +222,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
                     <div
                       className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
                         deliveryType === 'pickup' && isPickupAllowed
-                          ? 'border-[#9A0602] bg-[#9A0602]'
+                          ? 'border-[#66000E] bg-[#66000E]'
                           : 'border-[#CCCCCC]'
                       }`}
                     >
@@ -248,9 +248,9 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
 
       {/* 5. Slot Picker jika Memilih Pick-up */}
       {deliveryType === 'pickup' && (
-        <div className="p-3.5 bg-[#FFF9F9] rounded-2xl border border-[#FECDCA] space-y-3 animate-in fade-in duration-200">
+        <div className="p-3.5 bg-[#F5E8EA] rounded-2xl border border-[#E8DDDE] space-y-3 animate-in fade-in duration-200">
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#1F1F1F]">
-            <Calendar className="w-4 h-4 text-[#9A0602]" />
+            <Calendar className="w-4 h-4 text-[#66000E]" />
             <span>Jadwal Penjemputan Kurir ({dynamicCourierName})</span>
           </div>
 
@@ -264,7 +264,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
                 min={new Date().toISOString().split('T')[0]}
                 value={pickupDate}
                 onChange={(e) => setPickupDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:border-[#9A0602]"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:border-[#66000E]"
               />
             </div>
 
@@ -275,7 +275,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
               <select
                 value={pickupTimeSlot}
                 onChange={(e) => setPickupTimeSlot(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:border-[#9A0602]"
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:border-[#66000E]"
               >
                 <option value="09:00 - 12:00">Pagi (09:00 - 12:00 WIB)</option>
                 <option value="13:00 - 16:00">Siang (13:00 - 16:00 WIB)</option>

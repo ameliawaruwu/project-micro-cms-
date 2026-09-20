@@ -240,13 +240,13 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
   return (
     <div
       id="modal-shipping-fulfillment"
-      className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs font-sans"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs font-poppins"
     >
-      <div className="bg-white rounded-3xl max-w-xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-[#EAEAEA] animate-in fade-in zoom-in duration-200 overflow-hidden">
+      <div className="bg-white rounded-2xl max-w-xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-[#E5E0DD] animate-in fade-in zoom-in duration-200 overflow-hidden">
         {/* Header Shopee Style */}
-        <div className="p-4 sm:p-5 border-b border-[#EAEAEA] flex items-center justify-between bg-[#FDFBFB]">
+        <div className="p-4 sm:p-5 border-b border-[#E5E0DD] flex items-center justify-between bg-[#FDFBFB]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#FFF1F0] text-[#9A0602] flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold">
               <Truck className="w-4 h-4" />
             </div>
             <div>
@@ -317,11 +317,11 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
 
         {/* Modal Footer Actions */}
         {!shipmentResult && (
-          <div className="p-4 border-t border-[#EAEAEA] bg-white flex items-center justify-between gap-3">
+          <div className="p-4 border-t border-[#E5E0DD] bg-white flex items-center justify-between gap-3">
             <button
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2.5 min-h-[40px] rounded-xl border border-[#EAEAEA] text-[#555555] hover:bg-[#F7F7F7] font-semibold text-xs transition cursor-pointer"
+              className="px-4 py-2.5 min-h-[40px] rounded-xl border border-[#E5E0DD] text-[#555555] hover:bg-[#F7F7F7] font-semibold text-xs transition cursor-pointer"
             >
               Batal
             </button>
@@ -329,7 +329,7 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
             <button
               onClick={handleConfirmShipping}
               disabled={isSubmitting}
-              className="flex-1 px-5 py-2.5 min-h-[40px] rounded-xl bg-[#9A0602] hover:bg-[#7D0502] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+              className="flex-1 px-5 py-2.5 min-h-[40px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>

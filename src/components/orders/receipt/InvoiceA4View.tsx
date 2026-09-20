@@ -20,7 +20,7 @@ export const InvoiceA4View: React.FC<InvoiceA4ViewProps> = ({
   return (
     <div
       id="printable-receipt"
-      className="format-invoice-a4 w-full max-w-[195mm] bg-white text-black font-sans shadow-md rounded-md p-6 sm:p-8 space-y-6 border border-gray-200"
+      className="format-invoice-a4 w-full max-w-[195mm] bg-white text-black font-poppins shadow-md rounded-md p-6 sm:p-8 space-y-6 border border-gray-200"
     >
       {/* Invoice Header */}
       <div className="flex justify-between items-start border-b-2 border-black pb-4">
@@ -34,7 +34,7 @@ export const InvoiceA4View: React.FC<InvoiceA4ViewProps> = ({
         </div>
 
         <div className="text-right">
-          <div className="text-lg sm:text-xl font-black tracking-wider text-[#9A0602]">
+          <div className="text-lg sm:text-xl font-black tracking-wider text-[#66000E]">
             FAKTUR PENJUALAN
           </div>
           <div className="text-xs font-mono font-bold text-gray-800 mt-1">

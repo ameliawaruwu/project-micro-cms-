@@ -172,16 +172,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => handleItemClick(item.id as MerchantTab)}
-              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
+              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
                 isActive
-                  ? 'bg-rose-50 text-[#800000] font-semibold'
-                  : 'text-gray-600 hover:bg-rose-50/50 hover:text-[#800000]'
+                  ? 'bg-[#F5E8EA] text-[#66000E] font-semibold'
+                  : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
               }`}
               title={isCollapsed && !isOpenMobile ? item.label : undefined}
             >
               <Icon
                 className={`w-4 h-4 shrink-0 transition-colors ${
-                  isActive ? 'text-[#800000]' : 'text-gray-400 group-hover:text-[#800000]'
+                  isActive ? 'text-[#66000E]' : 'text-gray-400 group-hover:text-[#66000E]'
                 }`}
               />
 
@@ -190,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {item.badge !== undefined && item.badge > 0 && (
                 <span
                   className={`text-[10px] font-medium px-1.5 py-0.2 rounded shrink-0 ${
-                    isActive ? 'bg-[#800000] text-white' : 'bg-rose-100 text-[#800000]'
+                    isActive ? 'bg-[#66000E] text-white' : 'bg-[#F5E8EA] text-[#66000E]'
                   } ${isCollapsed && !isOpenMobile ? 'absolute -top-1 -right-1' : ''}`}
                 >
                   {item.badge}
@@ -212,7 +212,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               if (onLogout) onLogout();
               if (onCloseMobile) onCloseMobile();
             }}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-gray-600 hover:text-[#800000] hover:bg-rose-50/50 transition cursor-pointer"
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-xl text-xs font-medium text-gray-600 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 transition cursor-pointer"
             title={t('nav_logout', 'Keluar')}
           >
             <LogOut className="w-3.5 h-3.5 text-gray-400" />
@@ -223,7 +223,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={onLogout}
-              className="w-8 h-8 rounded-md text-gray-400 hover:text-[#800000] hover:bg-rose-50/50 flex items-center justify-center transition cursor-pointer"
+              className="w-8 h-8 rounded-xl text-gray-400 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 flex items-center justify-center transition cursor-pointer"
               title={t('nav_logout', 'Keluar')}
             >
               <LogOut className="w-3.5 h-3.5" />

@@ -9,8 +9,8 @@ interface StockBadgeProps {
 export const StockBadge: React.FC<StockBadgeProps> = ({ status, stock }) => {
   if (status === 'Habis' || stock <= 0) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#FFF1F0] text-[#9A0602] border border-[#FECDCA]">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#9A0602]"></span>
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE]">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#66000E]"></span>
         <span>Stok Habis (0)</span>
       </span>
     );
