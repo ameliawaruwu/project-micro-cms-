@@ -357,7 +357,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           <StoreIcon className="w-5 h-5 text-[#66000E]" />
           <span>{isNewStore ? 'Buat Toko Online' : t('nav_settings', 'Pengaturan Toko')}</span>
         </h1>
-        {!isNewStore && storeUrl && (store.isPublished || store.domainStatus === 'connected') && (
+        {!isNewStore && storeUrl && Boolean(store.isPublished) && (
           <a
             href={store.customDomain ? `https://${store.customDomain}` : storeUrl}
             target="_blank"
@@ -383,11 +383,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
             {!isNewStore && (
               <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
-                store.isPublished || store.domainStatus === 'connected'
+                Boolean(store.isPublished)
                   ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]'
                   : 'bg-amber-50 text-amber-800 border-amber-200'
               }`}>
-                {store.isPublished || store.domainStatus === 'connected' ? 'Etalase Aktif' : 'Draf'}
+                {Boolean(store.isPublished) ? 'Etalase Aktif' : 'Draf (Belum Publikasi)'}
               </span>
             )}
           </div>

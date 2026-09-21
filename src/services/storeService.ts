@@ -147,6 +147,7 @@ class StoreService {
           plan: row.plan || 'free',
           planExpiresAt: row.plan_expires_at || row.theme_settings?.planExpiresAt || undefined,
           planSubscribedAt: row.plan_subscribed_at || row.theme_settings?.planSubscribedAt || undefined,
+          isPublished: row.is_published !== undefined ? Boolean(row.is_published) : Boolean(row.theme_settings?.isPublished),
           layoutSettings: row.theme_settings,
           customDomain: row.custom_domain,
           onboarding: {
@@ -195,15 +196,76 @@ class StoreService {
   }
 
   async getStoreBySlug(slug: string): Promise<Store> {
-    const stores = this.getStoredStores();
-    if (!slug) return stores[0] || initialStores[0];
+    if (!slug) {
+      const stores = this.getStoredStores();
+      return stores[0] || initialStores[0];
+    }
 
     const clean = slug.toLowerCase().trim();
-    // 1. Exact slug or ID match
+
+    // 1. Fetch live from Supabase cloud so status is 100% synchronized across devices/browsers
+    try {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('*')
+        .or(`slug.ilike.${clean},id.eq.${clean}`)
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        const row = data[0];
+        const isPub = row.is_published !== undefined
+          ? Boolean(row.is_published)
+          : Boolean(row.theme_settings?.isPublished);
+
+        const mappedStore: Store = {
+          id: row.id,
+          merchantId: row.user_id,
+          name: row.name,
+          slug: row.slug,
+          tagline: row.tagline || '',
+          description: row.description || '',
+          logoUrl: row.logo_url || '',
+          bannerUrl: row.banner_url || '',
+          phoneWhatsApp: row.phone_whatsapp || '',
+          city: row.city || 'Indonesia',
+          province: row.province || '',
+          district: row.district || '',
+          subdistrict: row.subdistrict || '',
+          village: row.village || '',
+          addressDetail: row.address_detail || '',
+          postalCode: row.postal_code || '',
+          address: row.address || '',
+          latitude: row.latitude ? Number(row.latitude) : undefined,
+          longitude: row.longitude ? Number(row.longitude) : undefined,
+          category: row.category || 'Bisnis UMKM',
+          currency: 'IDR',
+          balance: Number(row.balance || 0),
+          plan: row.plan || 'free',
+          isPublished: isPub,
+          layoutSettings: row.theme_settings,
+          customDomain: row.custom_domain,
+          createdAt: row.created_at || new Date().toISOString(),
+        };
+
+        const stored = this.getStoredStores();
+        const existingIdx = stored.findIndex((s) => s.id === mappedStore.id);
+        if (existingIdx !== -1) {
+          stored[existingIdx] = { ...stored[existingIdx], ...mappedStore };
+        } else {
+          stored.push(mappedStore);
+        }
+        this.saveStores(stored);
+        return mappedStore;
+      }
+    } catch (err) {
+      console.warn('Supabase getStoreBySlug notice:', err);
+    }
+
+    // 2. Fallback to local stored stores
+    const stores = this.getStoredStores();
     const exact = stores.find((s) => s.slug?.toLowerCase() === clean || s.id?.toLowerCase() === clean);
     if (exact) return exact;
 
-    // 2. Fuzzy match
     const fuzzy = stores.find((s) => {
       const sSlug = (s.slug || '').toLowerCase();
       const sId = (s.id || '').toLowerCase();
@@ -275,20 +337,32 @@ class StoreService {
       if (updates.plan !== undefined) dbUpdates.plan = updates.plan;
       if (updates.balance !== undefined) dbUpdates.balance = updates.balance;
       if (updates.customDomain !== undefined) dbUpdates.custom_domain = updates.customDomain;
+      if (updates.isPublished !== undefined) dbUpdates.is_published = updates.isPublished;
       
       const combinedThemeSettings = {
         ...(stores[index].layoutSettings || {}),
         ...(updates.layoutSettings || {}),
+        ...(updates.isPublished !== undefined ? { isPublished: updates.isPublished } : {}),
         ...(updates.planExpiresAt ? { planExpiresAt: updates.planExpiresAt } : {}),
         ...(updates.planSubscribedAt ? { planSubscribedAt: updates.planSubscribedAt } : {}),
       };
       dbUpdates.theme_settings = combinedThemeSettings;
       stores[index].layoutSettings = combinedThemeSettings;
       await supabase.from('stores').update(dbUpdates).eq('id', storeId);
-      console.log(`[Supabase Database] Toko ${storeId} berhasil diperbarui di cloud.`);
+      console.log(`[Supabase Database] Toko ${storeId} berhasil diperbarui di cloud. is_published = ${updates.isPublished}`);
     } catch (err) {
       console.warn('Supabase store update notice:', err);
     }
+
+    // Instant local multi-tab & cross-tab broadcast
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('microcms_store_sync');
+        bc.postMessage({ type: 'STORE_UPDATED', store: stores[index] });
+        bc.close();
+      }
+      window.dispatchEvent(new CustomEvent('microcms_store_updated', { detail: stores[index] }));
+    } catch (e) {}
 
     return stores[index];
   }
@@ -370,6 +444,7 @@ class StoreService {
         plan: newStore.plan || 'free',
         balance: newStore.balance || 0,
         theme_settings: newStore.layoutSettings || {},
+        is_published: newStore.isPublished !== undefined ? newStore.isPublished : false,
         created_at: newStore.createdAt,
         updated_at: new Date().toISOString(),
       });
@@ -389,6 +464,120 @@ class StoreService {
     const newBalance = store.balance - amount;
     await this.updateStore(storeId, { balance: newBalance });
     return { newBalance };
+  }
+
+  /**
+   * Berlangganan (Subscribe) perubahan status toko secara Real-Time via Supabase WebSocket & BroadcastChannel
+   */
+  subscribeToStoreChanges(storeIdOrSlug: string, onUpdate: (updatedStore: Store) => void): () => void {
+    const unsubscribers: Array<() => void> = [];
+
+    // 1. BroadcastChannel listener (sinkronisasi instan antar-tab pada browser yang sama)
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('microcms_store_sync');
+        const bcHandler = (event: MessageEvent) => {
+          if (event.data && event.data.store) {
+            const incoming: Store = event.data.store;
+            if (incoming.id === storeIdOrSlug || incoming.slug === storeIdOrSlug) {
+              onUpdate(incoming);
+            }
+          }
+        };
+        bc.addEventListener('message', bcHandler);
+        unsubscribers.push(() => {
+          bc.removeEventListener('message', bcHandler);
+          bc.close();
+        });
+      }
+    } catch (e) {}
+
+    // 2. Window storage & custom event listener
+    try {
+      const storageHandler = (e: StorageEvent) => {
+        if (e.key === STORE_KEY && e.newValue) {
+          try {
+            const list: Store[] = JSON.parse(e.newValue);
+            const found = list.find((s) => s.id === storeIdOrSlug || s.slug === storeIdOrSlug);
+            if (found) {
+              onUpdate(found);
+            }
+          } catch (err) {}
+        }
+      };
+      window.addEventListener('storage', storageHandler);
+      unsubscribers.push(() => window.removeEventListener('storage', storageHandler));
+
+      const customHandler = (e: any) => {
+        if (e.detail) {
+          const s: Store = e.detail;
+          if (s.id === storeIdOrSlug || s.slug === storeIdOrSlug) {
+            onUpdate(s);
+          }
+        }
+      };
+      window.addEventListener('microcms_store_updated', customHandler);
+      unsubscribers.push(() => window.removeEventListener('microcms_store_updated', customHandler));
+    } catch (e) {}
+
+    // 3. Supabase Realtime WebSocket channel (sinkronisasi lintas-perangkat dan lintas-browser)
+    try {
+      const channel = supabase
+        .channel(`realtime:stores:${storeIdOrSlug}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'stores',
+          },
+          (payload: any) => {
+            if (payload?.new) {
+              const row = payload.new;
+              if (row.id === storeIdOrSlug || row.slug === storeIdOrSlug) {
+                const isPub = row.is_published !== undefined 
+                  ? Boolean(row.is_published) 
+                  : Boolean(row.theme_settings?.isPublished);
+
+                const stored = this.getStoredStores();
+                const idx = stored.findIndex((s) => s.id === row.id || s.slug === row.slug);
+                let merged: Store;
+                if (idx !== -1) {
+                  merged = {
+                    ...stored[idx],
+                    name: row.name || stored[idx].name,
+                    slug: row.slug || stored[idx].slug,
+                    isPublished: isPub,
+                    customDomain: row.custom_domain !== undefined ? row.custom_domain : stored[idx].customDomain,
+                  };
+                  stored[idx] = merged;
+                  this.saveStores(stored);
+                } else {
+                  merged = {
+                    ...initialStores[0],
+                    id: row.id,
+                    name: row.name,
+                    slug: row.slug,
+                    isPublished: isPub,
+                  };
+                }
+                onUpdate(merged);
+              }
+            }
+          }
+        )
+        .subscribe();
+
+      unsubscribers.push(() => {
+        supabase.removeChannel(channel);
+      });
+    } catch (err) {
+      console.warn('Realtime subscription error in storeService:', err);
+    }
+
+    return () => {
+      unsubscribers.forEach((fn) => fn());
+    };
   }
 }
 

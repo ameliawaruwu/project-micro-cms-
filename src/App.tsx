@@ -28,6 +28,7 @@ import {
   MapPin,
   Phone,
   Search,
+  EyeOff,
 } from 'lucide-react';
 import {
   Store,
@@ -494,6 +495,32 @@ export default function App() {
       window.removeEventListener('microcms_products_updated', handleProductsUpdated);
     };
   }, [activeStore?.id]);
+
+  // Real-time synchronization for store publish/unpublish status across all windows & devices
+  useEffect(() => {
+    const storeIdentifier = currentStore?.id || currentStore?.slug;
+    if (!storeIdentifier) return;
+
+    const unsubscribe = storeService.subscribeToStoreChanges(storeIdentifier, (updatedStore) => {
+      setActiveStore((prev) => {
+        if (!prev) return updatedStore;
+        if (prev.id === updatedStore.id || prev.slug === updatedStore.slug) {
+          return { ...prev, ...updatedStore };
+        }
+        return prev;
+      });
+
+      setStores((prev) => prev.map((s) => (s.id === updatedStore.id ? { ...s, ...updatedStore } : s)));
+
+      if (updatedStore.isPublished === false && viewMode === 'storefront-live') {
+        addToast('⚠️ Toko ini baru saja ditarik dari publikasi (unpublish) oleh pemilik toko.', 'info');
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [currentStore?.id, currentStore?.slug, viewMode]);
 
   // Route Users to their respective dashboards if they are logged in and on the landing page
   useEffect(() => {
@@ -1118,34 +1145,34 @@ export default function App() {
       {/* 2. PURE STANDALONE STOREFRONT (100% FULL SCREEN - NO PREVIEW / NO FRAMES) */}
       {viewMode === 'storefront-live' && (() => {
         const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
-        const isPublished = currentStore.isPublished !== false;
+        const isPublished = Boolean(currentStore?.isPublished);
 
-        // Jika toko belum dipublikasikan dan pengunjung bukan di mode preview
+        // Jika toko belum dipublikasikan atau sedang di-unpublish dan pengunjung bukan di mode preview
         if (!isPublished && !isPreview) {
           const isOwner = user && activeStore && activeStore.id === currentStore.id;
           return (
-            <div className="min-h-screen w-full bg-[#FAF7F7] flex flex-col items-center justify-center p-4 font-sans text-center">
+            <div className="min-h-screen w-full bg-[#FAF7F7] flex flex-col items-center justify-center p-4 sm:p-6 font-sans text-center">
               <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 border border-[#E5E0DD] shadow-lg space-y-5 animate-in fade-in duration-200">
-                <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-[#66000E] flex items-center justify-center mx-auto shadow-xs">
-                  <StoreIcon className="w-8 h-8" />
+                <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-[#66000E] flex items-center justify-center mx-auto shadow-xs">
+                  <EyeOff className="w-8 h-8 text-rose-700" />
                 </div>
                 <div className="space-y-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-semibold border border-amber-200">
-                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                    Toko Sedang Disiapkan
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-800 text-xs font-semibold border border-rose-200">
+                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                    Toko Tidak Aktif (Draf)
                   </span>
                   <h1 className="text-xl sm:text-2xl font-bold text-[#241A1A]">
                     {currentStore.name || 'Toko Online'}
                   </h1>
                   <p className="text-xs sm:text-sm text-[#706866] leading-relaxed">
-                    Halo! Toko online ini sedang dalam tahap persiapan dan belum resmi dibuka untuk umum. Silakan berkunjung kembali nanti.
+                    Toko online ini sedang tidak dapat diakses untuk umum karena dalam status draf atau baru saja ditarik dari publikasi (unpublish) oleh pemilik toko.
                   </p>
                 </div>
 
                 {isOwner ? (
                   <div className="space-y-3 pt-3 border-t border-[#E5E0DD]">
                     <p className="text-[11px] text-[#706866] font-medium">
-                      Anda adalah pemilik toko ini. Anda dapat melihat draf atau mempublikasikannya sekarang.
+                      Anda adalah pemilik toko ini. Anda dapat masuk ke Dashboard atau mempublikasikan kembali toko Anda agar aktif.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <button
@@ -1164,14 +1191,17 @@ export default function App() {
                   </div>
                 ) : (
                   currentStore.phoneWhatsApp && (
-                    <a
-                      href={`https://wa.me/${currentStore.phoneWhatsApp.replace(/[^0-9]/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
-                    >
-                      <span>Hubungi Penjual via WhatsApp</span>
-                    </a>
+                    <div className="pt-2 border-t border-[#E5E0DD]">
+                      <a
+                        href={`https://wa.me/${currentStore.phoneWhatsApp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Halo ${currentStore.name}, saya ingin menanyakan perihal toko online Anda.`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        <span>Hubungi Pemilik via WhatsApp</span>
+                      </a>
+                    </div>
                   )
                 )}
               </div>

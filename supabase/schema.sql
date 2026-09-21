@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS stores (
     plan VARCHAR(32) DEFAULT 'free' CHECK (plan IN ('free', 'starter', 'premium', 'personal', 'community', 'corporate', 'startup')),
     balance BIGINT DEFAULT 0,
     theme_settings JSONB DEFAULT '{}'::jsonb,
+    is_published BOOLEAN DEFAULT FALSE,
     is_suspended BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

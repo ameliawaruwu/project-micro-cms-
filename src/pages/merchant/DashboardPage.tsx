@@ -75,7 +75,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-400"></span>
                 <span>Belum Memiliki Toko</span>
               </div>
-            ) : !store.isPublished && store.domainStatus !== 'connected' ? (
+            ) : !store.isPublished ? (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium shadow-2xs">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
                 <span>Toko Belum Publikasi (Draf)</span>
@@ -94,7 +94,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {/* Real-time date, Buka Web Toko (jika sudah dipublikasikan), & quick refresh trigger */}
         <div className="flex items-center gap-2 shrink-0">
-          {store.slug && store.id && (store.isPublished || store.domainStatus === 'connected') && (
+          {store.slug && store.id && Boolean(store.isPublished) && (
             <a
               href={store.customDomain ? `https://${store.customDomain}` : `${window.location.origin}/?toko=${store.slug}`}
               target="_blank"
