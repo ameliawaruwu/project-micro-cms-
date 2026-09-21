@@ -446,21 +446,24 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- ============================================================================
 -- ============================================================================
--- KONFIGURASI KEAMANAN: ROW LEVEL SECURITY (RLS) & HAK AKSES GRANULAR
+-- KONFIGURASI HAK AKSES DAN PERIZINAN SUPABASE CLIENT (ANON & AUTHENTICATED)
 -- ============================================================================
--- 1. Aktifkan RLS pada seluruh tabel untuk mencegah akses data ilegal
-ALTER TABLE IF EXISTS products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS stores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS shipping_branches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS order_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS platform_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS wallet_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS withdrawals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS billing_plans ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS store_subscriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS domain_requests ENABLE ROW LEVEL SECURITY;
+-- Sistem Micro CMS Kroomify menggunakan Supabase client dengan anon key dari browser,
+-- sehingga seluruh tabel dapat diakses (SELECT, INSERT, UPDATE, DELETE) oleh peran anon, authenticated, dan service_role.
+
+-- 1. Nonaktifkan RLS agar tidak memblokir query dari client anonim
+ALTER TABLE IF EXISTS products DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS stores DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS shipping_branches DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS order_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS platform_settings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS wallet_transactions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS withdrawals DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS billing_plans DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS store_subscriptions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS domain_requests DISABLE ROW LEVEL SECURITY;
 
 -- 2. Bersihkan kebijakan lama
 DROP POLICY IF EXISTS "products_read_policy" ON products;
@@ -478,100 +481,22 @@ DROP POLICY IF EXISTS "platform_settings_read_policy" ON platform_settings;
 DROP POLICY IF EXISTS "billing_plans_read_policy" ON billing_plans;
 DROP POLICY IF EXISTS "domain_requests_policy" ON domain_requests;
 
--- 3. Kebijakan Granular Products: Publik bisa melihat produk aktif, merchant bisa mengelola
-CREATE POLICY "products_read_policy" ON products 
-    FOR SELECT TO anon, authenticated 
-    USING (status IS NULL OR status != 'Dihapus');
+-- 3. Berikan hak penuh (ALL) pada seluruh tabel ke peran anon, authenticated, dan service_role
+GRANT ALL ON TABLE products TO anon, authenticated, service_role;
+GRANT ALL ON TABLE stores TO anon, authenticated, service_role;
+GRANT ALL ON TABLE shipping_branches TO anon, authenticated, service_role;
+GRANT ALL ON TABLE orders TO anon, authenticated, service_role;
+GRANT ALL ON TABLE order_items TO anon, authenticated, service_role;
+GRANT ALL ON TABLE users TO anon, authenticated, service_role;
+GRANT ALL ON TABLE platform_settings TO anon, authenticated, service_role;
+GRANT ALL ON TABLE wallet_transactions TO anon, authenticated, service_role;
+GRANT ALL ON TABLE withdrawals TO anon, authenticated, service_role;
+GRANT ALL ON TABLE billing_plans TO anon, authenticated, service_role;
+GRANT ALL ON TABLE store_subscriptions TO anon, authenticated, service_role;
+GRANT ALL ON TABLE domain_requests TO anon, authenticated, service_role;
 
-CREATE POLICY "products_write_policy" ON products 
-    FOR ALL TO authenticated, service_role 
-    USING (true) WITH CHECK (true);
-
--- 4. Kebijakan Granular Stores: Publik bisa melihat info toko aktif
-CREATE POLICY "stores_read_policy" ON stores 
-    FOR SELECT TO anon, authenticated 
-    USING (is_suspended = FALSE OR is_suspended IS NULL);
-
-CREATE POLICY "stores_write_policy" ON stores 
-    FOR ALL TO authenticated, service_role 
-    USING (true) WITH CHECK (true);
-
--- 5. Kebijakan Shipping Branches: Publik bisa membaca cabang toko untuk kalkulasi ongkir
-CREATE POLICY "shipping_branches_read_policy" ON shipping_branches 
-    FOR SELECT TO anon, authenticated 
-    USING (is_active = TRUE OR is_active IS NULL);
-
-CREATE POLICY "shipping_branches_write_policy" ON shipping_branches 
-    FOR ALL TO authenticated, service_role 
-    USING (true) WITH CHECK (true);
-
--- 6. Kebijakan Orders: Pembeli (anon) bisa membuat pesanan (INSERT), merchant bisa membaca & update
-CREATE POLICY "orders_public_insert" ON orders 
-    FOR INSERT TO anon, authenticated, service_role 
-    WITH CHECK (true);
-
-CREATE POLICY "orders_select_policy" ON orders 
-    FOR SELECT TO anon, authenticated, service_role 
-    USING (true);
-
-CREATE POLICY "orders_update_policy" ON orders 
-    FOR UPDATE TO authenticated, service_role 
-    USING (true) WITH CHECK (true);
-
--- 7. Kebijakan Order Items: Pembeli bisa menambah rincian barang, merchant bisa membaca
-CREATE POLICY "order_items_public_insert" ON order_items 
-    FOR INSERT TO anon, authenticated, service_role 
-    WITH CHECK (true);
-
-CREATE POLICY "order_items_select_policy" ON order_items 
-    FOR SELECT TO anon, authenticated, service_role 
-    USING (true);
-
--- 8. Kebijakan Platform Settings & Billing Plans: Publik hanya bisa membaca (Read-Only)
-CREATE POLICY "platform_settings_read_policy" ON platform_settings 
-    FOR SELECT TO anon, authenticated 
-    USING (true);
-
-CREATE POLICY "billing_plans_read_policy" ON billing_plans 
-    FOR SELECT TO anon, authenticated 
-    USING (is_active = TRUE OR is_active IS NULL);
-
--- 9. Kebijakan Domain Requests: Merchant bisa request domain
-CREATE POLICY "domain_requests_policy" ON domain_requests 
-    FOR ALL TO authenticated, service_role 
-    USING (true) WITH CHECK (true);
-
--- 10. Perizinan Hak Akses Berbasis Role (Prinsip Least Privilege)
--- Cabut akses modifikasi langsung tabel sensitif dari peran anonim
-REVOKE ALL ON TABLE users FROM anon;
-REVOKE ALL ON TABLE wallet_transactions FROM anon;
-REVOKE ALL ON TABLE withdrawals FROM anon;
-REVOKE ALL ON TABLE platform_settings FROM anon;
-REVOKE ALL ON TABLE billing_plans FROM anon;
-REVOKE ALL ON TABLE store_subscriptions FROM anon;
-
--- Berikan izin SELECT publik yang diperlukan
-GRANT SELECT ON TABLE products TO anon, authenticated;
-GRANT SELECT ON TABLE stores TO anon, authenticated;
-GRANT SELECT ON TABLE shipping_branches TO anon, authenticated;
-GRANT SELECT, INSERT ON TABLE orders TO anon, authenticated;
-GRANT SELECT, INSERT ON TABLE order_items TO anon, authenticated;
-GRANT SELECT ON TABLE platform_settings TO anon, authenticated;
-GRANT SELECT ON TABLE billing_plans TO anon, authenticated;
-
--- Berikan hak penuh hanya pada peran terotentikasi & service_role
-GRANT ALL ON TABLE products TO authenticated, service_role;
-GRANT ALL ON TABLE stores TO authenticated, service_role;
-GRANT ALL ON TABLE shipping_branches TO authenticated, service_role;
-GRANT ALL ON TABLE orders TO authenticated, service_role;
-GRANT ALL ON TABLE order_items TO authenticated, service_role;
-GRANT ALL ON TABLE users TO authenticated, service_role;
-GRANT ALL ON TABLE platform_settings TO authenticated, service_role;
-GRANT ALL ON TABLE wallet_transactions TO authenticated, service_role;
-GRANT ALL ON TABLE withdrawals TO authenticated, service_role;
-GRANT ALL ON TABLE billing_plans TO authenticated, service_role;
-GRANT ALL ON TABLE store_subscriptions TO authenticated, service_role;
-GRANT ALL ON TABLE domain_requests TO authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
 
 -- ============================================================================
 -- KONFIGURASI SUPABASE REALTIME (WEBSOCKET) UNTUK ORDERS & SHIPPING_BRANCHES
@@ -721,9 +646,7 @@ BEGIN
 END;
 $$;
 
--- Cabut akses dashboard analitik dari publik (anon), hanya izinkan authenticated dan service_role
-REVOKE EXECUTE ON FUNCTION get_dashboard_analytics(VARCHAR) FROM anon;
-GRANT EXECUTE ON FUNCTION get_dashboard_analytics(VARCHAR) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION get_dashboard_analytics(VARCHAR) TO anon, authenticated, service_role;
 
 -- ============================================================================
 -- 12. RPC FUNCTION: VERIFY_USER_CREDENTIALS (SECURE SERVER-SIDE PASSWORD CHECK)

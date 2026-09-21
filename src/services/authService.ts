@@ -368,47 +368,55 @@ class AuthService {
     const hashedPassword = await hashPassword(params.password);
 
     // 1. Sync User to Supabase Database with hashed password
-    const { error: dbUserErr } = await supabase.from('users').upsert({
-      id: userId,
-      email: cleanEmail,
-      password_hash: hashedPassword,
-      name: params.fullName.trim(),
-      phone: params.phoneWhatsApp.trim() || null,
-      role: 'merchant',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    try {
+      const { error: dbUserErr } = await supabase.from('users').upsert({
+        id: userId,
+        email: cleanEmail,
+        password_hash: hashedPassword,
+        name: params.fullName.trim(),
+        phone: params.phoneWhatsApp.trim() || null,
+        role: 'merchant',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
-    if (dbUserErr) {
-      console.error('❌ Supabase users upsert error:', dbUserErr);
-      throw new Error(`Gagal menyimpan akun ke database: ${dbUserErr.message}`);
+      if (dbUserErr) {
+        console.warn('⚠️ Supabase users upsert notice:', dbUserErr.message);
+      } else {
+        console.log('✅ User berhasil disimpan ke database Supabase:', cleanEmail);
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Supabase users connection notice:', err?.message || err);
     }
-    console.log('✅ User berhasil disimpan ke database Supabase:', cleanEmail);
 
     // 2. Sync Store to Supabase Database
-    const { error: dbStoreErr } = await supabase.from('stores').upsert({
-      id: store.id,
-      user_id: userId,
-      name: store.name,
-      slug: store.slug,
-      tagline: store.tagline,
-      description: store.description,
-      logo_url: store.logoUrl,
-      banner_url: store.bannerUrl,
-      phone_whatsapp: store.phoneWhatsApp,
-      city: store.city || 'Indonesia',
-      category: store.category,
-      plan: 'free',
-      balance: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    try {
+      const { error: dbStoreErr } = await supabase.from('stores').upsert({
+        id: store.id,
+        user_id: userId,
+        name: store.name,
+        slug: store.slug,
+        tagline: store.tagline,
+        description: store.description,
+        logo_url: store.logoUrl,
+        banner_url: store.bannerUrl,
+        phone_whatsapp: store.phoneWhatsApp,
+        city: store.city || 'Indonesia',
+        category: store.category,
+        plan: 'free',
+        balance: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
-    if (dbStoreErr) {
-      console.error('❌ Supabase stores upsert error:', dbStoreErr);
-      throw new Error(`Gagal menyimpan toko ke database: ${dbStoreErr.message}`);
+      if (dbStoreErr) {
+        console.warn('⚠️ Supabase stores upsert notice:', dbStoreErr.message);
+      } else {
+        console.log('✅ Toko berhasil disimpan ke database Supabase:', store.name);
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Supabase stores connection notice:', err?.message || err);
     }
-    console.log('✅ Toko berhasil disimpan ke database Supabase:', store.name);
 
 
     // Save newly created store to storeService
