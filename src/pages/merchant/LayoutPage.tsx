@@ -21,7 +21,7 @@ import { AddSectionModal } from '../../components/layout-editor/AddSectionModal'
 import { StoreLayoutSetupWizard } from '../../components/layout-editor/StoreLayoutSetupWizard';
 import { ThemeLibraryView, TemplateGalleryItem, SavedThemeItem, TEMPLATE_GALLERY_ITEMS } from '../../components/layout-editor/ThemeLibraryView';
 import { PublishStoreModal } from '../../components/layout-editor/PublishStoreModal';
-import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2, EyeOff } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 
 interface LayoutPageProps {
@@ -29,6 +29,7 @@ interface LayoutPageProps {
   products: Product[];
   onSaveLayout: (layoutSettings: StoreLayoutSettings) => void;
   onPublishStore?: () => void;
+  onUnpublishStore?: () => void;
   onOpenStorefront: () => void;
   onOpenPhoneSimulator: () => void;
   onShowNotification: (msg: string) => void;
@@ -43,6 +44,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   products,
   onSaveLayout,
   onPublishStore,
+  onUnpublishStore,
   onOpenStorefront,
   onOpenPhoneSimulator,
   onShowNotification,
@@ -949,6 +951,45 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       onShowNotification('🎉 Toko online berhasil dipublikasikan dan live!');
     }, 200);
   };
+
+  const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
+  const [isUnpublishing, setIsUnpublishing] = useState(false);
+
+  const handleUnpublish = () => {
+    setIsUnpublishModalOpen(true);
+  };
+
+  const confirmUnpublish = async () => {
+    setIsUnpublishing(true);
+    try {
+      // Panggil backend API unpublish jika aktif
+      try {
+        await fetch('/api/deploy/unpublish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: currentStore.slug, customDomain: currentStore.customDomain }),
+        });
+      } catch (e) {
+        // Non-fatal jika serverless / remote API
+      }
+
+      if (onUnpublishStore) {
+        await onUnpublishStore();
+      } else {
+        await storeService.updateStore(currentStore.id, { isPublished: false });
+      }
+
+      setCurrentStore((prev) => ({ ...prev, isPublished: false }));
+      onShowNotification('Toko online berhasil di-unpublish (kembali menjadi draf).');
+    } catch (err: any) {
+      console.error('Error unpublishing store:', err);
+      onShowNotification('Gagal membatalkan publikasi toko.');
+    } finally {
+      setIsUnpublishing(false);
+      setIsUnpublishModalOpen(false);
+    }
+  };
+
   return (
     <>
       {/* ═══ MODE 1: LIBRARY (inside dashboard, with sidebar visible) ═══ */}
@@ -1249,6 +1290,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             activePage={activePage}
             onPageChange={handlePageChange}
             onPublish={handlePublish}
+            onUnpublish={handleUnpublish}
+            isUnpublishing={isUnpublishing}
           />
 
           {/* 2. THREE-PANEL WORKSPACE */}
@@ -1360,7 +1403,58 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             onNavigateBilling={onNavigateBilling}
             onNavigateDomain={onNavigateDomain}
             onPublish={onPublishStore}
+            onUnpublish={confirmUnpublish}
           />
+
+          {/* Unpublish Confirmation Modal */}
+          {isUnpublishModalOpen && (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#EBE5E2] space-y-4 animate-in zoom-in-95 duration-150">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
+                    <EyeOff className="w-5 h-5 text-rose-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#241A1A]">Tarik Publikasi Toko?</h3>
+                    <p className="text-xs text-[#706866]">Kembalikan website toko ke status Draf</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-[#555] leading-relaxed">
+                  Setelah di-unpublish, website toko <strong>{currentStore.name}</strong> tidak dapat diakses secara publik oleh pembeli dan statusnya kembali menjadi draf. Anda dapat mempublikasikannya kembali kapan saja.
+                </p>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsUnpublishModalOpen(false)}
+                    disabled={isUnpublishing}
+                    className="px-4 py-2 text-xs font-semibold text-[#706866] hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmUnpublish}
+                    disabled={isUnpublishing}
+                    className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {isUnpublishing ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Memproses...</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="w-3.5 h-3.5" />
+                        <span>Ya, Unpublish Toko</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>

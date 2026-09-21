@@ -83,6 +83,8 @@ interface EditorTopBarProps {
   onPageChange?: (pageId: string) => void;
   pages?: EditorPage[];
   onPublish?: () => void;
+  onUnpublish?: () => void;
+  isUnpublishing?: boolean;
 }
 
 export const EditorTopBar: React.FC<EditorTopBarProps> = ({
@@ -104,6 +106,8 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   onPageChange,
   pages = DEFAULT_EDITOR_PAGES,
   onPublish,
+  onUnpublish,
+  isUnpublishing = false,
 }) => {
   const { t } = useLanguage();
   const [isPageDropdownOpen, setIsPageDropdownOpen] = useState(false);
@@ -301,15 +305,29 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           <span className="hidden sm:inline">{isFullscreen ? 'Tutup Pratinjau' : t('preview', 'Pratinjau')}</span>
         </button>
 
-        {/* Publish */}
-        <button
-          type="button"
-          onClick={onPublish}
-          className="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
-        >
-          <Globe className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Publikasikan</span>
-        </button>
+        {/* Publish / Unpublish Toggle Button */}
+        {store.isPublished ? (
+          <button
+            type="button"
+            onClick={onUnpublish}
+            disabled={isUnpublishing}
+            className="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+            title="Tarik publikasi website toko (kembalikan ke mode draf)"
+          >
+            <EyeOff className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{isUnpublishing ? 'Memproses...' : 'Unpublish'}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onPublish}
+            className="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+            title="Publikasikan website toko ke publik"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Publikasikan</span>
+          </button>
+        )}
 
         {/* Save */}
         <button

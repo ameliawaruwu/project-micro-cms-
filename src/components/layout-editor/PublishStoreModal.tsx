@@ -21,6 +21,7 @@ import {
   Sliders,
   Radio,
   Wifi,
+  EyeOff,
 } from 'lucide-react';
 import { Store } from '../../types';
 import { domainRequestService, DomainRequest } from '../../services/domainRequestService';
@@ -35,6 +36,7 @@ interface PublishStoreModalProps {
   onNavigateBilling?: () => void;
   onNavigateDomain?: () => void;
   onPublish?: () => void;
+  onUnpublish?: () => void;
 }
 
 type PublishModalStep = 'choose_domain' | 'confirm_subdomain' | 'auto_deploy' | 'published';
@@ -59,6 +61,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
   onNavigateBilling,
   onNavigateDomain,
   onPublish,
+  onUnpublish,
 }) => {
   const [step, setStep] = useState<PublishModalStep>('choose_domain');
   const [copied, setCopied] = useState(false);
@@ -109,7 +112,11 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
   // Initialize modal state when opened
   useEffect(() => {
     if (!isOpen) return;
-    setStep('choose_domain');
+    if (store.isPublished) {
+      setStep('published');
+    } else {
+      setStep('choose_domain');
+    }
     setDeployProgress(0);
     setTerminalLogs([]);
 
@@ -692,6 +699,32 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                     )}
                   </button>
                 </div>
+              </div>
+
+              {/* Unpublish & Reconfigure Options */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setStep('choose_domain')}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#706866] hover:text-[#241A1A] hover:bg-[#F2EDEA] border border-[#E5E0DD] transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Atur Ulang Domain / Deploy</span>
+                </button>
+                {onUnpublish && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onUnpublish();
+                      onClose();
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 hover:bg-rose-50 border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
+                    title="Tarik publikasi toko dan kembalikan ke status draf"
+                  >
+                    <EyeOff className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Tarik Publikasi (Unpublish)</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
