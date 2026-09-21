@@ -3,11 +3,12 @@ import cors from 'cors';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import { deployRouter } from './backend/deployController';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5055;
 
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
@@ -220,6 +221,12 @@ app.post('/api/midtrans/notification', async (req, res) => {
     return res.status(500).json({ error: err?.message || 'Webhook processing error' });
   }
 });
+
+// 5. Endpoint Auto-Deploy Toko (Packaging Webroot, Nginx Vhost & Cloudflare Tunnel Ingress)
+app.use('/deploy', deployRouter);
+app.use('/api/deploy', deployRouter);
+app.use('/', deployRouter); // Kompatibilitas rute domainService.ts (/cloudflare/*)
+app.use('/api', deployRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running securely on http://localhost:${PORT}`);
