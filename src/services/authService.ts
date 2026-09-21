@@ -177,10 +177,24 @@ class AuthService {
     let verifiedDbUser: any = null;
     if (_password && _password !== 'google-auth') {
       try {
-        const { data: rpcRes, error: rpcErr } = await supabase.rpc('verify_user_credentials', {
+        const hashedPass = await hashPassword(_password);
+        let { data: rpcRes, error: rpcErr } = await supabase.rpc('verify_user_credentials', {
           p_email: cleanEmail,
           p_password: _password,
         });
+
+        // Fallback retry dengan hash jika database belum termigrasi atau password disimpan sebagai hash
+        if ((!rpcErr && rpcRes && !rpcRes.success) || (rpcRes && rpcRes.message === 'Kata sandi tidak sesuai')) {
+          const retryRes = await supabase.rpc('verify_user_credentials', {
+            p_email: cleanEmail,
+            p_password: hashedPass,
+          });
+          if (!retryRes.error && retryRes.data && retryRes.data.success) {
+            rpcRes = retryRes.data;
+            rpcErr = null;
+          }
+        }
+
         if (!rpcErr && rpcRes) {
           if (rpcRes.success && rpcRes.user) {
             verifiedDbUser = rpcRes.user;

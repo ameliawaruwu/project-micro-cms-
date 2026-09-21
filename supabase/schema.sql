@@ -661,6 +661,7 @@ AS $$
 DECLARE
     v_user RECORD;
     v_is_valid BOOLEAN := FALSE;
+    v_sha256_hash VARCHAR;
 BEGIN
     SELECT id, name, email, phone, role, password_hash, created_at
     INTO v_user
@@ -671,12 +672,20 @@ BEGIN
         RETURN json_build_object('success', false, 'message', 'Akun tidak ditemukan');
     END IF;
 
-    -- Dukung bcrypt/crypt hash atau plaintext lama selama transisi migrasi
+    -- Hitung SHA-256 hash dengan salt frontend kroomify
+    v_sha256_hash := encode(digest('kroomify_salt_v1_' || p_password, 'sha256'), 'hex');
+
+    -- 1. Kecocokan langsung (jika password disimpan plaintext atau user memasukkan hash)
     IF v_user.password_hash = p_password THEN
         v_is_valid := TRUE;
+    -- 2. Kecocokan dengan hash SHA-256 frontend kroomify
+    ELSIF v_user.password_hash = v_sha256_hash THEN
+        v_is_valid := TRUE;
+    -- 3. Kecocokan dengan bcrypt/crypt hash
     ELSIF v_user.password_hash LIKE '$2%' OR v_user.password_hash LIKE '$6%' THEN
         BEGIN
-            v_is_valid := (crypt(p_password, v_user.password_hash) = v_user.password_hash);
+            v_is_valid := (crypt(p_password, v_user.password_hash) = v_user.password_hash)
+                       OR (crypt(v_sha256_hash, v_user.password_hash) = v_user.password_hash);
         EXCEPTION WHEN OTHERS THEN
             v_is_valid := FALSE;
         END;

@@ -1,4 +1,5 @@
-// Service to communicate with Midtrans Snap API and Popup
+// Service to communicate with real Midtrans Snap API and Popup
+import { supabase } from './supabaseClient';
 
 export interface SnapTransactionParams {
   orderId: string;
@@ -46,7 +47,7 @@ class MidtransService {
   private isScriptLoaded = false;
 
   private getClientKey(): string {
-    return import.meta.env.VITE_MIDTRANS_CLIENT_KEY || '';
+    return import.meta.env.VITE_MIDTRANS_CLIENT_KEY || 'SB-Mid-client-6qHzXwHC6yMvkJ9J';
   }
 
   private getEnvironment(): 'sandbox' | 'production' {
@@ -75,7 +76,6 @@ class MidtransService {
         existingScript.addEventListener('error', () => {
           reject(new Error('Gagal memuat script Midtrans Snap SDK'));
         });
-        // Set timeout in case neither fires
         setTimeout(() => {
           if (window.snap) {
             this.isScriptLoaded = true;
@@ -113,21 +113,62 @@ class MidtransService {
     });
   }
 
+  /**
+   * Request real Snap Token from backend (Supabase Edge Function or Local Express Proxy)
+   */
   async createSnapToken(params: SnapTransactionParams): Promise<{ token: string; redirectUrl?: string }> {
-    const response = await fetch('/api/midtrans/snap-token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(params),
-    });
+    // 1. Prioritas utama: Panggil Backend Serverless Supabase Edge Function 'midtrans-snap'
+    try {
+      const { data, error } = await supabase.functions.invoke('midtrans-snap', {
+        body: params,
+      });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.message || 'Gagal membuat sesi transaksi Midtrans');
+      if (!error && data?.token) {
+        return {
+          token: data.token,
+          redirectUrl: data.redirectUrl,
+        };
+      }
+      if (error) {
+        console.warn('[Midtrans] Edge Function invoke failed, trying fallback endpoints:', error);
+      }
+    } catch (edgeErr) {
+      console.warn('[Midtrans] Supabase Edge Function notice:', edgeErr);
     }
 
-    return response.json();
+    // 2. Fallback direct HTTP fetch ke Edge Function atau Backend Server lokal (/api/midtrans/snap-token)
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kaveesimezonkgvhcbln.supabase.co';
+    const endpoints = [
+      `${supabaseUrl}/functions/v1/midtrans-snap`,
+      '/api/midtrans/snap-token',
+    ];
+
+    let lastError: any = null;
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(params),
+        });
+
+        if (response.ok) {
+          const json = await response.json();
+          if (json.token) {
+            return json;
+          }
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          lastError = new Error(errData.message || `Gagal menghubungi Midtrans API (${endpoint}: HTTP ${response.status})`);
+        }
+      } catch (networkErr: any) {
+        lastError = networkErr;
+      }
+    }
+
+    throw lastError || new Error('Gagal membuat sesi transaksi Midtrans. Periksa koneksi internet Anda.');
   }
 
   private renderInPagePaymentFrame(
@@ -156,12 +197,14 @@ class MidtransService {
     `;
 
     modal.innerHTML = `
-      <div style="background: #ffffff; width: 100%; max-width: 480px; height: 680px; max-height: 90vh; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
-          <div style="font-weight: 600; font-size: 14px; color: #1e293b;">Pembayaran Midtrans (Dalam Tab Ini)</div>
-          <button id="midtrans-inpage-close" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #64748b;">✕</button>
+      <div style="background: #ffffff; width: 100%; max-width: 500px; height: 720px; max-height: 92vh; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #e2e8f0; background: #0A2540; color: #ffffff;">
+          <div style="font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            <span>Pembayaran Resmi Midtrans</span>
+          </div>
+          <button id="midtrans-inpage-close" style="background: rgba(255,255,255,0.15); border: none; font-size: 16px; width: 28px; height: 28px; border-radius: 50%; color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
         </div>
-        <iframe src="${redirectUrl}" style="flex: 1; width: 100%; border: none;"></iframe>
+        <iframe src="${redirectUrl}" style="flex: 1; width: 100%; border: none;" allow="payment"></iframe>
       </div>
     `;
 
@@ -174,6 +217,9 @@ class MidtransService {
     });
   }
 
+  /**
+   * Buka popup resmi Midtrans Snap
+   */
   async payWithSnap(
     params: SnapTransactionParams,
     callbacks: {
@@ -183,38 +229,48 @@ class MidtransService {
       onClose?: () => void;
     }
   ): Promise<void> {
-    await this.loadSnapScript();
-
+    // 1. Ambil Snap Token asli dari Midtrans API melalui backend
     const { token, redirectUrl } = await this.createSnapToken(params);
 
-    if (!window.snap || typeof window.snap.pay !== 'function') {
-      if (redirectUrl) {
-        this.renderInPagePaymentFrame(redirectUrl, callbacks);
-        return;
-      }
-      throw new Error('Midtrans Snap tidak tersedia di window browser.');
+    if (!token) {
+      throw new Error('Gagal mendapatkan token transaksi Midtrans.');
     }
 
-    window.snap.pay(token, {
-      onSuccess: (result) => callbacks.onSuccess(result),
-      onPending: (result) => {
-        if (callbacks.onPending) callbacks.onPending(result);
-      },
-      onError: (result) => {
-        if (callbacks.onError) {
-          callbacks.onError(result);
-        } else {
-          alert('Pembayaran Midtrans gagal atau dibatalkan.');
-        }
-      },
-      onClose: () => {
-        if (callbacks.onClose) callbacks.onClose();
-      },
-    });
+    // 2. Muat SDK resmi Midtrans Snap
+    await this.loadSnapScript();
+
+    // 3. Jika window.snap tersedia, panggil Snap Popup resmi
+    if (window.snap && typeof window.snap.pay === 'function') {
+      window.snap.pay(token, {
+        onSuccess: (result) => callbacks.onSuccess(result),
+        onPending: (result) => {
+          if (callbacks.onPending) callbacks.onPending(result);
+        },
+        onError: (result) => {
+          if (callbacks.onError) {
+            callbacks.onError(result);
+          } else {
+            alert('Pembayaran Midtrans gagal atau dibatalkan.');
+          }
+        },
+        onClose: () => {
+          if (callbacks.onClose) callbacks.onClose();
+        },
+      });
+      return;
+    }
+
+    // 4. Fallback jika window.snap diblokir browser: gunakan iframe modal atau buka redirectUrl
+    if (redirectUrl) {
+      this.renderInPagePaymentFrame(redirectUrl, callbacks);
+      return;
+    }
+
+    throw new Error('Midtrans Snap tidak tersedia di window browser.');
   }
 
   /**
-   * Check payment status from Midtrans API via backend proxy
+   * Cek status pembayaran riil langsung dari Midtrans API via backend
    */
   async checkTransactionStatus(orderId: string): Promise<{
     success: boolean;
@@ -224,25 +280,36 @@ class MidtransService {
     data?: any;
     error?: string;
   }> {
-    try {
-      const response = await fetch(`/api/midtrans/status?orderId=${encodeURIComponent(orderId)}`);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        return {
-          success: false,
-          isPaid: false,
-          error: errorData.error || `HTTP error ${response.status}`,
-        };
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kaveesimezonkgvhcbln.supabase.co';
+    const endpoints = [
+      `${supabaseUrl}/functions/v1/midtrans-snap?orderId=${encodeURIComponent(orderId)}`,
+      `/api/midtrans/status?orderId=${encodeURIComponent(orderId)}`,
+    ];
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(endpoint);
+        if (response.ok) {
+          const data = await response.json();
+          const status = (data.transaction_status || data.transactionStatus || '').toLowerCase();
+          const isPaid = status === 'settlement' || status === 'capture';
+          return {
+            success: true,
+            isPaid,
+            transactionStatus: status,
+            data,
+          };
+        }
+      } catch (err) {
+        console.warn(`Failed to query Midtrans status from ${endpoint}:`, err);
       }
-      return await response.json();
-    } catch (err: any) {
-      console.warn('Failed to query Midtrans status:', err);
-      return {
-        success: false,
-        isPaid: false,
-        error: err.message || 'Network error',
-      };
     }
+
+    return {
+      success: false,
+      isPaid: false,
+      error: 'Tidak dapat memeriksa status transaksi ke server Midtrans.',
+    };
   }
 }
 
