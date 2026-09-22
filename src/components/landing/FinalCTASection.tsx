@@ -86,7 +86,7 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
 
                 {/* WhatsApp Secondary Button */}
                 <a
-                  href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroombox,%20saya%20tertarik%20buka%20toko%20online"
+                  href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroomify,%20saya%20tertarik%20buka%20toko%20online"
                   target="_blank"
                   rel="noreferrer"
                   className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-normal text-xs sm:text-sm border border-white/20 active:scale-[0.98] transition-all duration-150 cursor-pointer"
@@ -141,7 +141,7 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
                       </div>
                       <div className="text-left">
                         <h4 className="font-bold text-xs sm:text-sm text-[#241A1A] leading-tight">{t('cta_preview_your_store', 'Toko Anda')}</h4>
-                        <span className="text-[10px] text-[#6B6260] block">kroombox.id/toko-anda</span>
+                        <span className="text-[10px] text-[#6B6260] block">kroomify.id/toko-anda</span>
                       </div>
                     </div>
 

@@ -1,5 +1,5 @@
 /**
- * Ultra-smooth scrolling utility for Kroombox Landing Page.
+ * Ultra-smooth scrolling utility for Kroomify Landing Page.
  * Uses custom cubic-bezier easing interpolation (easeInOutCubic)
  * with requestAnimationFrame to ensure silky smooth continuous scrolling
  * across all mobile and desktop browsers and iframes.
@@ -18,7 +18,7 @@ export const scrollToLandingSection = (id: string, customOffset: number = 0, dur
   const element = document.getElementById(id);
   if (!element) return;
 
-  const header = document.getElementById('kroombox-landing-header');
+  const header = document.getElementById('kroomify-landing-header');
   const headerHeight = header ? header.getBoundingClientRect().height : (window.innerWidth < 1024 ? 64 : 68);
   
   const elementTop = element.getBoundingClientRect().top + window.scrollY;
@@ -34,40 +34,16 @@ export const scrollToLandingSection = (id: string, customOffset: number = 0, dur
   }, duration + 200);
 };
 
-export const smoothScrollToY = (targetY: number, duration: number = 550) => {
-  const startY = window.scrollY || window.pageYOffset;
-  const distance = targetY - startY;
-
-  if (Math.abs(distance) < 5) {
-    window.scrollTo(0, targetY);
-    return;
-  }
-
-  let startTime: number | null = null;
-  let animationFrameId: number;
-
-  const step = (currentTime: number) => {
-    if (!startTime) startTime = currentTime;
-    const timeElapsed = currentTime - startTime;
-    const progress = Math.min(timeElapsed / duration, 1);
-    const easeProgress = easeInOutCubic(progress);
-
-    window.scrollTo(0, startY + distance * easeProgress);
-
-    if (progress < 1) {
-      animationFrameId = requestAnimationFrame(step);
-    }
-  };
-
-  // Cancel any prior listener conflict
-  cancelAnimationFrame(window.__kroomboxScrollRafId || 0);
-  animationFrameId = requestAnimationFrame(step);
-  window.__kroomboxScrollRafId = animationFrameId;
+export const smoothScrollToY = (targetY: number, _duration?: number) => {
+  window.scrollTo({
+    top: targetY,
+    behavior: 'smooth',
+  });
 };
 
 // Global declaration for TS
 declare global {
   interface Window {
-    __kroomboxScrollRafId?: number;
+    __kroomifyScrollRafId?: number;
   }
 }

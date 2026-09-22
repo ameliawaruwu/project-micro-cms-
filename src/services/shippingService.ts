@@ -121,31 +121,36 @@ export const shippingService = {
   },
 
   /**
-   * Panggil Supabase Edge Function 'check-shipping-rates' dengan Biteship API
+   * Panggil Supabase Edge Function 'check-shipping-rates' atau direct Biteship API
    */
   async checkBiteshipRates(params: {
+    storeId?: string;
     branchId?: string;
     destinationPostalCode: string | number;
     weight: number;
     couriers?: string;
   }): Promise<{ rates: BiteshipRateOption[]; originBranch?: ShippingBranch }> {
-    const { branchId, destinationPostalCode, weight, couriers = 'jnt,jne,sicepat' } = params;
+    const { storeId, branchId, destinationPostalCode, weight, couriers = 'jnt,jne,sicepat' } = params;
 
     let branch: ShippingBranch | undefined;
     if (branchId) {
       branch = await branchService.getBranchById(branchId);
     }
     if (!branch) {
-      branch = await branchService.getDefaultBranch();
+      branch = await branchService.getDefaultBranch(storeId);
     }
 
+    const packageWeight = Math.max(100, weight || 500);
+    const originPostal = branch?.postalCode || '12730';
+
+    // 1. Coba via Supabase Edge Function
     try {
       const { data, error } = await supabase.functions.invoke('check-shipping-rates', {
         body: {
           branch_id: branch?.id,
-          origin_postal_code: branch?.postalCode,
+          origin_postal_code: originPostal,
           destination_postal_code: destinationPostalCode,
-          weight: Math.max(100, weight || 500),
+          weight: packageWeight,
           couriers,
         },
       });
@@ -160,8 +165,48 @@ export const shippingService = {
       console.warn('[Supabase Edge Function] check-shipping-rates fallback:', err);
     }
 
-    // Fallback simulation bila Edge Function belum dideploy atau Biteship offline
-    const originPostal = branch?.postalCode || '12730';
+    // 2. Gunakan proxy server internal /api/shipping/rates untuk keamanan API key
+    try {
+      const proxyRes = await fetch('/api/shipping/rates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          origin_postal_code: Number(originPostal),
+          destination_postal_code: Number(destinationPostalCode),
+          couriers,
+          weight: packageWeight,
+        }),
+      });
+
+      if (proxyRes.ok) {
+        const biteshipData = await proxyRes.json();
+        if (biteshipData?.pricing && Array.isArray(biteshipData.pricing) && biteshipData.pricing.length > 0) {
+          const mappedRates: BiteshipRateOption[] = biteshipData.pricing.map((p: any) => ({
+            courier_name: p.courier_name || p.company,
+            courier_code: p.courier_code || p.courier,
+            courier_service_name: p.courier_service_name || p.service_type,
+            courier_service_code: p.courier_service_code || p.type,
+            tier: p.tier || 'standard',
+            description: p.description || `${p.courier_name} ${p.courier_service_name}`,
+            service_type: p.service_type || 'standard',
+            shipping_type: p.shipping_type || 'parcel',
+            price: Number(p.price) || 0,
+            etd: p.duration || p.etd || '1-3 Hari',
+          }));
+
+          return {
+            rates: mappedRates,
+            originBranch: branch,
+          };
+        }
+      }
+    } catch (proxyErr) {
+      console.warn('[Biteship Proxy Rates] Fallback to direct or simulated rates:', proxyErr);
+    }
+
+    // 3. Fallback simulation bila Edge Function belum dideploy atau Biteship offline / sandbox balance 0
     const isNearby = String(originPostal).slice(0, 2) === String(destinationPostalCode).slice(0, 2);
     const weightKg = Math.max(1, Math.ceil(weight / 1000));
 
@@ -253,7 +298,8 @@ export const shippingService = {
     try {
       const apiKey =
         (import.meta as any).env?.VITE_BITESHIP_API_KEY ||
-        'biteship_test.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiVGVzdGluZyBNaWNyb0NNUyIsInVzZXJJZCI6IjZhYTc0ZjBlZjQyZTNkMzE1NDY2YmI1YSIsImlhdCI6MTc4OTM1MDA1MX0.TEmKBLYc6Ei-L4FfuCSH2JtNBAxrWR_imx3P9WddciA';
+        (import.meta as any).env?.BITESHIP_API_KEY ||
+        '';
 
       if (apiKey && apiKey.startsWith('biteship_')) {
         const branches = await branchService.getBranches();

@@ -72,6 +72,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [isCopiedVa, setIsCopiedVa] = useState(false);
   const [isCopiedOrderNumber, setIsCopiedOrderNumber] = useState(false);
+  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial';
 
   // Dynamic Midtrans Channels from merchant configuration
   const [activeChannels, setActiveChannels] = useState<PaymentChannel[]>(() => {
@@ -153,7 +154,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     }
   };
 
-  const recordSuccessOrder = async (orderIdCode?: string, verifiedMethod?: string) => {
+  const recordSuccessOrder = async (orderIdCode?: string, verifiedMethod?: string, isPaid: boolean = true) => {
     const orderItems = items.map((item) => ({
       productId: item.product.id,
       productName: item.product.name,
@@ -188,29 +189,33 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       discount: 0,
       grandTotal,
       paymentMethod: finalMethod as PaymentMethod,
-      paymentStatus: 'Sudah Dibayar',
+      paymentStatus: isPaid ? 'Sudah Dibayar' : 'Belum Dibayar',
       courier,
       shippingStatus: 'Baru',
       notes: notes.trim() || undefined,
     });
 
-    // Credit the merchant store balance automatically
-    const currentBalance = store.balance || 0;
-    await storeService.updateStore(store.id, { balance: currentBalance + grandTotal });
+    // Credit the merchant store balance only if actually paid
+    if (isPaid) {
+      const currentBalance = store.balance || 0;
+      await storeService.updateStore(store.id, { balance: currentBalance + grandTotal });
+    }
 
     cartService.clearCart(store.slug);
     setCompletedOrder(newOrder);
     setStep('success');
     onOrderSuccess(newOrder);
 
-    try {
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
-    } catch {
-      // Confetti fallback
+    if (isPaid) {
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+      } catch {
+        // Confetti fallback
+      }
     }
   };
 
@@ -237,16 +242,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         },
         {
           onSuccess: async (result) => {
-            await recordSuccessOrder(result.order_id || orderId, `Midtrans (${result.payment_type})`);
+            await recordSuccessOrder(result.order_id || orderId, `Midtrans (${result.payment_type})`, true);
             setIsSubmitting(false);
           },
           onPending: async (result) => {
-            await recordSuccessOrder(result.order_id || orderId, `Midtrans Pending (${result.payment_type})`);
+            await recordSuccessOrder(result.order_id || orderId, `Midtrans Pending (${result.payment_type})`, false);
             setIsSubmitting(false);
           },
           onError: (err) => {
             console.error('Midtrans Snap error:', err);
             setIsSubmitting(false);
+            alert('Pembayaran Midtrans dibatalkan atau belum selesai. Silakan coba kembali.');
           },
           onClose: () => {
             setIsSubmitting(false);
@@ -265,6 +271,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       alert('Mohon lengkapi formulir nama, nomor WhatsApp, dan alamat pengiriman.');
       return;
     }
+
+    if (isFreePlan) {
+      // Toko dengan Paket Free memproses order manual (Transfer/WA/COD)
+      const orderId = `KB-${Date.now().toString().slice(-6)}`;
+      const selectedName = selectedChannelId === 'cod' ? 'COD (Bayar di Tempat)' : selectedChannelId === 'wa' ? 'Pemesanan via WhatsApp' : 'Transfer Bank Manual';
+      recordSuccessOrder(orderId, selectedName, false);
+      return;
+    }
+
     setStep('payment');
     // Launch Snap
     setTimeout(() => {
@@ -276,7 +291,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     setIsSubmitting(true);
     try {
       const orderId = `KROOM-${Date.now()}`;
-      await recordSuccessOrder(orderId, selectedChannel.name);
+      await recordSuccessOrder(orderId, selectedChannel.name, false);
     } catch {
       alert('Terjadi kesalahan saat memproses pesanan.');
     } finally {
@@ -569,107 +584,149 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
               </div>
 
-              {/* DYNAMIC MIDTRANS PAYMENT CHANNELS SELECTOR */}
+              {/* PAYMENT CHANNELS SELECTOR */}
               <div className="space-y-2.5 pt-3 border-t border-[#E5E0DD]">
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-[#241A1A] uppercase tracking-wider flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-[#66000E]" />
-                      <span>Metode Pembayaran (Midtrans)</span>
+                      <span>{isFreePlan ? 'Metode Pembayaran (Manual)' : 'Metode Pembayaran (Midtrans)'}</span>
                     </h4>
                     <p className="text-[10px] text-[#706866]">
-                      {activeChannels.length} metode pembayaran otomatis aktif
+                      {isFreePlan ? 'Paket Free: Pembayaran via Transfer Bank, WA, atau COD' : `${activeChannels.length} metode pembayaran otomatis aktif`}
                     </p>
                   </div>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" />
-                    <span>Cek Otomatis 24 Jam</span>
-                  </span>
-                </div>
-
-                {/* Category Filter Tabs */}
-                <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
-                  {[
-                    { id: 'all', label: 'Semua' },
-                    { id: 'qris_ewallet', label: 'QRIS & E-Wallet' },
-                    { id: 'virtual_account', label: 'Transfer Bank (VA)' },
-                    { id: 'credit_card', label: 'Kartu Kredit' },
-                    { id: 'retail_paylater', label: 'Gerai / PayLater' },
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setChannelCategoryFilter(tab.id as any)}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap transition cursor-pointer ${
-                        channelCategoryFilter === tab.id
-                          ? 'bg-[#66000E] text-white shadow-2xs'
-                          : 'bg-[#FAF7F7] text-[#706866] hover:bg-[#EAE4E2] hover:text-[#241A1A]'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Channels List */}
-                <div className="space-y-1.5 max-h-56 overflow-y-auto pr-0.5 custom-scrollbar">
-                  {filteredChannels.length === 0 ? (
-                    <p className="text-xs text-gray-400 py-3 text-center">
-                      Tidak ada metode dalam kategori ini.
-                    </p>
+                  {isFreePlan ? (
+                    <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                      Metode Manual
+                    </span>
                   ) : (
-                    filteredChannels.map((channel) => {
-                      const isSelected = selectedChannelId === channel.id;
-                      return (
-                        <div
-                          key={channel.id}
-                          onClick={() => setSelectedChannelId(channel.id)}
-                          className={`p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between ${
-                            isSelected
-                              ? 'border-[#66000E] bg-[#F5E8EA]/40 shadow-2xs'
-                              : 'border-[#E5E0DD] bg-white hover:bg-[#FAF7F7]'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            {/* Brand Badge */}
-                            <span
-                              className="px-2 py-1 rounded-md text-[10px] font-black text-white shrink-0 tracking-wider"
-                              style={{ backgroundColor: channel.color }}
-                            >
-                              {channel.iconCode}
-                            </span>
-
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-xs text-[#241A1A] truncate">
-                                  {channel.name}
-                                </span>
-                                {channel.badge && (
-                                  <span className="text-[9px] font-bold bg-[#FAF7F7] text-[#66000E] px-1.5 py-0.2 rounded border border-[#E6DDDA]">
-                                    {channel.badge}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[10px] text-[#706866] truncate max-w-xs">
-                                {channel.description}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div
-                            className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ml-2 ${
-                              isSelected
-                                ? 'border-[#66000E] bg-[#66000E] text-white'
-                                : 'border-[#E5E0DD] bg-white'
-                            }`}
-                          >
-                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                          </div>
-                        </div>
-                      );
-                    })
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>Cek Otomatis 24 Jam</span>
+                    </span>
                   )}
                 </div>
+
+                {isFreePlan ? (
+                  <div className="space-y-2">
+                    <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-2.5 text-[11px] text-amber-900 leading-snug">
+                      Gateway otomatis Midtrans terkunci pada <b>Paket Free</b>. Pesanan Anda akan disimpan ke sistem dan dikonfirmasi langsung ke WhatsApp penjual.
+                    </div>
+                    {[
+                      { id: 'transfer_manual', title: 'Transfer Bank Manual', desc: 'Transfer ke rekening toko & kirim bukti bayar' },
+                      { id: 'wa', title: 'Pesan & Bayar via WhatsApp', desc: 'Kirim rincian belanja langsung ke WhatsApp penjual' },
+                      { id: 'cod', title: 'Bayar di Tempat (COD)', desc: 'Bayar tunai saat pesanan Anda tiba' },
+                    ].map((m) => (
+                      <div
+                        key={m.id}
+                        onClick={() => setSelectedChannelId(m.id)}
+                        className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                          selectedChannelId === m.id
+                            ? 'border-[#66000E] bg-[#F5E8EA]/40 shadow-2xs font-bold'
+                            : 'border-[#E5E0DD] bg-white hover:bg-[#FAF7F7]'
+                        }`}
+                      >
+                        <div>
+                          <div className="text-xs text-[#241A1A] font-bold">{m.title}</div>
+                          <div className="text-[10px] text-[#706866] font-normal">{m.desc}</div>
+                        </div>
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedChannelId === m.id ? 'border-[#66000E] bg-[#66000E]' : 'border-gray-300'}`}>
+                          {selectedChannelId === m.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {/* Category Filter Tabs */}
+                    <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
+                      {[
+                        { id: 'all', label: 'Semua' },
+                        { id: 'qris_ewallet', label: 'QRIS & E-Wallet' },
+                        { id: 'virtual_account', label: 'Transfer Bank (VA)' },
+                        { id: 'credit_card', label: 'Kartu Kredit' },
+                        { id: 'retail_paylater', label: 'Gerai / PayLater' },
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setChannelCategoryFilter(tab.id as any)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap transition cursor-pointer ${
+                            channelCategoryFilter === tab.id
+                              ? 'bg-[#66000E] text-white shadow-2xs'
+                              : 'bg-[#FAF7F7] text-[#706866] hover:bg-[#EAE4E2] hover:text-[#241A1A]'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Channels List */}
+                    <div className="space-y-1.5 max-h-56 overflow-y-auto pr-0.5 custom-scrollbar">
+                      {filteredChannels.length === 0 ? (
+                        <p className="text-xs text-gray-400 py-3 text-center">
+                          Tidak ada metode dalam kategori ini.
+                        </p>
+                      ) : (
+                        filteredChannels.map((channel) => {
+                          const isSelected = selectedChannelId === channel.id;
+                          return (
+                            <div
+                              key={channel.id}
+                              onClick={() => setSelectedChannelId(channel.id)}
+                              className={`p-2.5 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                                isSelected
+                                  ? 'border-[#66000E] bg-[#F5E8EA]/40 shadow-2xs'
+                                  : 'border-[#E5E0DD] bg-white hover:bg-[#FAF7F7]'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span
+                                  className="px-2 py-1 rounded-md text-[10px] font-black text-white shrink-0 tracking-wider"
+                                  style={{ backgroundColor: channel.color }}
+                                >
+                                  {channel.iconCode}
+                                </span>
+
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-xs text-[#241A1A] truncate">
+                                      {channel.name}
+                                    </span>
+                                    {channel.badge && (
+                                      <span className="text-[9px] font-bold bg-[#FAF7F7] text-[#66000E] px-1.5 py-0.2 rounded border border-[#E6DDDA]">
+                                        {channel.badge}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-[#706866] truncate block">
+                                    {channel.description}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 shrink-0">
+                                <div
+                                  className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                    isSelected
+                                      ? 'border-[#66000E] bg-[#66000E]'
+                                      : 'border-gray-300'
+                                  }`}
+                                >
+                                  {isSelected && (
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 

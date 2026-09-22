@@ -26,7 +26,7 @@ serve(async (req) => {
     const biteshipOrderId = body.order_id || body.id;
     const status = (body.status || '').toLowerCase();
 
-    // Map status Biteship ke status sistem Kroombox
+    // Map status Biteship ke status sistem Kroomify
     let shippingStatus: string = 'Diproses';
     let orderStatus: string = 'processing';
     let updateShippedAt: string | null = null;

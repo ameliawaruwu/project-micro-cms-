@@ -20,20 +20,20 @@ export const SolutionSection: React.FC = () => {
         <div className="text-center max-w-2xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-semibold mb-4 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-[#66000E]" />
-            <span>Transformasi Kroombox</span>
+            <span>Transformasi Kroomify</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#241A1A] tracking-tight leading-snug mb-3">
             Satu Tempat untuk Mengelola Toko Anda.
           </h2>
           <p className="text-[#5F5652] text-sm sm:text-base leading-relaxed font-normal">
-            Kroombox menyederhanakan pengelolaan toko online agar Anda bisa fokus pada pengembangan produk dan kepuasan pelanggan.
+            Kroomify menyederhanakan pengelolaan toko online agar Anda bisa fokus pada pengembangan produk dan kepuasan pelanggan.
           </p>
         </div>
 
-        {/* Visual Transformation Grid: Sebelum vs Dengan Kroombox */}
+        {/* Visual Transformation Grid: Sebelum vs Dengan Kroomify */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
           
-          {/* Box 1: Sebelum Kroombox (Old & Messy) */}
+          {/* Box 1: Sebelum Kroomify (Old & Messy) */}
           <div className="p-6 sm:p-8 rounded-2xl bg-white border border-[#E8DDDE] flex flex-col justify-between relative shadow-xs">
             <div>
               <div className="flex items-center justify-between mb-6">
@@ -42,7 +42,7 @@ export const SolutionSection: React.FC = () => {
                     <X className="w-4 h-4" />
                   </div>
                   <h3 className="text-base sm:text-lg font-bold text-[#241A1A]">
-                    Sebelum Kroombox
+                    Sebelum Kroomify
                   </h3>
                 </div>
                 <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
@@ -92,7 +92,7 @@ export const SolutionSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Box 2: Dengan Kroombox (New, Integrated & Clear) */}
+          {/* Box 2: Dengan Kroomify (New, Integrated & Clear) */}
           <div className="p-6 sm:p-8 rounded-2xl bg-white text-[#241A1A] flex flex-col justify-between relative shadow-md border-2 border-[#66000E]">
             
             <div className="relative z-10">
@@ -102,7 +102,7 @@ export const SolutionSection: React.FC = () => {
                     <Check className="w-4 h-4" />
                   </div>
                   <h3 className="text-base sm:text-lg font-bold text-[#241A1A]">
-                    Dengan Kroombox
+                    Dengan Kroomify
                   </h3>
                 </div>
                 <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE]">

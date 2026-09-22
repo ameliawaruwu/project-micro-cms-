@@ -7,52 +7,62 @@ const SUBSCRIPTIONS_KEY = 'microcms_store_subscriptions_v1';
 export const DEFAULT_BILLING_PLANS: BillingPlan[] = [
   {
     id: 'plan_free',
-    name: 'Starter (Gratis)',
+    name: 'Paket Free',
     slug: 'free',
-    tagline: 'Cocok untuk toko baru yang mulai berjualan online',
+    tagline: 'Belajar & kelola katalog produk lokal secara gratis',
     priceMonthly: 0,
     priceYearly: 0,
+    hostingPriceYearly: 0,
+    cmsPriceYearly: 0,
     features: [
-      'Katalog produk hingga 25 item',
-      'Checkout otomatis via Midtrans (QRIS & VA)',
-      'Cek ongkir otomatis ekspedisi (J&T, JNE)',
-      'Watermark resmi Kroombox di footer toko',
+      'Subdomain pratinjau: namatoko.kroombox.com',
+      'Katalog produk dasar (maksimal 10 produk)',
+      '❌ Tanpa Checkout Otomatis Midtrans (Manual/WA saja)',
+      '❌ Tanpa Ekspedisi Kurir Otomatis Biteship',
+      '❌ Tanpa Publikasi/Deploy Toko Online & Domain',
+      'Watermark resmi Kroomify di footer',
     ],
     isActive: true,
     sortOrder: 1,
   },
   {
-    id: 'plan_pro',
-    name: 'Pro UMKM',
-    slug: 'premium',
-    tagline: 'Fitur lengkap tanpa batas untuk meningkatkan omset toko',
-    priceMonthly: 99000,
-    priceYearly: 950000,
+    id: 'plan_personal',
+    name: 'Personal Toko',
+    slug: 'personal',
+    tagline: 'Buka toko online mandiri & terima pembayaran instan',
+    priceMonthly: 0,
+    priceYearly: 350000,
+    hostingPriceYearly: 200000,
+    cmsPriceYearly: 150000,
     features: [
-      'Unlimited katalog produk & varian',
-      'Bebas watermark (white-label brand sendiri)',
-      'Semua metode pembayaran Midtrans (QRIS, VA Bank, Kartu Kredit)',
-      'Visual layout builder & kustomisasi banner toko',
-      'Cetak label pengiriman thermal massal',
-      'Laporan analitik penjualan & omset real-time',
-      'Prioritas bantuan customer support',
+      'Kapasitas hingga 50 produk & varian',
+      'Deploy Toko Online Aktif (bisa diakses pembeli)',
+      'Checkout otomatis Midtrans (QRIS & VA Bank)',
+      'Cek ongkir & pengiriman otomatis Biteship',
+      'Kapasitas Hosting Cloud Kroomify cepat',
+      'Laporan penjualan & pesanan harian',
     ],
     isActive: true,
     sortOrder: 2,
   },
   {
-    id: 'plan_scaleup',
-    name: 'Bisnis Scale-Up',
-    slug: 'business',
-    tagline: 'Untuk bisnis UMKM berkembang dengan tim & cabang',
-    priceMonthly: 249000,
-    priceYearly: 2400000,
+    id: 'plan_community',
+    name: 'Community UMKM',
+    slug: 'community',
+    tagline: 'Solusi lengkap & paling laris untuk bisnis UMKM bertumbuh',
+    badge: 'Pilihan Terbaik UMKM',
+    priceMonthly: 0,
+    priceYearly: 1000000,
+    hostingPriceYearly: 700000,
+    cmsPriceYearly: 300000,
     features: [
-      'Semua fitur paket Pro UMKM',
-      'Akses multi-staf pengelola toko (hingga 5 admin)',
-      'Dukungan custom domain toko (.com / .id)',
-      'Notifikasi otomatis WhatsApp bot ke pembeli',
-      'Dedicated Account Manager 24/7',
+      'Unlimited katalog produk & varian tanpa batas',
+      'Mendukung Custom Domain Sendiri (.com, .id, dll)',
+      'Bebas Watermark (100% White-label Brand Anda)',
+      'Full checkout Midtrans (QRIS, VA Bank, E-Wallet)',
+      'Cetak label resi pengiriman thermal massal',
+      'Visual layout builder (bebas kustom tema toko)',
+      'Hosting Server UMKM prioritas tinggi',
     ],
     isActive: true,
     sortOrder: 3,
@@ -143,7 +153,14 @@ class BillingPlanService {
     }
     try {
       const parsed: BillingPlan[] = JSON.parse(raw);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_BILLING_PLANS;
+      // Validasi agar hanya 3 paket resmi yang dimuat
+      const validSlugs = new Set(['free', 'personal', 'community']);
+      const filtered = Array.isArray(parsed) ? parsed.filter((p) => validSlugs.has(p.slug)) : [];
+      if (filtered.length !== 3) {
+        localStorage.setItem(BILLING_PLANS_KEY, JSON.stringify(DEFAULT_BILLING_PLANS));
+        return DEFAULT_BILLING_PLANS;
+      }
+      return filtered;
     } catch {
       return DEFAULT_BILLING_PLANS;
     }
@@ -176,9 +193,12 @@ class BillingPlanService {
       }
 
       if (data && data.length > 0) {
-        const mapped = data.map(mapRowToPlan);
-        this.saveStoredPlans(mapped);
-        return mapped;
+        const validSlugs = new Set(['free', 'personal', 'community']);
+        const mapped = data.map(mapRowToPlan).filter((p) => validSlugs.has(p.slug));
+        if (mapped.length > 0) {
+          this.saveStoredPlans(mapped);
+          return mapped;
+        }
       }
       return this.getPlans();
     } catch (err) {
@@ -332,6 +352,63 @@ class BillingPlanService {
     }
 
     return newSub;
+  }
+
+  /**
+   * Get subscriptions for a specific store
+   */
+  getStoreSubscriptions(storeId: string): BillingSubscription[] {
+    return this.getSubscriptions().filter((s) => s.storeId === storeId);
+  }
+
+  /**
+   * Get pending subscription for a specific store if any
+   */
+  getPendingSubscription(storeId: string): BillingSubscription | undefined {
+    return this.getSubscriptions().find((s) => s.storeId === storeId && s.status === 'pending');
+  }
+
+  /**
+   * Update the status of a subscription (e.g. from pending to paid or cancelled)
+   */
+  async updateSubscriptionStatus(
+    identifier: string,
+    status: 'paid' | 'pending' | 'failed' | 'cancelled',
+    extra?: Partial<BillingSubscription>
+  ): Promise<BillingSubscription | null> {
+    const subs = this.getSubscriptions();
+    const index = subs.findIndex(
+      (s) => s.id === identifier || s.invoiceNumber === identifier || (s.orderId && s.orderId === identifier)
+    );
+
+    if (index === -1) return null;
+
+    const existing = subs[index];
+    const updated: BillingSubscription = {
+      ...existing,
+      ...extra,
+      status,
+      paidAt: status === 'paid' ? new Date().toISOString() : existing.paidAt,
+    };
+
+    subs[index] = updated;
+    localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subs));
+
+    // Sync to Supabase
+    try {
+      await supabase
+        .from('store_subscriptions')
+        .update({
+          status: updated.status,
+          paid_at: updated.paidAt,
+          expires_at: updated.expiresAt,
+        })
+        .eq('id', updated.id);
+    } catch (err) {
+      console.warn('Failed to update subscription status in Supabase:', err);
+    }
+
+    return updated;
   }
 }
 

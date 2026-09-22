@@ -1,7 +1,7 @@
 import React from 'react';
-import { ArrowRight, AlertTriangle, Send, MessageCircle } from 'lucide-react';
+import { ArrowRight, AlertTriangle, Send } from 'lucide-react';
 import { Order, Product } from '../../types';
-import { formatRupiah, generateWhatsAppLink } from '../../utils/formatters';
+import { formatRupiah } from '../../utils/formatters';
 
 interface SalesSummaryProps {
   orders: Order[];
@@ -21,18 +21,18 @@ export const SalesSummary: React.FC<SalesSummaryProps> = ({
   const recentOrders = orders.slice(0, 4);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 font-sans">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 font-poppins">
       {/* Recent Orders (2 Columns on Desktop) */}
-      <div className="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 border border-[#EAEAEA] shadow-xs flex flex-col justify-between">
+      <div className="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 border border-[#E5E0DD] shadow-xs flex flex-col justify-between">
         <div>
-          <div className="flex items-center justify-between pb-4 border-b border-[#EAEAEA] mb-4">
+          <div className="flex items-center justify-between pb-4 border-b border-[#E5E0DD] mb-4">
             <div>
               <h3 className="font-bold text-base text-[#1F1F1F]">Pesanan Terbaru Masuk</h3>
               <p className="text-xs text-[#555555] mt-0.5 font-normal">Segera kirim paket agar pelanggan puas</p>
             </div>
             <button
               onClick={onViewAllOrders}
-              className="text-xs font-semibold text-[#9A0602] hover:text-[#7D0502] flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-[#66000E] hover:text-[#52000B] flex items-center gap-1 cursor-pointer"
             >
               <span>Semua Pesanan</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -48,10 +48,10 @@ export const SalesSummary: React.FC<SalesSummaryProps> = ({
               recentOrders.map((order) => (
                 <div
                   key={order.id}
-                  className="p-3.5 rounded-xl border border-[#EAEAEA] hover:border-[#9A0602] bg-white hover:bg-[#F7F7F7] transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  className="p-3.5 rounded-xl border border-[#E5E0DD] hover:border-[#66000E] bg-white hover:bg-[#F7F7F7] transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white border border-[#EAEAEA] overflow-hidden shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-[#E5E0DD] overflow-hidden shrink-0">
                       <img
                         src={order.items[0]?.productImage || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=100'}
                         alt={order.items[0]?.productName}
@@ -79,26 +79,16 @@ export const SalesSummary: React.FC<SalesSummaryProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                    <a
-                      href={generateWhatsAppLink(order.customerPhone, `Halo Kak ${order.customerName}, terima kasih sudah order di toko kami (No: ${order.orderNumber}). Pesanan sedang kami siapkan ya!`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition"
-                      title="Hubungi Pembeli via WhatsApp"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                    </a>
-
                     {order.shippingStatus === 'Baru' || order.shippingStatus === 'Diproses' ? (
                       <button
                         onClick={() => onProcessOrder(order)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#9A0602] hover:bg-[#7D0502] text-white text-xs font-semibold transition active:scale-95 shadow-xs cursor-pointer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-semibold transition active:scale-95 shadow-xs cursor-pointer"
                       >
                         <Send className="w-3.5 h-3.5" />
                         <span>Proses Kirim</span>
                       </button>
                     ) : (
-                      <span className="text-[11px] font-semibold text-[#555555] bg-[#F7F7F7] border border-[#EAEAEA] px-2.5 py-1 rounded-lg">
+                      <span className="text-[11px] font-semibold text-[#555555] bg-[#F7F7F7] border border-[#E5E0DD] px-2.5 py-1 rounded-lg">
                         {order.shippingStatus}
                       </span>
                     )}
@@ -109,7 +99,7 @@ export const SalesSummary: React.FC<SalesSummaryProps> = ({
           </div>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-[#EAEAEA] flex items-center justify-between text-xs text-[#555555]">
+        <div className="mt-4 pt-3 border-t border-[#E5E0DD] flex items-center justify-between text-xs text-[#555555]">
           <span>Semua pesanan otomatis tersinkronisasi</span>
           <span className="font-mono text-[11px] text-[#777777]">Update Realtime</span>
         </div>
@@ -118,8 +108,8 @@ export const SalesSummary: React.FC<SalesSummaryProps> = ({
       {/* Stock Alerts & Quick Tips (1 Column on Desktop) */}
       <div className="space-y-4">
         {/* Low stock reminder */}
-        <div className="bg-white rounded-2xl p-5 border border-[#EAEAEA] shadow-xs">
-          <div className="flex items-center gap-2 text-[#9A0602] mb-3">
+        <div className="bg-white rounded-2xl p-5 border border-[#E5E0DD] shadow-xs">
+          <div className="flex items-center gap-2 text-[#66000E] mb-3">
             <AlertTriangle className="w-5 h-5" />
             <h3 className="font-bold text-sm text-[#1F1F1F]">Perhatian Stok Menipis</h3>
           </div>
@@ -131,15 +121,15 @@ export const SalesSummary: React.FC<SalesSummaryProps> = ({
             {lowStockProducts.slice(0, 3).map((prod) => (
               <div
                 key={prod.id}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-[#FFF1F0] border border-[#FECDCA] text-xs"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-[#F5E8EA] border border-[#E8DDDE] text-xs"
               >
                 <div className="truncate pr-2">
                   <p className="font-bold text-[#1F1F1F] truncate">{prod.name}</p>
-                  <span className="text-[11px] text-[#9A0602] font-semibold">Sisa: {prod.stock} unit</span>
+                  <span className="text-[11px] text-[#66000E] font-semibold">Sisa: {prod.stock} unit</span>
                 </div>
                 <button
                   onClick={() => onUpdateStock(prod)}
-                  className="px-2.5 py-1 rounded-lg bg-white border border-[#FECDCA] text-[#9A0602] font-semibold hover:bg-[#FFF1F0] transition shrink-0 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-white border border-[#E8DDDE] text-[#66000E] font-semibold hover:bg-[#F5E8EA] transition shrink-0 cursor-pointer"
                 >
                   + Tambah
                 </button>
@@ -150,7 +140,7 @@ export const SalesSummary: React.FC<SalesSummaryProps> = ({
 
         {/* UMKM Tip Box */}
         <div className="bg-[#1F1F1F] rounded-2xl p-5 text-white shadow-xs">
-          <div className="flex items-center gap-2 text-[#FECDCA] text-xs font-semibold uppercase tracking-wider mb-2">
+          <div className="flex items-center gap-2 text-[#E8DDDE] text-xs font-semibold uppercase tracking-wider mb-2">
             <span>💡 Tips Jualan Laris UMKM</span>
           </div>
           <h4 className="font-bold text-sm text-white mb-1.5">Pasang Link Toko di Bio Instagram & Status WA</h4>

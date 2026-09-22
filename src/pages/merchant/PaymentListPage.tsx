@@ -2,18 +2,36 @@ import React, { useState, useMemo } from 'react';
 import {
   CreditCard,
   Search,
+  Lock,
+  Sparkles,
+  AlertTriangle,
 } from 'lucide-react';
 import { paymentChannelService, PaymentChannel } from '../../services/paymentChannelService';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { Store } from '../../types';
 
 interface PaymentListPageProps {
+  store?: Store;
+  onNavigateBilling?: () => void;
   onShowNotification?: (msg: string) => void;
+  onNavigateDashboard?: () => void;
 }
 
-export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotification }) => {
+export const PaymentListPage: React.FC<PaymentListPageProps> = ({
+  store,
+  onNavigateBilling,
+  onShowNotification,
+  onNavigateDashboard,
+}) => {
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
   const [channels, setChannels] = useState<PaymentChannel[]>(() => paymentChannelService.getChannels());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | string>('all');
   const [isMasterActive, setIsMasterActive] = useState(true);
+
+  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial';
 
   // Filter channels based on search and category
   const filteredChannels = useMemo(() => {
@@ -42,6 +60,19 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
   }, [channels]);
 
   const handleToggleChannel = (id: string) => {
+    if (isFreePlan) {
+      if (onShowNotification) {
+        onShowNotification(
+          isEn
+            ? 'Midtrans gateway is locked on Free Plan. Please upgrade to a paid hosting plan.'
+            : 'Gateway Midtrans terkunci pada Paket Free. Silakan upgrade ke paket hosting berbayar.'
+        );
+      }
+      if (onNavigateBilling) {
+        onNavigateBilling();
+      }
+      return;
+    }
     const { channels: updated, updatedItem } = paymentChannelService.toggleChannel(id);
     setChannels(updated);
     if (onShowNotification && updatedItem) {
@@ -52,6 +83,19 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
   };
 
   const handleToggleMaster = () => {
+    if (isFreePlan) {
+      if (onShowNotification) {
+        onShowNotification(
+          isEn
+            ? 'Midtrans gateway is locked on Free Plan. Please upgrade to a paid hosting plan.'
+            : 'Gateway Midtrans terkunci pada Paket Free. Silakan upgrade ke paket hosting berbayar.'
+        );
+      }
+      if (onNavigateBilling) {
+        onNavigateBilling();
+      }
+      return;
+    }
     const nextState = !isMasterActive;
     setIsMasterActive(nextState);
     const updated = paymentChannelService.setAllChannels(nextState);
@@ -217,13 +261,57 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left w-full">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: t('nav_dashboard', 'Dashboard'), onClick: onNavigateDashboard },
+          { label: t('nav_payment', 'Pembayaran'), isActive: true },
+        ]}
+      />
+
       {/* 1. Page Title */}
       <div className="pb-3 border-b border-[#E5E0DD]">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-          <CreditCard className="w-6 h-6 text-[#66000E]" />
-          <span>Payment</span>
+        <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+          <CreditCard className="w-5 h-5 text-[#66000E]" />
+          <span>{t('nav_payment', 'Pembayaran')}</span>
         </h1>
       </div>
+
+      {/* Locked Alert on Free Plan */}
+      {isFreePlan && (
+        <div className="bg-gradient-to-br from-[#FFFBEB] via-[#FEF3C7]/30 to-white border-2 border-[#F59E0B]/40 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-[#FEF3C7] border border-[#FDE68A] text-[#B45309] flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+              <Lock className="w-5 h-5 text-[#B45309]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-bold text-[#92400E]">
+                  {isEn ? 'Midtrans Payment Gateway Locked (Free Plan)' : 'Gateway Pembayaran Midtrans Terkunci (Paket Free)'}
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] font-bold text-[10px] border border-[#FDE68A]">
+                  {isEn ? 'Hosting Required' : 'Perlu Paket Hosting'}
+                </span>
+              </div>
+              <p className="text-xs text-[#78350F] mt-1 max-w-2xl leading-relaxed">
+                {isEn
+                  ? 'To accept automated payments via QRIS, Virtual Account (BCA, Mandiri, BRI, BNI), and E-Wallets directly into your bank, upgrade to an active hosting plan (Personal Rp 350k/year or Community UMKM Rp 1jt/year).'
+                  : 'Untuk mengaktifkan pembayaran otomatis seperti QRIS, Virtual Account (BCA, Mandiri, BRI, BNI), dan E-Wallet ke toko Anda, diperlukan paket hosting server aktif (Personal Rp 350.000/thn atau Community UMKM Rp 1.000.000/thn).'}
+              </p>
+            </div>
+          </div>
+          {onNavigateBilling && (
+            <button
+              type="button"
+              onClick={onNavigateBilling}
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] text-white text-xs font-bold shadow-sm transition active:scale-[0.98] cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span>{isEn ? 'Upgrade Hosting Plan' : 'Upgrade Paket Hosting'}</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 2. Main Midtrans Gateway Card */}
       <div className="bg-white rounded-2xl border border-[#E5E0DD] shadow-2xs overflow-hidden transition">
@@ -235,10 +323,10 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">
-                Pilihan Metode Pembayaran
+                {t('payment_methods_title', 'Pilihan Metode Pembayaran')}
               </h2>
               <p className="text-xs text-[#706866] mt-0.5">
-                {activeCount} dari {channels.length} metode pembayaran aktif di etalase toko Anda
+                {activeCount} / {channels.length} {t('payment_active_count', 'metode pembayaran aktif di etalase toko Anda')}
               </p>
             </div>
           </div>
@@ -271,7 +359,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
               <Search className="w-4 h-4 text-[#706866] absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Cari metode pembayaran (contoh: BCA, QRIS, GoPay, Mandiri)..."
+                placeholder={isEn ? 'Search payment methods (e.g. BCA, QRIS, GoPay, Mandiri)...' : 'Cari metode pembayaran (contoh: BCA, QRIS, GoPay, Mandiri)...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
@@ -285,11 +373,11 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="py-2.5 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] cursor-pointer"
               >
-                <option value="all">Semua Kategori ({channels.length})</option>
+                <option value="all">{isEn ? `All Categories (${channels.length})` : `Semua Kategori (${channels.length})`}</option>
                 <option value="virtual_account">Virtual Account (Bank)</option>
                 <option value="qris_ewallet">QRIS &amp; E-Wallet</option>
-                <option value="credit_card">Kartu Kredit</option>
-                <option value="retail_paylater">Gerai Retail &amp; PayLater</option>
+                <option value="credit_card">{isEn ? 'Credit Card' : 'Kartu Kredit'}</option>
+                <option value="retail_paylater">{isEn ? 'Retail & PayLater' : 'Gerai Retail & PayLater'}</option>
               </select>
             </div>
           </div>
@@ -298,9 +386,9 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
           {filteredChannels.length === 0 ? (
             <div className="p-8 text-center bg-white rounded-xl border border-[#E5E0DD]">
               <Search className="w-8 h-8 text-[#706866] mx-auto mb-2 opacity-50" />
-              <p className="text-xs font-semibold text-[#241A1A]">Metode pembayaran tidak ditemukan</p>
+              <p className="text-xs font-semibold text-[#241A1A]">{isEn ? 'No payment methods found' : 'Metode pembayaran tidak ditemukan'}</p>
               <p className="text-[11px] text-[#706866] mt-0.5">
-                Coba kata kunci pencarian lain seperti "BCA", "QRIS", atau pilih Semua Kategori.
+                {isEn ? 'Try different search keywords such as "BCA", "QRIS", or select All Categories.' : 'Coba kata kunci pencarian lain seperti "BCA", "QRIS", atau pilih Semua Kategori.'}
               </p>
             </div>
           ) : (
@@ -329,26 +417,39 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
                   </div>
 
                   {/* Right: Toggle Switch & Status Text */}
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span
-                      className={`text-xs font-semibold hidden sm:inline-block ${
-                        channel.isEnabled ? 'text-emerald-700' : 'text-[#706866]'
-                      }`}
-                    >
-                      {channel.isEnabled ? 'Aktif' : 'Nonaktif'}
-                    </span>
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    {isFreePlan ? (
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                        <Lock className="w-3 h-3 text-amber-600" />
+                        <span>{isEn ? 'Plan Locked' : 'Terkunci'}</span>
+                      </span>
+                    ) : (
+                      <span
+                        className={`text-xs font-semibold hidden sm:inline-block ${
+                          channel.isEnabled ? 'text-emerald-700' : 'text-[#706866]'
+                        }`}
+                      >
+                        {channel.isEnabled ? (isEn ? 'Active' : 'Aktif') : (isEn ? 'Inactive' : 'Nonaktif')}
+                      </span>
+                    )}
 
                     <button
                       type="button"
                       onClick={() => handleToggleChannel(channel.id)}
                       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        channel.isEnabled ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
-                      }`}
-                      title={channel.isEnabled ? `Nonaktifkan ${channel.name}` : `Aktifkan ${channel.name}`}
+                        !isFreePlan && channel.isEnabled ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
+                      } ${isFreePlan ? 'opacity-70' : ''}`}
+                      title={
+                        isFreePlan
+                          ? (isEn ? 'Upgrade to a paid hosting plan to enable' : 'Upgrade ke paket hosting berbayar untuk mengaktifkan')
+                          : channel.isEnabled
+                          ? (isEn ? `Disable ${channel.name}` : `Nonaktifkan ${channel.name}`)
+                          : (isEn ? `Enable ${channel.name}` : `Aktifkan ${channel.name}`)
+                      }
                     >
                       <span
                         className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                          channel.isEnabled ? 'translate-x-5' : 'translate-x-0'
+                          !isFreePlan && channel.isEnabled ? 'translate-x-5' : 'translate-x-0'
                         }`}
                       />
                     </button>
@@ -360,9 +461,9 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({ onShowNotifica
 
           {/* Bottom Counter & Help Note */}
           <div className="flex items-center justify-between text-[11px] text-[#706866] pt-2 border-t border-[#E5E0DD]/80">
-            <span>Menampilkan {filteredChannels.length} metode pembayaran</span>
+            <span>{isEn ? `Showing ${filteredChannels.length} payment methods` : `Menampilkan ${filteredChannels.length} metode pembayaran`}</span>
             <span className="text-[#66000E] font-medium">
-              Pilihan metode pembayaran otomatis tersinkron ke checkout pembeli
+              {isEn ? 'Active payment methods automatically sync to buyer checkout' : 'Pilihan metode pembayaran otomatis tersinkron ke checkout pembeli'}
             </span>
           </div>
         </div>

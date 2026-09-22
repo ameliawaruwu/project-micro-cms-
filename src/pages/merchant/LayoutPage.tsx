@@ -21,7 +21,7 @@ import { AddSectionModal } from '../../components/layout-editor/AddSectionModal'
 import { StoreLayoutSetupWizard } from '../../components/layout-editor/StoreLayoutSetupWizard';
 import { ThemeLibraryView, TemplateGalleryItem, SavedThemeItem, TEMPLATE_GALLERY_ITEMS } from '../../components/layout-editor/ThemeLibraryView';
 import { PublishStoreModal } from '../../components/layout-editor/PublishStoreModal';
-import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2, EyeOff } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { normalizeThemeId } from '../../themes/ThemeRegistry';
 
@@ -29,20 +29,30 @@ interface LayoutPageProps {
   store: Store;
   products: Product[];
   onSaveLayout: (layoutSettings: StoreLayoutSettings) => void;
+  onPublishStore?: () => void;
+  onUnpublishStore?: () => void;
   onOpenStorefront: () => void;
   onOpenPhoneSimulator: () => void;
   onShowNotification: (msg: string) => void;
   onBack?: () => void;
+  onNavigateDashboard?: () => void;
+  onNavigateBilling?: () => void;
+  onNavigateDomain?: () => void;
 }
 
 export const LayoutPage: React.FC<LayoutPageProps> = ({
   store,
   products,
   onSaveLayout,
+  onPublishStore,
+  onUnpublishStore,
   onOpenStorefront,
   onOpenPhoneSimulator,
   onShowNotification,
   onBack,
+  onNavigateDashboard,
+  onNavigateBilling,
+  onNavigateDomain,
 }) => {
   const [currentStore, setCurrentStore] = useState<Store>(store);
   const cmsProducts = useCmsStore(state => state.products);
@@ -71,7 +81,16 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   
   // Theme Library vs Editor Mode
-  const [pageMode, setPageMode] = useState<'library' | 'preview' | 'loading' | 'editor'>('library');
+  const [pageMode, setPageMode] = useState<'library' | 'preview' | 'loading' | 'editor'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'editor' || params.get('editTheme')) {
+        return 'editor';
+      }
+    }
+    return 'library';
+  });
+
   const [previewTemplate, setPreviewTemplate] = useState<TemplateGalleryItem | null>(null);
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -82,6 +101,34 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     const raw = (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist';
     return normalizeThemeId(raw);
   });
+
+  // Sync template from URL parameter if opened via new tab (?mode=editor&editTheme=...)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const editTheme = params.get('editTheme');
+      if (editTheme) {
+        const found = TEMPLATE_GALLERY_ITEMS.find(
+          (t) => t.id === editTheme || t.storeTemplate.id === editTheme
+        );
+        if (found) {
+          const storeTemplate = found.storeTemplate;
+          const newSections = storeTemplate.sections.map((s, idx) => ({
+            ...s,
+            key: s.key || `${s.id}-${idx}`,
+            order: s.order !== undefined ? s.order : idx,
+          }));
+          setSections(newSections);
+          setSelectedSectionKey(newSections[0]?.key || null);
+          setPrimaryAccent(found.primaryAccent);
+          const mappedThemeId = normalizeThemeId(found.storeTemplate.id);
+          setActiveThemeId(mappedThemeId);
+          useCmsStore.getState().loadThemeData(mappedThemeId);
+          setPageMode('editor');
+        }
+      }
+    }
+  }, []);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [globalSettings, setGlobalSettings] = useState<any>(
     store.layoutSettings?.globalThemeSettings || {
@@ -93,9 +140,14 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   );
 
-  const displayProducts = (pageMode === 'preview' || !products || products.length === 0) 
-    ? cmsProducts 
-    : products;
+  // Keep useCmsStore synchronized when merchant products are updated
+  useEffect(() => {
+    if (products && products.length > 0) {
+      useCmsStore.getState().setProductsFromMerchant(products);
+    }
+  }, [products]);
+
+  const displayProducts = cmsProducts.length > 0 ? cmsProducts : (products || []);
 
   // Multi-page sections map state
   const [pageSectionsMap, setPageSectionsMap] = useState<Record<string, StoreSectionConfig[]>>(() => {
@@ -327,7 +379,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       const stored = localStorage.getItem(savedThemesStorageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          // Sanitize: filter out any corrupted entries missing storeTemplate or id
+          const valid = parsed.filter(
+            (t: any) => t && t.id && t.storeTemplate && t.storeTemplate.id
+          );
+          if (valid.length > 0) return valid;
+        }
       }
     } catch (e) {
       console.error('Failed to load saved themes from storage:', e);
@@ -470,6 +528,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       if (template.customLayoutSettings.globalThemeSettings) {
         setGlobalSettings(template.customLayoutSettings.globalThemeSettings);
       }
+      if (template.customLayoutSettings.activeThemeId) {
+        setActiveThemeId(normalizeThemeId(template.customLayoutSettings.activeThemeId));
+      }
       if (template.customPageSectionsMap) {
         setPageSectionsMap(template.customPageSectionsMap);
       }
@@ -513,7 +574,6 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
 
     useCmsStore.getState().loadThemeData(mappedThemeId);
-
     // Animate progress bar over ~1.5 seconds, then switch to editor
     let progress = 0;
     const interval = setInterval(() => {
@@ -860,6 +920,66 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       onShowNotification(`Draf tema & tata letak berhasil disimpan pada pukul ${timeStr}! Jam pembaruan draf diperbarui.`);
     }, 200);
   };
+
+  const handlePublish = () => {
+    setIsSaving(true);
+    const layoutSettings: StoreLayoutSettings = {
+      sections,
+      themeStyle: store.layoutSettings?.themeStyle || 'minimal',
+      primaryAccent,
+    };
+
+    onSaveLayout(layoutSettings);
+    if (onPublishStore) {
+      onPublishStore();
+    }
+    setCurrentStore((prev) => ({ ...prev, isPublished: true }));
+    setHasChanges(false);
+    setTimeout(() => {
+      setIsSaving(false);
+      setIsPublishModalOpen(true);
+      onShowNotification('🎉 Toko online berhasil dipublikasikan dan live!');
+    }, 200);
+  };
+
+  const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
+  const [isUnpublishing, setIsUnpublishing] = useState(false);
+
+  const handleUnpublish = () => {
+    setIsUnpublishModalOpen(true);
+  };
+
+  const confirmUnpublish = async () => {
+    setIsUnpublishing(true);
+    try {
+      // Panggil backend API unpublish jika aktif
+      try {
+        await fetch('/api/deploy/unpublish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: currentStore.slug, customDomain: currentStore.customDomain }),
+        });
+      } catch (e) {
+        // Non-fatal jika serverless / remote API
+      }
+
+      if (onUnpublishStore) {
+        await onUnpublishStore();
+      } else {
+        await storeService.updateStore(currentStore.id, { isPublished: false });
+      }
+
+      setCurrentStore((prev) => ({ ...prev, isPublished: false }));
+      onShowNotification('Toko online berhasil di-unpublish (kembali menjadi draf).');
+    } catch (err: any) {
+      console.error('Error unpublishing store:', err);
+      onShowNotification('Gagal membatalkan publikasi toko.');
+    } finally {
+      setIsUnpublishing(false);
+      setIsUnpublishModalOpen(false);
+    }
+  };
+
   return (
     <>
       {/* ═══ MODE 1: LIBRARY (inside dashboard, with sidebar visible) ═══ */}
@@ -1141,7 +1261,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             onSave={handleSave}
             onReset={handleReset}
             onOpenStorefront={handleOpenPreviewTab}
-            onBack={() => setPageMode('library')}
+            onBack={() => {
+              if (window.opener) {
+                window.close();
+              } else {
+                setPageMode('library');
+              }
+            }}
             isSaving={isSaving}
             canUndo={canUndo}
             canRedo={canRedo}
@@ -1151,7 +1277,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             onToggleFullscreen={toggleFullscreen}
             activePage={activePage}
             onPageChange={handlePageChange}
-            onPublish={() => setIsPublishModalOpen(true)}
+            onPublish={handlePublish}
+            onUnpublish={handleUnpublish}
+            isUnpublishing={isUnpublishing}
           />
 
           {/* 2. THREE-PANEL WORKSPACE */}
@@ -1260,7 +1388,61 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             isOpen={isPublishModalOpen}
             onClose={() => setIsPublishModalOpen(false)}
             store={currentStore}
+            onNavigateBilling={onNavigateBilling}
+            onNavigateDomain={onNavigateDomain}
+            onPublish={onPublishStore}
+            onUnpublish={confirmUnpublish}
           />
+
+          {/* Unpublish Confirmation Modal */}
+          {isUnpublishModalOpen && (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#EBE5E2] space-y-4 animate-in zoom-in-95 duration-150">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
+                    <EyeOff className="w-5 h-5 text-rose-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#241A1A]">Tarik Publikasi Toko?</h3>
+                    <p className="text-xs text-[#706866]">Kembalikan website toko ke status Draf</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-[#555] leading-relaxed">
+                  Setelah di-unpublish, website toko <strong>{currentStore.name}</strong> tidak dapat diakses secara publik oleh pembeli dan statusnya kembali menjadi draf. Anda dapat mempublikasikannya kembali kapan saja.
+                </p>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsUnpublishModalOpen(false)}
+                    disabled={isUnpublishing}
+                    className="px-4 py-2 text-xs font-semibold text-[#706866] hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmUnpublish}
+                    disabled={isUnpublishing}
+                    className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {isUnpublishing ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Memproses...</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="w-3.5 h-3.5" />
+                        <span>Ya, Unpublish Toko</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>

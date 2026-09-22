@@ -48,7 +48,7 @@ serve(async (req) => {
 
     // Send the email
     const info = await transporter.sendMail({
-      from: `"Kroombox" <${smtpEmail}>`,
+      from: `"Kroomify" <${smtpEmail}>`,
       to,
       subject,
       html,

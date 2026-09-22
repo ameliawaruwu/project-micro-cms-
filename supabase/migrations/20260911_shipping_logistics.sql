@@ -130,6 +130,7 @@ INSERT INTO shipping_branches (
     'Jawa Timur',
     '60293',
     FALSE,
+    TRUE
 )
 ON CONFLICT (id) DO NOTHING;
 

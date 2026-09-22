@@ -101,7 +101,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   return (
     <section 
       id="produk" 
-      className="min-h-[calc(100svh-124px)] min-h-[calc(100dvh-124px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center py-10 sm:py-14 lg:py-20 bg-[#FAF7F7] scroll-mt-16 sm:scroll-mt-20 border-b border-[#E8DDDE] font-sans relative"
+      className="min-h-[calc(100svh-124px)] min-h-[calc(100dvh-124px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center py-6 sm:py-8 lg:py-4 xl:py-8 bg-[#FAF7F7] scroll-mt-16 sm:scroll-mt-20 border-b border-[#E8DDDE] font-sans relative"
     >
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         

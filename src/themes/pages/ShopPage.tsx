@@ -8,8 +8,8 @@ import { Search, Filter, ShoppingBag, Sparkles, ArrowRight } from 'lucide-react'
 
 import { THEME_DATA_MAP } from '../themeData';
 import { mockProducts } from '../../cms/mockCmsData';
-
 import { useCmsStore } from '../../cms/useCmsStore';
+import { cartService } from '../../services/cartService';
 
 interface ShopPageProps {
   themeData?: ThemeSchema;
@@ -431,14 +431,51 @@ export const ShopPage: React.FC<ShopPageProps> = ({ themeData, themeId: propThem
           </div>
 
           {/* Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
             {filteredProducts.map((p) => (
-              <div key={p.id} className="group cursor-pointer">
-                <div className="aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden mb-4">
-                  <img src={p.imageUrl || (p as any).image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+              <div
+                key={p.id}
+                onClick={() => {
+                  if (store?.slug) {
+                    cartService.addToCart(store.slug, p as any, 1);
+                  }
+                  if (onNavigate) onNavigate('product');
+                }}
+                className="group cursor-pointer bg-white rounded-2xl p-3 border border-gray-100 hover:border-gray-300 hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="aspect-[4/5] bg-gray-100 rounded-xl overflow-hidden mb-3 relative">
+                    <img
+                      src={p.imageUrl || (p as any).image}
+                      alt={p.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="px-3.5 py-1.5 bg-white text-black text-xs font-bold rounded-lg shadow-md">
+                        Lihat Detail
+                      </span>
+                    </div>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 truncate text-sm mb-1">{p.name}</h3>
+                  <p className="text-gray-900 font-bold text-base">Rp {p.price.toLocaleString('id-ID')}</p>
                 </div>
-                <h3 className="font-semibold text-gray-900 truncate mb-1">{p.name}</h3>
-                <p className="text-gray-500 font-medium text-sm">Rp {p.price.toLocaleString('id-ID')}</p>
+
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (store?.slug) {
+                        cartService.addToCart(store.slug, p as any, 1);
+                      }
+                      if (onNavigate) onNavigate('checkout');
+                    }}
+                    className="w-full py-2.5 bg-black hover:bg-[#66000E] text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>Beli Sekarang</span>
+                  </button>
+                </div>
               </div>
             ))}
           </div>

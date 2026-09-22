@@ -79,7 +79,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
       const welcomeMessage: ChatMessage = {
         id: 'welcome-1',
         sender: 'bot',
-        text: `Halo ${activeStore.name ? activeStore.name : 'Juragan'}! 👋\n\nSaya **Asisten Virtual Kroombox**. Saya siap membantu Anda mengelola toko online, menambah produk, memproses pesanan, hingga penarikan saldo.\n\nSilakan pilih topik bantuan cepat di bawah ini atau ketik pertanyaan Anda langsung.`,
+        text: `Halo ${activeStore.name ? activeStore.name : 'Juragan'}! 👋\n\nSaya **Asisten Virtual Kroomify**. Saya siap membantu Anda mengelola toko online, menambah produk, memproses pesanan, hingga penarikan saldo.\n\nSilakan pilih topik bantuan cepat di bawah ini atau ketik pertanyaan Anda langsung.`,
         timestamp: getCurrentTime(),
         quickSuggestions: INITIAL_QUICK_TOPICS,
       };
@@ -160,7 +160,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
       return {
         id,
         sender: 'bot',
-        text: `Untuk menambah produk baru di Kroombox:\n\n1. Klik tombol **+ Tambah Produk** di bawah atau di halaman utama.\n2. Masukkan **Nama Produk**, **Harga**, dan **Stok**.\n3. Masukkan **Foto Produk** (bisa pilih foto contoh atau upload dari perangkat).\n4. Tentukan **Berat Produk (gram)** untuk kalkulasi ongkir otomatis.\n5. Klik **Simpan & Publikasikan**. Produk Anda langsung siap dibeli!`,
+        text: `Untuk menambah produk baru di Kroomify:\n\n1. Klik tombol **+ Tambah Produk** di bawah atau di halaman utama.\n2. Masukkan **Nama Produk**, **Harga**, dan **Stok**.\n3. Masukkan **Foto Produk** (bisa pilih foto contoh atau upload dari perangkat).\n4. Tentukan **Berat Produk (gram)** untuk kalkulasi ongkir otomatis.\n5. Klik **Simpan & Publikasikan**. Produk Anda langsung siap dibeli!`,
         timestamp: time,
         actionButton: {
           label: '✨ Tambah Produk Sekarang',
@@ -197,7 +197,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
       return {
         id,
         sender: 'bot',
-        text: `Alur memproses pesanan masuk di Kroombox:\n\n1. Masuk ke tab **Pesanan**.\n2. Pesanan berstatus *Perlu Diproses* menunjukkan pembeli sudah checkout.\n3. Klik **Proses Pengiriman**, masukkan nomor resi dari kurir pilihan (JNE, J&T, SiCepat, GoSend, dll).\n4. Anda juga dapat mencetak **Label Pengiriman & Struk Thermal** secara otomatis.\n5. Status akan otomatis diperbarui dan pembeli dapat melacak paketnya.`,
+        text: `Alur memproses pesanan masuk di Kroomify:\n\n1. Masuk ke tab **Pesanan**.\n2. Pesanan berstatus *Perlu Diproses* menunjukkan pembeli sudah checkout.\n3. Klik **Proses Pengiriman**, masukkan nomor resi dari kurir pilihan (JNE, J&T, SiCepat, GoSend, dll).\n4. Anda juga dapat mencetak **Label Pengiriman & Struk Thermal** secara otomatis.\n5. Status akan otomatis diperbarui dan pembeli dapat melacak paketnya.`,
         timestamp: time,
         actionButton: {
           label: 'Lihat Daftar Pesanan',
@@ -233,7 +233,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
       return {
         id,
         sender: 'bot',
-        text: `Toko online Anda memiliki link unik: \n🔗 **kroombox.id/${activeStore.slug || 'toko-umkm'}**\n\nTips meningkatkan penjualan:\n• Salin link toko dan pasang di Bio Instagram & TikTok.\n• Bagikan pesan otomatis yang sudah kami siapkan langsung ke kontak & grup WhatsApp.\n• Bagikan QR Code toko untuk dicetak di banner atau kemasan produk Anda.`,
+        text: `Toko online Anda memiliki link unik: \n🔗 **kroomify.id/${activeStore.slug || 'toko-umkm'}**\n\nTips meningkatkan penjualan:\n• Salin link toko dan pasang di Bio Instagram & TikTok.\n• Bagikan pesan otomatis yang sudah kami siapkan langsung ke kontak & grup WhatsApp.\n• Bagikan QR Code toko untuk dicetak di banner atau kemasan produk Anda.`,
         timestamp: time,
         actionButton: {
           label: 'Bagikan Link Toko',
@@ -269,7 +269,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
       return {
         id,
         sender: 'bot',
-        text: `Kroombox mendukung berbagai channel pembayaran & pengiriman ekspedisi otomatis:\n\n💳 **Metode Pembayaran**:\n• QRIS Instant (GoPay, OVO, Dana, ShopeePay, BCA)\n• Transfer Virtual Account Bank (BCA, Mandiri, BRI, BNI)\n• Bayar di Tempat (COD)\n\n🚚 **Pengiriman Ekspedisi**:\n• JNE, J&T Express, SiCepat, Anteraja\n• Instant Delivery (GoSend & GrabExpress)`,
+        text: `Kroomify mendukung berbagai channel pembayaran & pengiriman ekspedisi otomatis:\n\n💳 **Metode Pembayaran**:\n• QRIS Instant (GoPay, OVO, Dana, ShopeePay, BCA)\n• Transfer Virtual Account Bank (BCA, Mandiri, BRI, BNI)\n• Bayar di Tempat (COD)\n\n🚚 **Pengiriman Ekspedisi**:\n• JNE, J&T Express, SiCepat, Anteraja\n• Instant Delivery (GoSend & GrabExpress)`,
         timestamp: time,
         actionButton: {
           label: 'Buka Pembayaran & Pengiriman',
@@ -305,7 +305,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
       return {
         id,
         sender: 'bot',
-        text: `Halo! Senang bisa membantu Anda. 😊\n\nAda yang ingin Anda tanyakan seputar penggunaan dashboard Kroombox, cara jualan online, atau pengaturan produk dan pesanan?`,
+        text: `Halo! Senang bisa membantu Anda. 😊\n\nAda yang ingin Anda tanyakan seputar penggunaan dashboard Kroomify, cara jualan online, atau pengaturan produk dan pesanan?`,
         timestamp: time,
         quickSuggestions: INITIAL_QUICK_TOPICS,
       };
@@ -315,7 +315,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
     return {
       id,
       sender: 'bot',
-      text: `Terima kasih atas pertanyaannya. Terkait hal tersebut, Anda dapat mengelolanya langsung melalui menu navigasi di Kroombox:\n\n• **Produk**: Untuk mengelola barang, harga, dan stok.\n• **Pesanan**: Untuk konfirmasi order, cetak resi & pengiriman.\n• **Pengaturan**: Untuk identitas toko, nomor WhatsApp, dan rekening bank.\n\nApakah ada langkah spesifik yang ingin saya bantu jelaskan?`,
+      text: `Terima kasih atas pertanyaannya. Terkait hal tersebut, Anda dapat mengelolanya langsung melalui menu navigasi di Kroomify:\n\n• **Produk**: Untuk mengelola barang, harga, dan stok.\n• **Pesanan**: Untuk konfirmasi order, cetak resi & pengiriman.\n• **Pengaturan**: Untuk identitas toko, nomor WhatsApp, dan rekening bank.\n\nApakah ada langkah spesifik yang ingin saya bantu jelaskan?`,
       timestamp: time,
       quickSuggestions: [
         '📦 Cara tambah produk baru?',
@@ -384,7 +384,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h3 className="font-bold text-sm text-white truncate">
-                  Asisten Bantuan Kroombox
+                  Asisten Bantuan Kroomify
                 </h3>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" title="Online" />
               </div>
@@ -540,7 +540,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
             </button>
           </form>
           <div className="flex items-center justify-between text-[10px] text-[#706866] mt-1.5 px-1 font-normal">
-            <span>Asisten Bantuan Kroombox</span>
+            <span>Asisten Bantuan Kroomify</span>
             <span>Respon Cepat 24/7</span>
           </div>
         </div>

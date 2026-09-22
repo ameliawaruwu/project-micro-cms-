@@ -1,10 +1,10 @@
-// Central Data Service & Supabase Connector for Kroombox Frontend
+// Central Data Service & Supabase Connector for Kroomify Frontend
 import { supabase } from './supabaseClient';
 
 export { supabase };
 
 /**
- * Kroombox Client-Side Architecture
+ * Kroomify Client-Side Architecture
  * - Database & Auth: Supabase (BaaS)
  * - Local Caching: LocalStorage Fallback & Realtime Sync
  */

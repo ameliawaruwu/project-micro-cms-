@@ -10,6 +10,19 @@ const AUTH_STORE_KEY = 'microcms_active_store';
 const ACCOUNTS_KEY = 'microcms_accounts_v1';
 const ACTIVE_STORE_ID_KEY = 'microcms_active_store_id';
 
+export async function hashPassword(plain: string): Promise<string> {
+  if (!plain) return '';
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(`kroomify_salt_v1_${plain}`);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return plain;
+  }
+}
+
 interface StoredAccount {
   id: string; // userId
   email: string;
@@ -22,12 +35,12 @@ interface StoredAccount {
 const defaultAccounts: StoredAccount[] = [
   {
     id: 'usr-admin-1',
-    email: 'admin@kroombox.id',
+    email: 'admin@kroomify.id',
     password: 'admin123',
     user: {
       id: 'usr-admin-1',
-      name: 'Super Admin Kroombox',
-      email: 'admin@kroombox.id',
+      name: 'Super Admin Kroomify',
+      email: 'admin@kroomify.id',
       phoneWhatsApp: '081289201928',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
       role: 'admin',
@@ -77,9 +90,10 @@ class AuthService {
       const parsed: StoredAccount[] = JSON.parse(raw);
       // Merge with defaultAccounts if missing
       const existingIds = new Set(parsed.map((a) => a.id));
+      const existingEmails = new Set(parsed.map((a) => a.email.toLowerCase()));
       let changed = false;
       defaultAccounts.forEach((def) => {
-        if (!existingIds.has(def.id)) {
+        if (!existingIds.has(def.id) && !existingEmails.has(def.email.toLowerCase())) {
           parsed.push(def);
           changed = true;
         }
@@ -159,35 +173,76 @@ class AuthService {
 
     let account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
 
-    // Also check Supabase DB
-    let dbUser: any = null;
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-      if (!error && data) {
-        dbUser = data;
+    // 1. Coba verifikasi aman server-side via Supabase RPC verify_user_credentials
+    let verifiedDbUser: any = null;
+    if (_password && _password !== 'google-auth') {
+      try {
+        const hashedPass = await hashPassword(_password);
+        let { data: rpcRes, error: rpcErr } = await supabase.rpc('verify_user_credentials', {
+          p_email: cleanEmail,
+          p_password: _password,
+        });
+
+        // Fallback retry dengan hash jika database belum termigrasi atau password disimpan sebagai hash
+        if ((!rpcErr && rpcRes && !rpcRes.success) || (rpcRes && rpcRes.message === 'Kata sandi tidak sesuai')) {
+          const retryRes = await supabase.rpc('verify_user_credentials', {
+            p_email: cleanEmail,
+            p_password: hashedPass,
+          });
+          if (!retryRes.error && retryRes.data && retryRes.data.success) {
+            rpcRes = retryRes.data;
+            rpcErr = null;
+          }
+        }
+
+        if (!rpcErr && rpcRes) {
+          if (rpcRes.success && rpcRes.user) {
+            verifiedDbUser = rpcRes.user;
+          } else if (rpcRes.message === 'Kata sandi tidak sesuai') {
+            throw new Error('Kata sandi yang Anda masukkan salah.');
+          }
+        }
+      } catch (rpcEx: any) {
+        if (rpcEx.message === 'Kata sandi yang Anda masukkan salah.') throw rpcEx;
+        console.warn('verify_user_credentials RPC notice:', rpcEx);
       }
-    } catch (e) {
-      console.warn('Supabase query user warning:', e);
     }
 
-    // If account doesn't exist in local accounts AND not in Supabase DB:
+    // 2. Jika belum terverifikasi melalui RPC, cek metadata profil tanpa mengekspos hash
+    let dbUser: any = verifiedDbUser;
+    if (!dbUser && !account) {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, name, email, phone, role, created_at')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+        if (!error && data) {
+          dbUser = data;
+        }
+      } catch (e) {
+        console.warn('Supabase query user warning:', e);
+      }
+    }
+
+    // Jika akun tidak ditemukan baik di lokal maupun di database
     if (!account && !dbUser) {
       throw new Error('Akun belum terdaftar. Silakan lakukan registrasi terlebih dahulu.');
     }
 
-    // Password validation:
-    const expectedPassword = account?.password || dbUser?.password_hash;
-    if (_password && _password !== 'google-auth' && expectedPassword && _password !== expectedPassword) {
-      throw new Error('Kata sandi yang Anda masukkan salah.');
+    // 3. Verifikasi kata sandi untuk akun lokal / fallback
+    if (!verifiedDbUser && _password && _password !== 'google-auth') {
+      const hashedInput = await hashPassword(_password);
+      const expectedPassword = account?.password;
+      const isMatch = expectedPassword === _password || expectedPassword === hashedInput;
+      if (expectedPassword && !isMatch) {
+        throw new Error('Kata sandi yang Anda masukkan salah.');
+      }
     }
 
     let user: User;
     let merchant: Merchant;
-    let storeToUse: Store;
+    let storeToUse: Store | undefined;
 
     if (account) {
       user = account.user;
@@ -198,27 +253,8 @@ class AuthService {
       if (userStores.length > 0) {
         storeToUse = userStores.find((s) => s.id === account!.storeId) || userStores[0];
       } else {
-        // Find in all stores or create fresh
-        const fallbackStore = await storeService.getStoreById(account.storeId);
-        if (fallbackStore) {
-          storeToUse = { ...fallbackStore, merchantId: user.id };
-          await storeService.createStore(storeToUse);
-        } else {
-          storeToUse = await storeService.createStore({
-            merchantId: user.id,
-            name: `Toko ${user.name}`,
-            slug: `toko-${user.id.slice(-6)}`,
-            tagline: `Toko Resmi ${user.name}`,
-            description: 'Katalog online dan pemesanan praktis via WhatsApp.',
-            logoUrl: user.avatarUrl,
-            bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-            phoneWhatsApp: user.phoneWhatsApp || '',
-            city: 'Indonesia',
-            address: 'Pusat Usaha UMKM',
-            category: 'Bisnis UMKM',
-            currency: 'IDR',
-          });
-        }
+        // Merchant has not created a store yet
+        storeToUse = undefined;
       }
     } else {
       // Account exists in Supabase DB but not yet in localStorage
@@ -241,39 +277,25 @@ class AuthService {
       if (userStores.length > 0) {
         storeToUse = userStores[0];
       } else {
-        const storeName = `Toko ${userName}`;
-        const storeSlug = `toko-${cleanEmail.split('@')[0].replace(/[^a-z0-9]/g, '')}`;
-        storeToUse = await storeService.createStore({
-          merchantId: userId,
-          name: storeName,
-          slug: storeSlug,
-          tagline: `Katalog Resmi ${storeName}`,
-          description: 'Pusat belanja online praktis dan cepat.',
-          logoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(storeName)}&background=FFD358&color=002A45&bold=true`,
-          bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-          phoneWhatsApp: dbUser.phone || '',
-          city: 'Indonesia',
-          address: 'Pusat Usaha UMKM',
-          category: 'Bisnis UMKM',
-          currency: 'IDR',
-        });
+        // Merchant has not created a store yet
+        storeToUse = undefined;
       }
 
       merchant = {
         id: `merch-${userId}`,
         userId: userId,
-        storeId: storeToUse.id,
-        plan: 'starter',
+        storeId: storeToUse?.id || '',
+        plan: 'free',
         isVerified: true,
       };
 
       const newAccount: StoredAccount = {
         id: userId,
         email: cleanEmail,
-        password: dbUser.password_hash || _password || 'password123',
+        password: await hashPassword(_password || 'password123'),
         user,
         merchant,
-        storeId: storeToUse.id,
+        storeId: storeToUse?.id || '',
       };
 
       accounts.push(newAccount);
@@ -282,10 +304,15 @@ class AuthService {
 
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
     localStorage.setItem(AUTH_MERCHANT_KEY, JSON.stringify(merchant));
-    localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(storeToUse));
-    localStorage.setItem(ACTIVE_STORE_ID_KEY, storeToUse.id);
+    if (storeToUse) {
+      localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(storeToUse));
+      localStorage.setItem(ACTIVE_STORE_ID_KEY, storeToUse.id);
+    } else {
+      localStorage.removeItem(AUTH_STORE_KEY);
+      localStorage.removeItem(ACTIVE_STORE_ID_KEY);
+    }
 
-    return { user, merchant, store: storeToUse };
+    return { user, merchant, store: (storeToUse || null) as any };
   }
 
   async register(params: {
@@ -335,6 +362,7 @@ class AuthService {
       category: params.businessCategory,
       currency: 'IDR',
       balance: 0,
+      isPublished: false,
       onboarding: {
         storeNameSet: true,
         productUploaded: false,
@@ -347,93 +375,76 @@ class AuthService {
       id: `merch-${userId}`,
       userId: userId,
       storeId: storeId,
-      plan: 'starter',
+      plan: 'free',
       isVerified: true,
     };
 
-    // 1. Sync User to Supabase Database
-    const { error: dbUserErr } = await supabase.from('users').upsert({
-      id: userId,
-      email: cleanEmail,
-      password_hash: params.password,
-      name: params.fullName.trim(),
-      phone: params.phoneWhatsApp.trim() || null,
-      role: 'merchant',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    const hashedPassword = await hashPassword(params.password);
 
-    if (dbUserErr) {
-      console.error('❌ Supabase users upsert error:', dbUserErr);
-      throw new Error(`Gagal menyimpan akun ke database: ${dbUserErr.message}`);
+    // 1. Sync User to Supabase Database with hashed password
+    try {
+      const { error: dbUserErr } = await supabase.from('users').upsert({
+        id: userId,
+        email: cleanEmail,
+        password_hash: hashedPassword,
+        name: params.fullName.trim(),
+        phone: params.phoneWhatsApp.trim() || null,
+        role: 'merchant',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      if (dbUserErr) {
+        console.warn('⚠️ Supabase users upsert notice:', dbUserErr.message);
+      } else {
+        console.log('✅ User berhasil disimpan ke database Supabase:', cleanEmail);
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Supabase users connection notice:', err?.message || err);
     }
-    console.log('✅ User berhasil disimpan ke database Supabase:', cleanEmail);
 
     // 2. Sync Store to Supabase Database
-    const { error: dbStoreErr } = await supabase.from('stores').upsert({
-      id: store.id,
-      user_id: userId,
-      name: store.name,
-      slug: store.slug,
-      tagline: store.tagline,
-      description: store.description,
-      logo_url: store.logoUrl,
-      banner_url: store.bannerUrl,
-      phone_whatsapp: store.phoneWhatsApp,
-      city: store.city || 'Indonesia',
-      category: store.category,
-      plan: 'starter',
-      balance: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    try {
+      const { error: dbStoreErr } = await supabase.from('stores').upsert({
+        id: store.id,
+        user_id: userId,
+        name: store.name,
+        slug: store.slug,
+        tagline: store.tagline,
+        description: store.description,
+        logo_url: store.logoUrl,
+        banner_url: store.bannerUrl,
+        phone_whatsapp: store.phoneWhatsApp,
+        city: store.city || 'Indonesia',
+        category: store.category,
+        plan: 'free',
+        balance: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
-    if (dbStoreErr) {
-      console.error('❌ Supabase stores upsert error:', dbStoreErr);
-      throw new Error(`Gagal menyimpan toko ke database: ${dbStoreErr.message}`);
+      if (dbStoreErr) {
+        console.warn('⚠️ Supabase stores upsert notice:', dbStoreErr.message);
+      } else {
+        console.log('✅ Toko berhasil disimpan ke database Supabase:', store.name);
+      }
+    } catch (err: any) {
+      console.warn('⚠️ Supabase stores connection notice:', err?.message || err);
     }
-    console.log('✅ Toko berhasil disimpan ke database Supabase:', store.name);
 
 
     // Save newly created store to storeService
     await storeService.createStore(store);
 
-    // Create initial starter sample products for this brand category
-    try {
-      await productService.createProduct(store.id, {
-        name: `Paket Pilihan ${params.storeName}`,
-        price: 95000,
-        originalPrice: 120000,
-        stock: 25,
-        sku: 'PROD-001',
-        category: params.businessCategory,
-        description: `Produk unggulan berkualitas dari ${params.storeName}. Dibuat dengan standar terbaik dan siap kirim ke seluruh Indonesia.`,
-        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
-        weightGrams: 350,
-      });
+    // New stores start clean with 0 products
 
-      await productService.createProduct(store.id, {
-        name: `Koleksi Spesial ${params.businessCategory}`,
-        price: 150000,
-        originalPrice: 185000,
-        stock: 15,
-        sku: 'PROD-002',
-        category: params.businessCategory,
-        description: `Varian eksklusif terfavorit dengan jaminan kepuasan pelanggan dan garansi original.`,
-        imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
-        weightGrams: 500,
-      });
-    } catch (e) {
-      console.warn('Could not seed initial products for new store:', e);
-    }
-
-    // Save account into accounts repository
+    // Save account into accounts repository with hashed password
     const accounts = this.getStoredAccounts();
     const existingIndex = accounts.findIndex((a) => a.id === userId || a.email.toLowerCase() === cleanEmail);
     const newAccountRecord: StoredAccount = {
       id: userId,
       email: cleanEmail,
-      password: params.password,
+      password: hashedPassword,
       user,
       merchant,
       storeId: store.id,
@@ -482,6 +493,7 @@ class AuthService {
 
     const defaultName = cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
     const finalName = (params.fullName || defaultName).trim();
+    const hasCustomStoreName = !!params.storeName && params.storeName.trim().length > 0;
     const finalStoreName = (params.storeName || `Toko ${finalName}`).trim();
     const storeSlug = `toko-${cleanEmail.split('@')[0].replace(/[^a-z0-9]/g, '')}`;
     const storeId = `store_${Date.now()}`;
@@ -500,34 +512,14 @@ class AuthService {
       createdAt: new Date().toISOString(),
     };
 
-    const store: Store = {
-      id: storeId,
-      merchantId: userId,
-      name: finalStoreName,
-      slug: storeSlug,
-      tagline: `Toko Resmi ${finalStoreName}`,
-      description: 'Pusat belanja produk berkualitas dengan pemesanan mudah dan cepat.',
-      logoUrl: userAvatar,
-      bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-      phoneWhatsApp: '',
-      city: 'Indonesia',
-      address: 'Pusat Usaha UMKM',
-      category: 'Bisnis UMKM',
-      currency: 'IDR',
-      balance: 0,
-      onboarding: {
-        storeNameSet: true,
-        productUploaded: false,
-        paymentConnected: false,
-      },
-      createdAt: new Date().toISOString(),
-    };
+    const userStores = await storeService.getStoresForUser(userId);
+    const existingStore = userStores.length > 0 ? userStores[0] : undefined;
 
     const merchant: Merchant = {
       id: `merch-${userId}`,
       userId: userId,
-      storeId: storeId,
-      plan: 'starter',
+      storeId: existingStore?.id || '',
+      plan: 'free',
       isVerified: true,
     };
 
@@ -543,56 +535,8 @@ class AuthService {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
-      await supabase.from('stores').upsert({
-        id: store.id,
-        user_id: userId,
-        name: finalStoreName,
-        slug: storeSlug,
-        tagline: `Toko Resmi ${finalStoreName}`,
-        description: store.description,
-        phone_whatsapp: '',
-        category: 'Bisnis UMKM',
-        city: 'Indonesia',
-        address: 'Pusat Usaha UMKM',
-        plan: 'starter',
-        balance: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
     } catch (e) {
       console.warn('Supabase Google auth insert warning:', e);
-    }
-
-    // Save newly created store to storeService
-    await storeService.createStore(store);
-
-    // Create initial starter sample products
-    try {
-      await productService.createProduct(store.id, {
-        name: `Paket Perdana ${finalStoreName}`,
-        price: 85000,
-        originalPrice: 110000,
-        stock: 30,
-        sku: 'PROD-001',
-        category: 'Produk Unggulan',
-        description: `Produk pilihan berkualitas dari ${finalStoreName}. Siap dikirim ke seluruh Indonesia.`,
-        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
-        weightGrams: 350,
-      });
-
-      await productService.createProduct(store.id, {
-        name: 'Koleksi Spesial UMKM',
-        price: 135000,
-        originalPrice: 165000,
-        stock: 20,
-        sku: 'PROD-002',
-        category: 'Produk Unggulan',
-        description: 'Varian eksklusif dengan mutu terjamin dan respon cepat.',
-        imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
-        weightGrams: 450,
-      });
-    } catch (e) {
-      console.warn('Could not seed initial products for new Google user:', e);
     }
 
     const newAccountRecord: StoredAccount = {
@@ -601,246 +545,119 @@ class AuthService {
       password: 'google-oauth-managed',
       user,
       merchant,
-      storeId: store.id,
+      storeId: merchant.storeId,
     };
 
     accounts.push(newAccountRecord);
     this.saveAccounts(accounts);
 
-    return { user, merchant, store };
+    return { user, merchant, store: existingStore };
   }
 
 
-  async forgotPassword(identifier: string): Promise<boolean> {
+  async forgotPassword(email: string): Promise<boolean> {
     await new Promise((res) => setTimeout(res, 400));
-    const cleanInput = identifier.toLowerCase().trim();
-    if (!cleanInput || cleanInput.length < 2) {
-      throw new Error('Mohon masukkan email atau username yang valid.');
+    const cleanEmail = email.toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new Error('Alamat email tidak valid.');
     }
 
     const accounts = this.getStoredAccounts();
-    let account = accounts.find((a) =>
-      a.email.toLowerCase() === cleanInput ||
-      a.user.name.toLowerCase() === cleanInput ||
-      a.user.id.toLowerCase() === cleanInput ||
-      (a.user.phoneWhatsApp && a.user.phoneWhatsApp.replace(/[^0-9]/g, '') === cleanInput.replace(/[^0-9]/g, ''))
-    );
+    const account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
 
-    // If account not in local memory repository, check Supabase DB
     if (!account) {
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('id, email, name, role, created_at, phone')
-          .or(`email.eq.${cleanInput},name.ilike.%${cleanInput}%`)
-          .maybeSingle();
-
-        if (!error && data) {
-          account = {
-            id: data.id,
-            email: data.email,
-            user: {
-              id: data.id,
-              name: data.name || data.email.split('@')[0],
-              email: data.email,
-              phoneWhatsApp: data.phone || '',
-              role: (data.role as any) || 'merchant',
-              createdAt: data.created_at || new Date().toISOString(),
-            },
-            merchant: {
-              id: `merch-${data.id}`,
-              userId: data.id,
-              storeId: `store-${data.id}`,
-              plan: 'starter',
-              isVerified: true,
-            },
-            storeId: `store-${data.id}`,
-          };
-          accounts.push(account);
-          this.saveAccounts(accounts);
-        }
-      } catch (e) {
-        console.warn('Supabase query user warning in forgotPassword:', e);
-      }
+      // Don't throw error to prevent email enumeration, but return true anyway
+      return true;
     }
 
-    // If account is still not found anywhere:
-    if (!account) {
-      throw new Error('Akun dengan email atau username tersebut belum terdaftar.');
-    }
-
-    const targetEmail = account.email.toLowerCase().trim();
-
-    // Always generate a FRESH 6-digit random token on EVERY SINGLE REQUEST!
+    // Generate a 6-digit token
     const token = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Store token in session storage
+    sessionStorage.setItem(`reset_token_${cleanEmail}`, token);
 
-    // Store token by both targetEmail AND input cleanInput
-    sessionStorage.setItem(`reset_token_${targetEmail}`, token);
-    sessionStorage.setItem(`reset_token_${cleanInput}`, token);
-    localStorage.setItem(`reset_token_${targetEmail}`, token);
-    localStorage.setItem(`reset_token_${cleanInput}`, token);
-    localStorage.setItem(`reset_token_latest_${targetEmail}`, token);
-    localStorage.setItem(`reset_token_latest_${cleanInput}`, token);
-    localStorage.setItem(`reset_token_time_${targetEmail}`, Date.now().toString());
-
-    console.log(`[AUTH RESET TOKEN] Email Target: ${targetEmail} | Kode Token OTP: ${token}`);
-
-    // Dispatch email notification via /api/send-email
     try {
-      const emailSubject = 'Kode Token Verifikasi Reset Password Kroombox';
-      const emailHtml = `
-        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <span style="font-size: 26px; font-weight: 900; color: #66000E;">Kroombox</span>
-          </div>
-          <h2 style="font-size: 18px; font-weight: bold; color: #1A1110; margin-bottom: 8px;">Atur Ulang Kata Sandi</h2>
-          <p style="font-size: 14px; color: #4a5568; line-height: 1.5; margin-bottom: 16px;">
-            Halo <strong>${account.user.name || targetEmail}</strong>,<br/>
-            Kami menerima permintaan untuk mengatur ulang kata sandi akun Kroombox Anda. Masukkan kode token verifikasi 6-digit berikut pada halaman verifikasi:
-          </p>
-          <div style="background-color: #FFF1F0; border: 1px dashed #FFA39E; border-radius: 12px; padding: 18px; text-align: center; margin: 20px 0;">
-            <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #66000E; font-family: monospace;">${token}</span>
-          </div>
-          <p style="font-size: 12px; color: #718096; line-height: 1.4; margin-bottom: 20px;">
-            Kode token ini bersifat rahasia dan berlaku selama 15 menit. Jika Anda tidak melakukan permintaan ini, abaikan pesan ini.
-          </p>
-          <hr style="border: none; border-top: 1px solid #edf2f7; margin: 20px 0;" />
-          <p style="font-size: 11px; color: #a0aec0; text-align: center; margin: 0;">
-            &copy; ${new Date().getFullYear()} Kroombox Platform. All rights reserved.
-          </p>
-        </div>
-      `;
-
-      await fetch('/api/send-email', {
+      const response = await fetch('/api/send-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          to: targetEmail,
-          subject: emailSubject,
-          html: emailHtml,
+          to: cleanEmail,
+          subject: 'Kroomify - Token Reset Password Anda',
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #66000E;">Permintaan Reset Kata Sandi</h2>
+              <p>Halo,</p>
+              <p>Kami menerima permintaan untuk mengatur ulang kata sandi akun Kroomify Anda. Gunakan token 6 digit di bawah ini untuk melanjutkan:</p>
+              <div style="background-color: #F9EDEF; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #66000E;">${token}</span>
+              </div>
+              <p>Token ini hanya berlaku selama sesi ini. Jika Anda tidak meminta reset kata sandi, abaikan email ini.</p>
+              <br/>
+              <p style="font-size: 12px; color: #666;">Tim Kroomify</p>
+            </div>
+          `
         }),
-      }).catch((err) => {
-        console.warn('[EmailService] API send-email fetch warning:', err);
       });
-    } catch (e) {
-      console.warn('[EmailService] Gagal mengirim email reset password:', e);
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Error invoking local email server:', result.error);
+        throw new Error(result.error || 'Gagal mengirim email. Pastikan server lokal berjalan.');
+      }
+    } catch (err) {
+      console.error('Failed to send email:', err);
+      // Fallback to toast if function fails in local dev without CLI
+      window.dispatchEvent(
+        new CustomEvent('toast_notification', {
+          detail: {
+            message: `[GAGAL MENGIRIM EMAIL] Token Reset Password Anda: ${token}`,
+            type: 'error',
+            duration: 10000,
+          },
+        })
+      );
     }
 
     return true;
   }
 
-  async verifyResetToken(identifier: string, token: string): Promise<boolean> {
+  async verifyResetToken(email: string, token: string): Promise<boolean> {
     await new Promise((res) => setTimeout(res, 300));
-    const cleanInput = identifier.toLowerCase().trim();
-    const cleanToken = token.trim();
-
-    const accounts = this.getStoredAccounts();
-    const account = accounts.find((a) =>
-      a.email.toLowerCase() === cleanInput ||
-      a.user.name.toLowerCase() === cleanInput ||
-      a.user.id.toLowerCase() === cleanInput
-    );
-    const targetEmail = account ? account.email.toLowerCase().trim() : cleanInput;
-
-    const storedToken =
-      sessionStorage.getItem(`reset_token_${targetEmail}`) ||
-      sessionStorage.getItem(`reset_token_${cleanInput}`) ||
-      localStorage.getItem(`reset_token_${targetEmail}`) ||
-      localStorage.getItem(`reset_token_${cleanInput}`) ||
-      localStorage.getItem(`reset_token_latest_${targetEmail}`);
-
-    if (!storedToken || storedToken !== cleanToken) {
-      throw new Error('Token tidak valid atau sudah kadaluarsa. Silakan minta token baru.');
+    const cleanEmail = email.toLowerCase().trim();
+    const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
+    
+    if (!storedToken || storedToken !== token.trim()) {
+      throw new Error('Token tidak valid atau sudah kadaluarsa.');
     }
     return true;
   }
 
-  async resetPassword(identifier: string, token: string, newPassword: string): Promise<boolean> {
+  async resetPassword(email: string, token: string, newPassword: string): Promise<boolean> {
     await new Promise((res) => setTimeout(res, 400));
-    const cleanInput = identifier.toLowerCase().trim();
-    const cleanToken = token.trim();
+    const cleanEmail = email.toLowerCase().trim();
+    
+    // Verify token one last time
+    const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
+    if (!storedToken || storedToken !== token.trim()) {
+      throw new Error('Token tidak valid atau sudah kadaluarsa.');
+    }
 
     const accounts = this.getStoredAccounts();
-    let accountIndex = accounts.findIndex((a) =>
-      a.email.toLowerCase() === cleanInput ||
-      a.user.name.toLowerCase() === cleanInput ||
-      a.user.id.toLowerCase() === cleanInput
-    );
-
-    const targetEmail = accountIndex !== -1 ? accounts[accountIndex].email.toLowerCase().trim() : cleanInput;
-
-    // Verify token one last time
-    const storedToken =
-      sessionStorage.getItem(`reset_token_${targetEmail}`) ||
-      sessionStorage.getItem(`reset_token_${cleanInput}`) ||
-      localStorage.getItem(`reset_token_${targetEmail}`) ||
-      localStorage.getItem(`reset_token_${cleanInput}`) ||
-      localStorage.getItem(`reset_token_latest_${targetEmail}`);
-
-    if (!storedToken || storedToken !== cleanToken) {
-      throw new Error('Token tidak valid atau sudah kadaluarsa. Silakan periksa kembali token Anda.');
-    }
+    const accountIndex = accounts.findIndex((a) => a.email.toLowerCase() === cleanEmail);
 
     if (accountIndex === -1) {
-      // Check if user exists in Supabase
-      try {
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .or(`email.eq.${cleanInput},name.ilike.%${cleanInput}%`)
-          .maybeSingle();
-
-        if (data) {
-          const newAccountRecord: StoredAccount = {
-            id: data.id,
-            email: data.email,
-            password: newPassword,
-            user: {
-              id: data.id,
-              name: data.name || data.email.split('@')[0],
-              email: data.email,
-              phoneWhatsApp: data.phone || '',
-              role: data.role || 'merchant',
-              createdAt: data.created_at || new Date().toISOString(),
-            },
-            merchant: {
-              id: `merch-${data.id}`,
-              userId: data.id,
-              storeId: `store-${data.id}`,
-              plan: 'starter',
-              isVerified: true,
-            },
-            storeId: `store-${data.id}`,
-          };
-          accounts.push(newAccountRecord);
-          accountIndex = accounts.length - 1;
-        }
-      } catch (e) {
-        console.warn('Supabase query user warning during password reset:', e);
-      }
+      throw new Error('Akun tidak ditemukan.');
     }
 
-    if (accountIndex !== -1) {
-      accounts[accountIndex].password = newPassword;
-      this.saveAccounts(accounts);
-    }
+    // Update password
+    accounts[accountIndex].password = newPassword;
+    this.saveAccounts(accounts);
 
-    // Also update Supabase database users table
-    try {
-      await supabase.from('users').update({
-        password_hash: newPassword,
-        updated_at: new Date().toISOString(),
-      }).or(`email.eq.${targetEmail},name.ilike.%${cleanInput}%`);
-    } catch (e) {
-      console.warn('Supabase password update warning:', e);
-    }
-
-    // Clean up tokens
-    sessionStorage.removeItem(`reset_token_${targetEmail}`);
-    sessionStorage.removeItem(`reset_token_${cleanInput}`);
-    localStorage.removeItem(`reset_token_${targetEmail}`);
-    localStorage.removeItem(`reset_token_${cleanInput}`);
-    localStorage.removeItem(`reset_token_latest_${targetEmail}`);
+    // Clean up token
+    sessionStorage.removeItem(`reset_token_${cleanEmail}`);
 
     return true;
   }
@@ -851,30 +668,42 @@ class AuthService {
     localStorage.removeItem(AUTH_STORE_KEY);
     localStorage.removeItem(ACTIVE_STORE_ID_KEY);
     localStorage.setItem('microcms_explicit_logout', 'true');
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
+  }
+
+  async validateSessionWithDatabase(userId: string, email: string): Promise<boolean> {
+    try {
+      const cleanEmail = email.toLowerCase().trim();
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+
+      if (error) {
+        // Jika ada kendala koneksi, tetap izinkan fallback lokal
+        return true;
+      }
+
+      // Jika user bernilai null di database Supabase (artinya user telah dihapus di DB)
+      if (!data) {
+        console.warn(`[authService] User ${email} tidak ditemukan di database Supabase (telah dihapus). Membersihkan sesi lokal...`);
+        const accounts = this.getStoredAccounts().filter((a) => a.email.toLowerCase() !== cleanEmail && a.id !== userId);
+        this.saveAccounts(accounts);
+        await this.logout();
+        return false;
+      }
+
+      return true;
+    } catch {
+      return true;
+    }
   }
 
   async syncLocalAccountsToSupabase(): Promise<void> {
-    const accounts = this.getStoredAccounts();
-    for (const acc of accounts) {
-      if (acc.email === 'admin@kroombox.id' || acc.email === 'andhika@gmail.com') continue;
-      try {
-        const { error: uErr } = await supabase.from('users').upsert({
-          id: acc.id,
-          email: acc.email,
-          password_hash: acc.password || 'password123',
-          name: acc.user.name,
-          phone: acc.user.phoneWhatsApp || null,
-          role: acc.user.role || 'merchant',
-          created_at: acc.user.createdAt || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        if (!uErr) {
-          console.log('🔄 Synced local user to Supabase:', acc.email);
-        }
-      } catch (e) {
-        console.warn('Sync local user warning:', e);
-      }
-    }
+    // Tidak lagi melakukan auto-resurrect akun yang sudah dihapus di database
   }
 
   updateActiveStore(store: Store): void {

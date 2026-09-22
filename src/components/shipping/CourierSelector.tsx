@@ -143,17 +143,17 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
   };
 
   return (
-    <div className="space-y-3 font-sans text-left">
+    <div className="space-y-3 font-poppins text-left">
       {/* 1. Origin Branch Dropdown Selector */}
       {showBranchDropdown && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
             <label className="font-semibold text-[#1F1F1F] flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-[#9A0602]" />
+              <Building2 className="w-3.5 h-3.5 text-[#66000E]" />
               <span>Cabang / Gudang Asal Pengiriman</span>
             </label>
             {currentBranch?.isDefault && (
-              <span className="text-[10px] font-semibold text-[#9A0602] bg-[#FFF1F0] px-2 py-0.5 rounded-full border border-[#FECDCA]">
+              <span className="text-[10px] font-semibold text-[#66000E] bg-[#F5E8EA] px-2 py-0.5 rounded-full border border-[#E8DDDE]">
                 Cabang Utama
               </span>
             )}
@@ -163,7 +163,7 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
             <select
               value={currentBranch?.id || ''}
               onChange={(e) => handleBranchSelect(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-[#EAEAEA] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#9A0602]/20 focus:border-[#9A0602] cursor-pointer"
+              className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
             >
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -175,7 +175,7 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
 
           {currentBranch && (
             <div className="flex items-start gap-1 text-[11px] text-[#777777] pl-1">
-              <MapPin className="w-3 h-3 text-[#9A0602] shrink-0 mt-0.5" />
+              <MapPin className="w-3 h-3 text-[#66000E] shrink-0 mt-0.5" />
               <span className="line-clamp-1">
                 {currentBranch.address}, {currentBranch.city} • PIC: {currentBranch.picName} ({currentBranch.picPhone})
               </span>
@@ -188,11 +188,11 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs">
           <span className="font-semibold text-[#1F1F1F] flex items-center gap-1.5">
-            <Truck className="w-3.5 h-3.5 text-[#9A0602]" />
+            <Truck className="w-3.5 h-3.5 text-[#66000E]" />
             <span>Pilihan Kurir & Layanan Pengiriman</span>
           </span>
           {isLoadingRates && (
-            <span className="flex items-center gap-1 text-[11px] text-[#9A0602] font-medium">
+            <span className="flex items-center gap-1 text-[11px] text-[#66000E] font-medium">
               <Loader2 className="w-3 h-3 animate-spin" /> Menghitung ongkir...
             </span>
           )}
@@ -211,7 +211,7 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="p-3 rounded-2xl border border-[#EAEAEA] bg-white animate-pulse flex items-center justify-between gap-3"
+                className="p-3 rounded-2xl border border-[#E5E0DD] bg-white animate-pulse flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full bg-gray-200"></div>
@@ -243,8 +243,8 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
                 onClick={() => handleRateClick(rate)}
                 className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                   isSelected
-                    ? 'border-[#9A0602] bg-[#FFF1F0] shadow-xs ring-1 ring-[#9A0602]/20'
-                    : 'border-[#EAEAEA] bg-white hover:border-[#CCCCCC] hover:bg-[#FAFAFA]'
+                    ? 'border-[#66000E] bg-[#F5E8EA] shadow-xs ring-1 ring-[#66000E]/20'
+                    : 'border-[#E5E0DD] bg-white hover:border-[#CCCCCC] hover:bg-[#FAFAFA]'
                 }`}
               >
                 {/* Left: Radio & Info */}
@@ -252,7 +252,7 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
                   {/* Custom Radio Circle */}
                   <div
                     className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition ${
-                      isSelected ? 'border-[#9A0602] bg-[#9A0602]' : 'border-[#CCCCCC] bg-white'
+                      isSelected ? 'border-[#66000E] bg-[#66000E]' : 'border-[#CCCCCC] bg-white'
                     }`}
                   >
                     {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}

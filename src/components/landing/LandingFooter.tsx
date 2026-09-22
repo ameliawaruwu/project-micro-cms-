@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, MessageSquare } from 'lucide-react';
 import { scrollToLandingSection } from '../../utils/scroll';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { KroomifyLogo } from '../common/KroomifyLogo';
 
 interface LandingFooterProps {
   onNavigateLogin: () => void;
@@ -25,8 +26,8 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
   };
 
   return (
-    <footer className="bg-[#F5F1E8] text-[#6B6260] text-xs pt-12 sm:pt-14 pb-10 border-t border-[#E6DDDA] font-sans">
-      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="bg-[#FAF7F6] border-t border-[#E6DDDA] pt-12 sm:pt-16 pb-12 text-[#241A1A] font-sans text-left">
+      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* DESKTOP 5-COLUMN / MOBILE ACCORDION GRID */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10 pb-10 border-b border-[#E6DDDA]">
@@ -40,19 +41,9 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
               }}
               className="flex items-center gap-2.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none"
               title="Kembali ke Halaman Utama"
-              aria-label="Kembali ke Halaman Utama Kroombox"
+              aria-label="Kembali ke Halaman Utama Kroomify"
             >
-              <div className="w-8 h-8 rounded-xl bg-[#66000E] flex items-center justify-center text-white font-bold text-base shadow-xs group-hover:scale-105 transition-transform">
-                K
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-lg text-[#241A1A] tracking-tight group-hover:text-[#66000E] transition-colors leading-none">
-                  Kroombox
-                </span>
-                <span className="text-[11px] text-[#6B6260] mt-0.5">
-                  {t('footer_brand_tagline', 'Platform Toko Online UMKM Indonesia')}
-                </span>
-              </div>
+              <KroomifyLogo size="lg" />
             </button>
 
             <p className="text-[#6B6260] leading-relaxed text-xs sm:text-[13px] max-w-sm">
@@ -160,7 +151,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
                 </li>
                 <li>
                   <a
-                    href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroombox,%20saya%20butuh%20bantuan"
+                    href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroomify,%20saya%20butuh%20bantuan"
                     target="_blank"
                     rel="noreferrer"
                     className="hover:text-[#801010] transition-colors inline-flex items-center gap-1.5 text-[#66000E] font-bold"
@@ -309,7 +300,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
                     {t('footer_link_help_center', 'Pusat Bantuan')}
                   </a>
                   <a
-                    href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroombox,%20saya%20butuh%20bantuan"
+                    href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroomify,%20saya%20butuh%20bantuan"
                     target="_blank"
                     rel="noreferrer"
                     className="block py-1 text-[#66000E] font-bold"
@@ -325,28 +316,17 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
               <button
                 type="button"
                 onClick={() => toggleAccordion('legal')}
-                className={`w-full flex items-center justify-between p-3.5 text-xs font-bold transition-colors ${
-                  openMobileAccordion === 'legal' ? 'text-[#66000E] bg-white' : 'text-[#241A1A]'
-                }`}
+                className="w-full p-4 flex items-center justify-between text-left font-bold text-sm text-[#241A1A] cursor-pointer"
               >
-                <span>{t('footer_col_legal', 'LEGAL').toUpperCase()}</span>
-                <ChevronDown
-                  className={`w-4 h-4 text-[#6B6260] transition-transform duration-200 ${
-                    openMobileAccordion === 'legal' ? 'rotate-180 text-[#66000E]' : ''
-                  }`}
-                />
+                <span>{t('footer_col_legal', 'Legal & Privasi')}</span>
+                <ChevronDown className={`w-4 h-4 text-[#706866] transition-transform duration-200 ${openMobileAccordion === 'legal' ? 'rotate-180' : ''}`} />
               </button>
               {openMobileAccordion === 'legal' && (
-                <div className="p-3.5 pt-1 bg-white border-t border-[#E6DDDA] space-y-2 text-xs">
-                  <a href="#privasi" className="block py-1 text-[#6B6260] hover:text-[#66000E]">
-                    {t('footer_link_privacy', 'Kebijakan Privasi')}
-                  </a>
-                  <a href="#syarat" className="block py-1 text-[#6B6260] hover:text-[#66000E]">
-                    {t('footer_link_terms', 'Syarat & Ketentuan')}
-                  </a>
-                  <a href="#keamanan" className="block py-1 text-[#6B6260] hover:text-[#66000E]">
-                    {t('footer_link_data_security', 'Keamanan Data')}
-                  </a>
+                <div className="px-4 pb-4 space-y-2 text-xs text-[#5F5652] border-t border-[#E6DDDA]/60 pt-3">
+                  <a href="#syarat" className="block py-1 hover:text-[#66000E] transition-colors">{t('footer_link_terms', 'Syarat & Ketentuan')}</a>
+                  <a href="#privasi" className="block py-1 hover:text-[#66000E] transition-colors">{t('footer_link_privacy', 'Kebijakan Privasi')}</a>
+                  <a href="#sla" className="block py-1 hover:text-[#66000E] transition-colors">{t('footer_link_sla', 'Jaminan Layanan SLA')}</a>
+                  <a href="#keamanan" className="block py-1 hover:text-[#66000E] transition-colors">{t('footer_link_security', 'Keamanan Sistem')}</a>
                 </div>
               )}
             </div>
@@ -357,13 +337,13 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
 
         {/* BOTTOM COPYRIGHT & DISCLAIMER ROW */}
         <div className="pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] sm:text-xs text-[#6B6260] text-center sm:text-left">
-          <p>{t('footer_copyright', '© 2026 Kroombox. Dibuat untuk UMKM Indonesia.')}</p>
+          <p>{t('footer_copyright', '© 2026 Kroomify. Dibuat untuk UMKM Indonesia.')}</p>
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[#6B6260]">
             <span>{t('footer_privacy_secure', 'Privasi Terjaga')}</span>
             <span>•</span>
             <span>{t('footer_server_fast_safe', 'Server Cepat & Aman')}</span>
             <span>•</span>
-            <span className="text-[#66000E] font-bold">Kroombox v2.4</span>
+            <span className="text-[#66000E] font-bold">Kroomify v2.4</span>
           </div>
         </div>
 
@@ -371,4 +351,3 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
     </footer>
   );
 };
-

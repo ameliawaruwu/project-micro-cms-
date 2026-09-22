@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthIllustration } from '../../components/auth/AuthIllustration';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
+import { KroomifyLogo } from '../../components/common/KroomifyLogo';
 
 interface LoginPageProps {
   initialEmail?: string;
@@ -131,13 +132,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         
         {/* MOBILE-ONLY FLOATING BRAND LOGO (< md) */}
         <div className="md:hidden relative z-20 -mb-7 flex flex-col items-center justify-center">
-          <div className="flex items-center gap-2 px-5 py-2 rounded-full bg-white/95 backdrop-blur-md shadow-[0_8px_25px_rgba(0,0,0,0.25)] border border-white/60">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FFA940] to-[#FFC53D] flex items-center justify-center text-[#5C0D20] font-black text-base shadow-xs">
-              K
-            </div>
-            <span className="font-black text-2xl text-[#1A1110] tracking-tight">
-              Kroombox
-            </span>
+          <div className="px-5 py-2 rounded-full bg-white/95 backdrop-blur-md shadow-[0_8px_25px_rgba(0,0,0,0.25)] border border-white/60">
+            <KroomifyLogo size="md" />
           </div>
         </div>
 
@@ -165,21 +161,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           {/* DESKTOP BRAND BADGE */}
           <div className="hidden md:flex items-center gap-3 mb-6">
-            <div className="relative flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FFA940] to-[#FFC53D] shadow-sm flex items-center justify-center text-[#5C0D20] font-black text-lg">
-                K
-              </div>
-              <div className="absolute -inset-1 rounded-full bg-[#FFA940]/25 blur-xs pointer-events-none" />
-            </div>
-
-            <div className="flex flex-col">
-              <span className="font-bold text-xl text-[#1A1110] tracking-tight leading-none">
-                Kroombox
-              </span>
-              <span className="text-[11px] text-[#6B6260] mt-0.5 font-medium tracking-wide">
-                {t('landing_platform_badge', 'Platform Toko Online UMKM')}
-              </span>
-            </div>
+            <KroomifyLogo size="lg" />
           </div>
 
           {/* GREETING HEADING */}
@@ -206,7 +188,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           {error && (
             <div
               id="login-error"
-              className="mb-4 p-3 rounded-2xl bg-[#FFF1F0] border border-[#FFA39E] text-[#66000E] text-xs font-medium text-center animate-in fade-in duration-200"
+              className="mb-4 p-3 rounded-2xl bg-[#F5E8EA] border border-[#E8DDDE] text-[#66000E] text-xs font-medium text-center animate-in fade-in duration-200"
             >
               {error}
             </div>

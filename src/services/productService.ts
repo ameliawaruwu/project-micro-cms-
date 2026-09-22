@@ -1,14 +1,30 @@
 import { Product } from '../types';
 import { calculateProductStatus } from '../utils/formatters';
 import { supabase } from './supabaseClient';
+import { initialProducts } from './mockData';
 
 const PRODUCTS_KEY = 'microcms_products_clean_v1';
 
-// Clean old dummy data from browser cache
+// Clean old dummy data and auto-seeded sample products from browser cache
 if (typeof window !== 'undefined') {
   try {
     localStorage.removeItem('microcms_products_v1');
     localStorage.removeItem('microcms_products');
+    const stored = localStorage.getItem(PRODUCTS_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter((p: any) => {
+          if (!p || !p.name) return false;
+          const isStarter =
+            p.name.startsWith('Paket Perdana') ||
+            p.name.startsWith('Paket Pilihan') ||
+            p.name.startsWith('Koleksi Spesial');
+          return !(isStarter && p.storeId !== 'store-andhika');
+        });
+        localStorage.setItem(PRODUCTS_KEY, JSON.stringify(cleaned));
+      }
+    }
   } catch {
     // ignore
   }
@@ -54,14 +70,26 @@ class ProductService {
     }
   }
 
-  private saveProducts(products: Product[]) {
+  private saveProducts(productsToSave: Product[]) {
+    const existing = this.getStoredProducts();
     const uniqueMap = new Map<string, Product>();
-    products.forEach((p) => {
+    existing.forEach((p) => {
       if (p && p.id) {
         uniqueMap.set(p.id, p);
       }
     });
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(Array.from(uniqueMap.values())));
+    productsToSave.forEach((p) => {
+      if (p && p.id) {
+        uniqueMap.set(p.id, p);
+      }
+    });
+    const finalProducts = Array.from(uniqueMap.values());
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(finalProducts));
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: finalProducts }));
+      window.dispatchEvent(new Event('cms_draft_updated'));
+    }
   }
 
   async getProductsByStore(storeId: string): Promise<Product[]> {
@@ -94,13 +122,31 @@ class ProductService {
           // Supabase is empty, but local has products -> preserve local products
           return localProducts;
         }
+
+        // Neither Supabase nor local has products -> seed starter products ONLY for demo store (store-andhika)
+        if (storeId === 'store-andhika') {
+          const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId);
+          if (defaultStoreProducts.length > 0) {
+            const storeMapped = defaultStoreProducts.map((p) => ({ ...p, storeId }));
+            this.saveProducts(storeMapped);
+            return storeMapped;
+          }
+        }
         return [];
       }
     } catch (err: any) {
       console.warn('[Supabase Database] Offline fallback for products:', err?.message || err);
     }
 
-    // 2. Fallback to LocalStorage
+    // 2. Fallback to LocalStorage or initialProducts (only for demo store)
+    if (localProducts.length === 0 && storeId === 'store-andhika') {
+      const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId);
+      if (defaultStoreProducts.length > 0) {
+        const storeMapped = defaultStoreProducts.map((p) => ({ ...p, storeId }));
+        this.saveProducts(storeMapped);
+        return storeMapped;
+      }
+    }
     return localProducts;
   }
 
@@ -235,7 +281,11 @@ class ProductService {
     // 1. Delete from LocalStorage first
     let products = this.getStoredProducts();
     products = products.filter((p) => p.id !== id);
-    this.saveProducts(products);
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: products }));
+      window.dispatchEvent(new Event('cms_draft_updated'));
+    }
 
     // 2. Sync delete to Supabase Cloud Database
     try {

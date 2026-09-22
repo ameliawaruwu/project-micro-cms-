@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Package } from 'lucide-react';
 import { Product } from '../../types';
 import { ProductTable } from '../../components/products/ProductTable';
 import { ProductMobileCard } from '../../components/products/ProductMobileCard';
@@ -60,18 +61,16 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
       {/* Breadcrumb Navigation */}
       <Breadcrumb
         items={[
-          { label: 'Dashboard', onClick: onNavigateDashboard },
-          { label: 'Produk', isActive: true },
+          { label: t('nav_dashboard', 'Dashboard'), onClick: onNavigateDashboard },
+          { label: t('nav_products', 'Produk'), isActive: true },
         ]}
       />
 
-      <div className="pb-1 border-b border-[#E5E0DD]">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#1F1F1F] tracking-tight">
-          {t('products_title', 'Produk')}
+      <div className="pb-3 border-b border-[#E5E0DD]">
+        <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+          <Package className="w-5 h-5 text-[#66000E]" />
+          <span>{t('nav_products', 'Produk')}</span>
         </h1>
-        <p className="text-xs text-[#706866] mt-0.5">
-          Kelola inventaris barang dagangan, harga promo, stok ketersediaan, dan etalase toko online.
-        </p>
       </div>
 
       {/* Desktop Table View */}

@@ -4,7 +4,7 @@ export interface User {
   email: string;
   phoneWhatsApp: string;
   avatarUrl?: string;
-  role: 'merchant' | 'admin';
+  role: 'merchant' | 'admin' | 'buyer';
   createdAt: string;
 }
 
@@ -35,6 +35,7 @@ export type StoreSectionType =
   | 'video'
   | 'product_carousel'
   | 'collection'
+  | 'collection_grid'
   | 'product_categories'
   | 'countdown'
   | 'cta'
@@ -182,9 +183,10 @@ export interface StoreSectionOptions {
   bannerStyle?: 'compact' | 'normal' | 'minimal' | 'split' | 'full' | 'editorial' | 'typographic' | 'organic' | 'campaign' | string;
   backgroundColor?: 'default' | 'white' | 'brand' | 'dark' | 'amber' | 'neutral' | string;
   textColor?: 'light' | 'dark' | string;
+  layout?: 'grid' | 'masonry' | 'asymmetric' | 'carousel' | string;
 
   // Appearance & Positioning (Shopify Style)
-  contentPosition?: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'left' | 'right' | string;
+  contentPosition?: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'left' | 'center' | 'right' | string;
   animation?: 'none' | 'fade-in' | 'slide-up' | 'zoom-in';
   colorScheme?: 'scheme-1' | 'scheme-2' | 'scheme-3' | 'scheme-4' | 'scheme-5';
   enableContainer?: boolean;
@@ -254,7 +256,7 @@ export interface StoreSectionOptions {
 
   // Header / Navbar
   stickyHeader?: boolean;
-  headerStyle?: 'standard' | 'brand' | 'minimal' | string;
+  headerStyle?: 'standard' | 'brand' | 'minimal' | 'transparent' | string;
   headerLayout?: 'standard' | 'centered' | 'minimal' | string;
   showLogo?: boolean;
   showTagline?: boolean;
@@ -286,7 +288,7 @@ export interface StoreSectionConfig {
 }
 
 export interface StoreLayoutSettings {
-  sections: StoreSectionConfig[];
+  sections?: StoreSectionConfig[];
   primaryAccent?: string;
   themeStyle?: 'minimal' | 'modern' | 'compact' | string;
   activeThemeId?: string;
@@ -294,6 +296,9 @@ export interface StoreLayoutSettings {
   pages?: ThemePage[];
   activePage?: string;
   activeTemplateId?: string;
+  planExpiresAt?: string;
+  planSubscribedAt?: string;
+  [key: string]: any;
 }
 
 export interface Store {
@@ -309,14 +314,25 @@ export interface Store {
   city: string;
   province?: string;
   district?: string;
+  subdistrict?: string;
+  village?: string;
+  addressDetail?: string;
   postalCode?: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   category: string;
   currency: string;
   balance: number;
-  plan?: 'free' | 'starter' | 'premium';
+  plan?: 'free' | 'personal' | 'community' | 'corporate' | 'startup' | 'starter' | 'premium' | string;
+  planExpiresAt?: string;
+  planSubscribedAt?: string;
+  isPublished?: boolean;
   themeColor?: string;
   layoutSettings?: StoreLayoutSettings;
+  customDomain?: string;
+  domainType?: 'random' | 'custom';
+  domainStatus?: 'connected' | 'pending' | 'error';
   onboarding: {
     storeNameSet: boolean;
     productUploaded: boolean;
@@ -486,7 +502,7 @@ export interface Order {
 export interface Integration {
   id: string;
   type: 'payment' | 'shipping';
-  provider: 'midtrans' | 'stripe' | 'qris' | 'jnt' | 'jne' | 'sicepat' | 'gosend' | 'biteship';
+  provider: 'midtrans' | 'stripe' | 'qris' | 'jnt' | 'jne' | 'sicepat' | 'gosend' | 'anteraja' | 'biteship';
   name: string;
   logo: string;
   description: string;
@@ -609,6 +625,9 @@ export interface BillingPlan {
   tagline: string;
   priceMonthly: number;
   priceYearly: number;
+  hostingPriceYearly?: number;
+  cmsPriceYearly?: number;
+  badge?: string;
   features: string[];
   isActive: boolean;
   sortOrder: number;
@@ -624,7 +643,8 @@ export interface BillingSubscription {
   planName: string;
   cycle: 'monthly' | 'yearly';
   amount: number;
-  status: 'paid' | 'pending' | 'expired' | 'failed';
+  status: 'paid' | 'pending' | 'expired' | 'failed' | 'cancelled';
+  orderId?: string;
   paymentMethod: string;
   invoiceNumber: string;
   paidAt: string;

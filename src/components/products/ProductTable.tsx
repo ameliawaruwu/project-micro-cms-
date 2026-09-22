@@ -2,6 +2,7 @@ import React from 'react';
 import { Edit2, Trash2, Plus, Search, Eye, Image as ImageIcon } from 'lucide-react';
 import { Product } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ProductTableProps {
   products: Product[];
@@ -35,6 +36,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   onEditProduct,
   onDeleteProduct,
 }) => {
+  const { language, t } = useLanguage();
+  const isEn = language === 'en';
 
   return (
     <div className="space-y-4 font-sans">
@@ -46,7 +49,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             <Search className="w-4 h-4 text-[#706866] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Cari nama produk, SKU, atau kategori..."
+              placeholder={t('search_product_placeholder', 'Cari nama produk, SKU, atau kategori...')}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-xs sm:text-sm text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] focus:bg-white transition"
@@ -60,7 +63,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             aria-label="Filter kategori"
             className="py-2.5 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
           >
-            <option value="all">Semua Kategori</option>
+            <option value="all">{t('all_categories', 'Semua Kategori')}</option>
             {categories.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -75,7 +78,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs sm:text-sm shadow-2xs transition transform active:scale-95 shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Tambah Produk</span>
+          <span>{t('add_product', 'Tambah Produk')}</span>
         </button>
       </div>
 
@@ -86,9 +89,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             <div className="w-14 h-14 rounded-2xl bg-[#F9EDEF] border border-[#F0D5D8] text-[#66000E] mx-auto flex items-center justify-center mb-3">
               <ImageIcon className="w-7 h-7" />
             </div>
-            <h3 className="font-bold text-base text-[#241A1A]">Belum ada produk</h3>
+            <h3 className="font-bold text-base text-[#241A1A]">{isEn ? 'No products yet' : 'Belum ada produk'}</h3>
             <p className="text-xs text-[#706866] mt-1 max-w-sm mx-auto font-normal">
-              Tambahkan produk dagangan Anda agar etalase toko online dapat langsung dikunjungi pelanggan.
+              {isEn ? 'Add your products so customers can start browsing your online store.' : 'Tambahkan produk dagangan Anda agar etalase toko online dapat langsung dikunjungi pelanggan.'}
             </p>
           </div>
         ) : (
@@ -96,11 +99,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#FAF7F7] border-b border-[#E5E0DD] text-[11px] font-semibold uppercase tracking-wider text-[#706866]">
-                  <th className="py-3.5 px-4 pl-6 font-semibold">Produk</th>
-                  <th className="py-3.5 px-4 font-semibold">Kategori</th>
-                  <th className="py-3.5 px-4 font-semibold">Harga</th>
-                  <th className="py-3.5 px-4 font-semibold">Stok</th>
-                  <th className="py-3.5 px-4 pr-6 text-right font-semibold">Aksi</th>
+                  <th className="py-3.5 px-4 pl-6 font-semibold">{t('table_product', 'Produk')}</th>
+                  <th className="py-3.5 px-4 font-semibold">{t('category', 'Kategori')}</th>
+                  <th className="py-3.5 px-4 font-semibold">{t('price', 'Harga')}</th>
+                  <th className="py-3.5 px-4 font-semibold">{t('stock', 'Stok')}</th>
+                  <th className="py-3.5 px-4 pr-6 text-right font-semibold">{t('actions', 'Aksi')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E0DD] font-normal text-[#241A1A]">
@@ -173,21 +176,21 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                         <button
                           onClick={() => onViewProduct(prod)}
                           className="p-1.5 rounded-lg text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer"
-                          title="Lihat Detail Produk"
+                          title={isEn ? 'View Product Details' : 'Lihat Detail Produk'}
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => onEditProduct(prod)}
                           className="p-1.5 rounded-lg text-[#706866] hover:text-[#66000E] hover:bg-[#F9EDEF] transition cursor-pointer"
-                          title="Ubah Produk"
+                          title={isEn ? 'Edit Product' : 'Ubah Produk'}
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => onDeleteProduct(prod.id)}
                           className="p-1.5 rounded-lg text-[#706866] hover:text-[#66000E] hover:bg-[#F9EDEF] transition cursor-pointer"
-                          title="Hapus Produk"
+                          title={isEn ? 'Delete Product' : 'Hapus Produk'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

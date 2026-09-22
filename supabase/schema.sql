@@ -1,5 +1,5 @@
 -- ============================================================================
--- KROOMBOX (MICRO CMS) - SUPABASE / POSTGRESQL CLEAN DATABASE SCHEMA
+-- KROOMIFY (MICRO CMS) - SUPABASE / POSTGRESQL CLEAN DATABASE SCHEMA
 -- ============================================================================
 -- Kompatibel dengan Supabase Database & PostgreSQL 13+
 -- Mendukung Multi-Store UMKM, Katalog Produk, Midtrans Payment Gateway,
@@ -60,12 +60,18 @@ CREATE TABLE IF NOT EXISTS stores (
     city VARCHAR(128) NOT NULL DEFAULT 'Jakarta Selatan',
     province VARCHAR(128) DEFAULT 'DKI Jakarta',
     district VARCHAR(128),
+    subdistrict VARCHAR(128),
+    village VARCHAR(128),
     postal_code VARCHAR(16),
     address TEXT,
+    address_detail TEXT,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
     category VARCHAR(64) DEFAULT 'Fashion & Retail',
-    plan VARCHAR(32) DEFAULT 'free' CHECK (plan IN ('free', 'starter', 'premium')),
+    plan VARCHAR(32) DEFAULT 'free' CHECK (plan IN ('free', 'starter', 'premium', 'personal', 'community', 'corporate', 'startup')),
     balance BIGINT DEFAULT 0,
     theme_settings JSONB DEFAULT '{}'::jsonb,
+    is_published BOOLEAN DEFAULT FALSE,
     is_suspended BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -288,14 +294,14 @@ CREATE INDEX IF NOT EXISTS idx_wallet_transactions_store_id ON wallet_transactio
 CREATE TABLE IF NOT EXISTS platform_settings (
     id VARCHAR(32) PRIMARY KEY DEFAULT 'global_config',
     midtrans_environment VARCHAR(32) DEFAULT 'sandbox' CHECK (midtrans_environment IN ('sandbox', 'production')),
-    midtrans_merchant_id VARCHAR(128) DEFAULT 'G182930491',
-    midtrans_client_key VARCHAR(255) DEFAULT 'SB-Mid-client-8Yp9X1v2wQzL4a7k',
-    midtrans_server_key VARCHAR(255) DEFAULT 'SB-Mid-server-zR9u3M2vX8pLk1A0yW4t',
+    midtrans_merchant_id VARCHAR(128) DEFAULT '',
+    midtrans_client_key VARCHAR(255) DEFAULT '',
+    midtrans_server_key VARCHAR(255) DEFAULT '',
     biteship_enabled BOOLEAN DEFAULT TRUE,
     biteship_origin_city VARCHAR(128) DEFAULT 'Jakarta Selatan',
-    wa_gateway_enabled BOOLEAN DEFAULT TRUE,
-    wa_gateway_api_key VARCHAR(255) DEFAULT 'fonnte_token_88921xks9021',
-    wa_sender_phone VARCHAR(32) DEFAULT '081289201928',
+    wa_gateway_enabled BOOLEAN DEFAULT FALSE,
+    wa_gateway_api_key VARCHAR(255) DEFAULT '',
+    wa_sender_phone VARCHAR(32) DEFAULT '',
     platform_fee_percent NUMERIC(4,2) DEFAULT 1.50,
     payout_min_amount BIGINT DEFAULT 50000,
     payout_bank_fee BIGINT DEFAULT 2500,
@@ -346,14 +352,38 @@ CREATE INDEX IF NOT EXISTS idx_store_subscriptions_store_id ON store_subscriptio
 CREATE INDEX IF NOT EXISTS idx_store_subscriptions_status ON store_subscriptions(status);
 
 -- ============================================================================
+-- 12. TABEL: DOMAIN_REQUESTS (PERMINTAAN & APPROVAL CUSTOM DOMAIN TOKO)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS domain_requests (
+    id VARCHAR(64) PRIMARY KEY DEFAULT 'dom_' || replace(gen_random_uuid()::text, '-', ''),
+    store_id VARCHAR(64) NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+    store_name VARCHAR(255) NOT NULL,
+    requested_domain VARCHAR(255) NOT NULL,
+    tld VARCHAR(16) NOT NULL CHECK (tld IN ('.com', '.id', '.online', '.org', '.top')),
+    tld_price BIGINT NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'active')),
+    admin_notes TEXT,
+    suggestions JSONB DEFAULT '[]'::jsonb,
+    invoice_number VARCHAR(64),
+    payment_status VARCHAR(32) DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'paid', 'expired')),
+    requested_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    approved_at TIMESTAMP WITH TIME ZONE,
+    activated_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_domain_requests_store_id ON domain_requests(store_id);
+CREATE INDEX IF NOT EXISTS idx_domain_requests_status ON domain_requests(status);
+
+-- ============================================================================
 -- DATA INISIALISASI DASAR (AKUN, TOKO, GUDANG, & MASTER BILLING PLANS)
 -- ============================================================================
 INSERT INTO platform_settings (id) VALUES ('global_config') ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO users (id, email, password_hash, name, phone, role) VALUES
-('usr-admin-1', 'admin@kroombox.id', 'admin123', 'Super Admin Kroombox', '081289201928', 'admin'),
-('usr-andhika-1', 'andhika@gmail.com', 'password123', 'Andhika Pratama', '081298765432', 'merchant')
-ON CONFLICT (id) DO NOTHING;
+('usr-admin-1', 'admin@kroomify.id', crypt('admin123', gen_salt('bf')), 'Super Admin Kroomify', '081289201928', 'admin'),
+('usr-andhika-1', 'andhika@gmail.com', crypt('password123', gen_salt('bf')), 'Andhika Pratama', '081298765432', 'merchant')
+ON CONFLICT (id) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
 INSERT INTO stores (id, user_id, name, slug, tagline, description, phone_whatsapp, city, province, address, category, plan, balance) VALUES
 ('store-andhika', 'usr-andhika-1', 'Toko Andhika', 'toko-andhika', 'Toko Online Andhika', 'Pusat belanja produk berkualitas', '6281298765432', 'Jakarta Selatan', 'DKI Jakarta', 'Jl. Kemang Raya No. 42', 'Fashion & Retail', 'starter', 0)
@@ -403,14 +433,26 @@ INSERT INTO shipping_branches (
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO billing_plans (id, name, slug, tagline, price_monthly, price_yearly, features, is_active, sort_order) VALUES
-('plan_free', 'Starter (Gratis)', 'free', 'Cocok untuk toko baru yang mulai berjualan online', 0, 0, '["Katalog produk hingga 25 item", "Checkout otomatis via Midtrans (QRIS & VA)", "Cek ongkir otomatis ekspedisi (J&T, JNE)", "Watermark resmi Kroombox di footer toko"]'::jsonb, true, 1),
-('plan_pro', 'Pro UMKM', 'premium', 'Fitur lengkap tanpa batas untuk meningkatkan omset toko', 99000, 950000, '["Unlimited katalog produk & varian", "Bebas watermark (white-label brand sendiri)", "Semua metode pembayaran Midtrans (QRIS, VA Bank, Kartu Kredit)", "Visual layout builder & kustomisasi banner toko", "Cetak label pengiriman thermal massal", "Laporan analitik penjualan & omset real-time", "Prioritas bantuan customer support"]'::jsonb, true, 2),
-('plan_scaleup', 'Bisnis Scale-Up', 'business', 'Untuk bisnis UMKM berkembang dengan tim & cabang', 249000, 2400000, '["Semua fitur paket Pro UMKM", "Akses multi-staf pengelola toko (hingga 5 admin)", "Dukungan custom domain toko (.com / .id)", "Notifikasi otomatis WhatsApp bot ke pembeli", "Dedicated Account Manager 24/7"]'::jsonb, true, 3)
-ON CONFLICT (id) DO NOTHING;
+('plan_free', 'Paket Free', 'free', 'Cocok untuk toko baru yang baru mulai belajar online', 0, 0, '["Subdomain gratis [slug].kroomify.com", "Katalog produk hingga 15 item", "Checkout katalog & order WhatsApp", "Watermark Kroomify di footer toko", "Manual shipping & payment"]'::jsonb, true, 1),
+('plan_personal', 'Personal Toko', 'personal', 'Cocok untuk bisnis individu & toko retail mandiri', 35000, 350000, '["Hosting Server: Rp 200.000 / tahun", "Jasa Micro CMS: Rp 150.000 / tahun", "Dukungan Custom Domain (.top, .online, .org, .com, .id)", "Katalog produk hingga 100 item", "Automated Midtrans (QRIS, VA Bank, E-Wallet)", "Integrasi Ekspedisi Logistik (JNE, J&T via Biteship)", "White-label tanpa watermark"]'::jsonb, true, 2),
+('plan_community', 'Community UMKM', 'community', 'Pilihan terbaik untuk UMKM & komunitas bisnis berkembang', 100000, 1000000, '["Hosting Server: Rp 700.000 / tahun", "Jasa Micro CMS: Rp 300.000 / tahun", "Pilihan Terbaik UMKM (Rekomendasi Utama)", "Dukungan Custom Domain (.top, .online, .org, .com, .id)", "Unlimited katalog produk & varian", "Prioritas DNS setup & SSL otomatis", "Semua channel Midtrans & Biteship aktif", "Multi-gudang & multi-cabang pengiriman", "Laporan analitik omset & export data"]'::jsonb, true, 3),
+('plan_corporate', 'Bisnis Corporate', 'corporate', 'Solusi perusahaan retail skala menengah dengan multi-cabang', 250000, 2500000, '["Hosting Server: Rp 1.800.000 / tahun", "Jasa Micro CMS: Rp 700.000 / tahun", "Server dedicated cloud berkecepatan tinggi", "Kustomisasi tema & visual layout builder tingkat lanjut", "Multi-cabang gudang tidak terbatas", "Notifikasi otomatis WhatsApp bot ke pembeli", "Dedicated Account Manager 24/7"]'::jsonb, true, 4),
+('plan_startup', 'Startup Scale', 'startup', 'Infrastruktur cloud enterprise untuk brand skala nasional', 300000, 3000000, '["Hosting Server: Rp 2.000.000 / tahun", "Jasa Micro CMS: Rp 1.000.000 / tahun", "Traffic kapasitas tinggi hingga ratusan ribu order/hari", "API akses webhook langsung & integrasi ERP", "Prioritas domain deployment & DNS propagation", "Garansi uptime SLA 99.9%", "Prioritas engineering support"]'::jsonb, true, 5)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    tagline = EXCLUDED.tagline,
+    price_yearly = EXCLUDED.price_yearly,
+    features = EXCLUDED.features,
+    sort_order = EXCLUDED.sort_order;
 
 -- ============================================================================
--- KONFIGURASI PERIZINAN ROW LEVEL SECURITY (RLS) UNTUK FRONTEND
 -- ============================================================================
+-- KONFIGURASI HAK AKSES DAN PERIZINAN SUPABASE CLIENT (ANON & AUTHENTICATED)
+-- ============================================================================
+-- Sistem Micro CMS Kroomify menggunakan Supabase client dengan anon key dari browser,
+-- sehingga seluruh tabel dapat diakses (SELECT, INSERT, UPDATE, DELETE) oleh peran anon, authenticated, dan service_role.
+
+-- 1. Nonaktifkan RLS agar tidak memblokir query dari client anonim
 ALTER TABLE IF EXISTS products DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS stores DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS shipping_branches DISABLE ROW LEVEL SECURITY;
@@ -422,7 +464,25 @@ ALTER TABLE IF EXISTS wallet_transactions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS withdrawals DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS billing_plans DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS store_subscriptions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS domain_requests DISABLE ROW LEVEL SECURITY;
 
+-- 2. Bersihkan kebijakan lama
+DROP POLICY IF EXISTS "products_read_policy" ON products;
+DROP POLICY IF EXISTS "products_write_policy" ON products;
+DROP POLICY IF EXISTS "stores_read_policy" ON stores;
+DROP POLICY IF EXISTS "stores_write_policy" ON stores;
+DROP POLICY IF EXISTS "shipping_branches_read_policy" ON shipping_branches;
+DROP POLICY IF EXISTS "shipping_branches_write_policy" ON shipping_branches;
+DROP POLICY IF EXISTS "orders_public_insert" ON orders;
+DROP POLICY IF EXISTS "orders_select_policy" ON orders;
+DROP POLICY IF EXISTS "orders_update_policy" ON orders;
+DROP POLICY IF EXISTS "order_items_public_insert" ON order_items;
+DROP POLICY IF EXISTS "order_items_select_policy" ON order_items;
+DROP POLICY IF EXISTS "platform_settings_read_policy" ON platform_settings;
+DROP POLICY IF EXISTS "billing_plans_read_policy" ON billing_plans;
+DROP POLICY IF EXISTS "domain_requests_policy" ON domain_requests;
+
+-- 3. Berikan hak penuh (ALL) pada seluruh tabel ke peran anon, authenticated, dan service_role
 GRANT ALL ON TABLE products TO anon, authenticated, service_role;
 GRANT ALL ON TABLE stores TO anon, authenticated, service_role;
 GRANT ALL ON TABLE shipping_branches TO anon, authenticated, service_role;
@@ -434,6 +494,10 @@ GRANT ALL ON TABLE wallet_transactions TO anon, authenticated, service_role;
 GRANT ALL ON TABLE withdrawals TO anon, authenticated, service_role;
 GRANT ALL ON TABLE billing_plans TO anon, authenticated, service_role;
 GRANT ALL ON TABLE store_subscriptions TO anon, authenticated, service_role;
+GRANT ALL ON TABLE domain_requests TO anon, authenticated, service_role;
+
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
 
 -- ============================================================================
 -- KONFIGURASI SUPABASE REALTIME (WEBSOCKET) UNTUK ORDERS & SHIPPING_BRANCHES
@@ -451,3 +515,200 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN
     NULL;
 END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE domain_requests;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+-- ============================================================================
+-- 11. RPC FUNCTION: GET_DASHBOARD_ANALYTICS
+-- ============================================================================
+CREATE OR REPLACE FUNCTION get_dashboard_analytics(p_store_id VARCHAR)
+RETURNS JSONB 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_balance NUMERIC;
+    v_incoming_orders INT;
+    v_today_sales NUMERIC;
+    v_total_products INT;
+    v_low_stock_count INT;
+    v_recent_orders JSONB;
+    v_low_stock_items JSONB;
+BEGIN
+    -- 1. Active Store Balance
+    SELECT COALESCE(balance, 0) 
+    INTO v_balance 
+    FROM stores 
+    WHERE id = p_store_id;
+
+    v_balance := COALESCE(v_balance, 0);
+
+    -- 2. Incoming Orders (Paid & Needing Processing/Shipment)
+    SELECT COUNT(*) 
+    INTO v_incoming_orders 
+    FROM orders 
+    WHERE store_id = p_store_id 
+      AND (
+          payment_status = 'paid' 
+          OR order_status IN ('pending', 'processing')
+      )
+      AND order_status NOT IN ('delivered', 'cancelled');
+
+    v_incoming_orders := COALESCE(v_incoming_orders, 0);
+
+    -- 3. Today's Revenue (Transactions created today with paid status)
+    SELECT COALESCE(SUM(total_amount), 0) 
+    INTO v_today_sales 
+    FROM orders 
+    WHERE store_id = p_store_id 
+      AND payment_status = 'paid'
+      AND created_at >= CURRENT_DATE;
+
+    v_today_sales := COALESCE(v_today_sales, 0);
+
+    -- 4. Products & Low Stock Statistics (Stock <= 5)
+    SELECT COUNT(*) 
+    INTO v_total_products 
+    FROM products 
+    WHERE store_id = p_store_id 
+      AND (status IS NULL OR status != 'Dihapus');
+
+    v_total_products := COALESCE(v_total_products, 0);
+
+    SELECT COUNT(*) 
+    INTO v_low_stock_count 
+    FROM products 
+    WHERE store_id = p_store_id 
+      AND stock <= 5 
+      AND (status IS NULL OR status != 'Dihapus');
+
+    v_low_stock_count := COALESCE(v_low_stock_count, 0);
+
+    -- 5. Low Stock Items Details (Up to 5 items)
+    SELECT COALESCE(json_agg(row_to_json(lsi)), '[]'::jsonb)
+    INTO v_low_stock_items
+    FROM (
+        SELECT id, name, price, stock, image_url, category
+        FROM products
+        WHERE store_id = p_store_id
+          AND stock <= 5
+          AND (status IS NULL OR status != 'Dihapus')
+        ORDER BY stock ASC
+        LIMIT 5
+    ) lsi;
+
+    -- 6. Recent 5 Orders with Customer & Summary Details
+    SELECT COALESCE(json_agg(row_to_json(ro)), '[]'::jsonb)
+    INTO v_recent_orders 
+    FROM (
+        SELECT 
+            id, 
+            order_number, 
+            customer_name, 
+            shipping_city, 
+            total_amount, 
+            payment_method, 
+            payment_status,
+            order_status, 
+            shipping_courier,
+            created_at,
+            (
+                SELECT COALESCE(json_agg(json_build_object(
+                    'product_id', product_id,
+                    'product_name', product_name, 
+                    'price', price,
+                    'quantity', quantity,
+                    'subtotal', subtotal,
+                    'product_image', product_image
+                )), '[]'::jsonb) 
+                FROM order_items 
+                WHERE order_id = orders.id
+            ) AS items
+        FROM orders 
+        WHERE store_id = p_store_id 
+        ORDER BY created_at DESC 
+        LIMIT 5
+    ) ro;
+
+    RETURN json_build_object(
+        'balance', v_balance,
+        'incoming_orders', v_incoming_orders,
+        'today_sales', v_today_sales,
+        'total_products', v_total_products,
+        'low_stock_count', v_low_stock_count,
+        'low_stock_items', COALESCE(v_low_stock_items, '[]'::jsonb),
+        'recent_orders', COALESCE(v_recent_orders, '[]'::jsonb)
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_dashboard_analytics(VARCHAR) TO anon, authenticated, service_role;
+
+-- ============================================================================
+-- 12. RPC FUNCTION: VERIFY_USER_CREDENTIALS (SECURE SERVER-SIDE PASSWORD CHECK)
+-- ============================================================================
+-- Memverifikasi kredensial pengguna langsung di PostgreSQL menggunakan pgcrypto.
+-- Hash password TIDAK PERNAH dikirimkan ke memori/browser client!
+CREATE OR REPLACE FUNCTION verify_user_credentials(p_email VARCHAR, p_password VARCHAR)
+RETURNS JSONB 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_user RECORD;
+    v_is_valid BOOLEAN := FALSE;
+    v_sha256_hash VARCHAR;
+BEGIN
+    SELECT id, name, email, phone, role, password_hash, created_at
+    INTO v_user
+    FROM users
+    WHERE LOWER(email) = LOWER(TRIM(p_email));
+
+    IF NOT FOUND THEN
+        RETURN json_build_object('success', false, 'message', 'Akun tidak ditemukan');
+    END IF;
+
+    -- Hitung SHA-256 hash dengan salt frontend kroomify
+    v_sha256_hash := encode(digest('kroomify_salt_v1_' || p_password, 'sha256'), 'hex');
+
+    -- 1. Kecocokan langsung (jika password disimpan plaintext atau user memasukkan hash)
+    IF v_user.password_hash = p_password THEN
+        v_is_valid := TRUE;
+    -- 2. Kecocokan dengan hash SHA-256 frontend kroomify
+    ELSIF v_user.password_hash = v_sha256_hash THEN
+        v_is_valid := TRUE;
+    -- 3. Kecocokan dengan bcrypt/crypt hash
+    ELSIF v_user.password_hash LIKE '$2%' OR v_user.password_hash LIKE '$6%' THEN
+        BEGIN
+            v_is_valid := (crypt(p_password, v_user.password_hash) = v_user.password_hash)
+                       OR (crypt(v_sha256_hash, v_user.password_hash) = v_user.password_hash);
+        EXCEPTION WHEN OTHERS THEN
+            v_is_valid := FALSE;
+        END;
+    END IF;
+
+    IF v_is_valid THEN
+        RETURN json_build_object(
+            'success', true,
+            'user', json_build_object(
+                'id', v_user.id,
+                'name', v_user.name,
+                'email', v_user.email,
+                'phone', v_user.phone,
+                'role', v_user.role,
+                'created_at', v_user.created_at
+            )
+        );
+    ELSE
+        RETURN json_build_object('success', false, 'message', 'Kata sandi tidak sesuai');
+    END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION verify_user_credentials(VARCHAR, VARCHAR) TO anon, authenticated, service_role;
+

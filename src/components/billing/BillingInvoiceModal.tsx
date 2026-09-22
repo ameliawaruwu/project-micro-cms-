@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Printer, Copy, Check, Mail, Globe } from 'lucide-react';
 import { Store as StoreType } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export interface InvoiceRecord {
   id: string;
@@ -24,6 +25,8 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
   const [copied, setCopied] = useState(false);
 
   if (!isOpen || !invoice) return null;
@@ -61,7 +64,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
             <span className="font-bold text-xs text-gray-700">
-              Preview Invoice Resmi — {invoice.id}
+              {isEn ? 'Official Invoice Preview' : 'Preview Invoice Resmi'} — {invoice.id}
             </span>
           </div>
 
@@ -74,12 +77,12 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
               {copied ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-bold">Tersalin!</span>
+                  <span className="text-emerald-700 font-bold">{isEn ? 'Copied!' : 'Tersalin!'}</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5 text-gray-500" />
-                  <span>Salin No. Inv</span>
+                  <span>{isEn ? 'Copy Inv No.' : 'Salin No. Inv'}</span>
                 </>
               )}
             </button>
@@ -90,14 +93,14 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
               className="px-4 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Cetak / Unduh PDF</span>
+              <span>{isEn ? 'Print / Download PDF' : 'Cetak / Unduh PDF'}</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
-              title="Tutup"
+              title={isEn ? 'Close' : 'Tutup'}
             >
               <X className="w-5 h-5" />
             </button>
@@ -116,7 +119,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
             <div className="space-y-0.5">
               <h2 className="text-2xl font-black text-[#66000E] tracking-tight uppercase">KROOMSTORE</h2>
               <p className="text-[11px] font-semibold text-gray-500">
-                Platform Micro-CMS & Toko Online UMKM
+                {isEn ? 'MSME Micro-CMS & Online Store Platform' : 'Platform Micro-CMS & Toko Online UMKM'}
               </p>
             </div>
 
@@ -137,12 +140,12 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
             {/* Left: Diterbitkan Atas Nama */}
             <div>
               <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider block mb-1.5">
-                DITERBITKAN ATAS NAMA
+                {isEn ? 'ISSUED ON BEHALF OF' : 'DITERBITKAN ATAS NAMA'}
               </span>
               <table className="text-[11px]">
                 <tbody>
                   <tr>
-                    <td className="font-medium text-gray-600 pr-3 py-0.5">Penjual</td>
+                    <td className="font-medium text-gray-600 pr-3 py-0.5">{isEn ? 'Seller' : 'Penjual'}</td>
                     <td className="font-medium text-gray-600 pr-2 py-0.5">:</td>
                     <td className="font-bold text-gray-900 py-0.5">KroomStore</td>
                   </tr>
@@ -153,19 +156,19 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
             {/* Right: Untuk */}
             <div>
               <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider block mb-1.5">
-                UNTUK
+                {isEn ? 'FOR' : 'UNTUK'}
               </span>
               <table className="text-[11px]">
                 <tbody>
                   <tr>
-                    <td className="font-medium text-gray-600 pr-3 py-0.5 whitespace-nowrap">Pembeli</td>
+                    <td className="font-medium text-gray-600 pr-3 py-0.5 whitespace-nowrap">{isEn ? 'Buyer' : 'Pembeli'}</td>
                     <td className="font-medium text-gray-600 pr-2 py-0.5">:</td>
                     <td className="font-bold text-gray-900 py-0.5 uppercase">
                       {store.name}
                     </td>
                   </tr>
                   <tr>
-                    <td className="font-medium text-gray-600 pr-3 py-0.5 whitespace-nowrap">Tanggal Pembelian</td>
+                    <td className="font-medium text-gray-600 pr-3 py-0.5 whitespace-nowrap">{isEn ? 'Purchase Date' : 'Tanggal Pembelian'}</td>
                     <td className="font-medium text-gray-600 pr-2 py-0.5">:</td>
                     <td className="font-bold text-gray-900 py-0.5">
                       {invoice.date}
@@ -185,20 +188,20 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
             <table className="w-full text-xs text-left border-collapse">
               <thead>
                 <tr className="bg-[#66000E] text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
-                  <th className="py-2.5 px-3 text-left">INFO PRODUK</th>
+                  <th className="py-2.5 px-3 text-left">{isEn ? 'PRODUCT INFO' : 'INFO PRODUK'}</th>
                   <th className="py-2.5 px-2 text-center w-14">QTY</th>
-                  <th className="py-2.5 px-3 text-right">HARGA SATUAN</th>
-                  <th className="py-2.5 px-3 text-right">TOTAL HARGA</th>
+                  <th className="py-2.5 px-3 text-right">{isEn ? 'UNIT PRICE' : 'HARGA SATUAN'}</th>
+                  <th className="py-2.5 px-3 text-right">{isEn ? 'TOTAL PRICE' : 'TOTAL HARGA'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 <tr>
                   <td className="py-4 px-3 align-top">
                     <p className="font-bold text-gray-900 text-xs leading-snug">
-                      Langganan Platform KroomStore — {invoice.plan} ({invoice.cycle}) + Domain Toko ({store.slug ? `kroomstore.id/${store.slug}` : 'kroomstore.id'})
+                      {isEn ? `KroomStore Platform Subscription — ${invoice.plan} (${invoice.cycle}) + Store Domain (${store.slug ? `kroomstore.id/${store.slug}` : 'kroomstore.id'})` : `Langganan Platform KroomStore — ${invoice.plan} (${invoice.cycle}) + Domain Toko (${store.slug ? `kroomstore.id/${store.slug}` : 'kroomstore.id'})`}
                     </p>
                     <p className="text-[10.5px] text-gray-500 mt-0.5">
-                      Akses fitur jualan online, katalog produk, payment gateway otomatis, dan domain etalase toko
+                      {isEn ? 'Access to online store features, product catalog, automated payment gateway, and store showcase domain' : 'Akses fitur jualan online, katalog produk, payment gateway otomatis, dan domain etalase toko'}
                     </p>
                   </td>
                   <td className="py-4 px-2 text-center font-semibold text-gray-800 align-top">
@@ -220,7 +223,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
             <div className="w-72 space-y-1.5 text-xs">
               <div className="flex justify-between items-center text-gray-600 text-[11px]">
                 <span className="uppercase font-semibold text-[10px] tracking-wide">
-                  TOTAL HARGA (1 BARANG)
+                  {isEn ? 'TOTAL PRICE (1 ITEM)' : 'TOTAL HARGA (1 BARANG)'}
                 </span>
                 <span className="font-bold text-gray-900">
                   {formatInvoiceCurrency(invoice.amount)}
@@ -229,7 +232,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
 
               <div className="flex justify-between items-center text-gray-600 text-[11px]">
                 <span className="uppercase font-semibold text-[10px] tracking-wide">
-                  TOTAL BELANJA
+                  {isEn ? 'SHOPPING TOTAL' : 'TOTAL BELANJA'}
                 </span>
                 <span className="font-bold text-gray-900">
                   {formatInvoiceCurrency(invoice.amount)}
@@ -240,7 +243,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
 
               <div className="flex justify-between items-center pt-0.5">
                 <span className="uppercase font-bold text-xs text-gray-900 tracking-wide">
-                  TOTAL TAGIHAN
+                  {isEn ? 'TOTAL BILL' : 'TOTAL TAGIHAN'}
                 </span>
                 <span className="font-bold text-base text-[#66000E]">
                   {formatInvoiceCurrency(invoice.amount)}
@@ -255,7 +258,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
             {/* Contact Info */}
             <div className="space-y-1">
               <span className="font-bold text-gray-500 uppercase tracking-wider text-[9.5px] block">
-                HUBUNGI KAMI
+                {isEn ? 'CONTACT US' : 'HUBUNGI KAMI'}
               </span>
               <div className="flex items-center gap-1.5 text-gray-700 font-medium">
                 <Mail className="w-3.5 h-3.5 text-[#66000E]" />
@@ -270,7 +273,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
             {/* Print Date */}
             <div className="text-left sm:text-right">
               <span className="italic text-[10px] text-gray-400">
-                Dicetak pada: {printTimestamp}
+                {isEn ? 'Printed on:' : 'Dicetak pada:'} {printTimestamp}
               </span>
             </div>
 

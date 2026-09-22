@@ -1,8 +1,64 @@
-import { Order, ShippingStatus, CourierType, PaymentStatus } from '../types';
+import { Order, ShippingStatus, CourierType, PaymentStatus, OrderItem } from '../types';
 import { initialOrders } from './mockData';
 import { supabase } from './supabaseClient';
 
 const ORDERS_KEY = 'microcms_orders_v1';
+
+function mapSupabaseRowToOrder(row: any): Order {
+  const items: OrderItem[] = Array.isArray(row.order_items)
+    ? row.order_items.map((it: any) => ({
+        productId: it.product_id || '',
+        productName: it.product_name || 'Produk Toko',
+        productImage: it.product_image || '',
+        price: Number(it.price || 0),
+        quantity: Number(it.quantity || 1),
+        subtotal: Number(it.subtotal || 0),
+        variantName: it.variant_info || undefined,
+      }))
+    : [];
+
+  let shippingStatus: ShippingStatus = 'Baru';
+  if (row.order_status === 'shipped') shippingStatus = 'Dikirim';
+  else if (row.order_status === 'delivered') shippingStatus = 'Selesai';
+  else if (row.order_status === 'cancelled') shippingStatus = 'Dibatalkan';
+  else if (row.order_status === 'processing') shippingStatus = 'Diproses';
+
+  let paymentStatus: PaymentStatus = 'Belum Dibayar';
+  if (row.payment_status === 'paid') paymentStatus = 'Sudah Dibayar';
+  else if (row.payment_status === 'expired' || row.payment_status === 'refunded') paymentStatus = 'Gagal';
+
+  const subtotal = items.reduce((acc, it) => acc + it.subtotal, 0) || Number(row.total_amount || 0);
+
+  return {
+    id: row.id,
+    storeId: row.store_id,
+    orderNumber: row.order_number,
+    customerName: row.customer_name,
+    customerPhone: row.customer_phone,
+    customerEmail: row.customer_email || undefined,
+    customerAddress: row.shipping_address || row.destination_address || '',
+    customerCity: row.shipping_city || '',
+    customerPostalCode: row.destination_postal_code || undefined,
+    items,
+    subtotal,
+    shippingCost: Number(row.shipping_cost || 0),
+    discount: 0,
+    grandTotal: Number(row.total_amount || subtotal),
+    paymentMethod: row.payment_method || 'Manual',
+    paymentStatus,
+    courier: (row.shipping_courier as CourierType) || 'J&T',
+    courierCode: row.courier_code || undefined,
+    courierService: row.shipping_service || row.courier_service || undefined,
+    resiNumber: row.tracking_number || undefined,
+    trackingNumber: row.tracking_number || undefined,
+    shippingStatus,
+    createdAt: row.created_at || new Date().toISOString(),
+    shippedAt: row.shipped_at || undefined,
+    notes: row.notes || undefined,
+    shippingLabelUrl: row.shipping_label_url || undefined,
+    shippingMethod: row.shipping_method || undefined,
+  };
+}
 
 class OrderService {
   private getStoredOrders(): Order[] {
@@ -22,23 +78,13 @@ class OrderService {
             o.trackingNumber = 'WYB-1789350705568';
             o.shippingLabelUrl = 'https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development';
             modified = true;
-          } else if (o.shippingLabelUrl && o.shippingLabelUrl.includes('labels.biteship.com')) {
-            o.shippingLabelUrl = `https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development`;
-            modified = true;
           }
           orderMap.set(o.id, o);
         }
       });
 
-      initialOrders.forEach((o) => {
-        if (!orderMap.has(o.id)) {
-          orderMap.set(o.id, o);
-          modified = true;
-        }
-      });
-
       const uniqueOrders = Array.from(orderMap.values());
-      if (modified || uniqueOrders.length !== parsed.length) {
+      if (modified) {
         this.saveOrders(uniqueOrders);
       }
       return uniqueOrders;
@@ -61,9 +107,32 @@ class OrderService {
     let orders = this.getStoredOrders();
     let storeOrders = orders.filter((o) => o.storeId === storeId);
 
-    // Ensure order for "utiy" at Telkom University Bandung with status "Baru" exists
+    // 1. Fetch from Supabase PostgreSQL Database
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('store_id', storeId)
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        const dbOrders = data.map(mapSupabaseRowToOrder);
+        const map = new Map<string, Order>();
+        dbOrders.forEach((o) => map.set(o.id, o));
+        storeOrders.forEach((o) => {
+          if (!map.has(o.id)) map.set(o.id, o);
+        });
+        const combined = Array.from(map.values());
+        this.saveOrders(combined);
+        return combined;
+      }
+    } catch (err) {
+      console.warn('[Supabase Database] Error fetching orders:', err);
+    }
+
+    // Ensure order for "utiy" at Telkom University Bandung exists only for demo store (store-andhika)
     const hasUtiy = storeOrders.some((o) => o.customerName.toLowerCase() === 'utiy');
-    if (!hasUtiy) {
+    if (storeId === 'store-andhika' && !hasUtiy && storeOrders.length === 0) {
       const utiyOrder: Order = {
         id: `ord-${storeId}-utiy-${Date.now()}`,
         storeId,
@@ -100,44 +169,112 @@ class OrderService {
       };
       orders = [utiyOrder, ...orders];
       this.saveOrders(orders);
-      storeOrders = [utiyOrder, ...storeOrders];
-    }
-
-    // If store has 0 orders, seed starter orders for this store
-    if (storeOrders.length === 0) {
-      const templateOrders = initialOrders.slice(0, 4).map((item, idx) => ({
-        ...item,
-        id: `ord-${storeId}-${idx + 1}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        storeId,
-        orderNumber: `KB-${Math.floor(8000 + Math.random() * 1900)}`,
-        createdAt: new Date(Date.now() - idx * 86400000).toISOString(),
-      }));
-
-      orders = [...templateOrders, ...orders];
-      this.saveOrders(orders);
-      return templateOrders;
+      return [utiyOrder, ...storeOrders];
     }
 
     return storeOrders;
   }
 
   async getOrderById(id: string): Promise<Order | undefined> {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (!error && data) {
+        return mapSupabaseRowToOrder(data);
+      }
+    } catch {
+      // ignore
+    }
+
     const orders = this.getStoredOrders();
     return orders.find((o) => o.id === id);
   }
 
   async createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt'>): Promise<Order> {
     const orders = this.getStoredOrders();
-    const orderNumber = `MC-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderNumber = `KB-${Math.floor(1000 + Math.random() * 9000)}`;
     const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const newOrder: Order = {
       ...orderData,
-      id: `ord-${uniqueSuffix}`,
+      id: `ord_${uniqueSuffix}`,
       orderNumber,
       createdAt: new Date().toISOString(),
     };
+
+    // 1. Save locally for instantaneous response
     orders.unshift(newOrder);
     this.saveOrders(orders);
+
+    // 2. Persist to Supabase Database
+    try {
+      const dbPaymentStatus = newOrder.paymentStatus === 'Sudah Dibayar' ? 'paid' : 'unpaid';
+      let dbOrderStatus = 'pending';
+      if (newOrder.shippingStatus === 'Dikirim') dbOrderStatus = 'shipped';
+      else if (newOrder.shippingStatus === 'Selesai') dbOrderStatus = 'delivered';
+      else if (newOrder.shippingStatus === 'Dibatalkan') dbOrderStatus = 'cancelled';
+      else if (newOrder.shippingStatus === 'Diproses') dbOrderStatus = 'processing';
+
+      const { error: orderErr } = await supabase.from('orders').insert([
+        {
+          id: newOrder.id,
+          store_id: newOrder.storeId,
+          order_number: newOrder.orderNumber,
+          customer_name: newOrder.customerName,
+          customer_phone: newOrder.customerPhone,
+          customer_email: newOrder.customerEmail || null,
+          shipping_address: newOrder.customerAddress,
+          shipping_city: newOrder.customerCity || 'Indonesia',
+          shipping_courier: newOrder.courier || 'Kurir Toko',
+          shipping_service: newOrder.courierService || 'Reguler',
+          shipping_cost: newOrder.shippingCost || 0,
+          tracking_number: newOrder.resiNumber || newOrder.trackingNumber || null,
+          total_amount: newOrder.grandTotal,
+          payment_method: newOrder.paymentMethod || 'Manual',
+          payment_status: dbPaymentStatus,
+          order_status: dbOrderStatus,
+          notes: newOrder.notes || null,
+          destination_address: newOrder.customerAddress,
+          destination_postal_code: newOrder.customerPostalCode || null,
+          created_at: newOrder.createdAt,
+          updated_at: new Date().toISOString(),
+        },
+      ]);
+
+      if (orderErr) {
+        console.warn('[Supabase Database] Error inserting order:', orderErr);
+      } else {
+        console.log(`[Supabase Database] Pesanan ${newOrder.orderNumber} tersimpan di cloud!`);
+      }
+
+      // Insert items
+      if (newOrder.items && newOrder.items.length > 0) {
+        const dbItems = newOrder.items.map((it, idx) => ({
+          id: `itm_${newOrder.id}_${idx + 1}`,
+          order_id: newOrder.id,
+          product_id: it.productId || null,
+          product_name: it.productName,
+          product_image: it.productImage || null,
+          price: it.price,
+          quantity: it.quantity,
+          subtotal: it.subtotal,
+          variant_info: it.variantName || null,
+        }));
+
+        const { error: itemsErr } = await supabase.from('order_items').insert(dbItems);
+        if (itemsErr) {
+          console.warn('[Supabase Database] Error inserting order_items:', itemsErr);
+        } else {
+          console.log(`[Supabase Database] ${dbItems.length} item pesanan tersimpan di cloud!`);
+        }
+      }
+    } catch (err) {
+      console.warn('[Supabase Database] Gagal sinkron pesanan ke cloud:', err);
+    }
+
     return newOrder;
   }
 
@@ -153,6 +290,28 @@ class OrderService {
       ...(shippingStatus === 'Dikirim' ? { shippedAt: new Date().toISOString() } : {}),
     };
     this.saveOrders(orders);
+
+    // Sync to Supabase
+    try {
+      let dbOrderStatus = 'pending';
+      if (shippingStatus === 'Dikirim') dbOrderStatus = 'shipped';
+      else if (shippingStatus === 'Selesai') dbOrderStatus = 'delivered';
+      else if (shippingStatus === 'Dibatalkan') dbOrderStatus = 'cancelled';
+      else if (shippingStatus === 'Diproses') dbOrderStatus = 'processing';
+
+      const updatePayload: any = {
+        order_status: dbOrderStatus,
+        updated_at: new Date().toISOString(),
+      };
+      if (resiNumber) updatePayload.tracking_number = resiNumber;
+      if (shippingStatus === 'Dikirim') updatePayload.shipped_at = new Date().toISOString();
+
+      await supabase.from('orders').update(updatePayload).eq('id', orderId);
+      console.log(`[Supabase Database] Status pesanan ${orderId} diupdate: ${dbOrderStatus}`);
+    } catch (err) {
+      console.warn('[Supabase Database] Update order status notice:', err);
+    }
+
     return orders[index];
   }
 
@@ -166,6 +325,22 @@ class OrderService {
       paymentStatus,
     };
     this.saveOrders(orders);
+
+    // Sync to Supabase
+    try {
+      const dbPaymentStatus = paymentStatus === 'Sudah Dibayar' ? 'paid' : 'unpaid';
+      const updatePayload: any = {
+        payment_status: dbPaymentStatus,
+        updated_at: new Date().toISOString(),
+      };
+      if (paymentStatus === 'Sudah Dibayar') updatePayload.paid_at = new Date().toISOString();
+
+      await supabase.from('orders').update(updatePayload).eq('id', orderId);
+      console.log(`[Supabase Database] Status pembayaran ${orderId} diupdate: ${dbPaymentStatus}`);
+    } catch (err) {
+      console.warn('[Supabase Database] Update payment status notice:', err);
+    }
+
     return orders[index];
   }
 
@@ -184,6 +359,19 @@ class OrderService {
       shippedAt: new Date().toISOString(),
     };
     this.saveOrders(orders);
+
+    try {
+      await supabase.from('orders').update({
+        order_status: 'shipped',
+        shipping_courier: courier,
+        tracking_number: autoResi,
+        shipped_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq('id', orderId);
+    } catch (err) {
+      console.warn('[Supabase Database] processShipment sync notice:', err);
+    }
+
     return orders[index];
   }
 
@@ -220,6 +408,23 @@ class OrderService {
 
     orders[index] = updatedOrder;
     this.saveOrders(orders);
+
+    try {
+      await supabase.from('orders').update({
+        order_status: 'processing',
+        tracking_number: params.trackingNumber,
+        shipping_label_url: params.shippingLabelUrl || null,
+        shipping_method: params.shippingMethod || 'drop_off',
+        origin_branch_id: params.originBranchId || null,
+        pickup_time: params.pickupTime || null,
+        courier_code: params.courierCode || null,
+        courier_service: params.courierService || null,
+        updated_at: new Date().toISOString(),
+      }).eq('id', params.orderId);
+    } catch (err) {
+      console.warn('[Supabase Database] processShipmentWithBiteship sync notice:', err);
+    }
+
     return updatedOrder;
   }
 
@@ -231,11 +436,7 @@ class OrderService {
     lowStockCount: number;
   }> {
     const orders = await this.getOrdersByStore(storeId);
-    
-    // Pending orders need processing: Baru & Diproses
     const pendingOrders = orders.filter((o) => o.shippingStatus === 'Baru' || o.shippingStatus === 'Diproses');
-    
-    // Sum of paid orders
     const paidOrders = orders.filter((o) => o.paymentStatus === 'Sudah Dibayar');
     const todaySales = paidOrders.reduce((sum, o) => sum + o.grandTotal, 0);
 
@@ -301,4 +502,3 @@ class OrderService {
 }
 
 export const orderService = new OrderService();
-
