@@ -6,9 +6,10 @@ interface ThemeSectionRendererProps {
   themeId: ThemeId | string;
   section: StoreSectionConfig;
   onUpdateSectionOptions?: (key: string, newOptions: Partial<any>) => void;
+  deviceMode?: 'desktop' | 'tablet' | 'mobile';
 }
 
-export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ themeId, section, onUpdateSectionOptions }) => {
+export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ themeId, section, onUpdateSectionOptions, deviceMode = 'desktop' }) => {
   const normalizedId = normalizeThemeId(themeId);
   const themeComponents = ThemeRegistry[normalizedId] || ThemeRegistry[themeId as ThemeId];
 
@@ -37,7 +38,16 @@ export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ them
 
   if (Component) {
     const secKey = section.key || `${section.id}-0`;
-    return <Component sectionOptions={section.options} onUpdateSectionOptions={onUpdateSectionOptions} sectionKey={secKey} />;
+    return (
+      <Component 
+        sectionOptions={section.options} 
+        onUpdateSectionOptions={onUpdateSectionOptions} 
+        sectionKey={secKey}
+        deviceMode={deviceMode}
+        isMobile={deviceMode === 'mobile'}
+        isTablet={deviceMode === 'tablet'}
+      />
+    );
   }
 
   // Final fallback to original generic rendering if no custom component exists

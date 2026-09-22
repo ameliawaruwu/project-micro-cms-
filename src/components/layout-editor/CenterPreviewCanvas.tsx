@@ -505,6 +505,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                       themeId={activeThemeId} 
                       section={{ ...section, key: sectionKey }} 
                       onUpdateSectionOptions={onUpdateSectionOptions}
+                      deviceMode={deviceMode}
                     />
                   </div>
                 ) : (
@@ -1430,7 +1431,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     <main className={`flex-1 bg-[#EBE5E1] ${isDesktop ? 'p-1.5 sm:p-2.5 md:p-3' : 'p-2 sm:p-4 md:p-5'} overflow-y-auto overflow-x-hidden custom-scrollbar flex flex-col items-center justify-start min-h-0 font-sans select-none`}>
       {/* Realistic Device Canvas Frame */}
       <div
-        className={`transition-all duration-300 w-full mx-auto ${
+        className={`transition-all duration-300 w-full mx-auto device-${deviceMode} ${
           isDesktop
             ? 'max-w-full'
             : isTablet
@@ -1438,6 +1439,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
             : 'max-w-[390px]'
         }`}
         data-theme={store.layoutSettings?.themeStyle || 'minimalist-01'}
+        data-device-mode={deviceMode}
       >
         {/* Device Outer Frame */}
         <div
@@ -1448,6 +1450,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
               ? 'rounded-[32px] border-[10px] border-slate-800 ring-1 ring-slate-700 shadow-slate-900/25 shadow-xl'
               : 'rounded-none border-none shadow-none'
           }`}
+          data-device-mode={deviceMode}
         >
 
           {/* Tablet Status Bar */}
@@ -1666,6 +1669,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                           themeId={activeThemeId} 
                           section={section} 
                           onUpdateSectionOptions={onUpdateSectionOptions}
+                          deviceMode={deviceMode}
                         />
                       </div>
                     ) : (

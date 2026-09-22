@@ -281,4 +281,36 @@
   scrollbar-width: none;
 }
 
+/* ========================================================================= */
+/* Device Canvas Simulator Responsive Overrides                              */
+/* Ensures simulator containers (mobile/tablet) behave accurately regardless */
+/* of the user's outer browser desktop viewport size.                        */
+/* ========================================================================= */
+
+.device-mobile [class*="hidden md:flex"],
+.device-mobile nav.hidden.md\:flex,
+.device-mobile .hidden.md\:flex,
+.device-mobile .hidden.lg\:flex,
+[data-device-mode="mobile"] [class*="hidden md:flex"],
+[data-device-mode="mobile"] nav.hidden.md\:flex,
+[data-device-mode="mobile"] .hidden.md\:flex,
+[data-device-mode="mobile"] .hidden.lg\:flex {
+  display: none !important;
+}
+
+.device-mobile .md\:hidden,
+.device-mobile .lg\:hidden,
+[data-device-mode="mobile"] .md\:hidden,
+[data-device-mode="mobile"] .lg\:hidden {
+  display: flex !important;
+}
+
+.device-mobile .grid-cols-2.md\:grid-cols-4,
+.device-mobile .grid-cols-3.md\:grid-cols-4,
+[data-device-mode="mobile"] .grid-cols-2.md\:grid-cols-4,
+[data-device-mode="mobile"] .grid-cols-3.md\:grid-cols-4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+
 
