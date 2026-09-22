@@ -100,6 +100,7 @@ import { StoreHeader } from './components/storefront/StoreHeader';
 import { StoreProductCard } from './components/storefront/StoreProductCard';
 import { ProductDetailModal as StorefrontProductDetailModal } from './components/storefront/ProductDetailModal';
 import { CartDrawer } from './components/storefront/CartDrawer';
+import { StoreNotFoundPage } from './components/storefront/StoreNotFoundPage';
 import { ThemeRenderer } from './themes/ThemeRenderer';
 import { useCmsStore } from './cms/useCmsStore';
 
@@ -1151,61 +1152,13 @@ export default function App() {
         if (!isPublished && !isPreview) {
           const isOwner = user && activeStore && activeStore.id === currentStore.id;
           return (
-            <div className="min-h-screen w-full bg-[#FAF7F7] flex flex-col items-center justify-center p-4 sm:p-6 font-sans text-center">
-              <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 border border-[#E5E0DD] shadow-lg space-y-5 animate-in fade-in duration-200">
-                <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-[#66000E] flex items-center justify-center mx-auto shadow-xs">
-                  <EyeOff className="w-8 h-8 text-rose-700" />
-                </div>
-                <div className="space-y-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-800 text-xs font-semibold border border-rose-200">
-                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                    Toko Tidak Aktif (Draf)
-                  </span>
-                  <h1 className="text-xl sm:text-2xl font-bold text-[#241A1A]">
-                    {currentStore.name || 'Toko Online'}
-                  </h1>
-                  <p className="text-xs sm:text-sm text-[#706866] leading-relaxed">
-                    Toko online ini sedang tidak dapat diakses untuk umum karena dalam status draf atau baru saja ditarik dari publikasi (unpublish) oleh pemilik toko.
-                  </p>
-                </div>
-
-                {isOwner ? (
-                  <div className="space-y-3 pt-3 border-t border-[#E5E0DD]">
-                    <p className="text-[11px] text-[#706866] font-medium">
-                      Anda adalah pemilik toko ini. Anda dapat masuk ke Dashboard atau mempublikasikan kembali toko Anda agar aktif.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <button
-                        onClick={() => setViewMode('merchant-desktop')}
-                        className="flex-1 px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#241A1A] text-xs font-bold transition cursor-pointer"
-                      >
-                        Ke Dashboard
-                      </button>
-                      <button
-                        onClick={() => handlePublishStore(currentStore.id)}
-                        className="flex-1 px-4 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold transition shadow-xs cursor-pointer"
-                      >
-                        Publikasikan Toko
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  currentStore.phoneWhatsApp && (
-                    <div className="pt-2 border-t border-[#E5E0DD]">
-                      <a
-                        href={`https://wa.me/${currentStore.phoneWhatsApp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Halo ${currentStore.name}, saya ingin menanyakan perihal toko online Anda.`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        <span>Hubungi Pemilik via WhatsApp</span>
-                      </a>
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
+            <StoreNotFoundPage
+              store={currentStore}
+              slug={currentStore.slug}
+              isOwner={Boolean(isOwner)}
+              onGoToDashboard={() => setViewMode('merchant-desktop')}
+              onPublishStore={() => handlePublishStore(currentStore.id)}
+            />
           );
         }
 
