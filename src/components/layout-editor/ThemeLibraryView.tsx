@@ -338,7 +338,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
           </div>
 
           {/* ── PUSTAKA TEMA TERSIMPAN (SAVED DRAFT THEMES) ── */}
-          {savedThemes.length > 0 && (
+          {savedThemes.length > 0 ? (
             <div className="mb-10">
               <div className="mb-4 px-1 flex items-center justify-between">
                 <h3 className="font-bold text-[16px] text-[#202223]">Pustaka tema</h3>
@@ -446,7 +446,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
                                     <span>Ubah Nama</span>
                                   </button>
                                 )}
-                                {onDeleteTheme && savedThemes.length > 1 && (
+                                {onDeleteTheme && (
                                   <button
                                     onClick={() => {
                                       if (window.confirm(`Yakin ingin menghapus draf tema "${savedTmpl.name}"?`)) {
@@ -487,6 +487,19 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
                   </button>
                 </div>
               )}
+            </div>
+          ) : (
+            /* ── EMPTY STATE BANNER (BELUM ADA TEMPLATE AKTIF / DRAF) ── */
+            <div className="mb-8 p-4 sm:p-5 bg-white rounded-xl border border-[#E1E3E5] shadow-xs flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-[#F0F4FE] text-[#2C6ECB] flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-bold text-[#202223]">Belum ada template yang dipilih</h4>
+                <p className="text-xs text-[#6D7175] mt-0.5">
+                  Toko Anda belum memiliki draf atau template aktif. Silakan pilih salah satu template di bawah untuk mulai mendesain tampilan website toko Anda.
+                </p>
+              </div>
             </div>
           )}
 

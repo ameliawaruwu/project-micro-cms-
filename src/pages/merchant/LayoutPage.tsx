@@ -375,10 +375,26 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
   // Saved draft themes persistence in localStorage
   const savedThemesStorageKey = `microcms_saved_themes_${currentStore.id || 'default'}`;
+  const userSelectedThemeKey = `microcms_user_chose_theme_${currentStore.id || 'default'}`;
 
   const [savedThemes, setSavedThemes] = useState<SavedThemeItem[]>(() => {
     try {
-      const stored = localStorage.getItem(savedThemesStorageKey);
+      const isDemoStore = currentStore.id === 'store-andhika';
+      const hasPublishedTemplate = Boolean(currentStore.layoutSettings?.activeTemplateId);
+      const userExplicitlySelected =
+        typeof window !== 'undefined' && localStorage.getItem(userSelectedThemeKey) === 'true';
+
+      // If this is NOT the demo store and the user has not chosen or published a template yet:
+      // Must start with 0 drafts/templates!
+      if (!isDemoStore && !hasPublishedTemplate && !userExplicitlySelected) {
+        if (typeof window !== 'undefined') {
+          // Clear any legacy auto-seeded draft from previous versions
+          localStorage.removeItem(savedThemesStorageKey);
+        }
+        return [];
+      }
+
+      const stored = typeof window !== 'undefined' ? localStorage.getItem(savedThemesStorageKey) : null;
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
@@ -389,32 +405,91 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           if (valid.length > 0) return valid;
         }
       }
+
+      // If user had a published template in cloud/settings, restore that template
+      if (hasPublishedTemplate) {
+        const publishedTmpl = TEMPLATE_GALLERY_ITEMS.find(
+          (t) =>
+            t.id === currentStore.layoutSettings?.activeTemplateId ||
+            t.storeTemplate.id === currentStore.layoutSettings?.activeTemplateId
+        );
+        if (publishedTmpl) {
+          return [
+            {
+              ...publishedTmpl,
+              updatedAt: new Date().toISOString(),
+            },
+          ];
+        }
+      }
     } catch (e) {
       console.error('Failed to load saved themes from storage:', e);
     }
-    // Default initial saved theme
-    return [
-      {
-        ...TEMPLATE_GALLERY_ITEMS[0],
-        updatedAt: new Date().toISOString(),
-      },
-    ];
+
+    // Default initial saved theme ONLY for demo store (store-andhika)
+    if (currentStore.id === 'store-andhika') {
+      return [
+        {
+          ...TEMPLATE_GALLERY_ITEMS[0],
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+    }
+    return [];
   });
 
   const [editingDraftId, setEditingDraftId] = useState<string>(() => {
-    return savedThemes[0]?.id || TEMPLATE_GALLERY_ITEMS[0].id;
+    return savedThemes[0]?.id || '';
   });
+
+  // Re-sync savedThemes whenever currentStore changes
+  useEffect(() => {
+    const isDemoStore = currentStore.id === 'store-andhika';
+    const hasPublishedTemplate = Boolean(currentStore.layoutSettings?.activeTemplateId);
+    const userExplicitlySelected =
+      typeof window !== 'undefined' && localStorage.getItem(userSelectedThemeKey) === 'true';
+
+    if (!isDemoStore && !hasPublishedTemplate && !userExplicitlySelected) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(savedThemesStorageKey);
+      }
+      setSavedThemes([]);
+      return;
+    }
+
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem(savedThemesStorageKey) : null;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const valid = parsed.filter(
+            (t: any) => t && t.id && t.storeTemplate && t.storeTemplate.id
+          );
+          setSavedThemes(valid);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to reload saved themes for store:', e);
+    }
+  }, [currentStore.id, currentStore.layoutSettings?.activeTemplateId, savedThemesStorageKey, userSelectedThemeKey]);
 
   // Save savedThemes to localStorage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem(savedThemesStorageKey, JSON.stringify(savedThemes));
+      if (savedThemes.length > 0) {
+        localStorage.setItem(savedThemesStorageKey, JSON.stringify(savedThemes));
+      } else {
+        localStorage.removeItem(savedThemesStorageKey);
+      }
     } catch (e) {
       console.error('Failed to persist saved themes:', e);
     }
   }, [savedThemes, savedThemesStorageKey]);
 
   const handleAddSavedTheme = (template: TemplateGalleryItem) => {
+    try {
+      localStorage.setItem(userSelectedThemeKey, 'true');
+    } catch {}
     setSavedThemes((prev) => {
       const existingIdx = prev.findIndex((t) => t.id === template.id);
       const nowIso = new Date().toISOString();
