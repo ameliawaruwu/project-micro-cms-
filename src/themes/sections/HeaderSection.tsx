@@ -255,19 +255,21 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
   }
 
   // --- 5. MINIMALIST CLEAN THEME (Default) ---
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <header 
-      className={`w-full z-50 transition-all duration-700 ${
+      className={`w-full max-w-full z-50 transition-all duration-700 box-border overflow-x-hidden ${
         isSticky && scrolled ? 'fixed top-0 bg-white/90 backdrop-blur-2xl shadow-sm border-b border-gray-100 py-2' : 
-        isTransparent ? 'absolute top-0 bg-transparent py-6' : 'bg-white py-6'
+        isTransparent ? 'absolute top-0 bg-transparent py-3 sm:py-6' : 'bg-white py-3 sm:py-5'
       }`}
       style={{ color: isTransparent && !scrolled ? '#FFFFFF' : '#1A1A1A' }}
     >
-      <div className={`mx-auto px-6 lg:px-12 ${themeSettings.containerWidth}`}>
-        <div className="flex items-center justify-between h-16">
-          <div className="flex-shrink-0 mr-8 lg:mr-12 flex items-center">
+      <div className={`mx-auto px-3 sm:px-6 lg:px-12 w-full max-w-full ${themeSettings.containerWidth}`}>
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-4">
+          <div className="flex-shrink-0 flex items-center min-w-0">
             {settings.showLogo && (
-              <Link to="/" className="font-light text-2xl md:text-3xl tracking-tighter flex items-center hover:opacity-70 transition-opacity whitespace-nowrap" style={{ fontFamily: themeSettings.fontFamily }}>
+              <Link to="/" className="font-light text-lg sm:text-2xl md:text-3xl tracking-tighter flex items-center hover:opacity-70 transition-opacity whitespace-nowrap truncate max-w-[170px] sm:max-w-xs md:max-w-none" style={{ fontFamily: themeSettings.fontFamily }}>
                 <span className="font-medium mr-1">M</span>inimal.
               </Link>
             )}
@@ -285,19 +287,42 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
             ))}
           </nav>
 
-          <div className="flex-shrink-0 ml-8 lg:ml-12 flex items-center space-x-6 sm:space-x-8">
-            <button aria-label="Search" className="opacity-60 hover:opacity-100 hover:rotate-90 transition-all duration-300">
-              <Search className="w-5 h-5 stroke-[1.2]" />
+          <div className="flex-shrink-0 ml-auto flex items-center space-x-2 sm:space-x-6 sm:space-x-8">
+            <button aria-label="Search" className="opacity-60 hover:opacity-100 hover:rotate-90 transition-all duration-300 p-1">
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 stroke-[1.2]" />
             </button>
-            <button aria-label="Cart" onClick={() => navigate('/cart')} className="opacity-60 hover:opacity-100 transition-opacity relative flex items-center gap-2 group">
-              <ShoppingBag className="w-5 h-5 stroke-[1.2] group-hover:-translate-y-1 transition-transform" />
+            <button aria-label="Cart" onClick={() => navigate('/cart')} className="opacity-60 hover:opacity-100 transition-opacity relative flex items-center gap-1.5 sm:gap-2 group p-1">
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 stroke-[1.2] group-hover:-translate-y-1 transition-transform" />
               <span className="text-xs font-medium tracking-widest">(0)</span>
             </button>
-            <button className="md:hidden opacity-60 hover:opacity-100 transition-opacity">
-              <Menu className="w-6 h-6 stroke-[1.2]" />
+            <button 
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden opacity-60 hover:opacity-100 transition-opacity p-1.5 rounded-lg focus:outline-none cursor-pointer"
+              aria-label="Menu Navigasi"
+            >
+              <Menu className="w-5 h-5 stroke-[1.2]" />
             </button>
           </div>
         </div>
+
+        {/* Dedicated Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-100/60 mt-2 pt-3 pb-2 w-full animate-in slide-in-from-top-2 duration-200">
+            <nav className="flex flex-col space-y-1.5">
+              {navLinks.map((link, idx) => (
+                <Link 
+                  key={idx} 
+                  to={link.url} 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-xs font-medium uppercase tracking-wider opacity-80 hover:opacity-100 py-2 px-2.5 rounded-lg hover:bg-black/5 transition-all block"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

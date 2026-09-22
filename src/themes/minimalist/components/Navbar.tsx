@@ -11,27 +11,27 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
   const showNav = sectionOptions.showNavMenu ?? true;
 
   return (
-    <header className="w-full bg-white/95 backdrop-blur-md py-4 sm:py-5 px-4 sm:px-6 md:px-12 sticky top-0 z-50 font-sans border-b border-gray-100/80 transition-all">
-      <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-3 sm:gap-4">
+    <header className="w-full max-w-full bg-white/95 backdrop-blur-md sticky top-0 z-50 font-sans border-b border-gray-100/90 box-border overflow-x-hidden transition-all">
+      <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between py-3 sm:py-4 px-3 sm:px-5 md:px-10 gap-2 sm:gap-4 box-border">
         
         {/* Mobile / Tablet Hamburger Button */}
         <div className="md:hidden flex items-center shrink-0">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 -ml-2 text-gray-900 hover:text-gray-600 transition-colors rounded-lg focus:outline-none"
-            aria-label="Toggle Navigation Menu"
+            className="p-1.5 -ml-1 text-gray-900 hover:text-gray-600 active:bg-gray-100 rounded-lg transition-colors focus:outline-none cursor-pointer"
+            aria-label="Menu Navigasi"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
 
-        {/* Brand Logo / Name */}
-        <div className="flex-shrink-0 text-center md:text-left min-w-0">
+        {/* Brand Logo / Name (Auto-fits mobile screen without overlapping) */}
+        <div className="flex-1 md:flex-initial text-center md:text-left min-w-0 px-1">
           {showLogo && (
             <a 
               href="/" 
-              className="text-lg sm:text-xl md:text-2xl font-light tracking-tighter text-gray-900 uppercase whitespace-nowrap block hover:opacity-75 transition-opacity truncate max-w-[200px] sm:max-w-xs md:max-w-none"
+              className="text-base sm:text-lg md:text-2xl font-light tracking-tighter text-gray-900 uppercase whitespace-nowrap block hover:opacity-75 transition-opacity truncate max-w-[160px] sm:max-w-[240px] md:max-w-none mx-auto md:mx-0"
               title={storeInfo.name}
             >
               {storeInfo.name}
@@ -39,7 +39,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
           )}
         </div>
 
-        {/* Desktop Navigation Links */}
+        {/* Desktop Navigation Links (Strictly hidden on mobile viewport & simulator) */}
         {showNav && (
           <nav className="hidden md:flex items-center justify-center flex-1 gap-6 lg:gap-10 px-4">
             {navigation.filter(n => n.isActive).map((nav) => (
@@ -54,36 +54,39 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
           </nav>
         )}
 
-        {/* Right Action Icons */}
-        <div className="flex-shrink-0 flex items-center justify-end gap-3 sm:gap-5 lg:gap-6">
+        {/* Right Action Icons (Compact & perfectly aligned on mobile) */}
+        <div className="flex-shrink-0 flex items-center justify-end gap-1.5 sm:gap-3 md:gap-6">
           <button 
             type="button" 
             aria-label="Pencarian Produk"
-            className="text-gray-900 hover:text-gray-500 transition-colors p-1"
+            className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform p-1.5 rounded-lg focus:outline-none cursor-pointer"
           >
             <Search className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.5]" />
           </button>
           <button 
             type="button" 
             aria-label="Keranjang Belanja"
-            className="text-gray-900 hover:text-gray-500 transition-colors relative p-1"
+            className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform relative p-1.5 rounded-lg focus:outline-none cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.5]" />
+            <span className="absolute 0 top-0.5 right-0.5 bg-gray-900 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
+              0
+            </span>
           </button>
         </div>
 
       </div>
 
-      {/* Mobile Collapsible Navigation Menu */}
+      {/* Dedicated Mobile Collapsible Drawer Menu */}
       {showNav && mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-100 mt-3 pt-3 pb-2 px-2 bg-white animate-in slide-in-from-top-2 duration-200">
-          <nav className="flex flex-col space-y-2">
+        <div className="md:hidden border-t border-gray-100 w-full bg-white px-4 py-3 shadow-lg animate-in slide-in-from-top-2 duration-200">
+          <nav className="flex flex-col space-y-1">
             {navigation.filter(n => n.isActive).map((nav) => (
               <a
                 key={nav.id}
                 href={nav.route}
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                className="px-3 py-2.5 text-xs font-medium uppercase tracking-wider text-gray-800 hover:text-gray-950 hover:bg-gray-50 rounded-lg transition-colors block border-b border-gray-50 last:border-none"
               >
                 {nav.label}
               </a>

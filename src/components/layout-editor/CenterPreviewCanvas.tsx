@@ -465,7 +465,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     const customContent = renderPageCustomContent(activePage);
 
     return (
-      <div className="flex-1 w-full bg-white relative pb-32" onClick={handleCanvasClick}>
+      <div className="flex-1 w-full max-w-full overflow-x-hidden bg-white relative pb-32 box-border" onClick={handleCanvasClick}>
         {customContent ? (
           customContent
         ) : visibleSections.length === 0 ? (
@@ -1482,7 +1482,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           )}
 
           {/* STOREFRONT PREVIEW SCROLLABLE CONTENT */}
-          <div className="bg-white min-h-[620px] max-h-[calc(100vh-130px)] overflow-y-auto custom-scrollbar relative selection:bg-[#F5E8EA]" onClick={handleCanvasClick}>
+          <div className="bg-white w-full max-w-full min-h-[620px] max-h-[calc(100vh-130px)] overflow-y-auto overflow-x-hidden custom-scrollbar relative selection:bg-[#F5E8EA] box-border" onClick={handleCanvasClick}>
             {renderPageCustomContent(activePage) ? (
               renderPageCustomContent(activePage)
             ) : activePage === 'katalog' ? (
