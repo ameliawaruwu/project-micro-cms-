@@ -2,7 +2,17 @@ import { Order, ShippingStatus, CourierType, PaymentStatus, OrderItem } from '..
 import { initialOrders } from './mockData';
 import { supabase } from './supabaseClient';
 
-const ORDERS_KEY = 'microcms_orders_v1';
+// ============================================================
+// MERCHANT DATA ISOLATION: localStorage dipartisi per storeId
+// Key format: microcms_orders_v2_{storeId}
+// ============================================================
+const ORDERS_KEY_PREFIX = 'microcms_orders_v2_';
+// Hapus key global lama
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('microcms_orders_v1');
+  } catch { /* ignore */ }
+}
 
 function mapSupabaseRowToOrder(row: any): Order {
   const items: OrderItem[] = Array.isArray(row.order_items)
@@ -61,53 +71,36 @@ function mapSupabaseRowToOrder(row: any): Order {
 }
 
 class OrderService {
-  private getStoredOrders(): Order[] {
-    const data = localStorage.getItem(ORDERS_KEY);
-    if (!data) {
-      localStorage.setItem(ORDERS_KEY, JSON.stringify(initialOrders));
-      return initialOrders;
-    }
-    try {
-      let modified = false;
-      const parsed: Order[] = JSON.parse(data);
-      const orderMap = new Map<string, Order>();
-      parsed.forEach((o) => {
-        if (o && o.id) {
-          if (o.customerName?.toLowerCase() === 'utiy') {
-            o.resiNumber = 'WYB-1789350705568';
-            o.trackingNumber = 'WYB-1789350705568';
-            o.shippingLabelUrl = 'https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development';
-            modified = true;
-          }
-          orderMap.set(o.id, o);
-        }
-      });
-
-      const uniqueOrders = Array.from(orderMap.values());
-      if (modified) {
-        this.saveOrders(uniqueOrders);
-      }
-      return uniqueOrders;
-    } catch {
-      return initialOrders;
-    }
+  private storeKey(storeId: string): string {
+    return `${ORDERS_KEY_PREFIX}${storeId}`;
   }
 
-  private saveOrders(orders: Order[]) {
+  private getStoredOrders(storeId?: string): Order[] {
+    if (storeId) {
+      const data = localStorage.getItem(this.storeKey(storeId));
+      if (!data) return [];
+      try {
+        const parsed: Order[] = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed.filter((o) => o && o.id) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  private saveOrders(storeId: string, orders: Order[]) {
     const uniqueMap = new Map<string, Order>();
     orders.forEach((o) => {
-      if (o && o.id) {
-        uniqueMap.set(o.id, o);
-      }
+      if (o && o.id) uniqueMap.set(o.id, o);
     });
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(Array.from(uniqueMap.values())));
+    localStorage.setItem(this.storeKey(storeId), JSON.stringify(Array.from(uniqueMap.values())));
   }
 
   async getOrdersByStore(storeId: string): Promise<Order[]> {
-    let orders = this.getStoredOrders();
-    let storeOrders = orders.filter((o) => o.storeId === storeId);
+    let storeOrders = this.getStoredOrders(storeId);
 
-    // 1. Fetch from Supabase PostgreSQL Database
+    // 1. Fetch from Supabase PostgreSQL Database (selalu filter by store_id)
     try {
       const { data, error } = await supabase
         .from('orders')
@@ -123,14 +116,14 @@ class OrderService {
           if (!map.has(o.id)) map.set(o.id, o);
         });
         const combined = Array.from(map.values());
-        this.saveOrders(combined);
+        this.saveOrders(storeId, combined);
         return combined;
       }
     } catch (err) {
       console.warn('[Supabase Database] Error fetching orders:', err);
     }
 
-    // Ensure order for "utiy" at Telkom University Bandung exists only for demo store (store-andhika)
+    // Demo order untuk toko bawaan saja
     const hasUtiy = storeOrders.some((o) => o.customerName.toLowerCase() === 'utiy');
     if (storeId === 'store-andhika' && !hasUtiy && storeOrders.length === 0) {
       const utiyOrder: Order = {
@@ -167,21 +160,23 @@ class OrderService {
         createdAt: new Date().toISOString(),
         notes: 'Kirim ke pos satpam / lobi asrama Telkom University Bandung. Tolong hubungi WA sebelum sampai.',
       };
-      orders = [utiyOrder, ...orders];
-      this.saveOrders(orders);
-      return [utiyOrder, ...storeOrders];
+      const allOrders = [utiyOrder, ...storeOrders];
+      this.saveOrders(storeId, allOrders);
+      return allOrders;
     }
 
     return storeOrders;
   }
 
-  async getOrderById(id: string): Promise<Order | undefined> {
+  async getOrderById(id: string, storeId?: string): Promise<Order | undefined> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('orders')
         .select('*, order_items(*)')
-        .eq('id', id)
-        .maybeSingle();
+        .eq('id', id);
+      // Validasi ownership jika storeId diberikan
+      if (storeId) query = query.eq('store_id', storeId);
+      const { data, error } = await query.maybeSingle();
 
       if (!error && data) {
         return mapSupabaseRowToOrder(data);
@@ -190,12 +185,12 @@ class OrderService {
       // ignore
     }
 
-    const orders = this.getStoredOrders();
+    const orders = this.getStoredOrders(storeId);
     return orders.find((o) => o.id === id);
   }
 
   async createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt'>): Promise<Order> {
-    const orders = this.getStoredOrders();
+    const orders = this.getStoredOrders(orderData.storeId);
     const orderNumber = `KB-${Math.floor(1000 + Math.random() * 9000)}`;
     const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const newOrder: Order = {
@@ -205,9 +200,9 @@ class OrderService {
       createdAt: new Date().toISOString(),
     };
 
-    // 1. Save locally for instantaneous response
+    // 1. Save locally for instantaneous response (partisi per storeId)
     orders.unshift(newOrder);
-    this.saveOrders(orders);
+    this.saveOrders(orderData.storeId, orders);
 
     // 2. Persist to Supabase Database
     try {
@@ -278,10 +273,17 @@ class OrderService {
     return newOrder;
   }
 
-  async updateOrderStatus(orderId: string, shippingStatus: ShippingStatus, resiNumber?: string): Promise<Order> {
-    const orders = this.getStoredOrders();
+  async updateOrderStatus(orderId: string, shippingStatus: ShippingStatus, resiNumber?: string, storeId?: string): Promise<Order> {
+    const orders = this.getStoredOrders(storeId);
     const index = orders.findIndex((o) => o.id === orderId);
     if (index === -1) throw new Error('Pesanan tidak ditemukan');
+
+    // Validasi ownership
+    if (storeId && orders[index].storeId !== storeId) {
+      throw new Error('Tidak diizinkan mengubah pesanan milik toko lain');
+    }
+
+    const resolvedStoreId = storeId || orders[index].storeId;
 
     orders[index] = {
       ...orders[index],
@@ -289,9 +291,9 @@ class OrderService {
       ...(resiNumber ? { resiNumber } : {}),
       ...(shippingStatus === 'Dikirim' ? { shippedAt: new Date().toISOString() } : {}),
     };
-    this.saveOrders(orders);
+    this.saveOrders(resolvedStoreId, orders);
 
-    // Sync to Supabase
+    // Sync to Supabase dengan ownership check
     try {
       let dbOrderStatus = 'pending';
       if (shippingStatus === 'Dikirim') dbOrderStatus = 'shipped';
@@ -306,7 +308,9 @@ class OrderService {
       if (resiNumber) updatePayload.tracking_number = resiNumber;
       if (shippingStatus === 'Dikirim') updatePayload.shipped_at = new Date().toISOString();
 
-      await supabase.from('orders').update(updatePayload).eq('id', orderId);
+      let query = supabase.from('orders').update(updatePayload).eq('id', orderId);
+      if (resolvedStoreId) query = query.eq('store_id', resolvedStoreId); // ownership check
+      await query;
       console.log(`[Supabase Database] Status pesanan ${orderId} diupdate: ${dbOrderStatus}`);
     } catch (err) {
       console.warn('[Supabase Database] Update order status notice:', err);
@@ -315,18 +319,25 @@ class OrderService {
     return orders[index];
   }
 
-  async updatePaymentStatus(orderId: string, paymentStatus: PaymentStatus): Promise<Order> {
-    const orders = this.getStoredOrders();
+  async updatePaymentStatus(orderId: string, paymentStatus: PaymentStatus, storeId?: string): Promise<Order> {
+    const orders = this.getStoredOrders(storeId);
     const index = orders.findIndex((o) => o.id === orderId);
     if (index === -1) throw new Error('Pesanan tidak ditemukan');
+
+    // Validasi ownership
+    if (storeId && orders[index].storeId !== storeId) {
+      throw new Error('Tidak diizinkan mengubah pembayaran pesanan milik toko lain');
+    }
+
+    const resolvedStoreId = storeId || orders[index].storeId;
 
     orders[index] = {
       ...orders[index],
       paymentStatus,
     };
-    this.saveOrders(orders);
+    this.saveOrders(resolvedStoreId, orders);
 
-    // Sync to Supabase
+    // Sync to Supabase dengan ownership check
     try {
       const dbPaymentStatus = paymentStatus === 'Sudah Dibayar' ? 'paid' : 'unpaid';
       const updatePayload: any = {
@@ -335,7 +346,9 @@ class OrderService {
       };
       if (paymentStatus === 'Sudah Dibayar') updatePayload.paid_at = new Date().toISOString();
 
-      await supabase.from('orders').update(updatePayload).eq('id', orderId);
+      let query = supabase.from('orders').update(updatePayload).eq('id', orderId);
+      if (resolvedStoreId) query = query.eq('store_id', resolvedStoreId); // ownership check
+      await query;
       console.log(`[Supabase Database] Status pembayaran ${orderId} diupdate: ${dbPaymentStatus}`);
     } catch (err) {
       console.warn('[Supabase Database] Update payment status notice:', err);
@@ -344,11 +357,13 @@ class OrderService {
     return orders[index];
   }
 
-  async processShipment(orderId: string, courier: CourierType, resiNumber?: string): Promise<Order> {
+  async processShipment(orderId: string, courier: CourierType, resiNumber?: string, storeId?: string): Promise<Order> {
     const autoResi = resiNumber || `${courier.toUpperCase()}${Math.floor(1000000000 + Math.random() * 9000000000)}`;
-    const orders = this.getStoredOrders();
+    const orders = this.getStoredOrders(storeId);
     const index = orders.findIndex((o) => o.id === orderId);
     if (index === -1) throw new Error('Pesanan tidak ditemukan');
+
+    const resolvedStoreId = storeId || orders[index].storeId;
 
     orders[index] = {
       ...orders[index],
@@ -358,16 +373,18 @@ class OrderService {
       shippingStatus: 'Dikirim',
       shippedAt: new Date().toISOString(),
     };
-    this.saveOrders(orders);
+    this.saveOrders(resolvedStoreId, orders);
 
     try {
-      await supabase.from('orders').update({
+      let query = supabase.from('orders').update({
         order_status: 'shipped',
         shipping_courier: courier,
         tracking_number: autoResi,
         shipped_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }).eq('id', orderId);
+      if (resolvedStoreId) query = query.eq('store_id', resolvedStoreId); // ownership check
+      await query;
     } catch (err) {
       console.warn('[Supabase Database] processShipment sync notice:', err);
     }
@@ -385,12 +402,14 @@ class OrderService {
     shippingMethod?: 'pickup' | 'drop_off';
     originBranchId?: string;
     pickupTime?: string;
+    storeId?: string;
   }): Promise<Order> {
-    const orders = this.getStoredOrders();
+    const orders = this.getStoredOrders(params.storeId);
     const index = orders.findIndex((o) => o.id === params.orderId);
     if (index === -1) throw new Error('Pesanan tidak ditemukan');
 
     const current = orders[index];
+    const resolvedStoreId = params.storeId || current.storeId;
     const updatedOrder: Order = {
       ...current,
       courier: params.courier || current.courier,
@@ -407,10 +426,10 @@ class OrderService {
     };
 
     orders[index] = updatedOrder;
-    this.saveOrders(orders);
+    this.saveOrders(resolvedStoreId, orders);
 
     try {
-      await supabase.from('orders').update({
+      let query = supabase.from('orders').update({
         order_status: 'processing',
         tracking_number: params.trackingNumber,
         shipping_label_url: params.shippingLabelUrl || null,
@@ -421,6 +440,8 @@ class OrderService {
         courier_service: params.courierService || null,
         updated_at: new Date().toISOString(),
       }).eq('id', params.orderId);
+      if (resolvedStoreId) query = query.eq('store_id', resolvedStoreId); // ownership check
+      await query;
     } catch (err) {
       console.warn('[Supabase Database] processShipmentWithBiteship sync notice:', err);
     }
@@ -467,7 +488,9 @@ class OrderService {
           (payload: any) => {
             if (payload?.new && payload.new.id) {
               const row = payload.new;
-              const stored = this.getStoredOrders();
+              // Pastikan hanya proses event untuk storeId yang benar
+              if (row.store_id !== storeId) return;
+              const stored = this.getStoredOrders(storeId);
               const idx = stored.findIndex((o) => o.id === row.id);
               if (idx !== -1) {
                 const merged: Order = {
@@ -483,7 +506,7 @@ class OrderService {
                   shippedAt: row.shipped_at || stored[idx].shippedAt,
                 };
                 stored[idx] = merged;
-                this.saveOrders(stored);
+                this.saveOrders(storeId, stored);
                 onUpdate(merged);
               }
             }

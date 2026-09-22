@@ -245,6 +245,7 @@ class StoreService {
           layoutSettings: row.theme_settings,
           customDomain: row.custom_domain,
           createdAt: row.created_at || new Date().toISOString(),
+          onboarding: row.theme_settings?.onboarding || {},
         };
 
         const stored = this.getStoredStores();

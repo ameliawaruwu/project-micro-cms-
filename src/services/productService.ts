@@ -3,28 +3,17 @@ import { calculateProductStatus } from '../utils/formatters';
 import { supabase } from './supabaseClient';
 import { initialProducts } from './mockData';
 
-const PRODUCTS_KEY = 'microcms_products_clean_v1';
-
-// Clean old dummy data and auto-seeded sample products from browser cache
+// ============================================================
+// MERCHANT DATA ISOLATION: localStorage di-partisi per storeId
+// Key format: microcms_products_v2_{storeId}
+// ============================================================
+const PRODUCTS_KEY_PREFIX = 'microcms_products_v2_';
+// Hapus key global lama agar tidak bocor antar merchant
 if (typeof window !== 'undefined') {
   try {
     localStorage.removeItem('microcms_products_v1');
     localStorage.removeItem('microcms_products');
-    const stored = localStorage.getItem(PRODUCTS_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        const cleaned = parsed.filter((p: any) => {
-          if (!p || !p.name) return false;
-          const isStarter =
-            p.name.startsWith('Paket Perdana') ||
-            p.name.startsWith('Paket Pilihan') ||
-            p.name.startsWith('Koleksi Spesial');
-          return !(isStarter && p.storeId !== 'store-andhika');
-        });
-        localStorage.setItem(PRODUCTS_KEY, JSON.stringify(cleaned));
-      }
-    }
+    localStorage.removeItem('microcms_products_clean_v1');
   } catch {
     // ignore
   }
@@ -57,34 +46,39 @@ function mapSupabaseRowToProduct(row: any): Product {
 }
 
 class ProductService {
-  private getStoredProducts(): Product[] {
-    const data = localStorage.getItem(PRODUCTS_KEY);
-    if (!data) {
-      return [];
-    }
-    try {
-      const parsed: Product[] = JSON.parse(data);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
+  // ============================================================
+  // localStorage dipartisi per storeId untuk isolasi data merchant
+  // ============================================================
+  private storeKey(storeId: string): string {
+    return `${PRODUCTS_KEY_PREFIX}${storeId}`;
   }
 
-  private saveProducts(productsToSave: Product[]) {
-    const existing = this.getStoredProducts();
+  private getStoredProducts(storeId?: string): Product[] {
+    if (storeId) {
+      // Partisi per toko — ini yang benar untuk isolasi
+      const data = localStorage.getItem(this.storeKey(storeId));
+      if (!data) return [];
+      try {
+        const parsed: Product[] = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  private saveProducts(storeId: string, productsToSave: Product[]) {
+    const existing = this.getStoredProducts(storeId);
     const uniqueMap = new Map<string, Product>();
     existing.forEach((p) => {
-      if (p && p.id) {
-        uniqueMap.set(p.id, p);
-      }
+      if (p && p.id) uniqueMap.set(p.id, p);
     });
     productsToSave.forEach((p) => {
-      if (p && p.id) {
-        uniqueMap.set(p.id, p);
-      }
+      if (p && p.id) uniqueMap.set(p.id, p);
     });
     const finalProducts = Array.from(uniqueMap.values());
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(finalProducts));
+    localStorage.setItem(this.storeKey(storeId), JSON.stringify(finalProducts));
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: finalProducts }));
@@ -93,9 +87,9 @@ class ProductService {
   }
 
   async getProductsByStore(storeId: string): Promise<Product[]> {
-    const localProducts = this.getStoredProducts().filter((p) => p.storeId === storeId);
+    const localProducts = this.getStoredProducts(storeId);
 
-    // 1. Try fetching from Supabase Database
+    // 1. Try fetching from Supabase Database (selalu filter by store_id)
     try {
       const { data, error } = await supabase
         .from('products')
@@ -111,24 +105,22 @@ class ProductService {
           const map = new Map<string, Product>();
           dbProducts.forEach((p) => map.set(p.id, p));
           localProducts.forEach((p) => {
-            if (!map.has(p.id)) {
-              map.set(p.id, p);
-            }
+            if (!map.has(p.id)) map.set(p.id, p);
           });
           const merged = Array.from(map.values());
-          this.saveProducts(merged);
+          this.saveProducts(storeId, merged);
           return merged;
         } else if (localProducts.length > 0) {
-          // Supabase is empty, but local has products -> preserve local products
+          // Supabase kosong, gunakan local
           return localProducts;
         }
 
-        // Neither Supabase nor local has products -> seed starter products ONLY for demo store (store-andhika)
+        // Seed hanya untuk toko demo bawaan
         if (storeId === 'store-andhika') {
           const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId);
           if (defaultStoreProducts.length > 0) {
             const storeMapped = defaultStoreProducts.map((p) => ({ ...p, storeId }));
-            this.saveProducts(storeMapped);
+            this.saveProducts(storeId, storeMapped);
             return storeMapped;
           }
         }
@@ -138,12 +130,12 @@ class ProductService {
       console.warn('[Supabase Database] Offline fallback for products:', err?.message || err);
     }
 
-    // 2. Fallback to LocalStorage or initialProducts (only for demo store)
+    // 2. Fallback ke LocalStorage
     if (localProducts.length === 0 && storeId === 'store-andhika') {
       const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId);
       if (defaultStoreProducts.length > 0) {
         const storeMapped = defaultStoreProducts.map((p) => ({ ...p, storeId }));
-        this.saveProducts(storeMapped);
+        this.saveProducts(storeId, storeMapped);
         return storeMapped;
       }
     }
@@ -173,7 +165,7 @@ class ProductService {
     storeId: string,
     data: Omit<Product, 'id' | 'storeId' | 'status' | 'createdAt' | 'slug'>
   ): Promise<{ product: Product; syncedToCloud: boolean; cloudError?: string }> {
-    const products = this.getStoredProducts();
+    const products = this.getStoredProducts(storeId);
     const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const newProduct: Product = {
@@ -187,7 +179,7 @@ class ProductService {
 
     // 1. Always persist to LocalStorage first for instant UI update & zero blocking
     products.unshift(newProduct);
-    this.saveProducts(products);
+    this.saveProducts(storeId, products);
 
     // 2. Sync to Supabase Cloud Database
     let syncedToCloud = false;
@@ -226,7 +218,9 @@ class ProductService {
   }
 
   async updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
-    const products = this.getStoredProducts();
+    // Dapatkan storeId dari updates atau dari localStorage
+    const storeId = updates.storeId || this._findStoreIdForProduct(id);
+    const products = this.getStoredProducts(storeId);
     const index = products.findIndex((p) => p.id === id);
     if (index === -1) throw new Error('Produk tidak ditemukan');
 
@@ -241,9 +235,9 @@ class ProductService {
 
     // 1. Persist locally first
     products[index] = updatedProduct;
-    this.saveProducts(products);
+    this.saveProducts(storeId, products);
 
-    // 2. Sync to Supabase Cloud Database
+    // 2. Sync to Supabase Cloud Database — update divalidasi dengan store_id (ownership)
     try {
       const dbPayload: any = {};
       if (updates.name !== undefined) dbPayload.name = updates.name;
@@ -257,7 +251,12 @@ class ProductService {
       if (updates.images !== undefined) dbPayload.images = updates.images;
       if (updates.status !== undefined) dbPayload.status = updates.status;
 
-      const { error } = await supabase.from('products').update(dbPayload).eq('id', id);
+      // Validasi ownership: hanya update produk yang store_id-nya cocok
+      const { error } = await supabase
+        .from('products')
+        .update(dbPayload)
+        .eq('id', id)
+        .eq('store_id', storeId); // <- ownership check
       if (error) {
         console.warn('[Supabase Database Update]:', error.message);
       } else {
@@ -270,6 +269,22 @@ class ProductService {
     return updatedProduct;
   }
 
+  /** Helper: cari storeId dari produk di localStorage (semua partisi) */
+  private _findStoreIdForProduct(productId: string): string {
+    // Cari di semua partisi yang ada
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith(PRODUCTS_KEY_PREFIX)) {
+        try {
+          const items: Product[] = JSON.parse(localStorage.getItem(key) || '[]');
+          if (Array.isArray(items) && items.find((p) => p.id === productId)) {
+            return key.replace(PRODUCTS_KEY_PREFIX, '');
+          }
+        } catch { /* ignore */ }
+      }
+    }
+    return '';
+  }
+
   async updateStock(id: string, newStock: number): Promise<Product> {
     return this.updateProduct(id, {
       stock: Math.max(0, newStock),
@@ -277,19 +292,28 @@ class ProductService {
     });
   }
 
-  async deleteProduct(id: string): Promise<void> {
-    // 1. Delete from LocalStorage first
-    let products = this.getStoredProducts();
-    products = products.filter((p) => p.id !== id);
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+  async deleteProduct(id: string, storeId?: string): Promise<void> {
+    // Temukan storeId yang tepat untuk isolasi
+    const resolvedStoreId = storeId || this._findStoreIdForProduct(id);
+
+    // 1. Delete from localStorage (partisi per toko)
+    if (resolvedStoreId) {
+      let products = this.getStoredProducts(resolvedStoreId);
+      products = products.filter((p) => p.id !== id);
+      localStorage.setItem(this.storeKey(resolvedStoreId), JSON.stringify(products));
+    }
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: products }));
+      window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: [] }));
       window.dispatchEvent(new Event('cms_draft_updated'));
     }
 
-    // 2. Sync delete to Supabase Cloud Database
+    // 2. Sync delete ke Supabase — validasi ownership dengan store_id
     try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
+      let query = supabase.from('products').delete().eq('id', id);
+      if (resolvedStoreId) {
+        query = query.eq('store_id', resolvedStoreId); // <- ownership check
+      }
+      const { error } = await query;
       if (error) {
         console.warn('[Supabase Database Delete]:', error.message);
       }
@@ -309,7 +333,7 @@ class ProductService {
 
   // Sinkronisasi manual/otomatis seluruh produk lokal ke Supabase
   async syncAllLocalToCloud(storeId: string): Promise<{ success: boolean; count: number; error?: string }> {
-    const local = this.getStoredProducts().filter((p) => p.storeId === storeId);
+    const local = this.getStoredProducts(storeId);
     if (local.length === 0) {
       return { success: true, count: 0 };
     }

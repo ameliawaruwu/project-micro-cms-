@@ -3,7 +3,62 @@ import { adminService } from './adminService';
 import { storeService } from './storeService';
 import { supabase } from './supabaseClient';
 
-const TRANSACTIONS_KEY = 'microcms_wallet_transactions_v1';
+// ============================================================
+// MERCHANT DATA ISOLATION: localStorage dipartisi per storeId
+// Key format: microcms_wallet_v2_{storeId}
+// ============================================================
+const TRANSACTIONS_KEY_PREFIX = 'microcms_wallet_v2_';
+// Hapus key global lama
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('microcms_wallet_transactions_v1');
+  } catch { /* ignore */ }
+}
+
+// Demo transactions hanya untuk toko bawaan (store-andhika)
+const DEMO_STORE_ID = 'store-andhika';
+const DEMO_TRANSACTIONS: WalletTransaction[] = [
+  {
+    id: 'tx-001',
+    storeId: DEMO_STORE_ID,
+    type: 'income',
+    title: 'Penjualan Pesanan #ORD-2026-1024',
+    amount: 350000,
+    referenceId: 'ORD-2026-1024',
+    status: 'completed',
+    createdAt: '2026-09-07T09:15:00Z',
+  },
+  {
+    id: 'tx-002',
+    storeId: DEMO_STORE_ID,
+    type: 'income',
+    title: 'Penjualan Pesanan #ORD-2026-1023',
+    amount: 700000,
+    referenceId: 'ORD-2026-1023',
+    status: 'completed',
+    createdAt: '2026-09-06T17:40:00Z',
+  },
+  {
+    id: 'tx-003',
+    storeId: DEMO_STORE_ID,
+    type: 'income',
+    title: 'Penjualan Pesanan #ORD-2026-1022',
+    amount: 400000,
+    referenceId: 'ORD-2026-1022',
+    status: 'completed',
+    createdAt: '2026-09-06T11:20:00Z',
+  },
+  {
+    id: 'tx-004',
+    storeId: DEMO_STORE_ID,
+    type: 'withdrawal',
+    title: 'Penarikan Dana ke BCA (8820 1928 34)',
+    amount: 500000,
+    referenceId: 'wd-prev-001',
+    status: 'completed',
+    createdAt: '2026-09-03T10:00:00Z',
+  },
+];
 
 const initialTransactions: WalletTransaction[] = [
   {
@@ -49,26 +104,34 @@ const initialTransactions: WalletTransaction[] = [
 ];
 
 class WalletService {
-  private getStoredTransactions(): WalletTransaction[] {
-    const raw = localStorage.getItem(TRANSACTIONS_KEY);
+  private storeKey(storeId: string): string {
+    return `${TRANSACTIONS_KEY_PREFIX}${storeId}`;
+  }
+
+  private getStoredTransactions(storeId: string): WalletTransaction[] {
+    const raw = localStorage.getItem(this.storeKey(storeId));
     if (!raw) {
-      localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(initialTransactions));
-      return initialTransactions;
+      // Seed demo transactions hanya untuk toko bawaan
+      if (storeId === DEMO_STORE_ID) {
+        localStorage.setItem(this.storeKey(storeId), JSON.stringify(DEMO_TRANSACTIONS));
+        return DEMO_TRANSACTIONS;
+      }
+      return []; // Merchant baru mulai dari 0
     }
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
-      return initialTransactions;
+      return [];
     }
   }
 
-  private saveTransactions(list: WalletTransaction[]) {
-    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(list));
+  private saveTransactions(storeId: string, list: WalletTransaction[]) {
+    localStorage.setItem(this.storeKey(storeId), JSON.stringify(list));
   }
 
   getTransactions(storeId: string): WalletTransaction[] {
-    const all = this.getStoredTransactions();
-    return all.filter((t) => t.storeId === storeId);
+    return this.getStoredTransactions(storeId);
   }
 
   getWithdrawalRequests(storeId: string): WithdrawalRequest[] {
@@ -92,9 +155,8 @@ class WalletService {
       return { success: false, message: 'Minimal penarikan dana adalah Rp 50.000' };
     }
 
-    // 2. Fetch current store balance
-    const stores = await storeService.getStores();
-    const currentStore = stores.find((s) => s.id === storeId);
+    // 2. Fetch balance dari toko yang spesifik (bukan semua toko)
+    const currentStore = await storeService.getStoreById(storeId);
     const balance = currentStore ? (currentStore.balance || 0) : 0;
 
     if (amount > balance) {
@@ -143,8 +205,8 @@ class WalletService {
       console.warn('Failed to insert withdrawal to Supabase:', err);
     }
 
-    // 5. Record in Wallet Transaction History
-    const allTxs = this.getStoredTransactions();
+    // 5. Record in Wallet Transaction History (partisi per storeId)
+    const allTxs = this.getStoredTransactions(storeId);
     const newTx: WalletTransaction = {
       id: `tx-${Date.now()}`,
       storeId,
@@ -155,7 +217,7 @@ class WalletService {
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
-    this.saveTransactions([newTx, ...allTxs]);
+    this.saveTransactions(storeId, [newTx, ...allTxs]);
 
     // Sync to Supabase wallet_transactions table
     try {

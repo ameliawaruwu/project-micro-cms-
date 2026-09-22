@@ -24,6 +24,7 @@ import { PublishStoreModal } from '../../components/layout-editor/PublishStoreMo
 import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2, EyeOff, Eye } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { normalizeThemeId } from '../../themes/ThemeRegistry';
+import { storeService } from '../../services/storeService';
 
 interface LayoutPageProps {
   store: Store;
