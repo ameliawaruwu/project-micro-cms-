@@ -21,7 +21,7 @@ import { AddSectionModal } from '../../components/layout-editor/AddSectionModal'
 import { StoreLayoutSetupWizard } from '../../components/layout-editor/StoreLayoutSetupWizard';
 import { ThemeLibraryView, TemplateGalleryItem, SavedThemeItem, TEMPLATE_GALLERY_ITEMS } from '../../components/layout-editor/ThemeLibraryView';
 import { PublishStoreModal } from '../../components/layout-editor/PublishStoreModal';
-import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2, EyeOff } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2, EyeOff, Eye } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { normalizeThemeId } from '../../themes/ThemeRegistry';
 
@@ -78,6 +78,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [activeLeftPane, setActiveLeftPane] = useState<'sections' | 'settings'>('sections');
+  const [editorMobileTab, setEditorMobileTab] = useState<'canvas' | 'sections' | 'settings'>('canvas');
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   
   // Theme Library vs Editor Mode
@@ -681,7 +682,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   // Select section handler
   const handleSelectSection = (key: string) => {
     setSelectedSectionKey(key);
+    setShowGlobalSettings(false);
     setActiveLeftPane('settings');
+    setEditorMobileTab('settings');
   };
 
   // Move section (reorder)
@@ -1285,7 +1288,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           {/* 2. THREE-PANEL WORKSPACE */}
           <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0 relative bg-[#F6F6F7]">
             {/* Left Panel: Sections List */}
-            <div className={`lg:block ${selectedSectionKey && !isFullscreen ? 'hidden' : 'block'} h-full shrink-0 z-10`}>
+            <div className={`${editorMobileTab === 'sections' ? 'flex' : 'hidden'} lg:flex w-full lg:w-[280px] h-full shrink-0 z-10 overflow-hidden`}>
               <LeftPanelSections
                 sections={sections}
                 selectedSectionKey={selectedSectionKey}
@@ -1303,12 +1306,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 onOpenThemeSettings={() => {
                   setShowGlobalSettings(true);
                   setSelectedSectionKey(null);
+                  setEditorMobileTab('settings');
                 }}
               />
             </div>
 
             {/* Center Panel: Live Responsive Storefront Preview Canvas */}
-            <div className="flex-1 min-w-0 h-full flex flex-col relative z-0">
+            <div className={`${editorMobileTab === 'canvas' ? 'flex' : 'hidden'} lg:flex flex-1 min-w-0 h-full flex-col relative z-0 overflow-hidden`}>
               <CenterPreviewCanvas
                 store={currentStore}
                 products={displayProducts}
@@ -1332,7 +1336,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             </div>
 
             {/* Right Panel: Section Settings */}
-            <div className={`lg:block ${(selectedSectionKey || showGlobalSettings) && !isFullscreen ? 'block absolute lg:relative right-0 inset-y-0 shadow-2xl lg:shadow-none' : 'hidden'} h-full shrink-0 z-20 w-[320px] bg-white border-l border-[#E1E3E5]`}>
+            <div className={`${editorMobileTab === 'settings' ? 'flex' : 'hidden'} lg:${(selectedSectionKey || showGlobalSettings) && !isFullscreen ? 'flex' : 'hidden'} w-full lg:w-[320px] h-full shrink-0 z-20 bg-white border-l border-[#E1E3E5] overflow-hidden`}>
               <RightPanelSettings
                 store={currentStore}
                 selectedSection={selectedSection}
@@ -1356,6 +1360,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                   } else {
                     setSelectedSectionKey(null);
                   }
+                  setEditorMobileTab('canvas');
                 }}
                 showGlobalSettings={showGlobalSettings}
                 globalSettings={globalSettings}
@@ -1365,6 +1370,51 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 }}
               />
             </div>
+          </div>
+
+          {/* 3. MOBILE & TABLET BOTTOM DOCK (< 1024px) */}
+          <div className="lg:hidden shrink-0 bg-white border-t border-[#E1E3E5] px-3 py-1.5 flex items-center justify-around z-30 shadow-md">
+            <button
+              type="button"
+              onClick={() => setEditorMobileTab('canvas')}
+              className={`flex-1 py-1.5 px-2 rounded-xl flex flex-col items-center justify-center gap-0.5 text-xs font-semibold transition-all cursor-pointer ${
+                editorMobileTab === 'canvas'
+                  ? 'bg-[#F1F8FF] text-[#2C6ECB]'
+                  : 'text-[#6D7175] hover:text-[#202223] hover:bg-[#F6F6F7]'
+              }`}
+            >
+              <Eye className="w-4 h-4" />
+              <span className="text-[10px]">Pratinjau</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditorMobileTab('sections')}
+              className={`flex-1 py-1.5 px-2 rounded-xl flex flex-col items-center justify-center gap-0.5 text-xs font-semibold transition-all cursor-pointer ${
+                editorMobileTab === 'sections'
+                  ? 'bg-[#F1F8FF] text-[#2C6ECB]'
+                  : 'text-[#6D7175] hover:text-[#202223] hover:bg-[#F6F6F7]'
+              }`}
+            >
+              <ArrowRight className="w-4 h-4 rotate-90" />
+              <span className="text-[10px]">Struktur</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!selectedSectionKey && !showGlobalSettings) {
+                  setShowGlobalSettings(true);
+                }
+                setEditorMobileTab('settings');
+              }}
+              className={`flex-1 py-1.5 px-2 rounded-xl flex flex-col items-center justify-center gap-0.5 text-xs font-semibold transition-all cursor-pointer ${
+                editorMobileTab === 'settings'
+                  ? 'bg-[#F1F8FF] text-[#2C6ECB]'
+                  : 'text-[#6D7175] hover:text-[#202223] hover:bg-[#F6F6F7]'
+              }`}
+            >
+              <Palette className="w-4 h-4" />
+              <span className="text-[10px]">Pengaturan</span>
+            </button>
           </div>
 
           {/* Modal: Add Section from catalog */}

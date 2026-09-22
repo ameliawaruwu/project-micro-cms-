@@ -77,28 +77,28 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
   // --- 2. EDITORIAL / STORYTELLING THEME ---
   if (themeId && themeId.includes('editorial')) {
     return (
-      <footer className="bg-[#FAF7F7] pt-32 pb-16 border-t border-[#E5E0DD]">
-        <div className="mx-auto px-6 max-w-7xl flex flex-col items-center">
-          <h2 className="text-5xl md:text-8xl text-[#241A1A] font-normal tracking-widest uppercase mb-16 text-center" style={{ fontFamily: themeSettings.fontFamily }}>
+      <footer className="bg-[#FAF7F7] pt-16 sm:pt-32 pb-10 sm:pb-16 border-t border-[#E5E0DD] box-border">
+        <div className="mx-auto px-4 sm:px-6 max-w-7xl flex flex-col items-center">
+          <h2 className="text-3xl sm:text-5xl md:text-8xl text-[#241A1A] font-normal tracking-wider sm:tracking-widest uppercase mb-10 sm:mb-16 text-center break-words" style={{ fontFamily: themeSettings.fontFamily }}>
             Artisan
           </h2>
           
-          <div className="flex flex-wrap justify-center gap-8 md:gap-16 mb-24 text-[#241A1A]">
-            <a href="/about" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Journal</a>
-            <a href="/products" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Collections</a>
-            <a href="/about" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Our Story</a>
-            <a href="/about" className="text-sm italic tracking-widest hover:opacity-50 transition-opacity">Contact</a>
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-16 mb-12 sm:mb-24 text-[#241A1A]">
+            <a href="/about" className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">Journal</a>
+            <a href="/products" className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">Collections</a>
+            <a href="/about" className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">Our Story</a>
+            <a href="/about" className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">Contact</a>
           </div>
 
-          <div className="w-full flex flex-col md:flex-row items-center justify-between border-t border-[#241A1A]/10 pt-8 mt-auto">
-            <p className="text-xs tracking-widest text-[#706866] uppercase mb-6 md:mb-0">
+          <div className="w-full flex flex-col md:flex-row items-center justify-between border-t border-[#241A1A]/10 pt-8 mt-auto text-center md:text-left gap-4">
+            <p className="text-[11px] sm:text-xs tracking-widest text-[#706866] uppercase mb-4 md:mb-0">
               {settings.copyrightText}
             </p>
             
             {settings.showSocials && (
-              <div className="flex space-x-8 text-[#241A1A]">
-                <a href="#" className="hover:opacity-50 transition-opacity"><Instagram className="w-5 h-5 stroke-[1]" /></a>
-                <a href="#" className="hover:opacity-50 transition-opacity"><Twitter className="w-5 h-5 stroke-[1]" /></a>
+              <div className="flex space-x-6 sm:space-x-8 text-[#241A1A]">
+                <a href="#" className="hover:opacity-50 transition-opacity"><Instagram className="w-4 h-4 sm:w-5 sm:h-5 stroke-[1]" /></a>
+                <a href="#" className="hover:opacity-50 transition-opacity"><Twitter className="w-4 h-4 sm:w-5 sm:h-5 stroke-[1]" /></a>
               </div>
             )}
           </div>
@@ -110,50 +110,49 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
   // --- 3. BOLD BRAND THEME ---
   if (themeId && themeId.includes('bold')) {
     return (
-
-      <footer className="bg-black text-white pt-24 pb-12 border-t-8 border-white relative overflow-hidden">
+      <footer className="bg-black text-white pt-16 sm:pt-24 pb-8 sm:pb-12 border-t-8 border-white relative overflow-hidden box-border">
         {/* Giant background text */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[25vw] font-black text-white/5 select-none pointer-events-none whitespace-nowrap">
           BOLD
         </div>
 
-        <div className="mx-auto px-6 max-w-7xl relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
+        <div className="mx-auto px-4 sm:px-6 max-w-7xl relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12 mb-12 sm:mb-20">
             <div className="lg:col-span-2">
-              <h2 className="text-7xl font-black mb-6 uppercase tracking-tighter" style={{ fontFamily: themeSettings.fontFamily }}>
+              <h2 className="text-4xl sm:text-6xl md:text-7xl font-black mb-4 sm:mb-6 uppercase tracking-tighter break-words" style={{ fontFamily: themeSettings.fontFamily }}>
                 BOLD
               </h2>
-              <div className="w-24 h-4 bg-[#FF0000] mb-8"></div>
+              <div className="w-16 sm:w-24 h-3 sm:h-4 bg-[#FF0000] mb-6 sm:mb-8"></div>
               {settings.showSocials && (
-                <div className="flex gap-4">
-                  <a href="#" className="w-14 h-14 bg-white text-black flex items-center justify-center hover:bg-[#FF0000] hover:text-white hover:-rotate-12 transition-all"><Facebook className="w-6 h-6 stroke-[3]" /></a>
-                  <a href="#" className="w-14 h-14 bg-white text-black flex items-center justify-center hover:bg-[#FF0000] hover:text-white hover:rotate-12 transition-all"><Twitter className="w-6 h-6 stroke-[3]" /></a>
-                  <a href="#" className="w-14 h-14 bg-white text-black flex items-center justify-center hover:bg-[#FF0000] hover:text-white hover:-rotate-12 transition-all"><Instagram className="w-6 h-6 stroke-[3]" /></a>
+                <div className="flex gap-3 sm:gap-4">
+                  <a href="#" className="w-10 h-10 sm:w-14 sm:h-14 bg-white text-black flex items-center justify-center hover:bg-[#FF0000] hover:text-white hover:-rotate-12 transition-all"><Facebook className="w-4 h-4 sm:w-6 sm:h-6 stroke-[3]" /></a>
+                  <a href="#" className="w-10 h-10 sm:w-14 sm:h-14 bg-white text-black flex items-center justify-center hover:bg-[#FF0000] hover:text-white hover:rotate-12 transition-all"><Twitter className="w-4 h-4 sm:w-6 sm:h-6 stroke-[3]" /></a>
+                  <a href="#" className="w-10 h-10 sm:w-14 sm:h-14 bg-white text-black flex items-center justify-center hover:bg-[#FF0000] hover:text-white hover:-rotate-12 transition-all"><Instagram className="w-4 h-4 sm:w-6 sm:h-6 stroke-[3]" /></a>
                 </div>
               )}
             </div>
             
             <div>
-              <h4 className="text-xl font-black uppercase mb-8 tracking-widest text-[#FF0000]">Explore</h4>
-              <ul className="space-y-4">
-                <li><a href="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Shop All</a></li>
-                <li><a href="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Trending</a></li>
-                <li><a href="/products" className="text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Sale</a></li>
+              <h4 className="text-lg sm:text-xl font-black uppercase mb-4 sm:mb-8 tracking-widest text-[#FF0000]">Explore</h4>
+              <ul className="space-y-3 sm:space-y-4">
+                <li><a href="/products" className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Shop All</a></li>
+                <li><a href="/products" className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Trending</a></li>
+                <li><a href="/products" className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Sale</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-xl font-black uppercase mb-8 tracking-widest text-[#FF0000]">Join Us</h4>
-              <div className="flex bg-white text-black border-4 border-black group focus-within:border-white shadow-[8px_8px_0_rgba(255,0,0,1)]">
-                <input type="email" placeholder="EMAIL" className="w-full bg-transparent px-4 py-4 text-black font-bold uppercase outline-none placeholder-black/50" />
-                <button className="bg-black text-white px-6 font-black uppercase hover:bg-[#FF0000] transition-colors">
+              <h4 className="text-lg sm:text-xl font-black uppercase mb-4 sm:mb-8 tracking-widest text-[#FF0000]">Join Us</h4>
+              <div className="flex bg-white text-black border-4 border-black group focus-within:border-white shadow-sm sm:shadow-[8px_8px_0_rgba(255,0,0,1)]">
+                <input type="email" placeholder="EMAIL" className="w-full bg-transparent px-3 sm:px-4 py-3 sm:py-4 text-black text-xs sm:text-sm font-bold uppercase outline-none placeholder-black/50" />
+                <button className="bg-black text-white px-4 sm:px-6 font-black uppercase hover:bg-[#FF0000] transition-colors">
                   &rarr;
                 </button>
               </div>
             </div>
           </div>
           
-          <div className="text-center md:text-left flex flex-col md:flex-row justify-between items-center text-sm font-bold uppercase tracking-widest pt-8 border-t-4 border-white/20">
+          <div className="text-center md:text-left flex flex-col md:flex-row justify-between items-center text-xs sm:text-sm font-bold uppercase tracking-widest pt-6 sm:pt-8 border-t-4 border-white/20 gap-3">
             <p>{settings.copyrightText}</p>
           </div>
         </div>

@@ -308,29 +308,29 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   return (
     <div className="w-full h-full bg-[#F6F6F7] overflow-y-auto custom-scrollbar flex flex-col font-sans">
       {/* ── HEADER ── */}
-      <div className="bg-white border-b border-[#E1E3E5] px-6 sm:px-10 pt-8 pb-6 shrink-0">
+      <div className="bg-white border-b border-[#E1E3E5] px-4 sm:px-6 md:px-10 pt-6 sm:pt-8 pb-5 sm:pb-6 shrink-0 box-border">
         <div className="max-w-[1400px] mx-auto">
           {/* Title Row */}
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1A1A1A] tracking-tight leading-tight">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#1A1A1A] tracking-tight leading-tight">
                 Template Website
               </h1>
-              <p className="text-[#6D7175] text-sm sm:text-[15px] mt-1.5 max-w-xl leading-relaxed">
+              <p className="text-[#6D7175] text-xs sm:text-sm md:text-[15px] mt-1.5 max-w-xl leading-relaxed">
                 Pilih desain yang sesuai dengan karakter bisnis Anda. Setiap template bisa dikustomisasi sepenuhnya di visual editor.
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               {currentTemplateId && (
                 <button
                   onClick={onCustomize}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#1A1A1A] hover:bg-black transition-colors cursor-pointer shadow-sm"
+                  className="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#1A1A1A] hover:bg-black transition-colors cursor-pointer shadow-sm"
                 >
                   <Settings2 className="w-4 h-4" />
                   <span>Edit Template Aktif</span>
                 </button>
               )}
-              <div className="flex items-center gap-1.5 bg-[#F6F6F7] px-3.5 py-2 rounded-xl border border-[#E1E3E5] text-xs text-[#6D7175]">
+              <div className="flex items-center gap-1.5 bg-[#F6F6F7] px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-[#E1E3E5] text-xs text-[#6D7175]">
                 <Layers className="w-3.5 h-3.5 text-[#8C9196]" />
                 <span className="font-semibold">{TEMPLATE_GALLERY_ITEMS.length} Template</span>
               </div>

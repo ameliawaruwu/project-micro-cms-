@@ -139,9 +139,9 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   ];
 
   return (
-    <header className="bg-white border-b border-[#E1E3E5] px-3 sm:px-4 h-[52px] flex items-center justify-between gap-2 shrink-0 z-30 font-sans shadow-xs select-none">
+    <header className="bg-white border-b border-[#E1E3E5] px-2 sm:px-4 h-[52px] flex items-center justify-between gap-1 sm:gap-2 shrink-0 z-30 font-sans shadow-xs select-none w-full max-w-full overflow-hidden box-border">
       {/* ── LEFT: Back + Store Name + Status ── */}
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
         <button
           type="button"
           onClick={onBack}
@@ -151,27 +151,27 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           <ArrowLeft className="w-4 h-4" />
         </button>
 
-        <div className="w-px h-5 bg-[#E1E3E5] shrink-0 hidden sm:block"></div>
+        <div className="w-px h-4 sm:h-5 bg-[#E1E3E5] shrink-0 hidden min-[360px]:block"></div>
 
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="font-semibold text-[13px] text-[#202223] truncate max-w-[120px] sm:max-w-[180px]">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="font-semibold text-xs sm:text-[13px] text-[#202223] truncate max-w-[68px] min-[360px]:max-w-[90px] min-[420px]:max-w-[130px] sm:max-w-[180px] md:max-w-[220px]">
             {store.name || 'Toko UMKM'}
           </span>
           {hasChanges ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+            <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0" title="Ada perubahan belum disimpan">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-              Draft
+              <span className="hidden min-[480px]:inline">Draft</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+            <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0" title="Semua perubahan tersimpan">
               <Check className="w-2.5 h-2.5" />
-              Tersimpan
+              <span className="hidden min-[480px]:inline">Tersimpan</span>
             </span>
           )}
         </div>
 
         {/* Undo / Redo */}
-        <div className="hidden sm:flex items-center gap-0.5 ml-1">
+        <div className="hidden sm:flex items-center gap-0.5 ml-1 shrink-0">
           <button
             type="button"
             onClick={onUndo}
@@ -200,15 +200,15 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
       </div>
 
       {/* ── CENTER: Device Switcher + Page Selector ── */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Page Selector Dropdown */}
         <div className="relative hidden md:block" ref={pageDropdownRef}>
           <button
             onClick={() => setIsPageDropdownOpen(!isPageDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#E1E3E5] hover:bg-[#F6F6F7] transition cursor-pointer text-[13px] font-medium text-[#202223]"
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[#E1E3E5] hover:bg-[#F6F6F7] transition cursor-pointer text-xs sm:text-[13px] font-medium text-[#202223]"
           >
             <FileText className="w-3.5 h-3.5 text-[#8C9196]" />
-            <span>{currentPage?.label || 'Halaman Utama'}</span>
+            <span className="truncate max-w-[120px]">{currentPage?.label || 'Halaman Utama'}</span>
             <ChevronDown className={`w-3.5 h-3.5 text-[#8C9196] transition-transform ${isPageDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
@@ -284,9 +284,11 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         </div>
       </div>
 
-      {/* ── RIGHT: Language, Preview, Fullscreen, Save, Publish ── */}
-      <div className="flex items-center gap-1.5">
-        <LanguageSwitchButton compact />
+      {/* ── RIGHT: Language, Preview, Save, Publish ── */}
+      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        <div className="hidden min-[360px]:block">
+          <LanguageSwitchButton compact />
+        </div>
 
         {/* Preview Button */}
         <button
@@ -311,7 +313,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
             type="button"
             onClick={onUnpublish}
             disabled={isUnpublishing}
-            className="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+            className="p-1.5 sm:px-3.5 sm:py-1.5 rounded-lg text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
             title="Tarik publikasi website toko (kembalikan ke mode draf)"
           >
             <EyeOff className="w-3.5 h-3.5" />
@@ -321,7 +323,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           <button
             type="button"
             onClick={onPublish}
-            className="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+            className="p-1.5 sm:px-3.5 sm:py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
             title="Publikasikan website toko ke publik"
           >
             <Globe className="w-3.5 h-3.5" />
@@ -334,11 +336,12 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           type="button"
           onClick={onSave}
           disabled={isSaving}
-          className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold text-white transition flex items-center gap-1.5 cursor-pointer ${
+          className={`p-1.5 sm:px-3.5 sm:py-1.5 rounded-lg text-xs font-bold text-white transition flex items-center gap-1.5 cursor-pointer ${
             hasChanges
               ? 'bg-[#008060] hover:bg-[#006e52] shadow-sm ring-1 ring-[#008060]/20'
               : 'bg-[#008060] hover:bg-[#006e52]'
           } ${isSaving ? 'opacity-70 cursor-wait' : ''}`}
+          title="Simpan Perubahan Layout"
         >
           <Save className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">{isSaving ? 'Menyimpan...' : 'Simpan'}</span>

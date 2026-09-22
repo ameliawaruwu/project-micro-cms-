@@ -215,27 +215,27 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
   // --- 4. LIFESTYLE STORE THEME ---
   if (themeId && themeId.includes('lifestyle')) {
     return (
-      <header className={`w-full z-50 py-5 px-6 md:px-12 transition-all duration-500 ${
+      <header className={`w-full z-50 py-3 sm:py-5 px-3.5 sm:px-6 md:px-12 transition-all duration-500 box-border ${
         isSticky && scrolled ? 'fixed top-0 bg-[#FDFBF7]/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.05)] border-b border-[#D9A05B]/10' : 
         isTransparent ? 'absolute top-0' : 'bg-[#FDFBF7]'
       }`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-[#3E3E3E] hover:bg-[#D9A05B] hover:text-white hover:border-[#D9A05B] transition-all">
-              <Menu className="w-4 h-4" />
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-6 shrink-0">
+            <button className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 flex items-center justify-center text-[#3E3E3E] hover:bg-[#D9A05B] hover:text-white hover:border-[#D9A05B] transition-all">
+              <Menu className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
-            <button aria-label="Search" className="hidden md:flex w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-[#3E3E3E] hover:text-[#D9A05B] transition-all hover:shadow-md">
+            <button aria-label="Search" className="hidden md:flex w-10 h-10 rounded-full bg-white shadow-sm items-center justify-center text-[#3E3E3E] hover:text-[#D9A05B] transition-all hover:shadow-md">
               <Search className="w-4 h-4" />
             </button>
           </div>
           
           {settings.showLogo && (
-            <Link to="/" className="font-semibold text-3xl tracking-tight text-[#3E3E3E] absolute left-1/2 -translate-x-1/2" style={{ fontFamily: themeSettings.fontFamily }}>
+            <Link to="/" className="font-semibold text-lg sm:text-2xl md:text-3xl tracking-tight text-[#3E3E3E] text-center truncate max-w-[130px] sm:max-w-none" style={{ fontFamily: themeSettings.fontFamily }}>
               Lifestyle<span className="text-[#D9A05B]">.</span>
             </Link>
           )}
 
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-2 sm:gap-4 md:gap-8 shrink-0">
             <nav className="hidden lg:flex items-center gap-8">
               {navLinks.map((link, idx) => (
                 <Link key={idx} to={link.url} className="text-[14px] font-medium text-[#3E3E3E]/80 hover:text-[#D9A05B] transition-colors relative group">
@@ -244,9 +244,9 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
                 </Link>
               ))}
             </nav>
-            <button aria-label="Cart" onClick={() => navigate('/cart')} className="flex items-center gap-2 bg-[#3E3E3E] text-white px-5 py-2.5 rounded-full hover:bg-[#D9A05B] transition-colors shadow-lg shadow-black/10 hover:shadow-xl hover:-translate-y-0.5">
-              <ShoppingBag className="w-4 h-4" />
-              <span className="text-xs font-semibold hidden sm:block">Cart (0)</span>
+            <button aria-label="Cart" onClick={() => navigate('/cart')} className="flex items-center gap-1.5 sm:gap-2 bg-[#3E3E3E] text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full hover:bg-[#D9A05B] transition-colors shadow-lg shadow-black/10 hover:shadow-xl hover:-translate-y-0.5 text-xs">
+              <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="font-semibold hidden sm:block">Cart (0)</span>
             </button>
           </div>
         </div>
