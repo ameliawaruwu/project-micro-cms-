@@ -79,7 +79,8 @@ class StoreService {
           changed = true;
         }
         // Set demo stores to published, and others to false if undefined
-        if (s.id.startsWith('store-') && updated.isPublished === undefined) {
+        const isLegacyDemoStore = ['store-1', 'store-2', 'store-3', 'store-4'].includes(s.id);
+        if (isLegacyDemoStore && updated.isPublished === undefined) {
           updated.isPublished = true;
           changed = true;
         } else if (updated.isPublished === undefined) {

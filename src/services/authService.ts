@@ -111,6 +111,27 @@ class AuthService {
     localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
   }
 
+  purgeLocalAccount(email: string): void {
+    const cleanEmail = email.toLowerCase().trim();
+    try {
+      const accounts = this.getStoredAccounts().filter((a) => a.email.toLowerCase() !== cleanEmail);
+      this.saveAccounts(accounts);
+
+      const storedUser = localStorage.getItem(AUTH_USER_KEY);
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (parsed?.email?.toLowerCase() === cleanEmail) {
+          localStorage.removeItem(AUTH_USER_KEY);
+          localStorage.removeItem(AUTH_MERCHANT_KEY);
+          localStorage.removeItem(AUTH_STORE_KEY);
+          localStorage.removeItem(ACTIVE_STORE_ID_KEY);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to purge local account:', e);
+    }
+  }
+
   getCurrentUser(): { user: User | null; merchant: Merchant | null; store: Store | null } {
     try {
       const storedUser = localStorage.getItem(AUTH_USER_KEY);
@@ -141,23 +162,26 @@ class AuthService {
 
   async checkAccountExists(email: string): Promise<boolean> {
     const cleanEmail = email.toLowerCase().trim();
-    const accounts = this.getStoredAccounts();
-    if (accounts.some((a) => a.email.toLowerCase() === cleanEmail)) {
-      return true;
-    }
     try {
       const { data, error } = await supabase
         .from('users')
         .select('id')
         .eq('email', cleanEmail)
         .maybeSingle();
-      if (!error && data) {
-        return true;
+      if (!error) {
+        if (data) {
+          return true;
+        } else {
+          // Database secara definitif mengonfirmasi akun tidak ada (telah dihapus)
+          this.purgeLocalAccount(cleanEmail);
+          return false;
+        }
       }
     } catch (e) {
       console.warn('Supabase check account error:', e);
     }
-    return false;
+    const accounts = this.getStoredAccounts();
+    return accounts.some((a) => a.email.toLowerCase() === cleanEmail);
   }
 
   async login(email: string, _password?: string): Promise<{ user: User; merchant: Merchant; store: Store }> {
@@ -169,9 +193,6 @@ class AuthService {
 
     localStorage.removeItem('microcms_explicit_logout');
     const cleanEmail = email.toLowerCase().trim();
-    const accounts = this.getStoredAccounts();
-
-    let account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
 
     // 1. Coba verifikasi aman server-side via Supabase RPC verify_user_credentials
     let verifiedDbUser: any = null;
@@ -198,109 +219,130 @@ class AuthService {
         if (!rpcErr && rpcRes) {
           if (rpcRes.success && rpcRes.user) {
             verifiedDbUser = rpcRes.user;
+          } else if (rpcRes.message === 'Akun tidak ditemukan') {
+            // User sudah dihapus dari database Supabase
+            this.purgeLocalAccount(cleanEmail);
+            throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
           } else if (rpcRes.message === 'Kata sandi tidak sesuai') {
             throw new Error('Kata sandi yang Anda masukkan salah.');
+          } else {
+            throw new Error(rpcRes.message || 'Gagal masuk ke akun.');
           }
         }
       } catch (rpcEx: any) {
-        if (rpcEx.message === 'Kata sandi yang Anda masukkan salah.') throw rpcEx;
+        if (
+          rpcEx.message === 'Kata sandi yang Anda masukkan salah.' ||
+          rpcEx.message === 'Akun tidak terdaftar atau telah dihapus dari sistem.'
+        ) {
+          throw rpcEx;
+        }
         console.warn('verify_user_credentials RPC notice:', rpcEx);
       }
     }
 
-    // 2. Jika belum terverifikasi melalui RPC, cek metadata profil tanpa mengekspos hash
+    // 2. Jika belum terverifikasi melalui RPC (misal login Google atau RPC error), cek langsung ke database users
     let dbUser: any = verifiedDbUser;
-    if (!dbUser && !account) {
+    if (!dbUser) {
       try {
         const { data, error } = await supabase
           .from('users')
-          .select('id, name, email, phone, role, created_at')
+          .select('id, name, email, phone, role, password_hash, created_at')
           .eq('email', cleanEmail)
           .maybeSingle();
-        if (!error && data) {
+
+        if (!error) {
+          if (!data) {
+            // Database secara eksplisit mengonfirmasi bahwa user TIDAK ADA (sudah dihapus)
+            this.purgeLocalAccount(cleanEmail);
+            throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
+          }
           dbUser = data;
         }
-      } catch (e) {
+      } catch (e: any) {
+        if (e.message === 'Akun tidak terdaftar atau telah dihapus dari sistem.') {
+          throw e;
+        }
         console.warn('Supabase query user warning:', e);
       }
     }
 
-    // Jika akun tidak ditemukan baik di lokal maupun di database
-    if (!account && !dbUser) {
-      throw new Error('Akun belum terdaftar. Silakan lakukan registrasi terlebih dahulu.');
+    // 3. Jika database masih tidak dapat dihubungi dan dbUser kosong:
+    if (!dbUser) {
+      const accounts = this.getStoredAccounts();
+      const account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
+      if (!account) {
+        throw new Error('Akun belum terdaftar. Silakan lakukan registrasi terlebih dahulu.');
+      }
+      // Khusus mode offline darurat untuk akun demo
+      if (account.id === 'usr-admin-1' || account.id === 'usr-andhika-01') {
+        dbUser = {
+          id: account.id,
+          name: account.user.name,
+          email: account.email,
+          phone: account.user.phoneWhatsApp,
+          role: account.user.role,
+          password_hash: account.password,
+          created_at: account.user.createdAt,
+        };
+      } else {
+        // Akun reguler tidak diizinkan login jika tidak terverifikasi di database
+        this.purgeLocalAccount(cleanEmail);
+        throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
+      }
     }
 
-    // 3. Verifikasi kata sandi untuk akun lokal / fallback
+    // 4. Verifikasi kata sandi jika belum diverifikasi oleh RPC
     if (!verifiedDbUser && _password && _password !== 'google-auth') {
       const hashedInput = await hashPassword(_password);
-      const expectedPassword = account?.password;
-      const isMatch = expectedPassword === _password || expectedPassword === hashedInput;
-      if (expectedPassword && !isMatch) {
+      const isMatch =
+        dbUser.password_hash === _password ||
+        dbUser.password_hash === hashedInput;
+      if (!isMatch) {
         throw new Error('Kata sandi yang Anda masukkan salah.');
       }
     }
 
-    let user: User;
-    let merchant: Merchant;
+    // 5. Bangun user, merchant, dan store dari data database yang valid
+    const userId = dbUser.id;
+    const userName = dbUser.name || cleanEmail.split('@')[0];
+    const userRole = (dbUser.role as 'admin' | 'merchant') || 'merchant';
+
+    const user: User = {
+      id: userId,
+      name: userName,
+      email: cleanEmail,
+      phoneWhatsApp: dbUser.phone || '',
+      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1F4072&color=FFD358&bold=true`,
+      role: userRole,
+      createdAt: dbUser.created_at || new Date().toISOString(),
+    };
+
+    // Cari toko milik pengguna ini
     let storeToUse: Store | undefined;
-
-    if (account) {
-      user = account.user;
-      merchant = account.merchant;
-
-      // Find store belonging to this user
-      const userStores = await storeService.getStoresForUser(user.id);
-      if (userStores.length > 0) {
-        storeToUse = userStores.find((s) => s.id === account!.storeId) || userStores[0];
-      } else {
-        // Merchant has not created a store yet
-        storeToUse = undefined;
-      }
-    } else {
-      // Account exists in Supabase DB but not yet in localStorage
-      const userId = dbUser.id || `usr_${cleanEmail.replace(/[^a-z0-9]/g, '_')}`;
-      const userName = dbUser.name || cleanEmail.split('@')[0];
-      const userRole = (dbUser.role as 'admin' | 'merchant') || 'merchant';
-
-      user = {
-        id: userId,
-        name: userName,
-        email: cleanEmail,
-        phoneWhatsApp: dbUser.phone || '',
-        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1F4072&color=FFD358&bold=true`,
-        role: userRole,
-        createdAt: dbUser.created_at || new Date().toISOString(),
-      };
-
-      // Check stores for this user
-      let userStores = await storeService.getStoresForUser(userId);
-      if (userStores.length > 0) {
-        storeToUse = userStores[0];
-      } else {
-        // Merchant has not created a store yet
-        storeToUse = undefined;
-      }
-
-      merchant = {
-        id: `merch-${userId}`,
-        userId: userId,
-        storeId: storeToUse?.id || '',
-        plan: 'free',
-        isVerified: true,
-      };
-
-      const newAccount: StoredAccount = {
-        id: userId,
-        email: cleanEmail,
-        password: await hashPassword(_password || 'password123'),
-        user,
-        merchant,
-        storeId: storeToUse?.id || '',
-      };
-
-      accounts.push(newAccount);
-      this.saveAccounts(accounts);
+    const userStores = await storeService.getStoresForUser(userId);
+    if (userStores.length > 0) {
+      storeToUse = userStores[0];
     }
+
+    const merchant: Merchant = {
+      id: `merch-${userId}`,
+      userId: userId,
+      storeId: storeToUse?.id || '',
+      plan: 'free',
+      isVerified: true,
+    };
+
+    // Sinkronkan cache akun lokal dengan kredensial yang valid dari database
+    const accounts = this.getStoredAccounts().filter((a) => a.email.toLowerCase() !== cleanEmail);
+    accounts.push({
+      id: userId,
+      email: cleanEmail,
+      password: await hashPassword(_password || 'password123'),
+      user,
+      merchant,
+      storeId: storeToUse?.id || '',
+    });
+    this.saveAccounts(accounts);
 
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
     localStorage.setItem(AUTH_MERCHANT_KEY, JSON.stringify(merchant));
