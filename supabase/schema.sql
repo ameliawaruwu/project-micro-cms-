@@ -490,12 +490,8 @@ GRANT ALL ON TABLE billing_plans TO anon, authenticated, service_role;
 GRANT ALL ON TABLE store_subscriptions TO anon, authenticated, service_role;
 GRANT ALL ON TABLE domain_requests TO anon, authenticated, service_role;
 
--- Hak Akses Khusus Tabel Users (Proteksi Kolom Sensitif password_hash)
-GRANT ALL ON TABLE users TO service_role;
-REVOKE SELECT ON TABLE users FROM anon, authenticated;
-GRANT SELECT (id, email, name, phone, role, created_at, updated_at) ON TABLE users TO anon, authenticated;
-GRANT INSERT (id, email, password_hash, name, phone, role, created_at, updated_at) ON TABLE users TO anon, authenticated;
-GRANT UPDATE (name, phone, updated_at) ON TABLE users TO anon, authenticated;
+-- Hak Akses Tabel Users
+GRANT ALL ON TABLE users TO anon, authenticated, service_role;
 
 -- 3. Kebijakan RLS (Row Level Security Policies)
 -- Kebijakan Users
