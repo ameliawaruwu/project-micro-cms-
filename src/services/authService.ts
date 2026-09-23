@@ -681,10 +681,22 @@ class AuthService {
       });
 
       if (response.ok) {
-        console.log('Email sent successfully via local mail server');
+        console.log('✅ Email OTP berhasil dikirim via mail server');
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        console.warn('⚠️ Mail endpoint notice:', errData);
       }
     } catch (err) {
-      // Ignored since fallback toast and in-app display already active
+      console.warn('Failed to call /api/send-email:', err);
+    }
+
+    // Coba kirim juga via Supabase Auth jika SMTP Supabase terhubung
+    try {
+      await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: `${window.location.origin}/`,
+      });
+    } catch (sbErr) {
+      // Ignored if user not in auth.users
     }
 
     return true;

@@ -403,13 +403,18 @@ function emailDevPlugin(): Plugin {
               return;
             }
 
+            try {
+              const dotenv = await import('dotenv');
+              dotenv.config();
+            } catch (e) {}
+
             const smtpEmail = process.env.SMTP_EMAIL;
             const smtpPassword = process.env.SMTP_PASSWORD;
 
             if (!smtpEmail || !smtpPassword) {
               res.statusCode = 500;
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'Konfigurasi SMTP belum tersedia di server .env' }));
+              res.end(JSON.stringify({ error: 'Konfigurasi SMTP belum tersedia di server .env. Pastikan file .env sudah di-Save (Ctrl+S).' }));
               return;
             }
 
