@@ -159,22 +159,7 @@ class StoreService {
           },
           createdAt: row.created_at || new Date().toISOString(),
         }));
-        // Filter out legacy auto-created stores from Supabase too
-        const validMapped = mappedStores.filter((s) => {
-          const isLegacyAuto =
-            !s.id.startsWith('store-') &&
-            s.slug &&
-            (s.slug.startsWith('toko-amelia') ||
-              s.slug.startsWith('toko-usr_') ||
-              s.name.startsWith('Toko usr_') ||
-              s.description === 'Pusat belanja produk berkualitas dengan pemesanan mudah dan cepat.' ||
-              (s.description === 'Katalog online dan pemesanan praktis via WhatsApp.' && s.balance === 0));
-          if (isLegacyAuto) {
-            supabase.from('stores').delete().eq('id', s.id).then(() => {});
-            return false;
-          }
-          return true;
-        });
+        const validMapped = mappedStores;
 
         const map = new Map<string, Store>();
         validMapped.forEach((s) => map.set(s.id, s));
@@ -337,6 +322,8 @@ class StoreService {
       if (updates.latitude !== undefined) dbUpdates.latitude = updates.latitude;
       if (updates.longitude !== undefined) dbUpdates.longitude = updates.longitude;
       if (updates.category !== undefined) dbUpdates.category = updates.category;
+      if (updates.logoUrl !== undefined) dbUpdates.logo_url = updates.logoUrl;
+      if (updates.bannerUrl !== undefined) dbUpdates.banner_url = updates.bannerUrl;
       if (updates.plan !== undefined) dbUpdates.plan = updates.plan;
       if (updates.balance !== undefined) dbUpdates.balance = updates.balance;
       if (updates.customDomain !== undefined) dbUpdates.custom_domain = updates.customDomain;
@@ -356,6 +343,17 @@ class StoreService {
     } catch (err) {
       console.warn('Supabase store update notice:', err);
     }
+
+    // Update active auth session store in localStorage so changes persist across reload
+    try {
+      const activeAuthStoreStr = localStorage.getItem('microcms_auth_store');
+      if (activeAuthStoreStr) {
+        const parsed = JSON.parse(activeAuthStoreStr);
+        if (parsed.id === storeId) {
+          localStorage.setItem('microcms_auth_store', JSON.stringify(stores[index]));
+        }
+      }
+    } catch (e) {}
 
     // Instant local multi-tab & cross-tab broadcast
     try {

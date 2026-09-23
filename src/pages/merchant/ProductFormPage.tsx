@@ -30,6 +30,48 @@ export const DEFAULT_PRODUCT_CATEGORIES = [
   'Umum',
 ];
 
+export const compressProductImage = (
+  file: File,
+  maxDim: number = 1200,
+  quality: number = 0.82
+): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/webp', quality);
+          resolve(compressed.length < (e.target?.result as string).length ? compressed : (e.target?.result as string));
+        } else {
+          resolve(e.target?.result as string);
+        }
+      };
+      img.onerror = () => resolve(e.target?.result as string);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+};
+
 interface ProductFormPageProps {
   productToEdit?: Product | null;
   categories: string[];
@@ -130,6 +172,10 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
       setSku('');
       setWeightDisplay('');
       setErrorMsg('');
+      setIsSubmitting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   }, [productToEdit, availableCategories]);
 
@@ -156,19 +202,10 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
 
     const filesToProcess = validFiles.slice(0, remainingSlots);
 
-    Promise.all(
-      filesToProcess.map((file) => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            resolve(event.target?.result as string);
-          };
-          reader.readAsDataURL(file);
-        });
-      })
-    ).then((newBase64s) => {
+    Promise.all(filesToProcess.map((file) => compressProductImage(file))).then((newCompressedImgs) => {
+      const validStrings = newCompressedImgs.filter((img) => Boolean(img));
       setImages((prev) => {
-        const combined = [...prev, ...newBase64s];
+        const combined = [...prev, ...validStrings];
         return combined.slice(0, 5);
       });
       // Point to newly uploaded photo if was empty

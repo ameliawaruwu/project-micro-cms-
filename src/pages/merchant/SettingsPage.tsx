@@ -6,25 +6,33 @@ import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { wilayahService, WilayahItem, PostalCodeItem } from '../../services/wilayahService';
 import { StoreLocationPickerMap } from '../../components/merchant/StoreLocationPickerMap';
 
+export const UMKM_CATEGORIES = [
+  'Kuliner & Minuman',
+  'Fashion & Pakaian',
+  'Kecantikan & Perawatan',
+  'Elektronik & Gadget',
+  'Kerajinan & Kriya',
+  'Kesehatan & Farmasi',
+  'Pertanian & Peternakan',
+  'Jasa & Layanan',
+  'UMKM & Retail',
+  'Lainnya',
+];
+
 interface SettingsPageProps {
   store: Store;
-  onUpdateStore: (updated: Store) => void;
-  onCreateStore?: (data: Partial<Store>) => void;
-  onPublishStore?: () => void;
-  onOpenWithdraw?: () => void;
-  onOpenShareModal?: () => void;
-  onNavigateBilling?: () => void;
-  onShowNotification: (msg: string) => void;
-  onNavigateDashboard?: () => void;
+  onUpdateStore: (store: Store) => void;
+  onCreateStore?: (storeData: Partial<Store>) => void;
+  onNavigateDashboard: () => void;
+  onShowNotification: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   store,
   onUpdateStore,
   onCreateStore,
-  onPublishStore,
-  onShowNotification,
   onNavigateDashboard,
+  onShowNotification,
 }) => {
   const { t } = useLanguage();
   const isNewStore = !store.id;
@@ -36,6 +44,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     tagline: store.tagline || '',
     description: store.description || '',
     phoneWhatsApp: store.phoneWhatsApp || '',
+    category: store.category || 'UMKM & Retail',
     address: store.address || '',
     addressDetail: store.addressDetail || '',
     village: store.village || store.subdistrict || '',
@@ -49,6 +58,33 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     logoUrl: store.logoUrl || '',
     bannerUrl: store.bannerUrl || '',
   });
+
+  // Sinkronisasi otomatis form data saat data store dari database tiba
+  useEffect(() => {
+    if (store && store.id) {
+      setFormData((prev) => ({
+        ...prev,
+        name: store.name || '',
+        slug: store.slug || '',
+        tagline: store.tagline || '',
+        description: store.description || '',
+        phoneWhatsApp: store.phoneWhatsApp || '',
+        category: store.category || 'UMKM & Retail',
+        address: store.address || '',
+        addressDetail: store.addressDetail || '',
+        village: store.village || store.subdistrict || '',
+        subdistrict: store.subdistrict || store.village || '',
+        district: store.district || '',
+        city: store.city || '',
+        province: store.province || '',
+        postalCode: store.postalCode || '',
+        latitude: store.latitude,
+        longitude: store.longitude,
+        logoUrl: store.logoUrl || '',
+        bannerUrl: store.bannerUrl || '',
+      }));
+    }
+  }, [store?.id, store?.name, store?.address, store?.province, store?.city, store?.category]);
 
   // State Wilayah Indonesia Cascade Dropdown
   const [provinces, setProvinces] = useState<WilayahItem[]>([]);
@@ -305,6 +341,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         tagline: formData.tagline.trim(),
         description: formData.description.trim(),
         phoneWhatsApp: formData.phoneWhatsApp.trim(),
+        category: formData.category || 'UMKM & Retail',
         address: formData.address.trim(),
         addressDetail: formData.addressDetail.trim(),
         village: formData.village.trim(),
@@ -325,6 +362,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         tagline: formData.tagline.trim(),
         description: formData.description.trim(),
         phoneWhatsApp: formData.phoneWhatsApp.trim(),
+        category: formData.category || 'UMKM & Retail',
         address: formData.address.trim(),
         addressDetail: formData.addressDetail.trim(),
         village: formData.village.trim(),
@@ -450,6 +488,27 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1.5">
+                  Kategori Usaha UMKM <span className="text-[#66000E]">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
+                >
+                  {UMKM_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-[#777777] mt-1">
+                  Kategori utama usaha Anda untuk memudahkan pengelompokan dan kurasi etalase.
+                </p>
               </div>
             </div>
 

@@ -78,12 +78,69 @@ class ProductService {
       if (p && p.id) uniqueMap.set(p.id, p);
     });
     const finalProducts = Array.from(uniqueMap.values());
-    localStorage.setItem(this.storeKey(storeId), JSON.stringify(finalProducts));
+    
+    try {
+      localStorage.setItem(this.storeKey(storeId), JSON.stringify(finalProducts));
+    } catch (quotaError: any) {
+      console.warn('[productService] LocalStorage quota exceeded, optimizing image payloads...');
+      // Strip heavy data:image base64 for local storage caching so UI never breaks
+      const cleanProducts = finalProducts.map((p) => {
+        const isDataUrl = p.imageUrl?.startsWith('data:');
+        return {
+          ...p,
+          imageUrl: isDataUrl ? '' : p.imageUrl,
+          images: (p.images || []).map((img) => (img.startsWith('data:') ? '' : img)),
+        };
+      });
+      try {
+        localStorage.setItem(this.storeKey(storeId), JSON.stringify(cleanProducts));
+      } catch (inner) {
+        console.error('[productService] Critical localStorage error:', inner);
+      }
+    }
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: finalProducts }));
       window.dispatchEvent(new Event('cms_draft_updated'));
     }
+  }
+
+  async uploadImageToStorage(storeId: string, dataUrlOrUrl: string, index: number = 0): Promise<string> {
+    if (!dataUrlOrUrl || !dataUrlOrUrl.startsWith('data:image')) {
+      return dataUrlOrUrl;
+    }
+
+    try {
+      const [header, base64Data] = dataUrlOrUrl.split(',');
+      const mime = header.match(/:(.*?);/)?.[1] || 'image/webp';
+      const binary = atob(base64Data);
+      const array = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        array[i] = binary.charCodeAt(i);
+      }
+      const blob = new Blob([array], { type: mime });
+      const extension = mime.includes('png') ? 'png' : mime.includes('jpeg') ? 'jpg' : 'webp';
+      const fileName = `${storeId}/prod_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 6)}.${extension}`;
+
+      const { data: uploadData, error: uploadErr } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, blob, {
+          contentType: mime,
+          upsert: true,
+        });
+
+      if (!uploadErr && uploadData?.path) {
+        const { data: pubData } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(uploadData.path);
+        if (pubData?.publicUrl) {
+          return pubData.publicUrl;
+        }
+      }
+    } catch (e) {
+      console.warn('[productService] Supabase storage upload notice, fallback to base64:', e);
+    }
+    return dataUrlOrUrl;
   }
 
   async getProductsByStore(storeId: string): Promise<Product[]> {
@@ -168,10 +225,26 @@ class ProductService {
     const products = this.getStoredProducts(storeId);
     const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    // Upload images to Supabase Storage bucket for permanent CDN URLs
+    let finalImageUrl = data.imageUrl || '';
+    if (finalImageUrl.startsWith('data:image')) {
+      finalImageUrl = await this.uploadImageToStorage(storeId, finalImageUrl, 0);
+    }
+
+    let finalImages = data.images || [];
+    if (finalImages.length > 0) {
+      finalImages = await Promise.all(
+        finalImages.map((img, idx) => this.uploadImageToStorage(storeId, img, idx))
+      );
+    }
+
     const newProduct: Product = {
       ...data,
       id: `prd-${uniqueSuffix}`,
       storeId,
+      imageUrl: finalImageUrl,
+      images: finalImages,
       slug: `${slug || 'produk'}-${uniqueSuffix.slice(-5)}`,
       status: calculateProductStatus(data.stock),
       createdAt: new Date().toISOString(),
@@ -223,6 +296,15 @@ class ProductService {
     const products = this.getStoredProducts(storeId);
     const index = products.findIndex((p) => p.id === id);
     if (index === -1) throw new Error('Produk tidak ditemukan');
+
+    if (updates.imageUrl && updates.imageUrl.startsWith('data:image')) {
+      updates.imageUrl = await this.uploadImageToStorage(storeId, updates.imageUrl, 0);
+    }
+    if (updates.images && updates.images.length > 0) {
+      updates.images = await Promise.all(
+        updates.images.map((img, idx) => this.uploadImageToStorage(storeId, img, idx))
+      );
+    }
 
     const newStock = updates.stock !== undefined ? updates.stock : products[index].stock;
     const newStatus = calculateProductStatus(newStock);

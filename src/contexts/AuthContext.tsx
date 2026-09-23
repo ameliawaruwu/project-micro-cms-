@@ -73,44 +73,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const fullName = userMeta.full_name || userMeta.name || googleEmail.split('@')[0];
           const avatarUrl = userMeta.avatar_url || userMeta.picture;
 
-          const oauthIntent = sessionStorage.getItem('oauth_intent') || 'login';
+          const pendingStoreName = sessionStorage.getItem('oauth_pending_store_name');
+          sessionStorage.removeItem('oauth_pending_store_name');
           sessionStorage.removeItem('oauth_intent');
 
           const exists = await authService.checkAccountExists(googleEmail);
 
-          if (oauthIntent === 'register') {
-            const pendingStoreName = sessionStorage.getItem('oauth_pending_store_name');
-            sessionStorage.removeItem('oauth_pending_store_name');
-
-            // User registered via Google
-            await authService.registerWithGoogle({
+          let authData: { user: User; merchant: Merchant; store: Store };
+          if (!exists) {
+            // New user from Google OAuth: automatically register merchant & store
+            authData = await authService.registerWithGoogle({
               googleEmail,
               fullName,
               avatarUrl,
               storeName: pendingStoreName || undefined,
             });
-            // After register, user must login first
-            await supabase.auth.signOut();
-            await authService.logout();
-            sessionStorage.setItem('auth_redirect_msg', 'Pendaftaran dengan Google berhasil! Silakan klik "Masuk dengan Google" untuk login ke akun Anda.');
-            sessionStorage.setItem('auth_prefill_email', googleEmail);
-            window.dispatchEvent(new CustomEvent('auth_nav_login', { detail: { email: googleEmail } }));
           } else {
-            // User attempting to login with Google
-            if (!exists) {
-              // Reject if account not registered yet
-              await supabase.auth.signOut();
-              await authService.logout();
-              sessionStorage.setItem('auth_redirect_err', 'Akun Google ini belum terdaftar. Silakan daftar akun baru terlebih dahulu.');
-              window.dispatchEvent(new CustomEvent('auth_nav_login'));
-            } else {
-              // Existing registered user: login directly
-              const data = await authService.login(googleEmail, 'google-auth');
-              setUser(data.user);
-              setMerchant(data.merchant);
-              setStore(data.store);
-            }
+            // Existing user: log in directly
+            authData = await authService.login(googleEmail, 'google-auth');
           }
+
+          setUser(authData.user);
+          setMerchant(authData.merchant);
+          setStore(authData.store);
+          window.dispatchEvent(new CustomEvent('auth_google_success', { detail: authData }));
         }
       } catch (e) {
         console.error('Auth initialization error:', e);

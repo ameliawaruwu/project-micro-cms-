@@ -604,7 +604,36 @@ class AuthService {
     };
 
     const userStores = await storeService.getStoresForUser(userId);
-    const existingStore = userStores.length > 0 ? userStores[0] : undefined;
+    let existingStore = userStores.length > 0 ? userStores[0] : undefined;
+
+    if (!existingStore) {
+      existingStore = await storeService.createStore({
+        merchantId: userId,
+        name: finalStoreName,
+        slug: storeSlug,
+        tagline: `Toko Resmi ${finalStoreName}`,
+        description: 'Pusat belanja produk berkualitas dengan pemesanan praktis dan cepat.',
+        logoUrl: userAvatar,
+        bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+        phoneWhatsApp: '',
+        city: 'Indonesia',
+        province: '',
+        district: '',
+        subdistrict: '',
+        village: '',
+        postalCode: '',
+        address: 'Pusat Usaha UMKM',
+        category: 'UMKM & Retail',
+        currency: 'IDR',
+        balance: 0,
+        isPublished: false,
+        onboarding: {
+          storeNameSet: hasCustomStoreName,
+          productUploaded: false,
+          paymentConnected: false,
+        },
+      });
+    }
 
     const merchant: Merchant = {
       id: `merch-${userId}`,
@@ -643,7 +672,16 @@ class AuthService {
     accounts.push(newAccountRecord);
     this.saveAccounts(accounts);
 
-    return { user, merchant, store: existingStore };
+    // Save active session to localStorage so user is immediately logged in
+    localStorage.removeItem('microcms_explicit_logout');
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    localStorage.setItem(AUTH_MERCHANT_KEY, JSON.stringify(merchant));
+    if (existingStore) {
+      localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(existingStore));
+      localStorage.setItem(ACTIVE_STORE_ID_KEY, existingStore.id);
+    }
+
+    return { user, merchant, store: existingStore as Store };
   }
 
 

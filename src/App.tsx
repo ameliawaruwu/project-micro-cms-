@@ -120,15 +120,36 @@ export default function App() {
         setRegisteredEmailForLogin(e.detail.email);
       }
     };
+    const handleGoogleSuccess = (e: any) => {
+      const gUser = e.detail?.user;
+      const targetMode = gUser?.role === 'admin' ? 'admin' : 'merchant-desktop';
+      setViewMode(targetMode);
+      setAuthView(null);
+      loadData();
+      addToast('Berhasil masuk dengan akun Google!');
+    };
+
     window.addEventListener('auth_nav_login', handleNavLogin);
-    return () => window.removeEventListener('auth_nav_login', handleNavLogin);
+    window.addEventListener('auth_google_success', handleGoogleSuccess);
+    return () => {
+      window.removeEventListener('auth_nav_login', handleNavLogin);
+      window.removeEventListener('auth_google_success', handleGoogleSuccess);
+    };
   }, []);
 
   // State: Navigation & Multi-tenant Store
   const [stores, setStores] = useState<Store[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [activeTab, setActiveTab] = useState<MerchantTab>('beranda');
-  const [viewMode, setViewMode] = useState<ViewMode>('landing');
+  
+  // Inisialisasi viewMode langsung dari session tersimpan untuk mencegah flicker Landing Page saat reload
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const cachedUser = authService.getCurrentUser().user;
+    if (cachedUser) {
+      return cachedUser.role === 'admin' ? 'admin' : 'merchant-desktop';
+    }
+    return 'landing';
+  });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -925,8 +946,27 @@ export default function App() {
     addToast('Mode Toko Online Pembeli (Storefront) Aktif!', 'info');
   };
 
-  // LANDING PAGE VIEW
+  // 0. AUTH LOADING SPLASH: Mencegah flicker LandingPage saat session sedang diverifikasi
+  if (isAuthLoading && !authView && viewMode !== 'storefront-live') {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#FAF7F7]">
+        <div className="flex flex-col items-center gap-4 animate-in fade-in duration-300">
+          <KroomifyLogo className="h-10 w-auto" />
+          <div className="flex items-center gap-2.5 text-sm font-medium text-[#706866]">
+            <Loader2 className="w-4 h-4 animate-spin text-[#66000E]" />
+            <span>Memverifikasi sesi toko...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // LANDING PAGE VIEW (Hanya untuk user yang belum terotentikasi)
   if (viewMode === 'landing' && authView === null) {
+    if (isAuthenticated && user) {
+      setViewMode(user.role === 'admin' ? 'admin' : 'merchant-desktop');
+      return null;
+    }
     return (
       <>
         <LandingPage
@@ -977,13 +1017,13 @@ export default function App() {
         <LoginPage
           initialEmail={registeredEmailForLogin}
           onSuccess={() => {
+            const currentUser = authService.getCurrentUser().user || user;
+            const targetMode = currentUser?.role === 'admin' ? 'admin' : 'merchant-desktop';
+            setViewMode(targetMode);
             setAuthView(null);
-            const currentUser = authService.getCurrentUser().user;
-            if (currentUser?.role === 'admin') {
-              setViewMode('admin');
+            if (targetMode === 'admin') {
               addToast('Selamat datang di Super Admin Panel!');
             } else {
-              setViewMode('merchant-desktop');
               loadData();
               addToast('Berhasil masuk ke Dashboard Toko!');
             }
@@ -1367,6 +1407,7 @@ export default function App() {
                   />
                 ) : (
                   <ProductFormPage
+                    key={productToEdit ? `edit-${productToEdit.id}` : `add-${products.length}`}
                     productToEdit={productToEdit}
                     categories={categories}
                     onBack={() => {
