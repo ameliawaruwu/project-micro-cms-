@@ -1622,7 +1622,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             store={currentStore}
             onNavigateBilling={onNavigateBilling}
             onNavigateDomain={onNavigateDomain}
-            onPublish={onPublishStore}
+            onPublish={() => {
+              if (onPublishStore) onPublishStore();
+              setCurrentStore((prev) => ({ ...prev, isPublished: true }));
+            }}
             onUnpublish={confirmUnpublish}
           />
 

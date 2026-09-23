@@ -170,7 +170,9 @@ class StoreService {
           plan: row.plan || 'free',
           planExpiresAt: row.plan_expires_at || row.theme_settings?.planExpiresAt || undefined,
           planSubscribedAt: row.plan_subscribed_at || row.theme_settings?.planSubscribedAt || undefined,
-          isPublished: row.is_published !== undefined ? Boolean(row.is_published) : Boolean(row.theme_settings?.isPublished),
+          isPublished: row.is_published !== undefined && row.is_published !== null
+            ? Boolean(row.is_published)
+            : ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id),
           layoutSettings: row.theme_settings,
           customDomain: row.custom_domain,
           onboarding: {
@@ -216,9 +218,9 @@ class StoreService {
 
       if (!error && data && data.length > 0) {
         const row = data[0];
-        const isPub = row.is_published !== undefined
+        const isPub = row.is_published !== undefined && row.is_published !== null
           ? Boolean(row.is_published)
-          : Boolean(row.theme_settings?.isPublished);
+          : ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id);
 
         const mappedStore: Store = {
           id: row.id,
@@ -346,10 +348,11 @@ class StoreService {
       const combinedThemeSettings = {
         ...(stores[index].layoutSettings || {}),
         ...(updates.layoutSettings || {}),
-        ...(updates.isPublished !== undefined ? { isPublished: updates.isPublished } : {}),
         ...(updates.planExpiresAt ? { planExpiresAt: updates.planExpiresAt } : {}),
         ...(updates.planSubscribedAt ? { planSubscribedAt: updates.planSubscribedAt } : {}),
       };
+      // Keep theme_settings clean of store publication column
+      delete (combinedThemeSettings as any).isPublished;
       dbUpdates.theme_settings = combinedThemeSettings;
       stores[index].layoutSettings = combinedThemeSettings;
       await supabase.from('stores').update(dbUpdates).eq('id', storeId);
@@ -550,9 +553,9 @@ class StoreService {
             if (payload?.new) {
               const row = payload.new;
               if (row.id === storeIdOrSlug || row.slug === storeIdOrSlug) {
-                const isPub = row.is_published !== undefined 
+                const isPub = row.is_published !== undefined && row.is_published !== null
                   ? Boolean(row.is_published) 
-                  : Boolean(row.theme_settings?.isPublished);
+                  : ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id);
 
                 const stored = this.getStoredStores();
                 const idx = stored.findIndex((s) => s.id === row.id || s.slug === row.slug);

@@ -853,6 +853,7 @@ export default function App() {
         longitude: data.longitude,
         category: data.category || 'UMKM & Retail',
         currency: 'IDR',
+        isPublished: false,
       });
       setActiveStore(newStore);
       setStores([newStore]);
@@ -867,10 +868,10 @@ export default function App() {
 
   const handleSaveLayout = async (layoutSettings: StoreLayoutSettings) => {
     if (!activeStore) return;
-    const updated = await storeService.updateStore(activeStore.id, { layoutSettings, isPublished: true });
+    const updated = await storeService.updateStore(activeStore.id, { layoutSettings });
     setActiveStore(updated);
     setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-    addToast('Tata letak halaman toko berhasil disimpan dan dipublikasikan!');
+    addToast('Tata letak halaman toko berhasil disimpan!');
   };
 
   const handlePublishStore = async (storeId?: string) => {
@@ -1356,6 +1357,7 @@ export default function App() {
                 city: 'Indonesia',
                 category: data.storeUpdates.category || 'Kuliner & Minuman',
                 currency: 'IDR',
+                isPublished: false,
                 layoutSettings: data.layoutSettings,
               });
               setActiveStore(newStore);
