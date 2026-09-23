@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, ArrowUpRight, RefreshCw, LayoutDashboard, ExternalLink } from 'lucide-react';
+import { Wallet, ArrowUpRight, RefreshCw, LayoutDashboard, ExternalLink, Store as StoreIcon, Plus } from 'lucide-react';
 import { Store as StoreType, Order, Product, MerchantTab } from '../../types';
 import { MetricCard } from '../../components/dashboard/MetricCard';
 import { SalesAnalyticsSection } from '../../components/dashboard/SalesAnalyticsSection';
@@ -116,6 +116,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Onboarding Call-to-Action for new merchants without a store */}
+      {!store.id && (
+        <div className="bg-gradient-to-r from-[#66000E] to-[#8A0013] rounded-2xl p-5 sm:p-6 text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+              <StoreIcon className="w-5 h-5 text-white/90" />
+              <span>{isEn ? 'Open Your Online Store Now' : 'Buka Toko Online Anda Sekarang'}</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-white/80 max-w-xl">
+              {isEn
+                ? 'Your account is active. Create your first online store to set up your business details, address, and upload your products.'
+                : 'Akun Anda telah aktif. Silakan buat toko pertama Anda untuk melengkapi nama usaha, kategori, alamat pengiriman, dan mulai mengunggah produk.'}
+            </p>
+          </div>
+          <button
+            onClick={() => onNavigateTab('pengaturan')}
+            className="px-4 py-2.5 rounded-xl bg-white text-[#66000E] hover:bg-[#FAF7F7] text-xs font-semibold shadow-xs flex items-center justify-center gap-2 shrink-0 transition active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{isEn ? 'Create Store Now' : 'Buat Toko Baru'}</span>
+          </button>
+        </div>
+      )}
 
       {/* QUICK STORE WALLET BANNER (Saldo Toko Aktif) */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E5E0DD] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#66000E]/30 transition min-h-[90px]">

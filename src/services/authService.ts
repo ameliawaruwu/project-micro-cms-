@@ -565,7 +565,7 @@ class AuthService {
     fullName?: string;
     storeName?: string;
     avatarUrl?: string;
-  }): Promise<{ user: User; merchant: Merchant; store: Store }> {
+  }): Promise<{ user: User; merchant: Merchant; store: Store | null }> {
     await new Promise((res) => setTimeout(res, 450));
 
     const cleanEmail = params.googleEmail.toLowerCase().trim();
@@ -584,10 +584,6 @@ class AuthService {
 
     const defaultName = cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
     const finalName = (params.fullName || defaultName).trim();
-    const hasCustomStoreName = !!params.storeName && params.storeName.trim().length > 0;
-    const finalStoreName = (params.storeName || `Toko ${finalName}`).trim();
-    const storeSlug = `toko-${cleanEmail.split('@')[0].replace(/[^a-z0-9]/g, '')}`;
-    const storeId = `store_${Date.now()}`;
 
     const userAvatar =
       params.avatarUrl ||
@@ -603,37 +599,9 @@ class AuthService {
       createdAt: new Date().toISOString(),
     };
 
+    // User will create their store explicitly when ready. Do NOT automatically create a dummy store.
     const userStores = await storeService.getStoresForUser(userId);
-    let existingStore = userStores.length > 0 ? userStores[0] : undefined;
-
-    if (!existingStore) {
-      existingStore = await storeService.createStore({
-        merchantId: userId,
-        name: finalStoreName,
-        slug: storeSlug,
-        tagline: `Toko Resmi ${finalStoreName}`,
-        description: 'Pusat belanja produk berkualitas dengan pemesanan praktis dan cepat.',
-        logoUrl: userAvatar,
-        bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-        phoneWhatsApp: '',
-        city: 'Indonesia',
-        province: '',
-        district: '',
-        subdistrict: '',
-        village: '',
-        postalCode: '',
-        address: 'Pusat Usaha UMKM',
-        category: 'UMKM & Retail',
-        currency: 'IDR',
-        balance: 0,
-        isPublished: false,
-        onboarding: {
-          storeNameSet: hasCustomStoreName,
-          productUploaded: false,
-          paymentConnected: false,
-        },
-      });
-    }
+    const existingStore = userStores.length > 0 ? userStores[0] : undefined;
 
     const merchant: Merchant = {
       id: `merch-${userId}`,
@@ -679,9 +647,12 @@ class AuthService {
     if (existingStore) {
       localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(existingStore));
       localStorage.setItem(ACTIVE_STORE_ID_KEY, existingStore.id);
+    } else {
+      localStorage.removeItem(AUTH_STORE_KEY);
+      localStorage.removeItem(ACTIVE_STORE_ID_KEY);
     }
 
-    return { user, merchant, store: existingStore as Store };
+    return { user, merchant, store: (existingStore || null) as any };
   }
 
 

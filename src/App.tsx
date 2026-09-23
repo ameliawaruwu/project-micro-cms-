@@ -808,11 +808,13 @@ export default function App() {
         postalCode: data.postalCode || '',
         latitude: data.latitude,
         longitude: data.longitude,
-        category: 'Kuliner & Minuman',
+        category: data.category || 'UMKM & Retail',
         currency: 'IDR',
       });
       setActiveStore(newStore);
       setStores([newStore]);
+      localStorage.setItem('microcms_auth_store', JSON.stringify(newStore));
+      localStorage.setItem('microcms_active_store_id', newStore.id);
       addToast(`🎉 Toko "${newStore.name}" berhasil dibuat!`);
     } catch (err) {
       console.error('Error creating store:', err);

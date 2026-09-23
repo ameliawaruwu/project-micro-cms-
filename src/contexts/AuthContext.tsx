@@ -79,14 +79,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           const exists = await authService.checkAccountExists(googleEmail);
 
-          let authData: { user: User; merchant: Merchant; store: Store };
+          let authData: { user: User; merchant: Merchant; store: Store | null };
           if (!exists) {
-            // New user from Google OAuth: automatically register merchant & store
+            // New user from Google OAuth: register user & merchant without auto-creating a store
             authData = await authService.registerWithGoogle({
               googleEmail,
               fullName,
               avatarUrl,
-              storeName: pendingStoreName || undefined,
             });
           } else {
             // Existing user: log in directly
