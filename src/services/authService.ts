@@ -704,21 +704,56 @@ class AuthService {
   async verifyResetToken(email: string, token: string): Promise<boolean> {
     await new Promise((res) => setTimeout(res, 300));
     const cleanEmail = email.toLowerCase().trim();
+    const cleanToken = token.trim();
+
+    // 1. Cek kecocokan dengan token lokal
     const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
-    
-    if (!storedToken || storedToken !== token.trim()) {
-      throw new Error('Token verifikasi tidak valid atau sudah kadaluarsa.');
+    if (storedToken && storedToken === cleanToken) {
+      return true;
     }
-    return true;
+
+    // 2. Cek verifikasi OTP via Supabase Auth jika token dikirim dari Supabase Email
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: cleanToken,
+        type: 'recovery',
+      });
+      if (!error && (data?.session || data?.user)) {
+        sessionStorage.setItem(`reset_verified_${cleanEmail}`, 'true');
+        return true;
+      }
+    } catch (sbErr) {
+      console.warn('Supabase verifyOtp check notice:', sbErr);
+    }
+
+    throw new Error('Token verifikasi tidak valid atau sudah kadaluarsa.');
   }
 
   async resetPassword(email: string, token: string, newPassword: string): Promise<boolean> {
     await new Promise((res) => setTimeout(res, 400));
     const cleanEmail = email.toLowerCase().trim();
+    const cleanToken = token.trim();
     
-    // Verifikasi token
+    // Verifikasi validitas token (lokal atau supabase)
     const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
-    if (!storedToken || storedToken !== token.trim()) {
+    const isSupabaseVerified = sessionStorage.getItem(`reset_verified_${cleanEmail}`) === 'true';
+    let isTokenValid = (storedToken && storedToken === cleanToken) || isSupabaseVerified;
+
+    if (!isTokenValid) {
+      try {
+        const { data, error } = await supabase.auth.verifyOtp({
+          email: cleanEmail,
+          token: cleanToken,
+          type: 'recovery',
+        });
+        if (!error && (data?.session || data?.user)) {
+          isTokenValid = true;
+        }
+      } catch (e) {}
+    }
+
+    if (!isTokenValid) {
       throw new Error('Token verifikasi tidak valid atau sudah kadaluarsa.');
     }
 
@@ -746,7 +781,14 @@ class AuthService {
       console.warn('Failed to update password in Supabase:', e);
     }
 
-    // 3. Perbarui akun lokal di localStorage jika ada
+    // 3. Update Supabase Auth user password jika ada active session
+    try {
+      await supabase.auth.updateUser({ password: newPassword });
+    } catch (authErr) {
+      // Ignored if user only exists in public.users
+    }
+
+    // 4. Perbarui akun lokal di localStorage jika ada
     const accounts = this.getStoredAccounts();
     const accountIndex = accounts.findIndex((a) => a.email.toLowerCase() === cleanEmail);
     if (accountIndex !== -1) {
@@ -754,8 +796,9 @@ class AuthService {
       this.saveAccounts(accounts);
     }
 
-    // 4. Bersihkan token setelah berhasil digunakan
+    // 5. Bersihkan token setelah berhasil digunakan
     sessionStorage.removeItem(`reset_token_${cleanEmail}`);
+    sessionStorage.removeItem(`reset_verified_${cleanEmail}`);
 
     return true;
   }
