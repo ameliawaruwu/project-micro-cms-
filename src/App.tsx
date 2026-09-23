@@ -29,6 +29,7 @@ import {
   Phone,
   Search,
   EyeOff,
+  Loader2,
 } from 'lucide-react';
 import {
   Store,
@@ -94,6 +95,7 @@ import { MerchantWalletModal } from './components/wallet/MerchantWalletModal';
 import { UpgradePlanModal } from './components/billing/UpgradePlanModal';
 import { StoreLayoutSetupWizard } from './components/layout-editor/StoreLayoutSetupWizard';
 import { StoreNameSetupModal } from './components/common/StoreNameSetupModal';
+import { KroomifyLogo } from './components/common/KroomifyLogo';
 
 // Storefront Components
 import { StoreHeader } from './components/storefront/StoreHeader';
