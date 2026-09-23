@@ -639,17 +639,16 @@ class AuthService {
     // 2. Generate token 6 digit
     const token = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Simpan token di session storage dan local storage untuk verifikasi
+    // Simpan token hanya di session storage untuk verifikasi saat user memasukkan kode
     sessionStorage.setItem(`reset_token_${cleanEmail}`, token);
-    localStorage.setItem(`reset_token_latest_${cleanEmail}`, token);
 
-    // Kirim notifikasi toast ke UI berisi kode verifikasi
+    // Notifikasi bahwa instruksi telah dikirim ke email (tanpa menampilkan kode di UI)
     window.dispatchEvent(
       new CustomEvent('toast_notification', {
         detail: {
-          message: `Kode Verifikasi Reset Password: ${token}`,
-          type: 'info',
-          duration: 15000,
+          message: `Kode verifikasi telah dikirim ke email ${cleanEmail}. Silakan cek kotak masuk atau folder spam.`,
+          type: 'success',
+          duration: 6000,
         },
       })
     );
@@ -705,9 +704,7 @@ class AuthService {
   async verifyResetToken(email: string, token: string): Promise<boolean> {
     await new Promise((res) => setTimeout(res, 300));
     const cleanEmail = email.toLowerCase().trim();
-    const storedToken =
-      sessionStorage.getItem(`reset_token_${cleanEmail}`) ||
-      localStorage.getItem(`reset_token_latest_${cleanEmail}`);
+    const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
     
     if (!storedToken || storedToken !== token.trim()) {
       throw new Error('Token verifikasi tidak valid atau sudah kadaluarsa.');
@@ -720,9 +717,7 @@ class AuthService {
     const cleanEmail = email.toLowerCase().trim();
     
     // Verifikasi token
-    const storedToken =
-      sessionStorage.getItem(`reset_token_${cleanEmail}`) ||
-      localStorage.getItem(`reset_token_latest_${cleanEmail}`);
+    const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
     if (!storedToken || storedToken !== token.trim()) {
       throw new Error('Token verifikasi tidak valid atau sudah kadaluarsa.');
     }
@@ -761,7 +756,6 @@ class AuthService {
 
     // 4. Bersihkan token setelah berhasil digunakan
     sessionStorage.removeItem(`reset_token_${cleanEmail}`);
-    localStorage.removeItem(`reset_token_latest_${cleanEmail}`);
 
     return true;
   }

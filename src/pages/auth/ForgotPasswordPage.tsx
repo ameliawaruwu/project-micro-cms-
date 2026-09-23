@@ -8,6 +8,7 @@ import {
   Check,
   Eye,
   EyeOff,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
@@ -35,7 +36,6 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [devToken, setDevToken] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (resendCooldown > 0) {
@@ -60,9 +60,6 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
     try {
       setIsLoading(true);
       await forgotPassword(email.trim());
-      const cleanInput = email.trim().toLowerCase();
-      const latestToken = localStorage.getItem(`reset_token_latest_${cleanInput}`) || localStorage.getItem(`reset_token_${cleanInput}`);
-      if (latestToken) setDevToken(latestToken);
       setResendCooldown(30);
       setStep('token');
     } catch (err: any) {
@@ -79,9 +76,6 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
     try {
       setIsLoading(true);
       await forgotPassword(email.trim());
-      const cleanInput = email.trim().toLowerCase();
-      const latestToken = localStorage.getItem(`reset_token_latest_${cleanInput}`) || localStorage.getItem(`reset_token_${cleanInput}`);
-      if (latestToken) setDevToken(latestToken);
       setResendCooldown(30);
     } catch (err: any) {
       setError(err?.message || 'Gagal mengirim ulang token. Periksa kembali email/username Anda.');
@@ -329,19 +323,15 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
 
               {step === 'token' && (
                 <form onSubmit={handleVerifyToken} className="space-y-4 w-full animate-in fade-in" noValidate>
-                  {devToken && (
-                    <div
-                      onClick={() => setToken(devToken)}
-                      className="p-3 bg-[#F9EDEF] border border-[#66000E]/20 rounded-2xl text-xs text-[#66000E] flex items-center justify-between cursor-pointer hover:bg-[#F5DDE1] transition-all"
-                      title="Klik untuk mengisi token secara otomatis"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#66000E] animate-ping" />
-                        <span>Kode Verifikasi Anda: <strong className="font-mono text-sm tracking-widest font-bold ml-1">{devToken}</strong></span>
-                      </div>
-                      <span className="text-[11px] font-semibold underline">Gunakan</span>
+                  <div className="p-3.5 bg-[#F9EDEF] border border-[#66000E]/20 rounded-2xl text-xs text-[#66000E] flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-[#66000E]/10 flex items-center justify-center shrink-0">
+                      <Mail className="w-4 h-4 text-[#66000E]" />
                     </div>
-                  )}
+                    <div>
+                      <p className="font-semibold text-[#1A1110]">Kode verifikasi telah dikirim ke email</p>
+                      <p className="text-[11px] text-[#6B6260] mt-0.5">Silakan periksa kotak masuk (Inbox) atau folder Spam pada email <strong>{email}</strong>.</p>
+                    </div>
+                  </div>
 
                   <div className="space-y-1.5 text-left">
                     <label
