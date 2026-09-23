@@ -130,7 +130,10 @@ CREATE INDEX IF NOT EXISTS idx_shipping_branches_is_default ON shipping_branches
 
 -- Trigger Otomatis: Hanya 1 Cabang Default per Store
 CREATE OR REPLACE FUNCTION set_single_default_branch()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+LANGUAGE plpgsql 
+SET search_path = public, extensions
+AS $$
 BEGIN
     IF NEW.is_default = TRUE THEN
         UPDATE shipping_branches
@@ -139,7 +142,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS trg_single_default_branch ON shipping_branches;
 CREATE TRIGGER trg_single_default_branch
@@ -447,54 +450,107 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- ============================================================================
 -- ============================================================================
--- KONFIGURASI HAK AKSES DAN PERIZINAN SUPABASE CLIENT (ANON & AUTHENTICATED)
+-- KONFIGURASI HAK AKSES DAN KEAMANAN RLS (ROW LEVEL SECURITY)
 -- ============================================================================
--- Sistem Micro CMS Kroomify menggunakan Supabase client dengan anon key dari browser,
--- sehingga seluruh tabel dapat diakses (SELECT, INSERT, UPDATE, DELETE) oleh peran anon, authenticated, dan service_role.
+-- Mengaktifkan Row Level Security (RLS) pada seluruh tabel publik sesuai standar Supabase Security Advisor.
+-- Kolom sensitif password_hash pada tabel users diproteksi agar tidak bisa di-SELECT oleh role publik (anon/authenticated).
+-- Verifikasi password dilakukan secara aman di sisi database melalui RPC verify_user_credentials.
 
--- 1. Nonaktifkan RLS agar tidak memblokir query dari client anonim
-ALTER TABLE IF EXISTS products DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS stores DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS shipping_branches DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS orders DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS order_items DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS users DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS platform_settings DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS wallet_transactions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS withdrawals DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS billing_plans DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS store_subscriptions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS domain_requests DISABLE ROW LEVEL SECURITY;
+-- 1. Aktifkan Row Level Security (RLS) pada seluruh tabel
+ALTER TABLE IF EXISTS products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS stores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS shipping_branches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS platform_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS wallet_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS withdrawals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS billing_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS store_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS domain_requests ENABLE ROW LEVEL SECURITY;
 
--- 2. Bersihkan kebijakan lama
-DROP POLICY IF EXISTS "products_read_policy" ON products;
-DROP POLICY IF EXISTS "products_write_policy" ON products;
-DROP POLICY IF EXISTS "stores_read_policy" ON stores;
-DROP POLICY IF EXISTS "stores_write_policy" ON stores;
-DROP POLICY IF EXISTS "shipping_branches_read_policy" ON shipping_branches;
-DROP POLICY IF EXISTS "shipping_branches_write_policy" ON shipping_branches;
-DROP POLICY IF EXISTS "orders_public_insert" ON orders;
-DROP POLICY IF EXISTS "orders_select_policy" ON orders;
-DROP POLICY IF EXISTS "orders_update_policy" ON orders;
-DROP POLICY IF EXISTS "order_items_public_insert" ON order_items;
-DROP POLICY IF EXISTS "order_items_select_policy" ON order_items;
-DROP POLICY IF EXISTS "platform_settings_read_policy" ON platform_settings;
-DROP POLICY IF EXISTS "billing_plans_read_policy" ON billing_plans;
-DROP POLICY IF EXISTS "domain_requests_policy" ON domain_requests;
-
--- 3. Berikan hak penuh (ALL) pada seluruh tabel ke peran anon, authenticated, dan service_role
+-- 2. Hak Akses Tabel
 GRANT ALL ON TABLE products TO anon, authenticated, service_role;
 GRANT ALL ON TABLE stores TO anon, authenticated, service_role;
 GRANT ALL ON TABLE shipping_branches TO anon, authenticated, service_role;
 GRANT ALL ON TABLE orders TO anon, authenticated, service_role;
 GRANT ALL ON TABLE order_items TO anon, authenticated, service_role;
-GRANT ALL ON TABLE users TO anon, authenticated, service_role;
 GRANT ALL ON TABLE platform_settings TO anon, authenticated, service_role;
 GRANT ALL ON TABLE wallet_transactions TO anon, authenticated, service_role;
 GRANT ALL ON TABLE withdrawals TO anon, authenticated, service_role;
 GRANT ALL ON TABLE billing_plans TO anon, authenticated, service_role;
 GRANT ALL ON TABLE store_subscriptions TO anon, authenticated, service_role;
 GRANT ALL ON TABLE domain_requests TO anon, authenticated, service_role;
+
+-- Hak Akses Khusus Tabel Users (Proteksi Kolom Sensitif password_hash)
+GRANT ALL ON TABLE users TO service_role;
+REVOKE SELECT ON TABLE users FROM anon, authenticated;
+GRANT SELECT (id, email, name, phone, role, created_at, updated_at) ON TABLE users TO anon, authenticated;
+GRANT INSERT (id, email, password_hash, name, phone, role, created_at, updated_at) ON TABLE users TO anon, authenticated;
+GRANT UPDATE (name, phone, updated_at) ON TABLE users TO anon, authenticated;
+
+-- 3. Kebijakan RLS (Row Level Security Policies)
+-- Kebijakan Users
+DROP POLICY IF EXISTS "allow_public_all" ON users;
+DROP POLICY IF EXISTS "users_select_policy" ON users;
+DROP POLICY IF EXISTS "users_insert_policy" ON users;
+DROP POLICY IF EXISTS "users_update_policy" ON users;
+CREATE POLICY "users_select_policy" ON users FOR SELECT TO anon, authenticated, service_role USING (true);
+CREATE POLICY "users_insert_policy" ON users FOR INSERT TO anon, authenticated, service_role WITH CHECK (true);
+CREATE POLICY "users_update_policy" ON users FOR UPDATE TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+
+-- Kebijakan Billing Plans
+DROP POLICY IF EXISTS "billing_plans_public_read" ON billing_plans;
+CREATE POLICY "billing_plans_public_read" ON billing_plans FOR SELECT TO anon, authenticated, service_role USING (is_active = true);
+
+-- Kebijakan Stores
+DROP POLICY IF EXISTS "stores_backend_access" ON stores;
+DROP POLICY IF EXISTS "stores_storefront_public" ON stores;
+CREATE POLICY "stores_backend_access" ON stores FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+CREATE POLICY "stores_storefront_public" ON stores FOR SELECT TO anon USING (is_published = true AND is_suspended = false);
+
+-- Kebijakan Products
+DROP POLICY IF EXISTS "products_backend_access" ON products;
+DROP POLICY IF EXISTS "products_storefront_public" ON products;
+CREATE POLICY "products_backend_access" ON products FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+CREATE POLICY "products_storefront_public" ON products FOR SELECT TO anon USING (
+    EXISTS (SELECT 1 FROM stores s WHERE s.id = products.store_id AND s.is_published = true AND s.is_suspended = false)
+);
+
+-- Kebijakan Orders & Order Items
+DROP POLICY IF EXISTS "orders_backend_access" ON orders;
+DROP POLICY IF EXISTS "orders_public_insert_checkout" ON orders;
+CREATE POLICY "orders_backend_access" ON orders FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+CREATE POLICY "orders_public_insert_checkout" ON orders FOR INSERT TO anon WITH CHECK (
+    EXISTS (SELECT 1 FROM stores s WHERE s.id = orders.store_id AND s.is_published = true AND s.is_suspended = false)
+);
+
+DROP POLICY IF EXISTS "order_items_backend_access" ON order_items;
+DROP POLICY IF EXISTS "order_items_checkout_insert" ON order_items;
+CREATE POLICY "order_items_backend_access" ON order_items FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+CREATE POLICY "order_items_checkout_insert" ON order_items FOR INSERT TO anon WITH CHECK (
+    EXISTS (SELECT 1 FROM orders o JOIN stores s ON s.id = o.store_id WHERE o.id = order_items.order_id AND s.is_published = true)
+);
+
+-- Kebijakan Operasional Toko Lainnya
+DROP POLICY IF EXISTS "shipping_branches_backend" ON shipping_branches;
+CREATE POLICY "shipping_branches_backend" ON shipping_branches FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "withdrawals_backend" ON withdrawals;
+CREATE POLICY "withdrawals_backend" ON withdrawals FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "wallet_transactions_backend" ON wallet_transactions;
+CREATE POLICY "wallet_transactions_backend" ON wallet_transactions FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "platform_settings_admin_read" ON platform_settings;
+CREATE POLICY "platform_settings_admin_read" ON platform_settings FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "store_subscriptions_backend" ON store_subscriptions;
+CREATE POLICY "store_subscriptions_backend" ON store_subscriptions FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "domain_requests_backend" ON domain_requests;
+CREATE POLICY "domain_requests_backend" ON domain_requests FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
 
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
@@ -530,6 +586,7 @@ CREATE OR REPLACE FUNCTION get_dashboard_analytics(p_store_id VARCHAR)
 RETURNS JSONB 
 LANGUAGE plpgsql 
 SECURITY DEFINER
+SET search_path = public, extensions
 AS $$
 DECLARE
     v_balance NUMERIC;
@@ -658,6 +715,7 @@ CREATE OR REPLACE FUNCTION verify_user_credentials(p_email VARCHAR, p_password V
 RETURNS JSONB 
 LANGUAGE plpgsql 
 SECURITY DEFINER
+SET search_path = public, extensions
 AS $$
 DECLARE
     v_user RECORD;

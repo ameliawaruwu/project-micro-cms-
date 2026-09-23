@@ -246,7 +246,7 @@ class AuthService {
       try {
         const { data, error } = await supabase
           .from('users')
-          .select('id, name, email, phone, role, password_hash, created_at')
+          .select('id, name, email, phone, role, created_at')
           .eq('email', cleanEmail)
           .maybeSingle();
 
@@ -293,12 +293,16 @@ class AuthService {
 
     // 4. Verifikasi kata sandi jika belum diverifikasi oleh RPC
     if (!verifiedDbUser && _password && _password !== 'google-auth') {
-      const hashedInput = await hashPassword(_password);
-      const isMatch =
-        dbUser.password_hash === _password ||
-        dbUser.password_hash === hashedInput;
-      if (!isMatch) {
-        throw new Error('Kata sandi yang Anda masukkan salah.');
+      if (dbUser.password_hash) {
+        const hashedInput = await hashPassword(_password);
+        const isMatch =
+          dbUser.password_hash === _password ||
+          dbUser.password_hash === hashedInput;
+        if (!isMatch) {
+          throw new Error('Kata sandi yang Anda masukkan salah.');
+        }
+      } else {
+        throw new Error('Verifikasi kata sandi gagal.');
       }
     }
 
