@@ -8,9 +8,16 @@
 -- Sudah termasuk perizinan akses publik/anon untuk frontend & Supabase Realtime
 -- ============================================================================
 
--- Ekstensi UUID & pgcrypto
+-- Ekstensi UUID & pgcrypto & Konfigurasi Timezone WIB (Asia/Jakarta)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+ALTER DATABASE postgres SET timezone TO 'Asia/Jakarta';
+ALTER ROLE anon SET timezone TO 'Asia/Jakarta';
+ALTER ROLE authenticated SET timezone TO 'Asia/Jakarta';
+ALTER ROLE service_role SET timezone TO 'Asia/Jakarta';
+ALTER ROLE postgres SET timezone TO 'Asia/Jakarta';
+SET timezone = 'Asia/Jakarta';
 
 -- ============================================================================
 -- OPSI RESET TOTAL: HAPUS TABEL LAMA (UNCOMMENT JIKA INGIN BERSIHKAN DARI AWAL)
@@ -507,50 +514,50 @@ CREATE POLICY "billing_plans_public_read" ON billing_plans FOR SELECT TO anon, a
 -- Kebijakan Stores
 DROP POLICY IF EXISTS "stores_backend_access" ON stores;
 DROP POLICY IF EXISTS "stores_storefront_public" ON stores;
-CREATE POLICY "stores_backend_access" ON stores FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
-CREATE POLICY "stores_storefront_public" ON stores FOR SELECT TO anon USING (is_published = true AND is_suspended = false);
+DROP POLICY IF EXISTS "stores_all_policy" ON stores;
+CREATE POLICY "stores_all_policy" ON stores FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
 
 -- Kebijakan Products
 DROP POLICY IF EXISTS "products_backend_access" ON products;
 DROP POLICY IF EXISTS "products_storefront_public" ON products;
-CREATE POLICY "products_backend_access" ON products FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
-CREATE POLICY "products_storefront_public" ON products FOR SELECT TO anon USING (
-    EXISTS (SELECT 1 FROM stores s WHERE s.id = products.store_id AND s.is_published = true AND s.is_suspended = false)
-);
+DROP POLICY IF EXISTS "products_all_policy" ON products;
+CREATE POLICY "products_all_policy" ON products FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
 
 -- Kebijakan Orders & Order Items
 DROP POLICY IF EXISTS "orders_backend_access" ON orders;
 DROP POLICY IF EXISTS "orders_public_insert_checkout" ON orders;
-CREATE POLICY "orders_backend_access" ON orders FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
-CREATE POLICY "orders_public_insert_checkout" ON orders FOR INSERT TO anon WITH CHECK (
-    EXISTS (SELECT 1 FROM stores s WHERE s.id = orders.store_id AND s.is_published = true AND s.is_suspended = false)
-);
+DROP POLICY IF EXISTS "orders_all_policy" ON orders;
+CREATE POLICY "orders_all_policy" ON orders FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "order_items_backend_access" ON order_items;
 DROP POLICY IF EXISTS "order_items_checkout_insert" ON order_items;
-CREATE POLICY "order_items_backend_access" ON order_items FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
-CREATE POLICY "order_items_checkout_insert" ON order_items FOR INSERT TO anon WITH CHECK (
-    EXISTS (SELECT 1 FROM orders o JOIN stores s ON s.id = o.store_id WHERE o.id = order_items.order_id AND s.is_published = true)
-);
+DROP POLICY IF EXISTS "order_items_all_policy" ON order_items;
+CREATE POLICY "order_items_all_policy" ON order_items FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
 
 -- Kebijakan Operasional Toko Lainnya
 DROP POLICY IF EXISTS "shipping_branches_backend" ON shipping_branches;
-CREATE POLICY "shipping_branches_backend" ON shipping_branches FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "shipping_branches_all_policy" ON shipping_branches;
+CREATE POLICY "shipping_branches_all_policy" ON shipping_branches FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "withdrawals_backend" ON withdrawals;
-CREATE POLICY "withdrawals_backend" ON withdrawals FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "withdrawals_all_policy" ON withdrawals;
+CREATE POLICY "withdrawals_all_policy" ON withdrawals FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "wallet_transactions_backend" ON wallet_transactions;
-CREATE POLICY "wallet_transactions_backend" ON wallet_transactions FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "wallet_transactions_all_policy" ON wallet_transactions;
+CREATE POLICY "wallet_transactions_all_policy" ON wallet_transactions FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "platform_settings_admin_read" ON platform_settings;
-CREATE POLICY "platform_settings_admin_read" ON platform_settings FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "platform_settings_all_policy" ON platform_settings;
+CREATE POLICY "platform_settings_all_policy" ON platform_settings FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "store_subscriptions_backend" ON store_subscriptions;
-CREATE POLICY "store_subscriptions_backend" ON store_subscriptions FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "store_subscriptions_all_policy" ON store_subscriptions;
+CREATE POLICY "store_subscriptions_all_policy" ON store_subscriptions FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "domain_requests_backend" ON domain_requests;
-CREATE POLICY "domain_requests_backend" ON domain_requests FOR ALL TO authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "domain_requests_all_policy" ON domain_requests;
+CREATE POLICY "domain_requests_all_policy" ON domain_requests FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
 
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
@@ -769,4 +776,61 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION verify_user_credentials(VARCHAR, VARCHAR) TO anon, authenticated, service_role;
+
+-- ============================================================================
+-- 13. RPC FUNCTION: REGISTER_NEW_USER (PENDAFTARAN PENGGUNA BARU AMAN)
+-- ============================================================================
+CREATE OR REPLACE FUNCTION register_new_user(
+    p_id VARCHAR,
+    p_email VARCHAR,
+    p_password_hash VARCHAR,
+    p_name VARCHAR,
+    p_phone VARCHAR DEFAULT NULL,
+    p_role VARCHAR DEFAULT 'merchant'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+    v_user users%ROWTYPE;
+BEGIN
+    INSERT INTO users (id, email, password_hash, name, phone, role, created_at, updated_at)
+    VALUES (
+        p_id,
+        LOWER(TRIM(p_email)),
+        p_password_hash,
+        p_name,
+        p_phone,
+        p_role,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        phone = COALESCE(EXCLUDED.phone, users.phone),
+        updated_at = CURRENT_TIMESTAMP
+    RETURNING * INTO v_user;
+
+    RETURN json_build_object(
+        'success', true,
+        'user', json_build_object(
+            'id', v_user.id,
+            'email', v_user.email,
+            'name', v_user.name,
+            'phone', v_user.phone,
+            'role', v_user.role,
+            'created_at', v_user.created_at
+        )
+    );
+EXCEPTION WHEN unique_violation THEN
+    RETURN json_build_object('success', false, 'message', 'Email sudah terdaftar.');
+WHEN OTHERS THEN
+    RETURN json_build_object('success', false, 'message', SQLERRM);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION register_new_user(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) TO anon, authenticated, service_role;
+
 

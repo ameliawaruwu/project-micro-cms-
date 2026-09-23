@@ -23,6 +23,27 @@ export async function hashPassword(plain: string): Promise<string> {
   }
 }
 
+export function getWibIsoString(date: Date = new Date()): string {
+  const pad = (n: number, digits: number = 2) => String(n).padStart(digits, '0');
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+
+  const map: Record<string, string> = {};
+  for (const p of parts) {
+    map[p.type] = p.value;
+  }
+  const ms = pad(date.getMilliseconds(), 3);
+  return `${map.year}-${map.month}-${map.day}T${map.hour}:${map.minute}:${map.second}.${ms}+07:00`;
+}
+
 interface StoredAccount {
   id: string; // userId
   email: string;
@@ -414,7 +435,7 @@ class AuthService {
         productUploaded: false,
         paymentConnected: false,
       },
-      createdAt: new Date().toISOString(),
+      createdAt: getWibIsoString(),
     };
 
     const merchant: Merchant = {
@@ -429,21 +450,44 @@ class AuthService {
 
     // 1. Sync User to Supabase Database with hashed password
     try {
-      const { error: dbUserErr } = await supabase.from('users').upsert({
-        id: userId,
-        email: cleanEmail,
-        password_hash: hashedPassword,
-        name: params.fullName.trim(),
-        phone: params.phoneWhatsApp.trim() || null,
-        role: 'merchant',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+      const nowWib = getWibIsoString();
+      let registered = false;
+      try {
+        const { data: rpcData, error: rpcErr } = await supabase.rpc('register_new_user', {
+          p_id: userId,
+          p_email: cleanEmail,
+          p_password_hash: hashedPassword,
+          p_name: params.fullName.trim(),
+          p_phone: params.phoneWhatsApp.trim() || null,
+          p_role: 'merchant',
+        });
+        if (!rpcErr && rpcData && rpcData.success) {
+          registered = true;
+          console.log('✅ User berhasil didaftarkan via RPC Supabase:', cleanEmail);
+        } else if (rpcErr) {
+          console.warn('⚠️ Supabase register_new_user RPC notice:', rpcErr.message);
+        }
+      } catch (rpcEx) {
+        console.warn('RPC register notice, fallback to direct upsert:', rpcEx);
+      }
 
-      if (dbUserErr) {
-        console.warn('⚠️ Supabase users upsert notice:', dbUserErr.message);
-      } else {
-        console.log('✅ User berhasil disimpan ke database Supabase:', cleanEmail);
+      if (!registered) {
+        const { error: dbUserErr } = await supabase.from('users').upsert({
+          id: userId,
+          email: cleanEmail,
+          password_hash: hashedPassword,
+          name: params.fullName.trim(),
+          phone: params.phoneWhatsApp.trim() || null,
+          role: 'merchant',
+          created_at: nowWib,
+          updated_at: nowWib,
+        }).select('id');
+
+        if (dbUserErr) {
+          console.error('❌ Supabase users upsert error:', dbUserErr.message);
+        } else {
+          console.log('✅ User berhasil disimpan ke database Supabase:', cleanEmail);
+        }
       }
     } catch (err: any) {
       console.warn('⚠️ Supabase users connection notice:', err?.message || err);
@@ -451,6 +495,7 @@ class AuthService {
 
     // 2. Sync Store to Supabase Database
     try {
+      const nowWib = getWibIsoString();
       const { error: dbStoreErr } = await supabase.from('stores').upsert({
         id: store.id,
         user_id: userId,
@@ -465,12 +510,12 @@ class AuthService {
         category: store.category,
         plan: 'free',
         balance: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+        created_at: nowWib,
+        updated_at: nowWib,
+      }).select('id');
 
       if (dbStoreErr) {
-        console.warn('⚠️ Supabase stores upsert notice:', dbStoreErr.message);
+        console.error('❌ Supabase stores upsert error:', dbStoreErr.message);
       } else {
         console.log('✅ Toko berhasil disimpan ke database Supabase:', store.name);
       }
@@ -571,6 +616,7 @@ class AuthService {
 
     // Sync to Supabase Database
     try {
+      const nowWib = getWibIsoString();
       await supabase.from('users').upsert({
         id: userId,
         email: cleanEmail,
@@ -578,9 +624,9 @@ class AuthService {
         name: finalName,
         phone: null,
         role: 'merchant',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+        created_at: nowWib,
+        updated_at: nowWib,
+      }).select('id');
     } catch (e) {
       console.warn('Supabase Google auth insert warning:', e);
     }
