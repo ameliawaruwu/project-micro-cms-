@@ -139,7 +139,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   ];
 
   return (
-    <header className="bg-white border-b border-[#E1E3E5] px-2 sm:px-4 h-[52px] flex items-center justify-between gap-1 sm:gap-2 shrink-0 z-30 font-sans shadow-xs select-none w-full max-w-full overflow-hidden box-border">
+    <header className="bg-white border-b border-[#E1E3E5] px-2 sm:px-4 h-[52px] flex items-center justify-between gap-1 sm:gap-2 shrink-0 z-40 font-sans shadow-xs select-none w-full max-w-full box-border relative">
       {/* ── LEFT: Back + Store Name + Status ── */}
       <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
         <button
@@ -202,14 +202,15 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
       {/* ── CENTER: Device Switcher + Page Selector ── */}
       <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Page Selector Dropdown */}
-        <div className="relative hidden md:block" ref={pageDropdownRef}>
+        <div className="relative hidden sm:block" ref={pageDropdownRef}>
           <button
-            onClick={() => setIsPageDropdownOpen(!isPageDropdownOpen)}
+            type="button"
+            onClick={() => setIsPageDropdownOpen((prev) => !prev)}
             className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[#E1E3E5] hover:bg-[#F6F6F7] transition cursor-pointer text-xs sm:text-[13px] font-medium text-[#202223]"
           >
             <FileText className="w-3.5 h-3.5 text-[#8C9196]" />
             <span className="truncate max-w-[120px]">{currentPage?.label || 'Halaman Utama'}</span>
-            <ChevronDown className={`w-3.5 h-3.5 text-[#8C9196] transition-transform ${isPageDropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-3.5 h-3.5 text-[#8C9196] transition-transform duration-200 ${isPageDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isPageDropdownOpen && (
@@ -234,6 +235,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
                         return (
                           <button
                             key={page.id}
+                            type="button"
                             onClick={() => {
                               onPageChange?.(page.id);
                               setIsPageDropdownOpen(false);
@@ -261,7 +263,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         </div>
 
         {/* Separator */}
-        <div className="w-px h-5 bg-[#E1E3E5] hidden md:block"></div>
+        <div className="w-px h-5 bg-[#E1E3E5] hidden sm:block"></div>
 
         {/* Device Mode Switcher */}
         <div className="bg-[#F6F6F7] p-0.5 rounded-xl border border-[#E1E3E5] flex items-center gap-0.5">
