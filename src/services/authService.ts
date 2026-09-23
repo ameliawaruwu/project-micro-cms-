@@ -611,20 +611,50 @@ class AuthService {
       throw new Error('Alamat email tidak valid.');
     }
 
-    const accounts = this.getStoredAccounts();
-    const account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
-
-    if (!account) {
-      // Don't throw error to prevent email enumeration, but return true anyway
-      return true;
+    // 1. Cek keberadaan user di database Supabase atau di stored accounts
+    let userExists = false;
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+      if (!error && data) {
+        userExists = true;
+      }
+    } catch (e) {
+      console.warn('Supabase check user in forgotPassword notice:', e);
     }
 
-    // Generate a 6-digit token
+    const accounts = this.getStoredAccounts();
+    const account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
+    if (account) {
+      userExists = true;
+    }
+
+    if (!userExists) {
+      throw new Error('Alamat email belum terdaftar di sistem.');
+    }
+
+    // 2. Generate token 6 digit
     const token = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Store token in session storage
+    // Simpan token di session storage dan local storage untuk verifikasi
     sessionStorage.setItem(`reset_token_${cleanEmail}`, token);
+    localStorage.setItem(`reset_token_latest_${cleanEmail}`, token);
 
+    // Kirim notifikasi toast ke UI berisi kode verifikasi
+    window.dispatchEvent(
+      new CustomEvent('toast_notification', {
+        detail: {
+          message: `Kode Verifikasi Reset Password: ${token}`,
+          type: 'info',
+          duration: 15000,
+        },
+      })
+    );
+
+    // Coba kirimkan email jika server lokal tersedia
     try {
       const response = await fetch('/api/send-email', {
         method: 'POST',
@@ -650,24 +680,11 @@ class AuthService {
         }),
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error('Error invoking local email server:', result.error);
-        throw new Error(result.error || 'Gagal mengirim email. Pastikan server lokal berjalan.');
+      if (response.ok) {
+        console.log('Email sent successfully via local mail server');
       }
     } catch (err) {
-      console.error('Failed to send email:', err);
-      // Fallback to toast if function fails in local dev without CLI
-      window.dispatchEvent(
-        new CustomEvent('toast_notification', {
-          detail: {
-            message: `[GAGAL MENGIRIM EMAIL] Token Reset Password Anda: ${token}`,
-            type: 'error',
-            duration: 10000,
-          },
-        })
-      );
+      // Ignored since fallback toast and in-app display already active
     }
 
     return true;
@@ -676,10 +693,12 @@ class AuthService {
   async verifyResetToken(email: string, token: string): Promise<boolean> {
     await new Promise((res) => setTimeout(res, 300));
     const cleanEmail = email.toLowerCase().trim();
-    const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
+    const storedToken =
+      sessionStorage.getItem(`reset_token_${cleanEmail}`) ||
+      localStorage.getItem(`reset_token_latest_${cleanEmail}`);
     
     if (!storedToken || storedToken !== token.trim()) {
-      throw new Error('Token tidak valid atau sudah kadaluarsa.');
+      throw new Error('Token verifikasi tidak valid atau sudah kadaluarsa.');
     }
     return true;
   }
@@ -688,25 +707,49 @@ class AuthService {
     await new Promise((res) => setTimeout(res, 400));
     const cleanEmail = email.toLowerCase().trim();
     
-    // Verify token one last time
-    const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
+    // Verifikasi token
+    const storedToken =
+      sessionStorage.getItem(`reset_token_${cleanEmail}`) ||
+      localStorage.getItem(`reset_token_latest_${cleanEmail}`);
     if (!storedToken || storedToken !== token.trim()) {
-      throw new Error('Token tidak valid atau sudah kadaluarsa.');
+      throw new Error('Token verifikasi tidak valid atau sudah kadaluarsa.');
     }
 
+    if (!newPassword || newPassword.length < 6) {
+      throw new Error('Kata sandi baru minimal 6 karakter.');
+    }
+
+    // 1. Hash kata sandi baru dengan salt Kroomify
+    const hashedPass = await hashPassword(newPassword);
+
+    // 2. Perbarui ke database Supabase (public.users)
+    try {
+      const { error: dbError } = await supabase
+        .from('users')
+        .update({
+          password_hash: hashedPass,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('email', cleanEmail);
+
+      if (dbError) {
+        console.warn('Supabase password update error:', dbError);
+      }
+    } catch (e) {
+      console.warn('Failed to update password in Supabase:', e);
+    }
+
+    // 3. Perbarui akun lokal di localStorage jika ada
     const accounts = this.getStoredAccounts();
     const accountIndex = accounts.findIndex((a) => a.email.toLowerCase() === cleanEmail);
-
-    if (accountIndex === -1) {
-      throw new Error('Akun tidak ditemukan.');
+    if (accountIndex !== -1) {
+      accounts[accountIndex].password = newPassword;
+      this.saveAccounts(accounts);
     }
 
-    // Update password
-    accounts[accountIndex].password = newPassword;
-    this.saveAccounts(accounts);
-
-    // Clean up token
+    // 4. Bersihkan token setelah berhasil digunakan
     sessionStorage.removeItem(`reset_token_${cleanEmail}`);
+    localStorage.removeItem(`reset_token_latest_${cleanEmail}`);
 
     return true;
   }

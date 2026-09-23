@@ -329,14 +329,26 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
 
               {step === 'token' && (
                 <form onSubmit={handleVerifyToken} className="space-y-4 w-full animate-in fade-in" noValidate>
-
+                  {devToken && (
+                    <div
+                      onClick={() => setToken(devToken)}
+                      className="p-3 bg-[#F9EDEF] border border-[#66000E]/20 rounded-2xl text-xs text-[#66000E] flex items-center justify-between cursor-pointer hover:bg-[#F5DDE1] transition-all"
+                      title="Klik untuk mengisi token secara otomatis"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#66000E] animate-ping" />
+                        <span>Kode Verifikasi Anda: <strong className="font-mono text-sm tracking-widest font-bold ml-1">{devToken}</strong></span>
+                      </div>
+                      <span className="text-[11px] font-semibold underline">Gunakan</span>
+                    </div>
+                  )}
 
                   <div className="space-y-1.5 text-left">
                     <label
                       htmlFor="forgot-token"
                       className="block text-xs sm:text-sm font-medium text-[#1A1110]"
                     >
-                      Token Verifikasi
+                      Token Verifikasi (6 Digit)
                     </label>
                     <input
                       id="forgot-token"
