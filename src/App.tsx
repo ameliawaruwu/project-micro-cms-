@@ -324,6 +324,23 @@ export default function App() {
     const previewThemeParam = params.get('previewTheme');
     const editThemeParam = params.get('editTheme');
 
+    // If accessing root auth paths without store parameter, open platform merchant auth (red screen)
+    if (!tokoParam && pathSlug) {
+      const lowerSlug = pathSlug.toLowerCase();
+      if (lowerSlug === 'register' || lowerSlug === 'daftar') {
+        setAuthView('register');
+        return;
+      }
+      if (lowerSlug === 'login' || lowerSlug === 'masuk') {
+        setAuthView('login');
+        return;
+      }
+      if (lowerSlug === 'forgot-password' || lowerSlug === 'forgot_password' || lowerSlug === 'lupa-password') {
+        setAuthView('forgot_password');
+        return;
+      }
+    }
+
     if (previewThemeParam || editThemeParam || modeParam === 'editor') {
       storeService.getStores().then((all) => {
         let match = all[0] || initialStores[0];
