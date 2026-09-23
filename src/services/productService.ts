@@ -110,37 +110,46 @@ class ProductService {
       return dataUrlOrUrl;
     }
 
-    try {
-      const [header, base64Data] = dataUrlOrUrl.split(',');
-      const mime = header.match(/:(.*?);/)?.[1] || 'image/webp';
-      const binary = atob(base64Data);
-      const array = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        array[i] = binary.charCodeAt(i);
-      }
-      const blob = new Blob([array], { type: mime });
-      const extension = mime.includes('png') ? 'png' : mime.includes('jpeg') ? 'jpg' : 'webp';
-      const fileName = `${storeId}/prod_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 6)}.${extension}`;
-
-      const { data: uploadData, error: uploadErr } = await supabase.storage
-        .from('product-images')
-        .upload(fileName, blob, {
-          contentType: mime,
-          upsert: true,
-        });
-
-      if (!uploadErr && uploadData?.path) {
-        const { data: pubData } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(uploadData.path);
-        if (pubData?.publicUrl) {
-          return pubData.publicUrl;
-        }
-      }
-    } catch (e) {
-      console.warn('[productService] Supabase storage upload notice, fallback to base64:', e);
+    const [header, base64Data] = dataUrlOrUrl.split(',');
+    if (!base64Data) {
+      throw new Error('Format gambar tidak valid.');
     }
-    return dataUrlOrUrl;
+
+    const mime = header.match(/:(.*?);/)?.[1] || 'image/webp';
+    const binary = atob(base64Data);
+    const array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      array[i] = binary.charCodeAt(i);
+    }
+    const blob = new Blob([array], { type: mime });
+    const extension = mime.includes('png') ? 'png' : mime.includes('jpeg') ? 'jpg' : 'webp';
+    const fileName = `${storeId}/prod_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 6)}.${extension}`;
+
+    const { data: uploadData, error: uploadErr } = await supabase.storage
+      .from('product-images')
+      .upload(fileName, blob, {
+        contentType: mime,
+        upsert: true,
+      });
+
+    if (uploadErr) {
+      console.error('[productService] Storage upload error:', uploadErr);
+      throw new Error(`Gagal mengupload foto ke server: ${uploadErr.message}`);
+    }
+
+    if (!uploadData?.path) {
+      throw new Error('Upload gambar tidak menghasilkan path yang valid.');
+    }
+
+    const { data: pubData } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(uploadData.path);
+
+    if (!pubData?.publicUrl) {
+      throw new Error('Gagal mendapatkan URL publik gambar yang diupload.');
+    }
+
+    return pubData.publicUrl;
   }
 
   async getProductsByStore(storeId: string): Promise<Product[]> {

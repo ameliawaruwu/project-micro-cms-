@@ -173,6 +173,7 @@ export default function App() {
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [selectedMerchantProduct, setSelectedMerchantProduct] = useState<Product | null>(null);
   const [selectedStorefrontProduct, setSelectedStorefrontProduct] = useState<Product | null>(null);
   const [isShippingModalOpen, setIsShippingModalOpen] = useState(false);
@@ -211,9 +212,19 @@ export default function App() {
     window.addEventListener('toast_notification', handleToastNotification);
     const handleOpenOnboarding = () => setIsOnboardingModalOpen(true);
     window.addEventListener('open_store_onboarding', handleOpenOnboarding);
+
+    const handleStoreCreated = (e: any) => {
+      if (e.detail) {
+        setActiveStore(e.detail);
+        setStores((prev) => [e.detail, ...prev.filter((s) => s.id !== e.detail.id)]);
+      }
+    };
+    window.addEventListener('microcms_store_created', handleStoreCreated);
+
     return () => {
       window.removeEventListener('toast_notification', handleToastNotification);
       window.removeEventListener('open_store_onboarding', handleOpenOnboarding);
+      window.removeEventListener('microcms_store_created', handleStoreCreated);
     };
   }, []);
 
@@ -365,15 +376,25 @@ export default function App() {
     }
 
     if (previewThemeParam || editThemeParam || modeParam === 'editor') {
-      storeService.getStores().then((all) => {
-        let match = all[0] || initialStores[0];
-        if (tokoParam) {
-          match = all.find((s) => s.slug === tokoParam || s.id === tokoParam) || match;
-        }
-        setActiveStore(match);
-        setActiveTab('layout');
-        setViewMode('merchant-desktop');
-      });
+      const loggedUser = authService.getCurrentUser().user;
+      if (loggedUser) {
+        storeService.getStoresForUser(loggedUser.id).then((userStores) => {
+          let match = userStores.find((s) => s.slug === tokoParam || s.id === tokoParam) || userStores[0] || null;
+          setActiveStore(match);
+          setActiveTab('layout');
+          setViewMode('merchant-desktop');
+        });
+      } else {
+        storeService.getStores().then((all) => {
+          let match = all[0] || initialStores[0];
+          if (tokoParam) {
+            match = all.find((s) => s.slug === tokoParam || s.id === tokoParam) || match;
+          }
+          setActiveStore(match);
+          setActiveTab('layout');
+          setViewMode('merchant-desktop');
+        });
+      }
       return;
     }
 
@@ -436,7 +457,12 @@ export default function App() {
           }
         });
       } else {
-        // Fallback to active store or default store for page routes without explicit toko param
+        // Fallback to active store or default store for buyer storefront routes without explicit toko param
+        const loggedUser = authService.getCurrentUser().user;
+        if (loggedUser) {
+          // If a merchant is logged in, do not force another merchant's store as fallback
+          return;
+        }
         storeService.getStores().then(async (allStores) => {
           const targetStore = activeStore || allStores[0] || initialStores[0];
           setActiveStore(targetStore);
@@ -636,6 +662,11 @@ export default function App() {
 
   // Handlers for Products
   const handleOpenAddProduct = () => {
+    if (!activeStore || !activeStore.id) {
+      addToast('Buat toko terlebih dahulu sebelum menambah produk.', 'error');
+      setIsCreateStoreWizardOpen(true);
+      return;
+    }
     setProductToEdit(null);
     setProductSubView('add');
     setActiveTab('produk');
@@ -684,31 +715,43 @@ export default function App() {
   };
 
   const handleSaveProduct = async (data: any) => {
-    if (!activeStore) return;
-    if (productToEdit) {
-      const updated = await productService.updateProduct(productToEdit.id, data);
-      setProducts((prev) => {
-        const next = prev.map((p) => (p.id === updated.id ? updated : p));
-        useCmsStore.getState().setProductsFromMerchant(next);
-        return next;
-      });
-      addToast(`Produk "${updated.name}" berhasil diperbarui.`);
-    } else {
-      const res = await productService.createProduct(activeStore.id, data);
-      const created = res.product;
-      setProducts((prev) => {
-        const next = [created, ...prev.filter((p) => p.id !== created.id)];
-        useCmsStore.getState().setProductsFromMerchant(next);
-        return next;
-      });
-      if (res.syncedToCloud) {
-        addToast(`Produk "${created.name}" berhasil disimpan & tersinkron ke Supabase Cloud!`);
-      } else {
-        addToast(`Produk "${created.name}" tersimpan di lokal (Supabase belum tersinkron: ${res.cloudError || 'RLS terkunci'})`, 'info');
-      }
+    if (!activeStore || !activeStore.id) {
+      addToast('Tidak dapat menyimpan produk: toko belum dibuat. Silakan buat toko terlebih dahulu.', 'error');
+      setProductSubView('list');
+      setIsCreateStoreWizardOpen(true);
+      return;
     }
-    setProductSubView('list');
-    setProductToEdit(null);
+    setIsSavingProduct(true);
+    try {
+      if (productToEdit) {
+        const updated = await productService.updateProduct(productToEdit.id, data);
+        setProducts((prev) => {
+          const next = prev.map((p) => (p.id === updated.id ? updated : p));
+          useCmsStore.getState().setProductsFromMerchant(next);
+          return next;
+        });
+        addToast(`Produk "${updated.name}" berhasil diperbarui.`);
+      } else {
+        const res = await productService.createProduct(activeStore.id, data);
+        const created = res.product;
+        setProducts((prev) => {
+          const next = [created, ...prev.filter((p) => p.id !== created.id)];
+          useCmsStore.getState().setProductsFromMerchant(next);
+          return next;
+        });
+        if (res.syncedToCloud) {
+          addToast(`Produk "${created.name}" berhasil disimpan & tersinkron ke cloud!`);
+        } else {
+          addToast(`Produk "${created.name}" tersimpan di perangkat ini. Error cloud: ${res.cloudError || 'tidak diketahui'}`, 'info');
+        }
+      }
+      setProductSubView('list');
+      setProductToEdit(null);
+    } catch (err: any) {
+      addToast(`Gagal menyimpan produk: ${err?.message || 'Terjadi kesalahan. Coba lagi.'}`, 'error');
+    } finally {
+      setIsSavingProduct(false);
+    }
   };
 
 

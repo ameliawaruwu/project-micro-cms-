@@ -14,6 +14,7 @@ interface ProductFormModalProps {
   isOpen: boolean;
   productToEdit?: Product | null;
   categories: string[];
+  isSaving?: boolean;
   onClose: () => void;
   onSave: (data: any) => void;
 }
@@ -22,6 +23,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   isOpen,
   productToEdit,
   categories,
+  isSaving = false,
   onClose,
   onSave,
 }) => {
@@ -415,16 +417,30 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 sm:px-5 py-2.5 min-h-[44px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] font-bold text-xs hover:bg-[#FAF7F7] transition cursor-pointer"
+              disabled={isSaving}
+              className="px-4 sm:px-5 py-2.5 min-h-[44px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] font-bold text-xs hover:bg-[#FAF7F7] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="flex-1 sm:flex-none px-6 py-2.5 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs sm:text-sm shadow-xs transition transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              disabled={isSaving}
+              className="flex-1 sm:flex-none px-6 py-2.5 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs sm:text-sm shadow-xs transition transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
             >
-              <Check className="w-4 h-4 stroke-[2.5]" />
-              <span>Simpan Produk</span>
+              {isSaving ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  <span>Menyimpan...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 stroke-[2.5]" />
+                  <span>Simpan Produk</span>
+                </>
+              )}
             </button>
           </div>
         </form>

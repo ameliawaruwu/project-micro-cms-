@@ -21,13 +21,13 @@ import { supabase, signInWithGoogleOAuth } from '../services/supabaseClient';
   register: (params: {
     fullName: string;
     email: string;
-    phoneWhatsApp: string;
-    storeName: string;
-    storeSlug: string;
-    businessCategory: string;
+    phoneWhatsApp?: string;
+    storeName?: string;
+    storeSlug?: string;
+    businessCategory?: string;
     password: string;
     autoLogin?: boolean;
-  }) => Promise<{ user: User; merchant: Merchant; store: Store }>;
+  }) => Promise<{ user: User; merchant: Merchant; store: Store | null }>;
   forgotPassword: (email: string) => Promise<boolean>;
   verifyResetToken: (email: string, token: string) => Promise<boolean>;
   resetPassword: (email: string, token: string, newPassword: string) => Promise<boolean>;
@@ -149,10 +149,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (params: {
     fullName: string;
     email: string;
-    phoneWhatsApp: string;
-    storeName: string;
-    storeSlug: string;
-    businessCategory: string;
+    phoneWhatsApp?: string;
+    storeName?: string;
+    storeSlug?: string;
+    businessCategory?: string;
     password: string;
     autoLogin?: boolean;
   }) => {

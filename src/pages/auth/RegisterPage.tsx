@@ -26,7 +26,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   const { t } = useLanguage();
 
   // Form states
-  const [storeName, setStoreName] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -58,19 +57,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
     try {
       setIsSubmitting(true);
       const finalName = fullName.trim();
-      const finalStoreName = storeName.trim() || `Toko ${finalName}`;
-      const storeSlug = finalStoreName
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-');
 
       await register({
         fullName: finalName,
         email: email.trim().toLowerCase(),
         phoneWhatsApp: phone.trim(),
-        storeName: finalStoreName,
-        storeSlug: storeSlug || `toko-${Date.now()}`,
-        businessCategory: 'UMKM & Retail',
         password: password.trim(),
         autoLogin: false,
       });
@@ -88,9 +79,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
       setIsGoogleSubmitting(true);
       setError(null);
       sessionStorage.setItem('oauth_intent', 'register');
-      if (storeName.trim()) {
-        sessionStorage.setItem('oauth_pending_store_name', storeName.trim());
-      }
       await loginWithGoogle();
     } catch {
       setError('Gagal menghubungkan ke Google. Pastikan Google Provider sudah aktif di Supabase.');
@@ -184,36 +172,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
 
           {/* PILL CAPSULE REGISTER FORM */}
           <form onSubmit={handleRegisterSubmit} className="space-y-4 w-full" noValidate>
-            {/* Input 1: Store Name (Opsional) */}
-            <div className="space-y-1.5 text-left">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="reg-storename"
-                  className="block text-xs sm:text-sm font-medium text-[#1A1110]"
-                >
-                  {t('auth_store_name_label', 'Nama Toko')}
-                </label>
-                <span className="text-[11px] text-[#8C8280]">Opsional</span>
-              </div>
-              <div className="relative">
-                <input
-                  id="reg-storename"
-                  type="text"
-                  value={storeName}
-                  onChange={(e) => setStoreName(e.target.value)}
-                  placeholder="Contoh: Kopi Senja Nusantara"
-                  className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
-                />
-              </div>
-            </div>
-
-            {/* Input 2: Full Name / Owner Name */}
+            {/* Input 1: Full Name / Owner Name */}
             <div className="space-y-1.5 text-left">
               <label
                 htmlFor="reg-fullname"
                 className="block text-xs sm:text-sm font-medium text-[#1A1110]"
               >
-                {t('auth_fullname_label', 'Nama Pemilik Toko')}
+                {t('auth_fullname_label', 'Nama Lengkap')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -221,7 +186,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Contoh: Andhika Gonzales"
+                  placeholder="Contoh: Amelia Waruwu"
+                  required
                   className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
                 />
               </div>

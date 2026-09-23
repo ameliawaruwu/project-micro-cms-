@@ -25,6 +25,7 @@ import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2, E
 import { useCmsStore } from '../../cms/useCmsStore';
 import { normalizeThemeId } from '../../themes/ThemeRegistry';
 import { storeService } from '../../services/storeService';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface LayoutPageProps {
   store: Store;
@@ -274,7 +275,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         setPreviewDevice('desktop');
         setPageMode('preview');
         // Clean up URL so it doesn't get stuck in preview mode on reload
-        const newUrl = window.location.pathname + '?toko=' + (currentStore.slug || '');
+        const newUrl = window.location.pathname + (currentStore.slug ? `?toko=${currentStore.slug}` : '');
         window.history.replaceState({}, '', newUrl);
       }
     }
@@ -299,6 +300,15 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
   // Auto-sync current editor draft state to sessionStorage & localStorage for preview tab
   useEffect(() => {
+    // If merchant does not have a store yet, NEVER auto-save any draft
+    if (!currentStore.id) {
+      try {
+        sessionStorage.removeItem('microcms_preview_draft');
+        localStorage.removeItem('microcms_preview_draft');
+      } catch (e) {}
+      return;
+    }
+
     const updatedMap = { ...pageSectionsMap, [activePage]: sections };
     const pagesConfig = Object.entries(updatedMap).map(([slug, secs]) => ({
       id: slug,
@@ -373,32 +383,52 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     window.open(`/${currentStore.slug}?preview=true`, '_blank');
   };
 
-  // Saved draft themes persistence in localStorage
-  const savedThemesStorageKey = `microcms_saved_themes_${currentStore.id || 'default'}`;
-  const userSelectedThemeKey = `microcms_user_chose_theme_${currentStore.id || 'default'}`;
+  const { user } = useAuth();
+
+  // Saved draft themes persistence in localStorage - strictly isolated per user and store
+  const savedThemesStorageKey = user?.id && currentStore.id
+    ? `microcms_saved_themes_${user.id}_${currentStore.id}`
+    : '';
+  const userSelectedThemeKey = user?.id && currentStore.id
+    ? `microcms_user_chose_theme_${user.id}_${currentStore.id}`
+    : '';
+
+  // Clean up any legacy shared default keys immediately so old drafts never leak
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('microcms_saved_themes_default');
+      localStorage.removeItem('microcms_user_chose_theme_default');
+      localStorage.removeItem('microcms_saved_themes_none');
+      localStorage.removeItem('microcms_user_chose_theme_none');
+      if (!currentStore.id) {
+        localStorage.removeItem('microcms_preview_draft');
+        sessionStorage.removeItem('microcms_preview_draft');
+      }
+    }
+  }, [currentStore.id]);
 
   const [savedThemes, setSavedThemes] = useState<SavedThemeItem[]>(() => {
+    // 1. If merchant does not have a store yet, or user not logged in: MUST return empty state []
+    if (!currentStore.id || !user) {
+      return [];
+    }
+
     try {
-      const isDemoStore = currentStore.id === 'store-andhika';
+      const isDemoStore = currentStore.id === 'store-andhika' && user.id === 'usr-andhika-01';
       const hasPublishedTemplate = Boolean(currentStore.layoutSettings?.activeTemplateId);
       const userExplicitlySelected =
-        typeof window !== 'undefined' && localStorage.getItem(userSelectedThemeKey) === 'true';
+        typeof window !== 'undefined' && savedThemesStorageKey && localStorage.getItem(userSelectedThemeKey) === 'true';
 
       // If this is NOT the demo store and the user has not chosen or published a template yet:
       // Must start with 0 drafts/templates!
       if (!isDemoStore && !hasPublishedTemplate && !userExplicitlySelected) {
-        if (typeof window !== 'undefined') {
-          // Clear any legacy auto-seeded draft from previous versions
-          localStorage.removeItem(savedThemesStorageKey);
-        }
         return [];
       }
 
-      const stored = typeof window !== 'undefined' ? localStorage.getItem(savedThemesStorageKey) : null;
+      const stored = typeof window !== 'undefined' && savedThemesStorageKey ? localStorage.getItem(savedThemesStorageKey) : null;
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          // Sanitize: filter out any corrupted entries missing storeTemplate or id
           const valid = parsed.filter(
             (t: any) => t && t.id && t.storeTemplate && t.storeTemplate.id
           );
@@ -422,19 +452,20 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           ];
         }
       }
+
+      // Default initial saved theme ONLY for demo store (store-andhika)
+      if (isDemoStore) {
+        return [
+          {
+            ...TEMPLATE_GALLERY_ITEMS[0],
+            updatedAt: new Date().toISOString(),
+          },
+        ];
+      }
     } catch (e) {
       console.error('Failed to load saved themes from storage:', e);
     }
 
-    // Default initial saved theme ONLY for demo store (store-andhika)
-    if (currentStore.id === 'store-andhika') {
-      return [
-        {
-          ...TEMPLATE_GALLERY_ITEMS[0],
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-    }
     return [];
   });
 
@@ -442,23 +473,28 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     return savedThemes[0]?.id || '';
   });
 
-  // Re-sync savedThemes whenever currentStore changes
+  // Re-sync savedThemes whenever currentStore or user changes
   useEffect(() => {
-    const isDemoStore = currentStore.id === 'store-andhika';
+    if (!currentStore.id || !user) {
+      setSavedThemes([]);
+      return;
+    }
+
+    const isDemoStore = currentStore.id === 'store-andhika' && user.id === 'usr-andhika-01';
     const hasPublishedTemplate = Boolean(currentStore.layoutSettings?.activeTemplateId);
+    const userSelectedThemeKey = user?.id && currentStore.id
+      ? `microcms_user_chose_theme_${user.id}_${currentStore.id}`
+      : '';
     const userExplicitlySelected =
-      typeof window !== 'undefined' && localStorage.getItem(userSelectedThemeKey) === 'true';
+      typeof window !== 'undefined' && savedThemesStorageKey && localStorage.getItem(userSelectedThemeKey) === 'true';
 
     if (!isDemoStore && !hasPublishedTemplate && !userExplicitlySelected) {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(savedThemesStorageKey);
-      }
       setSavedThemes([]);
       return;
     }
 
     try {
-      const stored = typeof window !== 'undefined' ? localStorage.getItem(savedThemesStorageKey) : null;
+      const stored = typeof window !== 'undefined' && savedThemesStorageKey ? localStorage.getItem(savedThemesStorageKey) : null;
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
@@ -471,10 +507,11 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     } catch (e) {
       console.error('Failed to reload saved themes for store:', e);
     }
-  }, [currentStore.id, currentStore.layoutSettings?.activeTemplateId, savedThemesStorageKey, userSelectedThemeKey]);
+  }, [currentStore.id, currentStore.layoutSettings?.activeTemplateId, savedThemesStorageKey, userSelectedThemeKey, user?.id]);
 
-  // Save savedThemes to localStorage whenever it changes
+  // Save savedThemes to localStorage whenever it changes (isolated key only)
   useEffect(() => {
+    if (!savedThemesStorageKey) return;
     try {
       if (savedThemes.length > 0) {
         localStorage.setItem(savedThemesStorageKey, JSON.stringify(savedThemes));
@@ -486,10 +523,74 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   }, [savedThemes, savedThemesStorageKey]);
 
-  const handleAddSavedTheme = (template: TemplateGalleryItem) => {
-    try {
-      localStorage.setItem(userSelectedThemeKey, 'true');
-    } catch {}
+  // Helper: Trigger store creation ONLY when merchant explicitly picks or creates a template
+  const ensureStoreExistsForTemplate = async (template: TemplateGalleryItem): Promise<Store> => {
+    if (!user) throw new Error('User tidak terautentikasi.');
+
+    const mappedThemeId = normalizeThemeId(template.storeTemplate?.id || template.id);
+    const newSections = (template.storeTemplate?.sections || []).map((s, idx) => ({
+      ...s,
+      key: s.key || `${s.id}-${idx}`,
+      order: s.order !== undefined ? s.order : idx,
+    }));
+
+    if (currentStore.id) {
+      const updatedLayoutSettings = {
+        ...currentStore.layoutSettings,
+        activeTemplateId: template.id,
+        activeThemeId: mappedThemeId,
+        themeStyle: mappedThemeId,
+        primaryAccent: template.primaryAccent,
+        sections: newSections,
+      };
+      const updatedStore = await storeService.updateStore(currentStore.id, {
+        layoutSettings: updatedLayoutSettings,
+      });
+      setCurrentStore(updatedStore);
+      return updatedStore;
+    }
+
+    const cleanUserSlug = user.id.replace(/[^a-z0-9]/g, '').slice(0, 10);
+    const newStore = await storeService.createStore({
+      merchantId: user.id,
+      name: `Toko ${user.name || 'UMKM'}`,
+      slug: `toko-${cleanUserSlug || Date.now()}`,
+      tagline: template.storeTemplate?.tagline || `Toko Resmi ${user.name || 'UMKM'}`,
+      description: 'Pusat belanja produk berkualitas dengan pemesanan praktis dan cepat.',
+      logoUrl: user.avatarUrl || '',
+      bannerUrl: template.storeTemplate?.bannerUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+      category: 'UMKM & Retail',
+      currency: 'IDR',
+      isPublished: false,
+      layoutSettings: {
+        activeTemplateId: template.id,
+        activeThemeId: mappedThemeId,
+        themeStyle: mappedThemeId,
+        primaryAccent: template.primaryAccent,
+        sections: newSections,
+      },
+    });
+
+    setCurrentStore(newStore);
+    localStorage.setItem('microcms_auth_store', JSON.stringify(newStore));
+    localStorage.setItem('microcms_active_store_id', newStore.id);
+    window.dispatchEvent(new CustomEvent('microcms_store_created', { detail: newStore }));
+    return newStore;
+  };
+
+  const handleAddSavedTheme = async (template: TemplateGalleryItem) => {
+    let targetStore = currentStore;
+    if (!targetStore.id && user) {
+      targetStore = await ensureStoreExistsForTemplate(template);
+    }
+
+    const key = user && targetStore.id ? `microcms_user_chose_theme_${user.id}_${targetStore.id}` : '';
+    if (key) {
+      try {
+        localStorage.setItem(key, 'true');
+      } catch {}
+    }
+
     setSavedThemes((prev) => {
       const existingIdx = prev.findIndex((t) => t.id === template.id);
       const nowIso = new Date().toISOString();
@@ -1068,9 +1169,14 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             store={currentStore}
             products={products}
             onCustomize={() => setPageMode('editor')}
-            onSelectTheme={(themeId) => {
+            onSelectTheme={async (themeId) => {
               const storeTemplate = STORE_TEMPLATES.find(t => t.id === themeId);
               if (storeTemplate) {
+                const galleryItem = TEMPLATE_GALLERY_ITEMS.find(t => t.storeTemplate.id === themeId || t.id === themeId);
+                let targetStore = currentStore;
+                if (!targetStore.id && user && galleryItem) {
+                  targetStore = await ensureStoreExistsForTemplate(galleryItem);
+                }
                 const newSections = storeTemplate.sections.map((s, idx) => ({
                   ...s,
                   key: s.key || `${s.id}-${idx}`,
@@ -1085,7 +1191,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                   bannerUrl: storeTemplate.bannerUrl,
                   tagline: storeTemplate.tagline,
                   layoutSettings: {
-                    ...store.layoutSettings,
+                    ...targetStore.layoutSettings,
                     activeThemeId: mappedThemeId,
                     themeStyle: mappedThemeId,
                     primaryAccent: storeTemplate.primaryAccent,
@@ -1093,7 +1199,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                   }
                 });
                 onSaveLayout({
-                  ...store.layoutSettings,
+                  ...targetStore.layoutSettings,
                   activeThemeId: mappedThemeId,
                   themeStyle: mappedThemeId,
                   primaryAccent: storeTemplate.primaryAccent,

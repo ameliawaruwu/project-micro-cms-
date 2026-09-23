@@ -21,12 +21,12 @@ class StoreService {
       // Filter out auto-generated legacy stores so merchants start fresh without a store
       parsed.forEach((s) => {
         if (s && s.id) {
+          const isDemoStore = ['store-andhika', 'store-1', 'store-2', 'store-3'].includes(s.id);
           const isLegacyAuto =
-            !s.id.startsWith('store-') &&
-            s.slug &&
-            (s.slug.startsWith('toko-amelia') ||
-              s.slug.startsWith('toko-usr_') ||
+            !isDemoStore &&
+            ((s.slug && (s.slug === 'toko-me' || s.slug.startsWith('toko-amelia') || s.slug.startsWith('toko-usr_'))) ||
               s.name.startsWith('Toko usr_') ||
+              s.name === 'Toko Baru UMKM' ||
               s.description === 'Pusat belanja produk berkualitas dengan pemesanan mudah dan cepat.' ||
               (s.description === 'Katalog online dan pemesanan praktis via WhatsApp.' && s.balance === 0));
 
@@ -116,13 +116,34 @@ class StoreService {
   }
 
   async getStoresForUser(userId: string): Promise<Store[]> {
+    const isDemoUser = ['usr-andhika-01', 'usr-kirana-01', 'usr-barista-01', 'usr-artisan-01', 'usr-admin-1'].includes(userId);
     const localStores = this.getStoredStores().filter((s) => s.merchantId === userId);
+
     try {
       const { data, error } = await supabase
         .from('stores')
         .select('*')
         .eq('user_id', userId);
-      if (!error && data && data.length > 0) {
+
+      if (!error && data) {
+        if (data.length === 0) {
+          if (!isDemoUser) {
+            // Cloud explicitly confirms no store exists for this merchant.
+            // Purge any local ghost/zombie stores for this user immediately.
+            const allOther = this.getStoredStores().filter((s) => s.merchantId !== userId);
+            this.saveStores(allOther);
+
+            const activeId = localStorage.getItem(ACTIVE_STORE_KEY);
+            if (localStores.some((s) => s.id === activeId)) {
+              localStorage.removeItem(ACTIVE_STORE_KEY);
+              localStorage.removeItem('microcms_active_store');
+            }
+            return [];
+          } else {
+            return localStores;
+          }
+        }
+
         const mappedStores: Store[] = data.map((row) => ({
           id: row.id,
           merchantId: row.user_id,
@@ -159,22 +180,18 @@ class StoreService {
           },
           createdAt: row.created_at || new Date().toISOString(),
         }));
-        const validMapped = mappedStores;
 
-        const map = new Map<string, Store>();
-        validMapped.forEach((s) => map.set(s.id, s));
-        localStores.forEach((s) => {
-          if (!map.has(s.id)) map.set(s.id, s);
-        });
-        const combined = Array.from(map.values());
+        // Cache synced cloud stores locally
         const allOther = this.getStoredStores().filter((s) => s.merchantId !== userId);
-        this.saveStores([...allOther, ...combined]);
-        return combined;
+        this.saveStores([...allOther, ...mappedStores]);
+        return mappedStores;
       }
     } catch (e) {
       console.warn('Supabase fetch stores error:', e);
     }
-    return localStores;
+
+    // In case of network error/offline, return local stores if any
+    return isDemoUser ? localStores : [];
   }
 
   async getStoreById(id: string): Promise<Store | undefined> {
@@ -182,10 +199,9 @@ class StoreService {
     return stores.find((s) => s.id === id);
   }
 
-  async getStoreBySlug(slug: string): Promise<Store> {
+  async getStoreBySlug(slug: string): Promise<Store | undefined> {
     if (!slug) {
-      const stores = this.getStoredStores();
-      return stores[0] || initialStores[0];
+      return undefined;
     }
 
     const clean = slug.toLowerCase().trim();
@@ -249,7 +265,7 @@ class StoreService {
       console.warn('Supabase getStoreBySlug notice:', err);
     }
 
-    // 2. Fallback to local stored stores
+    // 2. Search local stored stores
     const stores = this.getStoredStores();
     const exact = stores.find((s) => s.slug?.toLowerCase() === clean || s.id?.toLowerCase() === clean);
     if (exact) return exact;
@@ -260,16 +276,14 @@ class StoreService {
       const sName = (s.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       const cleanSimple = clean.replace(/[^a-z0-9]/g, '');
       return (
-        sSlug.includes(clean) ||
-        clean.includes(sSlug) ||
-        sId.includes(clean) ||
-        clean.includes(sId) ||
-        sName.includes(cleanSimple) ||
-        cleanSimple.includes(sName)
+        sSlug === clean ||
+        sId === clean ||
+        sName === cleanSimple
       );
     });
 
-    return fuzzy || stores[0] || initialStores[0];
+    // Strictly return match or undefined. Never fall back to another merchant's store.
+    return fuzzy || undefined;
   }
 
   async getActiveStore(userId?: string): Promise<Store | undefined> {
@@ -283,7 +297,7 @@ class StoreService {
     const activeId = localStorage.getItem(ACTIVE_STORE_KEY);
     const found = stores.find((s) => s.id === activeId);
     if (found) return found;
-    return stores[0];
+    return undefined;
   }
 
   async setActiveStore(storeId: string): Promise<Store> {
