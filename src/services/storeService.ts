@@ -1,6 +1,7 @@
 import { Store } from '../types';
 import { initialStores } from './mockData';
 import { supabase } from './supabaseClient';
+import { getWibIsoString } from '../utils/formatters';
 
 const STORE_KEY = 'microcms_stores_v2';
 const ACTIVE_STORE_KEY = 'microcms_active_store_id';
@@ -320,7 +321,7 @@ class StoreService {
 
     // Sync to Supabase stores table
     try {
-      const dbUpdates: any = { updated_at: new Date().toISOString() };
+      const dbUpdates: any = { updated_at: getWibIsoString() };
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.slug !== undefined) dbUpdates.slug = updates.slug;
       if (updates.tagline !== undefined) dbUpdates.tagline = updates.tagline;
@@ -448,7 +449,7 @@ class StoreService {
         theme_settings: newStore.layoutSettings || {},
         is_published: newStore.isPublished !== undefined ? newStore.isPublished : false,
         created_at: newStore.createdAt,
-        updated_at: new Date().toISOString(),
+        updated_at: getWibIsoString(),
       });
       console.log(`[Supabase Database] Toko ${newStore.name} (${newStore.id}) berhasil dibuat di cloud!`);
     } catch (err) {

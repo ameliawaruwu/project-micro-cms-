@@ -92,3 +92,25 @@ export const getStatusBadgeColor = (status: string): { bg: string; text: string;
       return { bg: 'bg-slate-100 text-slate-700 border-slate-200', text: 'text-slate-700', border: 'border-slate-200' };
   }
 };
+
+export const getWibIsoString = (date: Date = new Date()): string => {
+  const pad = (n: number, digits: number = 2) => String(n).padStart(digits, '0');
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+
+  const map: Record<string, string> = {};
+  for (const p of parts) {
+    map[p.type] = p.value;
+  }
+  const ms = pad(date.getMilliseconds(), 3);
+  return `${map.year}-${map.month}-${map.day}T${map.hour}:${map.minute}:${map.second}.${ms}+07:00`;
+};
+
