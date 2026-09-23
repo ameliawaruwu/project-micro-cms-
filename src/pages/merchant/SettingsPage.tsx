@@ -3,7 +3,7 @@ import { Save, Phone, MapPin, Store as StoreIcon, ExternalLink, Loader2, Sparkle
 import { Store } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
-import { wilayahService, WilayahItem, PostalCodeItem } from '../../services/wilayahService';
+import { wilayahService, WilayahItem, PostalCodeItem, ReverseGeocodeResult } from '../../services/wilayahService';
 import { StoreLocationPickerMap } from '../../components/merchant/StoreLocationPickerMap';
 
 export const UMKM_CATEGORIES = [
@@ -23,6 +23,10 @@ interface SettingsPageProps {
   store: Store;
   onUpdateStore: (store: Store) => void;
   onCreateStore?: (storeData: Partial<Store>) => void;
+  onPublishStore?: () => void;
+  onOpenWithdraw?: () => void;
+  onOpenShareModal?: () => void;
+  onNavigateBilling?: () => void;
   onNavigateDashboard: () => void;
   onShowNotification: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
@@ -328,6 +332,129 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       latitude: prev.latitude ?? selectedItem?.latitude,
       longitude: prev.longitude ?? selectedItem?.longitude,
     }));
+  };
+
+  // Helper normalisasi nama wilayah agar pencocokan nama akurat
+  const cleanWilayahName = (s?: string) =>
+    (s || '')
+      .toLowerCase()
+      .replace(/^(kabupaten|kota|kecamatan|desa|kelurahan|daerah khusus ibukota|dki)\s+/i, '')
+      .replace(/\s+(kabupaten|kota|regency|city)$/i, '')
+      .trim();
+
+  const findBestWilayah = (list: WilayahItem[], target?: string) => {
+    if (!target || !target.trim()) return null;
+    const t = cleanWilayahName(target);
+    if (!t) return null;
+    // 1. Exact match setelah dibersihkan
+    let found = list.find((item) => cleanWilayahName(item.name) === t);
+    if (found) return found;
+    // 2. Substring match
+    found = list.find(
+      (item) =>
+        cleanWilayahName(item.name).includes(t) || t.includes(cleanWilayahName(item.name))
+    );
+    return found || null;
+  };
+
+  // Handler otomatis ketika memilih atau menggeser pin pada live maps
+  const handleLocationSelectFromMap = async (loc: ReverseGeocodeResult) => {
+    // 1. Perbarui nilai formData alamat secara langsung
+    setFormData((prev) => ({
+      ...prev,
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      address: loc.address ? loc.address : prev.address,
+      addressDetail: loc.addressDetail ? loc.addressDetail : prev.addressDetail,
+      province: loc.province ? loc.province : prev.province,
+      city: loc.city ? loc.city : prev.city,
+      district: loc.district ? loc.district : prev.district,
+      village: loc.village ? loc.village : prev.village,
+      subdistrict: loc.village ? loc.village : (loc.district ? loc.district : prev.subdistrict),
+      postalCode: loc.postalCode ? loc.postalCode : prev.postalCode,
+    }));
+
+    // 2. Sinkronkan cascade dropdown wilayah Indonesia secara otomatis
+    try {
+      let currentProvinces = provinces;
+      if (!currentProvinces || currentProvinces.length === 0) {
+        currentProvinces = await wilayahService.getProvinces();
+        setProvinces(currentProvinces);
+      }
+
+      // Cocokkan Provinsi
+      if (loc.province) {
+        const matchedProv = findBestWilayah(currentProvinces, loc.province);
+        if (matchedProv) {
+          setSelectedProvinceId(matchedProv.id);
+          setLoadingRegencies(true);
+          const regs = await wilayahService.getRegencies(matchedProv.id);
+          setRegencies(regs);
+          setLoadingRegencies(false);
+
+          // Cocokkan Kabupaten / Kota
+          if (loc.city) {
+            const matchedReg = findBestWilayah(regs, loc.city);
+            if (matchedReg) {
+              setSelectedRegencyId(matchedReg.id);
+              setLoadingDistricts(true);
+              const dists = await wilayahService.getDistricts(matchedReg.id);
+              setDistricts(dists);
+              setLoadingDistricts(false);
+
+              // Cocokkan Kecamatan
+              if (loc.district) {
+                const matchedDist = findBestWilayah(dists, loc.district);
+                if (matchedDist) {
+                  setSelectedDistrictId(matchedDist.id);
+                  setLoadingVillages(true);
+                  const vills = await wilayahService.getVillages(matchedDist.id);
+                  setVillages(vills);
+                  setLoadingVillages(false);
+
+                  // Cocokkan Desa / Kelurahan
+                  if (loc.village) {
+                    const matchedVill = findBestWilayah(vills, loc.village);
+                    if (matchedVill) {
+                      setSelectedVillageId(matchedVill.id);
+                    }
+                  }
+
+                  // Muat daftar kode pos dropdown
+                  const vName = loc.village || (vills[0] ? vills[0].name : '');
+                  setLoadingPostalCodes(true);
+                  const codes = await wilayahService.getPostalCodes(
+                    vName,
+                    matchedDist.name,
+                    matchedReg.name
+                  );
+                  if (codes.length > 0) {
+                    if (loc.postalCode && !codes.some((c) => c.code === loc.postalCode)) {
+                      setPostalCodes([
+                        {
+                          code: loc.postalCode,
+                          village: vName,
+                          district: matchedDist.name,
+                          isExact: true,
+                        },
+                        ...codes,
+                      ]);
+                    } else {
+                      setPostalCodes(codes);
+                    }
+                  }
+                  setLoadingPostalCodes(false);
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[SettingsPage] Error syncing cascade dropdown from live map:', err);
+    }
+
+    onShowNotification('📍 Alamat & wilayah otomatis terisi dari titik peta!', 'info');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -724,6 +851,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       longitude: lng,
                     }));
                   }}
+                  onLocationSelect={handleLocationSelectFromMap}
                 />
               </div>
             </div>

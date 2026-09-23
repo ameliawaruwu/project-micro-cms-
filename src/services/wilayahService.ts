@@ -3,6 +3,26 @@ export interface WilayahItem {
   name: string;
 }
 
+export interface ReverseGeocodeResult {
+  latitude: number;
+  longitude: number;
+  address: string;
+  addressDetail?: string;
+  village?: string;
+  district?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  displayName?: string;
+}
+
+export interface PlaceSearchResult {
+  latitude: number;
+  longitude: number;
+  displayName: string;
+  name: string;
+}
+
 export interface PostalCodeResult {
   code: string;
   village: string;
@@ -301,5 +321,143 @@ export const wilayahService = {
 
     cache.postalCodeLists.set(cacheKey, list);
     return list;
+  },
+
+  /**
+   * Reverse Geocode koordinat (latitude, longitude) ke alamat lengkap Indonesia
+   */
+  async reverseGeocode(lat: number, lng: number): Promise<ReverseGeocodeResult | null> {
+    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
+      return null;
+    }
+
+    // 1. Coba OpenStreetMap Nominatim
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'KroomifyApp/1.0 (contact@kroombox.com)',
+            'Accept-Language': 'id',
+          },
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.address) {
+          const addr = data.address;
+
+          // Alamat Jalan & Nomor Bangunan
+          const road = addr.road || addr.street || addr.pedestrian || addr.footway || addr.path || '';
+          const houseNumber = addr.house_number ? `No. ${addr.house_number}` : '';
+          const streetAddress = [road, houseNumber].filter(Boolean).join(' ').trim();
+
+          // Detail Alamat / Patokan / Bangunan
+          const landmark = addr.amenity || addr.shop || addr.tourism || addr.office || addr.building || addr.leisure || '';
+
+          // Desa / Kelurahan
+          const village = addr.village || addr.suburb || addr.neighbourhood || addr.hamlet || '';
+
+          // Kecamatan
+          const district = addr.town || addr.municipality || addr.city_district || addr.subdistrict || (village !== addr.suburb ? addr.suburb : '') || '';
+
+          // Kota / Kabupaten
+          let city = addr.county || addr.city || addr.town || '';
+          if (city.toLowerCase().startsWith('daerah khusus') || city.toLowerCase().includes('jakarta')) {
+            city = addr.city_district || 'Jakarta Pusat';
+          }
+
+          // Provinsi
+          let province = addr.state || '';
+          if (!province && (data.display_name?.includes('Jakarta') || city?.includes('Jakarta'))) {
+            province = 'DKI JAKARTA';
+          }
+
+          // Kode Pos
+          const postalCode = addr.postcode ? String(addr.postcode).trim() : '';
+
+          return {
+            latitude: lat,
+            longitude: lng,
+            address: streetAddress || road || (landmark ? `Area ${landmark}` : '') || data.display_name?.split(',')[0] || '',
+            addressDetail: landmark || (road && addr.neighbourhood ? `Area ${addr.neighbourhood}` : ''),
+            village: village,
+            district: district,
+            city: city,
+            province: province,
+            postalCode: postalCode,
+            displayName: data.display_name || '',
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('[wilayahService] Nominatim reverse geocode error:', err);
+    }
+
+    // 2. Fallback ke BigDataCloud Reverse Geocode
+    try {
+      const res = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=id`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const admins = data.localityInfo?.administrative || [];
+
+        const provAdmin = admins.find((a: any) => a.adminLevel === 4) || admins.find((a: any) => a.order === 7);
+        const cityAdmin = admins.find((a: any) => a.adminLevel === 5) || admins.find((a: any) => a.order === 8);
+        const distAdmin = admins.find((a: any) => a.adminLevel === 6) || admins.find((a: any) => a.order === 9 || a.order === 10);
+
+        return {
+          latitude: lat,
+          longitude: lng,
+          address: data.locality || data.city || '',
+          addressDetail: '',
+          village: '',
+          district: distAdmin ? distAdmin.name : data.locality || '',
+          city: cityAdmin ? cityAdmin.name : data.city || '',
+          province: provAdmin ? provAdmin.name : data.principalSubdivision || '',
+          postalCode: data.postcode || '',
+          displayName: [data.locality, data.city, data.principalSubdivision].filter(Boolean).join(', '),
+        };
+      }
+    } catch (err) {
+      console.warn('[wilayahService] BigDataCloud fallback error:', err);
+    }
+
+    return null;
+  },
+
+  /**
+   * Cari lokasi berdasarkan query teks (Search Places)
+   */
+  async searchPlaces(query: string): Promise<PlaceSearchResult[]> {
+    if (!query || !query.trim()) return [];
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query.trim()
+        )}&countrycodes=id&limit=5`,
+        {
+          headers: {
+            'User-Agent': 'KroomifyApp/1.0 (contact@kroombox.com)',
+            'Accept-Language': 'id',
+          },
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          return data.map((it: any) => ({
+            latitude: parseFloat(it.lat),
+            longitude: parseFloat(it.lon),
+            displayName: it.display_name || it.name,
+            name: it.name || it.display_name?.split(',')[0] || '',
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn('[wilayahService] searchPlaces error:', err);
+    }
+    return [];
   },
 };
