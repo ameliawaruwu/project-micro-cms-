@@ -146,9 +146,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
   // Keep useCmsStore synchronized when merchant products are updated
   useEffect(() => {
-    if (products && products.length > 0) {
-      useCmsStore.getState().setProductsFromMerchant(products);
-    }
+    useCmsStore.getState().setProductsFromMerchant(products || []);
   }, [products]);
 
   const displayProducts = cmsProducts.length > 0 ? cmsProducts : (products || []);
@@ -542,7 +540,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       };
       const updatedStore = await storeService.updateStore(currentStore.id, {
         layoutSettings: updatedLayoutSettings,
-      });
+      }, user.id);
       setCurrentStore(updatedStore);
       return updatedStore;
     }
@@ -1143,7 +1141,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       if (onUnpublishStore) {
         await onUnpublishStore();
       } else {
-        await storeService.setPublishedStatus(currentStore.id, false);
+        await storeService.setPublishedStatus(currentStore.id, false, user?.id);
       }
 
       setCurrentStore((prev) => ({ ...prev, isPublished: false }));

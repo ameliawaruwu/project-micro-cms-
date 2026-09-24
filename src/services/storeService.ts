@@ -7,7 +7,7 @@ const STORE_KEY = 'microcms_stores_v2';
 const ACTIVE_STORE_KEY = 'microcms_active_store_id';
 
 class StoreService {
-  private getStoredStores(): Store[] {
+  public getStoredStores(): Store[] {
     const data = localStorage.getItem(STORE_KEY);
     if (!data) {
       return [];
@@ -173,13 +173,76 @@ class StoreService {
       console.warn('Supabase fetch stores error:', e);
     }
 
-    // In case of network error/offline, return local stores if any
-    return isDemoUser ? localStores : [];
+    // In case of network error/offline, return local stores only for this user
+    return localStores;
   }
 
-  async getStoreById(id: string): Promise<Store | undefined> {
+  async getStoreById(id: string, ownerUserId?: string): Promise<Store | undefined> {
+    if (!id) return undefined;
+
+    // 1. Cek di local cache dulu
     const stores = this.getStoredStores();
-    return stores.find((s) => s.id === id);
+    const local = stores.find((s) => s.id === id);
+    if (local) {
+      if (ownerUserId && local.merchantId && local.merchantId !== ownerUserId) {
+        console.warn(`[storeService] Akses ditolak: Toko ${id} bukan milik user ${ownerUserId}`);
+        return undefined;
+      }
+      return local;
+    }
+
+    // 2. Fetch dari Supabase jika belum ada di local cache
+    try {
+      let query = supabase.from('stores').select('*').eq('id', id);
+      if (ownerUserId) {
+        query = query.eq('user_id', ownerUserId);
+      }
+      const { data, error } = await query.maybeSingle();
+      if (!error && data) {
+        const isPub = data.is_published !== undefined && data.is_published !== null
+          ? Boolean(data.is_published)
+          : ['store-1', 'store-2', 'store-3', 'store-4'].includes(data.id);
+
+        const mapped: Store = {
+          id: data.id,
+          merchantId: data.user_id,
+          name: data.name,
+          slug: data.slug,
+          tagline: data.tagline || '',
+          description: data.description || '',
+          logoUrl: data.logo_url || '',
+          bannerUrl: data.banner_url || '',
+          phoneWhatsApp: data.phone_whatsapp || '',
+          city: data.city || 'Indonesia',
+          province: data.province || '',
+          district: data.district || '',
+          subdistrict: data.subdistrict || '',
+          village: data.village || '',
+          addressDetail: data.address_detail || '',
+          postalCode: data.postal_code || '',
+          address: data.address || '',
+          latitude: data.latitude ? Number(data.latitude) : undefined,
+          longitude: data.longitude ? Number(data.longitude) : undefined,
+          category: data.category || 'Bisnis UMKM',
+          currency: 'IDR',
+          balance: Number(data.balance || 0),
+          plan: data.plan || 'free',
+          isPublished: isPub,
+          layoutSettings: data.theme_settings,
+          customDomain: data.custom_domain,
+          createdAt: data.created_at || new Date().toISOString(),
+          onboarding: data.theme_settings?.onboarding || {},
+        };
+
+        const currentStored = this.getStoredStores();
+        this.saveStores([...currentStored.filter((s) => s.id !== mapped.id), mapped]);
+        return mapped;
+      }
+    } catch (err) {
+      console.warn('Supabase getStoreById error:', err);
+    }
+
+    return undefined;
   }
 
   async getStoreBySlug(slug: string): Promise<Store | undefined> {
@@ -290,10 +353,22 @@ class StoreService {
     return store;
   }
 
-  async updateStore(storeId: string, updates: Partial<Store>): Promise<Store> {
+  /**
+   * Update toko.
+   * ownerUserId WAJIB untuk memastikan hanya pemilik toko yang dapat mengubah data.
+   * Supabase query dikombinasikan .eq('id', storeId) + .eq('user_id', ownerUserId)
+   * sehingga bahkan jika storeId dari frontend dimanipulasi, update tidak akan berlaku
+   * pada toko milik merchant lain.
+   */
+  async updateStore(storeId: string, updates: Partial<Store>, ownerUserId?: string): Promise<Store> {
     const stores = this.getStoredStores();
     const index = stores.findIndex((s) => s.id === storeId);
     if (index === -1) throw new Error('Toko tidak ditemukan');
+
+    // Validate ownership: toko harus milik ownerUserId
+    if (ownerUserId && stores[index].merchantId && stores[index].merchantId !== ownerUserId) {
+      throw new Error('Anda tidak memiliki akses untuk mengubah toko ini.');
+    }
 
     stores[index] = {
       ...stores[index],
@@ -340,7 +415,11 @@ class StoreService {
         stores[index].layoutSettings = combinedThemeSettings;
       }
 
-      const { error: supaErr } = await supabase.from('stores').update(dbUpdates).eq('id', storeId);
+      // Ownership-enforced Supabase update:
+      // .eq('user_id', ownerUserId) ensures even a manipulated storeId cannot affect another merchant's store
+      let supaQuery = supabase.from('stores').update(dbUpdates).eq('id', storeId);
+      if (ownerUserId) supaQuery = supaQuery.eq('user_id', ownerUserId);
+      const { error: supaErr } = await supaQuery;
       if (supaErr) {
         console.error(`[Supabase] updateStore error for ${storeId}:`, supaErr.message, supaErr.details);
       } else {
@@ -375,24 +454,39 @@ class StoreService {
   }
 
   /**
-   * Publish atau unpublish toko: update HANYA kolom is_published di Supabase.
-   * Tidak menyertakan theme_settings agar payload kecil dan update pasti berhasil.
+   * Publish atau unpublish toko.
+   * ownerUserId WAJIB — Supabase update di-filter oleh user_id agar merchant lain
+   * tidak dapat publish/unpublish toko yang bukan miliknya.
    */
-  async setPublishedStatus(storeId: string, isPublished: boolean): Promise<Store> {
+  async setPublishedStatus(storeId: string, isPublished: boolean, ownerUserId?: string): Promise<Store> {
     if (!storeId) throw new Error('storeId diperlukan');
 
-    // 1. Supabase-first: update langsung di database
-    const { error: supaErr } = await supabase
+    // Ownership check di localStorage sebelum call Supabase
+    if (ownerUserId) {
+      const stores = this.getStoredStores();
+      const target = stores.find((s) => s.id === storeId);
+      if (target && target.merchantId && target.merchantId !== ownerUserId) {
+        throw new Error('Anda tidak memiliki akses untuk mengubah status toko ini.');
+      }
+    }
+
+    // 1. Supabase-first: update langsung di database dengan ownership check
+    let supaQuery = supabase
       .from('stores')
       .update({ is_published: isPublished, updated_at: getWibIsoString() })
       .eq('id', storeId);
+
+    // Ownership-enforced: update HANYA berlaku jika user_id cocok dengan ownerUserId
+    if (ownerUserId) supaQuery = supaQuery.eq('user_id', ownerUserId);
+
+    const { error: supaErr } = await supaQuery;
 
     if (supaErr) {
       console.error('[Supabase] setPublishedStatus error:', supaErr.message);
       throw new Error(`Gagal ${isPublished ? 'mempublikasikan' : 'membatalkan publikasi'} toko: ${supaErr.message}`);
     }
 
-    console.log(`[Supabase] Toko ${storeId} is_published diset ke ${isPublished}`);
+    console.log(`[Supabase] Toko ${storeId} is_published diset ke ${isPublished} oleh ${ownerUserId}`);
 
     // 2. Sync ke localStorage
     const stores = this.getStoredStores();
@@ -453,7 +547,7 @@ class StoreService {
 
     const newStore: Store = {
       id: storeId,
-      merchantId: data.merchantId || 'USR001',
+      merchantId: data.merchantId || '',
       name,
       slug,
       tagline: data.tagline || '',
@@ -646,6 +740,7 @@ class StoreService {
                     balance: Number(row.balance || 0),
                     plan: row.plan || 'free',
                     isPublished: isPub,
+                    onboarding: row.theme_settings?.onboarding || {},
                     createdAt: row.created_at || new Date().toISOString(),
                   };
                 }

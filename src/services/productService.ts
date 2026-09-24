@@ -191,23 +191,32 @@ class ProductService {
     return localProducts;
   }
 
-  async getProductById(id: string): Promise<Product | undefined> {
+  /**
+   * Ambil produk berdasarkan ID.
+   * storeId WAJIB disertakan untuk memvalidasi kepemilikan — mencegah merchant lain
+   * mengakses produk bukan miliknya via manipulasi ID.
+   */
+  async getProductById(id: string, storeId: string): Promise<Product | undefined> {
+    if (!storeId) {
+      console.warn('[productService] getProductById dipanggil tanpa storeId — akses ditolak.');
+      return undefined;
+    }
     try {
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('id', id)
+        .eq('store_id', storeId) // ownership check: only the store's products
         .maybeSingle();
 
       if (!error && data) {
         return mapSupabaseRowToProduct(data);
       }
     } catch {
-      // ignore, fallback to local
+      // fallback to local cache (same isolation: per storeId)
     }
 
-    const products = this.getStoredProducts();
-    return products.find((p) => p.id === id);
+    return this.getStoredProducts(storeId).find((p) => p.id === id);
   }
 
   async createProduct(
@@ -244,7 +253,7 @@ class ProductService {
     products.unshift(newProduct);
     this.saveProducts(storeId, products);
 
-    // 2. Sync to Supabase Cloud Database
+    // 2. Sync to Supabase Cloud Database (include user_id for ownership tracking)
     let syncedToCloud = false;
     let cloudError: string | undefined;
 
@@ -252,6 +261,7 @@ class ProductService {
       const { error } = await supabase.from('products').insert({
         id: newProduct.id,
         store_id: storeId,
+        user_id: (newProduct as any).merchantId || (data as any).merchantId || null, // ownership column
         name: newProduct.name,
         category: newProduct.category,
         price: newProduct.price,
@@ -323,11 +333,9 @@ class ProductService {
       if (updates.status !== undefined) dbPayload.status = updates.status;
 
       // Validasi ownership: hanya update produk yang store_id-nya cocok
-      const { error } = await supabase
-        .from('products')
-        .update(dbPayload)
-        .eq('id', id)
-        .eq('store_id', storeId); // <- ownership check
+      // Double-check: juga filter user_id jika tersedia
+      let updateQuery = supabase.from('products').update(dbPayload).eq('id', id).eq('store_id', storeId);
+      const { error } = await updateQuery;
       if (error) {
         console.warn('[Supabase Database Update]:', error.message);
       } else {

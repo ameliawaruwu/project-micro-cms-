@@ -112,7 +112,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
       plan: planId,
       planExpiresAt: planId === 'free' ? undefined : oneYearLater,
       planSubscribedAt: planId === 'free' ? undefined : nowIso,
-    });
+    }, store.merchantId);
 
     // Record subscription transaction in database
     if (selectedPlan && planId !== 'free') {

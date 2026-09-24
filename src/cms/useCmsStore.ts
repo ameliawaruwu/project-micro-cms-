@@ -129,7 +129,17 @@ export const useCmsStore = create<CmsState>((set, get) => ({
   getPageBySlug: (slug: string) => get().pages.find(p => p.slug === slug),
 
   setProductsFromMerchant: (merchantProducts: Product[]) => {
-    if (!merchantProducts || merchantProducts.length === 0) return;
+    if (!merchantProducts || merchantProducts.length === 0) {
+      set({ products: [] });
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.removeItem('microcms_cms_products');
+          localStorage.removeItem('microcms_cms_products');
+          window.dispatchEvent(new Event('cms_draft_updated'));
+        } catch (e) {}
+      }
+      return;
+    }
     const cmsList = merchantProducts.map(productToCmsProduct);
     set({ products: cmsList });
     if (typeof window !== 'undefined') {

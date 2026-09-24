@@ -71,7 +71,7 @@ const defaultAccounts: StoredAccount[] = [
       id: 'merch-USR001',
       userId: 'USR001',
       storeId: '',
-      plan: 'enterprise',
+      plan: 'premium',
       isVerified: true,
     },
     storeId: '',
@@ -877,10 +877,46 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
+    // ── Bersihkan cache toko milik user yang sedang logout ──────────────────────
+    // Ini mencegah user berikutnya melihat store/produk dari user yang baru logout.
+    try {
+      const authStoreStr = localStorage.getItem(AUTH_STORE_KEY);
+      const authUserStr  = localStorage.getItem(AUTH_USER_KEY);
+      if (authStoreStr) {
+        const authStore = JSON.parse(authStoreStr);
+        // Hapus product cache untuk toko milik user ini
+        if (authStore?.id) {
+          localStorage.removeItem(`microcms_products_v2_${authStore.id}`);
+        }
+      }
+      if (authUserStr) {
+        const authUser = JSON.parse(authUserStr);
+        // Hapus semua product cache dari semua kunci microcms_products_v2_*
+        // yang store-nya milik user ini (identifikasi via stores cache)
+        const storesStr = localStorage.getItem('microcms_stores_v2');
+        if (storesStr && authUser?.id) {
+          const stores: Array<{ id: string; merchantId: string }> = JSON.parse(storesStr);
+          stores
+            .filter((s) => s.merchantId === authUser.id)
+            .forEach((s) => {
+              localStorage.removeItem(`microcms_products_v2_${s.id}`);
+            });
+          // Hapus store cache untuk user ini saja (biarkan user lain)
+          const otherStores = stores.filter((s) => s.merchantId !== authUser.id);
+          localStorage.setItem('microcms_stores_v2', JSON.stringify(otherStores));
+        }
+      }
+    } catch (e) {
+      // non-fatal: cleanup best-effort
+    }
+
+    // ── Hapus session keys ───────────────────────────────────────────────────────
     localStorage.removeItem(AUTH_USER_KEY);
     localStorage.removeItem(AUTH_MERCHANT_KEY);
     localStorage.removeItem(AUTH_STORE_KEY);
     localStorage.removeItem(ACTIVE_STORE_ID_KEY);
+    localStorage.removeItem('microcms_preview_draft');
+    sessionStorage.removeItem('microcms_preview_draft');
     localStorage.setItem('microcms_explicit_logout', 'true');
     try {
       await supabase.auth.signOut();

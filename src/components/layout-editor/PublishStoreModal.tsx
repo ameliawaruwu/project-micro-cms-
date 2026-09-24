@@ -237,7 +237,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
       await storeService.updateStore(store.id, {
         slug: randomSubdomain,
         isPublished: true,
-      });
+      }, store.merchantId);
     } catch (e) {
       console.warn('Sync store slug warning:', e);
     }

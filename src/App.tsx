@@ -376,6 +376,7 @@ export default function App() {
         setProducts([]);
         setOrders([]);
         setIntegrations([]);
+        useCmsStore.getState().setProductsFromMerchant([]);
         return;
       }
 
@@ -402,9 +403,7 @@ export default function App() {
         const initialCart = cartService.getCart(finalStore.slug);
 
         setProducts(storeProducts);
-        if (storeProducts && storeProducts.length > 0) {
-          useCmsStore.getState().setProductsFromMerchant(storeProducts);
-        }
+        useCmsStore.getState().setProductsFromMerchant(storeProducts);
         setOrders(storeOrders);
         setIntegrations(storeIntegrations);
         setCartItems(initialCart);
@@ -921,7 +920,7 @@ export default function App() {
 
   // Handlers for Store Settings & Wallet
   const handleUpdateStore = async (updated: Store) => {
-    await storeService.updateStore(updated.id, updated);
+    await storeService.updateStore(updated.id, updated, user?.id);
     setActiveStore(updated);
     setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
   };
@@ -965,7 +964,7 @@ export default function App() {
 
   const handleSaveLayout = async (layoutSettings: StoreLayoutSettings) => {
     if (!activeStore) return;
-    const updated = await storeService.updateStore(activeStore.id, { layoutSettings });
+    const updated = await storeService.updateStore(activeStore.id, { layoutSettings }, user?.id);
     setActiveStore(updated);
     setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
     addToast('Tata letak halaman toko berhasil disimpan!');
@@ -974,8 +973,13 @@ export default function App() {
   const handlePublishStore = async (storeId?: string) => {
     const targetId = storeId || activeStore?.id || currentStore?.id;
     if (!targetId) return;
+    // Validasi ownership: pastikan toko yang di-publish milik user yang sedang login
+    if (storeId && activeStore?.id && storeId !== activeStore.id) {
+      addToast('Akses ditolak: Anda tidak dapat mempublikasikan toko milik merchant lain.', 'error');
+      return;
+    }
     try {
-      const updated = await storeService.setPublishedStatus(targetId, true);
+      const updated = await storeService.setPublishedStatus(targetId, true, user?.id);
       setActiveStore(updated);
       setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
       addToast('🎉 Selamat! Toko online Anda resmi dipublikasikan dan live!');
@@ -988,8 +992,13 @@ export default function App() {
   const handleUnpublishStore = async (storeId?: string) => {
     const targetId = storeId || activeStore?.id || currentStore?.id;
     if (!targetId) return;
+    // Validasi ownership: pastikan toko yang di-unpublish milik user yang sedang login
+    if (storeId && activeStore?.id && storeId !== activeStore.id) {
+      addToast('Akses ditolak: Anda tidak dapat mengubah status toko milik merchant lain.', 'error');
+      return;
+    }
     try {
-      const updated = await storeService.setPublishedStatus(targetId, false);
+      const updated = await storeService.setPublishedStatus(targetId, false, user?.id);
       setActiveStore(updated);
       setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
       addToast('Toko online berhasil di-unpublish (kembali menjadi draf).', 'info');
@@ -1904,7 +1913,7 @@ export default function App() {
                 ...currentStore.onboarding,
                 storeNameSet: true,
               },
-            });
+            }, user?.id);
             setActiveStore(updated);
             setIsOnboardingModalOpen(false);
             addToast(`🎉 Nama toko "${updated.name}" berhasil disimpan!`);

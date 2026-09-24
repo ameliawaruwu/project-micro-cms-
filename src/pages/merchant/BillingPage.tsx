@@ -202,7 +202,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         planExpiresAt: expiresAtIso,
         planSubscribedAt: paidAtIso,
       }
-    });
+    }, store.merchantId);
     onUpdateStore(updated);
 
     // 2. Mark subscription as paid
@@ -326,7 +326,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
 
     if (price === 0 || targetPlan === 'free') {
       // Set to Free
-      const updated = await storeService.updateStore(store.id, { plan: 'free' });
+      const updated = await storeService.updateStore(store.id, { plan: 'free' }, store.merchantId);
       onUpdateStore(updated);
       setIsProcessing(false);
       setIsModalOpen(false);
