@@ -531,6 +531,14 @@ export default function App() {
         storeService.getStoreBySlug(tokoParam).then(async (targetStore) => {
           if (targetStore) {
             setActiveStore(targetStore);
+            // Load theme data if in preview mode (no draft was found in localStorage)
+            if (new URLSearchParams(window.location.search).get('preview') === 'true') {
+              const rawTheme = (targetStore.layoutSettings as any)?.activeThemeId || targetStore.layoutSettings?.themeStyle;
+              if (rawTheme) {
+                const { normalizeThemeId } = await import('./themes/ThemeRegistry');
+                useCmsStore.getState().loadThemeData(normalizeThemeId(rawTheme));
+              }
+            }
             const [storeProducts, storeOrders] = await Promise.all([
               productService.getProductsByStore(targetStore.id),
               orderService.getOrdersByStore(targetStore.id),
@@ -1384,6 +1392,18 @@ export default function App() {
       {viewMode === 'storefront-live' && (() => {
         const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
         const isPublished = Boolean(currentStore?.isPublished);
+
+        // Jika store belum terbaca (masih memuat draft/data) — tampilkan loading spinner
+        if (!currentStore?.id) {
+          return (
+            <div className="flex items-center justify-center min-h-screen bg-white">
+              <div className="flex flex-col items-center gap-3 text-gray-400">
+                <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm font-medium">Memuat toko...</span>
+              </div>
+            </div>
+          );
+        }
 
         // Jika toko belum dipublikasikan atau sedang di-unpublish dan pengunjung bukan di mode preview
         if (!isPublished && !isPreview) {
