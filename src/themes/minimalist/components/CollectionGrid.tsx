@@ -13,8 +13,11 @@ export const MinimalistCollectionGrid: React.FC<{ sectionOptions?: any }> = ({ s
         <div>
           <h2 className="text-xl sm:text-2xl md:text-3xl font-light text-gray-900 tracking-tight">{title}</h2>
         </div>
-        <a href="#all" className="text-xs sm:text-sm font-medium tracking-wide uppercase text-gray-900 hover:text-gray-500 transition-colors group">
-          View All Objects
+        <a 
+          href={sectionOptions.buttonLink || "#all"} 
+          className="text-xs sm:text-sm font-medium tracking-wide uppercase text-gray-900 hover:text-gray-500 transition-colors group"
+        >
+          {sectionOptions.buttonLabel || "View All Objects"}
           <span className="block max-w-0 group-hover:max-w-full transition-all duration-500 h-[1px] bg-gray-900 mt-1"></span>
         </a>
       </div>

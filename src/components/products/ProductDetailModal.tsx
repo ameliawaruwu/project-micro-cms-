@@ -97,9 +97,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <h2 className="text-lg sm:text-xl font-bold text-[#241A1A] leading-snug">
                 {product.name}
               </h2>
-              {product.sku && (
-                <p className="text-xs text-[#706866] font-mono mt-0.5">Kode SKU: {product.sku}</p>
-              )}
             </div>
 
             {/* Price & Stock info box */}

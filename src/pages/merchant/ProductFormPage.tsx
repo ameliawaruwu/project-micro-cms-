@@ -109,7 +109,6 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
   const [images, setImages] = useState<string[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [sku, setSku] = useState('');
   const [weightDisplay, setWeightDisplay] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -135,18 +134,16 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
       setStockDisplay(productToEdit.stock !== undefined && productToEdit.stock !== null ? String(productToEdit.stock) : '');
       setDescription(productToEdit.description || '');
 
-      // Load all images
-      const initialImgs: string[] = [];
-      if (productToEdit.imageUrl) initialImgs.push(productToEdit.imageUrl);
-      if (productToEdit.images && Array.isArray(productToEdit.images)) {
-        productToEdit.images.forEach((img) => {
-          if (img && !initialImgs.includes(img)) initialImgs.push(img);
-        });
+      // Load all images cleanly without duplicate entries
+      let initialImgs: string[] = [];
+      if (productToEdit.images && Array.isArray(productToEdit.images) && productToEdit.images.length > 0) {
+        initialImgs = [...productToEdit.images].filter(Boolean);
+      } else if (productToEdit.imageUrl) {
+        initialImgs = [productToEdit.imageUrl];
       }
       setImages(initialImgs);
       setActiveImageIndex(0);
 
-      setSku(productToEdit.sku || '');
       setWeightDisplay(productToEdit.weightGrams ? String(productToEdit.weightGrams) : '');
 
       if (productToEdit.category && availableCategories.includes(productToEdit.category)) {
@@ -169,7 +166,6 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
       setDescription('');
       setImages([]);
       setActiveImageIndex(0);
-      setSku('');
       setWeightDisplay('');
       setErrorMsg('');
       setIsSubmitting(false);
@@ -298,7 +294,6 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
         description: description.trim(),
         imageUrl: images[0],
         images: images,
-        sku: sku.trim() || undefined,
         weightGrams: weightDisplay ? parseNumber(weightDisplay) : undefined,
         status: (stockDisplay === '' || parseNumber(stockDisplay) > 0) ? 'Aktif' : 'Habis',
       };
@@ -638,17 +633,6 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                   onChange={(e) => setStockDisplay(e.target.value)}
                   placeholder="0"
                   className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E] transition"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#241A1A]">Kode SKU (Opsional)</label>
-                <input
-                  type="text"
-                  value={sku}
-                  onChange={(e) => setSku(e.target.value)}
-                  placeholder="Contoh: SKU-001"
-                  className="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E] transition"
                 />
               </div>
 

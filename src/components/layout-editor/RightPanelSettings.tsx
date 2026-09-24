@@ -180,18 +180,27 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   };
 
   const hasImage =
-    selectedSection.id === 'hero_banner' ||
-    selectedSection.id === 'promo_banner' ||
-    selectedSection.id === 'image_with_text' ||
-    selectedSection.id === 'gallery' ||
-    selectedSection.id === 'brand_philosophy' ||
-    selectedSection.id === 'craftsmanship_story' ||
-    selectedSection.id === 'lookbook' ||
-    selectedSection.id === 'brand_story' ||
-    selectedSection.id === 'ingredient_story' ||
-    selectedSection.id === 'sustainability' ||
-    selectedSection.id === 'latest_drop' ||
-    selectedSection.id === 'floating_showcase';
+    Boolean(opts.imageUrl || opts.bannerUrl) ||
+    [
+      'hero_banner',
+      'promo_banner',
+      'image_with_text',
+      'gallery',
+      'brand_philosophy',
+      'craftsmanship_story',
+      'lookbook',
+      'brand_story',
+      'ingredient_story',
+      'sustainability',
+      'latest_drop',
+      'floating_showcase',
+      'signature_collection',
+      'private_collection',
+      'asymmetric_showcase',
+      'tech_features',
+      'innovation_cta',
+      'journal',
+    ].includes(selectedSection.id);
 
   const currentImageUrl =
     opts.imageUrl ||
@@ -383,29 +392,39 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   value={opts.heading || opts.featuredTitle || opts.announcementText || opts.testimonialsTitle || opts.newsletterTitle || ''}
                   onChange={(e) => {
                     if (selectedSection.id === 'announcement') handleOptionChange({ announcementText: e.target.value });
-                    else if (selectedSection.id === 'featured_products') handleOptionChange({ featuredTitle: e.target.value });
-                    else if (selectedSection.id === 'testimonials') handleOptionChange({ testimonialsTitle: e.target.value });
-                    else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterTitle: e.target.value });
+                    else if (selectedSection.id === 'featured_products') handleOptionChange({ featuredTitle: e.target.value, heading: e.target.value });
+                    else if (selectedSection.id === 'testimonials') handleOptionChange({ testimonialsTitle: e.target.value, heading: e.target.value });
+                    else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterTitle: e.target.value, heading: e.target.value });
                     else handleOptionChange({ heading: e.target.value });
                   }}
+                  placeholder={selectedSection.title || 'Teks Judul...'}
                   className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB] focus:ring-1 focus:ring-[#2C6ECB]"
                 />
               </div>
 
-              {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'featured_products' || selectedSection.id === 'newsletter' || selectedSection.id === 'footer' || selectedSection.id === 'rich_text' || selectedSection.id === 'craftsmanship_story' || selectedSection.id === 'private_collection' || selectedSection.id === 'brand_story' || selectedSection.id === 'ingredient_story' || selectedSection.id === 'sustainability' || selectedSection.id === 'store_benefits' || selectedSection.id === 'community_board') && (
+              {selectedSection.id !== 'announcement' && selectedSection.id !== 'search_category' && (
                 <div className="space-y-1">
                   <label className="text-[12px] font-bold text-[#202223]">
-                    {selectedSection.id === 'footer' ? 'Teks Footer' : 'Deskripsi'}
+                    {selectedSection.id === 'footer'
+                      ? 'Teks Footer / Hak Cipta'
+                      : selectedSection.id === 'brand_philosophy'
+                      ? 'Isi Teks Filosofi'
+                      : 'Deskripsi / Subjudul'}
                   </label>
                   <textarea
-                    rows={3}
-                    value={selectedSection.id === 'footer' ? opts.copyrightText || '' : opts.subheading || opts.description || opts.featuredSubtitle || opts.newsletterSubtitle || ''}
+                    rows={selectedSection.id === 'brand_philosophy' ? 4 : 3}
+                    value={
+                      selectedSection.id === 'footer'
+                        ? opts.copyrightText || ''
+                        : opts.description || opts.subheading || opts.featuredSubtitle || opts.newsletterSubtitle || (opts as any).content || ''
+                    }
                     onChange={(e) => {
-                      if (selectedSection.id === 'featured_products') handleOptionChange({ featuredSubtitle: e.target.value });
+                      if (selectedSection.id === 'featured_products') handleOptionChange({ featuredSubtitle: e.target.value, subheading: e.target.value });
                       else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterSubtitle: e.target.value });
                       else if (selectedSection.id === 'footer') handleOptionChange({ copyrightText: e.target.value });
-                      else handleOptionChange({ subheading: e.target.value, description: e.target.value });
+                      else handleOptionChange({ subheading: e.target.value, description: e.target.value, content: e.target.value });
                     }}
+                    placeholder={selectedSection.id === 'brand_philosophy' ? 'Tuliskan filosofi, visi atau kisah brand Anda...' : 'Deskripsi konten bagian ini...'}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB] focus:ring-1 focus:ring-[#2C6ECB]"
                   />
                 </div>
@@ -429,10 +448,35 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
               )}
             </div>
 
+            {/* ── COLLECTION GRID SPECIFIC SETTINGS ── */}
+            {selectedSection.id === 'collection_grid' && (
+              <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-bold text-[#202223]">Jumlah Kolom Tampilan</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[2, 3, 4].map((cols) => (
+                      <button
+                        key={cols}
+                        type="button"
+                        onClick={() => handleOptionChange({ gridColumns: cols })}
+                        className={`py-2 px-3 rounded-lg border text-xs font-bold transition cursor-pointer ${
+                          (opts.gridColumns || 3) === cols
+                            ? 'border-[#2C6ECB] bg-[#F1F8FF] text-[#2C6ECB]'
+                            : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
+                        }`}
+                      >
+                        {cols} Kolom
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ── BUTTONS / CTA ── */}
-            {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' || selectedSection.id === 'signature_collection' || selectedSection.id === 'craftsmanship_story' || selectedSection.id === 'private_collection' || selectedSection.id === 'innovation_cta' || selectedSection.id === 'limited_release' || selectedSection.id === 'community_board' || selectedSection.id === 'latest_drop' || selectedSection.id === 'asymmetric_showcase') && (
+            {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' || selectedSection.id === 'signature_collection' || selectedSection.id === 'craftsmanship_story' || selectedSection.id === 'private_collection' || selectedSection.id === 'innovation_cta' || selectedSection.id === 'limited_release' || selectedSection.id === 'community_board' || selectedSection.id === 'latest_drop' || selectedSection.id === 'asymmetric_showcase' || selectedSection.id === 'collection_grid' || selectedSection.id === 'lookbook' || selectedSection.id === 'tech_features' || selectedSection.id === 'floating_showcase') && (
               <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
-                <label className="text-[12px] font-bold text-[#202223]">Tombol Utama</label>
+                <label className="text-[12px] font-bold text-[#202223]">Tombol Utama / Aksi</label>
                 <div className="space-y-2">
                   <input
                     type="text"

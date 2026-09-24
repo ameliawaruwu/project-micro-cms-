@@ -52,7 +52,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
   const [storeName, setStoreName] = useState(currentStore.name || '');
   const [storeSlug, setStoreSlug] = useState(currentStore.slug || '');
   const [category, setCategory] = useState(currentStore.category || 'Kuliner & Minuman');
-  const [tagline, setTagline] = useState(currentStore.tagline || 'Katalog resmi dan pemesanan praktis via WhatsApp.');
+  const [tagline, setTagline] = useState(currentStore.tagline || 'Katalog online resmi toko UMKM.');
   const [phoneWhatsApp, setPhoneWhatsApp] = useState(currentStore.phoneWhatsApp || '');
 
   // Step 2 Template Selection

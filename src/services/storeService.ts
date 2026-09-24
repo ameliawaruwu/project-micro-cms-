@@ -405,7 +405,7 @@ class StoreService {
       name,
       slug,
       tagline: data.tagline || `Toko Resmi ${name}`,
-      description: data.description || 'Katalog online dan pemesanan praktis via WhatsApp.',
+      description: data.description || 'Katalog online resmi toko UMKM.',
       logoUrl: data.logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=FFD358&color=002A45&bold=true`,
       bannerUrl: data.bannerUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
       phoneWhatsApp: data.phoneWhatsApp || '',

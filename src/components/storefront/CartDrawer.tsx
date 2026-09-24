@@ -275,7 +275,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     if (isFreePlan) {
       // Toko dengan Paket Free memproses order manual (Transfer/WA/COD)
       const orderId = `KB-${Date.now().toString().slice(-6)}`;
-      const selectedName = selectedChannelId === 'cod' ? 'COD (Bayar di Tempat)' : selectedChannelId === 'wa' ? 'Pemesanan via WhatsApp' : 'Transfer Bank Manual';
+      const selectedName = selectedChannelId === 'cod' ? 'COD (Bayar di Tempat)' : 'Transfer Bank Manual';
       recordSuccessOrder(orderId, selectedName, false);
       return;
     }
@@ -611,11 +611,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 {isFreePlan ? (
                   <div className="space-y-2">
                     <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-2.5 text-[11px] text-amber-900 leading-snug">
-                      Gateway otomatis Midtrans terkunci pada <b>Paket Free</b>. Pesanan Anda akan disimpan ke sistem dan dikonfirmasi langsung ke WhatsApp penjual.
+                      Gateway pembayaran online aktif pada paket Pro. Pesanan Anda akan disimpan langsung ke sistem toko kami.
                     </div>
                     {[
                       { id: 'transfer_manual', title: 'Transfer Bank Manual', desc: 'Transfer ke rekening toko & kirim bukti bayar' },
-                      { id: 'wa', title: 'Pesan & Bayar via WhatsApp', desc: 'Kirim rincian belanja langsung ke WhatsApp penjual' },
                       { id: 'cod', title: 'Bayar di Tempat (COD)', desc: 'Bayar tunai saat pesanan Anda tiba' },
                     ].map((m) => (
                       <div

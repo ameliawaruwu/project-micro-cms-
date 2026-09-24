@@ -57,6 +57,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   onNavigateDomain,
 }) => {
   const [currentStore, setCurrentStore] = useState<Store>(store);
+  const { user } = useAuth();
   const cmsProducts = useCmsStore(state => state.products);
 
   const initialSections = useMemo(
@@ -358,8 +359,11 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
     const cmsProducts = useCmsStore.getState().products;
 
+    const previewSlug = currentStore.slug || (user ? `toko-${user.id.replace(/[^a-z0-9]/g, '').slice(0, 10)}` : 'toko-preview');
+
     const draftStore = {
       ...currentStore,
+      slug: previewSlug,
       layoutSettings: {
         ...currentStore.layoutSettings,
         sections: updatedMap['homepage'] || sections,
@@ -370,20 +374,25 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         pages: pagesConfig,
         activePage,
       },
-      products: cmsProducts,
+      products: (cmsProducts && cmsProducts.length > 0) ? cmsProducts : products,
     };
 
-    sessionStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
-    localStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
-    if (cmsProducts && cmsProducts.length > 0) {
-      sessionStorage.setItem('microcms_cms_products', JSON.stringify(cmsProducts));
-      localStorage.setItem('microcms_cms_products', JSON.stringify(cmsProducts));
+    try {
+      sessionStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
+      localStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
+      const finalProds = draftStore.products;
+      if (finalProds && finalProds.length > 0) {
+        sessionStorage.setItem('microcms_cms_products', JSON.stringify(finalProds));
+        localStorage.setItem('microcms_cms_products', JSON.stringify(finalProds));
+      }
+      window.dispatchEvent(new Event('cms_draft_updated'));
+    } catch (e) {
+      console.error('Failed to sync preview draft:', e);
     }
-    window.dispatchEvent(new Event('cms_draft_updated'));
-    window.open(`/${currentStore.slug}?preview=true`, '_blank');
-  };
 
-  const { user } = useAuth();
+    const pageParam = activePage && activePage !== 'homepage' ? `&page=${encodeURIComponent(activePage)}` : '';
+    window.open(`/?toko=${encodeURIComponent(previewSlug)}&preview=true${pageParam}`, '_blank');
+  };
 
   // Saved draft themes persistence in localStorage - strictly isolated per user and store
   const savedThemesStorageKey = user?.id && currentStore.id

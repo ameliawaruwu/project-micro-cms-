@@ -10,6 +10,15 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
 
+  const navItems = (sectionOptions.navMenuItems && sectionOptions.navMenuItems.length > 0)
+    ? sectionOptions.navMenuItems.map((item: any, i: number) => ({
+        id: item.id || `nav-${i}`,
+        label: item.label || item.name,
+        route: item.href || item.route || '#',
+        isActive: true,
+      }))
+    : navigation.filter(n => n.isActive);
+
   return (
     <header className="w-full max-w-full bg-white/95 backdrop-blur-md sticky top-0 z-50 font-sans border-b border-gray-100/90 box-border overflow-x-hidden transition-all">
       <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between py-3 sm:py-4 px-3 sm:px-5 md:px-10 gap-2 sm:gap-4 box-border">
@@ -42,7 +51,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
         {/* Desktop Navigation Links (Strictly hidden on mobile viewport & simulator) */}
         {showNav && (
           <nav className="hidden md:flex items-center justify-center flex-1 gap-6 lg:gap-10 px-4">
-            {navigation.filter(n => n.isActive).map((nav) => (
+            {navItems.map((nav: any) => (
               <a
                 key={nav.id}
                 href={nav.route}
@@ -81,7 +90,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
       {showNav && mobileMenuOpen && (
         <div className="md:hidden border-t border-gray-100 w-full bg-white px-4 py-3 shadow-lg animate-in slide-in-from-top-2 duration-200">
           <nav className="flex flex-col space-y-1">
-            {navigation.filter(n => n.isActive).map((nav) => (
+            {navItems.map((nav: any) => (
               <a
                 key={nav.id}
                 href={nav.route}

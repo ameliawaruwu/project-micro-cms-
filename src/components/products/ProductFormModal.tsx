@@ -35,7 +35,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [customCategory, setCustomCategory] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [sku, setSku] = useState('');
   const [weightDisplay, setWeightDisplay] = useState('250');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -70,9 +69,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setCategory(productToEdit.category || (categories[0] || 'Umum'));
       setDescription(productToEdit.description || '');
       setImageUrl(productToEdit.imageUrl || '');
-      setSku(productToEdit.sku || '');
       setWeightDisplay(productToEdit.weightGrams ? String(productToEdit.weightGrams) : '250');
-      setShowAdvanced(Boolean(productToEdit.sku || productToEdit.originalPrice));
+      setShowAdvanced(Boolean(productToEdit.originalPrice));
     } else {
       setName('');
       setPriceDisplay('');
@@ -81,7 +79,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setCategory(categories[0] || 'Umum');
       setDescription('');
       setImageUrl(presetPhotos[0]);
-      setSku('');
       setWeightDisplay('250');
       setShowAdvanced(false);
     }
@@ -143,7 +140,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       category: finalCategory || 'Umum',
       description: description.trim() || 'Produk berkualitas dari toko kami.',
       imageUrl: imageUrl || presetPhotos[0],
-      sku: sku.trim() || undefined,
       weightGrams: parseNumber(weightDisplay) || 250,
     });
   };
@@ -355,7 +351,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               onClick={() => setShowAdvanced(!showAdvanced)}
               className="w-full py-2.5 px-3.5 rounded-xl bg-[#FAF7F7] hover:bg-[#F5E8EA]/50 border border-[#E5E0DD] flex items-center justify-between text-xs font-bold text-[#241A1A] transition cursor-pointer"
             >
-              <span>Pengaturan Lanjutan (SKU, Diskon, Berat Ongkir)</span>
+              <span>Pengaturan Lanjutan (Diskon, Berat Ongkir)</span>
               {showAdvanced ? <ChevronUp className="w-4 h-4 text-[#706866]" /> : <ChevronDown className="w-4 h-4 text-[#706866]" />}
             </button>
 
@@ -379,19 +375,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-[#E5E0DD] bg-white text-[#241A1A] font-semibold focus:outline-none focus:border-[#66000E]"
                       />
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#706866] mb-1">
-                      Kode SKU Produk
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: BTK-001"
-                      value={sku}
-                      onChange={(e) => setSku(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-[#E5E0DD] bg-white text-[#241A1A] font-medium focus:outline-none focus:border-[#66000E]"
-                    />
                   </div>
                 </div>
 

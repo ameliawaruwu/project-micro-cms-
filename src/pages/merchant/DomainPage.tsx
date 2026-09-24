@@ -83,6 +83,16 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
   };
 
   const handleUseRandomDomain = async () => {
+    if (isFreePlan) {
+      setAlert({
+        type: 'error',
+        message: isEn
+          ? 'Domain access is locked on Free Plan. Please upgrade to unlock and activate this domain.'
+          : 'Akses domain terkunci pada Paket Free. Silakan upgrade ke paket berbayar untuk mengaktifkan domain ini.',
+      });
+      return;
+    }
+
     setIsSettingRandom(true);
     setAlert(null);
     try {
@@ -247,7 +257,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16 font-sans">
+    <div className="space-y-6 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 w-full text-left">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E5E0DD] pb-4">
         <div>
@@ -378,31 +388,65 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{t('domain_available_ready', 'Tersedia & Siap Pakai')}</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{t('domain_available', 'Tersedia')}</span>
+              </div>
+              {isFreePlan && (
+                <div className="flex items-center gap-1 text-[11px] font-bold text-amber-900 bg-amber-100 px-2 py-1 rounded-lg border border-amber-300">
+                  <Lock className="w-3 h-3 text-amber-700" />
+                  <span>{t('domain_locked_free', 'Terkunci (Paket Free)')}</span>
+                </div>
+              )}
             </div>
+
             {domainType === 'random' && (
-              <button
-                type="button"
-                disabled={isSettingRandom}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleUseRandomDomain();
-                }}
-                className="text-xs sm:text-sm font-bold text-[#66000E] hover:text-[#52000B] flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {isSettingRandom ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_saving', 'Menyimpan...')}
-                  </>
-                ) : (
-                  <>
-                    <span>{t('domain_btn_use', 'Gunakan Domain')}</span> <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
+              isFreePlan ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onNavigateBilling) {
+                      onNavigateBilling();
+                    } else {
+                      setAlert({
+                        type: 'error',
+                        message: isEn
+                          ? 'Domain access is locked on Free Plan. Please upgrade your subscription.'
+                          : 'Akses domain terkunci pada Paket Free. Silakan upgrade paket langganan Anda.',
+                      });
+                    }
+                  }}
+                  className="text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-xl border border-amber-300 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-2xs"
+                  title="Terkunci: Upgrade paket untuk mengaktifkan domain ini"
+                >
+                  <Lock className="w-3.5 h-3.5 text-amber-800" />
+                  <span>{t('domain_unlock_btn', 'Buka Kunci Domain')}</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-amber-800" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isSettingRandom}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUseRandomDomain();
+                  }}
+                  className="text-xs sm:text-sm font-bold text-[#66000E] hover:text-[#52000B] flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {isSettingRandom ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_saving', 'Menyimpan...')}
+                    </>
+                  ) : (
+                    <>
+                      <span>{t('domain_btn_use', 'Gunakan Domain')}</span> <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              )
             )}
           </div>
         </div>

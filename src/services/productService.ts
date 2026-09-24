@@ -236,17 +236,14 @@ class ProductService {
     const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     // Upload images to Supabase Storage bucket for permanent CDN URLs
-    let finalImageUrl = data.imageUrl || '';
-    if (finalImageUrl.startsWith('data:image')) {
-      finalImageUrl = await this.uploadImageToStorage(storeId, finalImageUrl, 0);
-    }
-
-    let finalImages = data.images || [];
-    if (finalImages.length > 0) {
+    let rawImages = data.images && data.images.length > 0 ? data.images : (data.imageUrl ? [data.imageUrl] : []);
+    let finalImages: string[] = [];
+    if (rawImages.length > 0) {
       finalImages = await Promise.all(
-        finalImages.map((img, idx) => this.uploadImageToStorage(storeId, img, idx))
+        rawImages.map((img, idx) => this.uploadImageToStorage(storeId, img, idx))
       );
     }
+    const finalImageUrl = finalImages[0] || '';
 
     const newProduct: Product = {
       ...data,
@@ -275,7 +272,6 @@ class ProductService {
         category: newProduct.category,
         price: newProduct.price,
         stock: newProduct.stock,
-        sku: newProduct.sku || '',
         weight_grams: newProduct.weightGrams || 250,
         description: newProduct.description || '',
         image_url: newProduct.imageUrl || '',
@@ -306,13 +302,14 @@ class ProductService {
     const index = products.findIndex((p) => p.id === id);
     if (index === -1) throw new Error('Produk tidak ditemukan');
 
-    if (updates.imageUrl && updates.imageUrl.startsWith('data:image')) {
-      updates.imageUrl = await this.uploadImageToStorage(storeId, updates.imageUrl, 0);
-    }
     if (updates.images && updates.images.length > 0) {
       updates.images = await Promise.all(
         updates.images.map((img, idx) => this.uploadImageToStorage(storeId, img, idx))
       );
+      updates.imageUrl = updates.images[0];
+    } else if (updates.imageUrl && updates.imageUrl.startsWith('data:image')) {
+      updates.imageUrl = await this.uploadImageToStorage(storeId, updates.imageUrl, 0);
+      updates.images = [updates.imageUrl];
     }
 
     const newStock = updates.stock !== undefined ? updates.stock : products[index].stock;
@@ -335,7 +332,6 @@ class ProductService {
       if (updates.category !== undefined) dbPayload.category = updates.category;
       if (updates.price !== undefined) dbPayload.price = updates.price;
       if (updates.stock !== undefined) dbPayload.stock = updates.stock;
-      if (updates.sku !== undefined) dbPayload.sku = updates.sku;
       if (updates.weightGrams !== undefined) dbPayload.weight_grams = updates.weightGrams;
       if (updates.description !== undefined) dbPayload.description = updates.description;
       if (updates.imageUrl !== undefined) dbPayload.image_url = updates.imageUrl;

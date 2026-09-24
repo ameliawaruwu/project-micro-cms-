@@ -254,7 +254,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     if (onPageChange) onPageChange('katalog');
   };
 
-  // Intercept anchor and button clicks to fake routing
+  // Intercept anchor and button clicks to fake routing without reloading browser
   const handleCanvasClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const anchor = target.closest('a');
@@ -268,11 +268,14 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
       return;
     }
 
-    if (button) {
+    if (button && !button.closest('.section-floating-toolbar')) {
       const href = button.getAttribute('data-href') || button.getAttribute('href') || '';
-      const text = button.textContent || '';
-      handleNavClick(href, text);
-      return;
+      if (href) {
+        e.preventDefault();
+        const text = button.textContent || '';
+        handleNavClick(href, text);
+        return;
+      }
     }
   };
 
@@ -465,7 +468,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     const customContent = renderPageCustomContent(activePage);
 
     return (
-      <div className="flex-1 w-full max-w-full overflow-x-hidden bg-white relative pb-32 box-border" onClick={handleCanvasClick}>
+      <div className="flex-1 w-full max-w-full overflow-x-hidden bg-white relative pb-32 box-border" onClickCapture={handleCanvasClick} onClick={handleCanvasClick}>
         {customContent ? (
           customContent
         ) : visibleSections.length === 0 ? (
@@ -488,6 +491,14 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
               <div
                 key={sectionKey}
                 id={`preview-${sectionKey}`}
+                onClickCapture={(e) => {
+                  const target = e.target as HTMLElement;
+                  const anchor = target.closest('a');
+                  if (anchor) {
+                    e.preventDefault();
+                    handleNavClick(anchor.getAttribute('href') || '', anchor.textContent || '');
+                  }
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelectSection(sectionKey);
@@ -1482,7 +1493,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           )}
 
           {/* STOREFRONT PREVIEW SCROLLABLE CONTENT */}
-          <div className="bg-white w-full max-w-full min-h-[620px] max-h-[calc(100vh-130px)] overflow-y-auto overflow-x-hidden custom-scrollbar relative selection:bg-[#F5E8EA] box-border" onClick={handleCanvasClick}>
+          <div className="bg-white w-full max-w-full min-h-[620px] max-h-[calc(100vh-130px)] overflow-y-auto overflow-x-hidden custom-scrollbar relative selection:bg-[#F5E8EA] box-border" onClickCapture={handleCanvasClick} onClick={handleCanvasClick}>
             {renderPageCustomContent(activePage) ? (
               renderPageCustomContent(activePage)
             ) : activePage === 'katalog' ? (
@@ -1585,6 +1596,33 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                   <div
                     key={sectionKey}
                     id={`preview-${sectionKey}`}
+                    onClickCapture={(e) => {
+                      const target = e.target as HTMLElement;
+                      // Don't intercept floating action toolbar buttons
+                      if (target.closest('.section-floating-toolbar')) return;
+
+                      // Prevent default browser navigation on any anchor or link
+                      const anchor = target.closest('a');
+                      if (anchor) {
+                        e.preventDefault();
+                        const href = anchor.getAttribute('href') || '';
+                        const text = anchor.textContent || '';
+                        handleNavClick(href, text);
+                      }
+
+                      // Intercept buttons with href
+                      const button = target.closest('button');
+                      if (button && !button.closest('.section-floating-toolbar')) {
+                        const href = button.getAttribute('data-href') || button.getAttribute('href');
+                        if (href) {
+                          e.preventDefault();
+                          handleNavClick(href, button.textContent || '');
+                        }
+                      }
+
+                      // Always select the section so its settings open in the right panel
+                      onSelectSection(sectionKey);
+                    }}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSelectSection(sectionKey);
@@ -1610,7 +1648,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                     {/* Shopify-style Floating Action Toolbar at Bottom Center */}
                     {isSelected && (
                       <div
-                        className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 bg-slate-900/90 text-white backdrop-blur-xs px-2 py-1 rounded-xl shadow-xl flex items-center gap-1 border border-white/20 animate-in fade-in zoom-in-95 duration-100"
+                        className="section-floating-toolbar absolute bottom-2 left-1/2 -translate-x-1/2 z-30 bg-slate-900/90 text-white backdrop-blur-xs px-2 py-1 rounded-xl shadow-xl flex items-center gap-1 border border-white/20 animate-in fade-in zoom-in-95 duration-100"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {/* Move Up */}

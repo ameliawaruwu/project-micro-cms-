@@ -7,6 +7,15 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOp
   
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name}. All rights reserved.`;
 
+  const navList = (sectionOptions.navMenuItems && sectionOptions.navMenuItems.length > 0)
+    ? sectionOptions.navMenuItems.map((item: any, i: number) => ({
+        id: item.id || `nav-${i}`,
+        label: item.label || item.name,
+        route: item.href || item.route || '#',
+        isActive: true,
+      }))
+    : navigation.filter(n => n.isActive);
+
   return (
     <footer className="w-full max-w-full bg-white pt-10 sm:pt-16 md:pt-28 pb-8 sm:pb-12 px-3.5 sm:px-6 md:px-12 font-sans box-border overflow-hidden border-t border-gray-100">
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 md:gap-12 mb-10 sm:mb-16 md:mb-20">
@@ -23,7 +32,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOp
         <div className="md:col-span-3">
           <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">Navigation</h4>
           <ul className="space-y-2.5 sm:space-y-3">
-            {navigation.map(nav => (
+            {navList.map((nav: any) => (
               <li key={nav.id}>
                 <a href={nav.route} className="text-gray-600 hover:text-black text-xs sm:text-sm font-light transition-colors block py-0.5">
                   {nav.label}

@@ -127,13 +127,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                         <div>
                           <p
                             className="font-semibold text-[#241A1A] leading-snug hover:text-[#66000E] cursor-pointer"
-                            onClick={() => onViewProduct(prod)}
+                            onClick={() => onEditProduct(prod)}
                           >
                             {prod.name}
                           </p>
-                          {prod.sku && (
-                            <span className="text-[10px] text-[#706866] font-mono">SKU: {prod.sku}</span>
-                          )}
                         </div>
                       </div>
                     </td>
@@ -170,16 +167,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                       </span>
                     </td>
 
-                    {/* Actions: Lihat, Edit, Hapus */}
+                    {/* Actions: Edit, Hapus */}
                     <td className="py-3.5 px-4 pr-6 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => onViewProduct(prod)}
-                          className="p-1.5 rounded-lg text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer"
-                          title={isEn ? 'View Product Details' : 'Lihat Detail Produk'}
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
                         <button
                           onClick={() => onEditProduct(prod)}
                           className="p-1.5 rounded-lg text-[#706866] hover:text-[#66000E] hover:bg-[#F9EDEF] transition cursor-pointer"

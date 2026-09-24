@@ -141,11 +141,60 @@ export default function App() {
 
   // State: Navigation & Multi-tenant Store
   const [stores, setStores] = useState<Store[]>([]);
-  const [activeStore, setActiveStore] = useState<Store | null>(null);
+  const [activeStore, setActiveStore] = useState<Store | null>(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('preview') === 'true') {
+        try {
+          const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
+          if (draftStr) {
+            const draft = JSON.parse(draftStr);
+            if (draft.layoutSettings?.activeThemeId) {
+              const normalizedTheme = normalizeThemeId(draft.layoutSettings.activeThemeId);
+              useCmsStore.getState().loadThemeData(normalizedTheme);
+            }
+            return draft;
+          }
+        } catch (e) {
+          console.error('Failed to parse preview draft store synchronously:', e);
+        }
+      }
+    }
+    return null;
+  });
   const [activeTab, setActiveTab] = useState<MerchantTab>('beranda');
   
   // Inisialisasi viewMode langsung dari session tersimpan untuk mencegah flicker Landing Page saat reload
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const isPreview = searchParams.get('preview') === 'true';
+      const toko = searchParams.get('toko') || searchParams.get('store');
+      const mode = searchParams.get('mode') || searchParams.get('view');
+      const pathSlug = window.location.pathname.length > 1 ? window.location.pathname.substring(1).split('/')[0] : '';
+      const KNOWN_PAGE_ROUTES = [
+        'homepage', 'home', 'beranda',
+        'katalog', 'catalog', 'products', 'produk',
+        'product', 'detail-produk',
+        'about', 'tentang',
+        'contact', 'kontak',
+        'promo',
+        'berita', 'journal', 'lookbook', 'editorial', 'blog', 'news',
+        'login', 'masuk',
+        'register', 'daftar',
+        'cart', 'keranjang',
+        'checkout',
+        'orders', 'pesanan',
+        'profile', 'profil',
+        'thank_you', 'terima-kasih'
+      ];
+      const isKnownRoute = KNOWN_PAGE_ROUTES.includes(pathSlug.toLowerCase());
+
+      if (isPreview || mode === 'storefront' || mode === 'storefront-live' || toko || isKnownRoute) {
+        return 'storefront-live';
+      }
+    }
+
     const cachedUser = authService.getCurrentUser().user;
     if (cachedUser) {
       return cachedUser.role === 'admin' ? 'admin' : 'merchant-desktop';
@@ -156,7 +205,32 @@ export default function App() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // State: Core Data
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('preview') === 'true') {
+        try {
+          const savedProdsStr = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
+          if (savedProdsStr) {
+            const parsed = JSON.parse(savedProdsStr);
+            useCmsStore.setState({ products: parsed });
+            return parsed;
+          }
+          const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
+          if (draftStr) {
+            const draft = JSON.parse(draftStr);
+            if (draft.products && draft.products.length > 0) {
+              useCmsStore.setState({ products: draft.products });
+              return draft.products;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse preview products synchronously:', e);
+        }
+      }
+    }
+    return [];
+  });
   const [orders, setOrders] = useState<Order[]>([]);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -342,6 +416,7 @@ export default function App() {
       'about', 'tentang',
       'contact', 'kontak',
       'promo',
+      'berita', 'journal', 'lookbook', 'editorial', 'blog', 'news',
       'login', 'masuk',
       'register', 'daftar',
       'cart', 'keranjang',
@@ -398,7 +473,7 @@ export default function App() {
       return;
     }
 
-    if (tokoParam || modeParam === 'storefront' || isKnownRoute) {
+    if (params.get('preview') === 'true' || tokoParam || modeParam === 'storefront' || isKnownRoute) {
       setViewMode('storefront-live');
       
       const isPreview = params.get('preview') === 'true';
@@ -594,6 +669,9 @@ export default function App() {
 
   // Route Users to their respective dashboards if they are logged in and on the landing page
   useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === 'true') {
+      return;
+    }
     if (user && viewMode === 'landing') {
       if (user.role === 'admin') {
         setViewMode('admin');
@@ -1270,18 +1348,33 @@ export default function App() {
 
         return (
           <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative">
-            {/* Owner Draft Warning Banner in Preview Mode */}
-            {!isPublished && isPreview && (
-              <div className="bg-amber-500 text-white text-xs font-semibold px-4 py-2 text-center flex items-center justify-center gap-2 sticky top-0 z-50 shadow-xs">
-                <span>⚠️ Mode Pratinjau Draf: Toko ini belum dibuka untuk umum.</span>
-                {user && (
+            {/* Owner Draft / Preview Banner in Preview Mode */}
+            {isPreview && (
+              <div className="bg-amber-500 text-white text-xs font-semibold px-4 py-2 text-center flex items-center justify-between sm:justify-center gap-3 sticky top-0 z-50 shadow-xs">
+                <span>⚠️ Mode Pratinjau: Menampilkan tampilan toko dan tata letak yang sedang diedit.</span>
+                <div className="flex items-center gap-2">
+                  {!isPublished && user && (
+                    <button
+                      onClick={() => handlePublishStore(currentStore.id)}
+                      className="px-2.5 py-1 bg-white text-amber-900 rounded-lg text-[11px] font-bold hover:bg-amber-50 cursor-pointer transition shadow-2xs"
+                    >
+                      Publikasikan Sekarang
+                    </button>
+                  )}
                   <button
-                    onClick={() => handlePublishStore(currentStore.id)}
-                    className="ml-2 px-2.5 py-0.5 bg-white text-amber-900 rounded-lg text-[11px] font-bold hover:bg-amber-50 cursor-pointer transition"
+                    onClick={() => {
+                      if (window.opener) {
+                        window.close();
+                      } else {
+                        setViewMode('merchant-desktop');
+                        setActiveTab('layout');
+                      }
+                    }}
+                    className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-semibold cursor-pointer transition border border-amber-400/40 shadow-2xs"
                   >
-                    Publikasikan Sekarang
+                    Kembali ke Editor
                   </button>
-                )}
+                </div>
               </div>
             )}
             {/* Subtle Floating Switcher back to Dashboard */}
@@ -1334,7 +1427,7 @@ export default function App() {
             merchantId: user.id,
             name: user.name ? `Toko ${user.name}` : '',
             slug: user.name ? `toko-${user.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '',
-            tagline: 'Katalog online resmi dan pemesanan praktis via WhatsApp.',
+            tagline: 'Katalog online resmi toko UMKM.',
             description: '',
             logoUrl: user.avatarUrl,
             bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
