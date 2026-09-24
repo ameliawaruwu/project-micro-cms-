@@ -535,7 +535,6 @@ export default function App() {
             if (new URLSearchParams(window.location.search).get('preview') === 'true') {
               const rawTheme = (targetStore.layoutSettings as any)?.activeThemeId || targetStore.layoutSettings?.themeStyle;
               if (rawTheme) {
-                const { normalizeThemeId } = await import('./themes/ThemeRegistry');
                 useCmsStore.getState().loadThemeData(normalizeThemeId(rawTheme));
               }
             }
