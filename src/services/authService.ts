@@ -1,8 +1,8 @@
 import { User, Merchant, Store } from '../types';
-import { initialStores } from './mockData';
 import { storeService } from './storeService';
 import { productService } from './productService';
 import { supabase } from './supabaseClient';
+import { idService } from './idService';
 
 const AUTH_USER_KEY = 'microcms_auth_user';
 const AUTH_MERCHANT_KEY = 'microcms_auth_merchant';
@@ -55,11 +55,11 @@ interface StoredAccount {
 
 const defaultAccounts: StoredAccount[] = [
   {
-    id: 'usr-admin-1',
+    id: 'USR001',
     email: 'admin@kroomify.id',
     password: 'admin123',
     user: {
-      id: 'usr-admin-1',
+      id: 'USR001',
       name: 'Super Admin Kroomify',
       email: 'admin@kroomify.id',
       phoneWhatsApp: '081289201928',
@@ -68,35 +68,13 @@ const defaultAccounts: StoredAccount[] = [
       createdAt: '2026-01-01T00:00:00Z',
     },
     merchant: {
-      id: 'merch-admin',
-      userId: 'usr-admin-1',
-      storeId: 'store-andhika',
-      plan: 'premium',
+      id: 'merch-USR001',
+      userId: 'USR001',
+      storeId: '',
+      plan: 'enterprise',
       isVerified: true,
     },
-    storeId: 'store-andhika',
-  },
-  {
-    id: 'usr-andhika-01',
-    email: 'andhika@gmail.com',
-    password: 'password123',
-    user: {
-      id: 'usr-andhika-01',
-      name: 'Andhika Pratama',
-      email: 'andhika@gmail.com',
-      phoneWhatsApp: '081234567890',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-      role: 'merchant',
-      createdAt: '2026-01-10T08:00:00Z',
-    },
-    merchant: {
-      id: 'merch-usr-andhika-01',
-      userId: 'usr-andhika-01',
-      storeId: 'store-andhika',
-      plan: 'starter',
-      isVerified: true,
-    },
-    storeId: 'store-andhika',
+    storeId: '',
   },
 ];
 
@@ -109,20 +87,24 @@ class AuthService {
     }
     try {
       const parsed: StoredAccount[] = JSON.parse(raw);
+      // Filter out legacy dummy account USR000
+      const filtered = parsed.filter(
+        (a) => a.id !== 'USR000' && a.email.toLowerCase() !== 'andhika@gmail.com'
+      );
       // Merge with defaultAccounts if missing
-      const existingIds = new Set(parsed.map((a) => a.id));
-      const existingEmails = new Set(parsed.map((a) => a.email.toLowerCase()));
-      let changed = false;
+      const existingIds = new Set(filtered.map((a) => a.id));
+      const existingEmails = new Set(filtered.map((a) => a.email.toLowerCase()));
+      let changed = filtered.length !== parsed.length;
       defaultAccounts.forEach((def) => {
         if (!existingIds.has(def.id) && !existingEmails.has(def.email.toLowerCase())) {
-          parsed.push(def);
+          filtered.push(def);
           changed = true;
         }
       });
       if (changed) {
-        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(parsed));
+        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(filtered));
       }
-      return parsed;
+      return filtered;
     } catch {
       return defaultAccounts;
     }
@@ -395,7 +377,7 @@ class AuthService {
     await new Promise((res) => setTimeout(res, 450));
 
     const cleanEmail = params.email.toLowerCase().trim();
-    const userId = `usr_${cleanEmail.replace(/[^a-z0-9]/g, '_')}`;
+    const userId = await idService.generateNextId('users');
 
     const user: User = {
       id: userId,
@@ -407,11 +389,50 @@ class AuthService {
       createdAt: new Date().toISOString(),
     };
 
-    // User only registers their account/merchant. NO store or draft template is created automatically.
+    const cleanStoreName = (params.storeName || '').trim();
+    const cleanStoreSlug = cleanStoreName
+      ? cleanStoreName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      : '';
+    const storeId = await idService.generateNextId('stores');
+
+    let newStore: Store | null = null;
+    if (cleanStoreName) {
+      newStore = {
+        id: storeId,
+        merchantId: userId,
+        name: cleanStoreName,
+        slug: cleanStoreSlug,
+        tagline: '',
+        description: '',
+        logoUrl: '',
+        bannerUrl: '',
+        phoneWhatsApp: (params.phoneWhatsApp || '').trim(),
+        city: '',
+        province: '',
+        district: '',
+        subdistrict: '',
+        village: '',
+        addressDetail: '',
+        postalCode: '',
+        address: '',
+        category: '',
+        currency: 'IDR',
+        balance: 0,
+        plan: 'free',
+        isPublished: false,
+        onboarding: {
+          storeNameSet: true,
+          productUploaded: false,
+          paymentConnected: false,
+        },
+        createdAt: new Date().toISOString(),
+      };
+    }
+
     const merchant: Merchant = {
       id: `merch-${userId}`,
       userId: userId,
-      storeId: '',
+      storeId: newStore ? newStore.id : '',
       plan: 'free',
       isVerified: true,
     };
@@ -419,8 +440,8 @@ class AuthService {
     const hashedPassword = await hashPassword(params.password);
 
     // 1. Sync User to Supabase Database with hashed password
+    const nowWib = getWibIsoString();
     try {
-      const nowWib = getWibIsoString();
       let registered = false;
       try {
         const { data: rpcData, error: rpcErr } = await supabase.rpc('register_new_user', {
@@ -463,6 +484,48 @@ class AuthService {
       console.warn('⚠️ Supabase users connection notice:', err?.message || err);
     }
 
+    // 2. Sync newStore to Supabase stores table (clean with all details empty)
+    if (newStore) {
+      try {
+        await supabase.from('stores').upsert({
+          id: newStore.id,
+          user_id: newStore.merchantId,
+          name: newStore.name,
+          slug: newStore.slug,
+          tagline: '',
+          description: '',
+          logo_url: '',
+          banner_url: '',
+          phone_whatsapp: newStore.phoneWhatsApp,
+          city: '',
+          province: '',
+          district: '',
+          subdistrict: '',
+          village: '',
+          address_detail: '',
+          postal_code: '',
+          address: '',
+          category: '',
+          plan: 'free',
+          balance: 0,
+          theme_settings: {},
+          is_published: false,
+          created_at: newStore.createdAt,
+          updated_at: nowWib,
+        });
+        console.log('✅ Toko baru dengan informasi kosong berhasil disimpan ke Supabase:', newStore.name);
+      } catch (storeErr) {
+        console.warn('⚠️ Supabase stores create notice:', storeErr);
+      }
+
+      try {
+        const storedStores = storeService.getStoredStores();
+        const otherStores = storedStores.filter((s) => s.id !== newStore!.id);
+        otherStores.push(newStore);
+        localStorage.setItem('microcms_stores', JSON.stringify(otherStores));
+      } catch (e) {}
+    }
+
     // Save account into local accounts repository with hashed password
     const accounts = this.getStoredAccounts();
     const existingIndex = accounts.findIndex((a) => a.id === userId || a.email.toLowerCase() === cleanEmail);
@@ -472,7 +535,7 @@ class AuthService {
       password: hashedPassword,
       user,
       merchant,
-      storeId: '',
+      storeId: newStore ? newStore.id : '',
     };
 
     if (existingIndex >= 0) {
@@ -483,8 +546,13 @@ class AuthService {
     this.saveAccounts(accounts);
 
     // Clean any prior active store session & draft keys so newly registered user starts 100% clean
-    localStorage.removeItem(AUTH_STORE_KEY);
-    localStorage.removeItem(ACTIVE_STORE_ID_KEY);
+    if (newStore) {
+      localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(newStore));
+      localStorage.setItem(ACTIVE_STORE_ID_KEY, newStore.id);
+    } else {
+      localStorage.removeItem(AUTH_STORE_KEY);
+      localStorage.removeItem(ACTIVE_STORE_ID_KEY);
+    }
     try {
       localStorage.removeItem('microcms_preview_draft');
       sessionStorage.removeItem('microcms_preview_draft');
@@ -492,14 +560,18 @@ class AuthService {
       sessionStorage.removeItem('microcms_cms_products');
     } catch (e) {}
 
-    // Set Active Session ONLY if autoLogin is true (clean of any store)
+    // Set Active Session ONLY if autoLogin is true
     if (params.autoLogin) {
       localStorage.removeItem('microcms_explicit_logout');
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
       localStorage.setItem(AUTH_MERCHANT_KEY, JSON.stringify(merchant));
+      if (newStore) {
+        localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(newStore));
+        localStorage.setItem(ACTIVE_STORE_ID_KEY, newStore.id);
+      }
     }
 
-    return { user, merchant, store: null };
+    return { user, merchant, store: newStore };
   }
 
   async registerWithGoogle(params: {
@@ -515,14 +587,15 @@ class AuthService {
       throw new Error('Alamat Google Account tidak valid.');
     }
 
-    const userId = `usr_${cleanEmail.replace(/[^a-z0-9]/g, '_')}`;
     const accounts = this.getStoredAccounts();
-    const existing = accounts.find((a) => a.id === userId || a.email.toLowerCase() === cleanEmail);
+    const existing = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
 
     if (existing) {
       // User already registered via Google before, log them in
       return this.login(cleanEmail, 'google-auth');
     }
+
+    const userId = await idService.generateNextId('users');
 
     const defaultName = cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
     const finalName = (params.fullName || defaultName).trim();
@@ -835,6 +908,24 @@ class AuthService {
         this.saveAccounts(accounts);
         await this.logout();
         return false;
+      }
+
+      // Jika ID user di database telah dimigrasikan ke format standar (contoh: USR002)
+      if (data && data.id !== userId) {
+        try {
+          const storedUser = localStorage.getItem(AUTH_USER_KEY);
+          if (storedUser) {
+            const u = JSON.parse(storedUser);
+            u.id = data.id;
+            localStorage.setItem(AUTH_USER_KEY, JSON.stringify(u));
+          }
+          const storedMerch = localStorage.getItem(AUTH_MERCHANT_KEY);
+          if (storedMerch) {
+            const m = JSON.parse(storedMerch);
+            m.userId = data.id;
+            localStorage.setItem(AUTH_MERCHANT_KEY, JSON.stringify(m));
+          }
+        } catch (e) {}
       }
 
       return true;

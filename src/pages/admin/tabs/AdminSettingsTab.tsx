@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { PlatformSettings } from '../../../types';
 
+import { Breadcrumb } from '../../../components/common/Breadcrumb';
+
 interface AdminSettingsTabProps {
   isEn: boolean;
   platformSettings: PlatformSettings;
@@ -15,6 +17,7 @@ interface AdminSettingsTabProps {
   handleSaveSettings: (e: React.FormEvent) => void;
   handleTestApi: (service: 'midtrans' | 'biteship' | 'wa') => void;
   testingService: string | null;
+  onNavigateOverview?: () => void;
 }
 
 export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
@@ -24,25 +27,37 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
   handleSaveSettings,
   handleTestApi,
   testingService,
+  onNavigateOverview,
 }) => {
   return (
-    <div className="space-y-4 max-w-3xl">
-      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs flex items-center justify-between">
+    <div className="space-y-4 w-full">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: isEn ? 'Dashboard' : 'Beranda', onClick: onNavigateOverview },
+          { label: isEn ? 'System Settings' : 'Pengaturan Sistem', isActive: true },
+        ]}
+      />
+
+      {/* Header Judul Halaman di Bawah Topbar */}
+      <div className="pb-3 border-b border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xs font-bold text-gray-900 flex items-center gap-1.5 uppercase tracking-wider">
-            <SettingsIcon className="w-3.5 h-3.5 text-red-600" />
-            <span>{isEn ? 'Platform Policy & System Settings' : 'Pengaturan Kebijakan & Sistem Platform'}</span>
-          </h2>
-          <p className="text-[11px] text-gray-500">
-            {isEn ? 'Operational configuration for transaction fees, payout limits, and system status. Secret API keys are securely managed via .env.' : 'Konfigurasi operasional komisi transaksi, batas payout, dan status sistem. Kunci API rahasia dikelola aman via file .env.'}
+          <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+            <SettingsIcon className="w-5 h-5 text-[#66000E]" />
+            <span>{isEn ? 'System Settings' : 'Pengaturan Sistem'}</span>
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {isEn
+              ? 'Operational configuration for transaction fees, payout limits, API integration keys, and system maintenance status.'
+              : 'Konfigurasi operasional komisi transaksi, batas penarikan saldo, status integrasi API, dan mode pemeliharaan sistem.'}
           </p>
         </div>
         <button
           onClick={handleSaveSettings}
-          className="px-3.5 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium text-xs shadow-xs transition cursor-pointer flex items-center gap-1"
+          className="px-3.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-medium text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
         >
           <Check className="w-3.5 h-3.5" />
-          <span>{isEn ? 'Save' : 'Simpan'}</span>
+          <span>{isEn ? 'Save Changes' : 'Simpan Perubahan'}</span>
         </button>
       </div>
 

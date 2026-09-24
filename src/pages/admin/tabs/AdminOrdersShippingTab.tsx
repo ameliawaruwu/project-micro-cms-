@@ -23,6 +23,8 @@ import {
   getPaymentStatusLabel,
 } from '../utils';
 
+import { Breadcrumb } from '../../../components/common/Breadcrumb';
+
 interface AdminOrdersShippingTabProps {
   isEn: boolean;
   loadData: () => void;
@@ -44,6 +46,7 @@ interface AdminOrdersShippingTabProps {
   stores: Store[];
   handleCopyResi: (resi: string) => void;
   setSelectedAdminOrder: (order: Order) => void;
+  onNavigateOverview?: () => void;
 }
 
 export const AdminOrdersShippingTab: React.FC<AdminOrdersShippingTabProps> = ({
@@ -67,17 +70,26 @@ export const AdminOrdersShippingTab: React.FC<AdminOrdersShippingTabProps> = ({
   stores,
   handleCopyResi,
   setSelectedAdminOrder,
+  onNavigateOverview,
 }) => {
   return (
     <div className="space-y-4">
-      {/* Header section with Actions */}
-      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: isEn ? 'Dashboard' : 'Beranda', onClick: onNavigateOverview },
+          { label: isEn ? 'Orders & Shipping' : 'Pesanan & Pengiriman', isActive: true },
+        ]}
+      />
+
+      {/* Page Header */}
+      <div className="pb-3 border-b border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-            <Truck className="w-4 h-4 text-red-600" />
-            <span>{isEn ? 'Global Orders & Shipping Monitoring' : 'Monitoring Pesanan & Pengiriman Global'}</span>
-          </h2>
-          <p className="text-[11px] text-gray-500 mt-0.5">
+          <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+            <Truck className="w-5 h-5 text-[#66000E]" />
+            <span>{isEn ? 'Orders & Shipping' : 'Pesanan & Pengiriman'}</span>
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5">
             {isEn
               ? 'Track all store order transactions, courier logistics statuses, and tracking numbers in real-time.'
               : 'Pantau seluruh transaksi pesanan, status kurir logistik, dan pelacakan nomor resi lintas toko secara real-time.'}
@@ -88,7 +100,7 @@ export const AdminOrdersShippingTab: React.FC<AdminOrdersShippingTabProps> = ({
             loadData();
             showToast(isEn ? 'Orders and shipping data refreshed' : 'Data pesanan dan pengiriman diperbarui');
           }}
-          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0"
+          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 shadow-2xs self-start sm:self-auto"
         >
           <RefreshCw className="w-3.5 h-3.5 text-gray-500" />
           <span>{isEn ? 'Refresh Data' : 'Segarkan Data'}</span>

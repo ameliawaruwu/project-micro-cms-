@@ -340,7 +340,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       : 'J&T Express (Reguler)';
 
     const newOrder = await orderService.createOrder({
-      storeId: store?.id || 'store-andhika',
+      storeId: store?.id || '',
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
       customerEmail: customerEmail.trim() || undefined,

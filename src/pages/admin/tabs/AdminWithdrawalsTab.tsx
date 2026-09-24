@@ -9,6 +9,8 @@ import {
 import { WithdrawalRequest } from '../../../types';
 import { formatRupiah } from '../../../utils/formatters';
 
+import { Breadcrumb } from '../../../components/common/Breadcrumb';
+
 interface AdminWithdrawalsTabProps {
   withdrawals: WithdrawalRequest[];
   withdrawalTab: 'pending' | 'approved';
@@ -18,6 +20,7 @@ interface AdminWithdrawalsTabProps {
   handleApproveWithdrawal: (id: string, storeName: string) => void;
   handleRejectWithdrawal: (id: string, storeName: string) => void;
   isEn: boolean;
+  onNavigateOverview?: () => void;
 }
 
 export const AdminWithdrawalsTab: React.FC<AdminWithdrawalsTabProps> = ({
@@ -29,6 +32,7 @@ export const AdminWithdrawalsTab: React.FC<AdminWithdrawalsTabProps> = ({
   handleApproveWithdrawal,
   handleRejectWithdrawal,
   isEn,
+  onNavigateOverview,
 }) => {
   const pendingList = withdrawals.filter((w) => w.status === 'pending');
   const approvedList = withdrawals.filter((w) => w.status === 'approved' || w.status === 'rejected');
@@ -48,24 +52,30 @@ export const AdminWithdrawalsTab: React.FC<AdminWithdrawalsTabProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Header Action Bar */}
-      <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: isEn ? 'Dashboard' : 'Beranda', onClick: onNavigateOverview },
+          { label: isEn ? 'Payouts' : 'Pencairan Dana', isActive: true },
+        ]}
+      />
+
+      {/* Page Header */}
+      <div className="pb-3 border-b border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <Wallet className="w-5 h-5 text-red-600" />
-            <h2 className="text-base font-bold text-gray-900">
-              {isEn ? 'Store Payout Requests' : 'Pencairan Dana Toko'}
-            </h2>
-          </div>
+          <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+            <Wallet className="w-5 h-5 text-[#66000E]" />
+            <span>{isEn ? 'Store Payout Requests' : 'Pencairan Dana Toko'}</span>
+          </h1>
           <p className="text-xs text-gray-500 mt-0.5">
             {isEn
-              ? 'Manage and verify wallet balance withdrawal requests from merchant stores'
-              : 'Kelola dan verifikasi permohonan transfer saldo dompet dari toko merchant'}
+              ? 'Manage and verify wallet balance withdrawal requests from merchant stores.'
+              : 'Kelola dan verifikasi permohonan transfer saldo dompet dari toko merchant.'}
           </p>
         </div>
 
         {/* 2 Tabs: Butuh Approval & Selesai (Paid) */}
-        <div className="flex bg-gray-100 p-1 rounded-lg text-xs font-semibold">
+        <div className="flex bg-gray-100 p-1 rounded-lg text-xs font-semibold self-start sm:self-auto shrink-0 border border-gray-200">
           <button
             type="button"
             onClick={() => {

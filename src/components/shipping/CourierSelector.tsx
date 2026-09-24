@@ -27,7 +27,7 @@ interface CourierSelectorProps {
 }
 
 export const CourierSelector: React.FC<CourierSelectorProps> = ({
-  storeId = 'store-andhika',
+  storeId = '',
   destinationPostalCode,
   weightGrams = 500,
   selectedBranchId,

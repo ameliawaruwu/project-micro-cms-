@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { storeService } from './storeService';
+import { idService } from './idService';
 
 export interface DomainRequest {
   id: string;
@@ -230,7 +231,7 @@ class DomainRequestService {
 
     const price = DOMAIN_TLD_PRICES[tld].price;
     const fullDomain = `${cleanDomain}${tld}`;
-    const id = `dom_${Date.now()}`;
+    const id = await idService.generateNextId('domain_requests');
     const now = new Date().toISOString();
 
     const newRequest: DomainRequest = {

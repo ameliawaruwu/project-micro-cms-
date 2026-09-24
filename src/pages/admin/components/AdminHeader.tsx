@@ -21,12 +21,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 }) => {
   return (
     <header className="shrink-0 z-30 bg-white border-b border-gray-200 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
-      {/* Left: Active Tab Name */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-bold text-gray-900 tracking-tight capitalize">
-          {navItems.find((n) => n.id === activeTab)?.label || 'Dashboard'}
-        </span>
-      </div>
+      {/* Left: Spacer */}
+      <div className="flex items-center gap-2" />
 
       <div className="flex items-center gap-3 shrink-0">
         {/* Language Switcher Button */}

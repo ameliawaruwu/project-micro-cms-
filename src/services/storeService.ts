@@ -1,7 +1,7 @@
 import { Store } from '../types';
-import { initialStores } from './mockData';
 import { supabase } from './supabaseClient';
 import { getWibIsoString } from '../utils/formatters';
+import { idService } from './idService';
 
 const STORE_KEY = 'microcms_stores_v2';
 const ACTIVE_STORE_KEY = 'microcms_active_store_id';
@@ -10,20 +10,19 @@ class StoreService {
   private getStoredStores(): Store[] {
     const data = localStorage.getItem(STORE_KEY);
     if (!data) {
-      localStorage.setItem(STORE_KEY, JSON.stringify(initialStores));
-      return initialStores;
+      return [];
     }
     try {
       const parsed: Store[] = JSON.parse(data);
       const storeMap = new Map<string, Store>();
       let modified = false;
 
-      // Filter out auto-generated legacy stores so merchants start fresh without a store
+      // Filter out auto-generated legacy stores & demo stores so merchants start clean
       parsed.forEach((s) => {
         if (s && s.id) {
           const isDemoStore = ['store-andhika', 'store-1', 'store-2', 'store-3'].includes(s.id);
           const isLegacyAuto =
-            !isDemoStore &&
+            isDemoStore ||
             ((s.slug && (s.slug === 'toko-me' || s.slug.startsWith('toko-amelia') || s.slug.startsWith('toko-usr_'))) ||
               s.name.startsWith('Toko usr_') ||
               s.name === 'Toko Baru UMKM' ||
@@ -41,63 +40,13 @@ class StoreService {
         }
       });
 
-      // Merge any missing initial stores
-      initialStores.forEach((defStore) => {
-        if (!storeMap.has(defStore.id)) {
-          storeMap.set(defStore.id, defStore);
-          modified = true;
-        }
-      });
-
-      // Ensure demo stores have distinct merchant IDs and paymentConnected is true
-      const normalized = Array.from(storeMap.values()).map((s) => {
-        let changed = false;
-        let updated = { ...s };
-
-        if (s.id === 'store-andhika' && s.merchantId !== 'usr-andhika-01') {
-          updated.merchantId = 'usr-andhika-01';
-          changed = true;
-        }
-        if (s.id === 'store-1' && s.merchantId !== 'usr-kirana-01') {
-          updated.merchantId = 'usr-kirana-01';
-          changed = true;
-        }
-        if (s.id === 'store-2' && s.merchantId !== 'usr-barista-01') {
-          updated.merchantId = 'usr-barista-01';
-          changed = true;
-        }
-        if (s.id === 'store-3' && s.merchantId !== 'usr-artisan-01') {
-          updated.merchantId = 'usr-artisan-01';
-          changed = true;
-        }
-        if (s.id.startsWith('store-') && !updated.onboarding?.paymentConnected) {
-          updated.onboarding = {
-            ...updated.onboarding,
-            storeNameSet: true,
-            productUploaded: true,
-            paymentConnected: true,
-          };
-          changed = true;
-        }
-        // Set demo stores to published, and others to false if undefined
-        const isLegacyDemoStore = ['store-1', 'store-2', 'store-3', 'store-4'].includes(s.id);
-        if (isLegacyDemoStore && updated.isPublished === undefined) {
-          updated.isPublished = true;
-          changed = true;
-        } else if (updated.isPublished === undefined) {
-          updated.isPublished = false;
-          changed = true;
-        }
-        if (changed) modified = true;
-        return updated;
-      });
-
-      if (modified || normalized.length !== parsed.length) {
-        this.saveStores(normalized);
+      const cleanList = Array.from(storeMap.values());
+      if (modified || cleanList.length !== parsed.length) {
+        this.saveStores(cleanList);
       }
-      return normalized;
+      return cleanList;
     } catch {
-      return initialStores;
+      return [];
     }
   }
 
@@ -112,11 +61,47 @@ class StoreService {
   }
 
   async getStores(): Promise<Store[]> {
+    try {
+      const { data, error } = await supabase.from('stores').select('*').order('created_at', { ascending: false });
+      if (!error && data && data.length > 0) {
+        return data.map((row) => ({
+          id: row.id,
+          merchantId: row.user_id,
+          name: row.name,
+          slug: row.slug,
+          tagline: row.tagline || '',
+          description: row.description || '',
+          logoUrl: row.logo_url || '',
+          bannerUrl: row.banner_url || '',
+          phoneWhatsApp: row.phone_whatsapp || '',
+          city: row.city || 'Indonesia',
+          province: row.province || '',
+          district: row.district || '',
+          subdistrict: row.subdistrict || '',
+          village: row.village || '',
+          addressDetail: row.address_detail || '',
+          postalCode: row.postal_code || '',
+          address: row.address || '',
+          category: row.category || 'General',
+          currency: row.currency || 'IDR',
+          balance: Number(row.balance || 0),
+          isPublished: row.is_published !== false,
+          layoutSettings: row.layout_settings,
+          onboarding: row.onboarding || {
+            storeNameSet: true,
+            productUploaded: false,
+            paymentConnected: false,
+          },
+          createdAt: row.created_at || new Date().toISOString(),
+        }));
+      }
+    } catch {
+      // ignore
+    }
     return this.getStoredStores();
   }
 
   async getStoresForUser(userId: string): Promise<Store[]> {
-    const isDemoUser = ['usr-andhika-01', 'usr-kirana-01', 'usr-barista-01', 'usr-artisan-01', 'usr-admin-1'].includes(userId);
     const localStores = this.getStoredStores().filter((s) => s.merchantId === userId);
 
     try {
@@ -127,21 +112,17 @@ class StoreService {
 
       if (!error && data) {
         if (data.length === 0) {
-          if (!isDemoUser) {
-            // Cloud explicitly confirms no store exists for this merchant.
-            // Purge any local ghost/zombie stores for this user immediately.
-            const allOther = this.getStoredStores().filter((s) => s.merchantId !== userId);
-            this.saveStores(allOther);
+          // Cloud explicitly confirms no store exists for this merchant.
+          // Purge any local ghost/zombie stores for this user immediately.
+          const allOther = this.getStoredStores().filter((s) => s.merchantId !== userId);
+          this.saveStores(allOther);
 
-            const activeId = localStorage.getItem(ACTIVE_STORE_KEY);
-            if (localStores.some((s) => s.id === activeId)) {
-              localStorage.removeItem(ACTIVE_STORE_KEY);
-              localStorage.removeItem('microcms_active_store');
-            }
-            return [];
-          } else {
-            return localStores;
+          const activeId = localStorage.getItem(ACTIVE_STORE_KEY);
+          if (localStores.some((s) => s.id === activeId)) {
+            localStorage.removeItem(ACTIVE_STORE_KEY);
+            localStorage.removeItem('microcms_active_store');
           }
+          return [];
         }
 
         const mappedStores: Store[] = data.map((row) => ({
@@ -396,20 +377,26 @@ class StoreService {
       }
     }
 
-    const name = data.name || 'Toko Baru UMKM';
-    const slug = data.slug || `toko-${Date.now()}`;
+    const name = data.name ? data.name.trim() : '';
+    const slug = data.slug
+      ? data.slug.trim()
+      : name
+      ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      : '';
+
+    const storeId = (data.id && data.id.startsWith('STR')) ? data.id : await idService.generateNextId('stores');
 
     const newStore: Store = {
-      id: data.id || `store-${Date.now()}`,
-      merchantId: data.merchantId || 'usr-default',
+      id: storeId,
+      merchantId: data.merchantId || 'USR001',
       name,
       slug,
-      tagline: data.tagline || `Toko Resmi ${name}`,
-      description: data.description || 'Katalog online resmi toko UMKM.',
-      logoUrl: data.logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=FFD358&color=002A45&bold=true`,
-      bannerUrl: data.bannerUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+      tagline: data.tagline || '',
+      description: data.description || '',
+      logoUrl: data.logoUrl || '',
+      bannerUrl: data.bannerUrl || '',
       phoneWhatsApp: data.phoneWhatsApp || '',
-      city: data.city || 'Indonesia',
+      city: data.city || '',
       province: data.province || '',
       district: data.district || '',
       subdistrict: data.subdistrict || '',
@@ -419,13 +406,13 @@ class StoreService {
       address: data.address || '',
       latitude: data.latitude,
       longitude: data.longitude,
-      category: data.category || 'Bisnis UMKM',
+      category: data.category || '',
       currency: data.currency || 'IDR',
       balance: data.balance || 0,
       plan: data.plan || 'free',
       isPublished: data.isPublished !== undefined ? data.isPublished : false,
       onboarding: data.onboarding || {
-        storeNameSet: true,
+        storeNameSet: Boolean(name),
         productUploaded: false,
         paymentConnected: false,
       },
@@ -448,7 +435,7 @@ class StoreService {
         logo_url: newStore.logoUrl,
         banner_url: newStore.bannerUrl,
         phone_whatsapp: newStore.phoneWhatsApp,
-        city: newStore.city || 'Indonesia',
+        city: newStore.city || '',
         province: newStore.province || '',
         district: newStore.district || '',
         subdistrict: newStore.subdistrict || '',
@@ -458,7 +445,7 @@ class StoreService {
         address: newStore.address || '',
         latitude: newStore.latitude,
         longitude: newStore.longitude,
-        category: newStore.category,
+        category: newStore.category || '',
         plan: newStore.plan || 'free',
         balance: newStore.balance || 0,
         theme_settings: newStore.layoutSettings || {},
@@ -572,11 +559,29 @@ class StoreService {
                   this.saveStores(stored);
                 } else {
                   merged = {
-                    ...initialStores[0],
                     id: row.id,
-                    name: row.name,
-                    slug: row.slug,
+                    merchantId: row.user_id,
+                    name: row.name || '',
+                    slug: row.slug || '',
+                    tagline: row.tagline || '',
+                    description: row.description || '',
+                    logoUrl: row.logo_url || '',
+                    bannerUrl: row.banner_url || '',
+                    phoneWhatsApp: row.phone_whatsapp || '',
+                    city: row.city || '',
+                    province: row.province || '',
+                    district: row.district || '',
+                    subdistrict: row.subdistrict || '',
+                    village: row.village || '',
+                    addressDetail: row.address_detail || '',
+                    postalCode: row.postal_code || '',
+                    address: row.address || '',
+                    category: row.category || '',
+                    currency: 'IDR',
+                    balance: Number(row.balance || 0),
+                    plan: row.plan || 'free',
                     isPublished: isPub,
+                    createdAt: row.created_at || new Date().toISOString(),
                   };
                 }
                 onUpdate(merged);

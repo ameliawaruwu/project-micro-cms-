@@ -423,14 +423,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
 
     try {
-      const isDemoStore = currentStore.id === 'store-andhika' && user.id === 'usr-andhika-01';
       const hasPublishedTemplate = Boolean(currentStore.layoutSettings?.activeTemplateId);
       const userExplicitlySelected =
         typeof window !== 'undefined' && savedThemesStorageKey && localStorage.getItem(userSelectedThemeKey) === 'true';
 
-      // If this is NOT the demo store and the user has not chosen or published a template yet:
+      // If user has not chosen or published a template yet:
       // Must start with 0 drafts/templates!
-      if (!isDemoStore && !hasPublishedTemplate && !userExplicitlySelected) {
+      if (!hasPublishedTemplate && !userExplicitlySelected) {
         return [];
       }
 
@@ -461,16 +460,6 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           ];
         }
       }
-
-      // Default initial saved theme ONLY for demo store (store-andhika)
-      if (isDemoStore) {
-        return [
-          {
-            ...TEMPLATE_GALLERY_ITEMS[0],
-            updatedAt: new Date().toISOString(),
-          },
-        ];
-      }
     } catch (e) {
       console.error('Failed to load saved themes from storage:', e);
     }
@@ -489,7 +478,6 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       return;
     }
 
-    const isDemoStore = currentStore.id === 'store-andhika' && user.id === 'usr-andhika-01';
     const hasPublishedTemplate = Boolean(currentStore.layoutSettings?.activeTemplateId);
     const userSelectedThemeKey = user?.id && currentStore.id
       ? `microcms_user_chose_theme_${user.id}_${currentStore.id}`
@@ -497,7 +485,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     const userExplicitlySelected =
       typeof window !== 'undefined' && savedThemesStorageKey && localStorage.getItem(userSelectedThemeKey) === 'true';
 
-    if (!isDemoStore && !hasPublishedTemplate && !userExplicitlySelected) {
+    if (!hasPublishedTemplate && !userExplicitlySelected) {
       setSavedThemes([]);
       return;
     }
@@ -562,9 +550,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     const cleanUserSlug = user.id.replace(/[^a-z0-9]/g, '').slice(0, 10);
     const newStore = await storeService.createStore({
       merchantId: user.id,
-      name: `Toko ${user.name || 'UMKM'}`,
-      slug: `toko-${cleanUserSlug || Date.now()}`,
-      tagline: template.storeTemplate?.tagline || `Toko Resmi ${user.name || 'UMKM'}`,
+      name: '',
+      slug: '',
+      tagline: '',
       description: 'Pusat belanja produk berkualitas dengan pemesanan praktis dan cepat.',
       logoUrl: user.avatarUrl || '',
       bannerUrl: template.storeTemplate?.bannerUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',

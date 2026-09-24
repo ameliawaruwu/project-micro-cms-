@@ -41,7 +41,7 @@ export function productToCmsProduct(p: Product): CmsProduct {
   };
 }
 
-export function cmsProductToProduct(cp: CmsProduct, storeId: string = 'store-andhika'): Product {
+export function cmsProductToProduct(cp: CmsProduct, storeId: string = ''): Product {
   let merchantStatus: 'Tersedia' | 'Hampir Habis' | 'Habis' | 'Nonaktif' = 'Tersedia';
   if (cp.status === 'draft' || cp.status === 'archived') {
     merchantStatus = 'Nonaktif';
@@ -141,7 +141,7 @@ export const useCmsStore = create<CmsState>((set, get) => ({
     }
   },
 
-  updateProduct: (updatedProduct: CmsProduct, storeId: string = 'store-andhika') => {
+  updateProduct: (updatedProduct: CmsProduct, storeId: string = '') => {
     set(state => {
       const newProducts = state.products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
       if (typeof window !== 'undefined') {
@@ -172,7 +172,7 @@ export const useCmsStore = create<CmsState>((set, get) => ({
     } catch (e) {}
   },
 
-  addProduct: (newProduct: CmsProduct, storeId: string = 'store-andhika') => {
+  addProduct: (newProduct: CmsProduct, storeId: string = '') => {
     set(state => {
       const exists = state.products.some(p => p.id === newProduct.id);
       const newProducts = exists

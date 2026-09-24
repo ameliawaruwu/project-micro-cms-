@@ -1,7 +1,7 @@
 import { Product } from '../types';
 import { calculateProductStatus } from '../utils/formatters';
 import { supabase } from './supabaseClient';
-import { initialProducts } from './mockData';
+import { idService } from './idService';
 
 // ============================================================
 // MERCHANT DATA ISOLATION: localStorage di-partisi per storeId
@@ -181,15 +181,6 @@ class ProductService {
           return localProducts;
         }
 
-        // Seed hanya untuk toko demo bawaan
-        if (storeId === 'store-andhika') {
-          const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId);
-          if (defaultStoreProducts.length > 0) {
-            const storeMapped = defaultStoreProducts.map((p) => ({ ...p, storeId }));
-            this.saveProducts(storeId, storeMapped);
-            return storeMapped;
-          }
-        }
         return [];
       }
     } catch (err: any) {
@@ -197,14 +188,6 @@ class ProductService {
     }
 
     // 2. Fallback ke LocalStorage
-    if (localProducts.length === 0 && storeId === 'store-andhika') {
-      const defaultStoreProducts = initialProducts.filter((p) => p.storeId === storeId);
-      if (defaultStoreProducts.length > 0) {
-        const storeMapped = defaultStoreProducts.map((p) => ({ ...p, storeId }));
-        this.saveProducts(storeId, storeMapped);
-        return storeMapped;
-      }
-    }
     return localProducts;
   }
 
@@ -244,14 +227,15 @@ class ProductService {
       );
     }
     const finalImageUrl = finalImages[0] || '';
+    const productId = await idService.generateNextId('products');
 
     const newProduct: Product = {
       ...data,
-      id: `prd-${uniqueSuffix}`,
+      id: productId,
       storeId,
       imageUrl: finalImageUrl,
       images: finalImages,
-      slug: `${slug || 'produk'}-${uniqueSuffix.slice(-5)}`,
+      slug: `${slug || 'produk'}-${productId.toLowerCase()}`,
       status: calculateProductStatus(data.stock),
       createdAt: new Date().toISOString(),
     };

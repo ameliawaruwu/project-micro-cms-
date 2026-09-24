@@ -1,16 +1,39 @@
 import { Order, ShippingStatus, CourierType, PaymentStatus, OrderItem } from '../types';
-import { initialOrders } from './mockData';
 import { supabase } from './supabaseClient';
+import { idService } from './idService';
 
 // ============================================================
 // MERCHANT DATA ISOLATION: localStorage dipartisi per storeId
 // Key format: microcms_orders_v2_{storeId}
 // ============================================================
 const ORDERS_KEY_PREFIX = 'microcms_orders_v2_';
-// Hapus key global lama
+// Hapus key global lama & data pesanan dummy legacy
 if (typeof window !== 'undefined') {
   try {
     localStorage.removeItem('microcms_orders_v1');
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(ORDERS_KEY_PREFIX)) {
+        const raw = localStorage.getItem(key);
+        if (raw && (raw.includes('utiy') || raw.includes('KB-9298') || raw.includes('ord-utiy'))) {
+          try {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const cleaned = list.filter(
+                (o: any) =>
+                  o &&
+                  o.customerName?.toLowerCase() !== 'utiy' &&
+                  !o.id?.includes('utiy') &&
+                  !o.id?.includes('andhika')
+              );
+              localStorage.setItem(key, JSON.stringify(cleaned));
+            }
+          } catch {
+            localStorage.removeItem(key);
+          }
+        }
+      }
+    }
   } catch { /* ignore */ }
 }
 
@@ -81,7 +104,16 @@ class OrderService {
       if (!data) return [];
       try {
         const parsed: Order[] = JSON.parse(data);
-        return Array.isArray(parsed) ? parsed.filter((o) => o && o.id) : [];
+        return Array.isArray(parsed)
+          ? parsed.filter(
+              (o) =>
+                o &&
+                o.id &&
+                o.customerName?.toLowerCase() !== 'utiy' &&
+                !o.id.includes('utiy') &&
+                !o.id.includes('ord-utiy')
+            )
+          : [];
       } catch {
         return [];
       }
@@ -92,15 +124,25 @@ class OrderService {
   private saveOrders(storeId: string, orders: Order[]) {
     const uniqueMap = new Map<string, Order>();
     orders.forEach((o) => {
-      if (o && o.id) uniqueMap.set(o.id, o);
+      if (
+        o &&
+        o.id &&
+        o.customerName?.toLowerCase() !== 'utiy' &&
+        !o.id.includes('utiy') &&
+        !o.id.includes('ord-utiy')
+      ) {
+        uniqueMap.set(o.id, o);
+      }
     });
     localStorage.setItem(this.storeKey(storeId), JSON.stringify(Array.from(uniqueMap.values())));
   }
 
   async getOrdersByStore(storeId: string): Promise<Order[]> {
+    if (!storeId) return [];
+
     let storeOrders = this.getStoredOrders(storeId);
 
-    // 1. Fetch from Supabase PostgreSQL Database (selalu filter by store_id)
+    // Fetch from Supabase PostgreSQL Database (filter by store_id)
     try {
       const { data, error } = await supabase
         .from('orders')
@@ -108,61 +150,13 @@ class OrderService {
         .eq('store_id', storeId)
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        const dbOrders = data.map(mapSupabaseRowToOrder);
-        const map = new Map<string, Order>();
-        dbOrders.forEach((o) => map.set(o.id, o));
-        storeOrders.forEach((o) => {
-          if (!map.has(o.id)) map.set(o.id, o);
-        });
-        const combined = Array.from(map.values());
-        this.saveOrders(storeId, combined);
-        return combined;
+      if (!error) {
+        const dbOrders = (data || []).map(mapSupabaseRowToOrder);
+        this.saveOrders(storeId, dbOrders);
+        return dbOrders;
       }
     } catch (err) {
       console.warn('[Supabase Database] Error fetching orders:', err);
-    }
-
-    // Demo order untuk toko bawaan saja
-    const hasUtiy = storeOrders.some((o) => o.customerName.toLowerCase() === 'utiy');
-    if (storeId === 'store-andhika' && !hasUtiy && storeOrders.length === 0) {
-      const utiyOrder: Order = {
-        id: `ord-${storeId}-utiy-${Date.now()}`,
-        storeId,
-        orderNumber: `KB-${Math.floor(9100 + Math.random() * 800)}`,
-        customerName: 'utiy',
-        customerPhone: '081223344556',
-        customerEmail: 'utiy@telkomuniversity.ac.id',
-        customerAddress: 'Gedung Asrama Putri / Gedung Pelangi, Telkom University, Jl. Telekomunikasi No. 1, Terusan Buahbatu, Sukapura, Kec. Dayeuhkolot',
-        customerCity: 'Kab. Bandung, Jawa Barat',
-        customerPostalCode: '40257',
-        items: [
-          {
-            productId: 'prod-andhika-101',
-            productName: 'Kemeja Batik Tulis Modern Heritage Lengan Panjang',
-            productImage: 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=800&auto=format&fit=crop&q=80',
-            price: 185000,
-            quantity: 1,
-            subtotal: 185000,
-            variantName: 'Size M',
-          },
-        ],
-        subtotal: 185000,
-        shippingCost: 14000,
-        discount: 0,
-        grandTotal: 199000,
-        paymentMethod: 'QRIS',
-        paymentStatus: 'Sudah Dibayar',
-        courier: 'J&T',
-        courierService: 'EZ Regular (1-2 Hari)',
-        resiNumber: '',
-        shippingStatus: 'Baru',
-        createdAt: new Date().toISOString(),
-        notes: 'Kirim ke pos satpam / lobi asrama Telkom University Bandung. Tolong hubungi WA sebelum sampai.',
-      };
-      const allOrders = [utiyOrder, ...storeOrders];
-      this.saveOrders(storeId, allOrders);
-      return allOrders;
     }
 
     return storeOrders;
@@ -192,10 +186,10 @@ class OrderService {
   async createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt'>): Promise<Order> {
     const orders = this.getStoredOrders(orderData.storeId);
     const orderNumber = `KB-${Math.floor(1000 + Math.random() * 9000)}`;
-    const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const orderId = await idService.generateNextId('orders');
     const newOrder: Order = {
       ...orderData,
-      id: `ord_${uniqueSuffix}`,
+      id: orderId,
       orderNumber,
       createdAt: new Date().toISOString(),
     };
@@ -247,17 +241,22 @@ class OrderService {
 
       // Insert items
       if (newOrder.items && newOrder.items.length > 0) {
-        const dbItems = newOrder.items.map((it, idx) => ({
-          id: `itm_${newOrder.id}_${idx + 1}`,
-          order_id: newOrder.id,
-          product_id: it.productId || null,
-          product_name: it.productName,
-          product_image: it.productImage || null,
-          price: it.price,
-          quantity: it.quantity,
-          subtotal: it.subtotal,
-          variant_info: it.variantName || null,
-        }));
+        const dbItems = await Promise.all(
+          newOrder.items.map(async (it) => {
+            const itemId = await idService.generateNextId('order_items');
+            return {
+              id: itemId,
+              order_id: newOrder.id,
+              product_id: it.productId || null,
+              product_name: it.productName,
+              product_image: it.productImage || null,
+              price: it.price,
+              quantity: it.quantity,
+              subtotal: it.subtotal,
+              variant_info: it.variantName || null,
+            };
+          })
+        );
 
         const { error: itemsErr } = await supabase.from('order_items').insert(dbItems);
         if (itemsErr) {

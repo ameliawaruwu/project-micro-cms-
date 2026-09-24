@@ -31,7 +31,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<'all' | string>('all');
   const [isMasterActive, setIsMasterActive] = useState(true);
 
-  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial';
+  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial' || store.plan === 'starter';
 
   // Filter channels based on search and category
   const filteredChannels = useMemo(() => {
@@ -56,8 +56,9 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
   }, [channels, searchQuery, selectedCategory]);
 
   const activeCount = useMemo(() => {
+    if (isFreePlan) return 0;
     return channels.filter((c) => c.isEnabled).length;
-  }, [channels]);
+  }, [channels, isFreePlan]);
 
   const handleToggleChannel = (id: string) => {
     if (isFreePlan) {
@@ -336,14 +337,16 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
             <button
               type="button"
               onClick={handleToggleMaster}
+              role="switch"
+              aria-checked={!isFreePlan && isMasterActive && activeCount > 0}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                isMasterActive && activeCount > 0 ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
-              }`}
-              title={isMasterActive ? 'Nonaktifkan Gateway' : 'Aktifkan Gateway'}
+                !isFreePlan && isMasterActive && activeCount > 0 ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
+              } ${isFreePlan ? 'opacity-80' : ''}`}
+              title={isFreePlan ? (isEn ? 'Locked (Free Plan)' : 'Terkunci (Paket Free)') : isMasterActive ? 'Nonaktifkan Gateway' : 'Aktifkan Gateway'}
             >
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                  isMasterActive && activeCount > 0 ? 'translate-x-5' : 'translate-x-0'
+                  !isFreePlan && isMasterActive && activeCount > 0 ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -393,69 +396,88 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-2.5">
-              {filteredChannels.map((channel) => (
-                <div
-                  key={channel.id}
-                  className={`p-3.5 sm:p-4 rounded-xl border transition-all duration-150 flex items-center justify-between gap-3 bg-white ${
-                    channel.isEnabled
-                      ? 'border-[#E5E0DD] hover:border-[#66000E]/40 shadow-2xs'
-                      : 'border-[#E5E0DD]/60 opacity-65 bg-[#FCFBFB]'
-                  }`}
-                >
-                  {/* Left: Official Payment Logo & Info */}
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    {renderChannelLogo(channel.id, channel.iconCode)}
+              {filteredChannels.map((channel) => {
+                const isChannelActive = !isFreePlan && channel.isEnabled;
+                return (
+                  <div
+                    key={channel.id}
+                    className={`p-3.5 sm:p-4 rounded-xl border transition-all duration-150 flex items-center justify-between gap-3 bg-white ${
+                      isChannelActive
+                        ? 'border-[#E5E0DD] hover:border-[#66000E]/40 shadow-2xs'
+                        : 'border-[#E5E0DD]/60 opacity-70 bg-[#FCFBFB]'
+                    }`}
+                  >
+                    {/* Left: Official Payment Logo & Info */}
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      {renderChannelLogo(channel.id, channel.iconCode)}
 
-                    <div className="min-w-0">
-                      <h4 className="text-xs sm:text-sm font-bold text-[#241A1A] leading-snug">
-                        {channel.name}
-                      </h4>
-                      <p className="text-[11px] text-[#706866] mt-0.5 line-clamp-1">
-                        {channel.description}
-                      </p>
+                      <div className="min-w-0">
+                        <h4 className="text-xs sm:text-sm font-bold text-[#241A1A] leading-snug">
+                          {channel.name}
+                        </h4>
+                        <p className="text-[11px] text-[#706866] mt-0.5 line-clamp-1">
+                          {channel.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right: Toggle Switch & Status Text */}
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      {isFreePlan ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                          <span className="text-xs font-semibold text-[#777777] hidden sm:inline-block">
+                            {isEn ? 'Inactive' : 'Nonaktif'}
+                          </span>
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                            <Lock className="w-3 h-3 text-amber-600" />
+                            <span>{isEn ? 'Locked' : 'Terkunci'}</span>
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              channel.isEnabled ? 'bg-[#027A48]' : 'bg-slate-300'
+                            }`}
+                          ></span>
+                          <span
+                            className={`text-xs font-semibold hidden sm:inline-block ${
+                              channel.isEnabled ? 'text-[#027A48]' : 'text-[#777777]'
+                            }`}
+                          >
+                            {channel.isEnabled ? (isEn ? 'Active' : 'Aktif') : (isEn ? 'Inactive' : 'Nonaktif')}
+                          </span>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleChannel(channel.id)}
+                        role="switch"
+                        aria-checked={isChannelActive}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          isChannelActive ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
+                        } ${isFreePlan ? 'opacity-80' : ''}`}
+                        title={
+                          isFreePlan
+                            ? (isEn ? 'Upgrade to a paid hosting plan to enable' : 'Upgrade ke paket hosting berbayar untuk mengaktifkan')
+                            : channel.isEnabled
+                            ? (isEn ? `Disable ${channel.name}` : `Nonaktifkan ${channel.name}`)
+                            : (isEn ? `Enable ${channel.name}` : `Aktifkan ${channel.name}`)
+                        }
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                            isChannelActive ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
                     </div>
                   </div>
-
-                  {/* Right: Toggle Switch & Status Text */}
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    {isFreePlan ? (
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
-                        <Lock className="w-3 h-3 text-amber-600" />
-                        <span>{isEn ? 'Plan Locked' : 'Terkunci'}</span>
-                      </span>
-                    ) : (
-                      <span
-                        className={`text-xs font-semibold hidden sm:inline-block ${
-                          channel.isEnabled ? 'text-emerald-700' : 'text-[#706866]'
-                        }`}
-                      >
-                        {channel.isEnabled ? (isEn ? 'Active' : 'Aktif') : (isEn ? 'Inactive' : 'Nonaktif')}
-                      </span>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => handleToggleChannel(channel.id)}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        !isFreePlan && channel.isEnabled ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
-                      } ${isFreePlan ? 'opacity-70' : ''}`}
-                      title={
-                        isFreePlan
-                          ? (isEn ? 'Upgrade to a paid hosting plan to enable' : 'Upgrade ke paket hosting berbayar untuk mengaktifkan')
-                          : channel.isEnabled
-                          ? (isEn ? `Disable ${channel.name}` : `Nonaktifkan ${channel.name}`)
-                          : (isEn ? `Enable ${channel.name}` : `Aktifkan ${channel.name}`)
-                      }
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                          !isFreePlan && channel.isEnabled ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

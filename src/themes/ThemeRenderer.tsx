@@ -2,7 +2,6 @@ import React from 'react';
 import { Store, Product } from '../types';
 import { getStoreSections, getStoreSectionsForPage } from '../utils/layoutConstants';
 import { CenterPreviewCanvas } from '../components/layout-editor/CenterPreviewCanvas';
-import { mockProducts } from '../cms/mockCmsData';
 import { THEME_DATA_MAP } from './themeData';
 import { normalizeThemeId } from './ThemeRegistry';
 
@@ -18,12 +17,10 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
     return <div className="p-8 text-center text-gray-500">Store tidak ditemukan.</div>;
   }
 
-  const cmsProducts = useCmsStore(state => state.products);
   const rawThemeId = (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist';
   const activeThemeId = normalizeThemeId(rawThemeId);
   const themeData = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['minimalist'];
-  const themeProducts = themeData?.products && themeData.products.length > 0 ? themeData.products : mockProducts;
-  const displayProducts = (products && products.length > 0) ? products : (cmsProducts && cmsProducts.length > 0 ? (cmsProducts as any[]) : (themeProducts as any[]));
+  const displayProducts = products || [];
 
   // Determine initial page based on query param or current browser path
   const params = new URLSearchParams(window.location.search);

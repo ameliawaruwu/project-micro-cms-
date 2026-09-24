@@ -119,52 +119,80 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     }, 800);
   };
 
-  const loadData = () => {
-    setStats(adminService.getPlatformStats());
-    setStores(adminService.getAllStores());
-    setWithdrawals(adminService.getWithdrawals());
-    setSuspendedIds(adminService.getSuspendedStoreIds());
-    setOrders(adminService.getAllOrders());
-    setBillingPlans(billingPlanService.getPlans());
-    setBillingSubscriptions(billingPlanService.getSubscriptions());
-    domainRequestService.getAllRequests().then((reqs) => {
-      if (reqs) setDomainRequests(reqs);
-    });
+  const loadData = async () => {
+    try {
+      const [
+        fetchedStores,
+        fetchedWithdrawals,
+        fetchedOrders,
+        fetchedPlans,
+        fetchedSubs,
+        fetchedReqs,
+        fetchedSettings,
+      ] = await Promise.all([
+        adminService.fetchStoresFromDatabase(),
+        adminService.fetchWithdrawalsFromDatabase(),
+        adminService.fetchOrdersFromDatabase(),
+        billingPlanService.fetchPlansFromDatabase(),
+        billingPlanService.fetchSubscriptionsFromDatabase(),
+        domainRequestService.getAllRequests(),
+        adminService.fetchPlatformSettingsFromDatabase(),
+      ]);
+
+      setStores(fetchedStores);
+      setWithdrawals(fetchedWithdrawals);
+      setOrders(fetchedOrders);
+      setBillingPlans(fetchedPlans);
+      setBillingSubscriptions(fetchedSubs);
+      if (fetchedReqs) setDomainRequests(fetchedReqs);
+      if (fetchedSettings) setPlatformSettings(fetchedSettings);
+
+      const suspended = fetchedStores.filter((s) => s.isSuspended).map((s) => s.id);
+      setSuspendedIds(suspended.length > 0 ? suspended : adminService.getSuspendedStoreIds());
+
+      setStats(adminService.getPlatformStats(fetchedStores, fetchedWithdrawals, fetchedOrders));
+    } catch (err) {
+      console.warn('Error loading admin data from database:', err);
+    }
   };
 
   useEffect(() => {
+    // Initial sync from local caches
+    setStores(adminService.getAllStores());
+    setWithdrawals(adminService.getWithdrawals());
+    setOrders(adminService.getAllOrders());
+    setBillingPlans(billingPlanService.getPlans());
+    setBillingSubscriptions(billingPlanService.getSubscriptions());
+    setPlatformSettings(adminService.getPlatformSettings());
+    setStats(adminService.getPlatformStats());
+
+    // Live sync from database
     loadData();
-    billingPlanService.fetchPlansFromDatabase().then((plans) => {
-      if (plans && plans.length > 0) setBillingPlans(plans);
-    });
-    adminService.fetchWithdrawalsFromDatabase().then((w) => {
-      if (w && w.length > 0) setWithdrawals(w);
-    });
   }, []);
 
-  const handleToggleSuspend = (storeId: string, storeName: string) => {
-    const isNowActive = adminService.toggleStoreSuspension(storeId);
-    loadData();
+  const handleToggleSuspend = async (storeId: string, storeName: string) => {
+    const isNowActive = await adminService.toggleStoreSuspension(storeId);
+    await loadData();
     showToast(isNowActive ? `${storeName} diaktifkan kembali` : `${storeName} berhasil disuspend`);
   };
 
   const handleApproveWithdrawal = async (id: string, storeName?: string) => {
     await adminService.approveWithdrawal(id);
-    loadData();
+    await loadData();
     showToast(storeName ? `Pencairan dana ${storeName} berhasil disetujui & dipindahkan ke Paid` : 'Pencairan dana berhasil disetujui & dipindahkan ke Paid');
   };
 
   const handleRejectWithdrawal = async (id: string, storeName?: string) => {
     if (window.confirm(`Tolak pengajuan penarikan dana ${storeName || ''}? Saldo akan dikembalikan ke dompet toko.`)) {
       await adminService.rejectWithdrawal(id);
-      loadData();
+      await loadData();
       showToast('Pencairan dana ditolak & saldo toko dikembalikan');
     }
   };
 
-  const handleChangePlan = (storeId: string, plan: 'free' | 'starter' | 'premium') => {
-    adminService.updateStorePlan(storeId, plan);
-    loadData();
+  const handleChangePlan = async (storeId: string, plan: 'free' | 'starter' | 'premium') => {
+    await adminService.updateStorePlan(storeId, plan);
+    await loadData();
     showToast(`Paket toko diperbarui ke ${plan.toUpperCase()}`);
   };
 
@@ -237,14 +265,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       showToast(`Paket baru "${planForm.name}" berhasil ditambahkan`);
     }
 
-    setBillingPlans(billingPlanService.getPlans());
+    await loadData();
     setIsPlanModalOpen(false);
   };
 
   const handleDeletePlan = async (id: string, name: string) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus paket "${name}"?`)) {
       await billingPlanService.deletePlan(id);
-      setBillingPlans(billingPlanService.getPlans());
+      await loadData();
       showToast(`Paket "${name}" berhasil dihapus`);
     }
   };
@@ -252,15 +280,16 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const handleTogglePlanActive = async (id: string) => {
     const updated = await billingPlanService.togglePlanStatus(id);
     if (updated) {
-      setBillingPlans(billingPlanService.getPlans());
+      await loadData();
       showToast(`Status paket ${updated.name} diubah menjadi ${updated.isActive ? 'Aktif' : 'Nonaktif'}`);
     }
   };
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    adminService.savePlatformSettings(platformSettings);
-    showToast('Pengaturan sistem berhasil disimpan');
+    await adminService.savePlatformSettings(platformSettings);
+    await loadData();
+    showToast('Pengaturan sistem berhasil disimpan ke database');
   };
 
   const filteredStores = stores.filter((s) => {
@@ -377,7 +406,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         />
 
         {/* Dynamic Content (Scrollable) */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 w-full">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 w-full">
           {activeTab === 'overview' && (
             <AdminOverviewTab
               stats={stats}
@@ -403,6 +432,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               onOpenStorefront={onOpenStorefront}
               language={language}
               isEn={isEn}
+              onNavigateOverview={() => setActiveTab('overview')}
             />
           )}
 
@@ -411,6 +441,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               language={language}
               onShowToast={(msg) => setToastMessage(msg)}
               onRequestUpdated={loadData}
+              onNavigateOverview={() => setActiveTab('overview')}
             />
           )}
 
@@ -424,6 +455,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               handleApproveWithdrawal={handleApproveWithdrawal}
               handleRejectWithdrawal={handleRejectWithdrawal}
               isEn={isEn}
+              onNavigateOverview={() => setActiveTab('overview')}
             />
           )}
 
@@ -445,6 +477,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               planForm={planForm}
               setPlanForm={setPlanForm}
               handleSavePlan={handleSavePlan}
+              onNavigateOverview={() => setActiveTab('overview')}
             />
           )}
 
@@ -470,6 +503,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               stores={stores}
               handleCopyResi={handleCopyResi}
               setSelectedAdminOrder={setSelectedAdminOrder}
+              onNavigateOverview={() => setActiveTab('overview')}
             />
           )}
 
@@ -477,6 +511,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <AdminTransactionsTab
               orders={orders}
               isEn={isEn}
+              onNavigateOverview={() => setActiveTab('overview')}
             />
           )}
 
@@ -488,6 +523,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               handleSaveSettings={handleSaveSettings}
               handleTestApi={handleTestApi}
               testingService={testingService}
+              onNavigateOverview={() => setActiveTab('overview')}
             />
           )}
         </main>

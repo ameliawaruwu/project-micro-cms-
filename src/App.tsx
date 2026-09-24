@@ -50,7 +50,6 @@ import { productService } from './services/productService';
 import { orderService } from './services/orderService';
 import { integrationService } from './services/integrationService';
 import { cartService } from './services/cartService';
-import { initialStores } from './services/mockData';
 import { formatRupiah } from './utils/formatters';
 import { getStoreSections } from './utils/layoutConstants';
 
@@ -304,7 +303,7 @@ export default function App() {
 
   const EMPTY_STORE: Store = useMemo(() => ({
     id: '',
-    name: 'Belum Memiliki Toko',
+    name: '',
     slug: '',
     tagline: '',
     description: '',
@@ -321,7 +320,7 @@ export default function App() {
     createdAt: '',
   }), []);
 
-  const currentStore = activeStore || (user ? EMPTY_STORE : initialStores[0]);
+  const currentStore = activeStore || EMPTY_STORE;
 
   // Initial Data Loading
   const loadData = async (targetStoreId?: string) => {
@@ -331,30 +330,41 @@ export default function App() {
     }
     try {
       if (!user) {
+        if (viewMode.startsWith('merchant') || viewMode === 'admin') {
+          setActiveStore(EMPTY_STORE);
+          return;
+        }
         const params = new URLSearchParams(window.location.search);
         const tokoParam = params.get('toko') || params.get('store');
         const allStores = await storeService.getStores();
-        let selectedStore: Store;
+        let selectedStore: Store | undefined;
         if (tokoParam) {
           selectedStore = await storeService.getStoreBySlug(tokoParam);
         } else {
-          selectedStore = allStores[0] || initialStores[0];
+          selectedStore = allStores[0];
         }
 
-        setActiveStore(selectedStore);
-        setStores(allStores.length > 0 ? allStores : initialStores);
+        if (selectedStore) {
+          setActiveStore(selectedStore);
+          setStores(allStores);
 
-        const [storeProducts, storeOrders, storeIntegrations] = await Promise.all([
-          productService.getProductsByStore(selectedStore.id),
-          orderService.getOrdersByStore(selectedStore.id),
-          integrationService.getIntegrations(),
-        ]);
-        const initialCart = cartService.getCart(selectedStore.slug);
+          const [storeProducts, storeOrders, storeIntegrations] = await Promise.all([
+            productService.getProductsByStore(selectedStore.id),
+            orderService.getOrdersByStore(selectedStore.id),
+            integrationService.getIntegrations(),
+          ]);
+          const initialCart = cartService.getCart(selectedStore.slug);
 
-        setProducts(storeProducts);
-        setOrders(storeOrders);
-        setIntegrations(storeIntegrations);
-        setCartItems(initialCart);
+          setProducts(storeProducts);
+          setOrders(storeOrders);
+          setIntegrations(storeIntegrations);
+          setCartItems(initialCart);
+        } else {
+          setActiveStore(EMPTY_STORE);
+          setStores([]);
+          setProducts([]);
+          setOrders([]);
+        }
         return;
       }
 
@@ -362,7 +372,7 @@ export default function App() {
       setStores(userStores);
 
       if (userStores.length === 0) {
-        setActiveStore(null);
+        setActiveStore(EMPTY_STORE);
         setProducts([]);
         setOrders([]);
         setIntegrations([]);
@@ -381,7 +391,7 @@ export default function App() {
       }
 
       const finalStore = current || userStores[0];
-      setActiveStore(finalStore || null);
+      setActiveStore(finalStore || EMPTY_STORE);
 
       if (finalStore) {
         const [storeProducts, storeOrders, storeIntegrations] = await Promise.all([
@@ -461,7 +471,7 @@ export default function App() {
         });
       } else {
         storeService.getStores().then((all) => {
-          let match = all[0] || initialStores[0];
+          let match = all[0] || null;
           if (tokoParam) {
             match = all.find((s) => s.slug === tokoParam || s.id === tokoParam) || match;
           }
@@ -539,14 +549,16 @@ export default function App() {
           return;
         }
         storeService.getStores().then(async (allStores) => {
-          const targetStore = activeStore || allStores[0] || initialStores[0];
-          setActiveStore(targetStore);
-          const [storeProducts, storeOrders] = await Promise.all([
-            productService.getProductsByStore(targetStore.id),
-            orderService.getOrdersByStore(targetStore.id),
-          ]);
-          setProducts(storeProducts);
-          setOrders(storeOrders);
+          const targetStore = activeStore || allStores[0] || null;
+          if (targetStore) {
+            setActiveStore(targetStore);
+            const [storeProducts, storeOrders] = await Promise.all([
+              productService.getProductsByStore(targetStore.id),
+              orderService.getOrdersByStore(targetStore.id),
+            ]);
+            setProducts(storeProducts);
+            setOrders(storeOrders);
+          }
         });
       }
     }
@@ -1042,31 +1054,35 @@ export default function App() {
   // Handlers for Demo Mode & Landing Page Interactivity
   const handleLaunchDemo = async () => {
     const allStores = await storeService.getStores();
-    const demoStore = allStores[0] || initialStores[0];
-    setActiveStore(demoStore);
-    setStores(allStores.length > 0 ? allStores : initialStores);
-    const storeProducts = await productService.getProductsByStore(demoStore.id);
-    const storeOrders = await orderService.getOrdersByStore(demoStore.id);
-    const storeIntegrations = await integrationService.getIntegrations();
-    setProducts(storeProducts);
-    setOrders(storeOrders);
-    setIntegrations(storeIntegrations);
+    const demoStore = allStores[0] || null;
+    if (demoStore) {
+      setActiveStore(demoStore);
+      setStores(allStores);
+      const storeProducts = await productService.getProductsByStore(demoStore.id);
+      const storeOrders = await orderService.getOrdersByStore(demoStore.id);
+      const storeIntegrations = await integrationService.getIntegrations();
+      setProducts(storeProducts);
+      setOrders(storeOrders);
+      setIntegrations(storeIntegrations);
+    }
     setAuthView(null);
     setViewMode('merchant-desktop');
-    addToast('Mode Demo Toko Interaktif MicroCMS Aktif!', 'info');
+    addToast('Mode Merchant MicroCMS Aktif!', 'info');
   };
 
   const handleLaunchStorefrontDemo = async () => {
     const allStores = await storeService.getStores();
-    const demoStore = allStores[0] || initialStores[0];
-    setActiveStore(demoStore);
-    setStores(allStores.length > 0 ? allStores : initialStores);
-    const storeProducts = await productService.getProductsByStore(demoStore.id);
-    const storeOrders = await orderService.getOrdersByStore(demoStore.id);
-    const initialCart = cartService.getCart(demoStore.slug);
-    setProducts(storeProducts);
-    setOrders(storeOrders);
-    setCartItems(initialCart);
+    const demoStore = allStores[0] || null;
+    if (demoStore) {
+      setActiveStore(demoStore);
+      setStores(allStores);
+      const storeProducts = await productService.getProductsByStore(demoStore.id);
+      const storeOrders = await orderService.getOrdersByStore(demoStore.id);
+      const initialCart = cartService.getCart(demoStore.slug);
+      setProducts(storeProducts);
+      setOrders(storeOrders);
+      setCartItems(initialCart);
+    }
     setAuthView(null);
     setViewMode('storefront');
     addToast('Mode Toko Online Pembeli (Storefront) Aktif!', 'info');
@@ -1183,6 +1199,26 @@ export default function App() {
 
   // Render Public Storefront Content (Using New Dynamic Theme Engine)
   const renderStorefrontContent = () => {
+    const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+    const isPublished = Boolean(currentStore?.isPublished);
+
+    // Jika toko belum dipublikasikan atau toko belum ada dan bukan di mode preview
+    if ((!currentStore || !currentStore.id || !isPublished) && !isPreview) {
+      const isOwner = user && activeStore && activeStore.id === currentStore?.id;
+      const isAdmin = user && user.role === 'admin';
+      return (
+        <StoreNotFoundPage
+          store={currentStore}
+          slug={currentStore?.slug}
+          isOwner={Boolean(isOwner)}
+          isAdmin={Boolean(isAdmin)}
+          onGoToDashboard={() => setViewMode('merchant-desktop')}
+          onGoToAdmin={() => setViewMode('admin')}
+          onPublishStore={() => currentStore?.id && handlePublishStore(currentStore.id)}
+        />
+      );
+    }
+
     return <ThemeRenderer store={currentStore} products={products} />;
   };
 
@@ -1205,9 +1241,20 @@ export default function App() {
           {/* Top Bar Switcher back to Admin */}
           <div className="bg-[#002A45] text-white px-3 sm:px-4 py-2 flex items-center justify-between text-xs border-b border-[#1F4072] sticky top-0 z-50 shadow-sm">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+              <span className={`w-2 h-2 rounded-full shrink-0 ${currentStore?.isPublished ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
               <span className="truncate">
-                Pratinjau: <strong>{currentStore.name}</strong>
+                {currentStore?.name ? (
+                  <>
+                    Pratinjau: <strong>{currentStore.name}</strong>
+                    {!currentStore.isPublished && (
+                      <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                        Belum Publish
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>Toko Tidak Ditemukan</>
+                )}
               </span>
             </div>
 
@@ -1262,11 +1309,17 @@ export default function App() {
               </button>
 
               <button
-                onClick={() => setViewMode('merchant-desktop')}
+                onClick={() => {
+                  if (user?.role === 'admin') {
+                    setViewMode('admin');
+                  } else {
+                    setViewMode('merchant-desktop');
+                  }
+                }}
                 className="px-3 py-1.5 rounded-lg bg-[#FFD358] hover:bg-[#FFB915] text-[#002A45] font-extrabold flex items-center gap-1 shadow-xs cursor-pointer text-xs"
               >
                 <Monitor className="w-3.5 h-3.5" />
-                <span>Kembali</span>
+                <span>{user?.role === 'admin' ? 'Ke Admin' : 'Kembali'}</span>
               </button>
             </div>
           </div>
@@ -1335,12 +1388,15 @@ export default function App() {
         // Jika toko belum dipublikasikan atau sedang di-unpublish dan pengunjung bukan di mode preview
         if (!isPublished && !isPreview) {
           const isOwner = user && activeStore && activeStore.id === currentStore.id;
+          const isAdmin = user && user.role === 'admin';
           return (
             <StoreNotFoundPage
               store={currentStore}
               slug={currentStore.slug}
               isOwner={Boolean(isOwner)}
+              isAdmin={Boolean(isAdmin)}
               onGoToDashboard={() => setViewMode('merchant-desktop')}
+              onGoToAdmin={() => setViewMode('admin')}
               onPublishStore={() => handlePublishStore(currentStore.id)}
             />
           );
@@ -1381,12 +1437,18 @@ export default function App() {
             {new URLSearchParams(window.location.search).get('preview') !== 'true' && (
               <div className="fixed bottom-4 left-4 z-50">
                 <button
-                  onClick={() => setViewMode('merchant-desktop')}
+                  onClick={() => {
+                    if (user?.role === 'admin') {
+                      setViewMode('admin');
+                    } else {
+                      setViewMode('merchant-desktop');
+                    }
+                  }}
                   className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
-                  title="Kembali ke Dashboard Merchant"
+                  title={user?.role === 'admin' ? 'Kembali ke Admin Panel' : 'Kembali ke Dashboard Merchant'}
                 >
                   <Monitor className="w-3.5 h-3.5" />
-                  <span>Dashboard</span>
+                  <span>{user?.role === 'admin' ? 'Admin Panel' : 'Dashboard'}</span>
                 </button>
               </div>
             )}
@@ -1400,7 +1462,7 @@ export default function App() {
         <DeviceSimulatorFrame
           title={`Toko Online ${currentStore.name}`}
           urlPath={`microcms.id/${currentStore.slug}`}
-          onClose={() => setViewMode('merchant-desktop')}
+          onClose={() => setViewMode(user?.role === 'admin' ? 'admin' : 'merchant-desktop')}
         >
           {renderStorefrontContent()}
         </DeviceSimulatorFrame>
@@ -1410,9 +1472,23 @@ export default function App() {
       {viewMode === 'admin' && (
         <AdminDashboardPage
           currentUser={user}
-          onOpenStorefront={(slug) => {
-            const targetStore = stores.find((s) => s.slug === slug);
-            if (targetStore) setActiveStore(targetStore);
+          onOpenStorefront={async (slug) => {
+            const allStores = await storeService.getStores();
+            const targetStore = allStores.find((s) => s.slug === slug || s.id === slug);
+            if (targetStore) {
+              setActiveStore(targetStore);
+              const storeProducts = await productService.getProductsByStore(targetStore.id);
+              setProducts(storeProducts);
+            } else {
+              setActiveStore({
+                id: '',
+                merchantId: '',
+                name: slug,
+                slug: slug,
+                isPublished: false,
+              } as any);
+              setProducts([]);
+            }
             setViewMode('storefront');
           }}
           onLogout={handleLogout}
@@ -1425,9 +1501,9 @@ export default function App() {
           currentStore={{
             id: '',
             merchantId: user.id,
-            name: user.name ? `Toko ${user.name}` : '',
-            slug: user.name ? `toko-${user.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '',
-            tagline: 'Katalog online resmi toko UMKM.',
+            name: '',
+            slug: '',
+            tagline: '',
             description: '',
             logoUrl: user.avatarUrl,
             bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
@@ -1438,12 +1514,16 @@ export default function App() {
           } as Store}
           onComplete={async (data) => {
             try {
+              const cleanStoreName = (data.storeUpdates.name || '').trim();
+              const autoSlug = cleanStoreName
+                ? cleanStoreName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+                : '';
               const newStore = await storeService.createStore({
                 merchantId: user.id,
-                name: data.storeUpdates.name || `Toko ${user.name || 'UMKM'}`,
-                slug: data.storeUpdates.slug || `toko-${user.id.slice(-6)}`,
-                tagline: data.storeUpdates.tagline || 'Katalog resmi UMKM.',
-                description: data.storeUpdates.tagline || 'Pusat belanja online praktis dan cepat.',
+                name: cleanStoreName,
+                slug: data.storeUpdates.slug || autoSlug,
+                tagline: data.storeUpdates.tagline || (cleanStoreName ? `Toko Resmi ${cleanStoreName}` : ''),
+                description: data.storeUpdates.description || (cleanStoreName ? 'Pusat belanja online praktis dan cepat.' : ''),
                 logoUrl: user.avatarUrl || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=200&auto=format&fit=crop&q=80',
                 bannerUrl: data.storeUpdates.bannerUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
                 phoneWhatsApp: data.storeUpdates.phoneWhatsApp || user.phoneWhatsApp || '',
@@ -1457,7 +1537,7 @@ export default function App() {
               setStores([newStore]);
               setIsCreateStoreWizardOpen(false);
               setActiveTab('layout');
-              addToast(`🎉 Selamat! Toko "${newStore.name}" berhasil dibuat dan siap diatur.`);
+              addToast(`🎉 Selamat! Toko "${newStore.name || 'baru'}" berhasil dibuat dan siap diatur.`);
             } catch (err) {
               console.error('Error creating store:', err);
               addToast('Gagal membuat toko. Silakan coba lagi.', 'error');

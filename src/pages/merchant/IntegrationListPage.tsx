@@ -4,12 +4,13 @@ import {
   Truck,
   Zap,
 } from 'lucide-react';
-import { Integration } from '../../types';
+import { Integration, Store } from '../../types';
 import { IntegrationCard } from '../../components/integrations/IntegrationCard';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 
 interface IntegrationListPageProps {
+  store?: Store;
   integrations: Integration[];
   onToggleIntegration: (id: string) => void;
   onSaveConfig: (id: string, config: Record<string, string>) => void;
@@ -18,6 +19,7 @@ interface IntegrationListPageProps {
 }
 
 export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
+  store,
   integrations,
   onToggleIntegration,
   onSaveConfig,
@@ -27,11 +29,13 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'pembayaran' | 'pengiriman'>('pembayaran');
 
+  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial' || store.plan === 'starter';
+
   const paymentIntegrations = integrations.filter((i) => i.type === 'payment');
   const shippingIntegrations = integrations.filter((i) => i.type === 'shipping');
 
-  const activePaymentsCount = paymentIntegrations.filter((i) => i.isConnected).length;
-  const activeShippingsCount = shippingIntegrations.filter((i) => i.isConnected).length;
+  const activePaymentsCount = isFreePlan ? 0 : paymentIntegrations.filter((i) => i.isConnected).length;
+  const activeShippingsCount = isFreePlan ? 0 : shippingIntegrations.filter((i) => i.isConnected).length;
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200 font-poppins pb-24 lg:pb-8 text-left max-w-5xl">
@@ -126,6 +130,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
               <IntegrationCard
                 key={int.id}
                 integration={int}
+                isLocked={isFreePlan}
                 onToggle={onToggleIntegration}
                 onSaveConfig={onSaveConfig}
                 onShowNotification={onShowNotification}
@@ -153,6 +158,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
               <IntegrationCard
                 key={int.id}
                 integration={int}
+                isLocked={isFreePlan}
                 onToggle={onToggleIntegration}
                 onSaveConfig={onSaveConfig}
                 onShowNotification={onShowNotification}

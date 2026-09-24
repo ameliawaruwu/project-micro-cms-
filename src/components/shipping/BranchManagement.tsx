@@ -26,7 +26,7 @@ interface BranchManagementProps {
 }
 
 export const BranchManagement: React.FC<BranchManagementProps> = ({
-  storeId = 'store-andhika',
+  storeId = '',
   onShowNotification,
 }) => {
   const { t } = useLanguage();

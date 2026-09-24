@@ -16,6 +16,8 @@ import {
 import { Store } from '../../../types';
 import { formatRupiah } from '../../../utils/formatters';
 
+import { Breadcrumb } from '../../../components/common/Breadcrumb';
+
 interface AdminStoresTabProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -28,6 +30,7 @@ interface AdminStoresTabProps {
   onOpenStorefront?: (slug: string) => void;
   language: string;
   isEn: boolean;
+  onNavigateOverview?: () => void;
 }
 
 export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
@@ -42,6 +45,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
   onOpenStorefront,
   language,
   isEn,
+  onNavigateOverview,
 }) => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [copied, setCopied] = useState(false);
@@ -68,6 +72,32 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
   };
   return (
     <div className="space-y-4">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: isEn ? 'Dashboard' : 'Beranda', onClick: onNavigateOverview },
+          { label: isEn ? 'Manage Stores' : 'Kelola Toko', isActive: true },
+        ]}
+      />
+
+      {/* Page Header */}
+      <div className="pb-3 border-b border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+            <StoreIcon className="w-5 h-5 text-[#66000E]" />
+            <span>{isEn ? 'Manage Stores' : 'Kelola Toko'}</span>
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {isEn
+              ? 'Monitor, verify, manage subscription plans, and inspect active merchant storefronts.'
+              : 'Pantau, verifikasi, kelola paket langganan, dan tinjau etalase toko merchant.'}
+          </p>
+        </div>
+        <span className="text-xs font-medium text-gray-600 px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 self-start sm:self-auto">
+          {filteredStores.length} {isEn ? 'Stores' : 'Toko Terdaftar'}
+        </span>
+      </div>
+
       {/* Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative flex-1 w-full max-w-sm">
@@ -116,7 +146,18 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredStores.map((store) => {
+              {filteredStores.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-gray-400">
+                    <StoreIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                    <p className="font-semibold text-gray-700">{isEn ? 'No stores found' : 'Belum ada data toko'}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      {isEn ? 'Stores registered in database will be displayed here.' : 'Toko yang terdaftar di database akan ditampilkan di sini.'}
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                filteredStores.map((store) => {
                 const isSuspended = suspendedIds.includes(store.id);
                 return (
                   <tr key={store.id} className="hover:bg-gray-50/60 transition">
@@ -201,7 +242,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                     </td>
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>

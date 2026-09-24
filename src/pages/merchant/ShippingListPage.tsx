@@ -28,10 +28,10 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
   const { t } = useLanguage();
   const [activeSubTab, setActiveSubTab] = useState<'branches' | 'couriers'>('branches');
 
-  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial';
+  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial' || store.plan === 'starter';
 
   const shippingIntegrations = integrations.filter((i) => i.type === 'shipping');
-  const activeCount = shippingIntegrations.filter((i) => i.isConnected).length;
+  const activeCount = isFreePlan ? 0 : shippingIntegrations.filter((i) => i.isConnected).length;
 
   const handleToggle = (id: string) => {
     if (isFreePlan) {
@@ -68,7 +68,7 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
         {/* Status Badge */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-[#E5E0DD] shadow-2xs text-xs text-[#241A1A]">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span className={`w-2 h-2 rounded-full ${activeCount > 0 ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
             <span className="font-medium">
               {activeCount} {t('shipping_of', 'dari')} {shippingIntegrations.length} {t('shipping_active_badge', 'Ekspedisi Aktif')}
             </span>
@@ -174,6 +174,7 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
               <IntegrationCard
                 key={int.id}
                 integration={int}
+                isLocked={isFreePlan}
                 onToggle={handleToggle}
                 onSaveConfig={onSaveConfig}
                 onShowNotification={onShowNotification}

@@ -7,7 +7,6 @@ import { ThemeRegistry } from '../ThemeRegistry';
 import { Search, Filter, ShoppingBag, Sparkles, ArrowRight } from 'lucide-react';
 
 import { THEME_DATA_MAP } from '../themeData';
-import { mockProducts } from '../../cms/mockCmsData';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { cartService } from '../../services/cartService';
 
@@ -21,11 +20,8 @@ interface ShopPageProps {
 }
 
 export const ShopPage: React.FC<ShopPageProps> = ({ themeData, themeId: propThemeId, store, products = [], isWishlist, onNavigate }) => {
-  const cmsProducts = useCmsStore(state => state.products);
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
-  const fallbackThemeData = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['minimalist'];
-  const themeProducts = fallbackThemeData?.products && fallbackThemeData.products.length > 0 ? fallbackThemeData.products : mockProducts;
-  const displayProducts = (products && products.length > 0) ? products : (cmsProducts && cmsProducts.length > 0 ? (cmsProducts as any[]) : (themeProducts as any[]));
+  const displayProducts = products || [];
 
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',

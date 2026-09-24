@@ -22,16 +22,20 @@ import {
 } from '../../../services/domainRequestService';
 import { formatRupiah } from '../../../utils/formatters';
 
+import { Breadcrumb } from '../../../components/common/Breadcrumb';
+
 interface AdminDomainRequestsTabProps {
   language: string;
   onShowToast?: (msg: string) => void;
   onRequestUpdated?: () => void;
+  onNavigateOverview?: () => void;
 }
 
 export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
   language,
   onShowToast,
   onRequestUpdated,
+  onNavigateOverview,
 }) => {
   const isEn = language === 'en';
 
@@ -106,14 +110,22 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
   };
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-300">
+    <div className="space-y-4 animate-in fade-in duration-300">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: isEn ? 'Dashboard' : 'Beranda', onClick: onNavigateOverview },
+          { label: isEn ? 'Domain Requests' : 'Permintaan Domain', isActive: true },
+        ]}
+      />
+
       {/* 1. Header & Overview */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 pb-4">
+      <div className="pb-3 border-b border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-gray-900 tracking-tight flex items-center gap-2">
-            <Globe className="w-5 h-5 text-red-600" />
-            <span>{isEn ? 'Domain Requests Management' : 'Permintaan Domain Merchant'}</span>
-          </h2>
+          <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+            <Globe className="w-5 h-5 text-[#66000E]" />
+            <span>{isEn ? 'Domain Requests' : 'Permintaan Domain'}</span>
+          </h1>
           <p className="text-xs text-gray-500 mt-0.5">
             {isEn
               ? 'Review custom domain requests from merchants, verify availability on IDCloudHost/Whois, approve, or provide alternative suggestions.'
@@ -125,7 +137,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
           href="https://idcloudhost.com/domain/"
           target="_blank"
           rel="noreferrer"
-          className="px-3.5 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+          className="px-3.5 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-xs cursor-pointer self-start sm:self-auto shrink-0"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           <span>Buka IDCloudHost Domain</span>

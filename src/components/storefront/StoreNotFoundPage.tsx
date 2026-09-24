@@ -12,12 +12,15 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { Store } from '../../types';
+import { Shield } from 'lucide-react';
 
 interface StoreNotFoundPageProps {
   store?: Store | null;
   slug?: string;
   isOwner?: boolean;
+  isAdmin?: boolean;
   onGoToDashboard?: () => void;
+  onGoToAdmin?: () => void;
   onPublishStore?: () => void;
 }
 
@@ -25,9 +28,12 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
   store,
   slug,
   isOwner = false,
+  isAdmin = false,
   onGoToDashboard,
+  onGoToAdmin,
   onPublishStore,
 }) => {
+  const isUnpublished = store && !store.isPublished;
   const storeName = store?.name || (slug ? `Toko (${slug})` : 'Toko Online');
   const storeSlug = store?.slug || slug || '';
   const phoneWhatsApp = store?.phoneWhatsApp?.replace(/[^0-9]/g, '') || '';
@@ -81,15 +87,23 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
           <div className="text-center space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[11px] font-mono font-semibold border border-gray-200">
               <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-              <span>404 &bull; Store Inactive</span>
+              <span>{isUnpublished ? 'Draf • Belum Dipublikasikan' : '404 • Store Inactive'}</span>
             </div>
 
             <h1 className="text-xl sm:text-2xl font-extrabold text-[#241A1A] tracking-tight font-poppins">
-              Toko Sedang Dinonaktifkan
+              {isUnpublished ? 'Toko Belum Dipublikasikan' : 'Toko Tidak Ditemukan'}
             </h1>
 
             <p className="text-xs sm:text-sm text-[#706866] leading-relaxed">
-              Website toko online <strong className="text-[#241A1A] font-semibold">"{storeName}"</strong> saat ini tidak tersedia untuk publik karena berstatus draf atau telah ditarik dari publikasi oleh pemiliknya.
+              {isUnpublished ? (
+                <>
+                  Website toko online <strong className="text-[#241A1A] font-semibold">"{storeName}"</strong> saat ini belum dipublikasikan untuk umum karena masih dalam tahap penyusunan atau berstatus draf oleh pemiliknya.
+                </>
+              ) : (
+                <>
+                  Website toko online dengan alamat <strong className="text-[#241A1A] font-semibold">"{storeSlug || storeName}"</strong> saat ini tidak tersedia atau belum terdaftar di platform.
+                </>
+              )}
             </p>
           </div>
 
@@ -102,15 +116,36 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
                   {storeSlug}.kroombox.com
                 </span>
               </div>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-200 text-gray-600">
-                Draf
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                {isUnpublished ? 'Belum Terbit' : 'Tidak Ditemukan'}
               </span>
             </div>
           )}
 
           {/* Conditional Action Buttons */}
           <div className="space-y-3 pt-2">
-            {isOwner ? (
+            {isAdmin ? (
+              <div className="space-y-3 pt-2 border-t border-[#E5E0DD]">
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 leading-relaxed text-left">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-950 mb-1">
+                    <Shield className="w-4 h-4 text-amber-700" />
+                    <span>Mode Administrator Super</span>
+                  </div>
+                  Toko <strong className="text-amber-950">"{storeName}"</strong> saat ini berstatus <strong>Draf / Belum Publish</strong>. Halaman publik storefront belum dapat diakses oleh pembeli hingga pemilik toko mempublikasikannya.
+                </div>
+
+                {onGoToAdmin && (
+                  <button
+                    type="button"
+                    onClick={onGoToAdmin}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#55000C] text-white text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Home className="w-3.5 h-3.5 text-amber-200" />
+                    <span>Kembali ke Admin Panel</span>
+                  </button>
+                )}
+              </div>
+            ) : isOwner ? (
               <div className="space-y-2 pt-2 border-t border-[#E5E0DD]">
                 <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
                   <span className="font-bold block text-amber-950">Anda Pemilik Toko Ini:</span>

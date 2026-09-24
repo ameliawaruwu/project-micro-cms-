@@ -1,12 +1,13 @@
 import { BillingPlan, BillingSubscription } from '../types';
 import { supabase } from './supabaseClient';
+import { idService } from './idService';
 
 const BILLING_PLANS_KEY = 'microcms_billing_plans_v1';
-const SUBSCRIPTIONS_KEY = 'microcms_store_subscriptions_v1';
+const SUBSCRIPTIONS_KEY = 'microcms_store_subscriptions_v2';
 
 export const DEFAULT_BILLING_PLANS: BillingPlan[] = [
   {
-    id: 'plan_free',
+    id: 'PLN001',
     name: 'Paket Free',
     slug: 'free',
     tagline: 'Belajar & kelola katalog produk lokal secara gratis',
@@ -26,39 +27,42 @@ export const DEFAULT_BILLING_PLANS: BillingPlan[] = [
     sortOrder: 1,
   },
   {
-    id: 'plan_personal',
+    id: 'PLN002',
     name: 'Personal Toko',
     slug: 'personal',
     tagline: 'Buka toko online mandiri & terima pembayaran instan',
-    priceMonthly: 0,
+    priceMonthly: 35000,
     priceYearly: 350000,
     hostingPriceYearly: 200000,
     cmsPriceYearly: 150000,
     features: [
-      'Kapasitas hingga 50 produk & varian',
-      'Deploy Toko Online Aktif (bisa diakses pembeli)',
-      'Checkout otomatis Midtrans (QRIS & VA Bank)',
-      'Cek ongkir & pengiriman otomatis Biteship',
-      'Kapasitas Hosting Cloud Kroomify cepat',
-      'Laporan penjualan & pesanan harian',
+      'Hosting Server: Rp 200.000 / tahun',
+      'Jasa Micro CMS: Rp 150.000 / tahun',
+      'Dukungan Custom Domain (.top, .online, .org, .com, .id)',
+      'Katalog produk hingga 100 item',
+      'Automated Midtrans (QRIS, VA Bank, E-Wallet)',
+      'Integrasi Ekspedisi Logistik (JNE, J&T via Biteship)',
+      'White-label tanpa watermark',
     ],
     isActive: true,
     sortOrder: 2,
   },
   {
-    id: 'plan_community',
+    id: 'PLN003',
     name: 'Community UMKM',
     slug: 'community',
     tagline: 'Solusi lengkap & paling laris untuk bisnis UMKM bertumbuh',
     badge: 'Pilihan Terbaik UMKM',
-    priceMonthly: 0,
+    priceMonthly: 100000,
     priceYearly: 1000000,
     hostingPriceYearly: 700000,
     cmsPriceYearly: 300000,
     features: [
+      'Hosting Server: Rp 700.000 / tahun',
+      'Jasa Micro CMS: Rp 300.000 / tahun',
+      'Pilihan Terbaik UMKM (Rekomendasi Utama)',
+      'Dukungan Custom Domain (.top, .online, .org, .com, .id)',
       'Unlimited katalog produk & varian tanpa batas',
-      'Mendukung Custom Domain Sendiri (.com, .id, dll)',
-      'Bebas Watermark (100% White-label Brand Anda)',
       'Full checkout Midtrans (QRIS, VA Bank, E-Wallet)',
       'Cetak label resi pengiriman thermal massal',
       'Visual layout builder (bebas kustom tema toko)',
@@ -66,39 +70,6 @@ export const DEFAULT_BILLING_PLANS: BillingPlan[] = [
     ],
     isActive: true,
     sortOrder: 3,
-  },
-];
-
-const INITIAL_SUBSCRIPTIONS: BillingSubscription[] = [
-  {
-    id: 'sub_001',
-    storeId: 'store-andhika',
-    storeName: 'Toko Andhika',
-    planId: 'plan_pro',
-    planName: 'Pro UMKM',
-    cycle: 'monthly',
-    amount: 99000,
-    status: 'paid',
-    paymentMethod: 'Midtrans QRIS',
-    invoiceNumber: 'INV/2026/09/SUB-001',
-    paidAt: '2026-09-01T10:00:00Z',
-    expiresAt: '2026-10-01T10:00:00Z',
-    createdAt: '2026-09-01T10:00:00Z',
-  },
-  {
-    id: 'sub_002',
-    storeId: 'store-1',
-    storeName: 'Batik Kirana Solo',
-    planId: 'plan_scaleup',
-    planName: 'Bisnis Scale-Up',
-    cycle: 'yearly',
-    amount: 2400000,
-    status: 'paid',
-    paymentMethod: 'Midtrans BCA VA',
-    invoiceNumber: 'INV/2026/08/SUB-098',
-    paidAt: '2026-08-15T14:30:00Z',
-    expiresAt: '2027-08-15T14:30:00Z',
-    createdAt: '2026-08-15T14:30:00Z',
   },
 ];
 
@@ -153,14 +124,7 @@ class BillingPlanService {
     }
     try {
       const parsed: BillingPlan[] = JSON.parse(raw);
-      // Validasi agar hanya 3 paket resmi yang dimuat
-      const validSlugs = new Set(['free', 'personal', 'community']);
-      const filtered = Array.isArray(parsed) ? parsed.filter((p) => validSlugs.has(p.slug)) : [];
-      if (filtered.length !== 3) {
-        localStorage.setItem(BILLING_PLANS_KEY, JSON.stringify(DEFAULT_BILLING_PLANS));
-        return DEFAULT_BILLING_PLANS;
-      }
-      return filtered;
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_BILLING_PLANS;
     } catch {
       return DEFAULT_BILLING_PLANS;
     }
@@ -193,12 +157,9 @@ class BillingPlanService {
       }
 
       if (data && data.length > 0) {
-        const validSlugs = new Set(['free', 'personal', 'community']);
-        const mapped = data.map(mapRowToPlan).filter((p) => validSlugs.has(p.slug));
-        if (mapped.length > 0) {
-          this.saveStoredPlans(mapped);
-          return mapped;
-        }
+        const mapped = data.map(mapRowToPlan);
+        this.saveStoredPlans(mapped);
+        return mapped;
       }
       return this.getPlans();
     } catch (err) {
@@ -218,7 +179,7 @@ class BillingPlanService {
    * Create a new billing plan
    */
   async createPlan(data: Omit<BillingPlan, 'id'>): Promise<BillingPlan> {
-    const id = `plan_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
+    const id = await idService.generateNextId('billing_plans');
     const newPlan: BillingPlan = {
       ...data,
       id,
@@ -305,20 +266,53 @@ class BillingPlanService {
    */
   getSubscriptions(): BillingSubscription[] {
     const raw = localStorage.getItem(SUBSCRIPTIONS_KEY);
-    if (!raw) {
-      localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(INITIAL_SUBSCRIPTIONS));
-      return INITIAL_SUBSCRIPTIONS;
-    }
+    if (!raw) return [];
     try {
       const parsed: BillingSubscription[] = JSON.parse(raw);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SUBSCRIPTIONS;
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
-      return INITIAL_SUBSCRIPTIONS;
+      return [];
+    }
+  }
+
+  async fetchSubscriptionsFromDatabase(): Promise<BillingSubscription[]> {
+    try {
+      const { data, error } = await supabase
+        .from('store_subscriptions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('Supabase fetch store_subscriptions error:', error.message);
+        return this.getSubscriptions();
+      }
+
+      const mapped: BillingSubscription[] = (data || []).map((r: any) => ({
+        id: r.id,
+        storeId: r.store_id,
+        storeName: r.store_name || '',
+        planId: r.plan_id,
+        planName: r.plan_name,
+        cycle: r.cycle || 'monthly',
+        amount: Number(r.amount || 0),
+        status: r.status || 'paid',
+        paymentMethod: r.payment_method || 'Midtrans',
+        invoiceNumber: r.invoice_number || `INV-${r.id}`,
+        paidAt: r.paid_at || r.created_at || new Date().toISOString(),
+        expiresAt: r.expires_at || new Date().toISOString(),
+        createdAt: r.created_at || new Date().toISOString(),
+      }));
+
+      localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(mapped));
+      return mapped;
+    } catch (err) {
+      console.warn('Network error fetching subscriptions:', err);
+      return this.getSubscriptions();
     }
   }
 
   async recordSubscription(sub: Omit<BillingSubscription, 'id' | 'createdAt'>): Promise<BillingSubscription> {
-    const id = `sub_${Date.now()}`;
+    const id = await idService.generateNextId('store_subscriptions');
     const newSub: BillingSubscription = {
       ...sub,
       id,

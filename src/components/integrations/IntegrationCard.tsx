@@ -12,12 +12,14 @@ import {
   Layers,
   ArrowRight,
   Info,
+  Lock,
 } from 'lucide-react';
 import { Integration } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface IntegrationCardProps {
   integration: Integration;
+  isLocked?: boolean;
   onToggle: (id: string) => void;
   onSaveConfig: (id: string, config: Record<string, any>) => void;
   onShowNotification: (msg: string) => void;
@@ -63,6 +65,7 @@ const COURIER_SERVICES_PRESETS: Record<
 
 export const IntegrationCard: React.FC<IntegrationCardProps> = ({
   integration,
+  isLocked = false,
   onToggle,
   onSaveConfig,
   onShowNotification,
@@ -86,6 +89,8 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
   const [defaultHandoff, setDefaultHandoff] = useState<'pickup' | 'drop_off'>(
     integration.config?.defaultHandoff || (integration.provider === 'jne' ? 'drop_off' : 'pickup')
   );
+
+  const isConnected = !isLocked && integration.isConnected;
 
   const handleToggleService = (code: string) => {
     setSelectedServices((prev) =>
@@ -118,11 +123,13 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
 
   const handleToggle = () => {
     onToggle(integration.id);
-    onShowNotification(
-      integration.isConnected
-        ? `${integration.name} dinonaktifkan.`
-        : `${integration.name} berhasil diaktifkan!`
-    );
+    if (!isLocked) {
+      onShowNotification(
+        integration.isConnected
+          ? `${integration.name} dinonaktifkan.`
+          : `${integration.name} berhasil diaktifkan!`
+      );
+    }
   };
 
   const descObj = CONCISE_DESCRIPTIONS[integration.id];
@@ -130,7 +137,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
 
   return (
     <>
-      <div className="bg-white rounded-2xl p-3.5 sm:p-4.5 border border-[#E5E0DD] shadow-2xs hover:border-[#D5CEC9] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-poppins text-left">
+      <div className={`bg-white rounded-2xl p-3.5 sm:p-4.5 border border-[#E5E0DD] shadow-2xs hover:border-[#D5CEC9] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-poppins text-left ${isLocked ? 'opacity-85' : ''}`}>
         {/* Left: Logo & Info */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#FAF7F7] border border-[#E5E0DD] overflow-hidden flex items-center justify-center p-1.5 shrink-0 shadow-2xs">
@@ -172,27 +179,41 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
           <div className="flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full ${
-                integration.isConnected ? 'bg-[#027A48]' : 'bg-slate-300'
+                isConnected ? 'bg-[#027A48]' : 'bg-slate-300'
               }`}
             ></span>
             <span
               className={`text-xs font-semibold ${
-                integration.isConnected ? 'text-[#027A48]' : 'text-[#777777]'
+                isConnected ? 'text-[#027A48]' : 'text-[#777777]'
               }`}
             >
-              {isBiteship && integration.isConnected
+              {isLocked
+                ? t('courier_status_inactive', 'Nonaktif')
+                : isBiteship && isConnected
                 ? t('courier_connected_env', 'Terhubung via .env')
-                : integration.isConnected
+                : isConnected
                 ? t('courier_status_active', 'Aktif')
                 : t('courier_status_inactive', 'Nonaktif')}
             </span>
+            {isLocked && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                <Lock className="w-3 h-3 text-amber-600" />
+                <span>{isEn ? 'Locked' : 'Terkunci'}</span>
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2 ml-2">
             {/* Settings button */}
             <button
               type="button"
-              onClick={() => setShowConfigModal(true)}
+              onClick={() => {
+                if (isLocked) {
+                  onToggle(integration.id);
+                  return;
+                }
+                setShowConfigModal(true);
+              }}
               className="flex items-center gap-1.5 text-xs font-semibold text-[#555555] hover:text-[#1F1F1F] px-3 py-2 rounded-xl hover:bg-[#F7F7F7] border border-[#E5E0DD] transition cursor-pointer"
               title={isShipping ? t('courier_title_settings', 'Atur Preferensi Layanan') : t('courier_title_api_settings', 'Atur Kunci API')}
             >
@@ -206,18 +227,24 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                 type="button"
                 onClick={handleToggle}
                 role="switch"
-                aria-checked={integration.isConnected}
+                aria-checked={isConnected}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  integration.isConnected ? 'bg-[#66000E]' : 'bg-slate-200'
-                }`}
+                  isConnected ? 'bg-[#66000E]' : 'bg-slate-200'
+                } ${isLocked ? 'opacity-80' : ''}`}
+                title={isLocked ? (isEn ? 'Locked (Free Plan)' : 'Terkunci (Paket Free)') : undefined}
               >
                 <span
                   aria-hidden="true"
                   className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                    integration.isConnected ? 'translate-x-5' : 'translate-x-0'
+                    isConnected ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
               </button>
+            ) : isLocked ? (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#777777] bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-xl">
+                <Lock className="w-3 h-3 text-[#777777]" />
+                <span>Nonaktif</span>
+              </span>
             ) : (
               <span className="text-[11px] font-semibold text-[#027A48] bg-[#ECFDF3] border border-[#ABEFC6] px-2.5 py-1 rounded-xl">
                 Master API

@@ -11,20 +11,24 @@ interface Props {
   themeId?: string;
 }
 
-const mockProducts = [
-  { id: '1', name: 'Premium Item 1', price: 299000, imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop' },
-  { id: '2', name: 'Exclusive Design', price: 450000, imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop' },
-  { id: '3', name: 'Signature Collection', price: 890000, imageUrl: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800&auto=format&fit=crop' },
-  { id: '4', name: 'Limited Edition', price: 1200000, imageUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop' },
-  { id: '5', name: 'Essential Basics', price: 199000, imageUrl: 'https://images.unsplash.com/photo-1503342394128-c104d54dba01?w=800&auto=format&fit=crop' },
-  { id: '6', name: 'Modern Classic', price: 750000, imageUrl: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=800&auto=format&fit=crop' },
-  { id: '7', name: 'Urban Style', price: 320000, imageUrl: 'https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?w=800&auto=format&fit=crop' },
-  { id: '8', name: 'Vintage Find', price: 550000, imageUrl: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=800&auto=format&fit=crop' },
-];
-
 export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, products, themeId }) => {
-  const displayProducts = (products && products.length > 0 ? products : mockProducts).slice(0, settings.maxItems || 8);
+  const displayProducts = (products || []).slice(0, settings.maxItems || 8);
   const navigate = useNavigate();
+
+  if (displayProducts.length === 0) {
+    return (
+      <section className="py-16 md:py-24 bg-white">
+        <div className="mx-auto px-4 max-w-7xl text-center">
+          {settings.title && (
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">{settings.title}</h2>
+          )}
+          <div className="py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+            <p className="text-gray-400 text-sm font-medium">Belum ada produk yang ditampilkan.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   // --- 1. COMPACT / MODERN CATALOG THEME ---
   if (themeId && themeId.includes('compact')) {

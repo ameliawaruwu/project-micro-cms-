@@ -1,6 +1,7 @@
 import { ShippingBranch } from '../types';
 import { supabase } from './supabaseClient';
 import { storeService } from './storeService';
+import { idService } from './idService';
 
 // ============================================================
 // MERCHANT DATA ISOLATION: localStorage dipartisi per storeId
@@ -14,53 +15,7 @@ if (typeof window !== 'undefined') {
   } catch { /* ignore */ }
 }
 
-export const initialBranches: ShippingBranch[] = [
-  {
-    id: 'a0000000-0000-0000-0000-000000000001',
-    storeId: 'store-andhika',
-    branchName: 'Gudang Pusat Jakarta',
-    picName: 'Andhika Pratama',
-    picPhone: '081298765432',
-    address: 'Jl. Kemang Raya No. 42, RT 04 / RW 02',
-    subdistrict: 'Bangka, Mampang Prapatan',
-    city: 'Jakarta Selatan',
-    province: 'DKI Jakarta',
-    postalCode: '12730',
-    isDefault: true,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'a0000000-0000-0000-0000-000000000002',
-    storeId: 'store-andhika',
-    branchName: 'Cabang Logistik Surabaya',
-    picName: 'Budi Santoso',
-    picPhone: '081377889900',
-    address: 'Jl. Rungkut Industri Raya No. 15',
-    subdistrict: 'Kali Rungkut',
-    city: 'Kota Surabaya',
-    province: 'Jawa Timur',
-    postalCode: '60293',
-    isDefault: false,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'a0000000-0000-0000-0000-000000000003',
-    storeId: 'store-andhika',
-    branchName: 'Hub Distribusi Bandung',
-    picName: 'Rina Kusuma',
-    picPhone: '081223344556',
-    address: 'Jl. Soekarno Hatta No. 590',
-    subdistrict: 'Buahbatu',
-    city: 'Kota Bandung',
-    province: 'Jawa Barat',
-    postalCode: '40286',
-    isDefault: false,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-];
+export const initialBranches: ShippingBranch[] = [];
 
 function mapDbRowToBranch(row: any): ShippingBranch {
   return {
@@ -141,14 +96,6 @@ class BranchService {
         return localBranches;
       }
 
-      // Khusus toko demo bawaan
-      if (storeId === 'store-andhika') {
-        const demoBranches = initialBranches.filter((b) => b.storeId === storeId);
-        this.saveBranches(storeId, demoBranches);
-        return demoBranches;
-      }
-
-      // Untuk akun toko baru: tidak ada gudang otomatis
       return [];
     }
 
@@ -169,9 +116,6 @@ class BranchService {
         branches[0]
       );
     }
-    if (storeId === 'store-andhika') {
-      return initialBranches[0];
-    }
     return undefined;
   }
 
@@ -180,7 +124,7 @@ class BranchService {
   ): Promise<ShippingBranch> {
     const storeId = branchData.storeId || '';
     const branches = this.getStoredBranches(storeId);
-    const newId = crypto.randomUUID ? crypto.randomUUID() : `brn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const newId = await idService.generateNextId('shipping_branches');
 
     // Jika ini cabang pertama untuk toko tersebut, jadikan default otomatis
     const isFirstBranch = branches.length === 0;
@@ -208,7 +152,7 @@ class BranchService {
       await supabase.from('shipping_branches').insert([
         {
           id: newBranch.id,
-          store_id: storeId || 'store-andhika',
+          store_id: storeId || '',
           branch_name: newBranch.branchName,
           pic_name: newBranch.picName,
           pic_phone: newBranch.picPhone,

@@ -27,6 +27,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
 
   // Form states
   const [fullName, setFullName] = useState('');
+  const [storeName, setStoreName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -40,7 +41,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
     setError(null);
 
     if (!fullName.trim()) {
-      setError('Silakan masukkan nama pemilik toko.');
+      setError('Silakan masukkan nama lengkap.');
+      return;
+    }
+
+    if (!storeName.trim()) {
+      setError('Silakan masukkan nama toko.');
       return;
     }
 
@@ -60,6 +66,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
 
       await register({
         fullName: finalName,
+        storeName: storeName.trim(),
         email: email.trim().toLowerCase(),
         phoneWhatsApp: phone.trim(),
         password: password.trim(),
@@ -193,6 +200,27 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
               </div>
             </div>
 
+            {/* Input 2: Nama Toko */}
+            <div className="space-y-1.5 text-left">
+              <label
+                htmlFor="reg-storename"
+                className="block text-xs sm:text-sm font-medium text-[#1A1110]"
+              >
+                {t('auth_store_name', 'Nama Toko')} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="reg-storename"
+                  type="text"
+                  value={storeName}
+                  onChange={(e) => setStoreName(e.target.value)}
+                  placeholder="Contoh: Toko Berkah Jaya"
+                  required
+                  className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
+                />
+              </div>
+            </div>
+
             {/* Input 3: Username / Email */}
             <div className="space-y-1.5 text-left">
               <label
@@ -230,8 +258,27 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                 <input
                   id="reg-phone"
                   type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={16}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                  onKeyDown={(e) => {
+                    if (
+                      ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Home', 'End'].includes(e.key) ||
+                      ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase()))
+                    ) {
+                      return;
+                    }
+                    if (!/^[0-9]$/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const pastedData = e.clipboardData.getData('text');
+                    setPhone(pastedData.replace(/\D/g, '').slice(0, 16));
+                  }}
                   placeholder="081234567890"
                   className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
                 />

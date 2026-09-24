@@ -328,6 +328,7 @@ export interface Store {
   planExpiresAt?: string;
   planSubscribedAt?: string;
   isPublished?: boolean;
+  isSuspended?: boolean;
   themeColor?: string;
   layoutSettings?: StoreLayoutSettings;
   customDomain?: string;

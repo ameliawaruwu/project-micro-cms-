@@ -16,6 +16,8 @@ import { formatRupiah } from '../../../utils/formatters';
 import { PlanFormState } from '../types';
 import { AdminPlanModal } from '../components/AdminPlanModal';
 
+import { Breadcrumb } from '../../../components/common/Breadcrumb';
+
 interface AdminPlansTabProps {
   isEn: boolean;
   planSubTab: 'plans' | 'invoices';
@@ -33,6 +35,7 @@ interface AdminPlansTabProps {
   planForm: PlanFormState;
   setPlanForm: React.Dispatch<React.SetStateAction<PlanFormState>>;
   handleSavePlan: (e: React.FormEvent) => void;
+  onNavigateOverview?: () => void;
 }
 
 export const AdminPlansTab: React.FC<AdminPlansTabProps> = ({
@@ -52,27 +55,34 @@ export const AdminPlansTab: React.FC<AdminPlansTabProps> = ({
   planForm,
   setPlanForm,
   handleSavePlan,
+  onNavigateOverview,
 }) => {
   return (
     <div className="space-y-4">
-      {/* Header Action Bar */}
-      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: isEn ? 'Dashboard' : 'Beranda', onClick: onNavigateOverview },
+          { label: isEn ? 'Billing Plans' : 'Paket Langganan', isActive: true },
+        ]}
+      />
+
+      {/* Page Header */}
+      <div className="pb-3 border-b border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-red-600" />
-            <h2 className="text-base font-bold text-gray-900">
-              {isEn ? 'Billing Plans Management' : 'Pengaturan Paket Langganan'}
-            </h2>
-          </div>
+          <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+            <Crown className="w-5 h-5 text-[#66000E]" />
+            <span>{isEn ? 'Billing Plans Management' : 'Paket Langganan'}</span>
+          </h1>
           <p className="text-xs text-gray-500 mt-0.5">
             {isEn
-              ? 'Manage store subscription tiers, monthly & yearly pricing, features, and platform billing history'
-              : 'Kelola paket langganan toko, harga bulanan & tahunan, fitur, dan riwayat tagihan platform'}
+              ? 'Manage store subscription tiers, monthly & yearly pricing, features, and platform billing history.'
+              : 'Kelola paket langganan toko, harga bulanan & tahunan, fitur, dan riwayat tagihan platform.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          <div className="flex bg-gray-100 p-1 rounded-md text-xs font-semibold">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap self-start sm:self-auto shrink-0">
+          <div className="flex bg-gray-100 p-1 rounded-md text-xs font-semibold border border-gray-200">
             <button
               type="button"
               onClick={() => setPlanSubTab('plans')}
@@ -100,7 +110,7 @@ export const AdminPlansTab: React.FC<AdminPlansTabProps> = ({
           <button
             type="button"
             onClick={handleOpenCreatePlan}
-            className="px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+            className="px-3 py-1.5 rounded-md bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{isEn ? 'Add New Plan' : 'Tambah Paket Baru'}</span>
@@ -297,7 +307,18 @@ export const AdminPlansTab: React.FC<AdminPlansTabProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {billingSubscriptions.map((sub) => (
+                {billingSubscriptions.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-gray-400">
+                      <Receipt className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      <p className="font-semibold text-gray-700">{isEn ? 'No subscriptions yet' : 'Belum ada riwayat langganan'}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        {isEn ? 'Store subscription invoice records from database will be displayed here.' : 'Catatan invoice langganan toko dari database akan ditampilkan di sini.'}
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  billingSubscriptions.map((sub) => (
                   <tr key={sub.id} className="hover:bg-gray-50/60 transition">
                     <td className="py-2.5 px-3.5 font-mono font-semibold text-gray-900">
                       {sub.invoiceNumber}
@@ -330,7 +351,7 @@ export const AdminPlansTab: React.FC<AdminPlansTabProps> = ({
                       })}
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>

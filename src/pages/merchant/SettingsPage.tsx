@@ -39,56 +39,79 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onShowNotification,
 }) => {
   const { t } = useLanguage();
-  const isNewStore = !store.id;
-  const storeUrl = store.slug ? `${window.location.origin}/?toko=${store.slug}` : null;
+  const isStoreNameEmpty =
+    !store ||
+    !store.id ||
+    !store.name ||
+    store.name === 'Belum Memiliki Toko' ||
+    store.name === 'Toko Baru UMKM' ||
+    store.name.trim() === '';
+  const isNewStore = !store?.id || isStoreNameEmpty;
+  const storeUrl = store?.slug ? `${window.location.origin}/?toko=${store.slug}` : null;
 
   const [formData, setFormData] = useState({
-    name: isNewStore ? '' : store.name,
-    slug: isNewStore ? '' : store.slug,
-    tagline: store.tagline || '',
-    description: store.description || '',
-    phoneWhatsApp: store.phoneWhatsApp || '',
-    category: store.category || 'UMKM & Retail',
-    address: store.address || '',
-    addressDetail: store.addressDetail || '',
-    village: store.village || store.subdistrict || '',
-    subdistrict: store.subdistrict || store.village || '',
-    district: store.district || '',
-    city: store.city || '',
-    province: store.province || '',
-    postalCode: store.postalCode || '',
-    latitude: store.latitude,
-    longitude: store.longitude,
-    logoUrl: store.logoUrl || '',
-    bannerUrl: store.bannerUrl || '',
+    name: isStoreNameEmpty ? '' : store.name,
+    slug: isStoreNameEmpty ? '' : (store.slug || ''),
+    tagline: store?.tagline || '',
+    description: store?.description || '',
+    phoneWhatsApp: store?.phoneWhatsApp || '',
+    category: store?.category || '',
+    address: store?.address || '',
+    addressDetail: store?.addressDetail || '',
+    village: store?.village || store?.subdistrict || '',
+    subdistrict: store?.subdistrict || store?.village || '',
+    district: store?.district || '',
+    city: store?.city || '',
+    province: store?.province || '',
+    postalCode: store?.postalCode || '',
+    latitude: store?.latitude,
+    longitude: store?.longitude,
+    logoUrl: store?.logoUrl || '',
+    bannerUrl: store?.bannerUrl || '',
   });
 
   // Sinkronisasi otomatis form data saat data store dari database tiba
   useEffect(() => {
-    if (store && store.id) {
-      setFormData((prev) => ({
-        ...prev,
-        name: store.name || '',
-        slug: store.slug || '',
-        tagline: store.tagline || '',
-        description: store.description || '',
-        phoneWhatsApp: store.phoneWhatsApp || '',
-        category: store.category || 'UMKM & Retail',
-        address: store.address || '',
-        addressDetail: store.addressDetail || '',
-        village: store.village || store.subdistrict || '',
-        subdistrict: store.subdistrict || store.village || '',
-        district: store.district || '',
-        city: store.city || '',
-        province: store.province || '',
-        postalCode: store.postalCode || '',
-        latitude: store.latitude,
-        longitude: store.longitude,
-        logoUrl: store.logoUrl || '',
-        bannerUrl: store.bannerUrl || '',
-      }));
-    }
-  }, [store?.id, store?.name, store?.address, store?.province, store?.city, store?.category]);
+    const isStoreEmpty =
+      !store ||
+      !store.id ||
+      !store.name ||
+      store.name === 'Belum Memiliki Toko' ||
+      store.name === 'Toko Baru UMKM' ||
+      store.name.trim() === '';
+
+    setFormData({
+      name: isStoreEmpty ? '' : (store.name || ''),
+      slug: isStoreEmpty ? '' : (store.slug || ''),
+      tagline: store?.tagline || '',
+      description: store?.description || '',
+      phoneWhatsApp: store?.phoneWhatsApp || '',
+      category: store?.category || '',
+      address: store?.address || '',
+      addressDetail: store?.addressDetail || '',
+      village: store?.village || store?.subdistrict || '',
+      subdistrict: store?.subdistrict || store?.village || '',
+      district: store?.district || '',
+      city: store?.city || '',
+      province: store?.province || '',
+      postalCode: store?.postalCode || '',
+      latitude: store?.latitude,
+      longitude: store?.longitude,
+      logoUrl: store?.logoUrl || '',
+      bannerUrl: store?.bannerUrl || '',
+    });
+  }, [
+    store?.id,
+    store?.name,
+    store?.slug,
+    store?.tagline,
+    store?.description,
+    store?.phoneWhatsApp,
+    store?.address,
+    store?.province,
+    store?.city,
+    store?.category
+  ]);
 
   // State Wilayah Indonesia Cascade Dropdown
   const [provinces, setProvinces] = useState<WilayahItem[]>([]);
@@ -459,7 +482,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const autoSlug = (store.slug && store.slug.trim()) || formData.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `toko-${Date.now()}`;
+    const cleanName = formData.name.trim();
+    const generatedSlug = cleanName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const autoSlug = generatedSlug || (store.slug && store.slug.trim()) || '';
 
     if (isNewStore && onCreateStore) {
       onCreateStore({
@@ -609,8 +637,36 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   <input
                     type="tel"
                     required
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={16}
                     value={formData.phoneWhatsApp}
-                    onChange={(e) => setFormData({ ...formData, phoneWhatsApp: e.target.value })}
+                    onChange={(e) => {
+                      const numericOnly = e.target.value.replace(/\D/g, '');
+                      setFormData({ ...formData, phoneWhatsApp: numericOnly });
+                    }}
+                    onKeyDown={(e) => {
+                      if (
+                        ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Home', 'End'].includes(e.key) ||
+                        ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase()))
+                      ) {
+                        return;
+                      }
+                      if (!/^[0-9]$/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pastedData = e.clipboardData.getData('text');
+                      const digits = pastedData.replace(/\D/g, '');
+                      const target = e.target as HTMLInputElement;
+                      const start = target.selectionStart || 0;
+                      const end = target.selectionEnd || 0;
+                      const current = formData.phoneWhatsApp;
+                      const updated = (current.substring(0, start) + digits + current.substring(end)).slice(0, 16);
+                      setFormData({ ...formData, phoneWhatsApp: updated });
+                    }}
                     placeholder="Contoh: 081234567890"
                     className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
                   />
@@ -627,6 +683,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#1F1F1F] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
                 >
+                  <option value="" disabled>-- Pilih Kategori Usaha --</option>
                   {UMKM_CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}

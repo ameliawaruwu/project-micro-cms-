@@ -2,6 +2,7 @@ import { WithdrawalRequest, WalletTransaction } from '../types';
 import { adminService } from './adminService';
 import { storeService } from './storeService';
 import { supabase } from './supabaseClient';
+import { idService } from './idService';
 
 // ============================================================
 // MERCHANT DATA ISOLATION: localStorage dipartisi per storeId
@@ -15,94 +16,6 @@ if (typeof window !== 'undefined') {
   } catch { /* ignore */ }
 }
 
-// Demo transactions hanya untuk toko bawaan (store-andhika)
-const DEMO_STORE_ID = 'store-andhika';
-const DEMO_TRANSACTIONS: WalletTransaction[] = [
-  {
-    id: 'tx-001',
-    storeId: DEMO_STORE_ID,
-    type: 'income',
-    title: 'Penjualan Pesanan #ORD-2026-1024',
-    amount: 350000,
-    referenceId: 'ORD-2026-1024',
-    status: 'completed',
-    createdAt: '2026-09-07T09:15:00Z',
-  },
-  {
-    id: 'tx-002',
-    storeId: DEMO_STORE_ID,
-    type: 'income',
-    title: 'Penjualan Pesanan #ORD-2026-1023',
-    amount: 700000,
-    referenceId: 'ORD-2026-1023',
-    status: 'completed',
-    createdAt: '2026-09-06T17:40:00Z',
-  },
-  {
-    id: 'tx-003',
-    storeId: DEMO_STORE_ID,
-    type: 'income',
-    title: 'Penjualan Pesanan #ORD-2026-1022',
-    amount: 400000,
-    referenceId: 'ORD-2026-1022',
-    status: 'completed',
-    createdAt: '2026-09-06T11:20:00Z',
-  },
-  {
-    id: 'tx-004',
-    storeId: DEMO_STORE_ID,
-    type: 'withdrawal',
-    title: 'Penarikan Dana ke BCA (8820 1928 34)',
-    amount: 500000,
-    referenceId: 'wd-prev-001',
-    status: 'completed',
-    createdAt: '2026-09-03T10:00:00Z',
-  },
-];
-
-const initialTransactions: WalletTransaction[] = [
-  {
-    id: 'tx-001',
-    storeId: 'store-andhika',
-    type: 'income',
-    title: 'Penjualan Pesanan #ORD-2026-1024',
-    amount: 350000,
-    referenceId: 'ORD-2026-1024',
-    status: 'completed',
-    createdAt: '2026-09-07T09:15:00Z',
-  },
-  {
-    id: 'tx-002',
-    storeId: 'store-andhika',
-    type: 'income',
-    title: 'Penjualan Pesanan #ORD-2026-1023',
-    amount: 700000,
-    referenceId: 'ORD-2026-1023',
-    status: 'completed',
-    createdAt: '2026-09-06T17:40:00Z',
-  },
-  {
-    id: 'tx-003',
-    storeId: 'store-andhika',
-    type: 'income',
-    title: 'Penjualan Pesanan #ORD-2026-1022',
-    amount: 400000,
-    referenceId: 'ORD-2026-1022',
-    status: 'completed',
-    createdAt: '2026-09-06T11:20:00Z',
-  },
-  {
-    id: 'tx-004',
-    storeId: 'store-andhika',
-    type: 'withdrawal',
-    title: 'Penarikan Dana ke BCA (8820 1928 34)',
-    amount: 500000,
-    referenceId: 'wd-prev-001',
-    status: 'completed',
-    createdAt: '2026-09-03T10:00:00Z',
-  },
-];
-
 class WalletService {
   private storeKey(storeId: string): string {
     return `${TRANSACTIONS_KEY_PREFIX}${storeId}`;
@@ -111,12 +24,7 @@ class WalletService {
   private getStoredTransactions(storeId: string): WalletTransaction[] {
     const raw = localStorage.getItem(this.storeKey(storeId));
     if (!raw) {
-      // Seed demo transactions hanya untuk toko bawaan
-      if (storeId === DEMO_STORE_ID) {
-        localStorage.setItem(this.storeKey(storeId), JSON.stringify(DEMO_TRANSACTIONS));
-        return DEMO_TRANSACTIONS;
-      }
-      return []; // Merchant baru mulai dari 0
+      return [];
     }
     try {
       const parsed = JSON.parse(raw);
@@ -169,7 +77,7 @@ class WalletService {
 
     // 4. Create Withdrawal Request in Admin Service
     const allWithdrawals = adminService.getWithdrawals();
-    const newId = `wd-${Date.now().toString().slice(-6)}`;
+    const newId = await idService.generateNextId('withdrawals');
     const newWithdrawal: WithdrawalRequest = {
       id: newId,
       storeId,
@@ -207,8 +115,9 @@ class WalletService {
 
     // 5. Record in Wallet Transaction History (partisi per storeId)
     const allTxs = this.getStoredTransactions(storeId);
+    const txId = await idService.generateNextId('wallet_transactions');
     const newTx: WalletTransaction = {
-      id: `tx-${Date.now()}`,
+      id: txId,
       storeId,
       type: 'withdrawal',
       title: `Penarikan Dana ke ${bankName} (${accountNumber})`,

@@ -5,6 +5,7 @@ import {
   Clock,
   ChevronRight,
   Globe,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Store, WithdrawalRequest, AdminPlatformStats } from '../../../types';
 import { formatRupiah } from '../../../utils/formatters';
@@ -29,8 +30,25 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
   setActiveTab,
   language,
 }) => {
+  const isEn = language === 'en';
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
+      {/* Page Header */}
+      <div className="pb-3 border-b border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+            <LayoutDashboard className="w-5 h-5 text-[#66000E]" />
+            <span>{isEn ? 'Platform Overview' : 'Ringkasan Platform'}</span>
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {isEn
+              ? 'Real-time platform metrics, store performance, and financial overview.'
+              : 'Metrik platform real-time, performa toko merchant, dan ringkasan operasional.'}
+          </p>
+        </div>
+      </div>
+
       {/* Domain Request Notification Banner */}
       {pendingDomainRequestsCount > 0 && (
         <div className="bg-gradient-to-r from-red-50 to-amber-50 border border-red-200 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
@@ -134,7 +152,12 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
           </div>
 
           <div className="space-y-2">
-            {withdrawals.slice(0, 3).map((w) => (
+            {withdrawals.length === 0 ? (
+              <div className="py-6 text-center text-gray-400 text-xs">
+                {language === 'en' ? 'No payout requests yet.' : 'Belum ada pengajuan pencairan dana.'}
+              </div>
+            ) : (
+              withdrawals.slice(0, 3).map((w) => (
               <div
                 key={w.id}
                 className="flex items-center justify-between p-2.5 rounded-md bg-gray-50/70 border border-gray-100"
@@ -168,7 +191,7 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
                   </span>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
 

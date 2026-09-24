@@ -49,10 +49,15 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   // Step 1 Form Data
-  const [storeName, setStoreName] = useState(currentStore.name || '');
-  const [storeSlug, setStoreSlug] = useState(currentStore.slug || '');
+  const isStoreEmpty =
+    !currentStore.name ||
+    currentStore.name === 'Belum Memiliki Toko' ||
+    currentStore.name === 'Toko Baru UMKM' ||
+    currentStore.name.startsWith('Toko ');
+  const [storeName, setStoreName] = useState(isStoreEmpty ? '' : currentStore.name);
+  const [storeSlug, setStoreSlug] = useState(isStoreEmpty ? '' : (currentStore.slug || ''));
   const [category, setCategory] = useState(currentStore.category || 'Kuliner & Minuman');
-  const [tagline, setTagline] = useState(currentStore.tagline || 'Katalog online resmi toko UMKM.');
+  const [tagline, setTagline] = useState(isStoreEmpty ? '' : (currentStore.tagline || ''));
   const [phoneWhatsApp, setPhoneWhatsApp] = useState(currentStore.phoneWhatsApp || '');
 
   // Step 2 Template Selection
@@ -71,7 +76,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
       .trim()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
-    setStoreSlug(autoSlug || 'toko-saya');
+    setStoreSlug(autoSlug);
   };
 
   // Generation Simulator Effect
@@ -288,9 +293,28 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                   <div className="relative">
                     <MessageCircle className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
-                      type="text"
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={16}
                       value={phoneWhatsApp}
-                      onChange={(e) => setPhoneWhatsApp(e.target.value)}
+                      onChange={(e) => setPhoneWhatsApp(e.target.value.replace(/\D/g, ''))}
+                      onKeyDown={(e) => {
+                        if (
+                          ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Home', 'End'].includes(e.key) ||
+                          ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase()))
+                        ) {
+                          return;
+                        }
+                        if (!/^[0-9]$/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pastedData = e.clipboardData.getData('text');
+                        setPhoneWhatsApp(pastedData.replace(/\D/g, '').slice(0, 16));
+                      }}
                       placeholder="081234567890"
                       className="w-full pl-9 pr-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-red-600 font-mono"
                     />

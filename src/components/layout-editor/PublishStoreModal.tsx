@@ -80,11 +80,17 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   // Function to generate creative, catchy subdomains based on store name
   const generateNewSubdomain = (storeName: string): string => {
-    const cleanName = (storeName || 'toko')
+    if (!storeName || !storeName.trim() || storeName === 'Belum Memiliki Toko' || storeName === 'Toko Baru UMKM') {
+      return '';
+    }
+
+    const cleanName = storeName
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '-')
       .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '') || 'toko';
+      .replace(/^-|-$/g, '');
+
+    if (!cleanName) return '';
 
     const tags = ['id', 'store', 'official', 'pro', 'shop', 'mart', 'jaya', 'hub', 'outlet', 'berkah', 'ku'];
     const randomTag = tags[Math.floor(Math.random() * tags.length)];
@@ -121,9 +127,10 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
     setTerminalLogs([]);
 
     // Set initial random subdomain based on existing slug or generated
-    const initialSlug = store.slug && !store.slug.startsWith('store-')
-      ? store.slug
-      : generateNewSubdomain(store.name);
+    const hasName = !!(store.name && store.name.trim() && store.name !== 'Belum Memiliki Toko' && store.name !== 'Toko Baru UMKM');
+    const initialSlug = hasName
+      ? (store.slug && !store.slug.startsWith('store-') ? store.slug : generateNewSubdomain(store.name))
+      : '';
     setRandomSubdomain(initialSlug);
 
     domainRequestService.getRequestByStore(store.id).then((req) => {
@@ -360,7 +367,9 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                       </span>
                     </div>
                     <p className="text-[11px] text-gray-500 truncate mt-0.5 font-mono">
-                      https://{randomSubdomain || store.slug}.{selectedBaseDomain}
+                      {randomSubdomain || store.slug
+                        ? `https://${randomSubdomain || store.slug}.${selectedBaseDomain}`
+                        : `https://[nama-toko].${selectedBaseDomain}`}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-1">
                       Bisa diacak ulang (regenerate) di tahap konfirmasi berikutnya.
