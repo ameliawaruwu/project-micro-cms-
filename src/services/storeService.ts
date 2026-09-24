@@ -325,21 +325,29 @@ class StoreService {
       if (updates.balance !== undefined) dbUpdates.balance = updates.balance;
       if (updates.customDomain !== undefined) dbUpdates.custom_domain = updates.customDomain;
       if (updates.isPublished !== undefined) dbUpdates.is_published = updates.isPublished;
-      
-      const combinedThemeSettings = {
-        ...(stores[index].layoutSettings || {}),
-        ...(updates.layoutSettings || {}),
-        ...(updates.planExpiresAt ? { planExpiresAt: updates.planExpiresAt } : {}),
-        ...(updates.planSubscribedAt ? { planSubscribedAt: updates.planSubscribedAt } : {}),
-      };
-      // Keep theme_settings clean of store publication column
-      delete (combinedThemeSettings as any).isPublished;
-      dbUpdates.theme_settings = combinedThemeSettings;
-      stores[index].layoutSettings = combinedThemeSettings;
-      await supabase.from('stores').update(dbUpdates).eq('id', storeId);
-      console.log(`[Supabase Database] Toko ${storeId} berhasil diperbarui di cloud. is_published = ${updates.isPublished}`);
+
+      // Only include theme_settings when layout is explicitly being changed
+      // (avoids oversized payload on publish-only or metadata-only updates)
+      if (updates.layoutSettings !== undefined || updates.planExpiresAt !== undefined || updates.planSubscribedAt !== undefined) {
+        const combinedThemeSettings = {
+          ...(stores[index].layoutSettings || {}),
+          ...(updates.layoutSettings || {}),
+          ...(updates.planExpiresAt ? { planExpiresAt: updates.planExpiresAt } : {}),
+          ...(updates.planSubscribedAt ? { planSubscribedAt: updates.planSubscribedAt } : {}),
+        };
+        delete (combinedThemeSettings as any).isPublished;
+        dbUpdates.theme_settings = combinedThemeSettings;
+        stores[index].layoutSettings = combinedThemeSettings;
+      }
+
+      const { error: supaErr } = await supabase.from('stores').update(dbUpdates).eq('id', storeId);
+      if (supaErr) {
+        console.error(`[Supabase] updateStore error for ${storeId}:`, supaErr.message, supaErr.details);
+      } else {
+        console.log(`[Supabase] Toko ${storeId} berhasil diperbarui. is_published=${updates.isPublished}`);
+      }
     } catch (err) {
-      console.warn('Supabase store update notice:', err);
+      console.warn('[Supabase] updateStore network error:', err);
     }
 
     // Update active auth session store in localStorage so changes persist across reload
@@ -364,6 +372,63 @@ class StoreService {
     } catch (e) {}
 
     return stores[index];
+  }
+
+  /**
+   * Publish atau unpublish toko: update HANYA kolom is_published di Supabase.
+   * Tidak menyertakan theme_settings agar payload kecil dan update pasti berhasil.
+   */
+  async setPublishedStatus(storeId: string, isPublished: boolean): Promise<Store> {
+    if (!storeId) throw new Error('storeId diperlukan');
+
+    // 1. Supabase-first: update langsung di database
+    const { error: supaErr } = await supabase
+      .from('stores')
+      .update({ is_published: isPublished, updated_at: getWibIsoString() })
+      .eq('id', storeId);
+
+    if (supaErr) {
+      console.error('[Supabase] setPublishedStatus error:', supaErr.message);
+      throw new Error(`Gagal ${isPublished ? 'mempublikasikan' : 'membatalkan publikasi'} toko: ${supaErr.message}`);
+    }
+
+    console.log(`[Supabase] Toko ${storeId} is_published diset ke ${isPublished}`);
+
+    // 2. Sync ke localStorage
+    const stores = this.getStoredStores();
+    const index = stores.findIndex((s) => s.id === storeId);
+    if (index !== -1) {
+      stores[index] = { ...stores[index], isPublished };
+      this.saveStores(stores);
+
+      // Update auth store cache
+      try {
+        const authStr = localStorage.getItem('microcms_auth_store');
+        if (authStr) {
+          const parsed = JSON.parse(authStr);
+          if (parsed.id === storeId) {
+            localStorage.setItem('microcms_auth_store', JSON.stringify(stores[index]));
+          }
+        }
+      } catch (e) {}
+
+      // Broadcast ke semua tab
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          const bc = new BroadcastChannel('microcms_store_sync');
+          bc.postMessage({ type: 'STORE_UPDATED', store: stores[index] });
+          bc.close();
+        }
+        window.dispatchEvent(new CustomEvent('microcms_store_updated', { detail: stores[index] }));
+      } catch (e) {}
+
+      return stores[index];
+    }
+
+    // Jika tidak ada di localStorage, fetch ulang dari Supabase
+    const fresh = await this.getStoreBySlug(storeId);
+    if (fresh) return fresh;
+    throw new Error('Toko tidak ditemukan setelah update');
   }
 
   async createStore(data: Partial<Store>): Promise<Store> {

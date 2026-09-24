@@ -1143,7 +1143,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       if (onUnpublishStore) {
         await onUnpublishStore();
       } else {
-        await storeService.updateStore(currentStore.id, { isPublished: false });
+        await storeService.setPublishedStatus(currentStore.id, false);
       }
 
       setCurrentStore((prev) => ({ ...prev, isPublished: false }));

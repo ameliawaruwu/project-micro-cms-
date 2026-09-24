@@ -975,13 +975,13 @@ export default function App() {
     const targetId = storeId || activeStore?.id || currentStore?.id;
     if (!targetId) return;
     try {
-      const updated = await storeService.updateStore(targetId, { isPublished: true });
+      const updated = await storeService.setPublishedStatus(targetId, true);
       setActiveStore(updated);
       setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
       addToast('🎉 Selamat! Toko online Anda resmi dipublikasikan dan live!');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error publishing store:', err);
-      addToast('Gagal mempublikasikan toko.', 'error');
+      addToast(err?.message || 'Gagal mempublikasikan toko.', 'error');
     }
   };
 
@@ -989,13 +989,13 @@ export default function App() {
     const targetId = storeId || activeStore?.id || currentStore?.id;
     if (!targetId) return;
     try {
-      const updated = await storeService.updateStore(targetId, { isPublished: false });
+      const updated = await storeService.setPublishedStatus(targetId, false);
       setActiveStore(updated);
       setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
       addToast('Toko online berhasil di-unpublish (kembali menjadi draf).', 'info');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error unpublishing store:', err);
-      addToast('Gagal membatalkan publikasi toko.', 'error');
+      addToast(err?.message || 'Gagal membatalkan publikasi toko.', 'error');
     }
   };
 
