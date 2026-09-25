@@ -1615,6 +1615,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             isOpen={isPublishModalOpen}
             onClose={() => setIsPublishModalOpen(false)}
             store={currentStore}
+            products={displayProducts}
             onNavigateBilling={onNavigateBilling}
             onNavigateDomain={onNavigateDomain}
             onPublish={() => {

@@ -33,13 +33,14 @@ export class SitePackager {
     const indexPath = path.join(siteDir, 'index.html');
 
     try {
-      // 1. Pastikan folder engine dist ada (jika belum, salin dari dist CMS utama)
-      if (!fs.existsSync(path.join(this.engineDistDir, 'index.html'))) {
+      // 1. Pastikan folder engine dist selalu tersinkron dari dist CMS utama
+      const sourceDist = path.resolve(process.cwd(), 'dist');
+      if (fs.existsSync(sourceDist) && fs.existsSync(path.join(sourceDist, 'index.html'))) {
         fs.mkdirSync(this.engineDistDir, { recursive: true });
-        const sourceDist = path.resolve(process.cwd(), 'dist');
-        if (fs.existsSync(sourceDist)) {
-          await execAsync(`cp -r "${sourceDist}"/* "${this.engineDistDir}"/`);
-        }
+        await execAsync(`cp -r "${sourceDist}"/* "${this.engineDistDir}"/`);
+        await execAsync(`chmod -R a+rX "${this.engineDistDir}"`);
+      } else if (!fs.existsSync(path.join(this.engineDistDir, 'index.html'))) {
+        throw new Error('Berkas template engine dist tidak ditemukan di ' + sourceDist);
       }
 
       // 2. Buat folder situs target
@@ -51,14 +52,21 @@ export class SitePackager {
 
       // 4. Buat symlink assets ke engine bersama (menghemat storage NAS)
       const siteAssetsSymlink = path.join(siteDir, 'assets');
-      if (!fs.existsSync(siteAssetsSymlink)) {
-        try {
+      try {
+        const stat = fs.lstatSync(siteAssetsSymlink);
+        if (stat.isSymbolicLink() && !fs.existsSync(siteAssetsSymlink)) {
+          fs.unlinkSync(siteAssetsSymlink);
           fs.symlinkSync('../../engine/dist/assets', siteAssetsSymlink);
-        } catch {
-          // Jika symlink relatif gagal, coba salin atau symlink absolut
+        }
+      } catch (e: any) {
+        if (e.code === 'ENOENT') {
           try {
-            fs.symlinkSync(path.join(this.engineDistDir, 'assets'), siteAssetsSymlink);
-          } catch {}
+            fs.symlinkSync('../../engine/dist/assets', siteAssetsSymlink);
+          } catch {
+            try {
+              fs.symlinkSync(path.join(this.engineDistDir, 'assets'), siteAssetsSymlink);
+            } catch {}
+          }
         }
       }
 
@@ -69,6 +77,15 @@ export class SitePackager {
           fs.linkSync(logoIcon, path.join(siteDir, 'Logo-Icon.png'));
         } catch {
           fs.copyFileSync(logoIcon, path.join(siteDir, 'Logo-Icon.png'));
+        }
+      }
+
+      const logoMain = path.join(this.engineDistDir, 'Logo.png');
+      if (fs.existsSync(logoMain) && !fs.existsSync(path.join(siteDir, 'Logo.png'))) {
+        try {
+          fs.linkSync(logoMain, path.join(siteDir, 'Logo.png'));
+        } catch {
+          fs.copyFileSync(logoMain, path.join(siteDir, 'Logo.png'));
         }
       }
 

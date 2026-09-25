@@ -52,6 +52,7 @@ import { integrationService } from './services/integrationService';
 import { cartService } from './services/cartService';
 import { formatRupiah } from './utils/formatters';
 import { getStoreSections } from './utils/layoutConstants';
+import { isPlatformHost, getStoreSlugFromHost } from './utils/domainRouting';
 
 // Layout & Common Components
 import { Sidebar } from './components/layout/Sidebar';
@@ -142,6 +143,16 @@ export default function App() {
   const [stores, setStores] = useState<Store[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(() => {
     if (typeof window !== 'undefined') {
+      // 0. Cek Injected Store dari SitePackager (Production Live Storefront)
+      const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
+      if (injectedStore && (injectedStore.id || injectedStore.slug)) {
+        if (injectedStore.layoutSettings?.activeThemeId) {
+          const normalizedTheme = normalizeThemeId(injectedStore.layoutSettings.activeThemeId);
+          useCmsStore.getState().loadThemeData(normalizedTheme);
+        }
+        return injectedStore;
+      }
+
       const searchParams = new URLSearchParams(window.location.search);
       if (searchParams.get('preview') === 'true') {
         try {
@@ -166,6 +177,17 @@ export default function App() {
   // Inisialisasi viewMode langsung dari session tersimpan untuk mencegah flicker Landing Page saat reload
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== 'undefined') {
+      const injectedSlug = (window as any).__KROOMIFY_STORE_SLUG__;
+      const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
+      if (injectedSlug || injectedStore) {
+        return 'storefront-live';
+      }
+
+      const hostSlug = getStoreSlugFromHost(window.location.hostname);
+      if (hostSlug) {
+        return 'storefront-live';
+      }
+
       const searchParams = new URLSearchParams(window.location.search);
       const isPreview = searchParams.get('preview') === 'true';
       const toko = searchParams.get('toko') || searchParams.get('store');
@@ -187,7 +209,8 @@ export default function App() {
         'profile', 'profil',
         'thank_you', 'terima-kasih'
       ];
-      const isKnownRoute = KNOWN_PAGE_ROUTES.includes(pathSlug.toLowerCase());
+      // Hanya anggap sebagai rute toko jika ada parameter toko spesifik atau bukan di platform utama
+      const isKnownRoute = Boolean(toko) && KNOWN_PAGE_ROUTES.includes(pathSlug.toLowerCase());
 
       if (isPreview || mode === 'storefront' || mode === 'storefront-live' || toko || isKnownRoute) {
         return 'storefront-live';
@@ -200,12 +223,20 @@ export default function App() {
     }
     return 'landing';
   });
+  const [isStoreLoading, setIsStoreLoading] = useState<boolean>(true);
+  const [storeNotFound, setStoreNotFound] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // State: Core Data
   const [products, setProducts] = useState<Product[]>(() => {
     if (typeof window !== 'undefined') {
+      const injectedProds = (window as any).__KROOMIFY_INITIAL_PRODUCTS__;
+      if (Array.isArray(injectedProds) && injectedProds.length > 0) {
+        useCmsStore.getState().setProductsFromMerchant(injectedProds as any);
+        return injectedProds;
+      }
+
       const searchParams = new URLSearchParams(window.location.search);
       if (searchParams.get('preview') === 'true') {
         try {
@@ -332,29 +363,85 @@ export default function App() {
       if (!user) {
         if (viewMode.startsWith('merchant') || viewMode === 'admin') {
           setActiveStore(EMPTY_STORE);
+          setIsStoreLoading(false);
           return;
         }
-        const params = new URLSearchParams(window.location.search);
-        const tokoParam = params.get('toko') || params.get('store');
-        const allStores = await storeService.getStores();
-        let selectedStore: Store | undefined;
-        if (tokoParam) {
-          selectedStore = await storeService.getStoreBySlug(tokoParam);
-        } else {
-          selectedStore = allStores[0];
+
+        // Cek jika ada preloaded store dari site packager
+        const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
+        const injectedProducts = (window as any).__KROOMIFY_INITIAL_PRODUCTS__;
+        if (injectedStore && (injectedStore.id || injectedStore.slug)) {
+          setActiveStore(injectedStore);
+          setStores([injectedStore]);
+          if (Array.isArray(injectedProducts) && injectedProducts.length > 0) {
+            setProducts(injectedProducts);
+            useCmsStore.getState().setProductsFromMerchant(injectedProducts as any);
+          } else if (injectedStore.id) {
+            const storeProducts = await productService.getProductsByStore(injectedStore.id);
+            setProducts(storeProducts);
+            useCmsStore.getState().setProductsFromMerchant(storeProducts);
+          }
+          const initialCart = cartService.getCart(injectedStore.slug);
+          setCartItems(initialCart);
+          setIsStoreLoading(false);
+          return;
         }
 
-        if (selectedStore) {
+        const params = new URLSearchParams(window.location.search);
+        let tokoParam = params.get('toko') || params.get('store');
+        if (!tokoParam && typeof window !== 'undefined') {
+          tokoParam = getStoreSlugFromHost(window.location.hostname) || undefined;
+        }
+
+        // JIKA HOST ADALAH PLATFORM UTAMA (kroomify.kroombox.com / localhost) DAN TANPA PARAMETER TOKO:
+        // Tetap di landing page, JANGAN muat allStores[0] sebagai activeStore!
+        if (!tokoParam && (viewMode === 'landing' || isPlatformHost(window.location.hostname))) {
+          setActiveStore(EMPTY_STORE);
+          setIsStoreLoading(false);
+          return;
+        }
+
+        if (tokoParam) {
+          const selectedStore = await storeService.getStoreBySlug(tokoParam);
+          if (selectedStore) {
+            setActiveStore(selectedStore);
+            setStores([selectedStore]);
+
+            const [storeProducts, storeOrders, storeIntegrations] = await Promise.all([
+              productService.getProductsByStore(selectedStore.id),
+              orderService.getOrdersByStore(selectedStore.id),
+              integrationService.getIntegrations(),
+            ]);
+            const initialCart = cartService.getCart(selectedStore.slug);
+
+            setProducts(storeProducts);
+            setOrders(storeOrders);
+            setIntegrations(storeIntegrations);
+            setCartItems(initialCart);
+            setIsStoreLoading(false);
+          } else {
+            setActiveStore(EMPTY_STORE);
+            setStores([]);
+            setProducts([]);
+            setOrders([]);
+            setIsStoreLoading(false);
+            setStoreNotFound(true);
+          }
+          return;
+        }
+
+        // Fallback untuk development lokal tanpa domain khusus
+        const allStores = await storeService.getStores();
+        if (allStores && allStores.length > 0 && !isPlatformHost(window.location.hostname)) {
+          const selectedStore = allStores[0];
           setActiveStore(selectedStore);
           setStores(allStores);
-
           const [storeProducts, storeOrders, storeIntegrations] = await Promise.all([
             productService.getProductsByStore(selectedStore.id),
             orderService.getOrdersByStore(selectedStore.id),
             integrationService.getIntegrations(),
           ]);
           const initialCart = cartService.getCart(selectedStore.slug);
-
           setProducts(storeProducts);
           setOrders(storeOrders);
           setIntegrations(storeIntegrations);
@@ -365,6 +452,7 @@ export default function App() {
           setProducts([]);
           setOrders([]);
         }
+        setIsStoreLoading(false);
         return;
       }
 
@@ -410,6 +498,8 @@ export default function App() {
       }
     } catch (err) {
       console.error('Error loading store data:', err);
+    } finally {
+      setIsStoreLoading(false);
     }
   };
 
@@ -435,15 +525,19 @@ export default function App() {
       'thank_you', 'terima-kasih'
     ];
 
-    const isKnownRoute = pathSlug ? KNOWN_PAGE_ROUTES.includes(pathSlug.toLowerCase()) : false;
-    const storeSlugFromPath = (pathSlug && !isKnownRoute) ? pathSlug : null;
-    const tokoParam = params.get('toko') || params.get('store') || storeSlugFromPath;
+    const hostStoreSlug = getStoreSlugFromHost(window.location.hostname);
+    let tokoParam = params.get('toko') || params.get('store') || hostStoreSlug || (window as any).__KROOMIFY_STORE_SLUG__;
+    const storeSlugFromPath = (pathSlug && !KNOWN_PAGE_ROUTES.includes(pathSlug.toLowerCase())) ? pathSlug : null;
+    if (!tokoParam && storeSlugFromPath && !isPlatformHost(window.location.hostname)) {
+      tokoParam = storeSlugFromPath;
+    }
+    const isKnownRoute = Boolean(tokoParam) && (pathSlug ? KNOWN_PAGE_ROUTES.includes(pathSlug.toLowerCase()) : false);
     const modeParam = params.get('mode') || params.get('view');
     const previewThemeParam = params.get('previewTheme');
     const editThemeParam = params.get('editTheme');
 
     // If accessing root auth paths without store parameter, open platform merchant auth (red screen)
-    if (!tokoParam && pathSlug) {
+    if (!tokoParam && pathSlug && isPlatformHost(window.location.hostname)) {
       const lowerSlug = pathSlug.toLowerCase();
       if (lowerSlug === 'register' || lowerSlug === 'daftar') {
         setAuthView('register');
@@ -467,6 +561,7 @@ export default function App() {
           setActiveStore(match);
           setActiveTab('layout');
           setViewMode('merchant-desktop');
+          setIsStoreLoading(false);
         });
       } else {
         storeService.getStores().then((all) => {
@@ -477,6 +572,7 @@ export default function App() {
           setActiveStore(match);
           setActiveTab('layout');
           setViewMode('merchant-desktop');
+          setIsStoreLoading(false);
         });
       }
       return;
@@ -518,6 +614,7 @@ export default function App() {
               setProducts(initialProducts.length > 0 ? initialProducts : storeProducts);
               setOrders(storeOrders);
               setCartItems(initialCart);
+              setIsStoreLoading(false);
             });
             return;
           }
@@ -545,28 +642,40 @@ export default function App() {
             setProducts(storeProducts);
             setOrders(storeOrders);
             setCartItems(initialCart);
+            setIsStoreLoading(false);
+          } else {
+            setActiveStore(EMPTY_STORE);
+            setIsStoreLoading(false);
+            setStoreNotFound(true);
           }
         });
       } else {
-        // Fallback to active store or default store for buyer storefront routes without explicit toko param
-        const loggedUser = authService.getCurrentUser().user;
-        if (loggedUser) {
-          // If a merchant is logged in, do not force another merchant's store as fallback
-          return;
-        }
-        storeService.getStores().then(async (allStores) => {
-          const targetStore = activeStore || allStores[0] || null;
-          if (targetStore) {
-            setActiveStore(targetStore);
-            const [storeProducts, storeOrders] = await Promise.all([
-              productService.getProductsByStore(targetStore.id),
-              orderService.getOrdersByStore(targetStore.id),
-            ]);
-            setProducts(storeProducts);
-            setOrders(storeOrders);
+        // Fallback hanya jika bukan host platform
+        if (!isPlatformHost(window.location.hostname)) {
+          const loggedUser = authService.getCurrentUser().user;
+          if (!loggedUser) {
+            storeService.getStores().then(async (allStores) => {
+              const targetStore = activeStore || allStores[0] || null;
+              if (targetStore) {
+                setActiveStore(targetStore);
+                const [storeProducts, storeOrders] = await Promise.all([
+                  productService.getProductsByStore(targetStore.id),
+                  orderService.getOrdersByStore(targetStore.id),
+                ]);
+                setProducts(storeProducts);
+                setOrders(storeOrders);
+              }
+              setIsStoreLoading(false);
+            });
+          } else {
+            setIsStoreLoading(false);
           }
-        });
+        } else {
+          setIsStoreLoading(false);
+        }
       }
+    } else {
+      setIsStoreLoading(false);
     }
   }, []);
 
@@ -1401,8 +1510,8 @@ export default function App() {
         const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
         const isPublished = Boolean(currentStore?.isPublished);
 
-        // Jika store belum terbaca (masih memuat draft/data) — tampilkan loading spinner
-        if (!currentStore?.id) {
+        // Jika store belum terbaca dan masih dalam status loading
+        if (!currentStore?.id && isStoreLoading && !storeNotFound) {
           return (
             <div className="flex items-center justify-center min-h-screen bg-white">
               <div className="flex flex-col items-center gap-3 text-gray-400">
@@ -1410,6 +1519,29 @@ export default function App() {
                 <span className="text-sm font-medium">Memuat toko...</span>
               </div>
             </div>
+          );
+        }
+
+        // Jika store tidak ditemukan atau gagal dimuat (mencegah loading terus menerus)
+        if (!currentStore?.id || storeNotFound) {
+          const hostSlug = getStoreSlugFromHost(window.location.hostname);
+          const currentUrlSlug = new URLSearchParams(window.location.search).get('toko') || hostSlug || 'toko';
+          return (
+            <StoreNotFoundPage
+              store={currentStore}
+              slug={currentUrlSlug}
+              isOwner={false}
+              isAdmin={false}
+              onGoToDashboard={() => {
+                if (isPlatformHost(window.location.hostname)) {
+                  setViewMode(user ? (user.role === 'admin' ? 'admin' : 'merchant-desktop') : 'landing');
+                } else {
+                  window.location.href = 'https://kroomify.kroombox.com';
+                }
+              }}
+              onGoToAdmin={() => setViewMode('admin')}
+              onPublishStore={() => {}}
+            />
           );
         }
 

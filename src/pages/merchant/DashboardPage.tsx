@@ -96,7 +96,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           {store.slug && store.id && Boolean(store.isPublished) && (
             <a
-              href={store.customDomain ? `https://${store.customDomain}` : `${window.location.origin}/?toko=${store.slug}`}
+              href={store.customDomain ? `https://${store.customDomain}` : `https://${store.slug}.kroombox.com`}
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-1.5 rounded-xl bg-[#F5E8EA] hover:bg-[#F9EDEF] border border-[#E8DDDE] text-[#66000E] text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"

@@ -46,8 +46,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     store.name === 'Belum Memiliki Toko' ||
     store.name === 'Toko Baru UMKM' ||
     store.name.trim() === '';
-  const isNewStore = !store?.id || isStoreNameEmpty;
-  const storeUrl = store?.slug ? `${window.location.origin}/?toko=${store.slug}` : null;
+  const storeUrl = store?.slug
+    ? (store.customDomain ? `https://${store.customDomain}` : `https://${store.slug}.kroombox.com`)
+    : null;
 
   const [formData, setFormData] = useState({
     name: isStoreNameEmpty ? '' : store.name,

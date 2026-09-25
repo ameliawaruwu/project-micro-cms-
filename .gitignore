@@ -4,5 +4,8 @@ dist/
 coverage/
 .DS_Store
 *.log
+deploy_log.txt
+releases/
+current
 .env*
 !.env.example

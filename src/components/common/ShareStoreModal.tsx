@@ -96,8 +96,7 @@ export const ShareStoreModal: React.FC<ShareStoreModalProps> = ({
             href={storeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => {
-              e.preventDefault();
+            onClick={() => {
               onClose();
               onShowNotification(t('opening_online_store', 'Membuka toko online...'));
             }}

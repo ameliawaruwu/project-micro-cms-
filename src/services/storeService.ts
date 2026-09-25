@@ -257,7 +257,7 @@ class StoreService {
       const { data, error } = await supabase
         .from('stores')
         .select('*')
-        .or(`slug.ilike.${clean},id.eq.${clean}`)
+        .or(`slug.ilike.${clean},id.eq.${clean},custom_domain.ilike.${clean}`)
         .limit(1);
 
       if (!error && data && data.length > 0) {
