@@ -254,11 +254,21 @@ class StoreService {
 
     // 1. Fetch live from Supabase cloud so status is 100% synchronized across devices/browsers
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('stores')
         .select('*')
         .or(`slug.ilike.${clean},id.eq.${clean},custom_domain.ilike.${clean}`)
         .limit(1);
+
+      if (error) {
+        const fallback = await supabase
+          .from('stores')
+          .select('*')
+          .or(`slug.ilike.${clean},id.eq.${clean}`)
+          .limit(1);
+        data = fallback.data;
+        error = fallback.error;
+      }
 
       if (!error && data && data.length > 0) {
         const row = data[0];

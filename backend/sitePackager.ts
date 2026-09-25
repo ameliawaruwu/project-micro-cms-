@@ -46,8 +46,13 @@ export class SitePackager {
       // 2. Buat folder situs target
       fs.mkdirSync(siteDir, { recursive: true });
 
-      // 3. Tulis file JSON data toko & produk
-      fs.writeFileSync(path.join(siteDir, 'store.json'), JSON.stringify(store, null, 2), 'utf8');
+      // 3. Tulis file JSON data toko & produk (Pastikan status terbit selalu true saat dipublikasikan)
+      const storeWithPublish = {
+        ...store,
+        isPublished: true,
+        is_published: true,
+      };
+      fs.writeFileSync(path.join(siteDir, 'store.json'), JSON.stringify(storeWithPublish, null, 2), 'utf8');
       fs.writeFileSync(path.join(siteDir, 'products.json'), JSON.stringify(products, null, 2), 'utf8');
 
       // 4. Buat symlink assets ke engine bersama (menghemat storage NAS)
@@ -100,7 +105,7 @@ export class SitePackager {
         .replace(/>/g, '&gt;');
 
       // Sanitasi data toko & produk agar aman dari XSS injection di script tag
-      const safeStoreJson = JSON.stringify(store).replace(/</g, '\\u003c');
+      const safeStoreJson = JSON.stringify(storeWithPublish).replace(/</g, '\\u003c');
       const safeProductsJson = JSON.stringify(products).replace(/</g, '\\u003c');
 
       const injectedScript = `
@@ -133,8 +138,12 @@ export class SitePackager {
         );
       }
 
-      // Inject Script sebelum </head>
-      customizedHtml = customizedHtml.replace(/<\/head>/i, `${injectedScript}\n</head>`);
+      // Inject Script tepat di awal <head> agar dijalankan sebelum script module apa pun
+      if (customizedHtml.includes('<head>')) {
+        customizedHtml = customizedHtml.replace(/<head>/i, `<head>\n${injectedScript}`);
+      } else {
+        customizedHtml = customizedHtml.replace(/<\/head>/i, `${injectedScript}\n</head>`);
+      }
 
       // Tulis index.html toko
       fs.writeFileSync(indexPath, customizedHtml, 'utf8');

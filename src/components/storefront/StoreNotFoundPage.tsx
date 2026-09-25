@@ -33,9 +33,9 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
   onGoToAdmin,
   onPublishStore,
 }) => {
-  const isUnpublished = store && !store.isPublished;
-  const storeName = store?.name || (slug ? `Toko (${slug})` : 'Toko Online');
+  const isUnpublished = Boolean(store && store.id && !store.isPublished);
   const storeSlug = store?.slug || slug || '';
+  const storeName = store?.name || (storeSlug ? `Toko (${storeSlug})` : 'Toko Online');
   const phoneWhatsApp = store?.phoneWhatsApp?.replace(/[^0-9]/g, '') || '';
 
   return (

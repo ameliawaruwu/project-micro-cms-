@@ -360,29 +360,33 @@ export default function App() {
       return;
     }
     try {
+      // 0. Cek jika ada preloaded store dari site packager (Prioritaskan selalu di awal agar storefront instan termuat tanpa flicker)
+      const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
+      const injectedProducts = (window as any).__KROOMIFY_INITIAL_PRODUCTS__;
+      if (injectedStore && (injectedStore.id || injectedStore.slug)) {
+        const hydratedStore: Store = {
+          ...injectedStore,
+          isPublished: injectedStore.isPublished !== undefined ? Boolean(injectedStore.isPublished) : (injectedStore.is_published !== undefined ? Boolean(injectedStore.is_published) : true),
+        };
+        setActiveStore(hydratedStore);
+        setStores([hydratedStore]);
+        if (Array.isArray(injectedProducts) && injectedProducts.length > 0) {
+          setProducts(injectedProducts);
+          useCmsStore.getState().setProductsFromMerchant(injectedProducts as any);
+        } else if (hydratedStore.id) {
+          const storeProducts = await productService.getProductsByStore(hydratedStore.id);
+          setProducts(storeProducts);
+          useCmsStore.getState().setProductsFromMerchant(storeProducts);
+        }
+        const initialCart = cartService.getCart(hydratedStore.slug);
+        setCartItems(initialCart);
+        setIsStoreLoading(false);
+        return;
+      }
+
       if (!user) {
         if (viewMode.startsWith('merchant') || viewMode === 'admin') {
           setActiveStore(EMPTY_STORE);
-          setIsStoreLoading(false);
-          return;
-        }
-
-        // Cek jika ada preloaded store dari site packager
-        const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
-        const injectedProducts = (window as any).__KROOMIFY_INITIAL_PRODUCTS__;
-        if (injectedStore && (injectedStore.id || injectedStore.slug)) {
-          setActiveStore(injectedStore);
-          setStores([injectedStore]);
-          if (Array.isArray(injectedProducts) && injectedProducts.length > 0) {
-            setProducts(injectedProducts);
-            useCmsStore.getState().setProductsFromMerchant(injectedProducts as any);
-          } else if (injectedStore.id) {
-            const storeProducts = await productService.getProductsByStore(injectedStore.id);
-            setProducts(storeProducts);
-            useCmsStore.getState().setProductsFromMerchant(storeProducts);
-          }
-          const initialCart = cartService.getCart(injectedStore.slug);
-          setCartItems(initialCart);
           setIsStoreLoading(false);
           return;
         }
@@ -624,9 +628,22 @@ export default function App() {
       }
 
       if (tokoParam) {
+        // Cek dulu apakah data store yang diinjeksi sudah cocok untuk slug ini
+        const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
+        if (injectedStore && (injectedStore.slug?.toLowerCase() === tokoParam.toLowerCase() || injectedStore.id === tokoParam)) {
+          const hydratedStore: Store = {
+            ...injectedStore,
+            isPublished: injectedStore.isPublished !== undefined ? Boolean(injectedStore.isPublished) : (injectedStore.is_published !== undefined ? Boolean(injectedStore.is_published) : true),
+          };
+          setActiveStore(hydratedStore);
+          setIsStoreLoading(false);
+          setStoreNotFound(false);
+        }
+
         storeService.getStoreBySlug(tokoParam).then(async (targetStore) => {
           if (targetStore) {
             setActiveStore(targetStore);
+            setStoreNotFound(false);
             // Load theme data if in preview mode (no draft was found in localStorage)
             if (new URLSearchParams(window.location.search).get('preview') === 'true') {
               const rawTheme = (targetStore.layoutSettings as any)?.activeThemeId || targetStore.layoutSettings?.themeStyle;
@@ -644,9 +661,19 @@ export default function App() {
             setCartItems(initialCart);
             setIsStoreLoading(false);
           } else {
-            setActiveStore(EMPTY_STORE);
+            // Jika fetch gagal atau offline, cek apakah injectedStore tersedia sebelum menandai not found
+            const inj = (window as any).__KROOMIFY_INITIAL_STORE__;
+            if (inj && (inj.slug?.toLowerCase() === tokoParam.toLowerCase() || inj.id === tokoParam)) {
+              setActiveStore({
+                ...inj,
+                isPublished: inj.isPublished !== undefined ? Boolean(inj.isPublished) : (inj.is_published !== undefined ? Boolean(inj.is_published) : true),
+              });
+              setStoreNotFound(false);
+            } else {
+              setActiveStore(EMPTY_STORE);
+              setStoreNotFound(true);
+            }
             setIsStoreLoading(false);
-            setStoreNotFound(true);
           }
         });
       } else {
@@ -1325,7 +1352,7 @@ export default function App() {
   // Render Public Storefront Content (Using New Dynamic Theme Engine)
   const renderStorefrontContent = () => {
     const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
-    const isPublished = Boolean(currentStore?.isPublished);
+    const isPublished = Boolean(currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published);
 
     // Jika toko belum dipublikasikan atau toko belum ada dan bukan di mode preview
     if ((!currentStore || !currentStore.id || !isPublished) && !isPreview) {
@@ -1508,7 +1535,7 @@ export default function App() {
       {/* 2. PURE STANDALONE STOREFRONT (100% FULL SCREEN - NO PREVIEW / NO FRAMES) */}
       {viewMode === 'storefront-live' && (() => {
         const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
-        const isPublished = Boolean(currentStore?.isPublished);
+        const isPublished = Boolean(currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published);
 
         // Jika store belum terbaca dan masih dalam status loading
         if (!currentStore?.id && isStoreLoading && !storeNotFound) {
