@@ -121,11 +121,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
   // Initialize modal state when opened
   useEffect(() => {
     if (!isOpen) return;
-    if (store.isPublished) {
-      setStep('published');
-    } else {
-      setStep('choose_domain');
-    }
+    setStep('choose_domain');
     setDeployProgress(0);
     setTerminalLogs([]);
     setDeployError(null);

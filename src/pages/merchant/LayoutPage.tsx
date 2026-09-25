@@ -1105,16 +1105,11 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     };
 
     onSaveLayout(layoutSettings);
-    if (onPublishStore) {
-      onPublishStore();
-    }
-    setCurrentStore((prev) => ({ ...prev, isPublished: true }));
     setHasChanges(false);
     setTimeout(() => {
       setIsSaving(false);
       setIsPublishModalOpen(true);
-      onShowNotification('🎉 Toko online berhasil dipublikasikan dan live!');
-    }, 200);
+    }, 150);
   };
 
   const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
