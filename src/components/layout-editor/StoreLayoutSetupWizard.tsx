@@ -7,6 +7,7 @@ import {
   STORE_TEMPLATES,
   StoreTemplate,
 } from '../../utils/layoutConstants';
+import { useLanguage } from '../../contexts/LanguageContext';
 import {
   Store as StoreIcon,
   Sparkles,
@@ -30,14 +31,14 @@ interface StoreLayoutSetupWizardProps {
 }
 
 const BUSINESS_CATEGORIES = [
-  { id: 'Kuliner & Minuman', label: 'Kuliner & Minuman', icon: '🥘' },
-  { id: 'Fashion & Pakaian', label: 'Fashion & Pakaian', icon: '👗' },
-  { id: 'Elektronik & Gadget', label: 'Elektronik & Gadget', icon: '⚡' },
-  { id: 'Kriya & Kerajinan', label: 'Kriya & Kerajinan', icon: '🎋' },
-  { id: 'Kecantikan & Skincare', label: 'Kecantikan & Skincare', icon: '🌸' },
-  { id: 'Pertanian & Sembako', label: 'Pertanian & Sembako', icon: '🌾' },
-  { id: 'Jasa & Konsultasi', label: 'Jasa & Konsultasi', icon: '💼' },
-  { id: 'Lainnya', label: 'Lainnya', icon: '🛍️' },
+  { id: 'Kuliner & Minuman', key: 'cat_culinary', defaultLabel: 'Kuliner & Minuman', icon: '🥘' },
+  { id: 'Fashion & Pakaian', key: 'cat_fashion', defaultLabel: 'Fashion & Pakaian', icon: '👗' },
+  { id: 'Elektronik & Gadget', key: 'cat_electronics', defaultLabel: 'Elektronik & Gadget', icon: '⚡' },
+  { id: 'Kriya & Kerajinan', key: 'cat_crafts_kriya', defaultLabel: 'Kriya & Kerajinan', icon: '🎋' },
+  { id: 'Kecantikan & Skincare', key: 'cat_beauty_skincare', defaultLabel: 'Kecantikan & Skincare', icon: '🌸' },
+  { id: 'Pertanian & Sembako', key: 'cat_agriculture_groceries', defaultLabel: 'Pertanian & Sembako', icon: '🌾' },
+  { id: 'Jasa & Konsultasi', key: 'cat_services_consulting', defaultLabel: 'Jasa & Konsultasi', icon: '💼' },
+  { id: 'Lainnya', key: 'cat_other', defaultLabel: 'Lainnya', icon: '🛍️' },
 ];
 
 export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
@@ -45,6 +46,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
   onComplete,
   onCancel,
 }) => {
+  const { t } = useLanguage();
   // Step State: 1 = Identity, 2 = Template, 3 = Generating
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
@@ -146,14 +148,14 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-gray-900 leading-tight">
-                {currentStep === 1 && 'Langkah 1: Identitas & Informasi Toko'}
-                {currentStep === 2 && 'Langkah 2: Pilih Template Desain Toko'}
-                {currentStep === 3 && 'Langkah 3: Men-generate Website Toko'}
+                {currentStep === 1 && t('wizard_step_1_title', 'Langkah 1: Identitas & Informasi Toko')}
+                {currentStep === 2 && t('wizard_step_2_title', 'Langkah 2: Pilih Template Desain Toko')}
+                {currentStep === 3 && t('wizard_step_3_title', 'Langkah 3: Men-generate Website Toko')}
               </h2>
               <p className="text-xs text-gray-500">
-                {currentStep === 1 && 'Atur nama, kategori, dan kontak resmi toko online UMKM Anda.'}
-                {currentStep === 2 && 'Pilih gaya tampilan visual yang sesuai dengan bidang usaha Anda.'}
-                {currentStep === 3 && 'Sistem sedang menyiapkan struktur, tema, dan katalog website Anda.'}
+                {currentStep === 1 && t('wizard_step_1_subtitle', 'Atur nama, kategori, dan kontak resmi toko online UMKM Anda.')}
+                {currentStep === 2 && t('wizard_step_2_subtitle', 'Pilih gaya tampilan visual yang sesuai dengan bidang usaha Anda.')}
+                {currentStep === 3 && t('wizard_step_3_subtitle', 'Sistem sedang menyiapkan struktur, tema, dan katalog website Anda.')}
               </p>
             </div>
           </div>
@@ -162,7 +164,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
             <button
               onClick={onCancel}
               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
-              title="Batal"
+              title={t('wizard_btn_cancel', 'Batal')}
             >
               <X className="w-5 h-5" />
             </button>
@@ -176,7 +178,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${currentStep >= 1 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
                 1
               </span>
-              <span className="hidden sm:inline">Nama & Info</span>
+              <span className="hidden sm:inline">{t('wizard_nav_name_info', 'Nama & Info')}</span>
             </div>
             <div className={`h-0.5 flex-1 ${currentStep >= 2 ? 'bg-red-600' : 'bg-gray-200'}`} />
 
@@ -184,7 +186,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${currentStep >= 2 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
                 2
               </span>
-              <span className="hidden sm:inline">Pilih Template</span>
+              <span className="hidden sm:inline">{t('wizard_nav_choose_template', 'Pilih Template')}</span>
             </div>
             <div className={`h-0.5 flex-1 ${currentStep >= 3 ? 'bg-red-600' : 'bg-gray-200'}`} />
 
@@ -192,7 +194,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${currentStep === 3 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
                 3
               </span>
-              <span className="hidden sm:inline">Generate Web</span>
+              <span className="hidden sm:inline">{t('wizard_nav_generate_web', 'Generate Web')}</span>
             </div>
           </div>
         </div>
@@ -207,7 +209,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
             <div className="space-y-5 max-w-2xl mx-auto">
               <div>
                 <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">
-                  Nama Toko Online <span className="text-red-600">*</span>
+                  {t('wizard_store_name_label', 'Nama Toko Online')} <span className="text-red-600">*</span>
                 </label>
                 <div className="relative">
                   <StoreIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -216,7 +218,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                     required
                     value={storeName}
                     onChange={handleStoreNameChange}
-                    placeholder="Contoh: Dapur Nusantara, Batik Sekar, Toko Kopi Senja"
+                    placeholder={t('wizard_store_name_placeholder', 'Contoh: Dapur Nusantara, Batik Sekar, Toko Kopi Senja')}
                     className="w-full pl-9 pr-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-lg text-sm text-gray-900 font-medium focus:bg-white focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-500/10 transition"
                   />
                 </div>
@@ -225,7 +227,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
               {/* URL Domain Preview */}
               <div>
                 <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">
-                  Alamat Web Toko (Domain Slug)
+                  {t('wizard_store_slug_label', 'Alamat Web Toko (Domain Slug)')}
                 </label>
                 <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 overflow-hidden text-xs">
                   <span className="px-3 py-2.5 text-gray-500 bg-gray-100/80 border-r border-gray-200 font-mono font-medium select-none">
@@ -240,14 +242,14 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                   />
                 </div>
                 <p className="text-[11px] text-gray-500 mt-1">
-                  Tautan ini yang akan dibagikan ke pembeli di WhatsApp & media sosial.
+                  {t('wizard_store_slug_hint', 'Tautan ini yang akan dibagikan ke pembeli di WhatsApp & media sosial.')}
                 </p>
               </div>
 
               {/* Kategori Bisnis */}
               <div>
                 <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">
-                  Kategori Usaha
+                  {t('wizard_business_category_label', 'Kategori Usaha')}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {BUSINESS_CATEGORIES.map((cat) => (
@@ -262,7 +264,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                       }`}
                     >
                       <span className="text-base">{cat.icon}</span>
-                      <span className="truncate">{cat.label}</span>
+                      <span className="truncate">{t(cat.key, cat.defaultLabel)}</span>
                     </button>
                   ))}
                 </div>
@@ -272,7 +274,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">
-                    Slogan / Tagline Toko
+                    {t('wizard_store_tagline_label', 'Slogan / Tagline Toko')}
                   </label>
                   <div className="relative">
                     <Tag className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -280,7 +282,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                       type="text"
                       value={tagline}
                       onChange={(e) => setTagline(e.target.value)}
-                      placeholder="Slogan atau deskripsi singkat..."
+                      placeholder={t('wizard_store_tagline_placeholder', 'Slogan atau deskripsi singkat...')}
                       className="w-full pl-9 pr-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-red-600"
                     />
                   </div>
@@ -288,7 +290,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">
-                    Nomor WhatsApp Toko
+                    {t('wizard_store_wa_label', 'Nomor WhatsApp Toko')}
                   </label>
                   <div className="relative">
                     <MessageCircle className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -315,7 +317,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                         const pastedData = e.clipboardData.getData('text');
                         setPhoneWhatsApp(pastedData.replace(/\D/g, '').slice(0, 16));
                       }}
-                      placeholder="081234567890"
+                      placeholder={t('wizard_store_wa_placeholder', '081234567890')}
                       className="w-full pl-9 pr-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:bg-white focus:outline-none focus:border-red-600 font-mono"
                     />
                   </div>
@@ -333,14 +335,14 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Pilihan Template Siap Pakai
+                    {t('wizard_template_options_title', 'Pilihan Template Siap Pakai')}
                   </h3>
                   <p className="text-[11px] text-gray-500">
-                    Setiap template sudah dilengkapi susunan section, banner tematik, dan tombol pesan instan.
+                    {t('wizard_template_options_subtitle', 'Setiap template sudah dilengkapi susunan section, banner tematik, dan tombol pesan instan.')}
                   </p>
                 </div>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                  {STORE_TEMPLATES.length} Template
+                  {STORE_TEMPLATES.length} {t('wizard_template_count', 'Template')}
                 </span>
               </div>
 
@@ -403,14 +405,14 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
 
                         <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px]">
                           <span className="text-gray-500 font-medium">
-                            {tmpl.sections.length} Section Bawaan
+                            {tmpl.sections.length} {t('wizard_default_sections', 'Section Bawaan')}
                           </span>
                           <span
                             className={`font-semibold flex items-center gap-1 ${
                               isSelected ? 'text-red-600 font-bold' : 'text-gray-600 group-hover:text-red-600'
                             }`}
                           >
-                            {isSelected ? 'Terpilih ✓' : 'Pilih Template'}
+                            {isSelected ? t('wizard_template_selected', 'Terpilih ✓') : t('wizard_template_select', 'Pilih Template')}
                           </span>
                         </div>
                       </div>
@@ -442,8 +444,8 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
               <div>
                 <h3 className="text-lg font-bold text-gray-900">
                   {generationProgress >= 100
-                    ? '🎉 Website Toko Berhasil Dibuat!'
-                    : 'Sedang Membuat Website Toko Anda...'}
+                    ? t('wizard_gen_success_title', '🎉 Website Toko Berhasil Dibuat!')
+                    : t('wizard_gen_progress_title', 'Sedang Membuat Website Toko Anda...')}
                 </h3>
                 <p className="text-xs text-gray-500 mt-1">
                   Template <span className="font-semibold text-gray-800">{selectedTemplate.name}</span> siap dipasang untuk <span className="font-semibold text-gray-800">{storeName || 'Toko Anda'}</span>.
@@ -453,7 +455,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
               {/* Progress Bar */}
               <div className="w-full space-y-1.5">
                 <div className="flex justify-between text-[11px] font-bold text-gray-600">
-                  <span>Proses Pembuatan</span>
+                  <span>{t('wizard_gen_process_label', 'Proses Pembuatan')}</span>
                   <span>{generationProgress}%</span>
                 </div>
                 <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
@@ -468,19 +470,19 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
               <div className="w-full bg-gray-50 rounded-xl p-4 border border-gray-100 text-left space-y-2.5 text-xs">
                 <div className={`flex items-center gap-2.5 transition-colors ${generationStage >= 1 ? 'text-emerald-700 font-semibold' : 'text-gray-400'}`}>
                   <CheckCircle2 className={`w-4 h-4 ${generationStage >= 1 ? 'text-emerald-600' : 'text-gray-300'}`} />
-                  <span>Membangun struktur layout responsif (Mobile & Desktop)</span>
+                  <span>{t('wizard_stage_1', 'Membangun struktur layout responsif (Mobile & Desktop)')}</span>
                 </div>
                 <div className={`flex items-center gap-2.5 transition-colors ${generationStage >= 2 ? 'text-emerald-700 font-semibold' : 'text-gray-400'}`}>
                   <CheckCircle2 className={`w-4 h-4 ${generationStage >= 2 ? 'text-emerald-600' : 'text-gray-300'}`} />
-                  <span>Menerapkan warna aksen ({selectedTemplate.primaryAccent}) & banner cover</span>
+                  <span>{t('wizard_stage_2', 'Menerapkan warna aksen ({color}) & banner cover').replace('{color}', selectedTemplate.primaryAccent)}</span>
                 </div>
                 <div className={`flex items-center gap-2.5 transition-colors ${generationStage >= 3 ? 'text-emerald-700 font-semibold' : 'text-gray-400'}`}>
                   <CheckCircle2 className={`w-4 h-4 ${generationStage >= 3 ? 'text-emerald-600' : 'text-gray-300'}`} />
-                  <span>Menyinkronkan katalog produk & gateway pembayaran otomatis Midtrans</span>
+                  <span>{t('wizard_stage_3', 'Menyinkronkan katalog produk & gateway pembayaran otomatis Midtrans')}</span>
                 </div>
                 <div className={`flex items-center gap-2.5 transition-colors ${generationStage >= 4 ? 'text-emerald-700 font-semibold' : 'text-gray-400'}`}>
                   <CheckCircle2 className={`w-4 h-4 ${generationStage >= 4 ? 'text-emerald-600' : 'text-gray-300'}`} />
-                  <span>Website toko aktif dan siap diatur di Editor Layout</span>
+                  <span>{t('wizard_stage_4', 'Website toko aktif dan siap diatur di Editor Layout')}</span>
                 </div>
               </div>
 
@@ -499,7 +501,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                 className="px-4 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition flex items-center gap-1.5 cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Kembali ke Info Toko</span>
+                <span>{t('wizard_btn_back_info', 'Kembali ke Info Toko')}</span>
               </button>
             )}
             {currentStep === 1 && onCancel && (
@@ -508,7 +510,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                 onClick={onCancel}
                 className="px-4 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-100 transition cursor-pointer"
               >
-                Batal
+                {t('wizard_btn_cancel', 'Batal')}
               </button>
             )}
           </div>
@@ -519,14 +521,14 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                 type="button"
                 onClick={() => {
                   if (!storeName.trim()) {
-                    alert('Mohon isi nama toko Anda terlebih dahulu.');
+                    alert(t('wizard_name_required_alert', 'Mohon isi nama toko Anda terlebih dahulu.'));
                     return;
                   }
                   setCurrentStep(2);
                 }}
                 className="px-5 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer active:scale-98"
               >
-                <span>Lanjut Pilih Template</span>
+                <span>{t('wizard_btn_next_template', 'Lanjut Pilih Template')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             )}
@@ -538,7 +540,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                 className="px-6 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer active:scale-98"
               >
                 <Sparkles className="w-4 h-4 text-white" />
-                <span>Generate Web Toko Sekarang</span>
+                <span>{t('wizard_btn_generate_now', 'Generate Web Toko Sekarang')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             )}
@@ -555,7 +557,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                 }`}
               >
                 <Layout className="w-4 h-4" />
-                <span>Masuk ke Editor Layout Toko</span>
+                <span>{t('wizard_btn_enter_editor', 'Masuk ke Editor Layout Toko')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             )}

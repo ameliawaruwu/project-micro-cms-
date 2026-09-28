@@ -1835,7 +1835,7 @@ export default function App() {
                   onOpenShareStore={() => setIsShareModalOpen(true)}
                   onOpenWithdraw={() => setWithdrawModalOpen(true)}
                   onSelectOrder={(ord) => setSelectedOrderDetail(ord)}
-                  onCreateStore={user && !activeStore?.id ? () => setActiveTab('pengaturan') : undefined}
+                  onCreateStore={user && !activeStore?.id ? () => setIsCreateStoreWizardOpen(true) : undefined}
                   onPublishStore={() => handlePublishStore(currentStore.id)}
                 />
               )}
