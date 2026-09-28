@@ -341,7 +341,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
               disabled={isSubmitting}
               className="px-4 py-2 rounded-xl border border-[#E5E0DD] bg-white hover:bg-[#FAF7F7] text-xs font-semibold text-[#706866] hover:text-[#241A1A] transition cursor-pointer min-h-[38px]"
             >
-              Batal
+              {t('cancel', 'Batal')}
             </button>
             <button
               type="button"
@@ -352,12 +352,12 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
               {isSubmitting ? (
                 <>
                   <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
-                  <span>Menyimpan...</span>
+                  <span>{t('saving', 'Menyimpan...')}</span>
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  <span>Simpan Produk</span>
+                  <span>{t('btn_save_product', 'Simpan Produk')}</span>
                 </>
               )}
             </button>
@@ -392,7 +392,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
             <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
               <h3 className="text-sm font-bold text-[#241A1A] flex items-center gap-2">
                 <Camera className="w-4 h-4 text-[#66000E]" />
-                <span>Foto Produk</span>
+                <span>{t('product_photo', 'Foto Produk')}</span>
               </h3>
             </div>
 
@@ -409,7 +409,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
 
                     {/* Active index badge */}
                     <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-xs text-white text-[10px] font-bold tracking-wide">
-                      {activeImageIndex === 0 ? 'Foto Sampul (Utama)' : `Foto #${activeImageIndex + 1}`}
+                      {activeImageIndex === 0 ? t('cover_photo', 'Foto Sampul (Utama)') : `Foto #${activeImageIndex + 1}`}
                     </div>
                   </div>
 
@@ -421,7 +421,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                       className="flex-1 py-2 px-3 rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] hover:bg-[#F5E8EA] hover:border-[#66000E] text-xs font-bold text-[#241A1A] hover:text-[#66000E] flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[36px]"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Tambah Foto Lain</span>
+                      <span>{t('add_more_photos', 'Tambah Foto Lain')}</span>
                     </button>
                     <button
                       type="button"
@@ -430,7 +430,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                       title="Hapus foto ini"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>Hapus</span>
+                      <span>{t('delete', 'Hapus')}</span>
                     </button>
                   </div>
                 </div>
@@ -450,12 +450,12 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                     <UploadCloud className="w-6 h-6" />
                   </div>
                   <h4 className="text-sm font-bold text-[#241A1A]">
-                    Pilih Foto Produk
+                    {t('select_product_photo', 'Pilih Foto Produk')}
                   </h4>
 
                   <div className="mt-3.5 px-4 py-2 rounded-xl bg-[#66000E] text-white text-xs font-semibold shadow-2xs group-hover:bg-[#52000B] transition flex items-center gap-1.5">
                     <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Jelajahi File</span>
+                    <span>{t('browse_file', 'Jelajahi File')}</span>
                   </div>
                 </div>
               )}
@@ -465,9 +465,9 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
             <div className="pt-3 border-t border-[#E5E0DD] space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#241A1A]">
-                  Daftar Foto Produk ({images.length}/5)
+                  {t('product_photo_list', 'Daftar Foto Produk')} ({images.length}/5)
                 </span>
-                <span className="text-[10px] text-[#706866]">Klik foto untuk pratinjau</span>
+                <span className="text-[10px] text-[#706866]">{t('click_to_preview', 'Klik foto untuk pratinjau')}</span>
               </div>
 
               <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
@@ -484,7 +484,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                     <img src={img} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
                     {idx === 0 && (
                       <span className="absolute bottom-0 inset-x-0 bg-[#66000E] text-white text-[8px] font-bold text-center py-0.5 leading-none">
-                        Utama
+                        {t('main_badge', 'Utama')}
                       </span>
                     )}
                     <button
@@ -523,20 +523,20 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
           <div className="bg-white p-5 sm:p-6 rounded-2xl border border-[#E5E0DD] shadow-2xs h-full flex flex-col space-y-4">
             <h3 className="text-sm font-bold text-[#241A1A] pb-2 border-b border-[#E5E0DD] flex items-center gap-2">
               <Package className="w-4 h-4 text-[#66000E]" />
-              <span>Informasi Utama Produk</span>
+              <span>{t('main_product_info', 'Informasi Utama Produk')}</span>
             </h3>
 
             {/* Nama Produk */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-[#241A1A]">
-                Nama Produk <span className="text-rose-500">*</span>
+                {t('product_name', 'Nama Produk')} <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Contoh: Kemeja Batik Tulis Sutra Parang"
+                placeholder={t('product_name_placeholder', 'Contoh: Kemeja Batik Tulis Sutra Parang')}
                 className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E] transition"
               />
             </div>
@@ -547,7 +547,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[#241A1A] flex items-center gap-1.5">
                   <Tag className="w-3.5 h-3.5 text-[#66000E]" />
-                  <span>Kategori Produk <span className="text-rose-500">*</span></span>
+                  <span>{t('product_category', 'Kategori Produk')} <span className="text-rose-500">*</span></span>
                 </label>
                 <div className="space-y-2">
                   {category === '__new__' ? (
@@ -559,7 +559,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                           autoFocus
                           value={customCategory}
                           onChange={(e) => setCustomCategory(e.target.value)}
-                          placeholder="Tulis nama kategori baru (contoh: Boneka)..."
+                          placeholder="Tulis nama kategori baru..."
                           className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-[#66000E] bg-white text-[#241A1A] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 transition"
                         />
                       </div>
@@ -573,7 +573,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                           }}
                           className="text-[11px] font-semibold text-[#66000E] hover:underline cursor-pointer"
                         >
-                          Batal (Pilih dari daftar)
+                          {t('cancel', 'Batal')}
                         </button>
                       </div>
                     </div>
@@ -604,7 +604,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
               {/* Pricing Box */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[#241A1A] flex items-center gap-1.5">
-                  <span>Harga Produk (Rp) <span className="text-rose-500">*</span></span>
+                  <span>{t('selling_price', 'Harga Produk (Rp)')} <span className="text-rose-500">*</span></span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#706866]">
@@ -615,7 +615,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                     required
                     value={priceDisplay}
                     onChange={(e) => setPriceDisplay(formatThousand(e.target.value))}
-                    placeholder="Contoh: 150.000"
+                    placeholder={t('selling_price_placeholder', 'Contoh: 150.000')}
                     className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E] transition"
                   />
                 </div>
@@ -625,7 +625,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
             {/* Inventory & Logistics */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#241A1A]">Jumlah Stok</label>
+                <label className="text-xs font-bold text-[#241A1A]">{t('stock_amount', 'Jumlah Stok')}</label>
                 <input
                   type="number"
                   min="0"
@@ -637,14 +637,14 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#241A1A]">Berat Barang (Gram)</label>
+                <label className="text-xs font-bold text-[#241A1A]">{t('item_weight', 'Berat Barang (Gram)')}</label>
                 <div className="relative">
                   <input
                     type="number"
                     min="1"
                     value={weightDisplay}
                     onChange={(e) => setWeightDisplay(e.target.value)}
-                    placeholder="Contoh: 250"
+                    placeholder={t('item_weight_placeholder', 'Contoh: 250')}
                     className="w-full pl-3.5 pr-8 py-2.5 text-xs rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E] transition"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#706866] font-semibold">
@@ -656,12 +656,12 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
 
             {/* Deskripsi */}
             <div className="space-y-1.5 pt-2">
-              <label className="text-xs font-bold text-[#241A1A]">Deskripsi Lengkap Produk</label>
+              <label className="text-xs font-bold text-[#241A1A]">{t('product_full_desc', 'Deskripsi Lengkap Produk')}</label>
               <textarea
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Jelaskan keunggulan, bahan material, ukuran detail, dan instruksi perawatan produk..."
+                placeholder={t('product_desc_placeholder_detail', 'Jelaskan keunggulan, bahan material, ukuran detail, dan instruksi perawatan produk...')}
                 className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E] transition resize-y"
               ></textarea>
             </div>
@@ -676,7 +676,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
             disabled={isSubmitting}
             className="flex-1 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs font-bold text-[#706866] text-center"
           >
-            Batal
+            {t('cancel', 'Batal')}
           </button>
           <button
             type="button"
@@ -685,7 +685,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
             className="flex-1 py-2.5 rounded-xl bg-[#66000E] text-white text-xs font-bold text-center flex items-center justify-center gap-1.5 shadow-2xs"
           >
             <Save className="w-3.5 h-3.5" />
-            <span>Simpan Produk</span>
+            <span>{t('btn_save_product', 'Simpan Produk')}</span>
           </button>
         </div>
       </form>
