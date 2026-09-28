@@ -73,12 +73,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             {!store.id ? (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-medium shadow-2xs">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-400"></span>
-                <span>Belum Memiliki Toko</span>
+                <span>{isEn ? 'No Store Yet' : 'Belum Memiliki Toko'}</span>
               </div>
             ) : !store.isPublished ? (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium shadow-2xs">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
-                <span>Toko Belum Publikasi (Draf)</span>
+                <span>{isEn ? 'Unpublished Store (Draft)' : 'Toko Belum Publikasi (Draf)'}</span>
               </div>
             ) : (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-medium shadow-2xs">
@@ -132,7 +132,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </p>
           </div>
           <button
-            onClick={() => onNavigateTab('pengaturan')}
+            onClick={onCreateStore ? onCreateStore : () => onNavigateTab('pengaturan')}
             className="px-4 py-2.5 rounded-xl bg-white text-[#66000E] hover:bg-[#FAF7F7] text-xs font-semibold shadow-xs flex items-center justify-center gap-2 shrink-0 transition active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
