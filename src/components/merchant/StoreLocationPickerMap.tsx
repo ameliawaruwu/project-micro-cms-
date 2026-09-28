@@ -19,6 +19,7 @@ import {
   ReverseGeocodeResult,
   PlaceSearchResult,
 } from '../../services/wilayahService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface StoreLocationPickerMapProps {
   latitude?: number;
@@ -51,6 +52,7 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
   onChangeCoordinates,
   onLocationSelect,
 }) => {
+  const { t } = useLanguage();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -304,14 +306,14 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
           </div>
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
-              <span>Titik Keakuratan Lokasi Toko (Peta GPS)</span>
+              <span>{t('map_pin_accuracy', 'Titik Keakuratan Lokasi Toko (Peta GPS)')}</span>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-200">
                 <Sparkles className="w-2.5 h-2.5" />
-                Auto-Fill Alamat
+                {t('map_autofill_badge', 'Auto-Fill Alamat')}
               </span>
             </h4>
             <p className="text-[11px] text-gray-500">
-              Klik atau geser pin merah pada peta. Alamat, kelurahan, kecamatan, dan kota akan terisi otomatis!
+              {t('map_drag_instruction', 'Klik atau geser pin merah pada peta. Alamat, kelurahan, kecamatan, dan kota akan terisi otomatis!')}
             </p>
           </div>
         </div>
@@ -326,12 +328,12 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
           {isLocating ? (
             <>
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              <span>Mencari GPS...</span>
+              <span>{t('map_searching_gps', 'Mencari GPS...')}</span>
             </>
           ) : (
             <>
               <Navigation className="w-3.5 h-3.5" />
-              <span>Ambil Titik GPS Saya</span>
+              <span>{t('map_get_my_gps', 'Ambil Titik GPS Saya')}</span>
             </>
           )}
         </button>
@@ -356,7 +358,7 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
             onFocus={() => {
               if (searchResults.length > 0) setShowSearchResults(true);
             }}
-            placeholder="Ketik nama jalan, gedung, kampus, atau patokan lokasi untuk mencari..."
+            placeholder={t('map_search_placeholder', 'Ketik nama jalan, gedung, kampus, atau patokan lokasi untuk mencari...')}
             className="w-full pl-9 pr-8 py-2 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
           />
           {searchQuery && (
@@ -412,7 +414,7 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
         {isReverseGeocoding && (
           <div className="absolute top-2.5 left-2.5 z-20 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-lg border border-gray-200 shadow-md flex items-center gap-2 text-xs font-semibold text-[#66000E] animate-in fade-in">
             <Loader2 className="w-3.5 h-3.5 animate-spin text-[#66000E]" />
-            <span>Mendeteksi alamat dari titik peta...</span>
+            <span>{t('map_detecting_address', 'Mendeteksi alamat dari titik peta...')}</span>
           </div>
         )}
 
@@ -421,7 +423,7 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
           <div className="absolute top-2.5 left-2.5 z-20 max-w-[85%] bg-emerald-50/95 backdrop-blur-xs px-3 py-1.5 rounded-lg border border-emerald-300 shadow-md flex items-center gap-2 text-xs font-semibold text-emerald-800 animate-in fade-in slide-in-from-top-1">
             <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             <span className="truncate">
-              Alamat terisi otomatis: <strong className="font-bold">{lastDetectedAddress}</strong>
+              {t('map_autofill_success_label', 'Alamat terisi otomatis:')} <strong className="font-bold">{lastDetectedAddress}</strong>
             </span>
           </div>
         )}
@@ -430,7 +432,7 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
         {!isReverseGeocoding && !autoFillSuccess && (
           <div className="absolute top-2.5 left-2.5 z-20 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-gray-200 shadow-xs flex items-center gap-1.5 text-[11px] font-medium text-gray-700 pointer-events-none">
             <Crosshair className="w-3 h-3 text-[#66000E]" />
-            <span>Klik peta atau geser pin merah untuk ubah titik</span>
+            <span>{t('map_click_drag_hint', 'Klik peta atau geser pin merah untuk ubah titik')}</span>
           </div>
         )}
 
@@ -442,7 +444,7 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
           className="absolute bottom-2.5 left-2.5 z-20 bg-white/95 hover:bg-white px-2.5 py-1.5 rounded-lg border border-gray-200 shadow-xs flex items-center gap-1 text-[11px] font-semibold text-gray-800 transition cursor-pointer"
         >
           <ExternalLink className="w-3 h-3 text-[#66000E]" />
-          <span>Buka di Google Maps ({currentLat.toFixed(4)}, {currentLng.toFixed(4)})</span>
+          <span>{t('map_open_gmaps', 'Buka di Google Maps')} ({currentLat.toFixed(4)}, {currentLng.toFixed(4)})</span>
         </a>
       </div>
     </div>
