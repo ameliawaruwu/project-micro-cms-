@@ -239,49 +239,64 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       .map((f) => f.trim())
       .filter((f) => f.length > 0);
 
-    if (editingPlan) {
-      await billingPlanService.updatePlan(editingPlan.id, {
-        name: planForm.name.trim(),
-        slug: planForm.slug.trim().toLowerCase(),
-        tagline: planForm.tagline.trim(),
-        priceMonthly: Number(planForm.priceMonthly),
-        priceYearly: Number(planForm.priceYearly),
-        features,
-        sortOrder: Number(planForm.sortOrder),
-        isActive: planForm.isActive,
-      });
-      showToast(`Paket "${planForm.name}" berhasil diperbarui`);
-    } else {
-      await billingPlanService.createPlan({
-        name: planForm.name.trim(),
-        slug: planForm.slug.trim().toLowerCase(),
-        tagline: planForm.tagline.trim(),
-        priceMonthly: Number(planForm.priceMonthly),
-        priceYearly: Number(planForm.priceYearly),
-        features,
-        sortOrder: Number(planForm.sortOrder),
-        isActive: planForm.isActive,
-      });
-      showToast(`Paket baru "${planForm.name}" berhasil ditambahkan`);
-    }
+    try {
+      if (editingPlan) {
+        await billingPlanService.updatePlan(editingPlan.id, {
+          name: planForm.name.trim(),
+          slug: planForm.slug.trim().toLowerCase(),
+          tagline: planForm.tagline.trim(),
+          priceMonthly: Number(planForm.priceMonthly),
+          priceYearly: Number(planForm.priceYearly),
+          features,
+          sortOrder: Number(planForm.sortOrder),
+          isActive: planForm.isActive,
+        });
+        showToast(`Paket "${planForm.name}" berhasil diperbarui`);
+      } else {
+        await billingPlanService.createPlan({
+          name: planForm.name.trim(),
+          slug: planForm.slug.trim().toLowerCase(),
+          tagline: planForm.tagline.trim(),
+          priceMonthly: Number(planForm.priceMonthly),
+          priceYearly: Number(planForm.priceYearly),
+          features,
+          sortOrder: Number(planForm.sortOrder),
+          isActive: planForm.isActive,
+        });
+        showToast(`Paket baru "${planForm.name}" berhasil ditambahkan`);
+      }
 
-    await loadData();
-    setIsPlanModalOpen(false);
+      await loadData();
+      setIsPlanModalOpen(false);
+    } catch (err: any) {
+      console.error('Error saving plan:', err);
+      showToast(`Gagal menyimpan paket: ${err?.message || err}`);
+    }
   };
 
   const handleDeletePlan = async (id: string, name: string) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus paket "${name}"?`)) {
-      await billingPlanService.deletePlan(id);
-      await loadData();
-      showToast(`Paket "${name}" berhasil dihapus`);
+      try {
+        await billingPlanService.deletePlan(id);
+        await loadData();
+        showToast(`Paket "${name}" berhasil dihapus`);
+      } catch (err: any) {
+        console.error('Error deleting plan:', err);
+        showToast(`Gagal menghapus paket: ${err?.message || err}`);
+      }
     }
   };
 
   const handleTogglePlanActive = async (id: string) => {
-    const updated = await billingPlanService.togglePlanStatus(id);
-    if (updated) {
-      await loadData();
-      showToast(`Status paket ${updated.name} diubah menjadi ${updated.isActive ? 'Aktif' : 'Nonaktif'}`);
+    try {
+      const updated = await billingPlanService.togglePlanStatus(id);
+      if (updated) {
+        await loadData();
+        showToast(`Status paket ${updated.name} diubah menjadi ${updated.isActive ? 'Aktif' : 'Nonaktif'}`);
+      }
+    } catch (err: any) {
+      console.error('Error toggling plan:', err);
+      showToast(`Gagal mengubah status paket: ${err?.message || err}`);
     }
   };
 
