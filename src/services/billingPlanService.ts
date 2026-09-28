@@ -187,17 +187,21 @@ class BillingPlanService {
       updatedAt: new Date().toISOString(),
     };
 
-    const current = this.getStoredPlans();
-    const updated = [...current, newPlan];
-    this.saveStoredPlans(updated);
-
-    // Sync to Supabase
+    // 1. Sync ke Supabase
     try {
       const row = mapPlanToRow(newPlan);
-      await supabase.from('billing_plans').insert([{ ...row, created_at: newPlan.createdAt }]);
+      const { error } = await supabase.from('billing_plans').insert([{ ...row, created_at: newPlan.createdAt }]);
+      if (error) {
+        console.error('Failed to sync new plan to Supabase:', error);
+      }
     } catch (err) {
       console.warn('Failed to sync new plan to Supabase:', err);
     }
+
+    // 2. Simpan ke local cache
+    const current = this.getStoredPlans();
+    const updated = [...current.filter((p) => p.id !== id), newPlan];
+    this.saveStoredPlans(updated);
 
     return newPlan;
   }
@@ -216,16 +220,20 @@ class BillingPlanService {
       updatedAt: new Date().toISOString(),
     };
 
-    current[index] = updatedPlan;
-    this.saveStoredPlans(current);
-
-    // Sync to Supabase
+    // 1. Sync ke Supabase
     try {
       const row = mapPlanToRow(updatedPlan);
-      await supabase.from('billing_plans').update(row).eq('id', id);
+      const { error } = await supabase.from('billing_plans').update(row).eq('id', id);
+      if (error) {
+        console.error('Failed to update plan in Supabase:', error);
+      }
     } catch (err) {
       console.warn('Failed to update plan in Supabase:', err);
     }
+
+    // 2. Simpan ke local cache
+    current[index] = updatedPlan;
+    this.saveStoredPlans(current);
 
     return updatedPlan;
   }
@@ -234,18 +242,20 @@ class BillingPlanService {
    * Delete a billing plan
    */
   async deletePlan(id: string): Promise<boolean> {
-    const current = this.getStoredPlans();
-    const filtered = current.filter((p) => p.id !== id);
-    if (filtered.length === current.length) return false;
-
-    this.saveStoredPlans(filtered);
-
-    // Sync to Supabase
+    // 1. Sync ke Supabase
     try {
-      await supabase.from('billing_plans').delete().eq('id', id);
+      const { error } = await supabase.from('billing_plans').delete().eq('id', id);
+      if (error) {
+        console.error('Failed to delete plan from Supabase:', error);
+      }
     } catch (err) {
       console.warn('Failed to delete plan from Supabase:', err);
     }
+
+    // 2. Simpan ke local cache
+    const current = this.getStoredPlans();
+    const filtered = current.filter((p) => p.id !== id);
+    this.saveStoredPlans(filtered);
 
     return true;
   }
