@@ -93,7 +93,6 @@ import { ReceiptModal } from './components/orders/ReceiptModal';
 import { OrderDetailModal } from './components/orders/OrderDetailModal';
 import { MerchantWalletModal } from './components/wallet/MerchantWalletModal';
 import { UpgradePlanModal } from './components/billing/UpgradePlanModal';
-import { StoreLayoutSetupWizard } from './components/layout-editor/StoreLayoutSetupWizard';
 import { StoreNameSetupModal } from './components/common/StoreNameSetupModal';
 import { KroomifyLogo } from './components/common/KroomifyLogo';
 
@@ -311,7 +310,6 @@ export default function App() {
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [isUpgradePlanModalOpen, setIsUpgradePlanModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
-  const [isCreateStoreWizardOpen, setIsCreateStoreWizardOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('500000');
   const [bankAccount, setBankAccount] = useState('BCA - 8920192811');
 
@@ -932,8 +930,8 @@ export default function App() {
   // Handlers for Products
   const handleOpenAddProduct = () => {
     if (!activeStore || !activeStore.id) {
-      addToast('Buat toko terlebih dahulu sebelum menambah produk.', 'error');
-      setIsCreateStoreWizardOpen(true);
+      addToast('Silakan atur nama dan profil toko Anda di Pengaturan Toko terlebih dahulu.', 'info');
+      setActiveTab('pengaturan');
       return;
     }
     setProductToEdit(null);
@@ -985,9 +983,9 @@ export default function App() {
 
   const handleSaveProduct = async (data: any) => {
     if (!activeStore || !activeStore.id) {
-      addToast('Tidak dapat menyimpan produk: toko belum dibuat. Silakan buat toko terlebih dahulu.', 'error');
+      addToast('Toko belum dibuat. Silakan lengkapi profil toko di Pengaturan Toko terlebih dahulu.', 'error');
       setProductSubView('list');
-      setIsCreateStoreWizardOpen(true);
+      setActiveTab('pengaturan');
       return;
     }
     setIsSavingProduct(true);
@@ -1723,57 +1721,6 @@ export default function App() {
         />
       )}
 
-      {/* 4. CREATE STORE WIZARD MODAL (only when user explicitly clicks "Buat Toko") */}
-      {isCreateStoreWizardOpen && user && user.role !== 'admin' && (
-        <StoreLayoutSetupWizard
-          currentStore={{
-            id: '',
-            merchantId: user.id,
-            name: '',
-            slug: '',
-            tagline: '',
-            description: '',
-            logoUrl: user.avatarUrl,
-            bannerUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-            phoneWhatsApp: user.phoneWhatsApp || '',
-            city: 'Indonesia',
-            category: 'Kuliner & Minuman',
-            currency: 'IDR',
-          } as Store}
-          onComplete={async (data) => {
-            try {
-              const cleanStoreName = (data.storeUpdates.name || '').trim();
-              const autoSlug = cleanStoreName
-                ? cleanStoreName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-                : '';
-              const newStore = await storeService.createStore({
-                merchantId: user.id,
-                name: cleanStoreName,
-                slug: data.storeUpdates.slug || autoSlug,
-                tagline: data.storeUpdates.tagline || (cleanStoreName ? `Toko Resmi ${cleanStoreName}` : ''),
-                description: data.storeUpdates.description || (cleanStoreName ? 'Pusat belanja online praktis dan cepat.' : ''),
-                logoUrl: user.avatarUrl || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=200&auto=format&fit=crop&q=80',
-                bannerUrl: data.storeUpdates.bannerUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-                phoneWhatsApp: data.storeUpdates.phoneWhatsApp || user.phoneWhatsApp || '',
-                city: 'Indonesia',
-                category: data.storeUpdates.category || 'Kuliner & Minuman',
-                currency: 'IDR',
-                isPublished: false,
-                layoutSettings: data.layoutSettings,
-              });
-              setActiveStore(newStore);
-              setStores([newStore]);
-              setIsCreateStoreWizardOpen(false);
-              setActiveTab('layout');
-              addToast(`🎉 Selamat! Toko "${newStore.name || 'baru'}" berhasil dibuat dan siap diatur.`);
-            } catch (err) {
-              console.error('Error creating store:', err);
-              addToast('Gagal membuat toko. Silakan coba lagi.', 'error');
-            }
-          }}
-          onCancel={() => setIsCreateStoreWizardOpen(false)}
-        />
-      )}
 
       {/* 5. MERCHANT DASHBOARD VIEW (Desktop & Mobile Admin) */}
       {(viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile') && Boolean(user) && (
