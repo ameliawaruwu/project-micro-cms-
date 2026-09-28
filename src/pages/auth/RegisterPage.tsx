@@ -85,8 +85,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
     try {
       setIsGoogleSubmitting(true);
       setError(null);
-      sessionStorage.setItem('oauth_intent', 'register');
-      await loginWithGoogle();
+      await loginWithGoogle('register');
     } catch {
       setError('Gagal menghubungkan ke Google. Pastikan Google Provider sudah aktif di Supabase.');
     } finally {

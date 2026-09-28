@@ -926,23 +926,31 @@ class AuthService {
   async validateSessionWithDatabase(userId: string, email: string): Promise<boolean> {
     try {
       const cleanEmail = email.toLowerCase().trim();
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, email')
-        .eq('email', cleanEmail)
-        .maybeSingle();
+      let query = supabase.from('users').select('id, email');
+      if (cleanEmail && userId) {
+        query = query.or(`email.eq.${cleanEmail},id.eq.${userId}`);
+      } else if (cleanEmail) {
+        query = query.eq('email', cleanEmail);
+      } else {
+        query = query.eq('id', userId);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) {
-        // Jika ada kendala koneksi, tetap izinkan fallback lokal
+        // Jika ada kendala koneksi jaringan, izinkan sementara
         return true;
       }
 
       // Jika user bernilai null di database Supabase (artinya user telah dihapus di DB)
       if (!data) {
-        console.warn(`[authService] User ${email} tidak ditemukan di database Supabase (telah dihapus). Membersihkan sesi lokal...`);
+        console.warn(`[authService] User ${email} (ID: ${userId}) tidak ditemukan di database Supabase (telah dihapus). Membersihkan sesi lokal...`);
         const accounts = this.getStoredAccounts().filter((a) => a.email.toLowerCase() !== cleanEmail && a.id !== userId);
         this.saveAccounts(accounts);
         await this.logout();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth_session_invalidated'));
+        }
         return false;
       }
 

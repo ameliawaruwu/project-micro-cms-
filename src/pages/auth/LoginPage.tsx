@@ -56,6 +56,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       setEmail(prefillEmail);
       sessionStorage.removeItem('auth_prefill_email');
     }
+    const handleUnregistered = (e: any) => {
+      const msg = e.detail?.message || 'Akun Google ini belum terdaftar. Silakan registrasi terlebih dahulu.';
+      setError(msg);
+      if (e.detail?.email) {
+        setEmail(e.detail.email);
+      }
+    };
+    window.addEventListener('auth_google_unregistered', handleUnregistered);
+    return () => {
+      window.removeEventListener('auth_google_unregistered', handleUnregistered);
+    };
   }, [initialEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,8 +101,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       setGoogleLoading(true);
       setError(null);
       setSuccessMsg(null);
-      sessionStorage.setItem('oauth_intent', 'login');
-      await loginWithGoogle();
+      await loginWithGoogle('login');
     } catch {
       setError('Gagal menghubungkan ke Google. Pastikan Google Provider sudah diaktifkan di Supabase.');
     } finally {

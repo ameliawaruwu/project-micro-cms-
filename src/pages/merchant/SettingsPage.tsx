@@ -46,6 +46,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     store.name === 'Belum Memiliki Toko' ||
     store.name === 'Toko Baru UMKM' ||
     store.name.trim() === '';
+  const isNewStore = !store || !store.id || isStoreNameEmpty;
   const storeUrl = store?.slug
     ? (store.customDomain ? `https://${store.customDomain}` : `https://${store.slug}.kroombox.com`)
     : null;

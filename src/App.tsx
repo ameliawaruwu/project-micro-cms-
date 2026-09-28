@@ -131,11 +131,33 @@ export default function App() {
       addToast('Berhasil masuk dengan akun Google!');
     };
 
+    const handleSessionInvalidated = () => {
+      console.warn('[App] Sesi tidak valid atau user telah dihapus. Mengalihkan ke Landing Page.');
+      setViewMode('landing');
+      setAuthView(null);
+      setActiveStore(EMPTY_STORE);
+      setStores([]);
+    };
+
+    const handleGoogleUnregistered = (e: any) => {
+      const msg = e.detail?.message || `Akun Google (${e.detail?.email || 'ini'}) belum terdaftar. Silakan lakukan registrasi terlebih dahulu.`;
+      console.warn('[App] Akun Google belum terdaftar:', e.detail?.email);
+      setViewMode('landing');
+      setAuthView('login');
+      setActiveStore(EMPTY_STORE);
+      setStores([]);
+      addToast(msg, 'error');
+    };
+
     window.addEventListener('auth_nav_login', handleNavLogin);
     window.addEventListener('auth_google_success', handleGoogleSuccess);
+    window.addEventListener('auth_session_invalidated', handleSessionInvalidated);
+    window.addEventListener('auth_google_unregistered', handleGoogleUnregistered);
     return () => {
       window.removeEventListener('auth_nav_login', handleNavLogin);
       window.removeEventListener('auth_google_success', handleGoogleSuccess);
+      window.removeEventListener('auth_session_invalidated', handleSessionInvalidated);
+      window.removeEventListener('auth_google_unregistered', handleGoogleUnregistered);
     };
   }, []);
 
@@ -821,19 +843,34 @@ export default function App() {
     };
   }, [currentStore?.id, currentStore?.slug, viewMode]);
 
-  // Route Users to their respective dashboards if they are logged in and on the landing page
+  // Route Users: Jika login arahkan ke dashboard, jika tidak login / akun dihapus kembalikan ke landing page
   useEffect(() => {
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === 'true') {
       return;
     }
-    if (user && viewMode === 'landing') {
-      if (user.role === 'admin') {
-        setViewMode('admin');
-      } else {
-        setViewMode('merchant-desktop');
+
+    const isStorefront =
+      viewMode === 'storefront' ||
+      viewMode === 'storefront-live' ||
+      viewMode === 'storefront-phone';
+
+    if (isStorefront) return;
+
+    if (!isAuthLoading) {
+      if (user && viewMode === 'landing') {
+        if (user.role === 'admin') {
+          setViewMode('admin');
+        } else {
+          setViewMode('merchant-desktop');
+        }
+      } else if (!user && (viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile' || viewMode === 'admin')) {
+        console.warn('[App] User tidak terotentikasi di dashboard. Mengarahkan kembali ke Landing Page.');
+        setViewMode('landing');
+        setActiveStore(EMPTY_STORE);
+        setStores([]);
       }
     }
-  }, [user, viewMode]);
+  }, [user, viewMode, isAuthLoading, EMPTY_STORE]);
 
   // Store Switching
   const handleSelectStore = async (storeId: string) => {
@@ -1271,11 +1308,15 @@ export default function App() {
             setAuthView('register');
           }}
           onNavigateDashboard={() => {
-            setViewMode(user?.role === 'admin' ? 'admin' : 'merchant-desktop');
+            if (user) {
+              setViewMode(user.role === 'admin' ? 'admin' : 'merchant-desktop');
+            } else {
+              setAuthView('login');
+            }
           }}
           onLaunchDemo={handleLaunchDemo}
           onViewStorefrontDemo={handleLaunchStorefrontDemo}
-          isAuthenticated={isAuthenticated}
+          isAuthenticated={Boolean(isAuthenticated && user)}
         />
         <Toast toasts={toasts} onDismiss={removeToast} />
       </>
@@ -1656,7 +1697,7 @@ export default function App() {
       )}
 
       {/* 4. SUPER ADMIN DASHBOARD VIEW */}
-      {viewMode === 'admin' && (
+      {viewMode === 'admin' && Boolean(user && user.role === 'admin') && (
         <AdminDashboardPage
           currentUser={user}
           onOpenStorefront={async (slug) => {
@@ -1735,7 +1776,7 @@ export default function App() {
       )}
 
       {/* 5. MERCHANT DASHBOARD VIEW (Desktop & Mobile Admin) */}
-      {(viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile') && (!user || !!user) && (
+      {(viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile') && Boolean(user) && (
         <div className="flex h-screen w-full max-w-full overflow-hidden bg-[#FAF7F7]">
           {/* Desktop Left Sidebar & Mobile/Tablet Drawer */}
           <Sidebar
