@@ -36,7 +36,10 @@ import {
   paymentChannelService,
   PaymentChannel,
   DEFAULT_MIDTRANS_CHANNELS,
+  getLocalizedChannelDescription,
+  getLocalizedChannelName,
 } from '../../services/paymentChannelService';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { CourierSelector } from '../shipping/CourierSelector';
 
 interface CartDrawerProps {
@@ -58,6 +61,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onRemoveItem,
   onOrderSuccess,
 }) => {
+  const { language } = useLanguage();
   const [step, setStep] = useState<'cart' | 'checkout' | 'payment' | 'success'>('cart');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -692,7 +696,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-1.5">
                                     <span className="font-bold text-xs text-[#241A1A] truncate">
-                                      {channel.name}
+                                      {getLocalizedChannelName(channel.id, channel.name, language)}
                                     </span>
                                     {channel.badge && (
                                       <span className="text-[9px] font-bold bg-[#FAF7F7] text-[#66000E] px-1.5 py-0.2 rounded border border-[#E6DDDA]">
@@ -701,7 +705,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                     )}
                                   </div>
                                   <span className="text-[10px] text-[#706866] truncate block">
-                                    {channel.description}
+                                    {getLocalizedChannelDescription(channel.id, channel.description, language)}
                                   </span>
                                 </div>
                               </div>

@@ -66,7 +66,7 @@ import { DeviceSimulatorFrame } from './components/common/DeviceSimulatorFrame';
 // Merchant Pages
 import { DashboardPage } from './pages/merchant/DashboardPage';
 import { ProductListPage } from './pages/merchant/ProductListPage';
-import { ProductFormPage } from './pages/merchant/ProductFormPage';
+import { ProductFormModal } from './components/products/ProductFormModal';
 import { OrderListPage } from './pages/merchant/OrderListPage';
 import { PaymentListPage } from './pages/merchant/PaymentListPage';
 import { ShippingListPage } from './pages/merchant/ShippingListPage';
@@ -294,7 +294,7 @@ export default function App() {
   // State: Modals & Drawers
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  const [productSubView, setProductSubView] = useState<'list' | 'add' | 'edit'>('list');
+  const [isProductFormModalOpen, setIsProductFormModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
@@ -935,14 +935,14 @@ export default function App() {
       return;
     }
     setProductToEdit(null);
-    setProductSubView('add');
+    setIsProductFormModalOpen(true);
     setActiveTab('produk');
   };
 
   const handleOpenEditProduct = (prod: Product) => {
     setSelectedMerchantProduct(null);
     setProductToEdit(prod);
-    setProductSubView('edit');
+    setIsProductFormModalOpen(true);
     setActiveTab('produk');
   };
 
@@ -984,7 +984,7 @@ export default function App() {
   const handleSaveProduct = async (data: any) => {
     if (!activeStore || !activeStore.id) {
       addToast('Toko belum dibuat. Silakan lengkapi profil toko di Pengaturan Toko terlebih dahulu.', 'error');
-      setProductSubView('list');
+      setIsProductFormModalOpen(false);
       setActiveTab('pengaturan');
       return;
     }
@@ -1012,7 +1012,7 @@ export default function App() {
           addToast(`Produk "${created.name}" tersimpan di perangkat ini. Error cloud: ${res.cloudError || 'tidak diketahui'}`, 'info');
         }
       }
-      setProductSubView('list');
+      setIsProductFormModalOpen(false);
       setProductToEdit(null);
     } catch (err: any) {
       addToast(`Gagal menyimpan produk: ${err?.message || 'Terjadi kesalahan. Coba lagi.'}`, 'error');
@@ -1736,7 +1736,7 @@ export default function App() {
             onCloseMobile={() => setMobileSidebarOpen(false)}
             onTabChange={(tab) => {
               setActiveTab(tab);
-              if (tab !== 'produk') setProductSubView('list');
+              if (tab !== 'produk') { setIsProductFormModalOpen(false); setProductToEdit(null); }
             }}
             onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             onOpenShareModal={() => setIsShareModalOpen(true)}
@@ -1789,32 +1789,32 @@ export default function App() {
 
               {/* TAB 2: PRODUK */}
               {activeTab === 'produk' && (
-                productSubView === 'list' ? (
-                  <ProductListPage
-                    products={products}
-                    categories={categories}
-                    onAddProduct={handleOpenAddProduct}
-                    onViewProduct={(p) => setSelectedMerchantProduct(p)}
-                    onEditProduct={handleOpenEditProduct}
-                    onDuplicateProduct={handleDuplicateProduct}
-                    onDeleteProduct={handleDeleteProduct}
-                    onQuickStockChange={handleQuickStockChange}
-                    onNavigateDashboard={() => setActiveTab('beranda')}
-                    onSyncProducts={handleSyncProducts}
-                  />
-                ) : (
-                  <ProductFormPage
-                    key={productToEdit ? `edit-${productToEdit.id}` : `add-${products.length}`}
-                    productToEdit={productToEdit}
-                    categories={categories}
-                    onBack={() => {
-                      setProductSubView('list');
-                      setProductToEdit(null);
-                    }}
-                    onSave={handleSaveProduct}
-                  />
-                )
+                <ProductListPage
+                  products={products}
+                  categories={categories}
+                  onAddProduct={handleOpenAddProduct}
+                  onViewProduct={(p) => setSelectedMerchantProduct(p)}
+                  onEditProduct={handleOpenEditProduct}
+                  onDuplicateProduct={handleDuplicateProduct}
+                  onDeleteProduct={handleDeleteProduct}
+                  onQuickStockChange={handleQuickStockChange}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
+                  onSyncProducts={handleSyncProducts}
+                />
               )}
+
+              {/* Modal Tambah / Edit Produk */}
+              <ProductFormModal
+                isOpen={isProductFormModalOpen}
+                productToEdit={productToEdit}
+                categories={categories}
+                isSaving={isSavingProduct}
+                onClose={() => {
+                  setIsProductFormModalOpen(false);
+                  setProductToEdit(null);
+                }}
+                onSave={handleSaveProduct}
+              />
 
               {/* TAB 3: PESANAN */}
               {activeTab === 'pesanan' && (
@@ -1852,6 +1852,7 @@ export default function App() {
                 <DomainPage
                   store={currentStore}
                   onNavigateBilling={() => setActiveTab('billing')}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
                 />
               )}
 
@@ -1920,7 +1921,7 @@ export default function App() {
               pendingOrdersCount={pendingOrdersCount}
               onTabChange={(tab) => {
                 setActiveTab(tab);
-                if (tab !== 'produk') setProductSubView('list');
+                if (tab !== 'produk') { setIsProductFormModalOpen(false); setProductToEdit(null); }
               }}
             />
           </div>

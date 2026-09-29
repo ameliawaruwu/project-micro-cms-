@@ -103,15 +103,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-[#FAF7F7] border border-[#E5E0DD]">
               <div>
                 <span className="text-[10px] font-bold text-[#706866] uppercase tracking-wider block mb-0.5">
-                  Harga Jual
+                  {product.originalPrice && product.originalPrice > product.price ? 'Harga Jual (Setelah Diskon)' : 'Harga Jual'}
                 </span>
                 <span className="text-lg sm:text-xl font-bold text-[#66000E]">
                   {formatRupiah(product.price)}
                 </span>
                 {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-[11px] text-[#706866] line-through block">
-                    {formatRupiah(product.originalPrice)}
-                  </span>
+                  <div className="flex flex-col gap-0.5 mt-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-[#706866]">Harga Regular:</span>
+                      <span className="text-[11px] text-[#706866] line-through font-semibold">
+                        {formatRupiah(product.originalPrice)}
+                      </span>
+                    </div>
+                    <span className="inline-flex items-center self-start text-[9px] font-bold text-white bg-[#66000E] px-1.5 py-0.5 rounded-full shadow-2xs">
+                      Hemat {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% ({formatRupiah(product.originalPrice - product.price)})
+                    </span>
+                  </div>
                 )}
               </div>
 

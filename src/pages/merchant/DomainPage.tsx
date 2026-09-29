@@ -25,14 +25,20 @@ import {
 import { midtransService } from '../../services/midtransService';
 import { formatRupiah } from '../../utils/formatters';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
 import confetti from 'canvas-confetti';
 
 interface DomainPageProps {
   store: Store;
   onNavigateBilling?: () => void;
+  onNavigateDashboard?: () => void;
 }
 
-export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling }) => {
+export const DomainPage: React.FC<DomainPageProps> = ({
+  store,
+  onNavigateBilling,
+  onNavigateDashboard,
+}) => {
   const { t, language } = useLanguage();
   const isEn = language === 'en';
   const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial';
@@ -284,18 +290,21 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 w-full text-left">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E5E0DD] pb-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#241A1A] tracking-tight flex items-center gap-2">
-            <Globe className="w-6 h-6 text-[#66000E]" />
-            <span>{t('domain_page_title', 'Domain Toko')}</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-[#706866] mt-1">
-            {t('domain_page_subtitle', 'Atur alamat web toko online Anda agar profesional dan mudah diingat pelanggan')}
-          </p>
-        </div>
+    <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 w-full text-left">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: t('nav_dashboard', 'Dashboard'), onClick: onNavigateDashboard },
+          { label: t('domain_page_title', 'Domain Toko'), isActive: true },
+        ]}
+      />
+
+      {/* 1. Page Title */}
+      <div className="pb-3 border-b border-[#E5E0DD]">
+        <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+          <Globe className="w-5 h-5 text-[#66000E]" />
+          <span>{t('domain_page_title', 'Domain Toko')}</span>
+        </h1>
       </div>
 
       {/* FREE PLAN SANDBOX NOTICE */}
@@ -462,10 +471,10 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
                     }
                   }}
                   className="text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-xl border border-amber-300 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-2xs"
-                  title="Terkunci: Upgrade paket untuk mengaktifkan domain ini"
+                  title={isEn ? 'Locked: Upgrade plan to activate this domain' : 'Terkunci: Upgrade paket untuk mengaktifkan domain ini'}
                 >
                   <Lock className="w-3.5 h-3.5 text-amber-800" />
-                  <span>{t('domain_unlock_btn', 'Buka Kunci Domain')}</span>
+                  <span>{t('domain_unlock_btn', isEn ? 'Unlock Domain' : 'Buka Kunci Domain')}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-amber-800" />
                 </button>
               ) : (
@@ -480,11 +489,11 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
                 >
                   {isSettingRandom ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_saving', 'Menyimpan...')}
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_saving', isEn ? 'Saving...' : 'Menyimpan...')}
                     </>
                   ) : (
                     <>
-                      <span>{t('domain_btn_use', 'Gunakan Domain')}</span> <ArrowRight className="w-4 h-4" />
+                      <span>{t('domain_btn_use', isEn ? 'Use Domain' : 'Gunakan Domain')}</span> <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>
@@ -707,7 +716,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
                     </div>
                     <div className="text-right shrink-0">
                       <span className="text-[11px] text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                        Include DNS & SSL
+                        {isEn ? 'Includes DNS & SSL' : 'Termasuk DNS & SSL'}
                       </span>
                     </div>
                   </div>
@@ -720,11 +729,11 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
                     >
                       {isSubmitting ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_btn_checking', 'Memeriksa...')}
+                          <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_btn_checking', isEn ? 'Checking...' : 'Memeriksa...')}
                         </>
                       ) : (
                         <>
-                          <span>{t('domain_btn_check', 'Cek Ketersediaan')}</span> <ArrowRight className="w-4 h-4" />
+                          <span>{t('domain_btn_check', isEn ? 'Check Availability' : 'Cek Ketersediaan')}</span> <ArrowRight className="w-4 h-4" />
                         </>
                       )}
                     </button>

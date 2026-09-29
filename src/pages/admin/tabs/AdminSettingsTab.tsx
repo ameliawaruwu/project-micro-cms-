@@ -46,11 +46,6 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
             <SettingsIcon className="w-5 h-5 text-[#66000E]" />
             <span>{isEn ? 'System Settings' : 'Pengaturan Sistem'}</span>
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {isEn
-              ? 'Operational configuration for transaction fees, payout limits, API integration keys, and system maintenance status.'
-              : 'Konfigurasi operasional komisi transaksi, batas penarikan saldo, status integrasi API, dan mode pemeliharaan sistem.'}
-          </p>
         </div>
         <button
           onClick={handleSaveSettings}

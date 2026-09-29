@@ -20,14 +20,24 @@ if (typeof window !== 'undefined') {
 }
 
 function mapSupabaseRowToProduct(row: any): Product {
+  let originalPrice = row.original_price ? Number(row.original_price) : undefined;
+  let description = row.description || '';
+  const match = description.match(/<!--orig_price:(\d+(?:\.\d+)?)-->/);
+  if (match) {
+    if (!originalPrice) {
+      originalPrice = Number(match[1]);
+    }
+    description = description.replace(/\s*<!--orig_price:\d+(?:\.\d+)?-->/g, '').trim();
+  }
+
   return {
     id: row.id,
     storeId: row.store_id,
     name: row.name,
     slug: row.slug,
-    description: row.description || '',
+    description: description,
     price: Number(row.price),
-    originalPrice: row.original_price ? Number(row.original_price) : undefined,
+    originalPrice: originalPrice,
     stock: Number(row.stock),
     category: row.category || 'Umum',
     imageUrl: row.image_url || '',
@@ -167,9 +177,15 @@ class ProductService {
         const dbProducts = data.map(mapSupabaseRowToProduct);
 
         if (dbProducts.length > 0) {
-          // Merge db products with any local-only products
+          // Merge db products with any local-only products and preserve local originalPrice
           const map = new Map<string, Product>();
-          dbProducts.forEach((p) => map.set(p.id, p));
+          dbProducts.forEach((p) => {
+            const local = localProducts.find((lp) => lp.id === p.id);
+            if (local && local.originalPrice && !p.originalPrice) {
+              p.originalPrice = local.originalPrice;
+            }
+            map.set(p.id, p);
+          });
           localProducts.forEach((p) => {
             if (!map.has(p.id)) map.set(p.id, p);
           });
@@ -258,6 +274,11 @@ class ProductService {
     let cloudError: string | undefined;
 
     try {
+      let cloudDesc = (newProduct.description || '').replace(/\s*<!--orig_price:\d+(?:\.\d+)?-->/g, '').trim();
+      if (newProduct.originalPrice && newProduct.originalPrice > newProduct.price) {
+        cloudDesc = `${cloudDesc} <!--orig_price:${newProduct.originalPrice}-->`.trim();
+      }
+
       const { error } = await supabase.from('products').insert({
         id: newProduct.id,
         store_id: storeId,
@@ -267,7 +288,7 @@ class ProductService {
         price: newProduct.price,
         stock: newProduct.stock,
         weight_grams: newProduct.weightGrams || 250,
-        description: newProduct.description || '',
+        description: cloudDesc,
         image_url: newProduct.imageUrl || '',
         images: newProduct.images || [],
         status: newProduct.status,
@@ -327,13 +348,23 @@ class ProductService {
       if (updates.price !== undefined) dbPayload.price = updates.price;
       if (updates.stock !== undefined) dbPayload.stock = updates.stock;
       if (updates.weightGrams !== undefined) dbPayload.weight_grams = updates.weightGrams;
-      if (updates.description !== undefined) dbPayload.description = updates.description;
       if (updates.imageUrl !== undefined) dbPayload.image_url = updates.imageUrl;
       if (updates.images !== undefined) dbPayload.images = updates.images;
       if (updates.status !== undefined) dbPayload.status = updates.status;
 
+      // Encode originalPrice safely into description tag so it persists in cloud without schema cache errors
+      const effectiveOriginalPrice = updates.originalPrice !== undefined ? updates.originalPrice : products[index].originalPrice;
+      const effectivePrice = updates.price !== undefined ? updates.price : products[index].price;
+      const baseDesc = updates.description !== undefined ? updates.description : (products[index].description || '');
+      let cleanDesc = baseDesc.replace(/\s*<!--orig_price:\d+(?:\.\d+)?-->/g, '').trim();
+
+      if (effectiveOriginalPrice && effectiveOriginalPrice > effectivePrice) {
+        dbPayload.description = `${cleanDesc} <!--orig_price:${effectiveOriginalPrice}-->`.trim();
+      } else {
+        dbPayload.description = cleanDesc;
+      }
+
       // Validasi ownership: hanya update produk yang store_id-nya cocok
-      // Double-check: juga filter user_id jika tersedia
       let updateQuery = supabase.from('products').update(dbPayload).eq('id', id).eq('store_id', storeId);
       const { error } = await updateQuery;
       if (error) {
@@ -420,6 +451,11 @@ class ProductService {
     let syncedCount = 0;
     for (const prod of local) {
       try {
+        let cleanDesc = (prod.description || '').replace(/\s*<!--orig_price:\d+(?:\.\d+)?-->/g, '').trim();
+        if (prod.originalPrice && prod.originalPrice > prod.price) {
+          cleanDesc = `${cleanDesc} <!--orig_price:${prod.originalPrice}-->`.trim();
+        }
+
         const { error } = await supabase.from('products').upsert({
           id: prod.id,
           store_id: storeId,
@@ -429,7 +465,7 @@ class ProductService {
           stock: prod.stock,
           sku: prod.sku || '',
           weight_grams: prod.weightGrams || 250,
-          description: prod.description || '',
+          description: cleanDesc,
           image_url: prod.imageUrl || '',
           images: prod.images || [],
           status: prod.status,

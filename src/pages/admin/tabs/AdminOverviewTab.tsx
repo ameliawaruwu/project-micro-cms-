@@ -41,11 +41,6 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
             <LayoutDashboard className="w-5 h-5 text-[#66000E]" />
             <span>{isEn ? 'Platform Overview' : 'Ringkasan Platform'}</span>
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {isEn
-              ? 'Real-time platform metrics, store performance, and financial overview.'
-              : 'Metrik platform real-time, performa toko merchant, dan ringkasan operasional.'}
-          </p>
         </div>
       </div>
 

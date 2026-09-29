@@ -74,14 +74,14 @@ export const StoreProductCard: React.FC<StoreProductCardProps> = ({
             {product.name}
           </h3>
 
-          {/* Pricing */}
-          <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
+          {/* Pricing: Tampilan depan harga setelah diskon */}
+          <div className="mt-2 flex items-center justify-between gap-1.5 flex-wrap">
             <span className="font-bold text-sm sm:text-base text-[#1F1F1F]">
               {formatRupiah(product.price)}
             </span>
             {hasDiscount && (
-              <span className="text-xs text-[#777777] line-through">
-                {formatRupiah(product.originalPrice!)}
+              <span className="text-[10px] font-bold text-[#66000E] bg-[#F5E8EA] px-2 py-0.5 rounded-md">
+                Diskon {discountPercent}%
               </span>
             )}
           </div>

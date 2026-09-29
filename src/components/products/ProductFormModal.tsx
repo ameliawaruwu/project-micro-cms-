@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   X,
   Camera,
-  ChevronDown,
-  ChevronUp,
   Check,
-  Package,
-  HelpCircle,
+  Upload,
+  UploadCloud,
+  Trash2,
 } from 'lucide-react';
 import { Product } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { compressProductImage } from '../../pages/merchant/ProductFormPage';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -27,23 +28,64 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
+
   const [name, setName] = useState('');
-  const [priceDisplay, setPriceDisplay] = useState('');
   const [originalPriceDisplay, setOriginalPriceDisplay] = useState('');
+  const [discountPercent, setDiscountPercent] = useState('');
+  const [sellingPriceDisplay, setSellingPriceDisplay] = useState('');
   const [stockDisplay, setStockDisplay] = useState('10');
   const [category, setCategory] = useState('');
   const [customCategory, setCustomCategory] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [weightDisplay, setWeightDisplay] = useState('250');
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Helper formatting numbers with Indonesian thousand separator
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoError, setPhotoError] = useState('');
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Curated default categories for UMKM & retail stores, merged with existing categories
+  const availableCategories = useMemo(() => {
+    const defaults = isEn
+      ? [
+          'Clothing & Fashion',
+          'Food & Beverages',
+          'Health & Beauty',
+          'Handicrafts & Accessories',
+          'Electronics & Gadgets',
+          'Home & Living',
+          'Hobby & Sports',
+        ]
+      : [
+          'Pakaian & Fashion',
+          'Makanan & Minuman',
+          'Kesehatan & Kecantikan',
+          'Kerajinan & Aksesoris',
+          'Elektronik & Gadget',
+          'Rumah Tangga',
+          'Hobi & Olahraga',
+        ];
+
+    const set = new Set<string>();
+    defaults.forEach((c) => set.add(c));
+    categories.forEach((c) => {
+      if (c && c !== 'new' && c !== 'Lainnya' && c !== 'Other' && c !== 'Umum') {
+        set.add(c);
+      }
+    });
+    set.add(isEn ? 'Other' : 'Lainnya');
+    return Array.from(set);
+  }, [categories, isEn]);
+
+  // Helper formatting numbers with thousand separator
   const formatThousand = (val: number | string): string => {
     if (val === '' || val === undefined || val === null) return '';
     const clean = String(val).replace(/\D/g, '');
     if (!clean) return '';
-    return new Intl.NumberFormat('id-ID').format(Number(clean));
+    return new Intl.NumberFormat(isEn ? 'en-US' : 'id-ID').format(Number(clean));
   };
 
   const parseNumber = (val: string): number => {
@@ -60,48 +102,233 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800&auto=format&fit=crop&q=80',
   ];
 
-  useEffect(() => {
-    if (productToEdit) {
-      setName(productToEdit.name || '');
-      setPriceDisplay(productToEdit.price ? formatThousand(productToEdit.price) : '');
-      setOriginalPriceDisplay(productToEdit.originalPrice ? formatThousand(productToEdit.originalPrice) : '');
-      setStockDisplay(productToEdit.stock !== undefined ? String(productToEdit.stock) : '10');
-      setCategory(productToEdit.category || (categories[0] || 'Umum'));
-      setDescription(productToEdit.description || '');
-      setImageUrl(productToEdit.imageUrl || '');
-      setWeightDisplay(productToEdit.weightGrams ? String(productToEdit.weightGrams) : '250');
-      setShowAdvanced(Boolean(productToEdit.originalPrice));
-    } else {
-      setName('');
-      setPriceDisplay('');
-      setOriginalPriceDisplay('');
-      setStockDisplay('10');
-      setCategory(categories[0] || 'Umum');
-      setDescription('');
-      setImageUrl(presetPhotos[0]);
-      setWeightDisplay('250');
-      setShowAdvanced(false);
+  // File upload and compression handler (supports JPG/PNG max 10MB)
+  const handleFile = async (file: File) => {
+    if (!file) return;
+
+    // Validate format: JPG, JPEG, PNG, WEBP
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+    const hasValidExt = /\.(jpe?g|png|webp)$/i.test(file.name);
+    if (!validTypes.includes(file.type) && !hasValidExt) {
+      setPhotoError(
+        isEn
+          ? 'Invalid file format. Please upload JPG, PNG, or WEBP image.'
+          : 'Format file tidak didukung. Harap upload foto format JPG, PNG, atau WEBP.'
+      );
+      return;
     }
-  }, [productToEdit, categories, isOpen]);
+
+    // Validate size: Maximum 10 MB
+    const maxSizeBytes = 10 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      setPhotoError(
+        isEn
+          ? `File size is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Maximum allowed is 10 MB.`
+          : `Ukuran file ${(file.size / (1024 * 1024)).toFixed(1)} MB. Maksimal ukuran foto adalah 10 MB.`
+      );
+      return;
+    }
+
+    setPhotoError('');
+    setIsProcessingPhoto(true);
+    try {
+      const compressed = await compressProductImage(file, 1200, 0.85);
+      if (compressed) {
+        setImageUrl(compressed);
+      } else {
+        setPhotoError(
+          isEn
+            ? 'Failed to process image. Please try another photo.'
+            : 'Gagal memproses foto. Silakan coba file gambar lain.'
+        );
+      }
+    } catch {
+      setPhotoError(
+        isEn
+          ? 'Error reading photo file.'
+          : 'Terjadi kesalahan saat memproses file foto.'
+      );
+    } finally {
+      setIsProcessingPhoto(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFile(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFile(file);
+    }
+  };
+
+  const prevIsOpenRef = useRef(false);
+  const prevProductToEditIdRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    // Only initialize/reset form when modal is first opened or target product changes
+    const justOpened = isOpen && !prevIsOpenRef.current;
+    const productChanged = (productToEdit?.id || '') !== (prevProductToEditIdRef.current || '');
+
+    if (isOpen && (justOpened || productChanged)) {
+      setPhotoError('');
+      if (productToEdit) {
+        setName(productToEdit.name || '');
+        if (productToEdit.originalPrice && productToEdit.originalPrice > productToEdit.price) {
+          setOriginalPriceDisplay(formatThousand(productToEdit.originalPrice));
+          setSellingPriceDisplay(formatThousand(productToEdit.price));
+          const pct = Math.round(
+            ((productToEdit.originalPrice - productToEdit.price) / productToEdit.originalPrice) * 100
+          );
+          setDiscountPercent(String(pct));
+        } else {
+          setOriginalPriceDisplay(productToEdit.price ? formatThousand(productToEdit.price) : '');
+          setSellingPriceDisplay(productToEdit.price ? formatThousand(productToEdit.price) : '');
+          setDiscountPercent('');
+        }
+        setStockDisplay(productToEdit.stock !== undefined ? String(productToEdit.stock) : '10');
+
+        const prodCat = productToEdit.category || '';
+        if (availableCategories.includes(prodCat)) {
+          setCategory(prodCat);
+          setCustomCategory('');
+        } else if (prodCat) {
+          setCategory('new');
+          setCustomCategory(prodCat);
+        } else {
+          setCategory(availableCategories[0] || (isEn ? 'Clothing & Fashion' : 'Pakaian & Fashion'));
+          setCustomCategory('');
+        }
+
+        const cleanDesc = (productToEdit.description || '').replace(/\s*<!--orig_price:\d+(?:\.\d+)?-->/g, '').trim();
+        setDescription(cleanDesc);
+        setImageUrl(productToEdit.imageUrl || '');
+        setWeightDisplay(productToEdit.weightGrams ? String(productToEdit.weightGrams) : '250');
+      } else {
+        setName('');
+        setOriginalPriceDisplay('');
+        setDiscountPercent('');
+        setSellingPriceDisplay('');
+        setStockDisplay('10');
+        setCategory(availableCategories[0] || (isEn ? 'Clothing & Fashion' : 'Pakaian & Fashion'));
+        setCustomCategory('');
+        setDescription('');
+        setImageUrl('');
+        setWeightDisplay('250');
+      }
+    }
+
+    prevIsOpenRef.current = isOpen;
+    prevProductToEditIdRef.current = productToEdit?.id;
+  }, [isOpen, productToEdit?.id, availableCategories, isEn]);
 
   if (!isOpen) return null;
 
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value.replace(/\D/g, '');
-    if (!rawVal) {
-      setPriceDisplay('');
-      return;
-    }
-    setPriceDisplay(new Intl.NumberFormat('id-ID').format(Number(rawVal)));
-  };
-
+  // When Regular/Normal Price is changed
   const handleOriginalPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value.replace(/\D/g, '');
     if (!rawVal) {
       setOriginalPriceDisplay('');
+      setSellingPriceDisplay('');
       return;
     }
-    setOriginalPriceDisplay(new Intl.NumberFormat('id-ID').format(Number(rawVal)));
+    const normalPrice = Number(rawVal);
+    setOriginalPriceDisplay(formatThousand(normalPrice));
+
+    const pct = Number(discountPercent) || 0;
+    if (pct > 0 && pct < 100) {
+      const discounted = Math.round(normalPrice * (1 - pct / 100));
+      setSellingPriceDisplay(formatThousand(discounted));
+    } else {
+      setSellingPriceDisplay(formatThousand(normalPrice));
+    }
+  };
+
+  // When Discount (%) is changed
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawVal = e.target.value.replace(/\D/g, '');
+    if (!rawVal) {
+      setDiscountPercent('');
+      if (originalPriceDisplay) {
+        setSellingPriceDisplay(originalPriceDisplay);
+      }
+      return;
+    }
+    const pct = Math.min(99, Number(rawVal));
+    setDiscountPercent(String(pct));
+
+    const normalPrice = parseNumber(originalPriceDisplay) || parseNumber(sellingPriceDisplay);
+    if (normalPrice > 0) {
+      if (!originalPriceDisplay) {
+        setOriginalPriceDisplay(formatThousand(normalPrice));
+      }
+      const discounted = Math.round(normalPrice * (1 - pct / 100));
+      setSellingPriceDisplay(formatThousand(discounted));
+    }
+  };
+
+  // Quick discount preset click (10%, 20%, 30%, 50%)
+  const applyDiscountPreset = (pct: number) => {
+    setDiscountPercent(String(pct));
+    const normalPrice = parseNumber(originalPriceDisplay) || parseNumber(sellingPriceDisplay);
+    if (normalPrice > 0) {
+      if (!originalPriceDisplay) {
+        setOriginalPriceDisplay(formatThousand(normalPrice));
+      }
+      const discounted = Math.round(normalPrice * (1 - pct / 100));
+      setSellingPriceDisplay(formatThousand(discounted));
+    }
+  };
+
+  // Remove discount action
+  const removeDiscount = () => {
+    setDiscountPercent('');
+    if (originalPriceDisplay) {
+      setSellingPriceDisplay(originalPriceDisplay);
+    }
+  };
+
+  // When Selling Price is directly edited by user
+  const handleSellingPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawVal = e.target.value.replace(/\D/g, '');
+    if (!rawVal) {
+      setSellingPriceDisplay('');
+      return;
+    }
+    const sellPrice = Number(rawVal);
+    setSellingPriceDisplay(formatThousand(sellPrice));
+
+    const normalPrice = parseNumber(originalPriceDisplay);
+    if (normalPrice > sellPrice) {
+      const pct = Math.round(((normalPrice - sellPrice) / normalPrice) * 100);
+      setDiscountPercent(String(pct));
+    } else {
+      setDiscountPercent('');
+      setOriginalPriceDisplay(formatThousand(sellPrice));
+    }
+  };
+
+  // Quick preset price buttons (50k, 100k, 150k, 250k)
+  const setQuickPrice = (nominal: number) => {
+    setOriginalPriceDisplay(formatThousand(nominal));
+    const pct = Number(discountPercent) || 0;
+    if (pct > 0 && pct < 100) {
+      const discounted = Math.round(nominal * (1 - pct / 100));
+      setSellingPriceDisplay(formatThousand(discounted));
+    } else {
+      setSellingPriceDisplay(formatThousand(nominal));
+    }
   };
 
   const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,32 +341,45 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     setWeightDisplay(rawVal);
   };
 
-  const setQuickPrice = (nominal: number) => {
-    setPriceDisplay(new Intl.NumberFormat('id-ID').format(nominal));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      alert('Mohon masukkan nama produk.');
-      return;
-    }
-    const finalPrice = parseNumber(priceDisplay);
-    if (finalPrice <= 0) {
-      alert('Mohon masukkan harga jual produk yang valid (contoh: 50.000).');
+      alert(isEn ? 'Please enter a product name.' : 'Mohon masukkan nama produk.');
       return;
     }
 
-    const finalCategory = category === 'new' ? customCategory || 'Lainnya' : category;
+    const finalSellingPrice = parseNumber(sellingPriceDisplay) || parseNumber(originalPriceDisplay);
+    if (finalSellingPrice <= 0) {
+      alert(isEn ? 'Please enter a valid product price (e.g. 50,000).' : 'Mohon masukkan harga produk yang valid (contoh: 50.000).');
+      return;
+    }
+
+    if (!imageUrl) {
+      setPhotoError(isEn ? 'Please upload a product photo.' : 'Mohon unggah foto produk.');
+      alert(isEn ? 'Please upload a product photo.' : 'Mohon unggah foto produk terlebih dahulu.');
+      return;
+    }
+
+    let finalCategory = category;
+    if (category === 'new') {
+      finalCategory = customCategory.trim() || (isEn ? 'Other' : 'Lainnya');
+    }
+
+    const normalPrice = parseNumber(originalPriceDisplay);
+    let originalPriceVal: number | undefined = undefined;
+
+    if (normalPrice > finalSellingPrice) {
+      originalPriceVal = normalPrice;
+    }
 
     onSave({
       name: name.trim(),
-      price: finalPrice,
-      originalPrice: originalPriceDisplay ? parseNumber(originalPriceDisplay) : undefined,
+      price: finalSellingPrice,
+      originalPrice: originalPriceVal,
       stock: parseNumber(stockDisplay),
-      category: finalCategory || 'Umum',
-      description: description.trim() || 'Produk berkualitas dari toko kami.',
-      imageUrl: imageUrl || presetPhotos[0],
+      category: finalCategory || (isEn ? 'Other' : 'Lainnya'),
+      description: description.trim() || (isEn ? 'Quality product from our store.' : 'Produk berkualitas dari toko kami.'),
+      imageUrl: imageUrl,
       weightGrams: parseNumber(weightDisplay) || 250,
     });
   };
@@ -147,268 +387,457 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   return (
     <div
       id="modal-product-form"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 bg-[#241A1A]/50 backdrop-blur-xs overflow-y-auto font-sans text-left"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-[#241A1A]/60 backdrop-blur-xs font-sans text-left"
+      onClick={onClose}
     >
-      <div className="bg-white rounded-[22px] max-w-lg w-full p-5 sm:p-7 shadow-2xl border border-[#E5E0DD] my-6 animate-in fade-in zoom-in-95 duration-200">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#E5E0DD]">
+      <div
+        className="bg-white rounded-2xl max-w-2xl lg:max-w-3xl w-full shadow-2xl border border-[#E5E0DD] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E0DD] shrink-0 bg-white">
           <div>
-            <h3 className="font-bold text-lg sm:text-xl text-[#241A1A] tracking-tight">
-              {productToEdit ? 'Ubah Rincian Produk' : 'Tambah Produk Baru'}
+            <h3 className="font-bold text-base sm:text-lg text-[#241A1A] tracking-tight">
+              {productToEdit
+                ? (isEn ? 'Edit Product Details' : 'Ubah Rincian Produk')
+                : (isEn ? 'Add New Product' : 'Tambah Produk Baru')}
             </h3>
             <p className="text-xs text-[#706866] mt-0.5 font-normal">
-              Isi data sederhana di bawah untuk mulai jualan
+              {isEn ? 'Fill in the basic product details to start selling' : 'Isi data sederhana di bawah untuk mulai jualan'}
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-xl text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer border border-transparent hover:border-[#E5E0DD]"
-            aria-label="Tutup form"
+            aria-label={isEn ? 'Close' : 'Tutup'}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          
-          {/* Step 1: Product Photo */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-              1. FOTO PRODUK <span className="text-[#66000E]">*</span>
-            </label>
-            <div className="flex items-center gap-3.5">
-              <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-[#FAF7F7] border border-[#E5E0DD] overflow-hidden flex items-center justify-center relative shrink-0 shadow-2xs">
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt="Preview Produk"
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <Camera className="w-7 h-7 text-[#706866]" />
-                )}
-              </div>
-              <div className="flex-1 space-y-1.5">
-                <p className="text-[11px] text-[#706866] font-medium">Pilih foto siap pakai atau masukkan link gambar:</p>
-                <div className="flex gap-1.5 overflow-x-auto pb-1">
-                  {presetPhotos.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setImageUrl(preset)}
-                      className={`w-8 h-8 rounded-lg overflow-hidden border-2 shrink-0 transition cursor-pointer ${
-                        imageUrl === preset
-                          ? 'border-[#66000E] scale-105 shadow-2xs'
-                          : 'border-transparent opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <img src={preset} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="text"
-                  placeholder="Atau tempel URL gambar (https://...)"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] focus:bg-white text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Step 2: Product Name */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-              2. NAMA PRODUK <span className="text-[#66000E]">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Contoh: Kemeja Batik Parang Slimfit"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3.5 py-2.5 sm:py-3 rounded-xl border border-[#E5E0DD] text-sm text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10 transition"
-            />
-          </div>
-
-          {/* Step 3 & 4: Price & Stock with Manual Input Support */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            
-            {/* Price (Harga Jual) */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
-                  3. HARGA JUAL <span className="text-[#66000E]">*</span>
-                </label>
-                {priceDisplay && (
-                  <span className="text-[10px] text-[#66000E] font-bold">
-                    Rp {priceDisplay}
-                  </span>
-                )}
-              </div>
-
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#706866]">
-                  Rp
-                </span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  required
-                  placeholder="Contoh: 150.000"
-                  value={priceDisplay}
-                  onChange={handlePriceChange}
-                  className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 rounded-xl border border-[#E5E0DD] text-sm sm:text-base font-bold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10"
-                />
-              </div>
-
-              {/* Quick Preset Buttons */}
-              <div className="flex items-center gap-1.5 mt-1.5 overflow-x-auto">
-                {[50000, 100000, 150000, 250000].map((amt) => (
-                  <button
-                    key={amt}
-                    type="button"
-                    onClick={() => setQuickPrice(amt)}
-                    className="px-2 py-0.5 rounded-md bg-[#FAF7F7] hover:bg-[#F5E8EA] border border-[#E5E0DD] hover:border-[#66000E] text-[10px] font-semibold text-[#706866] hover:text-[#66000E] transition cursor-pointer whitespace-nowrap"
-                  >
-                    {amt >= 1000 ? `${amt / 1000}rb` : amt}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Stock (Jumlah Stok) */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-                4. JUMLAH STOK <span className="text-[#66000E]">*</span>
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                required
-                placeholder="10"
-                value={stockDisplay}
-                onChange={handleStockChange}
-                className="w-full px-3.5 py-2.5 sm:py-3 rounded-xl border border-[#E5E0DD] text-sm sm:text-base font-bold text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10"
-              />
-              <p className="text-[10px] text-[#706866] mt-1 font-medium">
-                Stok barang yang siap dibeli pelanggan
-              </p>
-            </div>
-
-          </div>
-
-          {/* Step 5: Category */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-              5. KATEGORI PRODUK
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10"
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-              <option value="new">+ Tambah Kategori Baru...</option>
-            </select>
-
-            {category === 'new' && (
-              <input
-                type="text"
-                placeholder="Tulis nama kategori baru..."
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                className="mt-2 w-full px-3.5 py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
-              />
-            )}
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-              DESKRIPSI SINGKAT
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Ceritakan keunggulan bahan, ukuran, dan cara penggunaan..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10 resize-none"
-            />
-          </div>
-
-          {/* Advanced Settings */}
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="w-full py-2.5 px-3.5 rounded-xl bg-[#FAF7F7] hover:bg-[#F5E8EA]/50 border border-[#E5E0DD] flex items-center justify-between text-xs font-bold text-[#241A1A] transition cursor-pointer"
-            >
-              <span>Pengaturan Lanjutan (Diskon, Berat Ongkir)</span>
-              {showAdvanced ? <ChevronUp className="w-4 h-4 text-[#706866]" /> : <ChevronDown className="w-4 h-4 text-[#706866]" />}
-            </button>
-
-            {showAdvanced && (
-              <div className="p-3.5 mt-2 bg-[#FAF7F7] rounded-2xl border border-[#E5E0DD] space-y-3 animate-in fade-in duration-150">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#706866] mb-1">
-                      Harga Coret (Diskon)
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+              
+              {/* Left Column: Photo Upload (JPG/PNG max 10MB) & Weight */}
+              <div className="md:col-span-5 space-y-3.5">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
+                      {isEn ? '1. PRODUCT PHOTO' : '1. FOTO PRODUK'} <span className="text-[#66000E]">*</span>
                     </label>
+                    {imageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageUrl('');
+                          setPhotoError('');
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                        className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{isEn ? 'Remove' : 'Hapus'}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png, image/jpeg, image/jpg, image/webp"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+
+                  {/* Dropzone & Preview Box */}
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                    }}
+                    onDrop={handleFileDrop}
+                    className={`w-full aspect-square max-w-[220px] md:max-w-none mx-auto rounded-2xl border-2 ${
+                      isDragging
+                        ? 'border-[#66000E] bg-[#66000E]/5 scale-[1.01]'
+                        : imageUrl
+                        ? 'border-[#E5E0DD] bg-[#FAF7F7]'
+                        : 'border-dashed border-[#E5E0DD] bg-[#FAF7F7] hover:border-[#66000E]/50'
+                    } overflow-hidden flex flex-col items-center justify-center relative shadow-2xs group transition cursor-pointer`}
+                  >
+                    {imageUrl ? (
+                      <>
+                        <img
+                          src={imageUrl}
+                          alt="Preview Produk"
+                          className="w-full h-full object-cover transition group-hover:scale-105 duration-200"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition duration-200 flex flex-col items-center justify-center gap-1.5 text-white">
+                          <Upload className="w-6 h-6" />
+                          <span className="text-xs font-semibold">
+                            {isEn ? 'Change Photo' : 'Ganti Foto'}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center p-4">
+                        <div className="w-12 h-12 rounded-full bg-white shadow-xs border border-[#E5E0DD] flex items-center justify-center mx-auto mb-2 text-[#66000E] group-hover:scale-110 transition">
+                          <UploadCloud className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-bold text-[#241A1A] block">
+                          {isEn ? 'Upload Photo' : 'Upload Foto Produk'}
+                        </span>
+                        <span className="text-[11px] text-[#706866] mt-0.5 block">
+                          {isEn ? 'Click or drag photo here' : 'Klik atau seret foto ke sini'}
+                        </span>
+                      </div>
+                    )}
+
+                    {isProcessingPhoto && (
+                      <div className="absolute inset-0 bg-white/85 backdrop-blur-xs flex flex-col items-center justify-center gap-2 z-10">
+                        <div className="w-6 h-6 border-2 border-[#66000E] border-t-transparent rounded-full animate-spin" />
+                        <span className="text-[11px] font-semibold text-[#66000E]">
+                          {isEn ? 'Processing photo...' : 'Memproses foto...'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upload Button & Specs */}
+                  <div className="mt-2 space-y-1.5">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-2 px-3 rounded-xl border border-[#E5E0DD] bg-white hover:bg-[#FAF7F7] text-xs font-semibold text-[#241A1A] flex items-center justify-center gap-2 transition cursor-pointer shadow-2xs hover:border-[#66000E]/40"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-[#66000E]" />
+                      <span>
+                        {imageUrl
+                          ? (isEn ? 'Change Photo from Device' : 'Ganti Foto dari Perangkat')
+                          : (isEn ? 'Choose JPG / PNG from Device' : 'Pilih Foto dari Perangkat')}
+                      </span>
+                    </button>
+
+                    <p className="text-[10px] text-[#706866] text-center font-medium">
+                      JPG, PNG, atau WEBP • Maksimal <strong>10 MB</strong>
+                    </p>
+
+                    {photoError && (
+                      <div className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-medium text-center animate-in fade-in">
+                        {photoError}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Preset Photos for quick trial */}
+                  <div className="pt-2">
+                    <p className="text-[10px] text-[#706866] font-medium mb-1">
+                      {isEn ? 'Or use sample presets:' : 'Atau gunakan contoh foto:'}
+                    </p>
+                    <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                      {presetPhotos.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setImageUrl(preset);
+                            setPhotoError('');
+                          }}
+                          className={`w-8 h-8 rounded-lg overflow-hidden border-2 shrink-0 transition cursor-pointer ${
+                            imageUrl === preset
+                              ? 'border-[#66000E] scale-105 shadow-2xs ring-1 ring-[#66000E]/20'
+                              : 'border-transparent opacity-65 hover:opacity-100'
+                          }`}
+                        >
+                          <img src={preset} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Weight Input (Compact on Left) */}
+                <div className="pt-2 border-t border-[#E5E0DD]/60">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-[#706866]">
+                      {isEn ? 'Estimated Weight (Grams)' : 'Estimasi Berat (Gram)'}
+                    </label>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="250"
+                      value={weightDisplay}
+                      onChange={handleWeightChange}
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#E5E0DD] bg-white text-[#241A1A] font-semibold focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-[#706866]">
+                      gram
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[#706866] mt-0.5 font-medium">
+                    {isEn ? 'Used for automated courier rate calculation' : 'Untuk hitung tarif ongkir kurir otomatis'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Name, Price, Stock, Category, Description */}
+              <div className="md:col-span-7 space-y-3.5">
+                
+                {/* 2. Nama Produk */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
+                    {isEn ? '2. PRODUCT NAME' : '2. NAMA PRODUK'} <span className="text-[#66000E]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={isEn ? 'e.g. Silk Batik Long Sleeve Shirt' : 'Contoh: Kemeja Batik Parang Slimfit'}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 transition"
+                  />
+                </div>
+
+                {/* 3. Harga Normal, Diskon, & Harga Jual Akhir */}
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Normal / Base Price */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
+                        {isEn ? '3. REGULAR PRICE' : '3. HARGA NORMAL'} <span className="text-[#66000E]">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#706866]">
+                          Rp
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          required
+                          placeholder={isEn ? '125,000' : 'Contoh: 125.000'}
+                          value={originalPriceDisplay}
+                          onChange={handleOriginalPriceChange}
+                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                        />
+                      </div>
+                      {/* Quick Base Price Presets */}
+                      <div className="flex items-center gap-1 mt-1.5 overflow-x-auto">
+                        {[50000, 100000, 150000, 250000].map((amt) => (
+                          <button
+                            key={amt}
+                            type="button"
+                            onClick={() => setQuickPrice(amt)}
+                            className="px-2 py-0.5 rounded-md bg-[#FAF7F7] hover:bg-[#F5E8EA] border border-[#E5E0DD] hover:border-[#66000E] text-[10px] font-semibold text-[#706866] hover:text-[#66000E] transition cursor-pointer whitespace-nowrap"
+                          >
+                            {amt >= 1000 ? `${amt / 1000}${isEn ? 'k' : 'rb'}` : amt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Discount Input */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
+                          {isEn ? 'DISCOUNT (%)' : 'DISKON (%)'}
+                        </label>
+                        {discountPercent && (
+                          <button
+                            type="button"
+                            onClick={removeDiscount}
+                            className="text-[10px] text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
+                          >
+                            {isEn ? 'Remove' : 'Hapus diskon'}
+                          </button>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#706866]">
+                          %
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder={isEn ? 'e.g. 10' : 'Contoh: 10'}
+                          value={discountPercent}
+                          onChange={handleDiscountChange}
+                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                        />
+                      </div>
+                      {/* Quick Discount Presets */}
+                      <div className="flex items-center gap-1 mt-1.5 overflow-x-auto">
+                        {[10, 20, 30, 50].map((pct) => (
+                          <button
+                            key={pct}
+                            type="button"
+                            onClick={() => applyDiscountPreset(pct)}
+                            className={`px-2 py-0.5 rounded-md border text-[10px] font-semibold transition cursor-pointer whitespace-nowrap ${
+                              discountPercent === String(pct)
+                                ? 'bg-[#66000E] text-white border-[#66000E]'
+                                : 'bg-[#FAF7F7] hover:bg-[#F5E8EA] border-[#E5E0DD] text-[#706866] hover:text-[#66000E]'
+                            }`}
+                          >
+                            {pct}%
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Selling Price (Input that automatically updates!) */}
+                  <div className="p-3 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-[#241A1A]">
+                        {isEn ? 'FINAL SELLING PRICE (BUYER PAYS)' : 'HARGA JUAL AKHIR (YANG DIBAYAR PEMBELI)'} <span className="text-[#66000E]">*</span>
+                      </label>
+                      {discountPercent && Number(discountPercent) > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-bold">
+                          Hemat {discountPercent}%
+                        </span>
+                      )}
+                    </div>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#706866]">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#66000E]">
                         Rp
                       </span>
                       <input
                         type="text"
                         inputMode="numeric"
-                        placeholder="Contoh: 200.000"
-                        value={originalPriceDisplay}
-                        onChange={handleOriginalPriceChange}
-                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-[#E5E0DD] bg-white text-[#241A1A] font-semibold focus:outline-none focus:border-[#66000E]"
+                        required
+                        placeholder={isEn ? '112,500' : '112.500'}
+                        value={sellingPriceDisplay}
+                        onChange={handleSellingPriceChange}
+                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-bold text-[#66000E] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 transition"
                       />
                     </div>
+                    <p className="text-[10px] text-[#706866]">
+                      {discountPercent && Number(discountPercent) > 0 && originalPriceDisplay && originalPriceDisplay !== sellingPriceDisplay ? (
+                        <>
+                          {isEn ? 'Front store displays discounted price ' : 'Bagian depan toko menampilkan harga diskon '}
+                          <span className="font-bold text-[#66000E]">Rp {sellingPriceDisplay}</span>
+                          {isEn ? ', detail view shows regular price ' : ', dan pada detail produk menampilkan harga regular '}
+                          <span className="line-through font-medium">Rp {originalPriceDisplay}</span>
+                        </>
+                      ) : (
+                        isEn ? 'Standard selling price without discount' : 'Harga jual standar produk tanpa diskon'
+                      )}
+                    </p>
                   </div>
                 </div>
 
+                {/* 4 & 5: Stock & Category */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
+                      {isEn ? '4. STOCK QUANTITY' : '4. JUMLAH STOK'} <span className="text-[#66000E]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      placeholder="10"
+                      value={stockDisplay}
+                      onChange={handleStockChange}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-bold text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                    />
+                    <p className="text-[10px] text-[#706866] mt-0.5 font-medium">
+                      {isEn ? 'Units available for purchase' : 'Stok barang yang siap dibeli'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
+                      {isEn ? '5. PRODUCT CATEGORY' : '5. KATEGORI PRODUK'}
+                    </label>
+
+                    {category === 'new' ? (
+                      <div className="relative animate-in fade-in duration-150">
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder={isEn ? 'Type new category name...' : 'Ketik nama kategori baru...'}
+                          value={customCategory}
+                          onChange={(e) => setCustomCategory(e.target.value)}
+                          className="w-full pl-3 pr-8 py-2 rounded-xl border border-[#66000E] bg-white text-xs font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#66000E]/15"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCategory(availableCategories[0] || (isEn ? 'Other' : 'Lainnya'));
+                            setCustomCategory('');
+                          }}
+                          title={isEn ? 'Cancel' : 'Batal'}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#706866] hover:text-[#66000E] rounded-md hover:bg-[#FAF7F7] transition cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <select
+                        value={category}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCategory(val);
+                          if (val === 'new') {
+                            setCustomCategory('');
+                          }
+                        }}
+                        className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
+                      >
+                        {availableCategories.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                        <option value="new">{isEn ? '+ Add New Category...' : '+ Tambah Kategori Baru...'}</option>
+                      </select>
+                    )}
+                  </div>
+                </div>
+
+                {/* Deskripsi Singkat */}
                 <div>
-                  <label className="block text-[11px] font-bold text-[#706866] mb-1">
-                    Estimasi Berat (Gram) untuk Hitung Ongkir Kurir
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
+                    {isEn ? 'SHORT DESCRIPTION' : 'DESKRIPSI SINGKAT'}
                   </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="250"
-                    value={weightDisplay}
-                    onChange={handleWeightChange}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E5E0DD] bg-white text-[#241A1A] font-semibold focus:outline-none focus:border-[#66000E]"
+                  <textarea
+                    rows={2}
+                    placeholder={isEn ? 'Describe materials, size, and product highlights...' : 'Ceritakan keunggulan bahan, ukuran, dan cara penggunaan...'}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 resize-none transition"
                   />
                 </div>
+
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Submit CTA Buttons */}
-          <div className="pt-4 border-t border-[#E5E0DD] flex items-center justify-end gap-2.5">
+          {/* Fixed Footer Buttons (Always visible at bottom) */}
+          <div className="px-5 py-3.5 border-t border-[#E5E0DD] bg-[#FAF7F7] flex items-center justify-end gap-2.5 shrink-0">
             <button
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 sm:px-5 py-2.5 min-h-[44px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] font-bold text-xs hover:bg-[#FAF7F7] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 min-h-[38px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] font-bold text-xs hover:bg-white transition cursor-pointer disabled:opacity-50"
             >
-              Batal
+              {isEn ? 'Cancel' : 'Batal'}
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="flex-1 sm:flex-none px-6 py-2.5 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs sm:text-sm shadow-xs transition transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
+              className="px-5 py-2 min-h-[38px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs sm:text-sm shadow-xs transition transform active:scale-98 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
             >
               {isSaving ? (
                 <>
@@ -416,18 +845,17 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                   </svg>
-                  <span>Menyimpan...</span>
+                  <span>{isEn ? 'Saving...' : 'Menyimpan...'}</span>
                 </>
               ) : (
                 <>
                   <Check className="w-4 h-4 stroke-[2.5]" />
-                  <span>Simpan Produk</span>
+                  <span>{productToEdit ? (isEn ? 'Save Changes' : 'Simpan Perubahan') : (isEn ? 'Save Product' : 'Simpan Produk')}</span>
                 </>
               )}
             </button>
           </div>
         </form>
-
       </div>
     </div>
   );

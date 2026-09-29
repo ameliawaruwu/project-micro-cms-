@@ -55,14 +55,19 @@ export const ProductMobileCard: React.FC<ProductMobileCardProps> = ({
               >
                 {prod.name}
               </h4>
-              <div className="mt-1 flex items-baseline gap-2">
+              <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
                 <span className="font-bold text-[#241A1A] text-base">
                   {formatRupiah(prod.price)}
                 </span>
                 {prod.originalPrice && prod.originalPrice > prod.price && (
-                  <span className="text-[11px] text-[#706866] line-through">
-                    {formatRupiah(prod.originalPrice)}
-                  </span>
+                  <>
+                    <span className="text-[11px] text-[#706866] line-through">
+                      {formatRupiah(prod.originalPrice)}
+                    </span>
+                    <span className="inline-flex items-center text-[9px] font-bold text-white bg-[#66000E] px-1.5 py-0.5 rounded-full shadow-2xs">
+                      -{Math.round(((prod.originalPrice - prod.price) / prod.originalPrice) * 100)}%
+                    </span>
+                  </>
                 )}
               </div>
             </div>

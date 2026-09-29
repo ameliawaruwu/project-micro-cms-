@@ -74,11 +74,6 @@ export const AdminPlansTab: React.FC<AdminPlansTabProps> = ({
             <Crown className="w-5 h-5 text-[#66000E]" />
             <span>{isEn ? 'Billing Plans Management' : 'Paket Langganan'}</span>
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {isEn
-              ? 'Manage store subscription tiers, monthly & yearly pricing, features, and platform billing history.'
-              : 'Kelola paket langganan toko, harga bulanan & tahunan, fitur, dan riwayat tagihan platform.'}
-          </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap self-start sm:self-auto shrink-0">
