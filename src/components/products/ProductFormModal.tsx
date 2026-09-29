@@ -724,23 +724,23 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           </div>
 
           {/* Fixed Footer Buttons (Always visible at bottom) */}
-          <div className="px-5 py-3.5 border-t border-[#E5E0DD] bg-[#FAF7F7] flex items-center justify-end gap-2.5 shrink-0">
+          <div className="px-5 py-2.5 border-t border-[#E5E0DD] bg-[#FAF7F7] flex items-center justify-end gap-2 shrink-0">
             <button
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 min-h-[38px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] font-medium text-xs hover:bg-white transition cursor-pointer disabled:opacity-50"
+              className="px-3 py-1.5 rounded-lg border border-[#E5E0DD] bg-white text-[#554D4B] hover:text-[#241A1A] font-medium text-xs hover:bg-[#F5F2F0] transition cursor-pointer disabled:opacity-50"
             >
               {isEn ? 'Cancel' : 'Batal'}
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-5 py-2 min-h-[38px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs sm:text-sm shadow-xs transition transform active:scale-98 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+              className="px-3.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-medium text-xs shadow-xs transition active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-70"
             >
               {isSaving ? (
                 <>
-                  <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                   </svg>
@@ -748,7 +748,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 stroke-[2.5]" />
+                  <Check className="w-3.5 h-3.5" />
                   <span>{productToEdit ? (isEn ? 'Save Changes' : 'Simpan Perubahan') : (isEn ? 'Save Product' : 'Simpan Produk')}</span>
                 </>
               )}
