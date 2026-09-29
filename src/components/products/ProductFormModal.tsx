@@ -588,23 +588,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
-                        {isEn ? '5. PRODUCT CATEGORY' : '5. KATEGORI PRODUK'}
-                      </label>
-                      {category === 'new' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCategory(availableCategories[0] || (isEn ? 'Other' : 'Lainnya'));
-                            setCustomCategory('');
-                          }}
-                          className="text-[11px] font-semibold text-[#66000E] hover:underline cursor-pointer"
-                        >
-                          {isEn ? '← Select from list' : '← Pilih dari daftar'}
-                        </button>
-                      )}
-                    </div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
+                      {isEn ? '5. PRODUCT CATEGORY' : '5. KATEGORI PRODUK'}
+                    </label>
 
                     {category === 'new' ? (
                       <div className="relative animate-in fade-in duration-150">
