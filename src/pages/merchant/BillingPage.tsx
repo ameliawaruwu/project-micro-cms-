@@ -51,25 +51,104 @@ const INITIAL_INVOICES: InvoiceItem[] = [
 
 const PLAN_NAME_MAP: Record<string, string> = {
   'Starter (Gratis)': 'Starter (Free)',
-  'Pro UMKM': 'Pro UMKM',
+  'Pro UMKM': 'Pro MSME',
   'Bisnis Scale-Up': 'Business Scale-Up',
-  'Paket Pro UMKM': 'Pro UMKM Plan',
+  'Paket Pro UMKM': 'Pro MSME Plan',
   'Paket Starter (Gratis)': 'Starter (Free) Plan',
   'Paket Bisnis Scale-Up': 'Business Scale-Up Plan',
+  'Paket Free': 'Free Plan',
+  'Personal Toko': 'Personal Store',
+  'Community UMKM': 'Community MSME',
+  'Bisnis Corporate': 'Corporate Business',
+  'Startup Scale': 'Startup Scale',
 };
 
 const PLAN_TAGLINE_MAP: Record<string, string> = {
+  'Cocok untuk toko baru yang baru mulai belajar online': 'Ideal for new stores starting to learn online selling',
+  'Cocok untuk bisnis individu & toko retail mandiri': 'Ideal for individual businesses & independent retail shops',
+  'Pilihan terbaik untuk UMKM & komunitas bisnis berkembang': 'Best choice for growing MSMEs & business communities',
+  'Solusi perusahaan retail skala menengah dengan multi-cabang': 'Solution for mid-sized retail enterprises with multiple branches',
+  'Infrastruktur cloud enterprise untuk brand skala nasional': 'Enterprise cloud infrastructure for national-scale brands',
+  'Belajar & kelola katalog produk lokal secara gratis': 'Learn & manage local product catalogs for free',
+  'Buka toko online mandiri & terima pembayaran instan': 'Open an independent online store & accept instant payments',
+  'Solusi lengkap & paling laris untuk bisnis UMKM bertumbuh': 'Complete & best-selling solution for growing MSME businesses',
   'Cocok untuk toko baru yang mulai berjualan online': 'Suitable for new stores starting to sell online',
   'Fitur lengkap tanpa batas untuk meningkatkan omset toko': 'Full unlimited features to boost store revenue',
   'Untuk bisnis UMKM berkembang dengan tim & cabang': 'For growing businesses with teams & branches',
 };
 
+const PLAN_BADGE_MAP: Record<string, string> = {
+  'Pilihan Terbaik UMKM': 'Best MSME Choice',
+  'Pilihan Terbaik UMKM (Rekomendasi Utama)': 'Best MSME Choice (Top Recommendation)',
+  'Populer': 'Popular',
+  'Rekomendasi': 'Recommended',
+};
+
 const PLAN_FEATURE_MAP: Record<string, string> = {
+  // Plan Free
+  'Subdomain gratis [slug].kroomify.com': 'Free subdomain [slug].kroomify.com',
+  'Subdomain pratinjau: namatoko.kroombox.com': 'Preview subdomain: yourstore.kroombox.com',
+  'Katalog produk hingga 15 item': 'Product catalog up to 15 items',
+  'Katalog produk dasar (maksimal 10 produk)': 'Basic product catalog (maximum 10 products)',
+  'Checkout katalog & order WhatsApp': 'Catalog checkout & WhatsApp ordering',
+  'Watermark Kroomify di footer toko': 'Kroomify watermark in store footer',
+  'Watermark resmi Kroomify di footer': 'Official Kroomify watermark in store footer',
+  'Manual shipping & payment': 'Manual shipping & payment',
+  'Tanpa Checkout Otomatis Midtrans (Manual/WA saja)': 'No automated Midtrans checkout (Manual/WA only)',
+  'Tanpa Ekspedisi Kurir Otomatis Biteship': 'No automated Biteship couriers',
+  'Tanpa Publikasi/Deploy Toko Online & Domain': 'No online store deployment & custom domain',
+
+  // Personal Toko
+  'Hosting Server: Rp 200.000 / tahun': 'Server Hosting: Rp 200,000 / year',
+  'Jasa Micro CMS: Rp 150.000 / tahun': 'Micro CMS Service: Rp 150,000 / year',
+  'Dukungan Custom Domain (.top, .online, .org, .com, .id)': 'Custom domain support (.top, .online, .org, .com, .id)',
+  'Mendukung Custom Domain Sendiri (.com, .id, dll)': 'Supports custom domain (.com, .id, etc.)',
+  'Katalog produk hingga 100 item': 'Product catalog up to 100 items',
+  'Kapasitas hingga 50 produk & varian': 'Capacity up to 50 products & variants',
+  'Deploy Toko Online Aktif (bisa diakses pembeli)': 'Live online store deployment (publicly accessible)',
+  'Automated Midtrans (QRIS, VA Bank, E-Wallet)': 'Automated Midtrans (QRIS, VA Bank, E-Wallet)',
+  'Checkout otomatis Midtrans (QRIS & VA Bank)': 'Automated Midtrans checkout (QRIS & VA Bank)',
+  'Integrasi Ekspedisi Logistik (JNE, J&T via Biteship)': 'Logistics courier integration (JNE, J&T via Biteship)',
+  'Cek ongkir & pengiriman otomatis Biteship': 'Automated shipping calculation & booking via Biteship',
+  'Kapasitas Hosting Cloud Kroomify cepat': 'Fast Kroomify Cloud Hosting capacity',
+  'Laporan penjualan & pesanan harian': 'Daily sales & order reporting',
+  'White-label tanpa watermark': 'White-label without watermark',
+
+  // Community UMKM
+  'Hosting Server: Rp 700.000 / tahun': 'Server Hosting: Rp 700,000 / year',
+  'Jasa Micro CMS: Rp 300.000 / tahun': 'Micro CMS Service: Rp 300,000 / year',
+  'Pilihan Terbaik UMKM (Rekomendasi Utama)': 'Best Choice for MSMEs (Top Recommendation)',
+  'Unlimited product catalog & variants': 'Unlimited product catalog & variants',
+  'Unlimited katalog produk & varian': 'Unlimited product catalog & variants',
+  'Unlimited katalog produk & varian tanpa batas': 'Unlimited product catalog & variants without limits',
+  'Prioritas DNS setup & SSL otomatis': 'Priority DNS setup & automated SSL',
+  'Semua channel Midtrans & Biteship aktif': 'All Midtrans & Biteship channels active',
+  'Full checkout Midtrans (QRIS, VA Bank, E-Wallet)': 'Full Midtrans checkout (QRIS, VA Bank, E-Wallet)',
+  'Multi-gudang & multi-cabang pengiriman': 'Multi-warehouse & multi-branch shipping',
+  'Laporan analitik omset & export data': 'Revenue analytics report & data export',
+  'Cetak label resi pengiriman thermal massal': 'Bulk thermal shipping label printing',
+  'Visual layout builder (bebas kustom tema toko)': 'Visual layout builder (customizable store themes)',
+  'Hosting Server UMKM prioritas tinggi': 'High priority MSME Server Hosting',
+  'Bebas Watermark (100% White-label Brand Anda)': 'Watermark-free (100% White-label your brand)',
+
+  // Corporate & Startup
+  'Hosting Server: Rp 1.800.000 / tahun': 'Server Hosting: Rp 1,800,000 / year',
+  'Jasa Micro CMS: Rp 700.000 / tahun': 'Micro CMS Service: Rp 700,000 / year',
+  'Server dedicated cloud berkecepatan tinggi': 'High-speed dedicated cloud server',
+  'Kustomisasi tema & visual layout builder tingkat lanjut': 'Advanced theme customization & visual layout builder',
+  'Multi-cabang gudang tidak terbatas': 'Unlimited multi-branch warehouses',
+  'Notifikasi otomatis WhatsApp bot ke pembeli': 'Automated WhatsApp bot notifications to buyers',
+  'Dedicated Account Manager 24/7': 'Dedicated Account Manager 24/7',
+  'Hosting Server: Rp 2.000.000 / tahun': 'Server Hosting: Rp 2,000,000 / year',
+  'Jasa Micro CMS: Rp 1.000.000 / tahun': 'Micro CMS Service: Rp 1,000,000 / year',
+  'Traffic kapasitas tinggi hingga ratusan ribu order/hari': 'High capacity traffic up to hundreds of thousands orders/day',
+  'API akses webhook langsung & integrasi ERP': 'Direct webhook API access & ERP integration',
+  'Prioritas domain deployment & DNS propagation': 'Priority domain deployment & DNS propagation',
+  'Garansi uptime SLA 99.9%': '99.9% SLA uptime guarantee',
+  'Prioritas engineering support': 'Priority engineering support',
   'Katalog produk hingga 25 item': 'Product catalog up to 25 items',
   'Checkout otomatis via Midtrans (QRIS & VA)': 'Automated checkout via Midtrans (QRIS & VA)',
   'Cek ongkir otomatis ekspedisi (J&T, JNE)': 'Automated shipping rate check (J&T, JNE)',
-  'Watermark resmi Kroomify di footer toko': 'Official Kroomify watermark in store footer',
-  'Unlimited katalog produk & varian': 'Unlimited product catalog & variants',
   'Bebas watermark (white-label brand sendiri)': 'Watermark free (your own white-label brand)',
   'Semua metode pembayaran Midtrans (QRIS, VA Bank, Kartu Kredit)': 'All Midtrans payment methods (QRIS, VA Bank, Credit Card)',
   'Visual layout builder & kustomisasi banner toko': 'Visual layout builder & store banner customization',
@@ -79,8 +158,6 @@ const PLAN_FEATURE_MAP: Record<string, string> = {
   'Semua fitur paket Pro UMKM': 'All features in Pro UMKM plan',
   'Akses multi-staf pengelola toko (hingga 5 admin)': 'Multi-staff store access (up to 5 admins)',
   'Dukungan custom domain toko (.com / .id)': 'Custom store domain support (.com / .id)',
-  'Notifikasi otomatis WhatsApp bot ke pembeli': 'Automated WhatsApp bot notifications to buyers',
-  'Dedicated Account Manager 24/7': 'Dedicated Account Manager 24/7',
 };
 
 export const BillingPage: React.FC<BillingPageProps> = ({
@@ -94,7 +171,27 @@ export const BillingPage: React.FC<BillingPageProps> = ({
 
   const getPlanName = (name: string) => (isEn && PLAN_NAME_MAP[name] ? PLAN_NAME_MAP[name] : name);
   const getPlanTagline = (tagline: string) => (isEn && PLAN_TAGLINE_MAP[tagline] ? PLAN_TAGLINE_MAP[tagline] : tagline);
-  const getPlanFeature = (feat: string) => (isEn && PLAN_FEATURE_MAP[feat] ? PLAN_FEATURE_MAP[feat] : feat);
+  const getPlanBadge = (badge?: string) => (!badge ? '' : (isEn && PLAN_BADGE_MAP[badge] ? PLAN_BADGE_MAP[badge] : badge));
+  const getPlanFeature = (feat: string) => {
+    if (!isEn) return feat;
+    const clean = feat.trim();
+    if (PLAN_FEATURE_MAP[clean]) return PLAN_FEATURE_MAP[clean];
+
+    // Dynamic pattern translations
+    if (/^Hosting Server:\s*(Rp\s*[\d\.\,]+)\s*\/\s*tahun/i.test(clean)) {
+      return clean.replace(/^Hosting Server:\s*(Rp\s*[\d\.\,]+)\s*\/\s*tahun/i, 'Server Hosting: $1 / year');
+    }
+    if (/^Jasa Micro CMS:\s*(Rp\s*[\d\.\,]+)\s*\/\s*tahun/i.test(clean)) {
+      return clean.replace(/^Jasa Micro CMS:\s*(Rp\s*[\d\.\,]+)\s*\/\s*tahun/i, 'Micro CMS Service: $1 / year');
+    }
+    if (/^Katalog produk hingga\s*(\d+)\s*item/i.test(clean)) {
+      return clean.replace(/^Katalog produk hingga\s*(\d+)\s*item/i, 'Product catalog up to $1 items');
+    }
+    if (/^Kapasitas hingga\s*(\d+)\s*produk/i.test(clean)) {
+      return clean.replace(/^Kapasitas hingga\s*(\d+)\s*produk/i, 'Capacity up to $1 products');
+    }
+    return clean;
+  };
 
   const [plans, setPlans] = useState<BillingPlan[]>(billingPlanService.getActivePlans());
   const billingCycle = 'yearly';
@@ -420,7 +517,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       {/* Breadcrumb Navigation */}
       <Breadcrumb
         items={[
-          { label: 'Dashboard', onClick: onNavigateDashboard },
+          { label: t('nav_dashboard', 'Dashboard'), onClick: onNavigateDashboard },
           { label: t('nav_billing', 'Paket Langganan'), isActive: true },
         ]}
       />
@@ -432,9 +529,6 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             <Crown className="w-5 h-5 text-[#66000E]" />
             <span>{t('nav_billing', 'Paket Langganan')}</span>
           </h1>
-          <p className="text-xs text-[#706866] mt-0.5">
-            Pilih paket langganan tahunan terbaik untuk toko online Anda. Seluruh paket berbayar sudah termasuk biaya hosting server & platform Micro CMS.
-          </p>
         </div>
 
         {/* Top Controls: Current Plan Status & Riwayat Berlangganan Button */}
@@ -611,7 +705,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 {plan.badge && (
                   <div className="mb-2">
                     <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500 text-white shadow-xs inline-block">
-                      ★ {plan.badge}
+                      ★ {getPlanBadge(plan.badge)}
                     </span>
                   </div>
                 )}
@@ -650,11 +744,11 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 {plan.hostingPriceYearly !== undefined && plan.cmsPriceYearly !== undefined && price > 0 && (
                   <div className="bg-[#FAF7F7] p-2.5 rounded-xl border border-[#E5E0DD]/80 mb-4 text-[11px] space-y-1">
                     <div className="flex justify-between text-[#706866]">
-                      <span>Biaya Hosting Server:</span>
+                      <span>{isEn ? 'Server Hosting Cost:' : 'Biaya Hosting Server:'}</span>
                       <span className="font-semibold text-[#241A1A]">{formatRupiah(plan.hostingPriceYearly)}</span>
                     </div>
                     <div className="flex justify-between text-[#706866]">
-                      <span>Biaya Jasa Micro CMS:</span>
+                      <span>{isEn ? 'Micro CMS Platform Fee:' : 'Biaya Jasa Micro CMS:'}</span>
                       <span className="font-semibold text-[#241A1A]">{formatRupiah(plan.cmsPriceYearly)}</span>
                     </div>
                   </div>

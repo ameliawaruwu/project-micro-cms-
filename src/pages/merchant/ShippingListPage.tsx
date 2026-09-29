@@ -36,7 +36,7 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
   const handleToggle = (id: string) => {
     if (isFreePlan) {
       onShowNotification(
-        'Fitur integrasi ekspedisi terkunci pada Paket Free. Silakan upgrade ke paket hosting berbayar.'
+        t('shipping_locked_notif', 'Fitur integrasi ekspedisi terkunci pada Paket Free. Silakan upgrade ke paket hosting berbayar.')
       );
       if (onNavigateBilling) {
         onNavigateBilling();
@@ -141,7 +141,7 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
                   className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] text-white text-xs font-bold shadow-sm transition active:scale-[0.98] cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-amber-300" />
-                  <span>Upgrade Paket Hosting</span>
+                  <span>{t('upgrade_hosting_plan_btn', 'Upgrade Paket Hosting')}</span>
                 </button>
               )}
             </div>

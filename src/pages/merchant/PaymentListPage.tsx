@@ -6,7 +6,12 @@ import {
   Sparkles,
   AlertTriangle,
 } from 'lucide-react';
-import { paymentChannelService, PaymentChannel } from '../../services/paymentChannelService';
+import {
+  paymentChannelService,
+  PaymentChannel,
+  getLocalizedChannelDescription,
+  getLocalizedChannelName,
+} from '../../services/paymentChannelService';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Store } from '../../types';
@@ -43,17 +48,22 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (c) =>
+      result = result.filter((c) => {
+        const localizedName = getLocalizedChannelName(c.id, c.name, language).toLowerCase();
+        const localizedDesc = getLocalizedChannelDescription(c.id, c.description, language).toLowerCase();
+        return (
           c.name.toLowerCase().includes(q) ||
           c.description.toLowerCase().includes(q) ||
+          localizedName.includes(q) ||
+          localizedDesc.includes(q) ||
           c.categoryLabel.toLowerCase().includes(q) ||
           c.id.toLowerCase().includes(q)
-      );
+        );
+      });
     }
 
     return result;
-  }, [channels, searchQuery, selectedCategory]);
+  }, [channels, searchQuery, selectedCategory, language]);
 
   const activeCount = useMemo(() => {
     if (isFreePlan) return 0;
@@ -77,8 +87,11 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
     const { channels: updated, updatedItem } = paymentChannelService.toggleChannel(id);
     setChannels(updated);
     if (onShowNotification && updatedItem) {
+      const displayName = getLocalizedChannelName(updatedItem.id, updatedItem.name, language);
       onShowNotification(
-        `${updatedItem.name} ${updatedItem.isEnabled ? 'diaktifkan' : 'dinonaktifkan'}`
+        isEn
+          ? `${displayName} ${updatedItem.isEnabled ? 'enabled' : 'disabled'}`
+          : `${displayName} ${updatedItem.isEnabled ? 'diaktifkan' : 'dinonaktifkan'}`
       );
     }
   };
@@ -104,8 +117,12 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
     if (onShowNotification) {
       onShowNotification(
         nextState
-          ? 'Semua metode pembayaran Midtrans diaktifkan'
-          : 'Semua metode pembayaran Midtrans dinonaktifkan'
+          ? isEn
+            ? 'All Midtrans payment methods enabled'
+            : 'Semua metode pembayaran Midtrans diaktifkan'
+          : isEn
+            ? 'All Midtrans payment methods disabled'
+            : 'Semua metode pembayaran Midtrans dinonaktifkan'
       );
     }
   };
@@ -342,7 +359,13 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                 !isFreePlan && isMasterActive && activeCount > 0 ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
               } ${isFreePlan ? 'opacity-80' : ''}`}
-              title={isFreePlan ? (isEn ? 'Locked (Free Plan)' : 'Terkunci (Paket Free)') : isMasterActive ? 'Nonaktifkan Gateway' : 'Aktifkan Gateway'}
+              title={
+                isFreePlan
+                  ? (isEn ? 'Locked (Free Plan)' : 'Terkunci (Paket Free)')
+                  : isMasterActive
+                  ? (isEn ? 'Disable Gateway' : 'Nonaktifkan Gateway')
+                  : (isEn ? 'Enable Gateway' : 'Aktifkan Gateway')
+              }
             >
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
@@ -397,7 +420,10 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
           ) : (
             <div className="grid grid-cols-1 gap-2.5">
               {filteredChannels.map((channel) => {
+                const displayName = getLocalizedChannelName(channel.id, channel.name, language);
+                const displayDesc = getLocalizedChannelDescription(channel.id, channel.description, language);
                 const isChannelActive = !isFreePlan && channel.isEnabled;
+
                 return (
                   <div
                     key={channel.id}
@@ -413,10 +439,10 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
 
                       <div className="min-w-0">
                         <h4 className="text-xs sm:text-sm font-bold text-[#241A1A] leading-snug">
-                          {channel.name}
+                          {displayName}
                         </h4>
                         <p className="text-[11px] text-[#706866] mt-0.5 line-clamp-1">
-                          {channel.description}
+                          {displayDesc}
                         </p>
                       </div>
                     </div>
@@ -431,7 +457,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                           </span>
                           <span className="flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
                             <Lock className="w-3 h-3 text-amber-600" />
-                            <span>{isEn ? 'Locked' : 'Terkunci'}</span>
+                            <span>{isEn ? 'Plan Locked' : 'Terkunci'}</span>
                           </span>
                         </div>
                       ) : (
@@ -463,8 +489,8 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                           isFreePlan
                             ? (isEn ? 'Upgrade to a paid hosting plan to enable' : 'Upgrade ke paket hosting berbayar untuk mengaktifkan')
                             : channel.isEnabled
-                            ? (isEn ? `Disable ${channel.name}` : `Nonaktifkan ${channel.name}`)
-                            : (isEn ? `Enable ${channel.name}` : `Aktifkan ${channel.name}`)
+                            ? (isEn ? `Disable ${displayName}` : `Nonaktifkan ${displayName}`)
+                            : (isEn ? `Enable ${displayName}` : `Aktifkan ${displayName}`)
                         }
                       >
                         <span

@@ -26,7 +26,13 @@ import { midtransService } from '../../services/midtransService';
 import { storeService } from '../../services/storeService';
 import { shippingService, INDONESIAN_CITIES } from '../../services/shippingService';
 import { integrationService } from '../../services/integrationService';
-import { paymentChannelService, PaymentChannel } from '../../services/paymentChannelService';
+import {
+  paymentChannelService,
+  PaymentChannel,
+  getLocalizedChannelDescription,
+  getLocalizedChannelName,
+} from '../../services/paymentChannelService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CheckoutPageProps {
   themeData?: ThemeSchema;
@@ -43,6 +49,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   products = [],
   onNavigate,
 }) => {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',
@@ -248,53 +256,58 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     activePaymentChannels.forEach((channel) => {
       if (!channel.isEnabled) return;
 
+      const localizedName = getLocalizedChannelName(channel.id, channel.name, language);
+      const localizedDesc = getLocalizedChannelDescription(channel.id, channel.description, language);
+
       if (channel.id === 'qris') {
         options.push({
           id: 'qris',
-          name: 'QRIS & E-Wallet (Scan Otomatis GoPay, OVO, DANA, ShopeePay)',
-          description: channel.description || 'Bayar instan via scan kode QRIS dari aplikasi m-Banking atau E-Wallet mana pun.',
-          badge: 'Instan Otomatis',
+          name: isEn
+            ? 'QRIS & E-Wallet (Instant Scan GoPay, OVO, DANA, ShopeePay)'
+            : 'QRIS & E-Wallet (Scan Otomatis GoPay, OVO, DANA, ShopeePay)',
+          description: localizedDesc || (isEn ? 'Instant scan via QRIS code from any mobile banking or e-wallet.' : 'Bayar instan via scan kode QRIS dari aplikasi m-Banking atau E-Wallet mana pun.'),
+          badge: isEn ? 'Instant Auto' : 'Instan Otomatis',
         });
       } else if (channel.id === 'gopay') {
         options.push({
           id: 'gopay',
-          name: 'GoPay & GoPay Later',
-          description: channel.description,
+          name: localizedName,
+          description: localizedDesc,
           badge: 'E-Wallet',
         });
       } else if (channel.id === 'shopeepay') {
         options.push({
           id: 'shopeepay',
-          name: 'ShopeePay & SPayLater',
-          description: channel.description,
+          name: localizedName,
+          description: localizedDesc,
           badge: 'E-Wallet',
         });
       } else if (channel.category === 'virtual_account') {
         options.push({
           id: channel.id,
-          name: channel.name,
-          description: channel.description || 'Transfer otomatis dengan verifikasi instan 24 jam tanpa perlu upload bukti transfer.',
-          badge: 'Otomatis 24/7',
+          name: localizedName,
+          description: localizedDesc || (isEn ? 'Automatic transfer with instant 24/7 verification without receipt upload.' : 'Transfer otomatis dengan verifikasi instan 24 jam tanpa perlu upload bukti transfer.'),
+          badge: isEn ? 'Automated 24/7' : 'Otomatis 24/7',
         });
       } else if (channel.id === 'credit_card') {
         options.push({
           id: 'credit_card',
-          name: 'Kartu Kredit / Debit Online (Visa, Mastercard, JCB)',
-          description: channel.description || 'Pembayaran online terenkripsi dengan proteksi 3D Secure OTP.',
+          name: isEn ? 'Credit / Debit Card Online (Visa, Mastercard, JCB)' : 'Kartu Kredit / Debit Online (Visa, Mastercard, JCB)',
+          description: localizedDesc || (isEn ? 'Encrypted online payment with 3D Secure OTP protection.' : 'Pembayaran online terenkripsi dengan proteksi 3D Secure OTP.'),
           badge: '3D Secure',
         });
       } else if (channel.category === 'retail_paylater') {
         options.push({
           id: channel.id,
-          name: channel.name,
-          description: channel.description || 'Bayar tunai di meja kasir dengan kode pembayaran.',
-          badge: 'Kasir Retail',
+          name: localizedName,
+          description: localizedDesc || (isEn ? 'Pay cash at retail counter using a payment code.' : 'Bayar tunai di meja kasir dengan kode pembayaran.'),
+          badge: isEn ? 'Retail Counter' : 'Kasir Retail',
         });
       }
     });
 
     return options;
-  }, [activePaymentChannels]);
+  }, [activePaymentChannels, language, isEn]);
 
   // Sync selectedPaymentId with available options
   useEffect(() => {
