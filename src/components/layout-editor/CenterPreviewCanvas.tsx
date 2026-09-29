@@ -468,7 +468,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     const customContent = renderPageCustomContent(activePage);
 
     return (
-      <div className="flex-1 w-full max-w-full overflow-x-hidden bg-white relative pb-32 box-border" onClickCapture={handleCanvasClick} onClick={handleCanvasClick}>
+      <div className="flex-1 w-full max-w-full overflow-x-hidden bg-white relative pb-0 box-border flex flex-col min-h-screen" onClickCapture={handleCanvasClick} onClick={handleCanvasClick}>
         {customContent ? (
           customContent
         ) : visibleSections.length === 0 ? (
@@ -479,10 +479,11 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           visibleSections.map((section, idx) => {
             const sectionKey = section.key || `${section.id}-${idx}`;
             const opts = section.options || {};
+            const isFooter = section.id === 'footer';
             
             const customPaddingStyle: React.CSSProperties = {
               paddingTop: opts.paddingTop !== undefined ? `${opts.paddingTop}px` : undefined,
-              paddingBottom: opts.paddingBottom !== undefined ? `${opts.paddingBottom}px` : undefined,
+              paddingBottom: isFooter ? 0 : (opts.paddingBottom !== undefined ? `${opts.paddingBottom}px` : undefined),
             };
 
             const isSelected = selectedSectionKey === sectionKey || selectedSectionKey === section.id;
@@ -504,7 +505,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                   e.stopPropagation();
                   onSelectSection(sectionKey);
                 }}
-                className={`relative ${
+                className={`relative w-full ${isFooter ? 'mt-auto' : ''} ${
                   readonly
                     ? 'cursor-default'
                     : `cursor-pointer transition-all duration-150 ${
@@ -516,7 +517,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                 style={customPaddingStyle}
               >
                 {activeThemeId && hasThemeComponent(activeThemeId, section.id) ? (
-                  <div>
+                  <div className={isFooter ? 'w-full' : undefined}>
                     <ThemeSectionRenderer 
                       themeId={activeThemeId} 
                       section={{ ...section, key: sectionKey }} 
@@ -1503,7 +1504,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
             {renderPageCustomContent(activePage) ? (
               renderPageCustomContent(activePage)
             ) : activePage === 'katalog' ? (
-               <div className="flex flex-col min-h-full pb-32">
+               <div className="flex flex-col min-h-full pb-0">
                  <div>
                    {ThemeRegistry[activeThemeId!]?.Navbar && React.createElement(ThemeRegistry[activeThemeId!].Navbar)}
                  </div>
@@ -1588,6 +1589,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                 const sectionKey = section.key || `${section.id}-${idx}`;
                 const isSelected = selectedSectionKey === sectionKey;
                 const opts = section.options || {};
+                const isFooter = section.id === 'footer';
                 const globalIndex = sections.findIndex(
                   (s, sIdx) => (s.key || `${s.id}-${sIdx}`) === sectionKey
                 );
@@ -1595,7 +1597,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                 // Custom inline styles for padding
                 const customPaddingStyle: React.CSSProperties = {
                   paddingTop: opts.paddingTop !== undefined ? `${opts.paddingTop}px` : undefined,
-                  paddingBottom: opts.paddingBottom !== undefined ? `${opts.paddingBottom}px` : undefined,
+                  paddingBottom: isFooter ? 0 : (opts.paddingBottom !== undefined ? `${opts.paddingBottom}px` : undefined),
                 };
 
                 return (
@@ -1634,7 +1636,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                       e.stopPropagation();
                       onSelectSection(sectionKey);
                     }}
-                    className={`relative ${readonly ? 'cursor-default' : 'group transition-all duration-150 cursor-pointer'}`}
+                    className={`relative w-full ${isFooter ? 'mt-auto' : ''} ${readonly ? 'cursor-default' : 'group transition-all duration-150 cursor-pointer'}`}
                     style={customPaddingStyle}
                   >
                     {/* Universal Selection Overlay to prevent child backgrounds from covering the ring */}

@@ -1651,7 +1651,7 @@ export default function App() {
         }
 
         return (
-          <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative">
+          <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative flex flex-col">
             {/* Owner Draft / Preview Banner in Preview Mode */}
             {isPreview && (
               <div className="bg-amber-500 text-white text-xs font-semibold px-4 py-2 text-center flex items-center justify-between sm:justify-center gap-3 sticky top-0 z-50 shadow-xs">
