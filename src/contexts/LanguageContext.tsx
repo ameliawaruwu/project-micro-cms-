@@ -905,6 +905,7 @@ export const translations: Translations = {
 
 interface LanguageContextType {
   language: Language;
+  isEn: boolean;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
   t: (key: string, fallback?: string) => string;
@@ -927,6 +928,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return 'id';
   });
 
+  const isEn = language === 'en';
+
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     try {
@@ -948,7 +951,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ language, isEn, setLanguage, toggleLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );
