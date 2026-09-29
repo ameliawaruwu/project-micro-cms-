@@ -229,6 +229,9 @@ export const useCmsStore = create<CmsState>((set, get) => ({
   },
 
   loadThemeData: (themeId: string) => {
+    const cleanThemeId = themeId === 'future_shop' || themeId === 'futuristic_dark' ? 'futuristic' : themeId;
+    const isNature = cleanThemeId === 'nature' || cleanThemeId === 'nature_organic' || cleanThemeId === 'green_market';
+
     // Check if user has saved custom edited products in session
     let activeProds: CmsProduct[] = [];
     if (typeof window !== 'undefined') {
@@ -239,14 +242,16 @@ export const useCmsStore = create<CmsState>((set, get) => ({
           const hasFashion = Array.isArray(parsed) && parsed.some(p => 
             /dress|blouse|cardigan|pants|skirt|fashion|amaryllis|knit/i.test(p.name || '')
           );
-          if (!hasFashion) {
+          const hasCosmetics = Array.isArray(parsed) && parsed.some(p => 
+            /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || '')
+          );
+          if (!hasFashion && !(isNature && hasCosmetics)) {
             activeProds = parsed;
           }
         }
       } catch (e) {}
     }
 
-    const cleanThemeId = themeId === 'future_shop' || themeId === 'futuristic_dark' ? 'futuristic' : themeId;
     const themeData = THEME_DATA_MAP[cleanThemeId as keyof typeof THEME_DATA_MAP] || THEME_DATA_MAP['futuristic'];
     if (themeData) {
       const finalProducts = activeProds.length > 0 ? activeProds : themeData.products;

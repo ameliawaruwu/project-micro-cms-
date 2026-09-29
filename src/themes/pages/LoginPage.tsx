@@ -282,7 +282,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   ) : (
                     <>
                       <p className="text-xs text-emerald-700">Masukkan alamat email terdaftar Anda:</p>
-                      <input type="email" defaultValue="hello@rimbabotanicals.com" placeholder="Email Terdaftar" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                      <input type="email" defaultValue="halo@greenmarket.id" placeholder="Email Terdaftar" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                       <button 
                         onClick={() => setResetSent(true)}
                         className="w-full py-4 bg-emerald-800 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm transition-all shadow-md cursor-pointer"
@@ -302,7 +302,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   {viewMode === 'register' && (
                     <input type="text" defaultValue="Alya Permata" placeholder="Nama Lengkap" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                   )}
-                  <input type="email" defaultValue="pelanggan@rimbabotanicals.com" placeholder="Email Anda" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                  <input type="email" defaultValue="pelanggan@greenmarket.id" placeholder="Email Anda" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                   <input type="password" defaultValue="••••••••" placeholder="Kata Sandi" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                   
                   <button 

@@ -489,83 +489,83 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
     ]
   },
 
-  // 7. NATURE (RIMBA BOTANICALS - Natural Skincare & Organic Wellness)
+  // 7. NATURE / GREEN MARKET (GREEN MARKET - Fresh Produce & Organic Farm)
   nature: {
     storeInfo: {
-      name: "RIMBA BOTANICALS",
-      description: "Botanical Skincare. Pure ingredients, eco-friendly rituals & organic wellness.",
-      address: "Jalan Hanoman, Ubud, Bali",
-      email: "hello@rimbabotanicals.com",
-      phone: "+62 813 9999 8888",
-      socials: { instagram: "@rimba.botanicals" }
+      name: "GREEN MARKET INDONESIA",
+      description: "Pasar pangan segar dan organik langsung dari mitra petani lokal. Sayuran hidroponik, buah segar pilihan, madu murni, dan hasil tani berkualitas tinggi.",
+      address: "Jalan Kebun Hijau No. 12, Lembang, Bandung",
+      email: "halo@greenmarket.id",
+      phone: "+62 812 8888 7777",
+      socials: { instagram: "@greenmarket.id" }
     },
     categories: [
-      { id: "nc1", name: "Face Rituals", slug: "face", image: "https://images.unsplash.com/photo-1629198688000-71f23e745b6e?w=800&q=80" },
-      { id: "nc2", name: "Body & Bath", slug: "body", image: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=800&q=80" },
-      { id: "nc3", name: "Elixirs & Oils", slug: "elixirs", image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=800&q=80" }
+      { id: "nc1", name: "Sayur Segar & Hidroponik", slug: "sayur-segar", image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80" },
+      { id: "nc2", name: "Buah Organik Pilihan", slug: "buah-organik", image: "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=800&q=80" },
+      { id: "nc3", name: "Madu & Pangan Alami", slug: "madu-pangan", image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=800&q=80" }
     ],
     products: [
       {
-        id: "np1", name: "Botanical Elixir Face Oil 30ml", slug: "face-oil", price: 280000,
-        image: "https://images.unsplash.com/photo-1629198688000-71f23e745b6e?w=800&q=80",
-        categoryId: "nc3", categoryName: "Elixirs & Oils",
-        description: "Nourishing blend of 7 organic cold-pressed botanical seed oils & wild rosehip.",
+        id: "np1", name: "Alpukat Mentega Super 1 Kg", slug: "alpukat-mentega", price: 45000,
+        image: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=800&q=80",
+        categoryId: "nc2", categoryName: "Buah Organik Pilihan",
+        description: "Alpukat mentega matang pohon dengan daging buah tebal, lembut, dan kaya nutrisi alami.",
         status: "active", isFeatured: true, isNew: true, stock: 40
       },
       {
-        id: "np2", name: "Volcanic Forest Clay Mask", slug: "clay-mask", price: 185000,
-        image: "https://images.unsplash.com/photo-1570194065650-d99fb4b8ccb0?w=800&q=80",
-        categoryId: "nc1", categoryName: "Face Rituals",
-        description: "Purifying volcanic ash clay enriched with organic matcha green tea & kaolin.",
+        id: "np2", name: "Bayam Hijau Hidroponik 250g", slug: "bayam-hidroponik", price: 18000,
+        image: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=800&q=80",
+        categoryId: "nc1", categoryName: "Sayur Segar & Hidroponik",
+        description: "Bayam hijau segar tanpa pestisida kimiawi, ditanam dengan metode hidroponik ramah lingkungan.",
         status: "active", isFeatured: true, isNew: false, stock: 50
       },
       {
-        id: "np3", name: "Lemongrass & Ginger Body Wash", slug: "body-wash", price: 150000,
-        image: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=800&q=80",
-        categoryId: "nc2", categoryName: "Body & Bath",
-        description: "Sulfate-free hydrating body wash infused with essential Bali lemongrass oils.",
+        id: "np3", name: "Madu Hutan Murni Liar 500ml", slug: "madu-hutan-murni", price: 120000,
+        image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=800&q=80",
+        categoryId: "nc3", categoryName: "Madu & Pangan Alami",
+        description: "Madu hutan murni lebah liar asli tanpa pemanis tambahan, dipanen langsung dari hutan nusantara.",
         status: "active", isFeatured: false, isNew: true, stock: 35
       },
       {
-        id: "np4", name: "Gentle Green Tea Facial Cleanser", slug: "cleanser", price: 195000,
-        image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=800&q=80",
-        categoryId: "nc1", categoryName: "Face Rituals",
-        description: "Low-pH soothing facial gel cleanser formulated for sensitive organic skin.",
+        id: "np4", name: "Tomat Cherry Manis Organik 500g", slug: "tomat-cherry", price: 28000,
+        image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&q=80",
+        categoryId: "nc1", categoryName: "Sayur Segar & Hidroponik",
+        description: "Tomat cherry manis renyah kaya antioksidan dan vitamin C, dipetik segar saat pesanan tiba.",
         status: "active", isFeatured: true, isNew: false, stock: 60
       },
       {
-        id: "np5", name: "Herbal Hydrating Body Lotion", slug: "body-lotion", price: 210000,
-        image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&q=80",
-        categoryId: "nc2", categoryName: "Body & Bath",
-        description: "Rich shea butter body cream scented with natural lavender and eucalyptus.",
+        id: "np5", name: "Apel Malang Manis Segar 1 Kg", slug: "apel-malang", price: 35000,
+        image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=800&q=80",
+        categoryId: "nc2", categoryName: "Buah Organik Pilihan",
+        description: "Apel segar kebun Malang dengan tekstur renyah dan perpaduan rasa manis-asam segar alami.",
         status: "active", isFeatured: true, isNew: true, stock: 45
       },
       {
-        id: "np6", name: "Natural Botanical Soap Bar", slug: "soap-bar", price: 65000,
-        image: "https://images.unsplash.com/photo-1607006482172-464817a0225d?w=800&q=80",
-        categoryId: "nc2", categoryName: "Body & Bath",
-        description: "Cold-processed handmade soap bar with exfoliating coconut husk.",
+        id: "np6", name: "Beras Merah Organik 2 Kg", slug: "beras-merah", price: 55000,
+        image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&q=80",
+        categoryId: "nc3", categoryName: "Madu & Pangan Alami",
+        description: "Beras merah organik tinggi serat dan rendah indeks glikemik dari kelompok tani binaan.",
         status: "active", isFeatured: false, isNew: false, stock: 80
       },
       {
-        id: "np7", name: "Brightening Vitamin C Serum", slug: "vit-c-serum", price: 320000,
-        image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800&q=80",
-        categoryId: "nc3", categoryName: "Elixirs & Oils",
-        description: "15% L-Ascorbic Acid Serum enriched with ferulic acid & aloe vera juice.",
-        status: "active", isFeatured: true, isNew: true, stock: 25
+        id: "np7", name: "Wortel Brastagi Manis 1 Kg", slug: "wortel-brastagi", price: 22000,
+        image: "https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?w=800&q=80",
+        categoryId: "nc1", categoryName: "Sayur Segar & Hidroponik",
+        description: "Wortel manis segar tanah vulkanik Brastagi, cocok untuk jus sehat dan aneka masakan keluarga.",
+        status: "active", isFeatured: true, isNew: true, stock: 30
       },
       {
-        id: "np8", name: "Rose Water Facial Hydrosol Mist", slug: "rose-mist", price: 145000,
-        image: "https://images.unsplash.com/photo-1512290900673-700230217039?w=800&q=80",
-        categoryId: "nc1", categoryName: "Face Rituals",
-        description: "Pure steam-distilled Damask rose water mist to refresh and hydrate skin.",
+        id: "np8", name: "Jeruk Peras Segar Manis 1 Kg", slug: "jeruk-peras", price: 32000,
+        image: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=800&q=80",
+        categoryId: "nc2", categoryName: "Buah Organik Pilihan",
+        description: "Jeruk peras manis banyak air kaya vitamin C murni untuk daya tahan tubuh harian.",
         status: "active", isFeatured: false, isNew: false, stock: 50
       }
     ],
     navigation: [
-      { id: "nn1", label: "Apothecary", route: "/katalog", order: 1, isActive: true },
-      { id: "nn2", label: "Ingredients", route: "/tentang", order: 2, isActive: true },
-      { id: "nn3", label: "Rituals", route: "/berita", order: 3, isActive: true }
+      { id: "nn1", label: "Pasar Segar", route: "/katalog", order: 1, isActive: true },
+      { id: "nn2", label: "Mitra Petani", route: "/tentang", order: 2, isActive: true },
+      { id: "nn3", label: "Edukasi Organik", route: "/berita", order: 3, isActive: true }
     ]
   },
 
