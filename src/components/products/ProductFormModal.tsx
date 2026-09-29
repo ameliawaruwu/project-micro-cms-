@@ -211,7 +211,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           setCustomCategory('');
         }
 
-        setDescription(productToEdit.description || '');
+        const cleanDesc = (productToEdit.description || '').replace(/\s*<!--orig_price:\d+(?:\.\d+)?-->/g, '').trim();
+        setDescription(cleanDesc);
         setImageUrl(productToEdit.imageUrl || '');
         setWeightDisplay(productToEdit.weightGrams ? String(productToEdit.weightGrams) : '250');
       } else {

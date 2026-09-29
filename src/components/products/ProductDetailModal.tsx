@@ -109,9 +109,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   {formatRupiah(product.price)}
                 </span>
                 {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-[11px] text-[#706866] line-through block">
-                    {formatRupiah(product.originalPrice)}
-                  </span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[11px] text-[#706866] line-through">
+                      {formatRupiah(product.originalPrice)}
+                    </span>
+                    <span className="inline-flex items-center text-[9px] font-bold text-white bg-[#66000E] px-1.5 py-0.5 rounded-full shadow-2xs">
+                      Hemat {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
+                    </span>
+                  </div>
                 )}
               </div>
 
