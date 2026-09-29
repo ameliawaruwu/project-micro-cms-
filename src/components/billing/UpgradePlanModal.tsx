@@ -108,7 +108,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
     const oneYearLater = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
     const nowIso = new Date().toISOString();
 
-    await storeService.updateStore(store.id, { 
+    await storeService.updateStore(store.id, {
       plan: planId,
       planExpiresAt: planId === 'free' ? undefined : oneYearLater,
       planSubscribedAt: planId === 'free' ? undefined : nowIso,
@@ -210,7 +210,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/50 backdrop-blur-xs animate-in fade-in duration-150 font-poppins">
       <div className="bg-white w-full max-w-3xl rounded-2xl shadow-xl border border-[#E5E0DD] overflow-hidden flex flex-col max-h-[92vh] text-left">
-        
+
         {/* Header */}
         <div className="px-5 py-3.5 border-b border-[#E5E0DD] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -233,11 +233,11 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-5 overflow-y-auto space-y-4">
-          
+
           {/* STEP 1: SELECT PLAN */}
           {paymentStep === 'select' && (
             <div className="space-y-4">
-              
+
               <div className="text-center max-w-md mx-auto">
                 <p className="text-xs text-gray-600">
                   Upgrade paket Anda untuk mengaktifkan pembayaran Midtrans, cek ongkir ekspedisi, dan deploy toko online.
@@ -253,11 +253,10 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                   return (
                     <div
                       key={plan.id}
-                      className={`relative rounded-xl p-4 flex flex-col justify-between transition-all border ${
-                        plan.highlight
+                      className={`relative rounded-xl p-4 flex flex-col justify-between transition-all border ${plan.highlight
                           ? 'border-[#66000E] bg-[#F5E8EA]/30 shadow-sm'
                           : 'border-[#E5E0DD] bg-white hover:border-[#D5D0CD]'
-                      }`}
+                        }`}
                     >
                       {plan.badge && (
                         <div className="absolute -top-2.5 right-3 bg-[#66000E] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">
@@ -297,13 +296,12 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                           type="button"
                           disabled={isCurrent}
                           onClick={() => handleSelectPlan(plan)}
-                          className={`w-full py-2 rounded-lg font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-1 ${
-                            isCurrent
+                          className={`w-full py-2 rounded-lg font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-1 ${isCurrent
                               ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-[#E5E0DD]'
                               : plan.highlight
-                              ? 'bg-[#66000E] hover:bg-[#52000B] text-white shadow-xs'
-                              : 'bg-white hover:bg-gray-50 text-gray-800 border border-[#E5E0DD]'
-                          }`}
+                                ? 'bg-[#66000E] hover:bg-[#52000B] text-white shadow-xs'
+                                : 'bg-white hover:bg-gray-50 text-gray-800 border border-[#E5E0DD]'
+                            }`}
                         >
                           <span>{isCurrent ? 'Paket Saat Ini' : `Pilih ${plan.name}`}</span>
                           {!isCurrent && <ArrowRight className="w-3 h-3" />}
@@ -321,7 +319,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
           {/* STEP 2: CHECKOUT & SIMULATE PAYMENT */}
           {paymentStep === 'checkout' && selectedPlan && (
             <div className="max-w-md mx-auto space-y-4">
-              
+
               <div className="bg-gray-50 rounded-xl p-4 border border-[#E5E0DD] space-y-2 text-xs">
                 <div className="flex items-center justify-between text-gray-600">
                   <span>Paket Langganan:</span>
@@ -357,11 +355,10 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('qris')}
-                    className={`p-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-2 transition cursor-pointer ${
-                      paymentMethod === 'qris'
+                    className={`p-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-2 transition cursor-pointer ${paymentMethod === 'qris'
                         ? 'border-[#66000E] bg-[#F5E8EA] text-[#66000E] font-bold shadow-2xs'
                         : 'border-[#E5E0DD] bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <QrCode className="w-4 h-4 text-[#66000E]" />
                     <span>QRIS (E-Wallet &amp; Bank)</span>
@@ -370,11 +367,10 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('bca_va')}
-                    className={`p-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-2 transition cursor-pointer ${
-                      paymentMethod === 'bca_va'
+                    className={`p-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-2 transition cursor-pointer ${paymentMethod === 'bca_va'
                         ? 'border-[#66000E] bg-[#F5E8EA] text-[#66000E] font-bold shadow-2xs'
                         : 'border-[#E5E0DD] bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <CreditCard className="w-4 h-4 text-[#66000E]" />
                     <span>Virtual Account Bank</span>
@@ -420,7 +416,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{isProcessing ? 'Memverifikasi Pembayaran...' : 'Konfirmasi Bayar Lunas (Midtrans)'}</span>
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={() => setPaymentStep('select')}

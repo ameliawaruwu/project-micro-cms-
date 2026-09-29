@@ -282,7 +282,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
    */
   const handleActivatePlan = async (sub: BillingSubscription) => {
     const planSlug = sub.planId.replace(/^plan_/, '');
-    
+
     // Calculate 1 Year (365 Days) Expiration Date
     const now = new Date();
     const oneYearLater = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
@@ -290,7 +290,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     const paidAtIso = now.toISOString();
 
     // 1. Update store record & notify parent state (App.tsx)
-    const updated = await storeService.updateStore(store.id, { 
+    const updated = await storeService.updateStore(store.id, {
       plan: planSlug as any,
       planExpiresAt: expiresAtIso,
       planSubscribedAt: paidAtIso,
@@ -368,8 +368,8 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       } else if (checkRes.isTimeout) {
         if (onShowNotification) {
           onShowNotification(
-            isEn 
-              ? 'Midtrans Sandbox is slow to respond. You can click "Instant Test (Sandbox)" to activate immediately.' 
+            isEn
+              ? 'Midtrans Sandbox is slow to respond. You can click "Instant Test (Sandbox)" to activate immediately.'
               : 'Koneksi ke Midtrans Sandbox sedang lambat. Silakan klik "⚡ Aktifkan Langsung (Sandbox)" untuk langsung mengaktifkan paket.'
           );
         }
@@ -485,8 +485,8 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             setIsModalOpen(false);
             if (onShowNotification) {
               onShowNotification(
-                isEn 
-                  ? 'Invoice created. Complete payment and click "Check Status & Activate" button.' 
+                isEn
+                  ? 'Invoice created. Complete payment and click "Check Status & Activate" button.'
                   : 'Kode pembayaran Midtrans diterbitkan. Selesaikan pembayaran lalu klik "Cek Status & Aktifkan Paket".'
               );
             }
@@ -700,13 +700,12 @@ export const BillingPage: React.FC<BillingPageProps> = ({
           return (
             <div
               key={plan.id}
-              className={`rounded-2xl bg-white p-5 sm:p-6 border transition-all duration-200 flex flex-col justify-between relative shadow-2xs hover:shadow-md ${
-                isCurrent
+              className={`rounded-2xl bg-white p-5 sm:p-6 border transition-all duration-200 flex flex-col justify-between relative shadow-2xs hover:shadow-md ${isCurrent
                   ? 'border-2 border-[#66000E] ring-4 ring-[#66000E]/5'
                   : plan.badge
-                  ? 'border-amber-400 ring-2 ring-amber-400/20'
-                  : 'border-[#E5E0DD]'
-              }`}
+                    ? 'border-amber-400 ring-2 ring-amber-400/20'
+                    : 'border-[#E5E0DD]'
+                }`}
             >
               <div>
                 {/* Top Badge */}
@@ -769,9 +768,8 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                     return (
                       <li key={idx} className={`flex items-start gap-2 leading-snug ${isNegative ? 'text-gray-400 line-through' : ''}`}>
                         <div
-                          className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                            isNegative ? 'bg-gray-100 text-gray-400' : 'bg-emerald-100 text-emerald-700'
-                          }`}
+                          className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isNegative ? 'bg-gray-100 text-gray-400' : 'bg-emerald-100 text-emerald-700'
+                            }`}
                         >
                           {isNegative ? <X className="w-2.5 h-2.5 stroke-[3]" /> : <Check className="w-2.5 h-2.5 stroke-[3]" />}
                         </div>
@@ -788,11 +786,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   type="button"
                   disabled={isCurrent}
                   onClick={() => handleOpenUpgrade(plan)}
-                  className={`w-full py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                    isCurrent
+                  className={`w-full py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${isCurrent
                       ? 'bg-[#FAF7F7] text-[#706866] border border-[#E5E0DD] cursor-default'
                       : 'bg-[#66000E] hover:bg-[#801010] text-white shadow-xs active:scale-95'
-                  }`}
+                    }`}
                 >
                   {isCurrent ? (
                     <span>{isEn ? 'Current Active Plan' : 'Paket Sedang Aktif'}</span>
@@ -852,11 +849,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                       <td className="py-3 px-3 text-[#706866]">{inv.date}</td>
                       <td className="py-3 px-3 font-bold text-[#66000E]">{formatRupiah(inv.amount)}</td>
                       <td className="py-3 px-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          inv.status.includes('Lunas') || inv.status.includes('Paid')
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${inv.status.includes('Lunas') || inv.status.includes('Paid')
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : 'bg-amber-50 text-amber-700 border-amber-200'
-                        }`}>
+                          }`}>
                           {inv.status}
                         </span>
                       </td>
@@ -935,11 +931,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <div
                   onClick={() => setPaymentMethod('qris')}
-                  className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer ${
-                    paymentMethod === 'qris'
+                  className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer ${paymentMethod === 'qris'
                       ? 'border-[#66000E] bg-[#F5E8EA]/40 font-bold text-[#66000E]'
                       : 'border-[#E5E0DD] bg-white text-[#706866]'
-                  }`}
+                    }`}
                 >
                   <QrCode className="w-4 h-4" />
                   <span>{isEn ? 'Instant QRIS' : 'QRIS Instan'}</span>
@@ -947,11 +942,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({
 
                 <div
                   onClick={() => setPaymentMethod('bca_va')}
-                  className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer ${
-                    paymentMethod === 'bca_va'
+                  className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer ${paymentMethod === 'bca_va'
                       ? 'border-[#66000E] bg-[#F5E8EA]/40 font-bold text-[#66000E]'
                       : 'border-[#E5E0DD] bg-white text-[#706866]'
-                  }`}
+                    }`}
                 >
                   <CreditCard className="w-4 h-4" />
                   <span>{isEn ? 'Virtual Account' : 'Virtual Account'}</span>

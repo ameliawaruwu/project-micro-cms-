@@ -285,13 +285,12 @@ class MidtransService {
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Pelanggan: <strong style="color: #1E293B;">${params.customerName || 'Merchant'}</strong></div>
           </div>
 
-          ${
-            reasonNotice
-              ? `<div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 10px 12px; font-size: 11px; color: #92400E; line-height: 1.4;">
+          ${reasonNotice
+        ? `<div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 10px 12px; font-size: 11px; color: #92400E; line-height: 1.4;">
                   <strong>Pemberitahuan Sandbox:</strong> Layanan Snap Midtrans belum dapat dihubungi (${reasonNotice}). Anda dapat menggunakan tombol simulasi di bawah untuk menguji proses pembayaran dan aktivasi paket secara instan.
                 </div>`
-              : ''
-          }
+        : ''
+      }
 
           <!-- Payment Options Preview -->
           <div style="border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px; background: #ffffff;">
@@ -340,7 +339,7 @@ class MidtransService {
           stored.push(params.orderId);
           sessionStorage.setItem('midtrans_simulated_paid_orders', JSON.stringify(stored));
         }
-      } catch {}
+      } catch { }
     };
 
     // Copy VA listener
@@ -489,7 +488,7 @@ class MidtransService {
           data: { order_id: orderId, transaction_status: 'settlement', status_code: '200' },
         };
       }
-    } catch {}
+    } catch { }
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kaveesimezonkgvhcbln.supabase.co';
     const endpoints = [
