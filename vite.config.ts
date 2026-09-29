@@ -25,8 +25,8 @@ function midtransDevPlugin(): Plugin {
 
         req.on('end', async () => {
           try {
-            const data = JSON.parse(body || '{}');
-            const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+            const rawKey = process.env.MIDTRANS_SERVER_KEY || '';
+            const serverKey = rawKey.replace(/^["']|["']$/g, '').trim();
             if (!serverKey) {
               res.statusCode = 500;
               res.setHeader('Content-Type', 'application/json');
@@ -174,7 +174,8 @@ function midtransDevPlugin(): Plugin {
       // Endpoint Tes Ping & Diagnosa Kunci Midtrans
       server.middlewares.use('/api/midtrans/test-ping', async (_req, res) => {
         try {
-          const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+          const rawKey = process.env.MIDTRANS_SERVER_KEY || '';
+          const serverKey = rawKey.replace(/^["']|["']$/g, '').trim();
           const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
           if (!serverKey) {
             res.statusCode = 400;

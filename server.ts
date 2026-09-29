@@ -164,6 +164,10 @@ async function getMidtransConfig() {
     }
   }
 
+  serverKey = serverKey.replace(/^["']|["']$/g, '').trim();
+  clientKey = clientKey.replace(/^["']|["']$/g, '').trim();
+  env = env.replace(/^["']|["']$/g, '').trim().toLowerCase();
+
   return { serverKey, clientKey, env };
 }
 
