@@ -266,22 +266,22 @@ export const ShopPage: React.FC<ShopPageProps> = ({ themeData, themeId: propThem
               ))}
             </div>
 
-            {/* Centered Search Bar - Below Filters */}
-            <div className="max-w-md mx-auto mb-12">
+            {/* Centered Search Bar - Below Filters (Wide & Spacious) */}
+            <div className="w-full max-w-2xl mx-auto mb-12 px-2 sm:px-0">
               <div className="relative w-full">
-                <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#2D5A27]/70" />
+                <Search className="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-[#2D5A27]/70" />
                 <input
                   type="text"
                   placeholder="Cari sayuran, buah segar, madu alami..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-white border border-[#2D5A27]/25 rounded-full text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent transition-all placeholder:text-[#1B3B2B]/40"
+                  className="w-full pl-13 pr-11 py-3.5 bg-white border border-[#2D5A27]/25 rounded-full text-sm sm:text-base shadow-xs focus:outline-none focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent transition-all placeholder:text-[#1B3B2B]/40"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-5 h-5 flex items-center justify-center cursor-pointer"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-5 h-5 flex items-center justify-center cursor-pointer"
                   >
                     ✕
                   </button>
