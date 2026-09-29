@@ -32,8 +32,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const isEn = language === 'en';
 
   const [name, setName] = useState('');
-  const [basePriceDisplay, setBasePriceDisplay] = useState('');
+  const [originalPriceDisplay, setOriginalPriceDisplay] = useState('');
   const [discountPercent, setDiscountPercent] = useState('');
+  const [sellingPriceDisplay, setSellingPriceDisplay] = useState('');
   const [stockDisplay, setStockDisplay] = useState('10');
   const [category, setCategory] = useState('');
   const [customCategory, setCustomCategory] = useState('');
@@ -185,13 +186,15 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       if (productToEdit) {
         setName(productToEdit.name || '');
         if (productToEdit.originalPrice && productToEdit.originalPrice > productToEdit.price) {
-          setBasePriceDisplay(formatThousand(productToEdit.originalPrice));
+          setOriginalPriceDisplay(formatThousand(productToEdit.originalPrice));
+          setSellingPriceDisplay(formatThousand(productToEdit.price));
           const pct = Math.round(
             ((productToEdit.originalPrice - productToEdit.price) / productToEdit.originalPrice) * 100
           );
           setDiscountPercent(String(pct));
         } else {
-          setBasePriceDisplay(productToEdit.price ? formatThousand(productToEdit.price) : '');
+          setOriginalPriceDisplay(productToEdit.price ? formatThousand(productToEdit.price) : '');
+          setSellingPriceDisplay(productToEdit.price ? formatThousand(productToEdit.price) : '');
           setDiscountPercent('');
         }
         setStockDisplay(productToEdit.stock !== undefined ? String(productToEdit.stock) : '10');
@@ -213,8 +216,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setWeightDisplay(productToEdit.weightGrams ? String(productToEdit.weightGrams) : '250');
       } else {
         setName('');
-        setBasePriceDisplay('');
+        setOriginalPriceDisplay('');
         setDiscountPercent('');
+        setSellingPriceDisplay('');
         setStockDisplay('10');
         setCategory(availableCategories[0] || (isEn ? 'Clothing & Fashion' : 'Pakaian & Fashion'));
         setCustomCategory('');
@@ -228,37 +232,102 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     prevProductToEditIdRef.current = productToEdit?.id;
   }, [isOpen, productToEdit?.id, availableCategories, isEn]);
 
-  // Real-time calculated selling price & discount
-  const numericBasePrice = parseNumber(basePriceDisplay);
-  const numericDiscount = parseNumber(discountPercent);
-
-  const finalSellingPrice = useMemo(() => {
-    if (numericBasePrice <= 0) return 0;
-    if (numericDiscount > 0 && numericDiscount < 100) {
-      return Math.round(numericBasePrice * (1 - numericDiscount / 100));
-    }
-    return numericBasePrice;
-  }, [numericBasePrice, numericDiscount]);
-
   if (!isOpen) return null;
 
-  const handleBasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // When Regular/Normal Price is changed
+  const handleOriginalPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value.replace(/\D/g, '');
     if (!rawVal) {
-      setBasePriceDisplay('');
+      setOriginalPriceDisplay('');
+      setSellingPriceDisplay('');
       return;
     }
-    setBasePriceDisplay(new Intl.NumberFormat(isEn ? 'en-US' : 'id-ID').format(Number(rawVal)));
+    const normalPrice = Number(rawVal);
+    setOriginalPriceDisplay(formatThousand(normalPrice));
+
+    const pct = Number(discountPercent) || 0;
+    if (pct > 0 && pct < 100) {
+      const discounted = Math.round(normalPrice * (1 - pct / 100));
+      setSellingPriceDisplay(formatThousand(discounted));
+    } else {
+      setSellingPriceDisplay(formatThousand(normalPrice));
+    }
   };
 
+  // When Discount (%) is changed
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value.replace(/\D/g, '');
     if (!rawVal) {
       setDiscountPercent('');
+      if (originalPriceDisplay) {
+        setSellingPriceDisplay(originalPriceDisplay);
+      }
       return;
     }
-    const num = Math.min(99, Number(rawVal));
-    setDiscountPercent(String(num));
+    const pct = Math.min(99, Number(rawVal));
+    setDiscountPercent(String(pct));
+
+    const normalPrice = parseNumber(originalPriceDisplay) || parseNumber(sellingPriceDisplay);
+    if (normalPrice > 0) {
+      if (!originalPriceDisplay) {
+        setOriginalPriceDisplay(formatThousand(normalPrice));
+      }
+      const discounted = Math.round(normalPrice * (1 - pct / 100));
+      setSellingPriceDisplay(formatThousand(discounted));
+    }
+  };
+
+  // Quick discount preset click (10%, 20%, 30%, 50%)
+  const applyDiscountPreset = (pct: number) => {
+    setDiscountPercent(String(pct));
+    const normalPrice = parseNumber(originalPriceDisplay) || parseNumber(sellingPriceDisplay);
+    if (normalPrice > 0) {
+      if (!originalPriceDisplay) {
+        setOriginalPriceDisplay(formatThousand(normalPrice));
+      }
+      const discounted = Math.round(normalPrice * (1 - pct / 100));
+      setSellingPriceDisplay(formatThousand(discounted));
+    }
+  };
+
+  // Remove discount action
+  const removeDiscount = () => {
+    setDiscountPercent('');
+    if (originalPriceDisplay) {
+      setSellingPriceDisplay(originalPriceDisplay);
+    }
+  };
+
+  // When Selling Price is directly edited by user
+  const handleSellingPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawVal = e.target.value.replace(/\D/g, '');
+    if (!rawVal) {
+      setSellingPriceDisplay('');
+      return;
+    }
+    const sellPrice = Number(rawVal);
+    setSellingPriceDisplay(formatThousand(sellPrice));
+
+    const normalPrice = parseNumber(originalPriceDisplay);
+    if (normalPrice > sellPrice) {
+      const pct = Math.round(((normalPrice - sellPrice) / normalPrice) * 100);
+      setDiscountPercent(String(pct));
+    } else {
+      setDiscountPercent('');
+      setOriginalPriceDisplay(formatThousand(sellPrice));
+    }
+  };
+
+  // Quick preset price buttons (50k, 100k, 150k, 250k)
+  const setQuickPrice = (nominal: number) => {
+    setOriginalPriceDisplay(formatThousand(nominal));
+    const pct = Number(discountPercent) || 0;
+    if (pct > 0 && pct < 100) {
+      const discounted = Math.round(nominal * (1 - pct / 100));
+      setSellingPriceDisplay(formatThousand(discounted));
+    } else {
+      setSellingPriceDisplay(formatThousand(nominal));
+    }
   };
 
   const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -271,10 +340,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     setWeightDisplay(rawVal);
   };
 
-  const setQuickPrice = (nominal: number) => {
-    setBasePriceDisplay(new Intl.NumberFormat(isEn ? 'en-US' : 'id-ID').format(nominal));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -282,8 +347,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       return;
     }
 
-    const basePrice = parseNumber(basePriceDisplay);
-    if (basePrice <= 0) {
+    const finalSellingPrice = parseNumber(sellingPriceDisplay) || parseNumber(originalPriceDisplay);
+    if (finalSellingPrice <= 0) {
       alert(isEn ? 'Please enter a valid product price (e.g. 50,000).' : 'Mohon masukkan harga produk yang valid (contoh: 50.000).');
       return;
     }
@@ -299,18 +364,16 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       finalCategory = customCategory.trim() || (isEn ? 'Other' : 'Lainnya');
     }
 
-    const discount = parseNumber(discountPercent);
-    let calculatedPrice = basePrice;
+    const normalPrice = parseNumber(originalPriceDisplay);
     let originalPriceVal: number | undefined = undefined;
 
-    if (discount > 0 && discount < 100) {
-      calculatedPrice = Math.round(basePrice * (1 - discount / 100));
-      originalPriceVal = basePrice;
+    if (normalPrice > finalSellingPrice) {
+      originalPriceVal = normalPrice;
     }
 
     onSave({
       name: name.trim(),
-      price: calculatedPrice,
+      price: finalSellingPrice,
       originalPrice: originalPriceVal,
       stock: parseNumber(stockDisplay),
       category: finalCategory || (isEn ? 'Other' : 'Lainnya'),
@@ -545,13 +608,13 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   />
                 </div>
 
-                {/* 3. Product Price & Discount */}
-                <div className="space-y-2">
+                {/* 3. Harga Normal, Diskon, & Harga Jual Akhir */}
+                <div className="space-y-2.5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Base Price */}
+                    {/* Normal / Base Price */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                        {isEn ? '3. PRODUCT PRICE' : '3. HARGA PRODUK'} <span className="text-[#66000E]">*</span>
+                        {isEn ? '3. REGULAR PRICE' : '3. HARGA NORMAL'} <span className="text-[#66000E]">*</span>
                       </label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#706866]">
@@ -561,10 +624,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                           type="text"
                           inputMode="numeric"
                           required
-                          placeholder={isEn ? '100,000' : 'Contoh: 100.000'}
-                          value={basePriceDisplay}
-                          onChange={handleBasePriceChange}
-                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-bold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                          placeholder={isEn ? '125,000' : 'Contoh: 125.000'}
+                          value={originalPriceDisplay}
+                          onChange={handleOriginalPriceChange}
+                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
                         />
                       </div>
                       {/* Quick Base Price Presets */}
@@ -591,7 +654,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         {discountPercent && (
                           <button
                             type="button"
-                            onClick={() => setDiscountPercent('')}
+                            onClick={removeDiscount}
                             className="text-[10px] text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
                           >
                             {isEn ? 'Remove' : 'Hapus diskon'}
@@ -605,7 +668,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         <input
                           type="text"
                           inputMode="numeric"
-                          placeholder={isEn ? 'e.g. 20' : 'Contoh: 20'}
+                          placeholder={isEn ? 'e.g. 10' : 'Contoh: 10'}
                           value={discountPercent}
                           onChange={handleDiscountChange}
                           className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
@@ -617,7 +680,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                           <button
                             key={pct}
                             type="button"
-                            onClick={() => setDiscountPercent(String(pct))}
+                            onClick={() => applyDiscountPreset(pct)}
                             className={`px-2 py-0.5 rounded-md border text-[10px] font-semibold transition cursor-pointer whitespace-nowrap ${
                               discountPercent === String(pct)
                                 ? 'bg-[#66000E] text-white border-[#66000E]'
@@ -631,33 +694,45 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Live Final Selling Price Banner */}
-                  {numericBasePrice > 0 && (
-                    <div className="px-3 py-2 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] flex items-center justify-between gap-2 animate-in fade-in duration-150">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-medium text-[#706866]">
-                          {isEn ? 'Final Store Price:' : 'Harga Jual di Toko:'}
-                        </span>
-                        <span className="text-xs sm:text-sm font-bold text-[#66000E]">
-                          Rp {new Intl.NumberFormat(isEn ? 'en-US' : 'id-ID').format(finalSellingPrice)}
-                        </span>
-                      </div>
-                      {numericDiscount > 0 ? (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] text-[#706866] line-through">
-                            Rp {basePriceDisplay}
-                          </span>
-                          <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-bold">
-                            -{numericDiscount}%
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-[#706866] font-medium">
-                          {isEn ? 'No discount applied' : 'Tanpa diskon'}
+                  {/* Selling Price (Input that automatically updates!) */}
+                  <div className="p-3 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-[#241A1A]">
+                        {isEn ? 'FINAL SELLING PRICE (BUYER PAYS)' : 'HARGA JUAL AKHIR (YANG DIBAYAR PEMBELI)'} <span className="text-[#66000E]">*</span>
+                      </label>
+                      {discountPercent && Number(discountPercent) > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-bold">
+                          Hemat {discountPercent}%
                         </span>
                       )}
                     </div>
-                  )}
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#66000E]">
+                        Rp
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        required
+                        placeholder={isEn ? '112,500' : '112.500'}
+                        value={sellingPriceDisplay}
+                        onChange={handleSellingPriceChange}
+                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-bold text-[#66000E] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 transition"
+                      />
+                    </div>
+                    <p className="text-[10px] text-[#706866]">
+                      {discountPercent && Number(discountPercent) > 0 && originalPriceDisplay && originalPriceDisplay !== sellingPriceDisplay ? (
+                        <>
+                          {isEn ? 'Storefront displays ' : 'Di toko tampil '}
+                          <span className="font-bold text-[#241A1A]">Rp {sellingPriceDisplay}</span>
+                          {isEn ? ' with strike price ' : ' dicoret '}
+                          <span className="line-through">Rp {originalPriceDisplay}</span>
+                        </>
+                      ) : (
+                        isEn ? 'Standard selling price without discount' : 'Harga jual standar produk tanpa diskon'
+                      )}
+                    </p>
+                  </div>
                 </div>
 
                 {/* 4 & 5: Stock & Category */}
