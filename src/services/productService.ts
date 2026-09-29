@@ -265,6 +265,7 @@ class ProductService {
         name: newProduct.name,
         category: newProduct.category,
         price: newProduct.price,
+        original_price: newProduct.originalPrice || null,
         stock: newProduct.stock,
         weight_grams: newProduct.weightGrams || 250,
         description: newProduct.description || '',
@@ -325,6 +326,7 @@ class ProductService {
       if (updates.name !== undefined) dbPayload.name = updates.name;
       if (updates.category !== undefined) dbPayload.category = updates.category;
       if (updates.price !== undefined) dbPayload.price = updates.price;
+      if (updates.originalPrice !== undefined) dbPayload.original_price = updates.originalPrice || null;
       if (updates.stock !== undefined) dbPayload.stock = updates.stock;
       if (updates.weightGrams !== undefined) dbPayload.weight_grams = updates.weightGrams;
       if (updates.description !== undefined) dbPayload.description = updates.description;
