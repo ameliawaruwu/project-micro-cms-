@@ -509,28 +509,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     )}
                   </div>
                 </div>
-
-                {/* Weight Input (Compact on Left) */}
-                <div className="pt-2 border-t border-[#E5E0DD]/60">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[11px] font-bold text-[#706866]">
-                      {isEn ? 'Estimated Weight (Grams)' : 'Estimasi Berat (Gram)'}
-                    </label>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="250"
-                      value={weightDisplay}
-                      onChange={handleWeightChange}
-                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#E5E0DD] bg-white text-[#241A1A] font-semibold focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-[#706866]">
-                      gram
-                    </span>
-                  </div>
-                </div>
               </div>
 
               {/* Right Column: Name, Price, Stock, Category, Description */}
@@ -640,7 +618,57 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   </div>
                 </div>
 
-                {/* Stock & Category */}
+                {/* Kategori Produk */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
+                    {isEn ? 'PRODUCT CATEGORY' : 'KATEGORI PRODUK'}
+                  </label>
+
+                  {category === 'new' ? (
+                    <div className="relative animate-in fade-in duration-150">
+                      <input
+                        type="text"
+                        autoFocus
+                        placeholder={isEn ? 'Type new category name...' : 'Ketik nama kategori baru...'}
+                        value={customCategory}
+                        onChange={(e) => setCustomCategory(e.target.value)}
+                        className="w-full pl-3 pr-8 py-2 rounded-xl border border-[#66000E] bg-white text-xs font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#66000E]/15"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCategory(availableCategories[0] || (isEn ? 'Other' : 'Lainnya'));
+                          setCustomCategory('');
+                        }}
+                        title={isEn ? 'Cancel' : 'Batal'}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#706866] hover:text-[#66000E] rounded-md hover:bg-[#FAF7F7] transition cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      value={category}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCategory(val);
+                        if (val === 'new') {
+                          setCustomCategory('');
+                        }
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
+                    >
+                      {availableCategories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                      <option value="new">{isEn ? '+ Add New Category...' : '+ Tambah Kategori Baru...'}</option>
+                    </select>
+                  )}
+                </div>
+
+                {/* Stock & Weight (Sebelah Kanan Jumlah Stok) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
@@ -659,51 +687,21 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                      {isEn ? 'PRODUCT CATEGORY' : 'KATEGORI PRODUK'}
+                      {isEn ? 'ESTIMATED WEIGHT (GRAMS)' : 'ESTIMASI BERAT (GRAM)'}
                     </label>
-
-                    {category === 'new' ? (
-                      <div className="relative animate-in fade-in duration-150">
-                        <input
-                          type="text"
-                          autoFocus
-                          placeholder={isEn ? 'Type new category name...' : 'Ketik nama kategori baru...'}
-                          value={customCategory}
-                          onChange={(e) => setCustomCategory(e.target.value)}
-                          className="w-full pl-3 pr-8 py-2 rounded-xl border border-[#66000E] bg-white text-xs font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#66000E]/15"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCategory(availableCategories[0] || (isEn ? 'Other' : 'Lainnya'));
-                            setCustomCategory('');
-                          }}
-                          title={isEn ? 'Cancel' : 'Batal'}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#706866] hover:text-[#66000E] rounded-md hover:bg-[#FAF7F7] transition cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <select
-                        value={category}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setCategory(val);
-                          if (val === 'new') {
-                            setCustomCategory('');
-                          }
-                        }}
-                        className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
-                      >
-                        {availableCategories.map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
-                        <option value="new">{isEn ? '+ Add New Category...' : '+ Tambah Kategori Baru...'}</option>
-                      </select>
-                    )}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="250"
+                        value={weightDisplay}
+                        onChange={handleWeightChange}
+                        className="w-full pl-3 pr-12 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-bold text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#706866]">
+                        gram
+                      </span>
+                    </div>
                   </div>
                 </div>
 
