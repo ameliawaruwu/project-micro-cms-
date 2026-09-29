@@ -471,10 +471,10 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                     }
                   }}
                   className="text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-xl border border-amber-300 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-2xs"
-                  title="Terkunci: Upgrade paket untuk mengaktifkan domain ini"
+                  title={isEn ? 'Locked: Upgrade plan to activate this domain' : 'Terkunci: Upgrade paket untuk mengaktifkan domain ini'}
                 >
                   <Lock className="w-3.5 h-3.5 text-amber-800" />
-                  <span>{t('domain_unlock_btn', 'Buka Kunci Domain')}</span>
+                  <span>{t('domain_unlock_btn', isEn ? 'Unlock Domain' : 'Buka Kunci Domain')}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-amber-800" />
                 </button>
               ) : (
@@ -489,11 +489,11 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                 >
                   {isSettingRandom ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_saving', 'Menyimpan...')}
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_saving', isEn ? 'Saving...' : 'Menyimpan...')}
                     </>
                   ) : (
                     <>
-                      <span>{t('domain_btn_use', 'Gunakan Domain')}</span> <ArrowRight className="w-4 h-4" />
+                      <span>{t('domain_btn_use', isEn ? 'Use Domain' : 'Gunakan Domain')}</span> <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>
@@ -716,7 +716,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                     </div>
                     <div className="text-right shrink-0">
                       <span className="text-[11px] text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                        Include DNS & SSL
+                        {isEn ? 'Includes DNS & SSL' : 'Termasuk DNS & SSL'}
                       </span>
                     </div>
                   </div>
@@ -729,11 +729,11 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                     >
                       {isSubmitting ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_btn_checking', 'Memeriksa...')}
+                          <Loader2 className="w-4 h-4 animate-spin" /> {t('domain_btn_checking', isEn ? 'Checking...' : 'Memeriksa...')}
                         </>
                       ) : (
                         <>
-                          <span>{t('domain_btn_check', 'Cek Ketersediaan')}</span> <ArrowRight className="w-4 h-4" />
+                          <span>{t('domain_btn_check', isEn ? 'Check Availability' : 'Cek Ketersediaan')}</span> <ArrowRight className="w-4 h-4" />
                         </>
                       )}
                     </button>
