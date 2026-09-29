@@ -3,7 +3,12 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { NatureProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 
-export const NatureFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey }) => {
+export const NatureFeaturedProducts: React.FC<{ 
+  sectionOptions?: any; 
+  onUpdateSectionOptions?: any; 
+  sectionKey?: string;
+  readonly?: boolean;
+}> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, readonly = false }) => {
   const allProducts = useCmsStore(state => state.products);
   
   // Dynamic product filtering and sorting
@@ -50,12 +55,16 @@ export const NatureFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSe
               src={sectionOptions.imageUrl} 
               alt="Featured Products Banner" 
               className="w-full h-48 md:h-64 object-cover rounded-2xl mb-8 border border-[#E8E4DB] shadow-sm"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80';
+              }}
             />
           )}
           <div className="inline-block px-3.5 py-1 bg-[#E8F5E9] text-[#166534] border border-[#C8E6C9] font-sans text-xs font-semibold rounded-full mb-3 tracking-wide">
             <InlineEditableText
               tagName="span"
               value={subtitle}
+              readonly={readonly}
               onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { featuredSubtitle: val })}
             />
           </div>
@@ -63,6 +72,7 @@ export const NatureFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSe
             <InlineEditableText
               tagName="span"
               value={title}
+              readonly={readonly}
               onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { featuredTitle: val })}
             />
           </h2>
@@ -71,7 +81,7 @@ export const NatureFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSe
         {/* Product Grid */}
         <div className={`grid ${gridColsClass} gap-4 sm:gap-6`}>
           {products.map((product) => (
-            <NatureProductCard key={product.id} product={product} options={sectionOptions} />
+            <NatureProductCard key={product.id} product={product} options={sectionOptions} readonly={readonly} />
           ))}
         </div>
 
@@ -84,6 +94,7 @@ export const NatureFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSe
             <InlineEditableText
               tagName="span"
               value={buttonText}
+              readonly={readonly}
               onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { buttonLabel: val })}
             />
           </a>

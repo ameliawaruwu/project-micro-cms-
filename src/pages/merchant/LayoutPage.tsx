@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   Store,
   StoreLayoutSettings,
@@ -23,6 +23,7 @@ import { ThemeLibraryView, TemplateGalleryItem, SavedThemeItem, TEMPLATE_GALLERY
 import { PublishStoreModal } from '../../components/layout-editor/PublishStoreModal';
 import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2, EyeOff, Eye } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
+import { THEME_DATA_MAP } from '../../themes/themeData';
 import { normalizeThemeId } from '../../themes/ThemeRegistry';
 import { storeService } from '../../services/storeService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -149,7 +150,31 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     useCmsStore.getState().setProductsFromMerchant(products || []);
   }, [products]);
 
-  const displayProducts = cmsProducts.length > 0 ? cmsProducts : (products || []);
+  const rawDisplayProducts = cmsProducts.length > 0 ? cmsProducts : (products || []);
+  const displayProducts = useMemo(() => {
+    if (activeThemeId === 'nature') {
+      const hasCosmetics = rawDisplayProducts.some(p => /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || ''));
+      if (hasCosmetics || rawDisplayProducts.length === 0) {
+        return THEME_DATA_MAP['nature'].products.map(cp => ({
+          id: cp.id,
+          storeId: currentStore.id,
+          name: cp.name,
+          slug: cp.slug,
+          price: cp.price,
+          originalPrice: cp.originalPrice,
+          imageUrl: cp.image,
+          images: cp.images,
+          category: cp.categoryName,
+          description: cp.description,
+          status: 'Tersedia' as const,
+          stock: cp.stock,
+          isFeatured: cp.isFeatured,
+          weight: 1000,
+        }));
+      }
+    }
+    return rawDisplayProducts;
+  }, [rawDisplayProducts, activeThemeId, currentStore.id]);
 
   // Multi-page sections map state
   const [pageSectionsMap, setPageSectionsMap] = useState<Record<string, StoreSectionConfig[]>>(() => {
@@ -298,6 +323,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   };
 
   // Auto-sync current editor draft state to sessionStorage & localStorage for preview tab
+  const lastDraftJsonRef = useRef<string>('');
   useEffect(() => {
     // If merchant does not have a store yet, NEVER auto-save any draft
     if (!currentStore.id) {
@@ -316,7 +342,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       sections: secs,
     }));
 
-    const cmsProducts = useCmsStore.getState().products;
+    const finalProducts = (activeThemeId === 'nature' && displayProducts.length > 0)
+      ? displayProducts
+      : (cmsProducts && cmsProducts.length > 0 ? cmsProducts : (products || []));
 
     const draftStore = {
       ...currentStore,
@@ -330,21 +358,27 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         pages: pagesConfig,
         activePage,
       },
-      products: cmsProducts,
+      products: finalProducts,
     };
 
+    const draftJson = JSON.stringify(draftStore);
+    if (lastDraftJsonRef.current === draftJson) {
+      return; // Skip identical updates to eliminate flickering / infinite re-render loops
+    }
+    lastDraftJsonRef.current = draftJson;
+
     try {
-      sessionStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
-      localStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
-      if (cmsProducts && cmsProducts.length > 0) {
-        sessionStorage.setItem('microcms_cms_products', JSON.stringify(cmsProducts));
-        localStorage.setItem('microcms_cms_products', JSON.stringify(cmsProducts));
+      sessionStorage.setItem('microcms_preview_draft', draftJson);
+      localStorage.setItem('microcms_preview_draft', draftJson);
+      if (finalProducts && finalProducts.length > 0) {
+        sessionStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
+        localStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
       }
       window.dispatchEvent(new Event('cms_draft_updated'));
     } catch (e) {
       console.error('Failed to sync preview draft:', e);
     }
-  }, [sections, pageSectionsMap, activePage, primaryAccent, globalSettings, activeThemeId, currentStore]);
+  }, [sections, pageSectionsMap, activePage, primaryAccent, globalSettings, activeThemeId, currentStore, displayProducts]);
 
   const handleOpenPreviewTab = () => {
     const updatedMap = { ...pageSectionsMap, [activePage]: sections };
@@ -355,7 +389,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       sections: secs,
     }));
 
-    const cmsProducts = useCmsStore.getState().products;
+    const finalProducts = (activeThemeId === 'nature' && displayProducts.length > 0)
+      ? displayProducts
+      : (cmsProducts && cmsProducts.length > 0 ? cmsProducts : (products || []));
 
     const previewSlug = currentStore.slug || (user ? `toko-${user.id.replace(/[^a-z0-9]/g, '').slice(0, 10)}` : 'toko-preview');
 
@@ -372,16 +408,18 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         pages: pagesConfig,
         activePage,
       },
-      products: (cmsProducts && cmsProducts.length > 0) ? cmsProducts : products,
+      products: finalProducts,
     };
 
+    const draftJson = JSON.stringify(draftStore);
+    lastDraftJsonRef.current = draftJson;
+
     try {
-      sessionStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
-      localStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
-      const finalProds = draftStore.products;
-      if (finalProds && finalProds.length > 0) {
-        sessionStorage.setItem('microcms_cms_products', JSON.stringify(finalProds));
-        localStorage.setItem('microcms_cms_products', JSON.stringify(finalProds));
+      sessionStorage.setItem('microcms_preview_draft', draftJson);
+      localStorage.setItem('microcms_preview_draft', draftJson);
+      if (finalProducts && finalProducts.length > 0) {
+        sessionStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
+        localStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
       }
       window.dispatchEvent(new Event('cms_draft_updated'));
     } catch (e) {

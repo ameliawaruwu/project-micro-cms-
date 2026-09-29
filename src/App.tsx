@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   LayoutDashboard,
   Package,
@@ -104,6 +104,7 @@ import { CartDrawer } from './components/storefront/CartDrawer';
 import { StoreNotFoundPage } from './components/storefront/StoreNotFoundPage';
 import { ThemeRenderer } from './themes/ThemeRenderer';
 import { normalizeThemeId } from './themes/ThemeRegistry';
+import { THEME_DATA_MAP } from './themes/themeData';
 import { useCmsStore } from './cms/useCmsStore';
 
 export default function App() {
@@ -623,12 +624,20 @@ export default function App() {
             if (savedProdsStr) {
               try {
                 initialProducts = JSON.parse(savedProdsStr);
-                useCmsStore.setState({ products: initialProducts });
               } catch (e) {}
             } else if (draftStore.products) {
               initialProducts = draftStore.products;
-              useCmsStore.setState({ products: initialProducts });
             }
+
+            const rawTheme = (draftStore.layoutSettings as any)?.activeThemeId || draftStore.layoutSettings?.themeStyle || 'nature';
+            const normalizedTheme = normalizeThemeId(rawTheme);
+            if (normalizedTheme === 'nature') {
+              const hasCosmetics = initialProducts.some(p => /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || ''));
+              if (hasCosmetics || initialProducts.length === 0) {
+                initialProducts = THEME_DATA_MAP['nature'].products;
+              }
+            }
+            useCmsStore.setState({ products: initialProducts });
             
             Promise.all([
               productService.getProductsByStore(draftStore.id),
@@ -727,6 +736,7 @@ export default function App() {
   }, []);
 
   // Live cross-tab & in-tab sync listener for Preview mode
+  const lastDraftStrRef = useRef<string>('');
   useEffect(() => {
     const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
     if (!isPreview) return;
@@ -734,24 +744,36 @@ export default function App() {
     const syncPreviewData = () => {
       try {
         const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
-        if (draftStr) {
+        if (draftStr && draftStr !== lastDraftStrRef.current) {
+          lastDraftStrRef.current = draftStr;
           const draftStore = JSON.parse(draftStr);
           setActiveStore(draftStore);
 
           const savedProds = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
+          let parsedProds: any[] = [];
           if (savedProds) {
             try {
-              const parsed = JSON.parse(savedProds);
-              useCmsStore.setState({ products: parsed });
-              setProducts(parsed);
+              parsedProds = JSON.parse(savedProds);
             } catch (e) {}
           } else if (draftStore.products) {
-            useCmsStore.setState({ products: draftStore.products });
-            setProducts(draftStore.products);
+            parsedProds = draftStore.products;
+          }
+
+          const rawTheme = (draftStore.layoutSettings as any)?.activeThemeId || draftStore.layoutSettings?.themeStyle || 'nature';
+          const normalizedTheme = normalizeThemeId(rawTheme);
+          if (normalizedTheme === 'nature') {
+            const hasCosmetics = parsedProds.some(p => /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || ''));
+            if (hasCosmetics || parsedProds.length === 0) {
+              parsedProds = THEME_DATA_MAP['nature'].products;
+            }
+          }
+
+          if (parsedProds.length > 0) {
+            useCmsStore.setState({ products: parsedProds });
+            setProducts(parsedProds);
           }
 
           if (draftStore.layoutSettings?.activeThemeId) {
-            const normalizedTheme = normalizeThemeId(draftStore.layoutSettings.activeThemeId);
             useCmsStore.getState().loadThemeData(normalizedTheme);
           }
         }

@@ -7,9 +7,16 @@ interface ThemeSectionRendererProps {
   section: StoreSectionConfig;
   onUpdateSectionOptions?: (key: string, newOptions: Partial<any>) => void;
   deviceMode?: 'desktop' | 'tablet' | 'mobile';
+  readonly?: boolean;
 }
 
-export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ themeId, section, onUpdateSectionOptions, deviceMode = 'desktop' }) => {
+export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ 
+  themeId, 
+  section, 
+  onUpdateSectionOptions, 
+  deviceMode = 'desktop',
+  readonly = false 
+}) => {
   const normalizedId = normalizeThemeId(themeId);
   const themeComponents = ThemeRegistry[normalizedId] || ThemeRegistry[themeId as ThemeId];
 
@@ -46,6 +53,7 @@ export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ them
         deviceMode={deviceMode}
         isMobile={deviceMode === 'mobile'}
         isTablet={deviceMode === 'tablet'}
+        readonly={readonly}
       />
     );
   }

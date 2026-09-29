@@ -99,25 +99,35 @@ const getInitialProducts = () => {
       const saved = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
       if (saved) {
         const parsed = JSON.parse(saved);
-        // If cached data contains old fashion products, clear cache and return new hardware mock products
+        // If cached data contains old fashion products or old cosmetics, clear cache and return fresh Green Market products
         const hasFashion = Array.isArray(parsed) && parsed.some(p => 
           /dress|blouse|cardigan|pants|skirt|fashion|amaryllis|knit/i.test(p.name || '') ||
           /dress|atasan|outerwear|bawahan/i.test(p.categoryName || '')
         );
-        if (hasFashion) {
+        const hasCosmetics = Array.isArray(parsed) && parsed.some(p => 
+          /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || '')
+        );
+        if (hasFashion || hasCosmetics) {
           sessionStorage.removeItem('microcms_cms_products');
           localStorage.removeItem('microcms_cms_products');
-          return mockProducts;
+          return THEME_DATA_MAP['nature'].products;
         }
         return parsed;
       }
     } catch (e) {}
   }
-  return mockProducts;
+  return THEME_DATA_MAP['nature'].products;
 };
 
 export const useCmsStore = create<CmsState>((set, get) => ({
-  storeInfo: mockStoreInfo,
+  storeInfo: {
+    name: "Green Market Indonesia",
+    description: "Pasar pangan segar dan produk organik langsung dari mitra petani lokal binaan. Sayuran hidroponik, buah segar pilihan, madu murni, dan bahan pangan alami berkualitas tinggi.",
+    address: "Jalan Kebun Hijau No. 12, Lembang, Bandung",
+    email: "halo@greenmarket.id",
+    phone: "+62 812 8888 7777",
+    socials: { instagram: "@greenmarket.id" }
+  },
   products: getInitialProducts(),
   categories: mockCategories,
   news: mockNews,
@@ -136,7 +146,6 @@ export const useCmsStore = create<CmsState>((set, get) => ({
         try {
           sessionStorage.removeItem('microcms_cms_products');
           localStorage.removeItem('microcms_cms_products');
-          window.dispatchEvent(new Event('cms_draft_updated'));
         } catch (e) {}
       }
       return;
@@ -147,7 +156,6 @@ export const useCmsStore = create<CmsState>((set, get) => ({
       try {
         sessionStorage.setItem('microcms_cms_products', JSON.stringify(cmsList));
         localStorage.setItem('microcms_cms_products', JSON.stringify(cmsList));
-        window.dispatchEvent(new Event('cms_draft_updated'));
       } catch (e) {}
     }
   },

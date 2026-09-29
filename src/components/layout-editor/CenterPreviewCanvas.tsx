@@ -500,13 +500,18 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                   }
                 }}
                 onClick={(e) => {
+                  if (readonly) return;
                   e.stopPropagation();
                   onSelectSection(sectionKey);
                 }}
-                className={`relative cursor-pointer transition-all duration-150 ${
-                  isSelected
-                    ? 'ring-2 ring-[#2C6ECB] ring-offset-2 z-10 shadow-sm'
-                    : 'hover:ring-1 hover:ring-[#2C6ECB]/50'
+                className={`relative ${
+                  readonly
+                    ? 'cursor-default'
+                    : `cursor-pointer transition-all duration-150 ${
+                        isSelected
+                          ? 'ring-2 ring-[#2C6ECB] ring-offset-2 z-10 shadow-sm'
+                          : 'hover:ring-1 hover:ring-[#2C6ECB]/50'
+                      }`
                 }`}
                 style={customPaddingStyle}
               >
@@ -517,6 +522,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                       section={{ ...section, key: sectionKey }} 
                       onUpdateSectionOptions={onUpdateSectionOptions}
                       deviceMode={deviceMode}
+                      readonly={readonly}
                     />
                   </div>
                 ) : (
@@ -1624,21 +1630,24 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                       onSelectSection(sectionKey);
                     }}
                     onClick={(e) => {
+                      if (readonly) return;
                       e.stopPropagation();
                       onSelectSection(sectionKey);
                     }}
-                    className="relative group transition-all duration-150 cursor-pointer"
+                    className={`relative ${readonly ? 'cursor-default' : 'group transition-all duration-150 cursor-pointer'}`}
                     style={customPaddingStyle}
                   >
                     {/* Universal Selection Overlay to prevent child backgrounds from covering the ring */}
-                    <div className={`absolute inset-0 z-[100] pointer-events-none transition-all duration-200 ${
-                      isSelected
-                        ? 'ring-2 ring-[#2271B1] ring-inset bg-[#2271B1]/5 shadow-xs'
-                        : 'group-hover:ring-2 group-hover:ring-[#2271B1]/50 group-hover:ring-inset'
-                    }`} />
+                    {!readonly && (
+                      <div className={`absolute inset-0 z-[100] pointer-events-none transition-all duration-200 ${
+                        isSelected
+                          ? 'ring-2 ring-[#2271B1] ring-inset bg-[#2271B1]/5 shadow-xs'
+                          : 'group-hover:ring-2 group-hover:ring-[#2271B1]/50 group-hover:ring-inset'
+                      }`} />
+                    )}
 
                     {/* Shopify-style Floating Label Badge on Top Left */}
-                    {isSelected && (
+                    {!readonly && isSelected && (
                       <div className="absolute top-0 left-0 z-[110] bg-[#2271B1] text-white px-2.5 py-0.5 rounded-br-md text-[10px] font-bold shadow-xs flex items-center gap-1">
                         <Edit3 className="w-2.5 h-2.5" />
                         <span>{section.title}</span>
@@ -1646,7 +1655,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                     )}
 
                     {/* Shopify-style Floating Action Toolbar at Bottom Center */}
-                    {isSelected && (
+                    {!readonly && isSelected && (
                       <div
                         className="section-floating-toolbar absolute bottom-2 left-1/2 -translate-x-1/2 z-30 bg-slate-900/90 text-white backdrop-blur-xs px-2 py-1 rounded-xl shadow-xl flex items-center gap-1 border border-white/20 animate-in fade-in zoom-in-95 duration-100"
                         onClick={(e) => e.stopPropagation()}
@@ -1708,6 +1717,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                           section={section} 
                           onUpdateSectionOptions={onUpdateSectionOptions}
                           deviceMode={deviceMode}
+                          readonly={readonly}
                         />
                       </div>
                     ) : (
@@ -1782,6 +1792,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                                     if (onUpdateStore) onUpdateStore({ logoUrl: newLogo });
                                   }}
                                   isSelected={isSelected}
+                                  readonly={readonly}
                                 />
                               </div>
                             )}
@@ -2027,6 +2038,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                             title="Ganti Background Banner"
                             onUpdateImage={(newImg) => handleUpdateOption(sectionKey, { imageUrl: newImg })}
                             isSelected={isSelected}
+                            readonly={readonly}
                           />
                         </div>
 

@@ -7,9 +7,10 @@ import { InlineEditableImage } from '../../../components/layout-editor/InlineEdi
 interface ProductCardProps {
   product: CmsProduct;
   options?: any;
+  readonly?: boolean;
 }
 
-export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options = {} }) => {
+export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options = {}, readonly = false }) => {
   const updateProduct = useCmsStore(state => state.updateProduct);
 
   const showPrice = options.showPrice !== false;
@@ -21,7 +22,7 @@ export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options
 
   return (
     <div className="group block font-serif">
-      <div className="bg-white rounded-2xl p-3 shadow-xs hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border border-[#E8E4DB] flex flex-col h-full justify-between">
+      <div className={`bg-white rounded-2xl p-3 shadow-xs border border-[#E8E4DB] flex flex-col h-full justify-between transition-all duration-300 ${readonly ? '' : 'hover:shadow-lg hover:-translate-y-1'}`}>
         <div>
           <div className="relative aspect-square overflow-hidden rounded-xl bg-[#F9F6F0] mb-3.5 border border-[#E8E4DB]/60">
             <InlineEditableImage
@@ -29,6 +30,7 @@ export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options
               alt={product.name}
               className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
               onUpdateImage={(newUrl) => updateProduct({ ...product, image: newUrl })}
+              readonly={readonly}
             />
             {showBadge && product.isNew && (
               <div className="absolute top-2 left-2 bg-[#2C3B2D] text-[#F9F6F0] text-[10px] font-sans font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-xs">
@@ -48,6 +50,7 @@ export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options
                 <InlineEditableText
                   tagName="span"
                   value={product.categoryName || 'Sayur & Buah'}
+                  readonly={readonly}
                   onSave={(val) => updateProduct({ ...product, categoryName: val })}
                 />
               </div>
@@ -57,6 +60,7 @@ export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options
               <InlineEditableText
                 tagName="span"
                 value={product.name}
+                readonly={readonly}
                 onSave={(val) => updateProduct({ ...product, name: val })}
               />
             </h3>
@@ -74,6 +78,7 @@ export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options
                 <InlineEditableText
                   tagName="span"
                   value={`Rp ${product.price.toLocaleString('id-ID')}`}
+                  readonly={readonly}
                   onSave={(val) => {
                     const num = parseInt(val.replace(/[^0-9]/g, ''), 10);
                     if (!isNaN(num)) updateProduct({ ...product, price: num });

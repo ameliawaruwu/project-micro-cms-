@@ -32,7 +32,15 @@ export const InlineEditableImage: React.FC<InlineEditableImageProps> = ({
     if (!src) return null;
     return (
       <div className={containerClassName}>
-        <img src={src} alt={alt} className={className} referrerPolicy="no-referrer" />
+        <img 
+          src={src} 
+          alt={alt} 
+          className={className} 
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80';
+          }}
+        />
       </div>
     );
   }
@@ -55,6 +63,9 @@ export const InlineEditableImage: React.FC<InlineEditableImageProps> = ({
             alt={alt}
             className={`${className} transition-all duration-200 group-hover/image-edit:brightness-90`}
             referrerPolicy="no-referrer"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80';
+            }}
           />
         ) : (
           <div className="w-full h-full min-h-[120px] bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-4 text-slate-400 text-xs">

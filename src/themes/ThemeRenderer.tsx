@@ -56,7 +56,31 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
   const rawThemeId = (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist';
   const activeThemeId = normalizeThemeId(rawThemeId);
   const themeData = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['minimalist'];
-  const displayProducts = products || [];
+
+  const displayProducts = React.useMemo(() => {
+    if (activeThemeId === 'nature') {
+      const hasCosmetics = (products || []).some(p => /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || ''));
+      if (hasCosmetics || !products || products.length === 0) {
+        return THEME_DATA_MAP['nature'].products.map(cp => ({
+          id: cp.id,
+          storeId: store.id,
+          name: cp.name,
+          slug: cp.slug,
+          price: cp.price,
+          originalPrice: cp.originalPrice,
+          imageUrl: cp.image,
+          images: cp.images,
+          category: cp.categoryName,
+          description: cp.description,
+          status: 'Tersedia' as const,
+          stock: cp.stock,
+          isFeatured: cp.isFeatured,
+          weight: 1000,
+        }));
+      }
+    }
+    return products || [];
+  }, [products, activeThemeId, store.id]);
 
   const sections = getStoreSectionsForPage(store.layoutSettings, activePage);
 
