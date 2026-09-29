@@ -2,13 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   X,
   Camera,
-  ChevronDown,
-  ChevronUp,
   Check,
-  Package,
-  HelpCircle,
 } from 'lucide-react';
 import { Product } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -27,6 +24,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
+
   const [name, setName] = useState('');
   const [priceDisplay, setPriceDisplay] = useState('');
   const [originalPriceDisplay, setOriginalPriceDisplay] = useState('');
@@ -36,14 +36,13 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [weightDisplay, setWeightDisplay] = useState('250');
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Helper formatting numbers with Indonesian thousand separator
+  // Helper formatting numbers with thousand separator
   const formatThousand = (val: number | string): string => {
     if (val === '' || val === undefined || val === null) return '';
     const clean = String(val).replace(/\D/g, '');
     if (!clean) return '';
-    return new Intl.NumberFormat('id-ID').format(Number(clean));
+    return new Intl.NumberFormat(isEn ? 'en-US' : 'id-ID').format(Number(clean));
   };
 
   const parseNumber = (val: string): number => {
@@ -70,7 +69,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setDescription(productToEdit.description || '');
       setImageUrl(productToEdit.imageUrl || '');
       setWeightDisplay(productToEdit.weightGrams ? String(productToEdit.weightGrams) : '250');
-      setShowAdvanced(Boolean(productToEdit.originalPrice));
     } else {
       setName('');
       setPriceDisplay('');
@@ -80,9 +78,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setDescription('');
       setImageUrl(presetPhotos[0]);
       setWeightDisplay('250');
-      setShowAdvanced(false);
     }
-  }, [productToEdit, categories, isOpen]);
+  }, [productToEdit, categories, isOpen, isEn]);
 
   if (!isOpen) return null;
 
@@ -92,7 +89,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setPriceDisplay('');
       return;
     }
-    setPriceDisplay(new Intl.NumberFormat('id-ID').format(Number(rawVal)));
+    setPriceDisplay(new Intl.NumberFormat(isEn ? 'en-US' : 'id-ID').format(Number(rawVal)));
   };
 
   const handleOriginalPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,7 +98,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setOriginalPriceDisplay('');
       return;
     }
-    setOriginalPriceDisplay(new Intl.NumberFormat('id-ID').format(Number(rawVal)));
+    setOriginalPriceDisplay(new Intl.NumberFormat(isEn ? 'en-US' : 'id-ID').format(Number(rawVal)));
   };
 
   const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,18 +112,18 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   };
 
   const setQuickPrice = (nominal: number) => {
-    setPriceDisplay(new Intl.NumberFormat('id-ID').format(nominal));
+    setPriceDisplay(new Intl.NumberFormat(isEn ? 'en-US' : 'id-ID').format(nominal));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      alert('Mohon masukkan nama produk.');
+      alert(isEn ? 'Please enter a product name.' : 'Mohon masukkan nama produk.');
       return;
     }
     const finalPrice = parseNumber(priceDisplay);
     if (finalPrice <= 0) {
-      alert('Mohon masukkan harga jual produk yang valid (contoh: 50.000).');
+      alert(isEn ? 'Please enter a valid selling price (e.g. 50,000).' : 'Mohon masukkan harga jual produk yang valid (contoh: 50.000).');
       return;
     }
 
@@ -138,7 +135,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       originalPrice: originalPriceDisplay ? parseNumber(originalPriceDisplay) : undefined,
       stock: parseNumber(stockDisplay),
       category: finalCategory || 'Umum',
-      description: description.trim() || 'Produk berkualitas dari toko kami.',
+      description: description.trim() || (isEn ? 'Quality product from our store.' : 'Produk berkualitas dari toko kami.'),
       imageUrl: imageUrl || presetPhotos[0],
       weightGrams: parseNumber(weightDisplay) || 250,
     });
@@ -147,220 +144,184 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   return (
     <div
       id="modal-product-form"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 bg-[#241A1A]/50 backdrop-blur-xs overflow-y-auto font-sans text-left"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-[#241A1A]/60 backdrop-blur-xs font-sans text-left"
+      onClick={onClose}
     >
-      <div className="bg-white rounded-[22px] max-w-lg w-full p-5 sm:p-7 shadow-2xl border border-[#E5E0DD] my-6 animate-in fade-in zoom-in-95 duration-200">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#E5E0DD]">
+      <div
+        className="bg-white rounded-2xl max-w-2xl lg:max-w-3xl w-full shadow-2xl border border-[#E5E0DD] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E0DD] shrink-0 bg-white">
           <div>
-            <h3 className="font-bold text-lg sm:text-xl text-[#241A1A] tracking-tight">
-              {productToEdit ? 'Ubah Rincian Produk' : 'Tambah Produk Baru'}
+            <h3 className="font-bold text-base sm:text-lg text-[#241A1A] tracking-tight">
+              {productToEdit
+                ? (isEn ? 'Edit Product Details' : 'Ubah Rincian Produk')
+                : (isEn ? 'Add New Product' : 'Tambah Produk Baru')}
             </h3>
             <p className="text-xs text-[#706866] mt-0.5 font-normal">
-              Isi data sederhana di bawah untuk mulai jualan
+              {isEn ? 'Fill in the basic product details to start selling' : 'Isi data sederhana di bawah untuk mulai jualan'}
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-xl text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer border border-transparent hover:border-[#E5E0DD]"
-            aria-label="Tutup form"
+            aria-label={isEn ? 'Close' : 'Tutup'}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          
-          {/* Step 1: Product Photo */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-              1. FOTO PRODUK <span className="text-[#66000E]">*</span>
-            </label>
-            <div className="flex items-center gap-3.5">
-              <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-[#FAF7F7] border border-[#E5E0DD] overflow-hidden flex items-center justify-center relative shrink-0 shadow-2xs">
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt="Preview Produk"
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <Camera className="w-7 h-7 text-[#706866]" />
-                )}
-              </div>
-              <div className="flex-1 space-y-1.5">
-                <p className="text-[11px] text-[#706866] font-medium">Pilih foto siap pakai atau masukkan link gambar:</p>
-                <div className="flex gap-1.5 overflow-x-auto pb-1">
-                  {presetPhotos.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setImageUrl(preset)}
-                      className={`w-8 h-8 rounded-lg overflow-hidden border-2 shrink-0 transition cursor-pointer ${
-                        imageUrl === preset
-                          ? 'border-[#66000E] scale-105 shadow-2xs'
-                          : 'border-transparent opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <img src={preset} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    </button>
-                  ))}
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+              
+              {/* Left Column: Photo & Presets & Weight */}
+              <div className="md:col-span-5 space-y-3.5">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
+                    {isEn ? '1. PRODUCT PHOTO' : '1. FOTO PRODUK'} <span className="text-[#66000E]">*</span>
+                  </label>
+                  <div className="w-full aspect-square max-w-[200px] md:max-w-none mx-auto rounded-2xl bg-[#FAF7F7] border-2 border-dashed border-[#E5E0DD] hover:border-[#66000E]/40 overflow-hidden flex items-center justify-center relative shadow-2xs group transition">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt="Preview Produk"
+                        className="w-full h-full object-cover transition group-hover:scale-105 duration-200"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="text-center p-3">
+                        <Camera className="w-8 h-8 text-[#706866] mx-auto mb-1 opacity-60" />
+                        <span className="text-[11px] text-[#706866] font-medium block">
+                          {isEn ? 'No photo selected' : 'Belum ada foto'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Atau tempel URL gambar (https://...)"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] focus:bg-white text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
-                />
+
+                {/* Preset Thumbnails */}
+                <div>
+                  <p className="text-[11px] text-[#706866] font-medium mb-1.5">
+                    {isEn ? 'Pick a photo preset or paste image link:' : 'Pilih foto siap pakai atau masukkan link gambar:'}
+                  </p>
+                  <div className="flex gap-1.5 overflow-x-auto pb-1">
+                    {presetPhotos.map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setImageUrl(preset)}
+                        className={`w-9 h-9 rounded-lg overflow-hidden border-2 shrink-0 transition cursor-pointer ${
+                          imageUrl === preset
+                            ? 'border-[#66000E] scale-105 shadow-2xs ring-2 ring-[#66000E]/20'
+                            : 'border-transparent opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={preset} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    placeholder={isEn ? 'Or paste image URL (https://...)' : 'Atau tempel URL gambar (https://...)'}
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    className="mt-1.5 w-full px-3 py-1.5 text-xs rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] focus:bg-white text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 transition"
+                  />
+                </div>
+
+                {/* Weight Input (Compact on Left) */}
+                <div className="pt-2 border-t border-[#E5E0DD]/60">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-[#706866]">
+                      {isEn ? 'Estimated Weight (Grams)' : 'Estimasi Berat (Gram)'}
+                    </label>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="250"
+                      value={weightDisplay}
+                      onChange={handleWeightChange}
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-[#E5E0DD] bg-white text-[#241A1A] font-semibold focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-[#706866]">
+                      gram
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[#706866] mt-0.5 font-medium">
+                    {isEn ? 'Used for automated courier rate calculation' : 'Untuk hitung tarif ongkir kurir otomatis'}
+                  </p>
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Step 2: Product Name */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-              2. NAMA PRODUK <span className="text-[#66000E]">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Contoh: Kemeja Batik Parang Slimfit"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3.5 py-2.5 sm:py-3 rounded-xl border border-[#E5E0DD] text-sm text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10 transition"
-            />
-          </div>
+              {/* Right Column: Name, Price, Stock, Category, Description */}
+              <div className="md:col-span-7 space-y-3.5">
+                
+                {/* 2. Nama Produk */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
+                    {isEn ? '2. PRODUCT NAME' : '2. NAMA PRODUK'} <span className="text-[#66000E]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={isEn ? 'e.g. Silk Batik Long Sleeve Shirt' : 'Contoh: Kemeja Batik Parang Slimfit'}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 transition"
+                  />
+                </div>
 
-          {/* Step 3 & 4: Price & Stock with Manual Input Support */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            
-            {/* Price (Harga Jual) */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
-                  3. HARGA JUAL <span className="text-[#66000E]">*</span>
-                </label>
-                {priceDisplay && (
-                  <span className="text-[10px] text-[#66000E] font-bold">
-                    Rp {priceDisplay}
-                  </span>
-                )}
-              </div>
-
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#706866]">
-                  Rp
-                </span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  required
-                  placeholder="Contoh: 150.000"
-                  value={priceDisplay}
-                  onChange={handlePriceChange}
-                  className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 rounded-xl border border-[#E5E0DD] text-sm sm:text-base font-bold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10"
-                />
-              </div>
-
-              {/* Quick Preset Buttons */}
-              <div className="flex items-center gap-1.5 mt-1.5 overflow-x-auto">
-                {[50000, 100000, 150000, 250000].map((amt) => (
-                  <button
-                    key={amt}
-                    type="button"
-                    onClick={() => setQuickPrice(amt)}
-                    className="px-2 py-0.5 rounded-md bg-[#FAF7F7] hover:bg-[#F5E8EA] border border-[#E5E0DD] hover:border-[#66000E] text-[10px] font-semibold text-[#706866] hover:text-[#66000E] transition cursor-pointer whitespace-nowrap"
-                  >
-                    {amt >= 1000 ? `${amt / 1000}rb` : amt}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Stock (Jumlah Stok) */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-                4. JUMLAH STOK <span className="text-[#66000E]">*</span>
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                required
-                placeholder="10"
-                value={stockDisplay}
-                onChange={handleStockChange}
-                className="w-full px-3.5 py-2.5 sm:py-3 rounded-xl border border-[#E5E0DD] text-sm sm:text-base font-bold text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10"
-              />
-              <p className="text-[10px] text-[#706866] mt-1 font-medium">
-                Stok barang yang siap dibeli pelanggan
-              </p>
-            </div>
-
-          </div>
-
-          {/* Step 5: Category */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-              5. KATEGORI PRODUK
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10"
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-              <option value="new">+ Tambah Kategori Baru...</option>
-            </select>
-
-            {category === 'new' && (
-              <input
-                type="text"
-                placeholder="Tulis nama kategori baru..."
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                className="mt-2 w-full px-3.5 py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
-              />
-            )}
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-              DESKRIPSI SINGKAT
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Ceritakan keunggulan bahan, ukuran, dan cara penggunaan..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10 resize-none"
-            />
-          </div>
-
-          {/* Advanced Settings */}
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="w-full py-2.5 px-3.5 rounded-xl bg-[#FAF7F7] hover:bg-[#F5E8EA]/50 border border-[#E5E0DD] flex items-center justify-between text-xs font-bold text-[#241A1A] transition cursor-pointer"
-            >
-              <span>Pengaturan Lanjutan (Diskon, Berat Ongkir)</span>
-              {showAdvanced ? <ChevronUp className="w-4 h-4 text-[#706866]" /> : <ChevronDown className="w-4 h-4 text-[#706866]" />}
-            </button>
-
-            {showAdvanced && (
-              <div className="p-3.5 mt-2 bg-[#FAF7F7] rounded-2xl border border-[#E5E0DD] space-y-3 animate-in fade-in duration-150">
+                {/* 3 & Price Coret */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold text-[#706866] mb-1">
-                      Harga Coret (Diskon)
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
+                        {isEn ? '3. SELLING PRICE' : '3. HARGA JUAL'} <span className="text-[#66000E]">*</span>
+                      </label>
+                      {priceDisplay && (
+                        <span className="text-[10px] text-[#66000E] font-bold">
+                          Rp {priceDisplay}
+                        </span>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#706866]">
+                        Rp
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        required
+                        placeholder={isEn ? '150,000' : 'Contoh: 150.000'}
+                        value={priceDisplay}
+                        onChange={handlePriceChange}
+                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-bold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                      />
+                    </div>
+                    {/* Quick Preset Buttons */}
+                    <div className="flex items-center gap-1 mt-1.5 overflow-x-auto">
+                      {[50000, 100000, 150000, 250000].map((amt) => (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => setQuickPrice(amt)}
+                          className="px-2 py-0.5 rounded-md bg-[#FAF7F7] hover:bg-[#F5E8EA] border border-[#E5E0DD] hover:border-[#66000E] text-[10px] font-semibold text-[#706866] hover:text-[#66000E] transition cursor-pointer whitespace-nowrap"
+                        >
+                          {amt >= 1000 ? `${amt / 1000}${isEn ? 'k' : 'rb'}` : amt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
+                      {isEn ? 'STRIKE PRICE (OPTIONAL)' : 'HARGA CORET (OPSIONAL)'}
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#706866]">
@@ -369,46 +330,99 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       <input
                         type="text"
                         inputMode="numeric"
-                        placeholder="Contoh: 200.000"
+                        placeholder={isEn ? '200,000' : 'Contoh: 200.000'}
                         value={originalPriceDisplay}
                         onChange={handleOriginalPriceChange}
-                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-[#E5E0DD] bg-white text-[#241A1A] font-semibold focus:outline-none focus:border-[#66000E]"
+                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
                       />
                     </div>
+                    <span className="text-[10px] text-[#706866] mt-1 block">
+                      {isEn ? 'Shows discount badge in store' : 'Menampilkan badge diskon di toko'}
+                    </span>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-[#706866] mb-1">
-                    Estimasi Berat (Gram) untuk Hitung Ongkir Kurir
-                  </label>
+                {/* 4 & 5: Stock & Category */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
+                      {isEn ? '4. STOCK QUANTITY' : '4. JUMLAH STOK'} <span className="text-[#66000E]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      placeholder="10"
+                      value={stockDisplay}
+                      onChange={handleStockChange}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-bold text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                    />
+                    <p className="text-[10px] text-[#706866] mt-0.5 font-medium">
+                      {isEn ? 'Units available for purchase' : 'Stok barang yang siap dibeli'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
+                      {isEn ? '5. PRODUCT CATEGORY' : '5. KATEGORI PRODUK'}
+                    </label>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                      <option value="new">{isEn ? '+ Add New Category...' : '+ Tambah Kategori Baru...'}</option>
+                    </select>
+                  </div>
+                </div>
+
+                {category === 'new' && (
                   <input
                     type="text"
-                    inputMode="numeric"
-                    placeholder="250"
-                    value={weightDisplay}
-                    onChange={handleWeightChange}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#E5E0DD] bg-white text-[#241A1A] font-semibold focus:outline-none focus:border-[#66000E]"
+                    placeholder={isEn ? 'Enter new category name...' : 'Tulis nama kategori baru...'}
+                    value={customCategory}
+                    onChange={(e) => setCustomCategory(e.target.value)}
+                    className="w-full px-3 py-1.5 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                  />
+                )}
+
+                {/* Deskripsi Singkat */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
+                    {isEn ? 'SHORT DESCRIPTION' : 'DESKRIPSI SINGKAT'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder={isEn ? 'Describe materials, size, and product highlights...' : 'Ceritakan keunggulan bahan, ukuran, dan cara penggunaan...'}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 resize-none transition"
                   />
                 </div>
+
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Submit CTA Buttons */}
-          <div className="pt-4 border-t border-[#E5E0DD] flex items-center justify-end gap-2.5">
+          {/* Fixed Footer Buttons (Always visible at bottom) */}
+          <div className="px-5 py-3.5 border-t border-[#E5E0DD] bg-[#FAF7F7] flex items-center justify-end gap-2.5 shrink-0">
             <button
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 sm:px-5 py-2.5 min-h-[44px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] font-bold text-xs hover:bg-[#FAF7F7] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 min-h-[38px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] font-bold text-xs hover:bg-white transition cursor-pointer disabled:opacity-50"
             >
-              Batal
+              {isEn ? 'Cancel' : 'Batal'}
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="flex-1 sm:flex-none px-6 py-2.5 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs sm:text-sm shadow-xs transition transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
+              className="px-5 py-2 min-h-[38px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs sm:text-sm shadow-xs transition transform active:scale-98 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
             >
               {isSaving ? (
                 <>
@@ -416,18 +430,17 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                   </svg>
-                  <span>Menyimpan...</span>
+                  <span>{isEn ? 'Saving...' : 'Menyimpan...'}</span>
                 </>
               ) : (
                 <>
                   <Check className="w-4 h-4 stroke-[2.5]" />
-                  <span>Simpan Produk</span>
+                  <span>{productToEdit ? (isEn ? 'Save Changes' : 'Simpan Perubahan') : (isEn ? 'Save Product' : 'Simpan Produk')}</span>
                 </>
               )}
             </button>
           </div>
         </form>
-
       </div>
     </div>
   );
