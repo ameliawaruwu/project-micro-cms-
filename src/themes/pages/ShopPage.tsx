@@ -249,8 +249,25 @@ export const ShopPage: React.FC<ShopPageProps> = ({ themeData, themeId: propThem
               </p>
             </div>
 
-            {/* Centered Search Bar */}
-            <div className="max-w-md mx-auto mb-6">
+            {/* Filter Pills - Cleanly Centered on Top */}
+            <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-2.5 mb-6">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                    selectedCategory === cat 
+                      ? 'bg-[#2D5A27] text-white shadow-md scale-105' 
+                      : 'bg-white text-[#1B3B2B]/75 hover:bg-[#2D5A27]/10 border border-[#2D5A27]/15 hover:border-[#2D5A27]/30'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Centered Search Bar - Below Filters */}
+            <div className="max-w-md mx-auto mb-12">
               <div className="relative w-full">
                 <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#2D5A27]/70" />
                 <input
@@ -270,23 +287,6 @@ export const ShopPage: React.FC<ShopPageProps> = ({ themeData, themeId: propThem
                   </button>
                 )}
               </div>
-            </div>
-
-            {/* Filter Pills - Cleanly Centered */}
-            <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-2.5 mb-12">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                    selectedCategory === cat 
-                      ? 'bg-[#2D5A27] text-white shadow-md scale-105' 
-                      : 'bg-white text-[#1B3B2B]/75 hover:bg-[#2D5A27]/10 border border-[#2D5A27]/15 hover:border-[#2D5A27]/30'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
             </div>
 
             {/* Grid */}
