@@ -13,9 +13,9 @@ import { FashionNavbar, FashionHero, FashionLookbook, FashionFeaturedProducts, F
 export type ThemeId = 'minimalist' | 'futuristic' | 'editorial' | 'nature' | 'luxury' | 'bold' | 'cute' | 'elegant' | 'modern' | 'creative' | 'professional' | 'fashion';
 
 export interface ThemeComponents {
-  Navbar: React.FC;
-  Hero: React.FC;
-  Footer: React.FC;
+  Navbar: React.FC<any>;
+  Hero: React.FC<any>;
+  Footer: React.FC<any>;
   ProductCard?: React.FC<any>; // Allow custom product cards per theme
   [key: string]: React.FC<any> | undefined; // Generic mapping for other sections
 }

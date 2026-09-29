@@ -1,12 +1,33 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 
-export const NatureNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean; readonly?: boolean }> = ({ 
+export const NatureNavbar: React.FC<{ 
+  sectionOptions?: any; 
+  isMobile?: boolean; 
+  isTablet?: boolean; 
+  readonly?: boolean;
+  searchQuery?: string;
+  onSearchChange?: (val: string) => void;
+}> = ({ 
   sectionOptions = {},
   isMobile = false,
   isTablet = false,
-  readonly = false
+  readonly = false,
+  searchQuery: controlledSearchQuery,
+  onSearchChange
 }) => {
+  const [localSearch, setLocalSearch] = React.useState('');
+  const query = controlledSearchQuery !== undefined ? controlledSearchQuery : localSearch;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (onSearchChange) {
+      onSearchChange(val);
+    } else {
+      setLocalSearch(val);
+    }
+  };
+
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
@@ -43,8 +64,31 @@ export const NatureNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
         )}
       </div>
 
-      <div className="w-full md:flex-1 flex justify-center md:justify-end items-center gap-4 sm:gap-6">
-        <button className="text-xs sm:text-[13px] tracking-wide text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors flex items-center gap-2 cursor-pointer font-sans whitespace-nowrap">
+      <div className="w-full md:flex-1 flex flex-wrap justify-center md:justify-end items-center gap-3 sm:gap-5">
+        {/* Search Bar in Header Right */}
+        <div className="relative w-44 sm:w-52 md:w-44 lg:w-60">
+          <svg className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5C6B5D]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            value={query}
+            onChange={handleInputChange}
+            placeholder="Cari produk segar..."
+            className="w-full pl-9 pr-7 py-1.5 bg-white border border-[#E8E4DB] rounded-full text-xs font-sans text-[#2C3B2D] placeholder-[#5C6B5D]/60 focus:outline-none focus:ring-1.5 focus:ring-[#2C3B2D] focus:border-transparent transition-all shadow-2xs"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => onSearchChange ? onSearchChange('') : setLocalSearch('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#5C6B5D] hover:text-[#2C3B2D] bg-[#E8E4DB]/50 hover:bg-[#E8E4DB] rounded-full w-4 h-4 flex items-center justify-center cursor-pointer"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        <button className="text-xs sm:text-[13px] tracking-wide text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors flex items-center gap-2 cursor-pointer font-sans whitespace-nowrap shrink-0">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
           Keranjang (0)
         </button>
