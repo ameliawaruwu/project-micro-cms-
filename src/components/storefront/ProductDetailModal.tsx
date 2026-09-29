@@ -79,15 +79,34 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 {product.name}
               </h2>
 
-              {/* Price */}
-              <div className="mt-2.5 flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-[#1F1F1F]">
-                  {formatRupiah(product.price)}
-                </span>
-                {hasDiscount && (
-                  <span className="text-xs text-[#777777] line-through">
-                    {formatRupiah(product.originalPrice!)}
-                  </span>
+              {/* Price Breakdown */}
+              <div className="mt-2.5 p-3 sm:p-3.5 rounded-2xl bg-[#FAF7F7] border border-[#E5E0DD]">
+                {hasDiscount ? (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-2xl sm:text-3xl font-extrabold text-[#66000E]">
+                        {formatRupiah(product.price)}
+                      </span>
+                      <span className="bg-[#66000E] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
+                        Diskon {discountPercent}%
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-[#706866] flex-wrap">
+                      <span className="font-medium">Harga Regular:</span>
+                      <span className="line-through font-semibold text-[#8F8785]">
+                        {formatRupiah(product.originalPrice!)}
+                      </span>
+                      <span className="text-[#027A48] font-bold text-xs">
+                        (Hemat {formatRupiah(product.originalPrice! - product.price)})
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="text-2xl sm:text-3xl font-extrabold text-[#1F1F1F]">
+                      {formatRupiah(product.price)}
+                    </span>
+                  </div>
                 )}
               </div>
 

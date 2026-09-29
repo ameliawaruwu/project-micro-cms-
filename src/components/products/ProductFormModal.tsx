@@ -724,10 +724,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     <p className="text-[10px] text-[#706866]">
                       {discountPercent && Number(discountPercent) > 0 && originalPriceDisplay && originalPriceDisplay !== sellingPriceDisplay ? (
                         <>
-                          {isEn ? 'Storefront displays ' : 'Di toko tampil '}
-                          <span className="font-bold text-[#241A1A]">Rp {sellingPriceDisplay}</span>
-                          {isEn ? ' with strike price ' : ' dicoret '}
-                          <span className="line-through">Rp {originalPriceDisplay}</span>
+                          {isEn ? 'Front store displays discounted price ' : 'Bagian depan toko menampilkan harga diskon '}
+                          <span className="font-bold text-[#66000E]">Rp {sellingPriceDisplay}</span>
+                          {isEn ? ', detail view shows regular price ' : ', dan pada detail produk menampilkan harga regular '}
+                          <span className="line-through font-medium">Rp {originalPriceDisplay}</span>
                         </>
                       ) : (
                         isEn ? 'Standard selling price without discount' : 'Harga jual standar produk tanpa diskon'
