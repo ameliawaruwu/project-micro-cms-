@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   Camera,
@@ -37,6 +37,39 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [imageUrl, setImageUrl] = useState('');
   const [weightDisplay, setWeightDisplay] = useState('250');
 
+  // Curated default categories for UMKM & retail stores, merged with existing categories
+  const availableCategories = useMemo(() => {
+    const defaults = isEn
+      ? [
+          'Clothing & Fashion',
+          'Food & Beverages',
+          'Health & Beauty',
+          'Handicrafts & Accessories',
+          'Electronics & Gadgets',
+          'Home & Living',
+          'Hobby & Sports',
+        ]
+      : [
+          'Pakaian & Fashion',
+          'Makanan & Minuman',
+          'Kesehatan & Kecantikan',
+          'Kerajinan & Aksesoris',
+          'Elektronik & Gadget',
+          'Rumah Tangga',
+          'Hobi & Olahraga',
+        ];
+
+    const set = new Set<string>();
+    defaults.forEach((c) => set.add(c));
+    categories.forEach((c) => {
+      if (c && c !== 'new' && c !== 'Lainnya' && c !== 'Other' && c !== 'Umum') {
+        set.add(c);
+      }
+    });
+    set.add(isEn ? 'Other' : 'Lainnya');
+    return Array.from(set);
+  }, [categories, isEn]);
+
   // Helper formatting numbers with thousand separator
   const formatThousand = (val: number | string): string => {
     if (val === '' || val === undefined || val === null) return '';
@@ -65,7 +98,19 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setPriceDisplay(productToEdit.price ? formatThousand(productToEdit.price) : '');
       setOriginalPriceDisplay(productToEdit.originalPrice ? formatThousand(productToEdit.originalPrice) : '');
       setStockDisplay(productToEdit.stock !== undefined ? String(productToEdit.stock) : '10');
-      setCategory(productToEdit.category || (categories[0] || 'Umum'));
+
+      const prodCat = productToEdit.category || '';
+      if (availableCategories.includes(prodCat)) {
+        setCategory(prodCat);
+        setCustomCategory('');
+      } else if (prodCat) {
+        setCategory('new');
+        setCustomCategory(prodCat);
+      } else {
+        setCategory(availableCategories[0] || (isEn ? 'Clothing & Fashion' : 'Pakaian & Fashion'));
+        setCustomCategory('');
+      }
+
       setDescription(productToEdit.description || '');
       setImageUrl(productToEdit.imageUrl || '');
       setWeightDisplay(productToEdit.weightGrams ? String(productToEdit.weightGrams) : '250');
@@ -74,12 +119,13 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setPriceDisplay('');
       setOriginalPriceDisplay('');
       setStockDisplay('10');
-      setCategory(categories[0] || 'Umum');
+      setCategory(availableCategories[0] || (isEn ? 'Clothing & Fashion' : 'Pakaian & Fashion'));
+      setCustomCategory('');
       setDescription('');
       setImageUrl(presetPhotos[0]);
       setWeightDisplay('250');
     }
-  }, [productToEdit, categories, isOpen, isEn]);
+  }, [productToEdit, availableCategories, isOpen, isEn]);
 
   if (!isOpen) return null;
 
@@ -127,14 +173,19 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       return;
     }
 
-    const finalCategory = category === 'new' ? customCategory || 'Lainnya' : category;
+    let finalCategory = category;
+    if (category === 'new') {
+      finalCategory = customCategory.trim() || (isEn ? 'Other' : 'Lainnya');
+    } else if (category === 'Lainnya' || category === 'Other') {
+      finalCategory = customCategory.trim() || (isEn ? 'Other' : 'Lainnya');
+    }
 
     onSave({
       name: name.trim(),
       price: finalPrice,
       originalPrice: originalPriceDisplay ? parseNumber(originalPriceDisplay) : undefined,
       stock: parseNumber(stockDisplay),
-      category: finalCategory || 'Umum',
+      category: finalCategory || (isEn ? 'Other' : 'Lainnya'),
       description: description.trim() || (isEn ? 'Quality product from our store.' : 'Produk berkualitas dari toko kami.'),
       imageUrl: imageUrl || presetPhotos[0],
       weightGrams: parseNumber(weightDisplay) || 250,
@@ -368,28 +419,41 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     </label>
                     <select
                       value={category}
-                      onChange={(e) => setCategory(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCategory(val);
+                        if (val !== 'new' && val !== 'Lainnya' && val !== 'Other') {
+                          setCustomCategory('');
+                        }
+                      }}
                       className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
                     >
-                      {categories.map((cat) => (
+                      {availableCategories.map((cat) => (
                         <option key={cat} value={cat}>
                           {cat}
                         </option>
                       ))}
                       <option value="new">{isEn ? '+ Add New Category...' : '+ Tambah Kategori Baru...'}</option>
                     </select>
+
+                    {(category === 'new' || category === 'Lainnya' || category === 'Other') && (
+                      <div className="mt-2 space-y-1 animate-in fade-in duration-150">
+                        <input
+                          type="text"
+                          placeholder={
+                            category === 'new'
+                              ? (isEn ? 'Enter custom category name (e.g. Doll, Coffee)...' : 'Tulis nama kategori baru (contoh: Boneka, Kopi, Sepatu)...')
+                              : (isEn ? 'Specify other category (optional, or keep as Other)...' : 'Tulis nama kategori spesifik (opsional, atau biarkan Lainnya)...')
+                          }
+                          value={customCategory}
+                          onChange={(e) => setCustomCategory(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                          autoFocus={category === 'new'}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {category === 'new' && (
-                  <input
-                    type="text"
-                    placeholder={isEn ? 'Enter new category name...' : 'Tulis nama kategori baru...'}
-                    value={customCategory}
-                    onChange={(e) => setCustomCategory(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
-                  />
-                )}
 
                 {/* Deskripsi Singkat */}
                 <div>
