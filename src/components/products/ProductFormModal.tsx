@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   X,
   Camera,
   Check,
+  Upload,
+  UploadCloud,
+  Trash2,
 } from 'lucide-react';
 import { Product } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { compressProductImage } from '../../pages/merchant/ProductFormPage';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -36,6 +40,11 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [weightDisplay, setWeightDisplay] = useState('250');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoError, setPhotoError] = useState('');
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Curated default categories for UMKM & retail stores, merged with existing categories
   const availableCategories = useMemo(() => {
@@ -92,7 +101,79 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800&auto=format&fit=crop&q=80',
   ];
 
+  // File upload and compression handler (supports JPG/PNG max 10MB)
+  const handleFile = async (file: File) => {
+    if (!file) return;
+
+    // Validate format: JPG, JPEG, PNG, WEBP
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+    const hasValidExt = /\.(jpe?g|png|webp)$/i.test(file.name);
+    if (!validTypes.includes(file.type) && !hasValidExt) {
+      setPhotoError(
+        isEn
+          ? 'Invalid file format. Please upload JPG, PNG, or WEBP image.'
+          : 'Format file tidak didukung. Harap upload foto format JPG, PNG, atau WEBP.'
+      );
+      return;
+    }
+
+    // Validate size: Maximum 10 MB
+    const maxSizeBytes = 10 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      setPhotoError(
+        isEn
+          ? `File size is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Maximum allowed is 10 MB.`
+          : `Ukuran file ${(file.size / (1024 * 1024)).toFixed(1)} MB. Maksimal ukuran foto adalah 10 MB.`
+      );
+      return;
+    }
+
+    setPhotoError('');
+    setIsProcessingPhoto(true);
+    try {
+      const compressed = await compressProductImage(file, 1200, 0.85);
+      if (compressed) {
+        setImageUrl(compressed);
+      } else {
+        setPhotoError(
+          isEn
+            ? 'Failed to process image. Please try another photo.'
+            : 'Gagal memproses foto. Silakan coba file gambar lain.'
+        );
+      }
+    } catch {
+      setPhotoError(
+        isEn
+          ? 'Error reading photo file.'
+          : 'Terjadi kesalahan saat memproses file foto.'
+      );
+    } finally {
+      setIsProcessingPhoto(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFile(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFile(file);
+    }
+  };
+
   useEffect(() => {
+    setPhotoError('');
     if (productToEdit) {
       setName(productToEdit.name || '');
       setPriceDisplay(productToEdit.price ? formatThousand(productToEdit.price) : '');
@@ -122,7 +203,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setCategory(availableCategories[0] || (isEn ? 'Clothing & Fashion' : 'Pakaian & Fashion'));
       setCustomCategory('');
       setDescription('');
-      setImageUrl(presetPhotos[0]);
+      setImageUrl('');
       setWeightDisplay('250');
     }
   }, [productToEdit, availableCategories, isOpen, isEn]);
@@ -173,6 +254,12 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       return;
     }
 
+    if (!imageUrl) {
+      setPhotoError(isEn ? 'Please upload a product photo.' : 'Mohon unggah foto produk.');
+      alert(isEn ? 'Please upload a product photo.' : 'Mohon unggah foto produk terlebih dahulu.');
+      return;
+    }
+
     let finalCategory = category;
     if (category === 'new') {
       finalCategory = customCategory.trim() || (isEn ? 'Other' : 'Lainnya');
@@ -185,7 +272,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       stock: parseNumber(stockDisplay),
       category: finalCategory || (isEn ? 'Other' : 'Lainnya'),
       description: description.trim() || (isEn ? 'Quality product from our store.' : 'Produk berkualitas dari toko kami.'),
-      imageUrl: imageUrl || presetPhotos[0],
+      imageUrl: imageUrl,
       weightGrams: parseNumber(weightDisplay) || 250,
     });
   };
@@ -227,59 +314,148 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
               
-              {/* Left Column: Photo & Presets & Weight */}
+              {/* Left Column: Photo Upload (JPG/PNG max 10MB) & Weight */}
               <div className="md:col-span-5 space-y-3.5">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-                    {isEn ? '1. PRODUCT PHOTO' : '1. FOTO PRODUK'} <span className="text-[#66000E]">*</span>
-                  </label>
-                  <div className="w-full aspect-square max-w-[200px] md:max-w-none mx-auto rounded-2xl bg-[#FAF7F7] border-2 border-dashed border-[#E5E0DD] hover:border-[#66000E]/40 overflow-hidden flex items-center justify-center relative shadow-2xs group transition">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
+                      {isEn ? '1. PRODUCT PHOTO' : '1. FOTO PRODUK'} <span className="text-[#66000E]">*</span>
+                    </label>
+                    {imageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageUrl('');
+                          setPhotoError('');
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                        className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{isEn ? 'Remove' : 'Hapus'}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png, image/jpeg, image/jpg, image/webp"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+
+                  {/* Dropzone & Preview Box */}
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                    }}
+                    onDrop={handleFileDrop}
+                    className={`w-full aspect-square max-w-[220px] md:max-w-none mx-auto rounded-2xl border-2 ${
+                      isDragging
+                        ? 'border-[#66000E] bg-[#66000E]/5 scale-[1.01]'
+                        : imageUrl
+                        ? 'border-[#E5E0DD] bg-[#FAF7F7]'
+                        : 'border-dashed border-[#E5E0DD] bg-[#FAF7F7] hover:border-[#66000E]/50'
+                    } overflow-hidden flex flex-col items-center justify-center relative shadow-2xs group transition cursor-pointer`}
+                  >
                     {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt="Preview Produk"
-                        className="w-full h-full object-cover transition group-hover:scale-105 duration-200"
-                        referrerPolicy="no-referrer"
-                      />
+                      <>
+                        <img
+                          src={imageUrl}
+                          alt="Preview Produk"
+                          className="w-full h-full object-cover transition group-hover:scale-105 duration-200"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition duration-200 flex flex-col items-center justify-center gap-1.5 text-white">
+                          <Upload className="w-6 h-6" />
+                          <span className="text-xs font-semibold">
+                            {isEn ? 'Change Photo' : 'Ganti Foto'}
+                          </span>
+                        </div>
+                      </>
                     ) : (
-                      <div className="text-center p-3">
-                        <Camera className="w-8 h-8 text-[#706866] mx-auto mb-1 opacity-60" />
-                        <span className="text-[11px] text-[#706866] font-medium block">
-                          {isEn ? 'No photo selected' : 'Belum ada foto'}
+                      <div className="text-center p-4">
+                        <div className="w-12 h-12 rounded-full bg-white shadow-xs border border-[#E5E0DD] flex items-center justify-center mx-auto mb-2 text-[#66000E] group-hover:scale-110 transition">
+                          <UploadCloud className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-bold text-[#241A1A] block">
+                          {isEn ? 'Upload Photo' : 'Upload Foto Produk'}
+                        </span>
+                        <span className="text-[11px] text-[#706866] mt-0.5 block">
+                          {isEn ? 'Click or drag photo here' : 'Klik atau seret foto ke sini'}
+                        </span>
+                      </div>
+                    )}
+
+                    {isProcessingPhoto && (
+                      <div className="absolute inset-0 bg-white/85 backdrop-blur-xs flex flex-col items-center justify-center gap-2 z-10">
+                        <div className="w-6 h-6 border-2 border-[#66000E] border-t-transparent rounded-full animate-spin" />
+                        <span className="text-[11px] font-semibold text-[#66000E]">
+                          {isEn ? 'Processing photo...' : 'Memproses foto...'}
                         </span>
                       </div>
                     )}
                   </div>
-                </div>
 
-                {/* Preset Thumbnails */}
-                <div>
-                  <p className="text-[11px] text-[#706866] font-medium mb-1.5">
-                    {isEn ? 'Pick a photo preset or paste image link:' : 'Pilih foto siap pakai atau masukkan link gambar:'}
-                  </p>
-                  <div className="flex gap-1.5 overflow-x-auto pb-1">
-                    {presetPhotos.map((preset, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setImageUrl(preset)}
-                        className={`w-9 h-9 rounded-lg overflow-hidden border-2 shrink-0 transition cursor-pointer ${
-                          imageUrl === preset
-                            ? 'border-[#66000E] scale-105 shadow-2xs ring-2 ring-[#66000E]/20'
-                            : 'border-transparent opacity-70 hover:opacity-100'
-                        }`}
-                      >
-                        <img src={preset} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      </button>
-                    ))}
+                  {/* Upload Button & Specs */}
+                  <div className="mt-2 space-y-1.5">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-2 px-3 rounded-xl border border-[#E5E0DD] bg-white hover:bg-[#FAF7F7] text-xs font-semibold text-[#241A1A] flex items-center justify-center gap-2 transition cursor-pointer shadow-2xs hover:border-[#66000E]/40"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-[#66000E]" />
+                      <span>
+                        {imageUrl
+                          ? (isEn ? 'Change Photo from Device' : 'Ganti Foto dari Perangkat')
+                          : (isEn ? 'Choose JPG / PNG from Device' : 'Pilih Foto dari Perangkat')}
+                      </span>
+                    </button>
+
+                    <p className="text-[10px] text-[#706866] text-center font-medium">
+                      JPG, PNG, atau WEBP • Maksimal <strong>10 MB</strong>
+                    </p>
+
+                    {photoError && (
+                      <div className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-medium text-center animate-in fade-in">
+                        {photoError}
+                      </div>
+                    )}
                   </div>
-                  <input
-                    type="text"
-                    placeholder={isEn ? 'Or paste image URL (https://...)' : 'Atau tempel URL gambar (https://...)'}
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    className="mt-1.5 w-full px-3 py-1.5 text-xs rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] focus:bg-white text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 transition"
-                  />
+
+                  {/* Preset Photos for quick trial */}
+                  <div className="pt-2">
+                    <p className="text-[10px] text-[#706866] font-medium mb-1">
+                      {isEn ? 'Or use sample presets:' : 'Atau gunakan contoh foto:'}
+                    </p>
+                    <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                      {presetPhotos.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setImageUrl(preset);
+                            setPhotoError('');
+                          }}
+                          className={`w-8 h-8 rounded-lg overflow-hidden border-2 shrink-0 transition cursor-pointer ${
+                            imageUrl === preset
+                              ? 'border-[#66000E] scale-105 shadow-2xs ring-1 ring-[#66000E]/20'
+                              : 'border-transparent opacity-65 hover:opacity-100'
+                          }`}
+                        >
+                          <img src={preset} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Weight Input (Compact on Left) */}
