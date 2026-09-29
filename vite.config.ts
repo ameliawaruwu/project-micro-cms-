@@ -133,6 +133,44 @@ function midtransDevPlugin(): Plugin {
         });
       });
 
+      // Endpoint Cek Status Pembayaran Midtrans Dev Server
+      server.middlewares.use('/api/midtrans/status', async (req, res) => {
+        const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+        const orderId = url.searchParams.get('orderId');
+        if (!orderId) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: true, message: 'orderId parameter is required' }));
+          return;
+        }
+
+        try {
+          const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+          const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
+          const apiUrl =
+            env === 'production'
+              ? `https://api.midtrans.com/v2/${encodeURIComponent(orderId)}/status`
+              : `https://api.sandbox.midtrans.com/v2/${encodeURIComponent(orderId)}/status`;
+
+          const statusRes = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Basic ${Buffer.from(serverKey + ':').toString('base64')}`,
+            },
+          });
+
+          const statusData = await statusRes.json();
+          res.statusCode = statusRes.status;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(statusData));
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: true, message: err?.message || 'Failed checking status' }));
+        }
+      });
+
       // Endpoint Webhook Notifikasi Midtrans dengan Verifikasi Signature SHA-512
       server.middlewares.use('/api/midtrans/notification', async (req, res) => {
         if (req.method !== 'POST') {

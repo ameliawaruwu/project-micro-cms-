@@ -78,10 +78,9 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
                 <CreditCard className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-semibold text-xs text-gray-900 block">Midtrans Payment</span>
-                <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {isEn ? 'Connected via .env' : 'Terhubung via .env'}
+                <span className="font-semibold text-xs text-gray-900 block">Midtrans Payment Gateway</span>
+                <span className="text-[10px] text-gray-500 font-medium flex items-center gap-1">
+                  Mode: <strong className="uppercase text-[#66000E]">{platformSettings.midtransEnvironment || 'sandbox'}</strong>
                 </span>
               </div>
             </div>
@@ -89,9 +88,9 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
               type="button"
               onClick={() => handleTestApi('midtrans')}
               disabled={testingService === 'midtrans'}
-              className="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 shadow-xs"
+              className="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 shadow-xs flex items-center gap-1"
             >
-              {testingService === 'midtrans' ? (isEn ? 'Testing...' : 'Menguji...') : (isEn ? 'Ping Test' : 'Tes Ping')}
+              {testingService === 'midtrans' ? (isEn ? 'Testing...' : 'Menguji...') : (isEn ? 'Test Connection' : 'Uji Koneksi')}
             </button>
           </div>
 
@@ -105,7 +104,7 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
                 <span className="font-semibold text-xs text-gray-900 block">{isEn ? 'Biteship Shipping' : 'Biteship Ekspedisi'}</span>
                 <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {isEn ? 'Connected via .env' : 'Terhubung via .env'}
+                  {isEn ? 'Active & Integrated' : 'Aktif & Terintegrasi'}
                 </span>
               </div>
             </div>
@@ -118,6 +117,88 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
               {testingService === 'biteship' ? (isEn ? 'Testing...' : 'Menguji...') : (isEn ? 'Ping Test' : 'Tes Ping')}
             </button>
           </div>
+        </div>
+
+        {/* MIDTRANS CREDENTIALS FORM */}
+        <div className="pt-2 border-t border-gray-100 space-y-2.5 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-gray-800">
+              {isEn ? 'Midtrans Credentials (Live / Sandbox)' : 'Kredensial Midtrans (Live / Sandbox)'}
+            </span>
+            <span className="text-[10px] text-gray-400">
+              {isEn ? 'Saved to database & synched with backend' : 'Tersimpan di database & disinkronkan ke server backend'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div>
+              <label className="font-medium text-gray-700 block mb-1">Environment</label>
+              <select
+                value={platformSettings.midtransEnvironment || 'sandbox'}
+                onChange={(e) =>
+                  setPlatformSettings({
+                    ...platformSettings,
+                    midtransEnvironment: e.target.value as 'sandbox' | 'production',
+                  })
+                }
+                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-medium text-xs focus:outline-none focus:border-red-500"
+              >
+                <option value="sandbox">Sandbox (Pengujian / Test)</option>
+                <option value="production">Production (Live Resmi)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="font-medium text-gray-700 block mb-1">Merchant ID</label>
+              <input
+                type="text"
+                placeholder="G477630600"
+                value={platformSettings.midtransMerchantId || ''}
+                onChange={(e) =>
+                  setPlatformSettings({
+                    ...platformSettings,
+                    midtransMerchantId: e.target.value,
+                  })
+                }
+                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-red-500"
+              />
+            </div>
+
+            <div>
+              <label className="font-medium text-gray-700 block mb-1">Client Key</label>
+              <input
+                type="text"
+                placeholder="SB-Mid-client-..."
+                value={platformSettings.midtransClientKey || ''}
+                onChange={(e) =>
+                  setPlatformSettings({
+                    ...platformSettings,
+                    midtransClientKey: e.target.value,
+                  })
+                }
+                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-red-500"
+              />
+            </div>
+
+            <div>
+              <label className="font-medium text-gray-700 block mb-1">Server Key</label>
+              <input
+                type="text"
+                placeholder="SB-Mid-server-..."
+                value={platformSettings.midtransServerKey || ''}
+                onChange={(e) =>
+                  setPlatformSettings({
+                    ...platformSettings,
+                    midtransServerKey: e.target.value,
+                  })
+                }
+                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-red-500"
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-gray-500">
+            💡 Dapatkan Server Key dan Client Key resmi dari <strong>Midtrans Dashboard &gt; Settings &gt; Access Keys</strong>. Pastikan tidak ada spasi di awal atau akhir kunci.
+          </p>
         </div>
       </div>
 

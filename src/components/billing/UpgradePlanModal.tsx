@@ -189,14 +189,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
         } catch (snapErr: any) {
           console.error('Midtrans Snap error:', snapErr);
           setIsProcessing(false);
-          const isSandbox = (import.meta as any).env?.VITE_MIDTRANS_ENV === 'sandbox';
-          if (isSandbox) {
-            if (window.confirm(`Layanan Midtrans Snap merespons: ${snapErr?.message || 'Error'}.\n\nApakah Anda ingin mengaktifkan paket ini secara instan (Mode Sandbox Test)?`)) {
-              await completeUpgradeProcess(planId);
-              return;
-            }
-          }
-          alert('Gagal membuka payment gateway Midtrans: ' + (snapErr?.message || 'Silakan coba beberapa saat lagi.'));
+          alert('Gagal membuka payment gateway Midtrans: ' + (snapErr?.message || 'Silakan periksa konfigurasi Midtrans Anda.'));
           return;
         }
       }

@@ -126,21 +126,63 @@ app.post('/api/shipping/rates', async (req, res) => {
   }
 });
 
+// Helper untuk mendapatkan kredensial Midtrans dari env atau database platform_settings
+async function getMidtransConfig() {
+  let serverKey = (process.env.MIDTRANS_SERVER_KEY || '').trim();
+  let clientKey = (process.env.VITE_MIDTRANS_CLIENT_KEY || '').trim();
+  let env = (process.env.VITE_MIDTRANS_ENV || 'sandbox').trim().toLowerCase();
+
+  // Jika serverKey belum diisi di .env atau ingin fallback ke Supabase platform_settings
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const resp = await fetch(`${supabaseUrl}/rest/v1/platform_settings?select=midtrans_environment,midtrans_server_key,midtrans_client_key&limit=1`, {
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
+      });
+      if (resp.ok) {
+        const rows = await resp.json();
+        if (Array.isArray(rows) && rows[0]) {
+          const dbRow = rows[0];
+          if (!serverKey && dbRow.midtrans_server_key) {
+            serverKey = dbRow.midtrans_server_key.trim();
+          }
+          if (!clientKey && dbRow.midtrans_client_key) {
+            clientKey = dbRow.midtrans_client_key.trim();
+          }
+          if (dbRow.midtrans_environment) {
+            env = dbRow.midtrans_environment.trim().toLowerCase();
+          }
+        }
+      }
+    } catch {
+      // Fallback silently to process.env
+    }
+  }
+
+  return { serverKey, clientKey, env };
+}
+
 // 3. Endpoint Midtrans Snap Token dengan Validasi Nominal di Sisi Server
 app.post('/api/midtrans/snap-token', async (req, res) => {
   try {
     const data = req.body || {};
-    const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+    const { serverKey, env } = await getMidtransConfig();
+
     if (!serverKey) {
-      return res.status(500).json({ error: 'MIDTRANS_SERVER_KEY tidak ditemukan di .env' });
+      return res.status(500).json({ error: true, message: 'MIDTRANS_SERVER_KEY belum dikonfigurasi di server .env atau Pengaturan Admin.' });
     }
 
     const rawAmount = Number(data.grossAmount);
     if (isNaN(rawAmount) || rawAmount <= 0) {
-      return res.status(400).json({ error: 'Nominal transaksi tidak valid (harus lebih besar dari Rp 0)' });
+      return res.status(400).json({ error: true, message: 'Nominal transaksi tidak valid (harus lebih besar dari Rp 0)' });
     }
     if (rawAmount > 500_000_000) {
-      return res.status(400).json({ error: 'Nominal transaksi melebihi batas maksimum' });
+      return res.status(400).json({ error: true, message: 'Nominal transaksi melebihi batas maksimum' });
     }
 
     const sanitizedOrderId = String(data.orderId || `ORDER-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
@@ -148,7 +190,6 @@ app.post('/api/midtrans/snap-token', async (req, res) => {
     const sanitizedPhone = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
     const sanitizedEmail = String(data.customerEmail || 'customer@example.com').trim().slice(0, 100);
 
-    const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
     const apiUrl =
       env === 'production'
         ? 'https://app.midtrans.com/snap/v1/transactions'
@@ -188,7 +229,7 @@ app.post('/api/midtrans/snap-token', async (req, res) => {
       } else if (midtransData?.status_message) {
         errorMsg = midtransData.status_message;
       } else if (midtransData?.error === 'Unauthorized' || midtransRes.status === 401) {
-        errorMsg = 'Kunci MIDTRANS_SERVER_KEY tidak valid atau belum diotorisasi di Midtrans (401 Unauthorized)';
+        errorMsg = 'Kunci MIDTRANS_SERVER_KEY tidak valid atau belum diotorisasi di Midtrans (401 Unauthorized). Pastikan Server Key Sandbox Anda sesuai di Midtrans Merchant Portal.';
       } else if (typeof midtransData?.error === 'string') {
         errorMsg = midtransData.error;
       } else if (typeof midtransData?.message === 'string') {
@@ -208,6 +249,96 @@ app.post('/api/midtrans/snap-token', async (req, res) => {
     });
   } catch (err: any) {
     return res.status(500).json({ error: true, message: err?.message || 'Internal Server Error' });
+  }
+});
+
+// 3b. Endpoint Cek Status Pembayaran Midtrans Langsung dari Server
+app.get('/api/midtrans/status', async (req, res) => {
+  try {
+    const orderId = String(req.query.orderId || '').trim();
+    if (!orderId) {
+      return res.status(400).json({ error: true, message: 'Parameter orderId wajib disertakan' });
+    }
+
+    const { serverKey, env } = await getMidtransConfig();
+    if (!serverKey) {
+      return res.status(500).json({ error: true, message: 'MIDTRANS_SERVER_KEY belum dikonfigurasi' });
+    }
+
+    const apiUrl =
+      env === 'production'
+        ? `https://api.midtrans.com/v2/${encodeURIComponent(orderId)}/status`
+        : `https://api.sandbox.midtrans.com/v2/${encodeURIComponent(orderId)}/status`;
+
+    const statusRes = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Basic ${Buffer.from(serverKey + ':').toString('base64')}`,
+      },
+    });
+
+    const statusData = await statusRes.json();
+    return res.status(statusRes.status).json(statusData);
+  } catch (err: any) {
+    return res.status(500).json({ error: true, message: err?.message || 'Gagal mengecek status transaksi Midtrans' });
+  }
+});
+
+// 3c. Endpoint Tes Ping & Diagnosa Kunci Midtrans
+app.get('/api/midtrans/test-ping', async (_req, res) => {
+  try {
+    const { serverKey, env } = await getMidtransConfig();
+    if (!serverKey) {
+      return res.status(400).json({ success: false, message: 'MIDTRANS_SERVER_KEY belum disetel' });
+    }
+
+    const apiUrl =
+      env === 'production'
+        ? 'https://app.midtrans.com/snap/v1/transactions'
+        : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
+
+    // Test authorization with a dummy transaction
+    const testRes = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Basic ${Buffer.from(serverKey + ':').toString('base64')}`,
+      },
+      body: JSON.stringify({
+        transaction_details: {
+          order_id: `PING-TEST-${Date.now()}`,
+          gross_amount: 10000,
+        },
+      }),
+    });
+
+    const data = await testRes.json();
+    if (testRes.ok && data.token) {
+      return res.status(200).json({
+        success: true,
+        message: `Koneksi Midtrans ${env.toUpperCase()} BERHASIL! Token Snap berhasil dibuat.`,
+        env,
+        maskedKey: serverKey.slice(0, 12) + '...',
+      });
+    } else if (testRes.status === 401) {
+      return res.status(401).json({
+        success: false,
+        message: `Server Key Midtrans ${env.toUpperCase()} ditolak (401 Unauthorized). Silakan periksa Server Key di dashboard Midtrans (Settings > Access Keys).`,
+        env,
+        details: data,
+      });
+    } else {
+      return res.status(testRes.status).json({
+        success: false,
+        message: data.message || (Array.isArray(data.error_messages) ? data.error_messages.join(', ') : 'Respon gagal dari Midtrans'),
+        env,
+        details: data,
+      });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal menghubungi server Midtrans' });
   }
 });
 

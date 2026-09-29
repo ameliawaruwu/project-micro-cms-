@@ -352,10 +352,6 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       }
 
       if (!sub.orderId) {
-        if (import.meta.env.DEV || (import.meta.env.VITE_MIDTRANS_ENV as string) === 'sandbox') {
-          await handleActivatePlan(sub);
-          return;
-        }
         if (onShowNotification) {
           onShowNotification(isEn ? 'Order ID not found for status verification.' : 'ID pesanan tidak valid untuk pengecekan status.');
         }
@@ -365,19 +361,11 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       const checkRes = await midtransService.checkTransactionStatus(sub.orderId);
       if (checkRes.isPaid) {
         await handleActivatePlan(sub);
-      } else if (checkRes.isTimeout) {
-        if (onShowNotification) {
-          onShowNotification(
-            isEn
-              ? 'Midtrans Sandbox is slow to respond. You can click "Instant Test (Sandbox)" to activate immediately.'
-              : 'Koneksi ke Midtrans Sandbox sedang lambat. Silakan klik "⚡ Aktifkan Langsung (Sandbox)" untuk langsung mengaktifkan paket.'
-          );
-        }
       } else {
         if (onShowNotification) {
           const msg = checkRes.transactionStatus
             ? (isEn ? `Status Midtrans: "${checkRes.transactionStatus}". Pembayaran belum lunas.` : `Status transaksi Midtrans: "${checkRes.transactionStatus}". Pembayaran belum lunas.`)
-            : (isEn ? 'Payment not detected yet. If you have paid or are testing in Sandbox, click "Instant Test (Sandbox)".' : 'Pembayaran belum terdeteksi di Midtrans Sandbox. Silakan selesaikan di simulator atau klik tombol "⚡ Aktifkan Langsung (Sandbox)".');
+            : (checkRes.error || (isEn ? 'Payment not detected yet. Please complete payment via Midtrans Snap.' : 'Pembayaran belum terdeteksi di Midtrans. Silakan selesaikan pembayaran via Midtrans Snap.'));
           onShowNotification(msg);
         }
       }
@@ -385,7 +373,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       console.warn('Notice verifying payment:', err);
       if (onShowNotification) {
         onShowNotification(
-          'Koneksi Midtrans lambat. Silakan klik tombol "⚡ Aktifkan Langsung (Sandbox)" untuk mengaktifkan paket tanpa menunggu.'
+          err?.message || (isEn ? 'Failed to connect to Midtrans server.' : 'Gagal menghubungi server Midtrans untuk verifikasi status.')
         );
       }
     } finally {
@@ -508,15 +496,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     } catch (err: any) {
       console.error('Midtrans payment error:', err);
       setIsProcessing(false);
-      const isSandbox = (import.meta as any).env?.VITE_MIDTRANS_ENV === 'sandbox';
-      if (isSandbox) {
-        if (window.confirm(`Layanan Midtrans Snap merespons: ${err?.message || 'Error'}.\n\nApakah Anda ingin mengaktifkan paket ini secara instan (Mode Sandbox Test)?`)) {
-          await handleActivatePlan(recordedPending);
-          setIsModalOpen(false);
-          return;
-        }
-      }
-      alert('Gagal membuka pembayaran Midtrans: ' + (err?.message || 'Terjadi kesalahan.'));
+      alert('Gagal membuka pembayaran Midtrans: ' + (err?.message || 'Terjadi kesalahan pada koneksi Midtrans.'));
     }
   };
 
@@ -661,19 +641,6 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? 'animate-spin' : ''}`} />
                 <span>{isVerifying ? (isEn ? 'Verifying...' : 'Memverifikasi...') : (isEn ? 'Check Status & Activate' : 'Cek Status & Aktifkan Paket')}</span>
               </button>
-
-              {/* Dev / Sandbox instant activation button */}
-              {(import.meta.env.DEV || (import.meta.env.VITE_MIDTRANS_ENV as string) === 'sandbox') && (
-                <button
-                  type="button"
-                  title="Aktivasi langsung untuk pengujian Sandbox tanpa menunggu simulasi bank"
-                  onClick={() => handleCheckPaymentStatus(pendingSubscription, true)}
-                  className="px-3.5 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                >
-                  <Zap className="w-3.5 h-3.5 text-amber-700 fill-current" />
-                  <span>{isEn ? 'Instant Test (Sandbox)' : '⚡ Aktifkan Langsung (Sandbox)'}</span>
-                </button>
-              )}
 
               <button
                 type="button"

@@ -138,6 +138,7 @@ class MidtransService {
 
     // 2. Fallback direct HTTP fetch ke Edge Function atau Backend Server lokal (/api/midtrans/snap-token)
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kaveesimezonkgvhcbln.supabase.co';
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
     const endpoints = [
       `${supabaseUrl}/functions/v1/midtrans-snap`,
       '/api/midtrans/snap-token',
@@ -146,11 +147,18 @@ class MidtransService {
     let lastError: any = null;
     for (const endpoint of endpoints) {
       try {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        };
+        if (endpoint.includes('supabase.co') && anonKey) {
+          headers['apikey'] = anonKey;
+          headers['Authorization'] = `Bearer ${anonKey}`;
+        }
+
         const response = await fetch(endpoint, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify(params),
         });
 
@@ -164,7 +172,7 @@ class MidtransService {
           const errMsg =
             errData.message ||
             (errData.details?.error === 'Unauthorized' || response.status === 401
-              ? 'Kunci MIDTRANS_SERVER_KEY tidak valid atau belum diotorisasi di Midtrans (401 Unauthorized)'
+              ? 'Kunci MIDTRANS_SERVER_KEY tidak valid atau belum diotorisasi di Midtrans (401 Unauthorized). Pastikan Server Key Sandbox Anda sesuai di Midtrans Merchant Portal.'
               : `Gagal menghubungi Midtrans API (${endpoint}: HTTP ${response.status})`);
           lastError = new Error(errMsg);
         }
@@ -286,20 +294,9 @@ class MidtransService {
     data?: any;
     error?: string;
   }> {
-    // 1. Check if this order was paid in the Sandbox Simulator
-    try {
-      const stored = JSON.parse(sessionStorage.getItem('midtrans_simulated_paid_orders') || '[]');
-      if (Array.isArray(stored) && stored.includes(orderId)) {
-        return {
-          success: true,
-          isPaid: true,
-          transactionStatus: 'settlement',
-          data: { order_id: orderId, transaction_status: 'settlement', status_code: '200' },
-        };
-      }
-    } catch { }
-
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kaveesimezonkgvhcbln.supabase.co';
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
     const endpoints = [
       `${supabaseUrl}/functions/v1/midtrans-snap?orderId=${encodeURIComponent(orderId)}`,
       `/api/midtrans/status?orderId=${encodeURIComponent(orderId)}`,
@@ -307,7 +304,15 @@ class MidtransService {
 
     for (const endpoint of endpoints) {
       try {
-        const response = await fetch(endpoint);
+        const headers: Record<string, string> = {
+          Accept: 'application/json',
+        };
+        if (endpoint.includes('supabase.co') && anonKey) {
+          headers['apikey'] = anonKey;
+          headers['Authorization'] = `Bearer ${anonKey}`;
+        }
+
+        const response = await fetch(endpoint, { headers });
         if (response.ok) {
           const data = await response.json();
           const status = (data.transaction_status || data.transactionStatus || '').toLowerCase();

@@ -105,13 +105,28 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     showToast(`No. Resi ${resi} disalin ke clipboard`);
   };
 
-  const handleTestApi = (service: 'midtrans' | 'biteship' | 'wa') => {
+  const handleTestApi = async (service: 'midtrans' | 'biteship' | 'wa') => {
     setTestingService(service);
+    if (service === 'midtrans') {
+      try {
+        const res = await fetch('/api/midtrans/test-ping');
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          showToast(`✅ ${data.message}`);
+        } else {
+          showToast(`❌ ${data.message || 'Server Key Midtrans tidak valid (401 Unauthorized)'}`);
+        }
+      } catch (err: any) {
+        showToast(`❌ Gagal menghubungi server: ${err?.message || err}`);
+      } finally {
+        setTestingService(null);
+      }
+      return;
+    }
+
     setTimeout(() => {
       setTestingService(null);
-      if (service === 'midtrans') {
-        showToast('Koneksi Midtrans Gateway (.env): Berhasil (200 OK)');
-      } else if (service === 'biteship') {
+      if (service === 'biteship') {
         showToast('Koneksi Biteship Shipping API (.env): Aktif');
       } else {
         showToast('WhatsApp Gateway API Token (.env): Valid');
