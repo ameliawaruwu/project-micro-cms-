@@ -94,11 +94,24 @@ function midtransDevPlugin(): Plugin {
 
             res.setHeader('Content-Type', 'application/json');
             if (!midtransRes.ok) {
+              let errorMsg = 'Midtrans API Error';
+              if (Array.isArray(midtransData?.error_messages) && midtransData.error_messages.length > 0) {
+                errorMsg = midtransData.error_messages.join(', ');
+              } else if (midtransData?.status_message) {
+                errorMsg = midtransData.status_message;
+              } else if (midtransData?.error === 'Unauthorized' || midtransRes.status === 401) {
+                errorMsg = 'Kunci MIDTRANS_SERVER_KEY tidak valid atau belum diotorisasi di Midtrans (401 Unauthorized)';
+              } else if (typeof midtransData?.error === 'string') {
+                errorMsg = midtransData.error;
+              } else if (typeof midtransData?.message === 'string') {
+                errorMsg = midtransData.message;
+              }
+
               res.statusCode = midtransRes.status;
               res.end(
                 JSON.stringify({
                   error: true,
-                  message: midtransData.error_messages ? midtransData.error_messages.join(', ') : 'Midtrans API Error',
+                  message: errorMsg,
                   details: midtransData,
                 })
               );

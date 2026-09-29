@@ -508,6 +508,14 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     } catch (err: any) {
       console.error('Midtrans payment error:', err);
       setIsProcessing(false);
+      const isSandbox = (import.meta as any).env?.VITE_MIDTRANS_ENV === 'sandbox';
+      if (isSandbox) {
+        if (window.confirm(`Layanan Midtrans Snap merespons: ${err?.message || 'Error'}.\n\nApakah Anda ingin mengaktifkan paket ini secara instan (Mode Sandbox Test)?`)) {
+          await handleActivatePlan(recordedPending);
+          setIsModalOpen(false);
+          return;
+        }
+      }
       alert('Gagal membuka pembayaran Midtrans: ' + (err?.message || 'Terjadi kesalahan.'));
     }
   };
