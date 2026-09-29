@@ -25,14 +25,20 @@ import {
 import { midtransService } from '../../services/midtransService';
 import { formatRupiah } from '../../utils/formatters';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
 import confetti from 'canvas-confetti';
 
 interface DomainPageProps {
   store: Store;
   onNavigateBilling?: () => void;
+  onNavigateDashboard?: () => void;
 }
 
-export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling }) => {
+export const DomainPage: React.FC<DomainPageProps> = ({
+  store,
+  onNavigateBilling,
+  onNavigateDashboard,
+}) => {
   const { t, language } = useLanguage();
   const isEn = language === 'en';
   const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial';
@@ -284,18 +290,21 @@ export const DomainPage: React.FC<DomainPageProps> = ({ store, onNavigateBilling
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 w-full text-left">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E5E0DD] pb-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#241A1A] tracking-tight flex items-center gap-2">
-            <Globe className="w-6 h-6 text-[#66000E]" />
-            <span>{t('domain_page_title', 'Domain Toko')}</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-[#706866] mt-1">
-            {t('domain_page_subtitle', 'Atur alamat web toko online Anda agar profesional dan mudah diingat pelanggan')}
-          </p>
-        </div>
+    <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 w-full text-left">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        items={[
+          { label: t('nav_dashboard', 'Dashboard'), onClick: onNavigateDashboard },
+          { label: t('domain_page_title', 'Domain Toko'), isActive: true },
+        ]}
+      />
+
+      {/* 1. Page Title */}
+      <div className="pb-3 border-b border-[#E5E0DD]">
+        <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+          <Globe className="w-5 h-5 text-[#66000E]" />
+          <span>{t('domain_page_title', 'Domain Toko')}</span>
+        </h1>
       </div>
 
       {/* FREE PLAN SANDBOX NOTICE */}

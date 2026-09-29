@@ -1852,6 +1852,7 @@ export default function App() {
                 <DomainPage
                   store={currentStore}
                   onNavigateBilling={() => setActiveTab('billing')}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
                 />
               )}
 
