@@ -127,41 +127,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div key={item.id} className="space-y-0.5">
                 <button
                   onClick={() => setIsWebsiteMenuExpanded(!isWebsiteMenuExpanded)}
-                  className={`w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-colors group relative cursor-pointer ${
+                  className={`w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
                     isActive
-                      ? 'bg-red-50 text-red-700 font-semibold'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-[#F5E8EA] text-[#66000E] font-semibold'
+                      : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
                   }`}
                   title={isCollapsed && !isOpenMobile ? item.label : undefined}
                 >
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     <Icon
                       className={`w-4 h-4 shrink-0 transition-colors ${
-                        isActive ? 'text-red-600' : 'text-gray-400 group-hover:text-gray-700'
+                        isActive ? 'text-[#66000E]' : 'text-gray-400 group-hover:text-[#66000E]'
                       }`}
                     />
                     {showLabel && <span className="flex-1 text-left truncate">{item.label}</span>}
                   </div>
                   {showLabel && (
-                    isWebsiteMenuExpanded ? <ChevronDown className="w-3.5 h-3.5 opacity-50 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 opacity-50 shrink-0" />
+                    isWebsiteMenuExpanded ? (
+                      <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-[#66000E] opacity-70' : 'text-gray-400 group-hover:text-[#66000E] opacity-50'}`} />
+                    ) : (
+                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-[#66000E] opacity-70' : 'text-gray-400 group-hover:text-[#66000E] opacity-50'}`} />
+                    )
                   )}
                 </button>
                 
                 {showLabel && isWebsiteMenuExpanded && item.children && (
-                  <div className="ml-6 space-y-0.5 mt-1">
-                    {item.children.map(child => (
-                      <button
-                        key={child.id}
-                        onClick={() => handleItemClick(child.id)}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-                          activeTab === child.id
-                            ? 'text-red-700 font-semibold bg-red-50/50'
-                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                        }`}
-                      >
-                        <span className="flex-1 text-left truncate">{child.label}</span>
-                      </button>
-                    ))}
+                  <div className="ml-4 pl-2 space-y-0.5 mt-1 border-l-2 border-[#F5E8EA]">
+                    {item.children.map(child => {
+                      const isChildActive = activeTab === child.id;
+                      return (
+                        <button
+                          key={child.id}
+                          onClick={() => handleItemClick(child.id)}
+                          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium font-poppins transition-colors cursor-pointer ${
+                            isChildActive
+                              ? 'text-[#66000E] font-semibold bg-[#F5E8EA]'
+                              : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
+                          }`}
+                        >
+                          <span className="flex-1 text-left truncate">{child.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
