@@ -420,13 +420,13 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     }
 
     const orderId = `BILL-${Date.now()}`;
-    const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+    const invoiceNumber = `INV-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     // Record subscription immediately so merchant has an invoice and orderId
     const recordedPending = await billingPlanService.recordSubscription({
       storeId: store.id,
       storeName: store.name,
-      planId: `plan_${targetPlan}`,
+      planId: selectedPlanForUpgrade.id,
       planName: selectedPlanForUpgrade.name,
       cycle: 'yearly',
       amount: price,
@@ -654,8 +654,8 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         </div>
       )}
 
-      {/* 2. Pricing Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pt-2">
+      {/* 2. Pricing Cards Grid (Responsive & Squarish Balanced Ratio) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch pt-2">
         {plans.map((plan) => {
           const isCurrent =
             plan.slug === store.plan ||
@@ -664,83 +664,93 @@ export const BillingPage: React.FC<BillingPageProps> = ({
           const isStorePaid = store.plan && store.plan !== 'free' && store.plan !== 'starter';
           const price = plan.priceYearly;
 
+          // Filter out redundant breakdown items and limit to top 4 highlights to keep card squarish and compact
+          const displayFeatures = plan.features.filter((feat) => {
+            const clean = feat.trim();
+            if (/^Hosting Server:/i.test(clean)) return false;
+            if (/^Jasa Micro CMS:/i.test(clean)) return false;
+            if (plan.badge && clean.toLowerCase().includes(plan.badge.toLowerCase())) return false;
+            return true;
+          }).slice(0, 4);
+
           return (
             <div
               key={plan.id}
-              className={`rounded-2xl bg-white p-5 sm:p-6 border transition-all duration-200 flex flex-col justify-between relative shadow-2xs hover:shadow-md ${isCurrent
+              className={`rounded-2xl bg-white p-4 sm:p-5 border transition-all duration-200 flex flex-col justify-between relative shadow-2xs hover:shadow-md ${
+                isCurrent
                   ? 'border-2 border-[#66000E] ring-4 ring-[#66000E]/5'
                   : plan.badge
                     ? 'border-amber-400 ring-2 ring-amber-400/20'
                     : 'border-[#E5E0DD]'
-                }`}
+              }`}
             >
-              <div>
-                {/* Top Badge */}
-                {plan.badge && (
-                  <div className="mb-2">
-                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500 text-white shadow-xs inline-block">
-                      ★ {getPlanBadge(plan.badge)}
-                    </span>
+              <div className="flex-1 flex flex-col">
+                {/* Header Row */}
+                <div className="flex items-start justify-between gap-2 min-h-[36px]">
+                  <div>
+                    {plan.badge && (
+                      <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-2xs inline-block mb-1">
+                        ★ {getPlanBadge(plan.badge)}
+                      </span>
+                    )}
+                    <h3 className="font-extrabold text-base text-[#241A1A] leading-tight">{getPlanName(plan.name)}</h3>
                   </div>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <h3 className="font-extrabold text-base text-[#241A1A]">{getPlanName(plan.name)}</h3>
                   {isCurrent && (
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block">
-                        {isStorePaid && plan.slug !== 'free' ? (isEn ? 'Active (1 Year)' : 'Aktif (1 Tahun)') : (isEn ? 'Active' : 'Aktif')}
+                        {isStorePaid && plan.slug !== 'free' ? (isEn ? 'Active' : 'Aktif') : (isEn ? 'Active' : 'Aktif')}
                       </span>
                       {isStorePaid && plan.slug !== 'free' && store.planExpiresAt && (
                         <span className="text-[9px] text-gray-500 font-medium block mt-0.5">
-                          s/d {new Date(store.planExpiresAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          s/d {new Date(store.planExpiresAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short' })}
                         </span>
                       )}
                     </div>
                   )}
                 </div>
 
-                <p className="text-xs text-[#706866] mt-1 min-h-[32px]">{getPlanTagline(plan.tagline)}</p>
+                <p className="text-[11px] text-[#706866] mt-1 line-clamp-1">{getPlanTagline(plan.tagline)}</p>
 
                 {/* Price */}
-                <div className="py-3 border-y border-[#FAF7F7] my-3">
+                <div className="py-2.5 border-y border-[#FAF7F7] my-2.5">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl sm:text-3xl font-black text-[#241A1A]">
+                    <span className="text-2xl font-black text-[#241A1A] tracking-tight">
                       {price === 0 ? (isEn ? 'Free' : 'Gratis') : formatRupiah(price)}
                     </span>
-                    <span className="text-xs text-[#706866]">
+                    <span className="text-[11px] text-[#706866]">
                       {price === 0 ? '' : isEn ? '/ year' : '/ tahun'}
                     </span>
                   </div>
                 </div>
 
-                {/* Transparent Breakdown (Hosting Server + Jasa Micro CMS) */}
-                {plan.hostingPriceYearly !== undefined && plan.cmsPriceYearly !== undefined && price > 0 && (
-                  <div className="bg-[#FAF7F7] p-2.5 rounded-xl border border-[#E5E0DD]/80 mb-4 text-[11px] space-y-1">
-                    <div className="flex justify-between text-[#706866]">
-                      <span>{isEn ? 'Server Hosting Cost:' : 'Biaya Hosting Server:'}</span>
-                      <span className="font-semibold text-[#241A1A]">{formatRupiah(plan.hostingPriceYearly)}</span>
-                    </div>
-                    <div className="flex justify-between text-[#706866]">
-                      <span>{isEn ? 'Micro CMS Platform Fee:' : 'Biaya Jasa Micro CMS:'}</span>
-                      <span className="font-semibold text-[#241A1A]">{formatRupiah(plan.cmsPriceYearly)}</span>
-                    </div>
+                {/* Compact Transparent Breakdown Tag */}
+                {plan.hostingPriceYearly !== undefined && plan.cmsPriceYearly !== undefined && price > 0 ? (
+                  <div className="flex items-center justify-between text-[10px] text-[#706866] bg-[#FAF7F7] px-2.5 py-1.5 rounded-lg border border-[#E5E0DD]/70 mb-3">
+                    <span>Hosting: <strong className="text-[#241A1A]">{formatRupiah(plan.hostingPriceYearly)}</strong></span>
+                    <span className="text-gray-300">•</span>
+                    <span>CMS: <strong className="text-[#241A1A]">{formatRupiah(plan.cmsPriceYearly)}</strong></span>
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-[#706866] bg-[#FAF7F7] px-2.5 py-1.5 rounded-lg border border-[#E5E0DD]/70 mb-3 flex items-center justify-between">
+                    <span>{isEn ? 'Community Hosting Free' : 'Hosting Komunitas Gratis'}</span>
+                    <span className="text-emerald-700 font-bold">Rp 0</span>
                   </div>
                 )}
 
-                {/* Features List */}
-                <ul className="space-y-2.5 text-xs text-[#241A1A] pb-4">
-                  {plan.features.map((feat, idx) => {
+                {/* Features List (Compact 4 Key Items) */}
+                <ul className="space-y-2 text-[11px] text-[#241A1A] mb-4 flex-1">
+                  {displayFeatures.map((feat, idx) => {
                     const isNegative = feat.startsWith('❌');
                     return (
-                      <li key={idx} className={`flex items-start gap-2 leading-snug ${isNegative ? 'text-gray-400 line-through' : ''}`}>
+                      <li key={idx} className={`flex items-start gap-1.5 leading-snug ${isNegative ? 'text-gray-400 line-through' : ''}`}>
                         <div
-                          className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isNegative ? 'bg-gray-100 text-gray-400' : 'bg-emerald-100 text-emerald-700'
-                            }`}
+                          className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                            isNegative ? 'bg-gray-100 text-gray-400' : 'bg-emerald-100 text-emerald-700'
+                          }`}
                         >
-                          {isNegative ? <X className="w-2.5 h-2.5 stroke-[3]" /> : <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                          {isNegative ? <X className="w-2 h-2 stroke-[3]" /> : <Check className="w-2 h-2 stroke-[3]" />}
                         </div>
-                        <span>{getPlanFeature(feat.replace(/^❌\s*/, ''))}</span>
+                        <span className="line-clamp-1">{getPlanFeature(feat.replace(/^❌\s*/, ''))}</span>
                       </li>
                     );
                   })}
@@ -748,15 +758,16 @@ export const BillingPage: React.FC<BillingPageProps> = ({
               </div>
 
               {/* Action Button */}
-              <div className="pt-2">
+              <div className="pt-1 mt-auto">
                 <button
                   type="button"
                   disabled={isCurrent}
                   onClick={() => handleOpenUpgrade(plan)}
-                  className={`w-full py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${isCurrent
+                  className={`w-full py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                    isCurrent
                       ? 'bg-[#FAF7F7] text-[#706866] border border-[#E5E0DD] cursor-default'
                       : 'bg-[#66000E] hover:bg-[#801010] text-white shadow-xs active:scale-95'
-                    }`}
+                  }`}
                 >
                   {isCurrent ? (
                     <span>{isEn ? 'Current Active Plan' : 'Paket Sedang Aktif'}</span>

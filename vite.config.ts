@@ -171,6 +171,76 @@ function midtransDevPlugin(): Plugin {
         }
       });
 
+      // Endpoint Tes Ping & Diagnosa Kunci Midtrans
+      server.middlewares.use('/api/midtrans/test-ping', async (_req, res) => {
+        try {
+          const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+          const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
+          if (!serverKey) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, message: 'MIDTRANS_SERVER_KEY belum disetel' }));
+            return;
+          }
+
+          const apiUrl =
+            env === 'production'
+              ? 'https://app.midtrans.com/snap/v1/transactions'
+              : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
+
+          const testRes = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              Authorization: `Basic ${Buffer.from(serverKey + ':').toString('base64')}`,
+            },
+            body: JSON.stringify({
+              transaction_details: {
+                order_id: `PING-TEST-${Date.now()}`,
+                gross_amount: 10000,
+              },
+            }),
+          });
+
+          const data = await testRes.json();
+          res.statusCode = testRes.status;
+          res.setHeader('Content-Type', 'application/json');
+          if (testRes.ok && data.token) {
+            res.end(
+              JSON.stringify({
+                success: true,
+                message: `Koneksi Midtrans ${env.toUpperCase()} BERHASIL! Token Snap berhasil dibuat.`,
+                env,
+                maskedKey: serverKey.slice(0, 12) + '...',
+              })
+            );
+          } else if (testRes.status === 401) {
+            res.end(
+              JSON.stringify({
+                success: false,
+                message: `Server Key Midtrans ${env.toUpperCase()} ditolak (401 Unauthorized). Silakan periksa Server Key di dashboard Midtrans (Settings > Access Keys). Pastikan IP Whitelist kosong.`,
+                env,
+                details: data,
+              })
+            );
+          } else {
+            res.end(
+              JSON.stringify({
+                success: false,
+                message: data.message || (Array.isArray(data.error_messages) ? data.error_messages.join(', ') : 'Respon gagal dari Midtrans'),
+                env,
+                details: data,
+              })
+            );
+          }
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: false, message: err?.message || 'Gagal menghubungi server Midtrans' }));
+        }
+      });
+
       // Endpoint Webhook Notifikasi Midtrans dengan Verifikasi Signature SHA-512
       server.middlewares.use('/api/midtrans/notification', async (req, res) => {
         if (req.method !== 'POST') {
