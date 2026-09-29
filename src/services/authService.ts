@@ -55,11 +55,11 @@ interface StoredAccount {
 
 const defaultAccounts: StoredAccount[] = [
   {
-    id: 'USR001',
+    id: 'USR013',
     email: 'admin@kroomify.id',
     password: 'admin123',
     user: {
-      id: 'USR001',
+      id: 'USR013',
       name: 'Super Admin Kroomify',
       email: 'admin@kroomify.id',
       phoneWhatsApp: '081289201928',
@@ -68,8 +68,8 @@ const defaultAccounts: StoredAccount[] = [
       createdAt: '2026-01-01T00:00:00Z',
     },
     merchant: {
-      id: 'merch-USR001',
-      userId: 'USR001',
+      id: 'merch-USR013',
+      userId: 'USR013',
       storeId: '',
       plan: 'premium',
       isVerified: true,
