@@ -237,40 +237,56 @@ export const ShopPage: React.FC<ShopPageProps> = ({ themeData, themeId: propThem
     // 4. NATURE THEME
     if (activeThemeId === 'nature') {
       return (
-        <div className="pt-28 pb-24 bg-[#F4F7F4] text-[#1B3B2B] min-h-screen font-sans">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center mb-12">
+        <div className="pt-24 pb-20 bg-[#F4F7F4] text-[#1B3B2B] min-h-screen font-sans">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="text-center mb-8">
               <span className="px-4 py-1.5 bg-[#2D5A27]/10 text-[#2D5A27] rounded-full text-xs font-bold uppercase tracking-wider inline-block mb-3">
                 100% Organik & Alami
               </span>
-              <h1 className="text-4xl md:text-5xl font-extrabold text-[#1B3B2B]">Katalog Produk Alam</h1>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#1B3B2B] mb-3">Katalog Produk Alam</h1>
+              <p className="text-xs sm:text-sm text-[#1B3B2B]/70 max-w-lg mx-auto font-light">
+                Pilihan sayuran segar, buah organik pilihan, dan pangan alami berkualitas langsung dari mitra petani lokal.
+              </p>
             </div>
 
-            {/* Filter Pills */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-12">
-              <div className="flex flex-wrap justify-center gap-2">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
-                      selectedCategory === cat ? 'bg-[#2D5A27] text-white shadow-md' : 'bg-white text-[#1B3B2B]/70 hover:bg-[#2D5A27]/10'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-              <div className="relative w-full md:w-72">
-                <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#2D5A27]" />
+            {/* Centered Search Bar */}
+            <div className="max-w-md mx-auto mb-6">
+              <div className="relative w-full">
+                <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#2D5A27]/70" />
                 <input
                   type="text"
-                  placeholder="Cari produk herbal..."
+                  placeholder="Cari sayuran, buah segar, madu alami..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#2D5A27]/20 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A27]"
+                  className="w-full pl-11 pr-4 py-3 bg-white border border-[#2D5A27]/25 rounded-full text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent transition-all placeholder:text-[#1B3B2B]/40"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-5 h-5 flex items-center justify-center cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
+            </div>
+
+            {/* Filter Pills - Cleanly Centered */}
+            <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-2.5 mb-12">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                    selectedCategory === cat 
+                      ? 'bg-[#2D5A27] text-white shadow-md scale-105' 
+                      : 'bg-white text-[#1B3B2B]/75 hover:bg-[#2D5A27]/10 border border-[#2D5A27]/15 hover:border-[#2D5A27]/30'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
 
             {/* Grid */}
