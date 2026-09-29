@@ -14,6 +14,7 @@ import {
   mockPages
 } from './mockCmsData';
 import { THEME_DATA_MAP } from '../themes/themeData';
+import { normalizeThemeId } from '../themes/ThemeRegistry';
 import { Product } from '../types';
 import { productService } from '../services/productService';
 
@@ -229,8 +230,8 @@ export const useCmsStore = create<CmsState>((set, get) => ({
   },
 
   loadThemeData: (themeId: string) => {
-    const cleanThemeId = themeId === 'future_shop' || themeId === 'futuristic_dark' ? 'futuristic' : themeId;
-    const isNature = cleanThemeId === 'nature' || cleanThemeId === 'nature_organic' || cleanThemeId === 'green_market';
+    const cleanThemeId = normalizeThemeId(themeId);
+    const isNature = cleanThemeId === 'nature';
 
     // Check if user has saved custom edited products in session
     let activeProds: CmsProduct[] = [];
@@ -245,14 +246,17 @@ export const useCmsStore = create<CmsState>((set, get) => ({
           const hasCosmetics = Array.isArray(parsed) && parsed.some(p => 
             /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || '')
           );
-          if (!hasFashion && !(isNature && hasCosmetics)) {
+          const hasElectronics = Array.isArray(parsed) && parsed.some(p => 
+            /neon|rtx|geforce|intel|ryzen|gaming|headset|keyboard|monitor/i.test(p.name || '')
+          );
+          if (!hasFashion && !(isNature && (hasCosmetics || hasElectronics))) {
             activeProds = parsed;
           }
         }
       } catch (e) {}
     }
 
-    const themeData = THEME_DATA_MAP[cleanThemeId as keyof typeof THEME_DATA_MAP] || THEME_DATA_MAP['futuristic'];
+    const themeData = THEME_DATA_MAP[cleanThemeId] || THEME_DATA_MAP['nature'];
     if (themeData) {
       const finalProducts = activeProds.length > 0 ? activeProds : themeData.products;
       set({
