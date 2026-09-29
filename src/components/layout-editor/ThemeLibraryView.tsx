@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Store, Product, ThemeTemplate } from '../../types';
 import { STORE_TEMPLATES, StoreTemplate } from '../../utils/layoutConstants';
 import { THEME_DATA_MAP } from '../../themes/themeData';
+import { useLanguage } from '../../contexts/LanguageContext';
 import {
   Search,
   X,
@@ -28,17 +29,17 @@ import {
 
 // ─── Template Category Definitions ───────────────────────────────────
 const TEMPLATE_CATEGORIES = [
-  { id: 'all', label: 'Semua', icon: Grid },
-  { id: 'minimalist', label: 'Minimalist', icon: LayoutTemplate },
-  { id: 'modern', label: 'Modern', icon: Zap },
-  { id: 'futuristic', label: 'Futuristic', icon: Sparkles },
-  { id: 'elegant', label: 'Elegant', icon: Crown },
-  { id: 'bold', label: 'Bold', icon: Flame },
-  { id: 'editorial', label: 'Editorial', icon: BookOpen },
-  { id: 'luxury', label: 'Luxury', icon: Gem },
-  { id: 'creative', label: 'Creative', icon: PenTool },
-  { id: 'nature', label: 'Nature', icon: TreePine },
-  { id: 'professional', label: 'Professional', icon: Briefcase },
+  { id: 'all', labelId: 'Semua', labelEn: 'All', icon: Grid },
+  { id: 'minimalist', labelId: 'Minimalist', labelEn: 'Minimalist', icon: LayoutTemplate },
+  { id: 'modern', labelId: 'Modern', labelEn: 'Modern', icon: Zap },
+  { id: 'futuristic', labelId: 'Futuristic', labelEn: 'Futuristic', icon: Sparkles },
+  { id: 'elegant', labelId: 'Elegant', labelEn: 'Elegant', icon: Crown },
+  { id: 'bold', labelId: 'Bold', labelEn: 'Bold', icon: Flame },
+  { id: 'editorial', labelId: 'Editorial', labelEn: 'Editorial', icon: BookOpen },
+  { id: 'luxury', labelId: 'Luxury', labelEn: 'Luxury', icon: Gem },
+  { id: 'creative', labelId: 'Creative', labelEn: 'Creative', icon: PenTool },
+  { id: 'nature', labelId: 'Alam', labelEn: 'Nature', icon: TreePine },
+  { id: 'professional', labelId: 'Profesional', labelEn: 'Professional', icon: Briefcase },
 ] as const;
 
 // ─── 10 Template Gallery Items ──────────────────────────────────────
@@ -63,28 +64,30 @@ export interface SavedThemeItem extends TemplateGalleryItem {
   customPageSectionsMap?: any;
 }
 
-export const formatSavedDate = (isoString?: string): string => {
-  if (!isoString) return 'Tersimpan: Baru saja';
+export const formatSavedDate = (isoString?: string, isEn?: boolean): string => {
+  if (!isoString) return isEn ? 'Saved: Just now' : 'Tersimpan: Baru saja';
   const date = new Date(isoString);
-  if (isNaN(date.getTime())) return 'Tersimpan: Baru saja';
+  if (isNaN(date.getTime())) return isEn ? 'Saved: Just now' : 'Tersimpan: Baru saja';
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
-  if (diffMinutes < 1) return 'Tersimpan: Baru saja';
-  if (diffMinutes < 60) return `Tersimpan: ${diffMinutes} mnt lalu`;
+  if (diffMinutes < 1) return isEn ? 'Saved: Just now' : 'Tersimpan: Baru saja';
+  if (diffMinutes < 60) return isEn ? `Saved: ${diffMinutes}m ago` : `Tersimpan: ${diffMinutes} mnt lalu`;
 
-  const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+  const timeStr = date.toLocaleTimeString(isEn ? 'en-US' : 'id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
   const isToday = date.toDateString() === now.toDateString();
-  if (isToday) return `Tersimpan: Hari ini pukul ${timeStr}`;
+  if (isToday) return isEn ? `Saved: Today at ${timeStr}` : `Tersimpan: Hari ini pukul ${timeStr}`;
 
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
   if (date.toDateString() === yesterday.toDateString()) {
-    return `Tersimpan: Kemarin pukul ${timeStr}`;
+    return isEn ? `Saved: Yesterday at ${timeStr}` : `Tersimpan: Kemarin pukul ${timeStr}`;
   }
 
-  return `Tersimpan: ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} pukul ${timeStr}`;
+  return isEn
+    ? `Saved: ${date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })} at ${timeStr}`
+    : `Tersimpan: ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} pukul ${timeStr}`;
 };
 
 export const TEMPLATE_GALLERY_ITEMS: TemplateGalleryItem[] = [
@@ -251,6 +254,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   onRenameTheme,
   onDeleteTheme,
 }) => {
+  const { t, isEn } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [showAllDrafts, setShowAllDrafts] = useState(false);
@@ -280,7 +284,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
     setLoadingTemplateId(template.id);
     setMiniToast({
       id: template.id,
-      message: `Menambahkan ${template.name}...`,
+      message: isEn ? `Adding ${template.name}...` : `Menambahkan ${template.name}...`,
       isSuccess: false,
     });
 
@@ -295,7 +299,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
       setLoadingTemplateId(null);
       setMiniToast({
         id: template.id,
-        message: `Tema "${template.name}" ditambahkan ke Draf`,
+        message: isEn ? `Theme "${template.name}" added to Drafts` : `Tema "${template.name}" ditambahkan ke Draf`,
         isSuccess: true,
       });
 
@@ -306,248 +310,257 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   };
 
   return (
-    <div className="w-full h-full bg-[#F6F6F7] overflow-y-auto custom-scrollbar flex flex-col font-sans">
-      {/* ── HEADER ── */}
-      <div className="bg-white border-b border-[#E1E3E5] px-4 sm:px-6 md:px-10 pt-6 sm:pt-8 pb-5 sm:pb-6 shrink-0 box-border">
+    <div className="w-full h-full bg-[#FAF7F7] overflow-y-auto custom-scrollbar flex flex-col font-sans">
+      {/* ── HEADER (Unified styling matching all merchant pages, without subtitle) ── */}
+      <div className="bg-white border-b border-[#E5E0DD] px-4 sm:px-6 md:px-10 py-3.5 sm:py-4 shrink-0 box-border">
         <div className="max-w-[1400px] mx-auto">
           {/* Title Row */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#1A1A1A] tracking-tight leading-tight">
-                Template Website
-              </h1>
-              <p className="text-[#6D7175] text-xs sm:text-sm md:text-[15px] mt-1.5 max-w-xl leading-relaxed">
-                Pilih desain yang sesuai dengan karakter bisnis Anda. Setiap template bisa dikustomisasi sepenuhnya di visual editor.
-              </p>
-            </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
+              <Palette className="w-5 h-5 text-[#66000E]" />
+              <span>{isEn ? 'Website Templates' : 'Template Website'}</span>
+            </h1>
+
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               {currentTemplateId && (
                 <button
                   onClick={onCustomize}
-                  className="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#1A1A1A] hover:bg-black transition-colors cursor-pointer shadow-sm"
+                  className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#66000E] hover:bg-[#52000B] transition-colors cursor-pointer shadow-xs"
                 >
                   <Settings2 className="w-4 h-4" />
-                  <span>Edit Template Aktif</span>
+                  <span>{isEn ? 'Edit Active Template' : 'Edit Template Aktif'}</span>
                 </button>
               )}
-              <div className="flex items-center gap-1.5 bg-[#F6F6F7] px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-[#E1E3E5] text-xs text-[#6D7175]">
-                <Layers className="w-3.5 h-3.5 text-[#8C9196]" />
-                <span className="font-semibold">{TEMPLATE_GALLERY_ITEMS.length} Template</span>
+              <div className="flex items-center gap-1.5 bg-[#FAF7F7] px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#706866]">
+                <Layers className="w-3.5 h-3.5 text-[#706866]" />
+                <span className="font-semibold">{TEMPLATE_GALLERY_ITEMS.length} {isEn ? 'Templates' : 'Template'}</span>
               </div>
             </div>
-          </div>
-
-          {/* ── PUSTAKA TEMA TERSIMPAN (SAVED DRAFT THEMES) ── */}
-          {savedThemes.length > 0 ? (
-            <div className="mb-10">
-              <div className="mb-4 px-1 flex items-center justify-between">
-                <h3 className="font-bold text-[16px] text-[#202223]">Pustaka tema</h3>
-                <span className="text-xs text-[#6D7175] font-medium">{savedThemes.length} Draf Tersimpan</span>
-              </div>
-              
-              <div className="bg-white border border-[#E1E3E5] rounded-xl shadow-xs overflow-visible">
-                <div className="flex flex-col">
-                  {(showAllDrafts ? savedThemes : savedThemes.slice(0, 3)).map((savedTmpl, idx) => {
-                    const isCurrentActive = currentTemplateId === savedTmpl.storeTemplate.id;
-                    const isEditingActive = editingDraftId
-                      ? savedTmpl.id === editingDraftId
-                      : !isCurrentActive && idx === 0;
-                    const isLast = idx === (showAllDrafts ? savedThemes.length : Math.min(3, savedThemes.length)) - 1;
-                    const isMenuOpen = openActionMenuId === savedTmpl.id;
-
-                    return (
-                      <div key={savedTmpl.id} className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#F9FAFB] transition ${!isLast ? 'border-b border-[#E1E3E5]' : ''} relative`}>
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-[#E1E3E5] bg-gray-50 flex items-center justify-center shadow-inner">
-                            <img src={savedTmpl.thumbnailUrl} alt={savedTmpl.name} className="w-full h-full object-cover" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                              <h4 className="font-bold text-[15px] text-[#202223] truncate">{savedTmpl.name}</h4>
-                              {isCurrentActive ? (
-                                <span className="px-2 py-0.5 bg-[#E4F8EB] text-[#008060] text-[10px] font-bold rounded uppercase tracking-wider">Dipublikasikan</span>
-                              ) : isEditingActive ? (
-                                <span className="px-2 py-0.5 bg-[#F0F4FE] text-[#2C6ECB] text-[10px] font-bold rounded uppercase tracking-wider">Draf Aktif</span>
-                              ) : (
-                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded uppercase tracking-wider">Draf</span>
-                              )}
-                            </div>
-                            <div className="text-[13px] text-[#6D7175] flex items-center gap-1.5">
-                              {isCurrentActive ? (
-                                <span className="flex items-center gap-1.5 text-[#008060] font-medium">
-                                  <span className="w-2 h-2 rounded-full bg-[#008060] shadow-[0_0_0_2px_#E4F8EB]"></span>
-                                  Tema sedang digunakan live
-                                </span>
-                              ) : (
-                                <span>{formatSavedDate(savedTmpl.updatedAt)}</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto relative">
-                          <div className="relative">
-                            <button
-                              onClick={() => setOpenActionMenuId(isMenuOpen ? null : savedTmpl.id)}
-                              className="px-4 py-2 rounded-lg text-[13px] font-semibold text-[#202223] bg-white border border-[#C9CCCF] hover:bg-[#F6F6F7] hover:border-[#8C9196] transition cursor-pointer shadow-xs flex items-center gap-1"
-                            >
-                              <span>Tindakan</span>
-                              <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isMenuOpen ? 'rotate-90' : ''}`} />
-                            </button>
-
-                            {/* Dropdown Menu */}
-                            {isMenuOpen && (
-                              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-[#E1E3E5] py-1.5 z-50 text-xs font-medium animate-in fade-in zoom-in-95 duration-100">
-                                {!isCurrentActive && onPublishTheme && (
-                                  <button
-                                    onClick={() => {
-                                      onPublishTheme(savedTmpl);
-                                      setOpenActionMenuId(null);
-                                    }}
-                                    className="w-full text-left px-3.5 py-2 text-[#008060] hover:bg-[#E4F8EB] font-bold flex items-center gap-2 transition"
-                                  >
-                                    <Sparkles className="w-3.5 h-3.5" />
-                                    <span>Publikasikan Tema</span>
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => {
-                                    onApplyTemplate?.(savedTmpl);
-                                    setOpenActionMenuId(null);
-                                  }}
-                                  className="w-full text-left px-3.5 py-2 text-[#202223] hover:bg-[#F6F6F7] flex items-center gap-2 transition"
-                                >
-                                  <Settings2 className="w-3.5 h-3.5 text-gray-500" />
-                                  <span>Sesuaikan Draf</span>
-                                </button>
-                                {onDuplicateTheme && (
-                                  <button
-                                    onClick={() => {
-                                      onDuplicateTheme(savedTmpl);
-                                      setOpenActionMenuId(null);
-                                    }}
-                                    className="w-full text-left px-3.5 py-2 text-[#202223] hover:bg-[#F6F6F7] flex items-center gap-2 transition"
-                                  >
-                                    <Layers className="w-3.5 h-3.5 text-gray-500" />
-                                    <span>Duplikat Draf</span>
-                                  </button>
-                                )}
-                                {onRenameTheme && (
-                                  <button
-                                    onClick={() => {
-                                      const newName = window.prompt('Masukkan nama baru untuk draf tema:', savedTmpl.name);
-                                      if (newName && newName.trim()) {
-                                        onRenameTheme(savedTmpl, newName.trim());
-                                      }
-                                      setOpenActionMenuId(null);
-                                    }}
-                                    className="w-full text-left px-3.5 py-2 text-[#202223] hover:bg-[#F6F6F7] flex items-center gap-2 transition"
-                                  >
-                                    <PenTool className="w-3.5 h-3.5 text-gray-500" />
-                                    <span>Ubah Nama</span>
-                                  </button>
-                                )}
-                                {onDeleteTheme && (
-                                  <button
-                                    onClick={() => {
-                                      if (window.confirm(`Yakin ingin menghapus draf tema "${savedTmpl.name}"?`)) {
-                                        onDeleteTheme(savedTmpl.id);
-                                      }
-                                      setOpenActionMenuId(null);
-                                    }}
-                                    className="w-full text-left px-3.5 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 transition border-t border-gray-100"
-                                  >
-                                    <X className="w-3.5 h-3.5" />
-                                    <span>Hapus Draf</span>
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          <button
-                            onClick={() => onApplyTemplate?.(savedTmpl)}
-                            className="px-4 py-2 rounded-lg text-[13px] font-semibold bg-[#202223] hover:bg-black text-white transition cursor-pointer shadow-xs"
-                          >
-                            {isCurrentActive ? 'Sesuaikan' : 'Sesuaikan draf'}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              
-              {savedThemes.length > 3 && (
-                <div className="mt-4 flex justify-center">
-                  <button
-                    onClick={() => setShowAllDrafts(!showAllDrafts)}
-                    className="text-[14px] font-semibold text-[#2C6ECB] hover:text-[#1F5199] hover:underline transition-colors"
-                  >
-                    {showAllDrafts ? 'Tampilkan lebih sedikit' : 'Tampilkan lebih banyak'}
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* ── EMPTY STATE BANNER (BELUM ADA TEMPLATE AKTIF / DRAF) ── */
-            <div className="mb-8 p-4 sm:p-5 bg-white rounded-xl border border-[#E1E3E5] shadow-xs flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-[#F0F4FE] text-[#2C6ECB] flex items-center justify-center shrink-0">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="text-sm font-bold text-[#202223]">Belum ada template yang dipilih</h4>
-                <p className="text-xs text-[#6D7175] mt-0.5">
-                  Toko Anda belum memiliki draf atau template aktif. Silakan pilih salah satu template di bawah untuk mulai mendesain tampilan website toko Anda.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* ── EXPLORE TEMPLATES ── */}
-          <div className="mb-6 px-1">
-            <h3 className="font-bold text-[20px] text-[#202223]">Jelajahi template</h3>
-          </div>
-
-          {/* ── CATEGORY FILTERS ── */}
-          <div className="mt-5 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {TEMPLATE_CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              const isActive = activeCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-semibold border transition-all cursor-pointer ${isActive
-                      ? 'bg-[#DC2626] text-white border-[#DC2626] shadow-sm'
-                      : 'bg-white text-[#6D7175] border-[#E1E3E5] hover:border-[#DC2626] hover:text-[#DC2626]'
-                    }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{cat.label}</span>
-                </button>
-              );
-            })}
           </div>
         </div>
       </div>
 
-      {/* ── TEMPLATE GRID ── */}
-      <div className="flex-1 px-6 sm:px-10 py-8">
-        <div className="max-w-[1400px] mx-auto">
-          {filteredTemplates.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-white border border-[#E1E3E5] flex items-center justify-center mb-5 shadow-sm">
-                <Search className="w-7 h-7 text-[#8C9196]" />
+      {/* ── MAIN CONTENT CONTAINER ── */}
+      <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-6 md:px-10 pt-5 pb-8 flex-1 flex flex-col">
+        {/* ── PUSTAKA TEMA TERSIMPAN (SAVED DRAFT THEMES) ── */}
+        {savedThemes.length > 0 ? (
+          <div className="mb-8">
+            <div className="mb-3 px-1 flex items-center justify-between">
+              <h3 className="font-bold text-[15px] sm:text-[16px] text-[#1F1F1F]">{isEn ? 'Theme Library' : 'Pustaka tema'}</h3>
+              <span className="text-xs text-[#706866] font-medium">{savedThemes.length} {isEn ? 'Saved Drafts' : 'Draf Tersimpan'}</span>
+            </div>
+            
+            <div className="bg-white border border-[#E5E0DD] rounded-2xl shadow-xs overflow-visible">
+              <div className="flex flex-col">
+                {(showAllDrafts ? savedThemes : savedThemes.slice(0, 3)).map((savedTmpl, idx) => {
+                  const isCurrentActive = currentTemplateId === savedTmpl.storeTemplate.id;
+                  const isEditingActive = editingDraftId
+                    ? savedTmpl.id === editingDraftId
+                    : !isCurrentActive && idx === 0;
+                  const isLast = idx === (showAllDrafts ? savedThemes.length : Math.min(3, savedThemes.length)) - 1;
+                  const isMenuOpen = openActionMenuId === savedTmpl.id;
+
+                  return (
+                    <div key={savedTmpl.id} className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#FAF7F7] transition ${!isLast ? 'border-b border-[#E5E0DD]' : ''} relative`}>
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[#E5E0DD] bg-gray-50 flex items-center justify-center shadow-inner">
+                          <img src={savedTmpl.thumbnailUrl} alt={savedTmpl.name} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <h4 className="font-bold text-[15px] text-[#1F1F1F] truncate">{savedTmpl.name}</h4>
+                            {isCurrentActive ? (
+                              <span className="px-2 py-0.5 bg-[#E4F8EB] text-[#008060] text-[10px] font-bold rounded-full uppercase tracking-wider">{isEn ? 'Published' : 'Dipublikasikan'}</span>
+                            ) : isEditingActive ? (
+                              <span className="px-2 py-0.5 bg-[#F0F4FE] text-[#2C6ECB] text-[10px] font-bold rounded-full uppercase tracking-wider">{isEn ? 'Active Draft' : 'Draf Aktif'}</span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-[#FAF7F7] text-[#706866] border border-[#E5E0DD] text-[10px] font-bold rounded-full uppercase tracking-wider">{isEn ? 'Draft' : 'Draf'}</span>
+                            )}
+                          </div>
+                          <div className="text-[13px] text-[#706866] flex items-center gap-1.5">
+                            {isCurrentActive ? (
+                              <span className="flex items-center gap-1.5 text-[#008060] font-medium">
+                                <span className="w-2 h-2 rounded-full bg-[#008060] shadow-[0_0_0_2px_#E4F8EB]"></span>
+                                {isEn ? 'Live theme currently in use' : 'Tema sedang digunakan live'}
+                              </span>
+                            ) : (
+                              <span>{formatSavedDate(savedTmpl.updatedAt, isEn)}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto relative">
+                        <div className="relative">
+                          <button
+                            onClick={() => setOpenActionMenuId(isMenuOpen ? null : savedTmpl.id)}
+                            className="px-3.5 py-2 rounded-xl text-[13px] font-semibold text-[#1F1F1F] bg-white border border-[#E5E0DD] hover:bg-[#FAF7F7] hover:border-[#66000E] transition cursor-pointer shadow-xs flex items-center gap-1"
+                          >
+                            <span>{isEn ? 'Actions' : 'Tindakan'}</span>
+                            <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isMenuOpen ? 'rotate-90' : ''}`} />
+                          </button>
+
+                          {/* Dropdown Menu */}
+                          {isMenuOpen && (
+                            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-[#E5E0DD] py-1.5 z-50 text-xs font-medium animate-in fade-in zoom-in-95 duration-100">
+                              {!isCurrentActive && onPublishTheme && (
+                                <button
+                                  onClick={() => {
+                                    onPublishTheme(savedTmpl);
+                                    setOpenActionMenuId(null);
+                                  }}
+                                  className="w-full text-left px-3.5 py-2 text-[#008060] hover:bg-[#E4F8EB] font-bold flex items-center gap-2 transition"
+                                >
+                                  <Sparkles className="w-3.5 h-3.5" />
+                                  <span>{isEn ? 'Publish Theme' : 'Publikasikan Tema'}</span>
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  onApplyTemplate?.(savedTmpl);
+                                  setOpenActionMenuId(null);
+                                }}
+                                className="w-full text-left px-3.5 py-2 text-[#1F1F1F] hover:bg-[#FAF7F7] flex items-center gap-2 transition"
+                              >
+                                <Settings2 className="w-3.5 h-3.5 text-gray-500" />
+                                <span>{isEn ? 'Customize Draft' : 'Sesuaikan Draf'}</span>
+                              </button>
+                              {onDuplicateTheme && (
+                                <button
+                                  onClick={() => {
+                                    onDuplicateTheme(savedTmpl);
+                                    setOpenActionMenuId(null);
+                                  }}
+                                  className="w-full text-left px-3.5 py-2 text-[#1F1F1F] hover:bg-[#FAF7F7] flex items-center gap-2 transition"
+                                >
+                                  <Layers className="w-3.5 h-3.5 text-gray-500" />
+                                  <span>{isEn ? 'Duplicate Draft' : 'Duplikat Draf'}</span>
+                                </button>
+                              )}
+                              {onRenameTheme && (
+                                <button
+                                  onClick={() => {
+                                    const newName = window.prompt(isEn ? 'Enter a new name for the theme draft:' : 'Masukkan nama baru untuk draf tema:', savedTmpl.name);
+                                    if (newName && newName.trim()) {
+                                      onRenameTheme(savedTmpl, newName.trim());
+                                    }
+                                    setOpenActionMenuId(null);
+                                  }}
+                                  className="w-full text-left px-3.5 py-2 text-[#1F1F1F] hover:bg-[#FAF7F7] flex items-center gap-2 transition"
+                                >
+                                  <PenTool className="w-3.5 h-3.5 text-gray-500" />
+                                  <span>{isEn ? 'Rename' : 'Ubah Nama'}</span>
+                                </button>
+                              )}
+                              {onDeleteTheme && (
+                                <button
+                                  onClick={() => {
+                                    if (window.confirm(isEn ? `Are you sure you want to delete the theme draft "${savedTmpl.name}"?` : `Yakin ingin menghapus draf tema "${savedTmpl.name}"?`)) {
+                                      onDeleteTheme(savedTmpl.id);
+                                    }
+                                    setOpenActionMenuId(null);
+                                  }}
+                                  className="w-full text-left px-3.5 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition border-t border-gray-100"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>{isEn ? 'Delete Draft' : 'Hapus Draf'}</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => onApplyTemplate?.(savedTmpl)}
+                          className="px-4 py-2 rounded-xl text-[13px] font-semibold bg-[#66000E] hover:bg-[#52000B] text-white transition cursor-pointer shadow-xs"
+                        >
+                          {isCurrentActive ? (isEn ? 'Customize' : 'Sesuaikan') : (isEn ? 'Customize draft' : 'Sesuaikan draf')}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <h3 className="text-lg font-bold text-[#202223]">Tidak ada template ditemukan</h3>
-              <p className="text-sm text-[#6D7175] mt-1.5 max-w-sm">
-                Coba ubah kata kunci pencarian atau pilih kategori lain.
+            </div>
+            
+            {savedThemes.length > 3 && (
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={() => setShowAllDrafts(!showAllDrafts)}
+                  className="text-[14px] font-semibold text-[#66000E] hover:underline transition-colors cursor-pointer"
+                >
+                  {showAllDrafts ? (isEn ? 'Show fewer' : 'Tampilkan lebih sedikit') : (isEn ? 'Show more' : 'Tampilkan lebih banyak')}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ── EMPTY STATE BANNER (BELUM ADA TEMPLATE AKTIF / DRAF) ── */
+          <div className="mb-6 p-4 sm:p-5 bg-white rounded-2xl border border-[#E5E0DD] shadow-xs flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-[#FAF7F7] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
+              <Sparkles className="w-5 h-5 text-[#66000E]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-bold text-[#1F1F1F]">
+                {isEn ? 'No template selected yet' : 'Belum ada template yang dipilih'}
+              </h4>
+              <p className="text-xs text-[#706866] mt-0.5 leading-relaxed">
+                {isEn
+                  ? 'Your store does not have an active draft or template yet. Please select one of the templates below to start designing your store website.'
+                  : 'Toko Anda belum memiliki draf atau template aktif. Silakan pilih salah satu template di bawah untuk mulai mendesain tampilan website toko Anda.'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── EXPLORE TEMPLATES ── */}
+        <div className="mb-3 px-1">
+          <h3 className="font-bold text-[18px] sm:text-[20px] text-[#1F1F1F]">
+            {isEn ? 'Explore templates' : 'Jelajahi template'}
+          </h3>
+        </div>
+
+        {/* ── CATEGORY FILTERS ── */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide mb-6">
+          {TEMPLATE_CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            const isActive = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold border transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-[#66000E] text-white border-[#66000E] shadow-xs'
+                    : 'bg-white text-[#706866] border-[#E5E0DD] hover:border-[#66000E] hover:text-[#66000E]'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{isEn ? cat.labelEn : cat.labelId}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── TEMPLATE GRID ── */}
+        <div className="flex-1 pb-16">
+          {filteredTemplates.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-white border border-[#E5E0DD] flex items-center justify-center mb-5 shadow-xs">
+                <Search className="w-7 h-7 text-[#706866]" />
+              </div>
+              <h3 className="text-lg font-bold text-[#1F1F1F]">
+                {isEn ? 'No templates found' : 'Tidak ada template ditemukan'}
+              </h3>
+              <p className="text-sm text-[#706866] mt-1.5 max-w-sm">
+                {isEn
+                  ? 'Try adjusting your search keywords or select another category.'
+                  : 'Coba ubah kata kunci pencarian atau pilih kategori lain.'}
               </p>
               <button
                 onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
-                className="mt-5 px-5 py-2.5 rounded-xl bg-white text-[#202223] text-sm font-semibold border border-[#E1E3E5] hover:bg-[#F6F6F7] transition cursor-pointer shadow-xs"
+                className="mt-5 px-5 py-2.5 rounded-xl bg-white text-[#1F1F1F] text-sm font-semibold border border-[#E5E0DD] hover:bg-[#FAF7F7] hover:border-[#66000E] transition cursor-pointer shadow-xs"
               >
-                Reset Filter
+                {isEn ? 'Reset Filter' : 'Reset Filter'}
               </button>
             </div>
           ) : (
@@ -558,6 +571,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
                   template={template}
                   isActive={currentTemplateId === template.storeTemplate.id}
                   isLoading={loadingTemplateId === template.id}
+                  isEn={isEn}
                   onPreview={() => onPreviewTemplate?.(template)}
                   onUse={() => handleUseTemplate(template)}
                 />
@@ -565,8 +579,6 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
             </div>
           )}
         </div>
-
-        <div className="h-16"></div>
       </div>
 
       {/* Mini Toast Notification (Bottom Center Red Snack Bar matching palette) */}
@@ -756,17 +768,19 @@ const TemplateCard: React.FC<{
   template: TemplateGalleryItem;
   isActive: boolean;
   isLoading?: boolean;
+  isEn?: boolean;
   onPreview: () => void;
   onUse: () => void;
-}> = ({ template, isActive, isLoading = false, onPreview, onUse }) => {
+}> = ({ template, isActive, isLoading = false, isEn = false, onPreview, onUse }) => {
   const themeData = THEME_DATA_MAP[template.storeTemplate.id] || THEME_DATA_MAP['minimalist'];
 
   return (
     <div className="group font-sans flex flex-col gap-4">
       {/* Thumbnail */}
       <div
-        className={`relative aspect-[4/3] sm:aspect-[16/12] bg-white overflow-hidden cursor-pointer rounded-2xl border border-[#E1E3E5] shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-[#C9CCCF] ${isActive ? 'ring-2 ring-[#2C6ECB] border-transparent' : ''
-          }`}
+        className={`relative aspect-[4/3] sm:aspect-[16/12] bg-white overflow-hidden cursor-pointer rounded-2xl border border-[#E5E0DD] shadow-xs transition-all duration-300 group-hover:shadow-md group-hover:border-[#66000E]/40 ${
+          isActive ? 'ring-2 ring-[#66000E] border-transparent' : ''
+        }`}
         onClick={onPreview}
       >
         <MiniTemplatePreview template={template} themeData={themeData} />
@@ -778,33 +792,33 @@ const TemplateCard: React.FC<{
       {/* Info Row (Title + Button) */}
       <div className="flex items-start justify-between px-1">
         <div>
-          <h3 className="font-bold text-[16px] text-[#202223] leading-tight">
+          <h3 className="font-bold text-[16px] text-[#1F1F1F] leading-tight">
             {template.name}
           </h3>
-          <p className="text-[14px] text-[#6D7175] mt-1">
-            oleh MicroCMS
+          <p className="text-[13px] text-[#706866] mt-1">
+            {isEn ? 'by MicroCMS' : 'oleh MicroCMS'}
           </p>
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); onUse(); }}
           disabled={isLoading || isActive}
-          className={`px-4 py-2 rounded-xl border text-[13px] font-semibold shadow-sm transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+          className={`px-4 py-2 rounded-xl border text-[13px] font-semibold shadow-xs transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
             isActive
-              ? 'bg-[#202223] text-white border-[#202223]'
+              ? 'bg-[#66000E] text-white border-[#66000E]'
               : isLoading
-              ? 'bg-[#F6F6F7] border-[#E1E3E5] text-[#6D7175] cursor-wait'
-              : 'bg-white border-[#E1E3E5] text-[#202223] hover:bg-[#F6F6F7]'
+              ? 'bg-[#FAF7F7] border-[#E5E0DD] text-[#706866] cursor-wait'
+              : 'bg-white border-[#E5E0DD] text-[#241A1A] hover:bg-[#FAF7F7] hover:border-[#66000E]'
           }`}
         >
           {isLoading ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#6D7175]" />
-              <span>Memuat...</span>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#706866]" />
+              <span>{isEn ? 'Loading...' : 'Memuat...'}</span>
             </>
           ) : isActive ? (
-            'Aktif'
+            isEn ? 'Active' : 'Aktif'
           ) : (
-            'Tambahkan'
+            isEn ? 'Add' : 'Tambahkan'
           )}
         </button>
       </div>
