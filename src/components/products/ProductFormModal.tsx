@@ -93,14 +93,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     return clean ? Number(clean) : 0;
   };
 
-  // Curated presets for fast demo selection
-  const presetPhotos = [
-    'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=800&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=800&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800&auto=format&fit=crop&q=80',
-  ];
+
 
   // File upload and compression handler (supports JPG/PNG max 10MB)
   const handleFile = async (file: File) => {
@@ -255,32 +248,22 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     }
   };
 
-  // When Discount (%) is changed
-  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value.replace(/\D/g, '');
-    if (!rawVal) {
+  // Standard discount percentage options for dropdown
+  const DISCOUNT_OPTIONS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 75];
+
+  // When Discount (%) dropdown is changed
+  const handleDiscountDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (!val || val === '0') {
       setDiscountPercent('');
       if (originalPriceDisplay) {
         setSellingPriceDisplay(originalPriceDisplay);
       }
       return;
     }
-    const pct = Math.min(99, Number(rawVal));
+    const pct = Number(val);
     setDiscountPercent(String(pct));
 
-    const normalPrice = parseNumber(originalPriceDisplay) || parseNumber(sellingPriceDisplay);
-    if (normalPrice > 0) {
-      if (!originalPriceDisplay) {
-        setOriginalPriceDisplay(formatThousand(normalPrice));
-      }
-      const discounted = Math.round(normalPrice * (1 - pct / 100));
-      setSellingPriceDisplay(formatThousand(discounted));
-    }
-  };
-
-  // Quick discount preset click (10%, 20%, 30%, 50%)
-  const applyDiscountPreset = (pct: number) => {
-    setDiscountPercent(String(pct));
     const normalPrice = parseNumber(originalPriceDisplay) || parseNumber(sellingPriceDisplay);
     if (normalPrice > 0) {
       if (!originalPriceDisplay) {
@@ -316,18 +299,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     } else {
       setDiscountPercent('');
       setOriginalPriceDisplay(formatThousand(sellPrice));
-    }
-  };
-
-  // Quick preset price buttons (50k, 100k, 150k, 250k)
-  const setQuickPrice = (nominal: number) => {
-    setOriginalPriceDisplay(formatThousand(nominal));
-    const pct = Number(discountPercent) || 0;
-    if (pct > 0 && pct < 100) {
-      const discounted = Math.round(nominal * (1 - pct / 100));
-      setSellingPriceDisplay(formatThousand(discounted));
-    } else {
-      setSellingPriceDisplay(formatThousand(nominal));
     }
   };
 
@@ -426,7 +397,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
-                      {isEn ? '1. PRODUCT PHOTO' : '1. FOTO PRODUK'} <span className="text-[#66000E]">*</span>
+                      {isEn ? 'PRODUCT PHOTO' : 'FOTO PRODUK'} <span className="text-[#66000E]">*</span>
                     </label>
                     {imageUrl && (
                       <button
@@ -537,32 +508,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       </div>
                     )}
                   </div>
-
-                  {/* Preset Photos for quick trial */}
-                  <div className="pt-2">
-                    <p className="text-[10px] text-[#706866] font-medium mb-1">
-                      {isEn ? 'Or use sample presets:' : 'Atau gunakan contoh foto:'}
-                    </p>
-                    <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-                      {presetPhotos.map((preset, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            setImageUrl(preset);
-                            setPhotoError('');
-                          }}
-                          className={`w-8 h-8 rounded-lg overflow-hidden border-2 shrink-0 transition cursor-pointer ${
-                            imageUrl === preset
-                              ? 'border-[#66000E] scale-105 shadow-2xs ring-1 ring-[#66000E]/20'
-                              : 'border-transparent opacity-65 hover:opacity-100'
-                          }`}
-                        >
-                          <img src={preset} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
                 {/* Weight Input (Compact on Left) */}
@@ -594,10 +539,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               {/* Right Column: Name, Price, Stock, Category, Description */}
               <div className="md:col-span-7 space-y-3.5">
                 
-                {/* 2. Nama Produk */}
+                {/* Nama Produk */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-                    {isEn ? '2. PRODUCT NAME' : '2. NAMA PRODUK'} <span className="text-[#66000E]">*</span>
+                    {isEn ? 'PRODUCT NAME' : 'NAMA PRODUK'} <span className="text-[#66000E]">*</span>
                   </label>
                   <input
                     type="text"
@@ -609,13 +554,13 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   />
                 </div>
 
-                {/* 3. Harga Normal, Diskon, & Harga Jual Akhir */}
+                {/* Harga Normal, Diskon Dropdown, & Harga Jual Akhir */}
                 <div className="space-y-2.5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Normal / Base Price */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                        {isEn ? '3. REGULAR PRICE' : '3. HARGA NORMAL'} <span className="text-[#66000E]">*</span>
+                        {isEn ? 'REGULAR PRICE' : 'HARGA NORMAL'} <span className="text-[#66000E]">*</span>
                       </label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#706866]">
@@ -631,28 +576,15 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                           className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
                         />
                       </div>
-                      {/* Quick Base Price Presets */}
-                      <div className="flex items-center gap-1 mt-1.5 overflow-x-auto">
-                        {[50000, 100000, 150000, 250000].map((amt) => (
-                          <button
-                            key={amt}
-                            type="button"
-                            onClick={() => setQuickPrice(amt)}
-                            className="px-2 py-0.5 rounded-md bg-[#FAF7F7] hover:bg-[#F5E8EA] border border-[#E5E0DD] hover:border-[#66000E] text-[10px] font-semibold text-[#706866] hover:text-[#66000E] transition cursor-pointer whitespace-nowrap"
-                          >
-                            {amt >= 1000 ? `${amt / 1000}${isEn ? 'k' : 'rb'}` : amt}
-                          </button>
-                        ))}
-                      </div>
                     </div>
 
-                    {/* Discount Input */}
+                    {/* Discount Dropdown */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
-                          {isEn ? 'DISCOUNT (%)' : 'DISKON (%)'}
+                          {isEn ? 'DISCOUNT' : 'DISKON'}
                         </label>
-                        {discountPercent && (
+                        {discountPercent && Number(discountPercent) > 0 && (
                           <button
                             type="button"
                             onClick={removeDiscount}
@@ -662,36 +594,23 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                           </button>
                         )}
                       </div>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#706866]">
-                          %
-                        </span>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder={isEn ? 'e.g. 10' : 'Contoh: 10'}
-                          value={discountPercent}
-                          onChange={handleDiscountChange}
-                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
-                        />
-                      </div>
-                      {/* Quick Discount Presets */}
-                      <div className="flex items-center gap-1 mt-1.5 overflow-x-auto">
-                        {[10, 20, 30, 50].map((pct) => (
-                          <button
-                            key={pct}
-                            type="button"
-                            onClick={() => applyDiscountPreset(pct)}
-                            className={`px-2 py-0.5 rounded-md border text-[10px] font-semibold transition cursor-pointer whitespace-nowrap ${
-                              discountPercent === String(pct)
-                                ? 'bg-[#66000E] text-white border-[#66000E]'
-                                : 'bg-[#FAF7F7] hover:bg-[#F5E8EA] border-[#E5E0DD] text-[#706866] hover:text-[#66000E]'
-                            }`}
-                          >
+                      <select
+                        value={discountPercent || '0'}
+                        onChange={handleDiscountDropdownChange}
+                        className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
+                      >
+                        <option value="0">{isEn ? 'No Discount (0%)' : 'Tanpa Diskon (0%)'}</option>
+                        {discountPercent &&
+                          Number(discountPercent) > 0 &&
+                          !DISCOUNT_OPTIONS.includes(Number(discountPercent)) && (
+                            <option value={discountPercent}>{discountPercent}%</option>
+                          )}
+                        {DISCOUNT_OPTIONS.map((pct) => (
+                          <option key={pct} value={String(pct)}>
                             {pct}%
-                          </button>
+                          </option>
                         ))}
-                      </div>
+                      </select>
                     </div>
                   </div>
 
@@ -736,11 +655,11 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   </div>
                 </div>
 
-                {/* 4 & 5: Stock & Category */}
+                {/* Stock & Category */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                      {isEn ? '4. STOCK QUANTITY' : '4. JUMLAH STOK'} <span className="text-[#66000E]">*</span>
+                      {isEn ? 'STOCK QUANTITY' : 'JUMLAH STOK'} <span className="text-[#66000E]">*</span>
                     </label>
                     <input
                       type="text"
@@ -758,7 +677,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                      {isEn ? '5. PRODUCT CATEGORY' : '5. KATEGORI PRODUK'}
+                      {isEn ? 'PRODUCT CATEGORY' : 'KATEGORI PRODUK'}
                     </label>
 
                     {category === 'new' ? (
