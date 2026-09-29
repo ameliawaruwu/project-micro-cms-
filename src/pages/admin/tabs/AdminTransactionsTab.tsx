@@ -34,11 +34,6 @@ export const AdminTransactionsTab: React.FC<AdminTransactionsTabProps> = ({
             <Receipt className="w-5 h-5 text-[#66000E]" />
             <span>{isEn ? 'Transaction Logs' : 'Log Transaksi'}</span>
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {isEn
-              ? 'Audit trail of customer payments processed across all merchant stores.'
-              : 'Catatan audit riwayat transaksi pembayaran lintas toko merchant.'}
-          </p>
         </div>
         <span className="text-xs font-semibold text-gray-800 px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 self-start sm:self-auto">
           {orders.length} {isEn ? 'Transactions' : 'Transaksi'}

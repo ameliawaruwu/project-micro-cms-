@@ -126,11 +126,6 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
             <Globe className="w-5 h-5 text-[#66000E]" />
             <span>{isEn ? 'Domain Requests' : 'Permintaan Domain'}</span>
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {isEn
-              ? 'Review custom domain requests from merchants, verify availability on IDCloudHost/Whois, approve, or provide alternative suggestions.'
-              : 'Tinjau permohonan domain dari toko UMKM, cek ketersediaan di IDCloudHost/Whois, setujui, atau berikan saran domain alternatif.'}
-          </p>
         </div>
 
         <a

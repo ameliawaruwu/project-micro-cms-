@@ -89,11 +89,6 @@ export const AdminOrdersShippingTab: React.FC<AdminOrdersShippingTabProps> = ({
             <Truck className="w-5 h-5 text-[#66000E]" />
             <span>{isEn ? 'Orders & Shipping' : 'Pesanan & Pengiriman'}</span>
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {isEn
-              ? 'Track all store order transactions, courier logistics statuses, and tracking numbers in real-time.'
-              : 'Pantau seluruh transaksi pesanan, status kurir logistik, dan pelacakan nomor resi lintas toko secara real-time.'}
-          </p>
         </div>
         <button
           onClick={() => {

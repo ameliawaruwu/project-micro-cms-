@@ -87,11 +87,6 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
             <StoreIcon className="w-5 h-5 text-[#66000E]" />
             <span>{isEn ? 'Manage Stores' : 'Kelola Toko'}</span>
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {isEn
-              ? 'Monitor, verify, manage subscription plans, and inspect active merchant storefronts.'
-              : 'Pantau, verifikasi, kelola paket langganan, dan tinjau etalase toko merchant.'}
-          </p>
         </div>
         <span className="text-xs font-medium text-gray-600 px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 self-start sm:self-auto">
           {filteredStores.length} {isEn ? 'Stores' : 'Toko Terdaftar'}

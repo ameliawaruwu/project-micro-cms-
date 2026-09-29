@@ -67,11 +67,6 @@ export const AdminWithdrawalsTab: React.FC<AdminWithdrawalsTabProps> = ({
             <Wallet className="w-5 h-5 text-[#66000E]" />
             <span>{isEn ? 'Store Payout Requests' : 'Pencairan Dana Toko'}</span>
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {isEn
-              ? 'Manage and verify wallet balance withdrawal requests from merchant stores.'
-              : 'Kelola dan verifikasi permohonan transfer saldo dompet dari toko merchant.'}
-          </p>
         </div>
 
         {/* 2 Tabs: Butuh Approval & Selesai (Paid) */}
