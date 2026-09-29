@@ -42,7 +42,7 @@ export const NatureNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOption
 export const NatureHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "Raw Ingredients.";
-  const subheading = sectionOptions.subheading || "Simple Rituals.";
+  const subheading = sectionOptions.subheading || sectionOptions.description || "Simple Rituals.";
   const buttonLabel = sectionOptions.buttonLabel || "Explore Collection";
   const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=1600&q=80";
 
@@ -59,14 +59,16 @@ export const NatureHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
         </div>
       </div>
       
-      <div className="z-10 text-center text-white bg-black/20 p-12 md:p-20 rounded-[32px] backdrop-blur-md border border-white/10 shadow-2xl transform hover:-translate-y-2 transition-transform duration-500">
-        <h1 className="text-5xl md:text-7xl font-serif mb-2 leading-tight drop-shadow-md">
+      <div className="z-10 text-center text-white bg-black/20 p-8 sm:p-12 md:p-16 max-w-3xl mx-4 rounded-[32px] backdrop-blur-md border border-white/10 shadow-2xl transform hover:-translate-y-1 transition-transform duration-500">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-bold mb-3 sm:mb-4 leading-tight drop-shadow-md tracking-tight">
           {heading}
         </h1>
-        <h2 className="text-5xl md:text-7xl font-serif mb-10 italic text-[#F9F6F0] drop-shadow-md">
-          {subheading}
-        </h2>
-        <button className="px-10 py-4 bg-[#F9F6F0] text-[#2C3B2D] rounded-full text-sm font-medium hover:bg-white hover:shadow-lg transition-all duration-300">
+        {subheading && (
+          <p className="text-sm sm:text-base md:text-lg text-[#F9F6F0]/90 font-light italic max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed drop-shadow-sm">
+            {subheading}
+          </p>
+        )}
+        <button className="px-8 sm:px-10 py-3 sm:py-3.5 bg-[#F9F6F0] text-[#2C3B2D] rounded-full text-xs sm:text-sm font-medium hover:bg-white hover:shadow-lg transition-all duration-300 cursor-pointer">
           {buttonLabel}
         </button>
       </div>
