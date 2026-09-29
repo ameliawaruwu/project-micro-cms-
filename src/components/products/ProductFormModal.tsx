@@ -176,8 +176,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     let finalCategory = category;
     if (category === 'new') {
       finalCategory = customCategory.trim() || (isEn ? 'Other' : 'Lainnya');
-    } else if (category === 'Lainnya' || category === 'Other') {
-      finalCategory = customCategory.trim() || (isEn ? 'Other' : 'Lainnya');
     }
 
     onSave({
@@ -414,43 +412,65 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                      {isEn ? '5. PRODUCT CATEGORY' : '5. KATEGORI PRODUK'}
-                    </label>
-                    <select
-                      value={category}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setCategory(val);
-                        if (val !== 'new' && val !== 'Lainnya' && val !== 'Other') {
-                          setCustomCategory('');
-                        }
-                      }}
-                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
-                    >
-                      {availableCategories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                      <option value="new">{isEn ? '+ Add New Category...' : '+ Tambah Kategori Baru...'}</option>
-                    </select>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
+                        {isEn ? '5. PRODUCT CATEGORY' : '5. KATEGORI PRODUK'}
+                      </label>
+                      {category === 'new' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCategory(availableCategories[0] || (isEn ? 'Other' : 'Lainnya'));
+                            setCustomCategory('');
+                          }}
+                          className="text-[11px] font-semibold text-[#66000E] hover:underline cursor-pointer"
+                        >
+                          {isEn ? '← Select from list' : '← Pilih dari daftar'}
+                        </button>
+                      )}
+                    </div>
 
-                    {(category === 'new' || category === 'Lainnya' || category === 'Other') && (
-                      <div className="mt-2 space-y-1 animate-in fade-in duration-150">
+                    {category === 'new' ? (
+                      <div className="relative animate-in fade-in duration-150">
                         <input
                           type="text"
-                          placeholder={
-                            category === 'new'
-                              ? (isEn ? 'Enter custom category name (e.g. Doll, Coffee)...' : 'Tulis nama kategori baru (contoh: Boneka, Kopi, Sepatu)...')
-                              : (isEn ? 'Specify other category (optional, or keep as Other)...' : 'Tulis nama kategori spesifik (opsional, atau biarkan Lainnya)...')
-                          }
+                          autoFocus
+                          placeholder={isEn ? 'Type new category name...' : 'Ketik nama kategori baru...'}
                           value={customCategory}
                           onChange={(e) => setCustomCategory(e.target.value)}
-                          className="w-full px-3 py-1.5 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
-                          autoFocus={category === 'new'}
+                          className="w-full pl-3 pr-8 py-2 rounded-xl border border-[#66000E] bg-white text-xs font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#66000E]/15"
                         />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCategory(availableCategories[0] || (isEn ? 'Other' : 'Lainnya'));
+                            setCustomCategory('');
+                          }}
+                          title={isEn ? 'Cancel' : 'Batal'}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#706866] hover:text-[#66000E] rounded-md hover:bg-[#FAF7F7] transition cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </div>
+                    ) : (
+                      <select
+                        value={category}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCategory(val);
+                          if (val === 'new') {
+                            setCustomCategory('');
+                          }
+                        }}
+                        className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
+                      >
+                        {availableCategories.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                        <option value="new">{isEn ? '+ Add New Category...' : '+ Tambah Kategori Baru...'}</option>
+                      </select>
                     )}
                   </div>
                 </div>
