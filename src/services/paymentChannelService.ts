@@ -233,3 +233,79 @@ class PaymentChannelService {
 }
 
 export const paymentChannelService = new PaymentChannelService();
+
+export const CHANNEL_NAME_MAP: Record<string, { id: string; en: string }> = {
+  credit_card: {
+    id: 'Kartu Kredit & Debit (Visa / Mastercard / JCB)',
+    en: 'Credit & Debit Card (Visa / Mastercard / JCB)',
+  },
+};
+
+export const CHANNEL_DESC_MAP: Record<string, { id: string; en: string }> = {
+  qris: {
+    id: 'Scan & bayar dari semua aplikasi m-Banking (BCA, Mandiri, BRI, BNI) dan E-Wallet (GoPay, OVO, DANA, ShopeePay).',
+    en: 'Scan & pay from all mobile banking apps (BCA, Mandiri, BRI, BNI) and E-Wallets (GoPay, OVO, DANA, ShopeePay).',
+  },
+  gopay: {
+    id: 'Pembayaran langsung terintegrasi dengan saldo GoPay atau GoPay Later pelanggan.',
+    en: 'Direct payment integrated with customer\'s GoPay or GoPay Later balance.',
+  },
+  shopeepay: {
+    id: 'Pembayaran instan langsung dari aplikasi Shopee pelanggan.',
+    en: 'Instant checkout directly from customer\'s Shopee application.',
+  },
+  bca_va: {
+    id: 'Transfer otomatis via BCA Mobile, myBCA, KlikBCA, atau ATM BCA (Cek lunas instan 24 jam).',
+    en: 'Automated transfer via BCA Mobile, myBCA, KlikBCA, or BCA ATM (Instant 24/7 verification).',
+  },
+  mandiri_bill: {
+    id: 'Pembayaran via Livin by Mandiri (Bill Payment), Internet Banking, dan ATM Mandiri.',
+    en: 'Payment via Livin by Mandiri (Bill Payment), Internet Banking, and Mandiri ATM.',
+  },
+  bni_va: {
+    id: 'Transfer otomatis via BNI Mobile Banking, Internet Banking, dan ATM BNI.',
+    en: 'Automated transfer via BNI Mobile Banking, Internet Banking, and BNI ATM.',
+  },
+  bri_va: {
+    id: 'Pembayaran instan via BRImo, Internet Banking BRI, dan ATM BRI.',
+    en: 'Instant payment via BRImo, BRI Internet Banking, and BRI ATM.',
+  },
+  permata_va: {
+    id: 'Transfer via PermataMobile X, ATM Permata, dan transfer jaringan antarbank.',
+    en: 'Transfer via PermataMobile X, Permata ATM, and interbank network transfers.',
+  },
+  cimb_va: {
+    id: 'Pembayaran via OCTO Mobile, OCTO Clicks, dan ATM CIMB Niaga.',
+    en: 'Payment via OCTO Mobile, OCTO Clicks, and CIMB Niaga ATM.',
+  },
+  credit_card: {
+    id: 'Mendukung kartu kredit dan debit berlogo Visa, MasterCard, JCB, dan AMEX dengan proteksi 3D Secure OTP.',
+    en: 'Supports credit and debit cards with Visa, MasterCard, JCB, and AMEX with 3D Secure OTP protection.',
+  },
+  indomaret: {
+    id: 'Bayar tunai di seluruh meja kasir Indomaret dan Ceriamart dengan kode pembayaran.',
+    en: 'Pay in cash at all Indomaret and Ceriamart counters using a payment code.',
+  },
+  alfamart: {
+    id: 'Bayar tunai di seluruh meja kasir Alfamart, Alfamidi, dan Dan+Dan di seluruh Indonesia.',
+    en: 'Pay in cash at all Alfamart, Alfamidi, and Dan+Dan counters across Indonesia.',
+  },
+  akulaku: {
+    id: 'Cicilan instan tanpa kartu kredit dengan akun Akulaku pelanggan.',
+    en: 'Instant installment without credit card using customer\'s Akulaku account.',
+  },
+};
+
+export const getLocalizedChannelDescription = (channelId: string, fallbackDesc?: string, lang: 'id' | 'en' = 'id'): string => {
+  if (CHANNEL_DESC_MAP[channelId]) {
+    return CHANNEL_DESC_MAP[channelId][lang] || CHANNEL_DESC_MAP[channelId].id;
+  }
+  return fallbackDesc || '';
+};
+
+export const getLocalizedChannelName = (channelId: string, fallbackName: string, lang: 'id' | 'en' = 'id'): string => {
+  if (CHANNEL_NAME_MAP[channelId]) {
+    return CHANNEL_NAME_MAP[channelId][lang] || CHANNEL_NAME_MAP[channelId].id;
+  }
+  return fallbackName;
+};
