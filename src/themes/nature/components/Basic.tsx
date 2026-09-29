@@ -1,13 +1,18 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 
-export const NatureNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const NatureNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean; readonly?: boolean }> = ({ 
+  sectionOptions = {},
+  isMobile = false,
+  isTablet = false,
+  readonly = false
+}) => {
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
 
   const rawName = sectionOptions.heading || sectionOptions.storeName || storeInfo?.name;
-  const storeName = (!rawName || rawName === 'NEON//CORE Electronics') ? 'Green Market' : rawName;
+  const storeName = (!rawName || rawName === 'NEON//CORE Electronics') ? 'Green Market Indonesia' : rawName;
 
   const navList = (navigation && navigation.length > 0) ? navigation : [
     { id: 'nn1', label: 'Pasar Segar', route: '/katalog' },
@@ -16,12 +21,12 @@ export const NatureNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOption
   ];
 
   return (
-    <nav className="w-full px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center bg-[#F9F6F0] border-b border-[#E8E4DB] sticky top-0 z-50 font-serif">
-      <div className="w-full md:w-1/3 flex justify-center md:justify-start mb-6 md:mb-0">
+    <nav className="w-full px-4 sm:px-6 md:px-10 lg:px-12 py-5 flex flex-col md:flex-row justify-between items-center bg-[#F9F6F0] border-b border-[#E8E4DB] sticky top-0 z-50 font-serif gap-4 md:gap-0">
+      <div className="w-full md:flex-1 flex justify-center md:justify-start">
         {showNav && (
-          <div className="flex gap-8">
+          <div className="flex flex-wrap justify-center md:justify-start gap-4 sm:gap-6 lg:gap-8 items-center">
             {navList.map(nav => (
-              <a key={nav.id} href={nav.route} className="text-[13px] tracking-wide font-medium text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors relative group font-sans">
+              <a key={nav.id} href={nav.route} className="text-xs sm:text-[13px] tracking-wide font-medium text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors relative group font-sans whitespace-nowrap">
                 {nav.label}
                 <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-[#2C3B2D] group-hover:w-full transition-all duration-300"></span>
               </a>
@@ -30,16 +35,16 @@ export const NatureNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOption
         )}
       </div>
       
-      <div className="w-full md:w-1/3 flex justify-center mb-6 md:mb-0">
+      <div className="shrink-0 flex justify-center items-center px-2 sm:px-6">
         {showLogo && (
-          <a href="/" className="text-3xl md:text-4xl font-serif text-[#2C3B2D] tracking-wider hover:opacity-80 transition-opacity font-bold">
+          <a href="/" className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-serif text-[#2C3B2D] tracking-wide hover:opacity-80 transition-opacity font-bold whitespace-nowrap inline-block text-center">
             {storeName}
           </a>
         )}
       </div>
 
-      <div className="w-full md:w-1/3 flex justify-center md:justify-end gap-6">
-        <button className="text-[13px] tracking-wide text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors flex items-center gap-2 cursor-pointer font-sans">
+      <div className="w-full md:flex-1 flex justify-center md:justify-end items-center gap-4 sm:gap-6">
+        <button className="text-xs sm:text-[13px] tracking-wide text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors flex items-center gap-2 cursor-pointer font-sans whitespace-nowrap">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
           Keranjang (0)
         </button>
