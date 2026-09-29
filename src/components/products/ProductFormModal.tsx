@@ -172,41 +172,53 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     }
   };
 
-  useEffect(() => {
-    setPhotoError('');
-    if (productToEdit) {
-      setName(productToEdit.name || '');
-      setPriceDisplay(productToEdit.price ? formatThousand(productToEdit.price) : '');
-      setOriginalPriceDisplay(productToEdit.originalPrice ? formatThousand(productToEdit.originalPrice) : '');
-      setStockDisplay(productToEdit.stock !== undefined ? String(productToEdit.stock) : '10');
+  const prevIsOpenRef = useRef(false);
+  const prevProductToEditIdRef = useRef<string | undefined>(undefined);
 
-      const prodCat = productToEdit.category || '';
-      if (availableCategories.includes(prodCat)) {
-        setCategory(prodCat);
-        setCustomCategory('');
-      } else if (prodCat) {
-        setCategory('new');
-        setCustomCategory(prodCat);
+  useEffect(() => {
+    // Only initialize/reset form when modal is first opened or target product changes
+    const justOpened = isOpen && !prevIsOpenRef.current;
+    const productChanged = (productToEdit?.id || '') !== (prevProductToEditIdRef.current || '');
+
+    if (isOpen && (justOpened || productChanged)) {
+      setPhotoError('');
+      if (productToEdit) {
+        setName(productToEdit.name || '');
+        setPriceDisplay(productToEdit.price ? formatThousand(productToEdit.price) : '');
+        setOriginalPriceDisplay(productToEdit.originalPrice ? formatThousand(productToEdit.originalPrice) : '');
+        setStockDisplay(productToEdit.stock !== undefined ? String(productToEdit.stock) : '10');
+
+        const prodCat = productToEdit.category || '';
+        if (availableCategories.includes(prodCat)) {
+          setCategory(prodCat);
+          setCustomCategory('');
+        } else if (prodCat) {
+          setCategory('new');
+          setCustomCategory(prodCat);
+        } else {
+          setCategory(availableCategories[0] || (isEn ? 'Clothing & Fashion' : 'Pakaian & Fashion'));
+          setCustomCategory('');
+        }
+
+        setDescription(productToEdit.description || '');
+        setImageUrl(productToEdit.imageUrl || '');
+        setWeightDisplay(productToEdit.weightGrams ? String(productToEdit.weightGrams) : '250');
       } else {
+        setName('');
+        setPriceDisplay('');
+        setOriginalPriceDisplay('');
+        setStockDisplay('10');
         setCategory(availableCategories[0] || (isEn ? 'Clothing & Fashion' : 'Pakaian & Fashion'));
         setCustomCategory('');
+        setDescription('');
+        setImageUrl('');
+        setWeightDisplay('250');
       }
-
-      setDescription(productToEdit.description || '');
-      setImageUrl(productToEdit.imageUrl || '');
-      setWeightDisplay(productToEdit.weightGrams ? String(productToEdit.weightGrams) : '250');
-    } else {
-      setName('');
-      setPriceDisplay('');
-      setOriginalPriceDisplay('');
-      setStockDisplay('10');
-      setCategory(availableCategories[0] || (isEn ? 'Clothing & Fashion' : 'Pakaian & Fashion'));
-      setCustomCategory('');
-      setDescription('');
-      setImageUrl('');
-      setWeightDisplay('250');
     }
-  }, [productToEdit, availableCategories, isOpen, isEn]);
+
+    prevIsOpenRef.current = isOpen;
+    prevProductToEditIdRef.current = productToEdit?.id;
+  }, [isOpen, productToEdit?.id, availableCategories, isEn]);
 
   if (!isOpen) return null;
 
