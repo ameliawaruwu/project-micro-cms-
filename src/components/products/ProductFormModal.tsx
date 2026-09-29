@@ -530,9 +530,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       gram
                     </span>
                   </div>
-                  <p className="text-[10px] text-[#706866] mt-0.5 font-medium">
-                    {isEn ? 'Used for automated courier rate calculation' : 'Untuk hitung tarif ongkir kurir otomatis'}
-                  </p>
                 </div>
               </div>
 
@@ -640,18 +637,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-bold text-[#66000E] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 transition"
                       />
                     </div>
-                    <p className="text-[10px] text-[#706866]">
-                      {discountPercent && Number(discountPercent) > 0 && originalPriceDisplay && originalPriceDisplay !== sellingPriceDisplay ? (
-                        <>
-                          {isEn ? 'Front store displays discounted price ' : 'Bagian depan toko menampilkan harga diskon '}
-                          <span className="font-bold text-[#66000E]">Rp {sellingPriceDisplay}</span>
-                          {isEn ? ', detail view shows regular price ' : ', dan pada detail produk menampilkan harga regular '}
-                          <span className="line-through font-medium">Rp {originalPriceDisplay}</span>
-                        </>
-                      ) : (
-                        isEn ? 'Standard selling price without discount' : 'Harga jual standar produk tanpa diskon'
-                      )}
-                    </p>
                   </div>
                 </div>
 
@@ -670,9 +655,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       onChange={handleStockChange}
                       className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-bold text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
                     />
-                    <p className="text-[10px] text-[#706866] mt-0.5 font-medium">
-                      {isEn ? 'Units available for purchase' : 'Stok barang yang siap dibeli'}
-                    </p>
                   </div>
 
                   <div>
