@@ -368,7 +368,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         {/* Fixed Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E0DD] shrink-0 bg-white">
           <div>
-            <h3 className="font-bold text-base sm:text-lg text-[#241A1A] tracking-tight">
+            <h3 className="font-semibold text-base sm:text-lg text-[#241A1A] tracking-tight">
               {productToEdit
                 ? (isEn ? 'Edit Product Details' : 'Ubah Rincian Produk')
                 : (isEn ? 'Add New Product' : 'Tambah Produk Baru')}
@@ -392,12 +392,12 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
               
-              {/* Left Column: Photo Upload (JPG/PNG max 10MB) & Weight */}
+              {/* Left Column: Photo Upload (JPG/PNG max 10MB) */}
               <div className="md:col-span-5 space-y-3.5">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
-                      {isEn ? 'PRODUCT PHOTO' : 'FOTO PRODUK'} <span className="text-[#66000E]">*</span>
+                    <label className="block text-xs font-medium text-[#4A4543]">
+                      {isEn ? 'Product Photo' : 'Foto Produk'} <span className="text-[#66000E]">*</span>
                     </label>
                     {imageUrl && (
                       <button
@@ -516,8 +516,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 
                 {/* Nama Produk */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1.5">
-                    {isEn ? 'PRODUCT NAME' : 'NAMA PRODUK'} <span className="text-[#66000E]">*</span>
+                  <label className="block text-xs font-medium text-[#4A4543] mb-1.5">
+                    {isEn ? 'Product Name' : 'Nama Produk'} <span className="text-[#66000E]">*</span>
                   </label>
                   <input
                     type="text"
@@ -534,11 +534,11 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Normal / Base Price */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                        {isEn ? 'REGULAR PRICE' : 'HARGA NORMAL'} <span className="text-[#66000E]">*</span>
+                      <label className="block text-xs font-medium text-[#4A4543] mb-1">
+                        {isEn ? 'Regular Price' : 'Harga Normal'} <span className="text-[#66000E]">*</span>
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#706866]">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#706866]">
                           Rp
                         </span>
                         <input
@@ -548,7 +548,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                           placeholder={isEn ? '125,000' : 'Contoh: 125.000'}
                           value={originalPriceDisplay}
                           onChange={handleOriginalPriceChange}
-                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-normal text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
                         />
                       </div>
                     </div>
@@ -556,14 +556,14 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     {/* Discount Dropdown */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A]">
-                          {isEn ? 'DISCOUNT' : 'DISKON'}
+                        <label className="block text-xs font-medium text-[#4A4543]">
+                          {isEn ? 'Discount' : 'Diskon'}
                         </label>
                         {discountPercent && Number(discountPercent) > 0 && (
                           <button
                             type="button"
                             onClick={removeDiscount}
-                            className="text-[10px] text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
+                            className="text-[10px] text-rose-600 hover:text-rose-700 font-medium cursor-pointer"
                           >
                             {isEn ? 'Remove' : 'Hapus diskon'}
                           </button>
@@ -572,7 +572,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       <select
                         value={discountPercent || '0'}
                         onChange={handleDiscountDropdownChange}
-                        className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
+                        className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-normal text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
                       >
                         <option value="0">{isEn ? 'No Discount (0%)' : 'Tanpa Diskon (0%)'}</option>
                         {discountPercent &&
@@ -592,17 +592,17 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   {/* Selling Price (Input that automatically updates!) */}
                   <div className="p-3 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="block text-xs font-bold text-[#241A1A]">
-                        {isEn ? 'FINAL SELLING PRICE (BUYER PAYS)' : 'HARGA JUAL AKHIR (YANG DIBAYAR PEMBELI)'} <span className="text-[#66000E]">*</span>
+                      <label className="block text-xs font-medium text-[#4A4543]">
+                        {isEn ? 'Final Selling Price (Buyer Pays)' : 'Harga Jual Akhir (Yang Dibayar Pembeli)'} <span className="text-[#66000E]">*</span>
                       </label>
                       {discountPercent && Number(discountPercent) > 0 && (
-                        <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-bold">
+                        <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-semibold">
                           Hemat {discountPercent}%
                         </span>
                       )}
                     </div>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#66000E]">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#66000E]">
                         Rp
                       </span>
                       <input
@@ -612,7 +612,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         placeholder={isEn ? '112,500' : '112.500'}
                         value={sellingPriceDisplay}
                         onChange={handleSellingPriceChange}
-                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-bold text-[#66000E] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 transition"
+                        className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-semibold text-[#66000E] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 transition"
                       />
                     </div>
                   </div>
@@ -620,8 +620,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
                 {/* Kategori Produk */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                    {isEn ? 'PRODUCT CATEGORY' : 'KATEGORI PRODUK'}
+                  <label className="block text-xs font-medium text-[#4A4543] mb-1">
+                    {isEn ? 'Product Category' : 'Kategori Produk'}
                   </label>
 
                   {category === 'new' ? (
@@ -632,7 +632,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         placeholder={isEn ? 'Type new category name...' : 'Ketik nama kategori baru...'}
                         value={customCategory}
                         onChange={(e) => setCustomCategory(e.target.value)}
-                        className="w-full pl-3 pr-8 py-2 rounded-xl border border-[#66000E] bg-white text-xs font-semibold text-[#241A1A] placeholder:text-[#9A9290] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#66000E]/15"
+                        className="w-full pl-3 pr-8 py-2 rounded-xl border border-[#66000E] bg-white text-xs font-normal text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:ring-2 focus:ring-[#66000E]/15"
                       />
                       <button
                         type="button"
@@ -656,7 +656,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                           setCustomCategory('');
                         }
                       }}
-                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
+                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-normal text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
                     >
                       {availableCategories.map((cat) => (
                         <option key={cat} value={cat}>
@@ -671,8 +671,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 {/* Stock & Weight (Sebelah Kanan Jumlah Stok) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                      {isEn ? 'STOCK QUANTITY' : 'JUMLAH STOK'} <span className="text-[#66000E]">*</span>
+                    <label className="block text-xs font-medium text-[#4A4543] mb-1">
+                      {isEn ? 'Stock Quantity' : 'Jumlah Stok'} <span className="text-[#66000E]">*</span>
                     </label>
                     <input
                       type="text"
@@ -681,13 +681,13 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       placeholder="10"
                       value={stockDisplay}
                       onChange={handleStockChange}
-                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-bold text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-normal text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                      {isEn ? 'ESTIMATED WEIGHT (GRAMS)' : 'ESTIMASI BERAT (GRAM)'}
+                    <label className="block text-xs font-medium text-[#4A4543] mb-1">
+                      {isEn ? 'Estimated Weight (Grams)' : 'Estimasi Berat (Gram)'}
                     </label>
                     <div className="relative">
                       <input
@@ -696,7 +696,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         placeholder="250"
                         value={weightDisplay}
                         onChange={handleWeightChange}
-                        className="w-full pl-3 pr-12 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-bold text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
+                        className="w-full pl-3 pr-12 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-normal text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#706866]">
                         gram
@@ -707,15 +707,15 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
                 {/* Deskripsi Singkat */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                    {isEn ? 'SHORT DESCRIPTION' : 'DESKRIPSI SINGKAT'}
+                  <label className="block text-xs font-medium text-[#4A4543] mb-1">
+                    {isEn ? 'Short Description' : 'Deskripsi Singkat'}
                   </label>
                   <textarea
                     rows={2}
                     placeholder={isEn ? 'Describe materials, size, and product highlights...' : 'Ceritakan keunggulan bahan, ukuran, dan cara penggunaan...'}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 resize-none transition"
+                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-normal text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 resize-none transition"
                   />
                 </div>
 
@@ -729,7 +729,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 min-h-[38px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] font-bold text-xs hover:bg-white transition cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 min-h-[38px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] font-medium text-xs hover:bg-white transition cursor-pointer disabled:opacity-50"
             >
               {isEn ? 'Cancel' : 'Batal'}
             </button>
