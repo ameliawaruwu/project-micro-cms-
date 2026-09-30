@@ -148,13 +148,13 @@ async function getMidtransConfig() {
         const rows = await resp.json();
         if (Array.isArray(rows) && rows[0]) {
           const dbRow = rows[0];
-          if (!serverKey && dbRow.midtrans_server_key) {
+          if (dbRow.midtrans_server_key && dbRow.midtrans_server_key.trim()) {
             serverKey = dbRow.midtrans_server_key.trim();
           }
-          if (!clientKey && dbRow.midtrans_client_key) {
+          if (dbRow.midtrans_client_key && dbRow.midtrans_client_key.trim()) {
             clientKey = dbRow.midtrans_client_key.trim();
           }
-          if (dbRow.midtrans_environment) {
+          if (dbRow.midtrans_environment && dbRow.midtrans_environment.trim()) {
             env = dbRow.midtrans_environment.trim().toLowerCase();
           }
         }

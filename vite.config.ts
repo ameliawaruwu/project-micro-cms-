@@ -6,6 +6,49 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+async function getDevMidtransConfig() {
+  let serverKey = (process.env.MIDTRANS_SERVER_KEY || '').trim();
+  let clientKey = (process.env.VITE_MIDTRANS_CLIENT_KEY || '').trim();
+  let env = (process.env.VITE_MIDTRANS_ENV || 'sandbox').trim().toLowerCase();
+
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const resp = await fetch(`${supabaseUrl}/rest/v1/platform_settings?select=midtrans_environment,midtrans_server_key,midtrans_client_key&limit=1`, {
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
+      });
+      if (resp.ok) {
+        const rows = await resp.json();
+        if (Array.isArray(rows) && rows[0]) {
+          const dbRow = rows[0];
+          if (dbRow.midtrans_server_key && dbRow.midtrans_server_key.trim()) {
+            serverKey = dbRow.midtrans_server_key.trim();
+          }
+          if (dbRow.midtrans_client_key && dbRow.midtrans_client_key.trim()) {
+            clientKey = dbRow.midtrans_client_key.trim();
+          }
+          if (dbRow.midtrans_environment && dbRow.midtrans_environment.trim()) {
+            env = dbRow.midtrans_environment.trim().toLowerCase();
+          }
+        }
+      }
+    } catch {
+      // Fallback silently
+    }
+  }
+
+  serverKey = serverKey.replace(/^["']|["']$/g, '').trim();
+  clientKey = clientKey.replace(/^["']|["']$/g, '').trim();
+  env = env.replace(/^["']|["']$/g, '').trim().toLowerCase();
+
+  return { serverKey, clientKey, env };
+}
+
 function midtransDevPlugin(): Plugin {
   return {
     name: 'midtrans-dev-server',
@@ -25,12 +68,18 @@ function midtransDevPlugin(): Plugin {
 
         req.on('end', async () => {
           try {
-            const rawKey = process.env.MIDTRANS_SERVER_KEY || '';
-            const serverKey = rawKey.replace(/^["']|["']$/g, '').trim();
+            let data: any = {};
+            try {
+              data = JSON.parse(body || '{}');
+            } catch {
+              data = {};
+            }
+
+            const { serverKey, env } = await getDevMidtransConfig();
             if (!serverKey) {
               res.statusCode = 500;
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'MIDTRANS_SERVER_KEY tidak ditemukan di .env' }));
+              res.end(JSON.stringify({ error: 'MIDTRANS_SERVER_KEY tidak ditemukan di .env atau database' }));
               return;
             }
 
@@ -55,7 +104,6 @@ function midtransDevPlugin(): Plugin {
             const sanitizedPhone = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
             const sanitizedEmail = String(data.customerEmail || 'customer@example.com').trim().slice(0, 100);
 
-            const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
             const apiUrl =
               env === 'production'
                 ? 'https://app.midtrans.com/snap/v1/transactions'
@@ -145,8 +193,7 @@ function midtransDevPlugin(): Plugin {
         }
 
         try {
-          const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
-          const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
+          const { serverKey, env } = await getDevMidtransConfig();
           const apiUrl =
             env === 'production'
               ? `https://api.midtrans.com/v2/${encodeURIComponent(orderId)}/status`
@@ -174,13 +221,11 @@ function midtransDevPlugin(): Plugin {
       // Endpoint Tes Ping & Diagnosa Kunci Midtrans
       server.middlewares.use('/api/midtrans/test-ping', async (_req, res) => {
         try {
-          const rawKey = process.env.MIDTRANS_SERVER_KEY || '';
-          const serverKey = rawKey.replace(/^["']|["']$/g, '').trim();
-          const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
+          const { serverKey, env } = await getDevMidtransConfig();
           if (!serverKey) {
             res.statusCode = 400;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ success: false, message: 'MIDTRANS_SERVER_KEY belum disetel' }));
+            res.end(JSON.stringify({ success: false, message: 'MIDTRANS_SERVER_KEY belum disetel di .env atau database' }));
             return;
           }
 
