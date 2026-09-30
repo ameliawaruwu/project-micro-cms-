@@ -29,11 +29,9 @@ import { CartItem, Store, CourierType, PaymentMethod, Order, ShippingBranch, Bit
 import { formatRupiah, generateWhatsAppLink } from '../../utils/formatters';
 import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
-import { shippingService, INDONESIAN_CITIES, ShippingRate } from '../../services/shippingService';
 import { storeService } from '../../services/storeService';
-import { midtransService } from '../../services/midtransService';
+import { duitkuService } from '../../services/duitkuService';
 import {
-  paymentChannelService,
   PaymentChannel,
   DEFAULT_MIDTRANS_CHANNELS,
   getLocalizedChannelDescription,
@@ -223,20 +221,21 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     }
   };
 
-  // Trigger Midtrans Snap payment
-  const handleLaunchMidtransSnap = async () => {
+  // Trigger Duitku payment
+  const handleLaunchDuitkuPayment = async () => {
     setIsSubmitting(true);
     const orderId = `KROOM-${Date.now()}`;
 
     try {
-      await midtransService.payWithSnap(
+      await duitkuService.payWithDuitku(
         {
           orderId,
           grossAmount: grandTotal,
           customerName: name.trim(),
           customerEmail: 'customer@example.com',
           customerPhone: phone.trim(),
-          enabledPayments: [selectedChannel.id],
+          paymentMethod: selectedChannel.id,
+          productDetails: `Pesanan ${items.length} item - ${store.name}`,
           items: items.map((i) => ({
             id: i.product.id,
             name: i.product.name,
@@ -246,17 +245,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         },
         {
           onSuccess: async (result) => {
-            await recordSuccessOrder(result.order_id || orderId, `Midtrans (${result.payment_type})`, true);
+            await recordSuccessOrder(result.merchantOrderId || orderId, `Duitku (${selectedChannel.name})`, true);
             setIsSubmitting(false);
           },
           onPending: async (result) => {
-            await recordSuccessOrder(result.order_id || orderId, `Midtrans Pending (${result.payment_type})`, false);
+            await recordSuccessOrder(result.merchantOrderId || orderId, `Duitku Pending (${selectedChannel.name})`, false);
             setIsSubmitting(false);
           },
           onError: (err) => {
-            console.error('Midtrans Snap error:', err);
+            console.error('Duitku payment error:', err);
             setIsSubmitting(false);
-            alert('Pembayaran Midtrans dibatalkan atau belum selesai. Silakan coba kembali.');
+            alert('Pembayaran Duitku dibatalkan atau belum selesai. Silakan coba kembali.');
           },
           onClose: () => {
             setIsSubmitting(false);
@@ -264,7 +263,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         }
       );
     } catch (error) {
-      console.warn('Midtrans Snap pop-up tidak dapat dibuka, dialihkan ke instruksi manual:', error);
+      console.warn('Duitku payment pop-up tidak dapat dibuka:', error);
       setIsSubmitting(false);
     }
   };
@@ -285,9 +284,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     }
 
     setStep('payment');
-    // Launch Snap
+    // Launch Duitku
     setTimeout(() => {
-      handleLaunchMidtransSnap();
+      handleLaunchDuitkuPayment();
     }, 150);
   };
 

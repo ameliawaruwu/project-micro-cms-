@@ -167,7 +167,14 @@ class DuitkuService {
         }),
       });
 
-      const resData = await response.json();
+      const rawText = await response.text();
+      let resData: any = {};
+      try {
+        resData = JSON.parse(rawText);
+      } catch {
+        throw new Error(`Respon server tidak berformat JSON (HTTP ${response.status}). Mohon segarkan browser Anda (Ctrl+F5) dan coba lagi.`);
+      }
+
       if (response.ok && resData.reference) {
         return {
           reference: resData.reference,
