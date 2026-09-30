@@ -3,6 +3,8 @@ import cors from 'cors';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { deployRouter } from './backend/deployController';
 
 dotenv.config();
@@ -380,6 +382,17 @@ async function getDuitkuConfig(): Promise<{ merchantCode: string; apiKey: string
   let merchantCode = process.env.DUITKU_MERCHANT_CODE || '';
   let apiKey = process.env.DUITKU_API_KEY || '';
   let env: 'sandbox' | 'production' = (process.env.DUITKU_ENV as any) === 'production' ? 'production' : 'sandbox';
+
+  // Baca ulang file .env dari disk secara langsung agar selalu sinkron jika diedit
+  try {
+    const envPath = path.resolve(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const parsed = dotenv.parse(fs.readFileSync(envPath, 'utf8'));
+      if (parsed.DUITKU_MERCHANT_CODE) merchantCode = parsed.DUITKU_MERCHANT_CODE;
+      if (parsed.DUITKU_API_KEY) apiKey = parsed.DUITKU_API_KEY;
+      if (parsed.DUITKU_ENV) env = parsed.DUITKU_ENV.toLowerCase() === 'production' ? 'production' : 'sandbox';
+    }
+  } catch {}
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
