@@ -144,6 +144,8 @@ class DuitkuService {
   async createInvoice(params: DuitkuTransactionParams): Promise<{
     reference: string;
     paymentUrl: string;
+    vaNumber?: string;
+    qrString?: string;
     statusCode: string;
     statusMessage: string;
   }> {
@@ -160,7 +162,7 @@ class DuitkuService {
           customerEmail: params.customerEmail,
           customerPhone: params.customerPhone,
           productDetails: params.productDetails,
-          paymentMethod: params.paymentMethod || '',
+          paymentMethod: params.paymentMethod || 'SP',
           items: params.items || [],
         }),
       });
@@ -170,6 +172,8 @@ class DuitkuService {
         return {
           reference: resData.reference,
           paymentUrl: resData.paymentUrl || '',
+          vaNumber: resData.vaNumber,
+          qrString: resData.qrString,
           statusCode: resData.statusCode || '00',
           statusMessage: resData.statusMessage || 'SUCCESS',
         };
@@ -222,7 +226,7 @@ class DuitkuService {
         return;
       }
 
-      // 2. Jika POP script diblokir browser, arahkan ke paymentUrl resmi Duitku
+      // 2. Jika POP script tidak aktif, arahkan langsung ke paymentUrl resmi Duitku
       if (invoice.paymentUrl) {
         window.location.href = invoice.paymentUrl;
         return;
@@ -237,7 +241,7 @@ class DuitkuService {
         reference: '',
         statusMessage: err.message || 'Gagal memproses pembayaran Duitku resmi',
       });
-      alert(`[Duitku Official Gateway]\n${err.message || 'Gagal memproses transaksi.'}\n\nPastikan Merchant Code dan API Key Duitku yang baru sudah diisi.`);
+      alert(`[Duitku Official Gateway]\n${err.message || 'Gagal memproses transaksi.'}`);
     }
   }
 

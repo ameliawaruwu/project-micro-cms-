@@ -434,6 +434,26 @@ class MidtransService {
 
     // Duitku Migration: Delegasikan eksekusi pembayaran ke Duitku Payment Gateway
     try {
+      let duitkuMethod = 'SP'; // Default ShopeePay QRIS
+      if (Array.isArray(params.enabledPayments) && params.enabledPayments.length > 0) {
+        const first = params.enabledPayments[0].toLowerCase();
+        if (first.includes('qris') || first.includes('gopay') || first.includes('shopee')) {
+          duitkuMethod = 'SP';
+        } else if (first.includes('bca')) {
+          duitkuMethod = 'BC';
+        } else if (first.includes('bri')) {
+          duitkuMethod = 'BR';
+        } else if (first.includes('mandiri') || first.includes('echannel')) {
+          duitkuMethod = 'M2';
+        } else if (first.includes('bni')) {
+          duitkuMethod = 'I1';
+        } else if (first.includes('permata')) {
+          duitkuMethod = 'BT';
+        } else {
+          duitkuMethod = 'BC';
+        }
+      }
+
       await duitkuService.payWithDuitku(
         {
           orderId: params.orderId,
@@ -441,6 +461,7 @@ class MidtransService {
           customerName: params.customerName,
           customerPhone: params.customerPhone,
           customerEmail: params.customerEmail,
+          paymentMethod: duitkuMethod,
           items: params.items,
         },
         {

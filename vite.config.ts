@@ -583,7 +583,25 @@ function duitkuDevPlugin(): Plugin {
             const customerVaName = String(data.customerName || 'Pelanggan').slice(0, 20);
             const email = String(data.customerEmail || 'customer@example.com').trim().slice(0, 100);
             const phoneNumber = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
-            const paymentMethod = String(data.paymentMethod || '').trim();
+            let paymentMethod = String(data.paymentMethod || '').trim();
+            if (!paymentMethod) {
+              paymentMethod = 'SP'; // Default ShopeePay QRIS
+            } else {
+              const pmLower = paymentMethod.toLowerCase();
+              if (pmLower === 'qris' || pmLower.includes('qris') || pmLower.includes('gopay') || pmLower.includes('shopee')) {
+                paymentMethod = 'SP';
+              } else if (pmLower === 'bca_va' || pmLower.includes('bca') || pmLower === 'va' || pmLower.includes('virtual_account')) {
+                paymentMethod = 'BC';
+              } else if (pmLower.includes('bri')) {
+                paymentMethod = 'BR';
+              } else if (pmLower.includes('mandiri') || pmLower.includes('echannel')) {
+                paymentMethod = 'M2';
+              } else if (pmLower.includes('bni')) {
+                paymentMethod = 'I1';
+              } else if (pmLower.includes('permata')) {
+                paymentMethod = 'BT';
+              }
+            }
 
             const stringToSign = `${merchantCode}${merchantOrderId}${paymentAmount}${apiKey}`;
             const signature = nodeCrypto.createHash('md5').update(stringToSign).digest('hex');
@@ -655,6 +673,8 @@ function duitkuDevPlugin(): Plugin {
               reference: duitkuData.reference,
               paymentUrl: duitkuData.paymentUrl,
               vaNumber: duitkuData.vaNumber,
+              qrString: duitkuData.qrString,
+              amount: duitkuData.amount,
               statusCode: duitkuData.statusCode,
               statusMessage: duitkuData.statusMessage,
             }));

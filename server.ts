@@ -499,7 +499,25 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
     const customerVaName = String(data.customerName || 'Pelanggan').slice(0, 20);
     const email = String(data.customerEmail || 'customer@example.com').trim().slice(0, 100);
     const phoneNumber = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
-    const paymentMethod = String(data.paymentMethod || '').trim();
+    let paymentMethod = String(data.paymentMethod || '').trim();
+    if (!paymentMethod) {
+      paymentMethod = 'SP'; // Default ShopeePay QRIS jika tidak ditentukan
+    } else {
+      const pmLower = paymentMethod.toLowerCase();
+      if (pmLower === 'qris' || pmLower.includes('qris') || pmLower.includes('gopay') || pmLower.includes('shopee')) {
+        paymentMethod = 'SP';
+      } else if (pmLower === 'bca_va' || pmLower.includes('bca') || pmLower === 'va' || pmLower.includes('virtual_account')) {
+        paymentMethod = 'BC';
+      } else if (pmLower.includes('bri')) {
+        paymentMethod = 'BR';
+      } else if (pmLower.includes('mandiri') || pmLower.includes('echannel')) {
+        paymentMethod = 'M2';
+      } else if (pmLower.includes('bni')) {
+        paymentMethod = 'I1';
+      } else if (pmLower.includes('permata')) {
+        paymentMethod = 'BT';
+      }
+    }
 
     // Postman: CryptoJS.MD5(merchantCode + merchantOrderId + paymentAmount + apiKey)
     const hashText = `${merchantCode}${merchantOrderId}${paymentAmount}${apiKey}`;
@@ -573,6 +591,8 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
       reference: duitkuData.reference,
       paymentUrl: duitkuData.paymentUrl,
       vaNumber: duitkuData.vaNumber,
+      qrString: duitkuData.qrString,
+      amount: duitkuData.amount,
       statusCode: duitkuData.statusCode,
       statusMessage: duitkuData.statusMessage,
     });
