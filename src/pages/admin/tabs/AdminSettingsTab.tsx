@@ -206,7 +206,7 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
             </div>
           </div>
           <p className="text-[11px] text-gray-500">
-            💡 Dapatkan <strong>Merchant Code</strong> dan <strong>API Key</strong> dari dashboard <strong>Duitku Merchant Portal (My Project)</strong>. URL Callback backend: <code className="bg-gray-100 px-1 py-0.5 rounded text-sky-700 font-mono">https://kroomify.kroombox.com/api/duitku/callback</code>
+            💡 Dapatkan <strong>Merchant Code</strong> dan <strong>API Key</strong> dari dashboard <strong>Duitku Merchant Portal (My Project)</strong>. URL Callback proyek: <code className="bg-gray-100 px-1 py-0.5 rounded text-sky-700 font-mono">https://kroomify.kroombox.com/api/payment/callback</code>
           </p>
         </div>
 

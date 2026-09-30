@@ -493,7 +493,7 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
     const signature = crypto.createHash('md5').update(hashText).digest('hex');
 
     const appUrl = (process.env.APP_URL || 'https://kroomify.kroombox.com').replace(/\/$/, '');
-    const callbackUrl = `${appUrl}/api/duitku/callback`;
+    const callbackUrl = `${appUrl}/api/payment/callback`;
     const returnUrl = `${appUrl}/`;
 
     const apiUrl =
@@ -663,7 +663,8 @@ app.post('/api/duitku/test-connection', async (req, res) => {
 });
 
 // 4b.5 Duitku Webhook Callback (Notifikasi Pembayaran)
-app.post('/api/duitku/callback', async (req, res) => {
+// Mendukung endpoint elegan /api/payment/callback, /api/callback, dan /api/duitku/callback
+app.post(['/api/payment/callback', '/api/callback', '/api/duitku/callback'], async (req, res) => {
   try {
     const { merchantCode: receivedCode, amount, merchantOrderId, signature, resultCode, reference } = req.body || {};
     const { merchantCode, apiKey } = await getDuitkuConfig();

@@ -577,8 +577,8 @@ function duitkuDevPlugin(): Plugin {
             const stringToSign = `${merchantCode}${merchantOrderId}${paymentAmount}${apiKey}`;
             const signature = nodeCrypto.createHash('md5').update(stringToSign).digest('hex');
 
-            const appUrl = (process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '');
-            const callbackUrl = `${appUrl}/api/duitku/callback`;
+            const appUrl = (process.env.APP_URL || 'https://kroomify.kroombox.com').replace(/\/$/, '');
+            const callbackUrl = `${appUrl}/api/payment/callback`;
             const returnUrl = `${appUrl}/`;
 
             const apiUrl =
