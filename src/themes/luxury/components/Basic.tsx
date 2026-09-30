@@ -5,6 +5,7 @@ export const LuxuryNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOption
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
 
   return (
     <nav className="w-full px-8 md:px-16 py-8 flex justify-between items-center bg-[#fcfbf9] border-b border-[#92400E]/10 sticky top-0 z-50 transition-all duration-300">
@@ -22,8 +23,8 @@ export const LuxuryNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOption
       
       <div className="w-1/3 flex justify-center">
         {showLogo && (
-          <a href="/" className="text-3xl md:text-4xl font-serif text-[#92400E] tracking-tight">
-            {storeInfo.name}
+          <a href="/" className="text-3xl md:text-4xl font-serif text-[#92400E] tracking-tight text-center">
+            {storeTitle}
           </a>
         )}
       </div>
@@ -70,12 +71,13 @@ export const LuxuryHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
 
 export const LuxuryFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name}. All rights reserved.`;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. All rights reserved.`;
 
   return (
     <footer className="w-full px-8 md:px-16 py-32 bg-[#121212] text-white flex flex-col items-center border-t border-[#D4AF37]/20">
       <a href="/" className="text-4xl font-serif mb-16 text-[#D4AF37] tracking-wider hover:opacity-80 transition-opacity">
-        {storeInfo.name}
+        {storeTitle}
       </a>
       
       <div className="flex flex-col md:flex-row gap-12 md:gap-24 text-[10px] uppercase tracking-[0.3em] mb-20 opacity-80 text-center">

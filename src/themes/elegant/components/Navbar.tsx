@@ -2,9 +2,10 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, Menu } from 'lucide-react';
 
-export const ElegantNavbar: React.FC = () => {
+export const ElegantNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const navigation = useCmsStore((state) => state.navigation);
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
 
   return (
     <header className="w-full bg-[#FAF9F6]/90 backdrop-blur-sm border-b border-[#E8E6E1] py-5 px-8 md:px-16 sticky top-0 z-50 font-['Cormorant_Garamond',serif]">
@@ -24,7 +25,7 @@ export const ElegantNavbar: React.FC = () => {
         {/* Center: Logo */}
         <div className="flex-1 text-center flex flex-col items-center">
           <a href="/" className="text-3xl md:text-4xl font-normal tracking-wide text-[#2C2A29]">
-            {storeInfo.name}
+            {storeTitle}
           </a>
         </div>
 

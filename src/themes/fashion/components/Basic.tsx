@@ -5,6 +5,7 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
 
   return (
     <nav className="w-full bg-[#18181B] text-white border-b border-white/10 sticky top-0 z-50">
@@ -20,8 +21,8 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
         
         <div className="w-1/3 flex justify-center">
           {showLogo && (
-            <a href="/" className="text-3xl md:text-4xl font-serif italic tracking-wider hover:opacity-80 transition-opacity">
-              {storeInfo.name}
+            <a href="/" className="text-3xl md:text-4xl font-serif italic tracking-wider hover:opacity-80 transition-opacity text-center">
+              {storeTitle}
             </a>
           )}
         </div>

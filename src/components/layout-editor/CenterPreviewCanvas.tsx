@@ -597,7 +597,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                         )}
                         <div className="min-w-0">
                           <InlineEditableText
-                            value={store.name}
+                            value={opts.heading || opts.storeName || store.name}
                             onSave={() => {}}
                             className={`font-bold tracking-tight leading-tight block truncate ${
                               isMobile ? 'text-xs max-w-[150px]' : isTablet ? 'text-sm max-w-[180px]' : 'text-sm sm:text-base'

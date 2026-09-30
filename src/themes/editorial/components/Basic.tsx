@@ -4,19 +4,21 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 export const EditorialNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const leftSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || "The Journal";
   
   return (
     <nav className="w-full px-6 md:px-12 py-8 flex flex-col md:flex-row justify-between items-center bg-[#fafafa] border-b border-gray-200">
       <div className="w-full md:w-1/3 flex justify-center md:justify-start mb-6 md:mb-0">
         <div className="text-xs font-medium tracking-[0.2em] uppercase text-gray-500">
-          The Journal
+          {leftSubtitle}
         </div>
       </div>
       
       <div className="w-full md:w-1/3 flex justify-center mb-6 md:mb-0">
         {showLogo && (
-          <a href="/" className="text-3xl md:text-5xl font-serif italic tracking-tight text-gray-900">
-            {storeInfo.name}
+          <a href="/" className="text-3xl md:text-5xl font-serif italic tracking-tight text-gray-900 text-center">
+            {storeTitle}
           </a>
         )}
       </div>
@@ -67,11 +69,12 @@ export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
 
 export const EditorialFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name}`;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
 
   return (
     <footer className="w-full px-6 md:px-12 py-24 bg-gray-900 text-white flex flex-col items-center">
-      <h2 className="text-4xl md:text-5xl font-serif italic mb-12">{storeInfo.name}</h2>
+      <h2 className="text-4xl md:text-5xl font-serif italic mb-12">{storeTitle}</h2>
       <div className="flex flex-col md:flex-row gap-8 md:gap-16 text-center mb-16">
         <div>
           <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-4">Headquarters</p>

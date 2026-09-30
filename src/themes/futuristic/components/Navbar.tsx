@@ -2,9 +2,10 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, Menu, Hexagon } from 'lucide-react';
 
-export const FuturisticNavbar: React.FC = () => {
+export const FuturisticNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const navigation = useCmsStore((state) => state.navigation);
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
 
   return (
     <header className="w-full bg-white/90 backdrop-blur-md border-b border-gray-200 py-4 px-6 sticky top-0 z-50 font-['Space_Grotesk',sans-serif]">
@@ -14,7 +15,7 @@ export const FuturisticNavbar: React.FC = () => {
         <div className="flex items-center gap-3">
           <Hexagon className="w-8 h-8 text-red-600" />
           <a href="/" className="text-xl font-bold tracking-[0.2em] uppercase text-gray-900 drop-shadow-[0_0_8px_rgba(220,38,38,0.2)]">
-            {storeInfo.name}
+            {storeTitle}
           </a>
         </div>
 

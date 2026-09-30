@@ -81,6 +81,7 @@ interface CmsState {
 
   // Actions
   loadThemeData: (themeId: string) => void;
+  updateStoreInfo: (info: Partial<CmsStoreInfo>) => void;
   updateProduct: (product: CmsProduct, storeId?: string) => void;
   addProduct: (product: CmsProduct, storeId?: string) => void;
   deleteProduct: (id: string) => void;
@@ -138,6 +139,15 @@ export const useCmsStore = create<CmsState>((set, get) => ({
   getProductsByCategory: (categoryId: string) => get().products.filter(p => p.categoryId === categoryId),
   getNewsBySlug: (slug: string) => get().news.find(n => n.slug === slug),
   getPageBySlug: (slug: string) => get().pages.find(p => p.slug === slug),
+
+  updateStoreInfo: (info: Partial<CmsStoreInfo>) => {
+    set(state => ({
+      storeInfo: {
+        ...state.storeInfo,
+        ...info,
+      }
+    }));
+  },
 
   setProductsFromMerchant: (merchantProducts: Product[]) => {
     if (!merchantProducts || merchantProducts.length === 0) {

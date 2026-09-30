@@ -2,9 +2,10 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, Menu, Heart } from 'lucide-react';
 
-export const CuteNavbar: React.FC = () => {
+export const CuteNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const navigation = useCmsStore((state) => state.navigation);
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
 
   return (
     <header className="w-full bg-[#FFF5F7] border-b-4 border-[#FFD1DC] py-4 px-6 sticky top-0 z-50 font-['Outfit',sans-serif] rounded-b-3xl shadow-sm">
@@ -29,7 +30,7 @@ export const CuteNavbar: React.FC = () => {
             <Heart className="w-6 h-6 text-[#FF85A1] fill-[#FF85A1]" />
           </div>
           <a href="/" className="text-2xl font-black text-[#FF85A1] tracking-tight">
-            {storeInfo.name}
+            {storeTitle}
           </a>
         </div>
 

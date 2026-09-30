@@ -389,15 +389,19 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 <label className="text-[12px] font-bold text-[#202223]">Teks Judul</label>
                 <input
                   type="text"
-                  value={opts.heading || opts.featuredTitle || opts.announcementText || opts.testimonialsTitle || opts.newsletterTitle || ''}
+                  value={opts.heading || opts.featuredTitle || opts.announcementText || opts.testimonialsTitle || opts.newsletterTitle || (selectedSection.id === 'header' ? (opts.storeName || '') : '')}
                   onChange={(e) => {
                     if (selectedSection.id === 'announcement') handleOptionChange({ announcementText: e.target.value });
                     else if (selectedSection.id === 'featured_products') handleOptionChange({ featuredTitle: e.target.value, heading: e.target.value });
                     else if (selectedSection.id === 'testimonials') handleOptionChange({ testimonialsTitle: e.target.value, heading: e.target.value });
                     else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterTitle: e.target.value, heading: e.target.value });
+                    else if (selectedSection.id === 'header') {
+                      handleOptionChange({ heading: e.target.value, storeName: e.target.value });
+                      useCmsStore.getState().updateStoreInfo({ name: e.target.value });
+                    }
                     else handleOptionChange({ heading: e.target.value });
                   }}
-                  placeholder={selectedSection.title || 'Teks Judul...'}
+                  placeholder={selectedSection.id === 'header' ? (store.name || 'Nama Toko / Judul Header') : (selectedSection.title || 'Teks Judul...')}
                   className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB] focus:ring-1 focus:ring-[#2C6ECB]"
                 />
               </div>
@@ -422,6 +426,10 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       if (selectedSection.id === 'featured_products') handleOptionChange({ featuredSubtitle: e.target.value, subheading: e.target.value });
                       else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterSubtitle: e.target.value });
                       else if (selectedSection.id === 'footer') handleOptionChange({ copyrightText: e.target.value });
+                      else if (selectedSection.id === 'header') {
+                        handleOptionChange({ subheading: e.target.value, description: e.target.value, subtitle: e.target.value });
+                        useCmsStore.getState().updateStoreInfo({ description: e.target.value });
+                      }
                       else handleOptionChange({ subheading: e.target.value, description: e.target.value, content: e.target.value });
                     }}
                     placeholder={selectedSection.id === 'brand_philosophy' ? 'Tuliskan filosofi, visi atau kisah brand Anda...' : 'Deskripsi konten bagian ini...'}

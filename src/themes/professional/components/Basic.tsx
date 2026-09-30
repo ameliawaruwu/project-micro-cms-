@@ -23,9 +23,11 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any }> = ({ section
           {showLogo && (
             <a href="/" className="text-2xl font-bold tracking-tight flex items-center gap-3">
               <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center">
-                <span className="text-[#1E40AF] font-bold text-xl leading-none">P</span>
+                <span className="text-[#1E40AF] font-bold text-xl leading-none">
+                  {(sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo.name || 'P')[0]?.toUpperCase()}
+                </span>
               </div>
-              {storeInfo.name}
+              {sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo.name}
             </a>
           )}
           {showNav && (
@@ -106,7 +108,8 @@ export const ProfessionalHero: React.FC<{ sectionOptions?: any }> = ({ sectionOp
 
 export const ProfessionalFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name}. All rights reserved.`;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. All rights reserved.`;
 
   return (
     <footer className="w-full bg-gray-900 text-gray-300 pt-20 pb-10 border-t border-gray-800">
@@ -115,9 +118,11 @@ export const ProfessionalFooter: React.FC<{ sectionOptions?: any }> = ({ section
           <div className="col-span-1 md:col-span-1">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center">
-                <span className="text-white font-bold text-xl leading-none">P</span>
+                <span className="text-white font-bold text-xl leading-none">
+                  {(storeTitle || 'P')[0]?.toUpperCase()}
+                </span>
               </div>
-              {storeInfo.name}
+              {storeTitle}
             </h2>
             <p className="text-sm text-gray-400 leading-relaxed mb-6">
               {storeInfo.description || "Providing enterprise-grade solutions and dedicated support for businesses worldwide."}

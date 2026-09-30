@@ -6,6 +6,7 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo.name || 'RAWSTATE';
 
   return (
     <nav className="w-full px-6 md:px-12 py-4 flex flex-col md:flex-row justify-between items-center bg-zinc-950/90 backdrop-blur-md text-white border-b border-zinc-800/80 sticky top-0 z-50 transition-all">
@@ -13,7 +14,7 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
         {showLogo && (
           <a href="/" className="flex items-center gap-3 font-black tracking-tighter uppercase text-2xl md:text-3xl text-white hover:text-red-500 transition-colors group">
             <span className="px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 text-white text-xs font-black tracking-widest rounded-md group-hover:scale-105 transition-transform shadow-md shadow-red-600/20">RAW</span>
-            <span className="font-extrabold tracking-tight">{storeInfo.name || 'RAWSTATE'}</span>
+            <span className="font-extrabold tracking-tight">{storeTitle}</span>
           </a>
         )}
       </div>
@@ -116,13 +117,14 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
 
 export const BoldFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name} ALL RIGHTS RESERVED`;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo.name || 'RAWSTATE';
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle} ALL RIGHTS RESERVED`;
 
   return (
     <footer className="w-full px-8 py-16 bg-zinc-950 text-white text-center border-t border-zinc-800/80 relative overflow-hidden">
       <div className="max-w-4xl mx-auto space-y-6">
         <a href="/" className="inline-block text-4xl md:text-6xl font-black tracking-tighter uppercase text-white hover:text-red-500 transition-colors">
-          {storeInfo.name || 'RAWSTATE'}
+          {storeTitle}
         </a>
         <div className="flex flex-wrap justify-center gap-8 font-semibold uppercase tracking-wider text-xs text-zinc-400">
           <a href="#" className="hover:text-white transition-colors">Instagram</a>

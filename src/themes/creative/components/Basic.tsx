@@ -5,13 +5,14 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
 
   return (
     <nav className="w-full px-8 py-6 flex justify-between items-center bg-[#E11D48] text-white sticky top-0 z-50">
       <div className="flex-1 flex justify-start">
         {showLogo && (
           <a href="/" className="text-3xl font-extrabold tracking-tighter hover:text-yellow-300 transition-colors transform hover:-rotate-3">
-            {storeInfo.name}
+            {storeTitle}
           </a>
         )}
       </div>
@@ -68,14 +69,15 @@ export const CreativeHero: React.FC<{ sectionOptions?: any }> = ({ sectionOption
 
 export const CreativeFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name}`;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
 
   return (
     <footer className="w-full px-8 py-20 bg-black text-white flex flex-col items-center relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-[#E11D48] via-yellow-300 to-blue-500"></div>
       
       <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-[#E11D48] mb-12 transform hover:scale-110 transition-transform cursor-default">
-        {storeInfo.name}
+        {storeTitle}
       </h2>
       
       <div className="flex gap-8 mb-16 text-sm font-bold uppercase tracking-widest">
