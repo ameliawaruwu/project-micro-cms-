@@ -13,7 +13,8 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
   const showCart = sectionOptions.showCartBadge ?? true;
   const showWhatsApp = sectionOptions.showWhatsAppButton ?? false;
 
-  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const rawTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeTitle = (!rawTitle || rawTitle === 'Green Market Indonesia') ? 'LOOKSEE' : rawTitle;
   const leftSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || "The Journal";
 
   const navItems = (sectionOptions.navMenuItems && sectionOptions.navMenuItems.length > 0)
@@ -179,7 +180,10 @@ export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
 
 export const EditorialFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
-  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const rawTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeTitle = (!rawTitle || rawTitle === 'Green Market Indonesia') ? 'LOOKSEE' : rawTitle;
+  const address = (storeInfo?.address && !storeInfo.address.includes('Lembang')) ? storeInfo.address : 'Grand Indonesia West Mall Lt. 1, Jakarta';
+  const email = (storeInfo?.email && !storeInfo.email.includes('greenmarket')) ? storeInfo.email : 'contact@looksee.id';
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
 
   return (
@@ -188,11 +192,11 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOpt
       <div className="flex flex-col md:flex-row gap-8 md:gap-16 text-center mb-16">
         <div>
           <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-4">Headquarters</p>
-          <p className="text-xs uppercase tracking-widest text-gray-300 max-w-xs">{storeInfo.address}</p>
+          <p className="text-xs uppercase tracking-widest text-gray-300 max-w-xs">{address}</p>
         </div>
         <div>
           <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-4">Inquiries</p>
-          <p className="text-xs uppercase tracking-widest text-gray-300">{storeInfo.email}</p>
+          <p className="text-xs uppercase tracking-widest text-gray-300">{email}</p>
         </div>
       </div>
       <div className="w-full max-w-lg h-[1px] bg-gray-800 mb-8"></div>

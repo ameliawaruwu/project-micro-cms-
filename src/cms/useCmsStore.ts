@@ -100,35 +100,56 @@ const getInitialProducts = () => {
       const saved = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
       if (saved) {
         const parsed = JSON.parse(saved);
-        // If cached data contains old fashion products or old cosmetics, clear cache and return fresh Green Market products
-        const hasFashion = Array.isArray(parsed) && parsed.some(p => 
-          /dress|blouse|cardigan|pants|skirt|fashion|amaryllis|knit/i.test(p.name || '') ||
-          /dress|atasan|outerwear|bawahan/i.test(p.categoryName || '')
-        );
-        const hasCosmetics = Array.isArray(parsed) && parsed.some(p => 
-          /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || '')
-        );
-        if (hasFashion || hasCosmetics) {
-          sessionStorage.removeItem('microcms_cms_products');
-          localStorage.removeItem('microcms_cms_products');
-          return THEME_DATA_MAP['nature'].products;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
         }
-        return parsed;
+      }
+
+      // Check if draft has an active theme
+      const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
+      if (draftStr) {
+        const draft = JSON.parse(draftStr);
+        const themeId = normalizeThemeId(draft.layoutSettings?.activeThemeId || draft.layoutSettings?.themeStyle || 'editorial');
+        if (THEME_DATA_MAP[themeId]?.products) {
+          return THEME_DATA_MAP[themeId].products;
+        }
       }
     } catch (e) {}
   }
-  return THEME_DATA_MAP['nature'].products;
+  return THEME_DATA_MAP['editorial']?.products || THEME_DATA_MAP['minimalist']?.products || [];
+};
+
+const getInitialStoreInfo = (): CmsStoreInfo => {
+  if (typeof window !== 'undefined') {
+    try {
+      const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
+      if (draftStr) {
+        const draft = JSON.parse(draftStr);
+        const themeId = normalizeThemeId(draft.layoutSettings?.activeThemeId || draft.layoutSettings?.themeStyle || 'editorial');
+        const themeData = THEME_DATA_MAP[themeId] || THEME_DATA_MAP['editorial'];
+        return {
+          name: draft.name || themeData.storeInfo.name || 'LOOKSEE',
+          description: draft.description || themeData.storeInfo.description,
+          address: draft.address || themeData.storeInfo.address,
+          email: draft.email || themeData.storeInfo.email,
+          phone: draft.phoneWhatsApp || themeData.storeInfo.phone,
+          socials: themeData.storeInfo.socials,
+        };
+      }
+    } catch (e) {}
+  }
+  return THEME_DATA_MAP['editorial']?.storeInfo || {
+    name: "LOOKSEE",
+    description: "Autumn / Winter Collection. High fashion editorial, tailoring & sophisticated silhouettes.",
+    address: "Jakarta, Indonesia",
+    email: "contact@looksee.id",
+    phone: "+62 812 3456 7890",
+    socials: { instagram: "@looksee.archive" }
+  };
 };
 
 export const useCmsStore = create<CmsState>((set, get) => ({
-  storeInfo: {
-    name: "Green Market Indonesia",
-    description: "Pasar pangan segar dan produk organik langsung dari mitra petani lokal binaan. Sayuran hidroponik, buah segar pilihan, madu murni, dan bahan pangan alami berkualitas tinggi.",
-    address: "Jalan Kebun Hijau No. 12, Lembang, Bandung",
-    email: "halo@greenmarket.id",
-    phone: "+62 812 8888 7777",
-    socials: { instagram: "@greenmarket.id" }
-  },
+  storeInfo: getInitialStoreInfo(),
   products: getInitialProducts(),
   categories: mockCategories,
   news: mockNews,
@@ -249,7 +270,6 @@ export const useCmsStore = create<CmsState>((set, get) => ({
 
   loadThemeData: (themeId: string) => {
     const cleanThemeId = normalizeThemeId(themeId);
-    const isNature = cleanThemeId === 'nature';
 
     // Check if user has saved custom edited products in session
     let activeProds: CmsProduct[] = [];
@@ -258,31 +278,28 @@ export const useCmsStore = create<CmsState>((set, get) => ({
         const saved = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
         if (saved) {
           const parsed = JSON.parse(saved);
-          const hasFashion = Array.isArray(parsed) && parsed.some(p => 
-            /dress|blouse|cardigan|pants|skirt|fashion|amaryllis|knit/i.test(p.name || '')
-          );
-          const hasCosmetics = Array.isArray(parsed) && parsed.some(p => 
-            /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || '')
-          );
-          const hasElectronics = Array.isArray(parsed) && parsed.some(p => 
-            /neon|rtx|geforce|intel|ryzen|gaming|headset|keyboard|monitor/i.test(p.name || '')
-          );
-          if (!hasFashion && !(isNature && (hasCosmetics || hasElectronics))) {
+          if (Array.isArray(parsed) && parsed.length > 0) {
             activeProds = parsed;
           }
         }
       } catch (e) {}
     }
 
-    const themeData = THEME_DATA_MAP[cleanThemeId] || THEME_DATA_MAP['nature'];
+    const themeData = THEME_DATA_MAP[cleanThemeId] || THEME_DATA_MAP['editorial'] || THEME_DATA_MAP['minimalist'];
     if (themeData) {
       const finalProducts = activeProds.length > 0 ? activeProds : themeData.products;
-      set({
-        storeInfo: themeData.storeInfo,
+      set((state) => ({
+        storeInfo: {
+          ...themeData.storeInfo,
+          // Preserve custom name if already modified by merchant and not the old generic ones
+          name: state.storeInfo.name && state.storeInfo.name !== 'Green Market Indonesia' && state.storeInfo.name !== 'Toko Sayur'
+            ? state.storeInfo.name
+            : themeData.storeInfo.name,
+        },
         products: finalProducts,
         categories: themeData.categories,
         navigation: themeData.navigation.sort((a, b) => a.order - b.order),
-      });
+      }));
     }
   },
 }));

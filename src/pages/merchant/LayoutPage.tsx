@@ -150,6 +150,24 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     useCmsStore.getState().setProductsFromMerchant(products || []);
   }, [products]);
 
+  // Sync store info to useCmsStore whenever activeThemeId or store name changes
+  useEffect(() => {
+    if (activeThemeId) {
+      const themeData = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['editorial'];
+      const activeName = (currentStore.name && currentStore.name !== 'Toko Sayur' && currentStore.name !== 'Green Market Indonesia')
+        ? currentStore.name
+        : (activeThemeId === 'editorial' ? 'LOOKSEE' : themeData.storeInfo.name);
+
+      useCmsStore.getState().updateStoreInfo({
+        name: activeName,
+        description: currentStore.description || themeData.storeInfo.description,
+        address: currentStore.address || themeData.storeInfo.address,
+        email: currentStore.email || themeData.storeInfo.email,
+        phone: currentStore.phoneWhatsApp || themeData.storeInfo.phone,
+      });
+    }
+  }, [activeThemeId, currentStore.name]);
+
   const rawDisplayProducts = cmsProducts.length > 0 ? cmsProducts : (products || []);
   const displayProducts = useMemo(() => {
     if (activeThemeId === 'nature') {
@@ -173,15 +191,49 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         }));
       }
     }
+    if (activeThemeId === 'editorial') {
+      const hasVegetables = rawDisplayProducts.some(p => /bayam|kangkung|sayur|wortel|tomat|hidroponik|alpukat|madu/i.test(p.name || ''));
+      if (hasVegetables || rawDisplayProducts.length === 0) {
+        return THEME_DATA_MAP['editorial'].products.map(cp => ({
+          id: cp.id,
+          storeId: currentStore.id,
+          name: cp.name,
+          slug: cp.slug,
+          price: cp.price,
+          originalPrice: cp.originalPrice,
+          imageUrl: cp.image,
+          images: cp.images,
+          category: cp.categoryName,
+          description: cp.description,
+          status: 'Tersedia' as const,
+          stock: cp.stock,
+          isFeatured: cp.isFeatured,
+          weight: 1000,
+        }));
+      }
+    }
     return rawDisplayProducts;
   }, [rawDisplayProducts, activeThemeId, currentStore.id]);
 
   // Multi-page sections map state
   const [pageSectionsMap, setPageSectionsMap] = useState<Record<string, StoreSectionConfig[]>>(() => {
+    const brandName = (currentStore.name && currentStore.name !== 'Toko Sayur' && currentStore.name !== 'Green Market Indonesia')
+      ? currentStore.name
+      : (activeThemeId === 'editorial' ? 'LOOKSEE' : currentStore.name || 'Toko Saya');
+
     const defaultMap: Record<string, StoreSectionConfig[]> = {
       homepage: initialSections,
       catalog: [
-        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { 
+          key: 'header-0', 
+          id: 'header', 
+          title: 'Header & Navbar Toko', 
+          isVisible: true,
+          options: {
+            heading: brandName,
+            storeName: brandName,
+          }
+        },
         { key: 'search_category-0', id: 'search_category', title: 'Bilah Pencarian & Kategori', isVisible: true },
         {
           key: 'product_grid-0',
@@ -189,9 +241,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           title: 'Katalog Produk Lengkap',
           isVisible: true,
           options: {
-            heading: 'Katalog Produk Lengkap',
-            subheading: 'Temukan produk pilihan Anda dengan kualitas terbaik',
-            gridColumns: 4,
+            heading: 'The Catalogue',
+            subheading: 'Curated Collection',
+            gridColumns: 3,
             productCount: 12,
             showPrice: true,
             showCategory: true,
@@ -203,7 +255,16 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           }
         },
         { key: 'store_benefits-0', id: 'store_benefits', title: 'Keunggulan Toko', isVisible: true },
-        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+        { 
+          key: 'footer-0', 
+          id: 'footer', 
+          title: 'Footer Toko', 
+          isVisible: true,
+          options: {
+            heading: brandName,
+            storeName: brandName,
+          }
+        }
       ],
       product: [
         { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
@@ -312,12 +373,48 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       const aliasKey = newPageId === 'catalog' ? 'catalog' : newPageId === 'katalog' ? 'catalog' : newPageId;
       const targetSections = updatedMap[aliasKey] || updatedMap[newPageId] || [
         { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
-        { key: 'product_grid-0', id: 'product_grid', title: 'Katalog Produk', isVisible: true, options: { gridColumns: 4, productCount: 8, showPrice: true, showAddToCart: true } },
+        { key: 'product_grid-0', id: 'product_grid', title: 'Katalog Produk', isVisible: true, options: { gridColumns: 3, productCount: 12, showPrice: true, showAddToCart: true } },
         { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
       ];
-      setSections(targetSections);
-      setSelectedSectionKey(targetSections.length > 0 ? (targetSections[0].key || `${targetSections[0].id}-0`) : null);
-      return updatedMap;
+
+      // Preserve header & footer branding options from homepage
+      const hpHeader = updatedMap['homepage']?.find((s) => s.id === 'header');
+      const hpFooter = updatedMap['homepage']?.find((s) => s.id === 'footer');
+
+      const brandFallback = (currentStore.name && currentStore.name !== 'Toko Sayur' && currentStore.name !== 'Green Market Indonesia')
+        ? currentStore.name
+        : (activeThemeId === 'editorial' ? 'LOOKSEE' : currentStore.name || 'Toko Saya');
+
+      const syncedSections = targetSections.map((sec) => {
+        if (sec.id === 'header') {
+          return {
+            ...sec,
+            options: {
+              ...sec.options,
+              heading: hpHeader?.options?.heading || sec.options?.heading || brandFallback,
+              storeName: hpHeader?.options?.storeName || sec.options?.storeName || brandFallback,
+              headerStyle: hpHeader?.options?.headerStyle || sec.options?.headerStyle,
+              showLogo: hpHeader?.options?.showLogo !== undefined ? hpHeader.options.showLogo : sec.options?.showLogo,
+            },
+          };
+        }
+        if (sec.id === 'footer') {
+          return {
+            ...sec,
+            options: {
+              ...sec.options,
+              heading: hpFooter?.options?.heading || sec.options?.heading || brandFallback,
+              storeName: hpFooter?.options?.storeName || sec.options?.storeName || brandFallback,
+              copyrightText: hpFooter?.options?.copyrightText || sec.options?.copyrightText,
+            },
+          };
+        }
+        return sec;
+      });
+
+      setSections(syncedSections);
+      setSelectedSectionKey(syncedSections.length > 0 ? (syncedSections[0].key || `${syncedSections[0].id}-0`) : null);
+      return { ...updatedMap, [aliasKey]: syncedSections };
     });
     setActivePage(newPageId);
   };
@@ -1032,6 +1129,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       return sec;
     });
     setSections(updated);
+
+    // If updating heading or storeName, sync to storeInfo so all theme templates react immediately
+    if (newOptions.heading || (newOptions as any).storeName) {
+      const newName = newOptions.heading || (newOptions as any).storeName;
+      useCmsStore.getState().updateStoreInfo({ name: newName });
+    }
+
     pushToHistory(updated);
     setActivePreset('custom');
   };

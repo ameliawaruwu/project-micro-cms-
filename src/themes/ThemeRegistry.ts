@@ -1,6 +1,6 @@
 import { MinimalistNavbar, MinimalistHero, MinimalistFeaturedProducts, MinimalistFooter, MinimalistBrandPhilosophy, MinimalistCollectionGrid } from './minimalist';
 import { FuturisticNavbar, FuturisticHero, FuturisticFeaturedProducts, FuturisticFooter, FuturisticTechFeatures, FuturisticProductComparison, FuturisticFloatingShowcase, FuturisticInnovationCta } from './futuristic';
-import { EditorialNavbar, EditorialHero, EditorialLookbook, EditorialCampaign, EditorialAsymmetricShowcase, EditorialBrandStory, EditorialJournal, EditorialFooter } from './editorial';
+import { EditorialNavbar, EditorialHero, EditorialLookbook, EditorialCampaign, EditorialAsymmetricShowcase, EditorialBrandStory, EditorialJournal, EditorialFooter, EditorialProductGrid } from './editorial';
 import { NatureNavbar, NatureHero, NatureIngredientStory, NatureSustainability, NatureFooter, NatureFeaturedProducts, NatureProductCard } from './nature';
 import { LuxuryNavbar, LuxuryHero, LuxurySignatureCollection, LuxuryCraftsmanship, LuxuryPrivateCollection, LuxuryFooter } from './luxury';
 import { BoldNavbar, BoldHero, BoldLatestDrop, BoldCategoryTiles, BoldLookbook, BoldLimitedRelease, BoldCommunityBoard, BoldFooter } from './bold';
@@ -39,8 +39,8 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     AsymmetricShowcase: EditorialAsymmetricShowcase,
     BrandStory: EditorialBrandStory,
     Journal: EditorialJournal,
-    FeaturedProducts: CuteFeaturedProducts,
-    ProductGrid: CuteFeaturedProducts,
+    FeaturedProducts: EditorialProductGrid,
+    ProductGrid: EditorialProductGrid,
   },
   futuristic: {
     Navbar: FuturisticNavbar,
