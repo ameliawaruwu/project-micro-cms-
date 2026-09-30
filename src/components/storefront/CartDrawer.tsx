@@ -30,8 +30,10 @@ import { formatRupiah, generateWhatsAppLink } from '../../utils/formatters';
 import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
 import { storeService } from '../../services/storeService';
+import { shippingService, INDONESIAN_CITIES, ShippingRate } from '../../services/shippingService';
 import { duitkuService } from '../../services/duitkuService';
 import {
+  paymentChannelService,
   PaymentChannel,
   DEFAULT_MIDTRANS_CHANNELS,
   getLocalizedChannelDescription,
@@ -902,7 +904,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <div className="pt-2 space-y-2">
                   <button
                     type="button"
-                    onClick={handleLaunchMidtransSnap}
+                    onClick={handleLaunchDuitkuPayment}
                     disabled={isSubmitting}
                     className="w-full py-2.5 rounded-xl bg-[#002A45] hover:bg-[#001D30] text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                   >
