@@ -505,8 +505,8 @@ function duitkuDevPlugin(): Plugin {
             const pad = (n: number) => String(n).padStart(2, '0');
             const datetime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-            const stringToSign = `${merchantCode}${amount}${datetime}`;
-            const signature = nodeCrypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+            const stringToSign = `${merchantCode}${amount}${datetime}${apiKey}`;
+            const signature = nodeCrypto.createHash('sha256').update(stringToSign).digest('hex');
 
             const apiUrl =
               env === 'production'
@@ -574,8 +574,8 @@ function duitkuDevPlugin(): Plugin {
             const phoneNumber = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
             const paymentMethod = String(data.paymentMethod || '').trim();
 
-            const stringToSign = `${merchantCode}${merchantOrderId}${paymentAmount}`;
-            const signature = nodeCrypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+            const stringToSign = `${merchantCode}${merchantOrderId}${paymentAmount}${apiKey}`;
+            const signature = nodeCrypto.createHash('md5').update(stringToSign).digest('hex');
 
             const appUrl = (process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '');
             const callbackUrl = `${appUrl}/api/duitku/callback`;
@@ -588,26 +588,39 @@ function duitkuDevPlugin(): Plugin {
 
             const payload: any = {
               merchantCode,
-              paymentAmount,
+              paymentAmount: String(paymentAmount),
               paymentMethod,
               merchantOrderId,
               productDetails,
+              additionalParam: '',
+              merchantUserInfo: '',
               customerVaName,
               email,
               phoneNumber,
+              itemDetails: Array.isArray(data.items) && data.items.length > 0
+                ? data.items.map((it: any) => ({
+                    name: String(it.name || 'Item').slice(0, 50),
+                    price: Math.round(Number(it.price || 0)),
+                    quantity: Math.max(1, Math.round(Number(it.quantity || 1))),
+                  }))
+                : [
+                    {
+                      name: productDetails.slice(0, 50),
+                      price: paymentAmount,
+                      quantity: 1,
+                    },
+                  ],
+              customerDetail: {
+                firstName: customerVaName,
+                lastName: '',
+                email,
+                phoneNumber,
+              },
               callbackUrl,
               returnUrl,
               signature,
-              expiryPeriod: 1440,
+              expiryPeriod: 15,
             };
-
-            if (Array.isArray(data.items) && data.items.length > 0) {
-              payload.itemDetails = data.items.map((it: any) => ({
-                name: String(it.name || 'Item').slice(0, 50),
-                price: Math.round(Number(it.price || 0)),
-                quantity: Math.max(1, Math.round(Number(it.quantity || 1))),
-              }));
-            }
 
             const duitkuRes = await fetch(apiUrl, {
               method: 'POST',
@@ -616,7 +629,7 @@ function duitkuDevPlugin(): Plugin {
             });
 
             const duitkuData = await duitkuRes.json();
-            if (!duitkuRes.ok || duitkuData.statusCode !== '00') {
+            if (!duitkuRes.ok || (duitkuData.statusCode && duitkuData.statusCode !== '00')) {
               const errorMsg = duitkuData.statusMessage || duitkuData.Message || 'Gagal memproses transaksi di Duitku';
               res.statusCode = duitkuRes.ok ? 400 : duitkuRes.status;
               res.setHeader('Content-Type', 'application/json');
@@ -665,8 +678,8 @@ function duitkuDevPlugin(): Plugin {
               return;
             }
 
-            const stringToSign = `${merchantCode}${merchantOrderId}`;
-            const signature = nodeCrypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+            const stringToSign = `${merchantCode}${merchantOrderId}${apiKey}`;
+            const signature = nodeCrypto.createHash('md5').update(stringToSign).digest('hex');
 
             const apiUrl =
               env === 'production'
@@ -675,12 +688,12 @@ function duitkuDevPlugin(): Plugin {
 
             const statusRes = await fetch(apiUrl, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                merchantcode: merchantCode,
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({
+                merchantCode,
                 merchantOrderId,
                 signature,
-              }),
+              }).toString(),
             });
 
             const statusData = await statusRes.json();
@@ -710,8 +723,8 @@ function duitkuDevPlugin(): Plugin {
           const pad = (n: number) => String(n).padStart(2, '0');
           const datetime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-          const stringToSign = `${merchantCode}10000${datetime}`;
-          const signature = nodeCrypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+          const stringToSign = `${merchantCode}10000${datetime}${apiKey}`;
+          const signature = nodeCrypto.createHash('sha256').update(stringToSign).digest('hex');
 
           const apiUrl =
             env === 'production'
@@ -728,6 +741,7 @@ function duitkuDevPlugin(): Plugin {
               signature,
             }),
           });
+
 
           const pingData = await pingRes.json();
           if (pingRes.ok && pingData.responseCode === '00') {

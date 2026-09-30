@@ -433,8 +433,9 @@ app.post('/api/duitku/payment-methods', async (req, res) => {
     const pad = (n: number) => String(n).padStart(2, '0');
     const datetime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-    const stringToSign = `${merchantCode}${amount}${datetime}`;
-    const signature = crypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+    // Postman: CryptoJS.SHA256(merchantcode + paymentAmount + datetime + apiKey)
+    const hashText = `${merchantCode}${amount}${datetime}${apiKey}`;
+    const signature = crypto.createHash('sha256').update(hashText).digest('hex');
 
     const apiUrl =
       env === 'production'
@@ -461,7 +462,7 @@ app.post('/api/duitku/payment-methods', async (req, res) => {
   }
 });
 
-// 4b.2 Create Invoice / Inquiry Duitku
+// 4b.2 Create Invoice / Inquiry Duitku (v2/inquiry)
 app.post('/api/duitku/create-invoice', async (req, res) => {
   try {
     const data = req.body || {};
@@ -487,9 +488,9 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
     const phoneNumber = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
     const paymentMethod = String(data.paymentMethod || '').trim();
 
-    // Signature v2 inquiry: HMAC_SHA256(merchantCode + merchantOrderId + paymentAmount, apiKey)
-    const stringToSign = `${merchantCode}${merchantOrderId}${paymentAmount}`;
-    const signature = crypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+    // Postman: CryptoJS.MD5(merchantCode + merchantOrderId + paymentAmount + apiKey)
+    const hashText = `${merchantCode}${merchantOrderId}${paymentAmount}${apiKey}`;
+    const signature = crypto.createHash('md5').update(hashText).digest('hex');
 
     const appUrl = (process.env.APP_URL || 'https://kroomify.kroombox.com').replace(/\/$/, '');
     const callbackUrl = `${appUrl}/api/duitku/callback`;
@@ -502,26 +503,39 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
 
     const payload: any = {
       merchantCode,
-      paymentAmount,
+      paymentAmount: String(paymentAmount),
       paymentMethod,
       merchantOrderId,
       productDetails,
+      additionalParam: '',
+      merchantUserInfo: '',
       customerVaName,
       email,
       phoneNumber,
+      itemDetails: Array.isArray(data.items) && data.items.length > 0
+        ? data.items.map((it: any) => ({
+            name: String(it.name || 'Item').slice(0, 50),
+            price: Math.round(Number(it.price || 0)),
+            quantity: Math.max(1, Math.round(Number(it.quantity || 1))),
+          }))
+        : [
+            {
+              name: productDetails.slice(0, 50),
+              price: paymentAmount,
+              quantity: 1,
+            },
+          ],
+      customerDetail: {
+        firstName: customerVaName,
+        lastName: '',
+        email,
+        phoneNumber,
+      },
       callbackUrl,
       returnUrl,
       signature,
-      expiryPeriod: 1440,
+      expiryPeriod: 15,
     };
-
-    if (Array.isArray(data.items) && data.items.length > 0) {
-      payload.itemDetails = data.items.map((it: any) => ({
-        name: String(it.name || 'Item').slice(0, 50),
-        price: Math.round(Number(it.price || 0)),
-        quantity: Math.max(1, Math.round(Number(it.quantity || 1))),
-      }));
-    }
 
     const duitkuRes = await fetch(apiUrl, {
       method: 'POST',
@@ -532,7 +546,7 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
     });
 
     const duitkuData = await duitkuRes.json();
-    if (!duitkuRes.ok || duitkuData.statusCode !== '00') {
+    if (!duitkuRes.ok || (duitkuData.statusCode && duitkuData.statusCode !== '00')) {
       const errorMsg = duitkuData.statusMessage || duitkuData.Message || 'Gagal memproses transaksi di Duitku';
       return res.status(duitkuRes.ok ? 400 : duitkuRes.status).json({
         error: true,
@@ -567,8 +581,9 @@ app.post('/api/duitku/check-status', async (req, res) => {
       return res.status(500).json({ error: true, message: 'DUITKU_MERCHANT_CODE belum dikonfigurasi' });
     }
 
-    const stringToSign = `${merchantCode}${merchantOrderId}`;
-    const signature = crypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+    // Postman: CryptoJS.MD5(merchantCode + merchantOrderId + apiKey)
+    const hashText = `${merchantCode}${merchantOrderId}${apiKey}`;
+    const signature = crypto.createHash('md5').update(hashText).digest('hex');
 
     const apiUrl =
       env === 'production'
@@ -577,12 +592,12 @@ app.post('/api/duitku/check-status', async (req, res) => {
 
     const statusRes = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        merchantcode: merchantCode,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        merchantCode,
         merchantOrderId,
         signature,
-      }),
+      }).toString(),
     });
 
     const data = await statusRes.json();
@@ -607,8 +622,9 @@ app.post('/api/duitku/test-connection', async (req, res) => {
     const pad = (n: number) => String(n).padStart(2, '0');
     const datetime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-    const stringToSign = `${merchantCode}10000${datetime}`;
-    const signature = crypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+    // Postman: CryptoJS.SHA256(merchantcode + paymentAmount + datetime + apiKey)
+    const hashText = `${merchantCode}10000${datetime}${apiKey}`;
+    const signature = crypto.createHash('sha256').update(hashText).digest('hex');
 
     const apiUrl =
       env === 'production'
@@ -627,7 +643,7 @@ app.post('/api/duitku/test-connection', async (req, res) => {
     });
 
     const data = await pingRes.json();
-    if (pingRes.ok && data.responseCode === '00') {
+    if (pingRes.ok && (data.responseCode === '00' || Array.isArray(data.paymentFee))) {
       return res.status(200).json({
         success: true,
         message: `Koneksi Duitku ${env.toUpperCase()} BERHASIL! Saluran pembayaran aktif terdeteksi.`,
@@ -656,12 +672,20 @@ app.post('/api/duitku/callback', async (req, res) => {
       return res.status(400).send('Bad Parameter');
     }
 
-    const stringToSign = `${receivedCode || merchantCode}${amount}${merchantOrderId}`;
-    const calcSignature = crypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+    const code = receivedCode || merchantCode;
+    // Cek kalkulasi signature (mendukung format MD5 maupun SHA256)
+    const md5Signature = crypto.createHash('md5').update(`${code}${amount}${merchantOrderId}${apiKey}`).digest('hex');
+    const sha256Signature = crypto.createHash('sha256').update(`${code}${amount}${merchantOrderId}${apiKey}`).digest('hex');
+    const hmacSignature = crypto.createHmac('sha256', apiKey).update(`${code}${amount}${merchantOrderId}`).digest('hex');
 
-    if (signature.toLowerCase() !== calcSignature.toLowerCase()) {
+    const isValid =
+      signature.toLowerCase() === md5Signature.toLowerCase() ||
+      signature.toLowerCase() === sha256Signature.toLowerCase() ||
+      signature.toLowerCase() === hmacSignature.toLowerCase();
+
+    if (!isValid) {
       console.warn(`[Duitku Callback] Invalid Signature for order ${merchantOrderId}`);
-      return res.status(400).send('Bad Signature');
+      return res.status(400).send('Wrong Signature');
     }
 
     console.log(`[Duitku Callback] Pembayaran Order ${merchantOrderId} status: ${resultCode} (Ref: ${reference})`);
@@ -689,13 +713,14 @@ app.post('/api/duitku/callback', async (req, res) => {
       }
     }
 
-    // Duitku mewajibkan HTTP 200 OK
-    return res.status(200).send('OK');
+    // Duitku mewajibkan respon HTTP 200 dengan text "Success" atau "OK"
+    return res.status(200).send('Success');
   } catch (err: any) {
     console.error('[Duitku Callback Error]', err);
     return res.status(500).send(err?.message || 'Internal Error');
   }
 });
+
 
 // 5. Endpoint Auto-Deploy Toko (Packaging Webroot, Nginx Vhost & Cloudflare Tunnel Ingress)
 
