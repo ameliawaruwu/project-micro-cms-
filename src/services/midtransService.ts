@@ -1,5 +1,6 @@
-// Service to communicate with real Midtrans Snap API and Popup
 import { supabase } from './supabaseClient';
+import { duitkuService } from './duitkuService';
+
 
 export interface SnapTransactionParams {
   orderId: string;
@@ -431,8 +432,53 @@ class MidtransService {
   ): Promise<void> {
     const isSandbox = this.getEnvironment() === 'sandbox';
 
+    // Duitku Migration: Delegasikan eksekusi pembayaran ke Duitku Payment Gateway
+    try {
+      await duitkuService.payWithDuitku(
+        {
+          orderId: params.orderId,
+          grossAmount: params.grossAmount,
+          customerName: params.customerName,
+          customerPhone: params.customerPhone,
+          customerEmail: params.customerEmail,
+          items: params.items,
+        },
+        {
+          onSuccess: (res) =>
+            callbacks.onSuccess({
+              status_code: res.resultCode,
+              status_message: res.statusMessage || 'SUCCESS',
+              order_id: res.merchantOrderId,
+              transaction_id: res.reference,
+              transaction_status: res.resultCode === '00' ? 'settlement' : 'pending',
+            }),
+          onPending: (res) =>
+            callbacks.onPending?.({
+              status_code: res.resultCode,
+              status_message: res.statusMessage || 'PENDING',
+              order_id: res.merchantOrderId,
+              transaction_id: res.reference,
+              transaction_status: 'pending',
+            }),
+          onError: (res) =>
+            callbacks.onError?.({
+              status_code: res.resultCode,
+              status_message: res.statusMessage || 'ERROR',
+              order_id: res.merchantOrderId,
+              transaction_id: res.reference,
+              transaction_status: 'failed',
+            }),
+          onClose: callbacks.onClose,
+        }
+      );
+      return;
+    } catch (duitkuErr) {
+      console.warn('Duitku gateway notice, executing fallback pipeline:', duitkuErr);
+    }
+
     try {
       // 1. Ambil Snap Token asli dari Midtrans API melalui backend
+
       const { token, redirectUrl } = await this.createSnapToken(params);
 
       if (token) {
@@ -507,6 +553,21 @@ class MidtransService {
           payment_type: 'simulator',
         },
       };
+    }
+
+    // 1. Cek status ke Duitku Payment Gateway
+    try {
+      const duitkuRes = await duitkuService.checkTransactionStatus(orderId);
+      if (duitkuRes.isPaid) {
+        return {
+          success: true,
+          isPaid: true,
+          transactionStatus: 'settlement',
+          data: duitkuRes,
+        };
+      }
+    } catch {
+      // Lanjutkan ke pemeriksaan lainnya
     }
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kaveesimezonkgvhcbln.supabase.co';

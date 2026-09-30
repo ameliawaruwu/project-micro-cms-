@@ -105,8 +105,25 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     showToast(`No. Resi ${resi} disalin ke clipboard`);
   };
 
-  const handleTestApi = async (service: 'midtrans' | 'biteship' | 'wa') => {
+  const handleTestApi = async (service: 'midtrans' | 'duitku' | 'biteship' | 'wa') => {
     setTestingService(service);
+    if (service === 'duitku') {
+      try {
+        const res = await fetch('/api/duitku/test-connection', { method: 'POST' });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          showToast(`✅ ${data.message} (${data.channelCount} saluran pembayaran aktif)`);
+        } else {
+          showToast(`❌ ${data.message || 'Kredensial Duitku ditolak atau belum diatur'}`);
+        }
+      } catch (err: any) {
+        showToast(`❌ Gagal menghubungi endpoint Duitku: ${err?.message || err}`);
+      } finally {
+        setTestingService(null);
+      }
+      return;
+    }
+
     if (service === 'midtrans') {
       try {
         const res = await fetch('/api/midtrans/test-ping');

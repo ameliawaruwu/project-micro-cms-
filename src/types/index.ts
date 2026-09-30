@@ -595,11 +595,18 @@ export interface AdminPlatformStats {
 }
 
 export interface PlatformSettings {
-  // Midtrans Payment Gateway
+  // Midtrans Payment Gateway (Legacy)
   midtransEnvironment: 'sandbox' | 'production';
   midtransMerchantId: string;
   midtransClientKey: string;
   midtransServerKey: string;
+
+
+  // Duitku Payment Gateway
+  duitkuEnvironment?: 'sandbox' | 'production';
+  duitkuMerchantCode?: string;
+  duitkuApiKey?: string;
+
 
   // Biteship / RajaOngkir Courier API
   biteshipEnabled: boolean;

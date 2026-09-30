@@ -356,6 +356,9 @@ class AdminService {
       midtransMerchantId: (import.meta as any).env?.VITE_MIDTRANS_MERCHANT_ID || '',
       midtransClientKey: (import.meta as any).env?.VITE_MIDTRANS_CLIENT_KEY || '',
       midtransServerKey: (import.meta as any).env?.MIDTRANS_SERVER_KEY || '',
+      duitkuEnvironment: ((import.meta as any).env?.VITE_DUITKU_ENV as any) || 'sandbox',
+      duitkuMerchantCode: (import.meta as any).env?.VITE_DUITKU_MERCHANT_CODE || (import.meta as any).env?.DUITKU_MERCHANT_CODE || '',
+      duitkuApiKey: (import.meta as any).env?.DUITKU_API_KEY || '',
       biteshipEnabled: true,
       biteshipApiKey: (import.meta as any).env?.VITE_BITESHIP_API_KEY || (import.meta as any).env?.BITESHIP_API_KEY || '',
       biteshipOriginCity: 'Jakarta Selatan',
@@ -396,6 +399,9 @@ class AdminService {
         midtransMerchantId: data.midtrans_merchant_id || current.midtransMerchantId,
         midtransClientKey: data.midtrans_client_key || current.midtransClientKey,
         midtransServerKey: data.midtrans_server_key || current.midtransServerKey,
+        duitkuEnvironment: (data.duitku_environment as any) || current.duitkuEnvironment,
+        duitkuMerchantCode: data.duitku_merchant_code || current.duitkuMerchantCode,
+        duitkuApiKey: data.duitku_api_key || current.duitkuApiKey,
         biteshipEnabled: data.biteship_enabled ?? current.biteshipEnabled,
         biteshipApiKey: current.biteshipApiKey,
         biteshipOriginCity: data.biteship_origin_city || current.biteshipOriginCity,
@@ -421,28 +427,33 @@ class AdminService {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 
     try {
+      const updatePayload: any = {
+        midtrans_environment: settings.midtransEnvironment,
+        midtrans_merchant_id: settings.midtransMerchantId,
+        midtrans_client_key: settings.midtransClientKey,
+        midtrans_server_key: settings.midtransServerKey,
+        duitku_environment: settings.duitkuEnvironment,
+        duitku_merchant_code: settings.duitkuMerchantCode,
+        duitku_api_key: settings.duitkuApiKey,
+        biteship_enabled: settings.biteshipEnabled,
+        biteship_origin_city: settings.biteshipOriginCity,
+        wa_gateway_enabled: settings.waGatewayEnabled,
+        wa_sender_phone: settings.waSenderPhone,
+        platform_fee_percent: settings.platformFeePercent,
+        payout_min_amount: settings.payoutMinAmount,
+        payout_bank_fee: settings.payoutBankFee,
+        auto_approve_payout_under: settings.autoApprovePayoutUnder,
+        maintenance_mode: settings.maintenanceMode,
+        updated_at: new Date().toISOString(),
+      };
       await supabase
         .from('platform_settings')
-        .update({
-          midtrans_environment: settings.midtransEnvironment,
-          midtrans_merchant_id: settings.midtransMerchantId,
-          midtrans_client_key: settings.midtransClientKey,
-          midtrans_server_key: settings.midtransServerKey,
-          biteship_enabled: settings.biteshipEnabled,
-          biteship_origin_city: settings.biteshipOriginCity,
-          wa_gateway_enabled: settings.waGatewayEnabled,
-          wa_sender_phone: settings.waSenderPhone,
-          platform_fee_percent: settings.platformFeePercent,
-          payout_min_amount: settings.payoutMinAmount,
-          payout_bank_fee: settings.payoutBankFee,
-          auto_approve_payout_under: settings.autoApprovePayoutUnder,
-          maintenance_mode: settings.maintenanceMode,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', 'SET001');
     } catch (err) {
       console.warn('Failed to sync platform settings to Supabase:', err);
     }
+
   }
 
   getPlatformStats(stores?: Store[], withdrawals?: WithdrawalRequest[], orders?: Order[]): AdminPlatformStats {

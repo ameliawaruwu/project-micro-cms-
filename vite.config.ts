@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, Plugin } from 'vite';
 import dotenv from 'dotenv';
+import nodeCrypto from 'crypto';
+
 
 dotenv.config();
 
@@ -428,7 +430,336 @@ function midtransDevPlugin(): Plugin {
   };
 }
 
+async function getDevDuitkuConfig(): Promise<{ merchantCode: string; apiKey: string; env: 'sandbox' | 'production' }> {
+  let merchantCode = process.env.DUITKU_MERCHANT_CODE || '';
+  let apiKey = process.env.DUITKU_API_KEY || '';
+  let env: 'sandbox' | 'production' = (process.env.DUITKU_ENV as any) === 'production' ? 'production' : 'sandbox';
+
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const resp = await fetch(`${supabaseUrl}/rest/v1/platform_settings?select=*&limit=1`, {
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
+      });
+      if (resp.ok) {
+        const rows = await resp.json();
+        if (Array.isArray(rows) && rows[0]) {
+          const dbRow = rows[0];
+          if (dbRow.duitku_merchant_code && dbRow.duitku_merchant_code.trim()) {
+            merchantCode = dbRow.duitku_merchant_code.trim();
+          }
+          if (dbRow.duitku_api_key && dbRow.duitku_api_key.trim()) {
+            apiKey = dbRow.duitku_api_key.trim();
+          }
+          if (dbRow.duitku_environment && dbRow.duitku_environment.trim()) {
+            env = dbRow.duitku_environment.trim().toLowerCase() === 'production' ? 'production' : 'sandbox';
+          }
+        }
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  merchantCode = merchantCode.replace(/^["']|["']$/g, '').trim();
+  apiKey = apiKey.replace(/^["']|["']$/g, '').trim();
+
+  return { merchantCode, apiKey, env };
+}
+
+function duitkuDevPlugin(): Plugin {
+  return {
+    name: 'duitku-dev-server',
+    configureServer(server) {
+      // 1. Get Payment Methods
+      server.middlewares.use('/api/duitku/payment-methods', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+
+        let body = '';
+        req.on('data', (chunk) => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const { merchantCode, apiKey, env } = await getDevDuitkuConfig();
+            if (!merchantCode || !apiKey) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: 'DUITKU_MERCHANT_CODE atau DUITKU_API_KEY belum disetel' }));
+              return;
+            }
+
+            const rawAmount = Number(data.amount || 10000);
+            const amount = isNaN(rawAmount) || rawAmount <= 0 ? 10000 : Math.round(rawAmount);
+
+            const now = new Date();
+            const pad = (n: number) => String(n).padStart(2, '0');
+            const datetime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+            const stringToSign = `${merchantCode}${amount}${datetime}`;
+            const signature = nodeCrypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+
+            const apiUrl =
+              env === 'production'
+                ? 'https://passport.duitku.com/webapi/api/merchant/paymentmethod/getpaymentmethod'
+                : 'https://sandbox.duitku.com/webapi/api/merchant/paymentmethod/getpaymentmethod';
+
+            const resp = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                merchantcode: merchantCode,
+                amount: String(amount),
+                datetime,
+                signature,
+              }),
+            });
+
+            const resData = await resp.json();
+            res.statusCode = resp.status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(resData));
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: true, message: err?.message || 'Gagal mengambil metode pembayaran Duitku' }));
+          }
+        });
+      });
+
+      // 2. Create Invoice / Inquiry
+      server.middlewares.use('/api/duitku/create-invoice', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+
+        let body = '';
+        req.on('data', (chunk) => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const { merchantCode, apiKey, env } = await getDevDuitkuConfig();
+            if (!merchantCode || !apiKey) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: 'DUITKU_MERCHANT_CODE atau DUITKU_API_KEY belum dikonfigurasi di .env atau Pengaturan Admin.' }));
+              return;
+            }
+
+            const rawAmount = Number(data.grossAmount || data.paymentAmount);
+            if (isNaN(rawAmount) || rawAmount <= 0) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: 'Nominal transaksi tidak valid' }));
+              return;
+            }
+
+            const paymentAmount = Math.round(rawAmount);
+            const merchantOrderId = String(data.orderId || `ORDER-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 50);
+            const productDetails = String(data.productDetails || 'Pembayaran Toko').slice(0, 255);
+            const customerVaName = String(data.customerName || 'Pelanggan').slice(0, 20);
+            const email = String(data.customerEmail || 'customer@example.com').trim().slice(0, 100);
+            const phoneNumber = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
+            const paymentMethod = String(data.paymentMethod || '').trim();
+
+            const stringToSign = `${merchantCode}${merchantOrderId}${paymentAmount}`;
+            const signature = nodeCrypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+
+            const appUrl = (process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+            const callbackUrl = `${appUrl}/api/duitku/callback`;
+            const returnUrl = `${appUrl}/`;
+
+            const apiUrl =
+              env === 'production'
+                ? 'https://passport.duitku.com/webapi/api/merchant/v2/inquiry'
+                : 'https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry';
+
+            const payload: any = {
+              merchantCode,
+              paymentAmount,
+              paymentMethod,
+              merchantOrderId,
+              productDetails,
+              customerVaName,
+              email,
+              phoneNumber,
+              callbackUrl,
+              returnUrl,
+              signature,
+              expiryPeriod: 1440,
+            };
+
+            if (Array.isArray(data.items) && data.items.length > 0) {
+              payload.itemDetails = data.items.map((it: any) => ({
+                name: String(it.name || 'Item').slice(0, 50),
+                price: Math.round(Number(it.price || 0)),
+                quantity: Math.max(1, Math.round(Number(it.quantity || 1))),
+              }));
+            }
+
+            const duitkuRes = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+
+            const duitkuData = await duitkuRes.json();
+            if (!duitkuRes.ok || duitkuData.statusCode !== '00') {
+              const errorMsg = duitkuData.statusMessage || duitkuData.Message || 'Gagal memproses transaksi di Duitku';
+              res.statusCode = duitkuRes.ok ? 400 : duitkuRes.status;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: errorMsg, details: duitkuData }));
+              return;
+            }
+
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              success: true,
+              reference: duitkuData.reference,
+              paymentUrl: duitkuData.paymentUrl,
+              vaNumber: duitkuData.vaNumber,
+              statusCode: duitkuData.statusCode,
+              statusMessage: duitkuData.statusMessage,
+            }));
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: true, message: err?.message || 'Internal Server Error' }));
+          }
+        });
+      });
+
+      // 3. Check Status
+      server.middlewares.use('/api/duitku/check-status', async (req, res) => {
+        let body = '';
+        req.on('data', (chunk) => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const merchantOrderId = data.merchantOrderId || '';
+            if (!merchantOrderId) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: 'Parameter merchantOrderId wajib diisi' }));
+              return;
+            }
+
+            const { merchantCode, apiKey, env } = await getDevDuitkuConfig();
+            if (!merchantCode || !apiKey) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: 'DUITKU_MERCHANT_CODE belum disetel' }));
+              return;
+            }
+
+            const stringToSign = `${merchantCode}${merchantOrderId}`;
+            const signature = nodeCrypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+
+            const apiUrl =
+              env === 'production'
+                ? 'https://passport.duitku.com/webapi/api/merchant/transactionStatus'
+                : 'https://sandbox.duitku.com/webapi/api/merchant/transactionStatus';
+
+            const statusRes = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                merchantcode: merchantCode,
+                merchantOrderId,
+                signature,
+              }),
+            });
+
+            const statusData = await statusRes.json();
+            res.statusCode = statusRes.status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(statusData));
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: true, message: err?.message || 'Gagal cek status Duitku' }));
+          }
+        });
+      });
+
+      // 4. Test Connection
+      server.middlewares.use('/api/duitku/test-connection', async (_req, res) => {
+        try {
+          const { merchantCode, apiKey, env } = await getDevDuitkuConfig();
+          if (!merchantCode || !apiKey) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, message: 'Kredensial Duitku belum lengkap di .env atau database.' }));
+            return;
+          }
+
+          const now = new Date();
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const datetime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+          const stringToSign = `${merchantCode}10000${datetime}`;
+          const signature = nodeCrypto.createHmac('sha256', apiKey).update(stringToSign).digest('hex');
+
+          const apiUrl =
+            env === 'production'
+              ? 'https://passport.duitku.com/webapi/api/merchant/paymentmethod/getpaymentmethod'
+              : 'https://sandbox.duitku.com/webapi/api/merchant/paymentmethod/getpaymentmethod';
+
+          const pingRes = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              merchantcode: merchantCode,
+              amount: '10000',
+              datetime,
+              signature,
+            }),
+          });
+
+          const pingData = await pingRes.json();
+          if (pingRes.ok && pingData.responseCode === '00') {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              success: true,
+              message: `Koneksi Duitku ${env.toUpperCase()} BERHASIL! Saluran pembayaran aktif terdeteksi.`,
+              env,
+              channelCount: Array.isArray(pingData.paymentFee) ? pingData.paymentFee.length : 0,
+            }));
+          } else {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              success: false,
+              message: pingData.responseMessage || pingData.Message || 'Respon ditolak oleh Duitku. Periksa Merchant Code dan API Key.',
+              details: pingData,
+            }));
+          }
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: false, message: err?.message || 'Gagal menghubungi server Duitku' }));
+        }
+      });
+    },
+  };
+}
+
 // Backend Proxy untuk Biteship API (Menyembunyikan BITESHIP_API_KEY dari browser client)
+
 function shippingDevPlugin(): Plugin {
   return {
     name: 'shipping-dev-server',
@@ -849,6 +1180,7 @@ export default defineConfig(() => {
     plugins: [
       react(),
       tailwindcss(),
+      duitkuDevPlugin(),
       midtransDevPlugin(),
       shippingDevPlugin(),
       emailDevPlugin(),
