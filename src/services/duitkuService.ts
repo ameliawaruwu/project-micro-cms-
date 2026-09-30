@@ -111,7 +111,7 @@ class DuitkuService {
       };
 
       script.onerror = () => {
-        console.warn('Gagal memuat Duitku POP script dari CDN, akan menggunakan fallback modal.');
+        console.warn('Gagal memuat Duitku POP script dari CDN, akan menggunakan direct paymentUrl.');
         resolve();
       };
 
@@ -202,6 +202,7 @@ class DuitkuService {
 
       const invoice = await this.createInvoice(params);
 
+      // 1. Prioritaskan Duitku POP resmi (window.checkout.process)
       if (window.checkout && typeof window.checkout.process === 'function') {
         window.checkout.process(invoice.reference, {
           defaultLanguage: 'id',
@@ -221,23 +222,22 @@ class DuitkuService {
         return;
       }
 
-      // If Duitku POP object is not attached, open direct paymentUrl in popup window
+      // 2. Jika POP script diblokir browser, arahkan ke paymentUrl resmi Duitku
       if (invoice.paymentUrl) {
-        const popup = window.open(
-          invoice.paymentUrl,
-          'DuitkuPayment',
-          'width=480,height=720,scrollbars=yes,status=yes'
-        );
-        if (popup) {
-          return;
-        }
+        window.location.href = invoice.paymentUrl;
+        return;
       }
 
-      // Fallback to simulator if pop is unavailable
-      this.renderSandboxSimulator(params, callbacks);
+      throw new Error('Duitku tidak mengembalikan referensi atau paymentUrl yang valid.');
     } catch (err: any) {
-      console.warn('Duitku API tidak dapat merespons live, mengaktifkan Duitku Sandbox Simulator:', err);
-      this.renderSandboxSimulator(params, callbacks, err.message);
+      console.error('Duitku Official Error:', err);
+      callbacks.onError?.({
+        resultCode: '02',
+        merchantOrderId: params.orderId,
+        reference: '',
+        statusMessage: err.message || 'Gagal memproses pembayaran Duitku resmi',
+      });
+      alert(`[Duitku Official Gateway]\n${err.message || 'Gagal memproses transaksi.'}\n\nPastikan Merchant Code dan API Key Duitku yang baru sudah diisi.`);
     }
   }
 
