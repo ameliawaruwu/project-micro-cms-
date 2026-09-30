@@ -338,7 +338,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <h3 className="font-bold text-sm text-[#241A1A] leading-tight">
                 {step === 'cart' && 'Keranjang Belanja'}
                 {step === 'checkout' && 'Pengiriman & Pembayaran'}
-                {step === 'payment' && 'Sesi Pembayaran Midtrans'}
+                {step === 'payment' && 'Sesi Pembayaran Duitku'}
                 {step === 'success' && 'Pesanan Berhasil'}
               </h3>
               <p className="text-[11px] text-[#706866]">
@@ -594,7 +594,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <div>
                     <h4 className="text-xs font-bold text-[#241A1A] uppercase tracking-wider flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-[#66000E]" />
-                      <span>{isFreePlan ? 'Metode Pembayaran (Manual)' : 'Metode Pembayaran (Midtrans)'}</span>
+                      <span>{isFreePlan ? 'Metode Pembayaran (Manual)' : 'Metode Pembayaran (Duitku)'}</span>
                     </h4>
                     <p className="text-[10px] text-[#706866]">
                       {isFreePlan ? 'Paket Free: Pembayaran via Transfer Bank, WA, atau COD' : `${activeChannels.length} metode pembayaran otomatis aktif`}
@@ -797,12 +797,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
               </div>
 
-              {/* Midtrans Payment Container */}
+              {/* Duitku Payment Container */}
               <div className="bg-white rounded-2xl p-4 border border-[#E5E0DD] shadow-2xs text-center space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-[#FAF7F7] text-[11px] text-[#706866]">
                   <span className="flex items-center gap-1.5 font-bold text-[#241A1A]">
                     <ShieldCheck className="w-4 h-4 text-[#66000E]" />
-                    <span>Midtrans Payment Gateway</span>
+                    <span>Duitku Payment Gateway</span>
                   </span>
                   <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-100">
                     Otomatis Dicek
@@ -845,14 +845,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <div className="w-44 h-44 mx-auto bg-white p-2.5 rounded-2xl border-2 border-[#E5E0DD] shadow-xs flex items-center justify-center">
                       <img
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(
-                          `MIDTRANS_QRIS_${selectedChannel.id}_${Date.now()}_${grandTotal}`
+                          `DUITKU_QRIS_${selectedChannel.id}_${Date.now()}_${grandTotal}`
                         )}&color=66000E`}
-                        alt="QRIS Midtrans"
+                        alt="QRIS Duitku"
                         className="w-full h-full object-contain"
                       />
                     </div>
                     <p className="text-[10px] text-[#A8A09E]">
-                      NMID: ID10200392019 • PT MIDTRANS INDONESIA (Toko: {store.name})
+                      NMID: ID10200392019 • PT DUITKU TRANS INDONESIA (Toko: {store.name})
                     </p>
                   </>
                 ) : selectedChannel.category === 'virtual_account' ? (
@@ -894,7 +894,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       Petunjuk Pembayaran {selectedChannel.name}
                     </div>
                     <p className="text-[11px] text-[#706866] leading-relaxed">
-                      Lanjutkan pembayaran pada jendela popup resmi Midtrans Snap. Sistem akan memverifikasi transaksi secara real-time dan memperbarui status pesanan Anda.
+                      Lanjutkan pembayaran pada jendela popup resmi Duitku POP. Sistem akan memverifikasi transaksi secara real-time dan memperbarui status pesanan Anda.
                     </p>
                   </div>
                 )}
@@ -908,7 +908,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     className="w-full py-2.5 rounded-xl bg-[#002A45] hover:bg-[#001D30] text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Buka Jendela Midtrans Snap Popup</span>
+                    <span>Buka Jendela Duitku POP</span>
                   </button>
 
                   <button
@@ -945,7 +945,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <div>
                 <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold mb-1">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Lunas Otomatis via Midtrans</span>
+                  <span>Lunas Otomatis via Duitku</span>
                 </div>
                 <h4 className="font-extrabold text-lg text-[#241A1A]">Pesanan Berhasil Dibuat!</h4>
                 <p className="text-xs text-[#706866] mt-1">

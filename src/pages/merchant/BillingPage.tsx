@@ -15,7 +15,7 @@ import {
 import confetti from 'canvas-confetti';
 import { Store as StoreType, BillingPlan, BillingSubscription } from '../../types';
 import { storeService } from '../../services/storeService';
-import { midtransService } from '../../services/midtransService';
+import { duitkuService } from '../../services/duitkuService';
 import { billingPlanService } from '../../services/billingPlanService';
 import { formatRupiah } from '../../utils/formatters';
 import { BillingInvoiceModal } from '../../components/billing/BillingInvoiceModal';
@@ -45,7 +45,7 @@ const INITIAL_INVOICES: InvoiceItem[] = [
     cycle: 'Bulanan',
     date: '11 Sep 2026',
     amount: 99000,
-    status: 'Lunas (Midtrans)',
+    status: 'Lunas (Duitku)',
   },
 ];
 
@@ -94,7 +94,7 @@ const PLAN_FEATURE_MAP: Record<string, string> = {
   'Watermark Kroomify di footer toko': 'Kroomify watermark in store footer',
   'Watermark resmi Kroomify di footer': 'Official Kroomify watermark in store footer',
   'Manual shipping & payment': 'Manual shipping & payment',
-  'Tanpa Checkout Otomatis Midtrans (Manual/WA saja)': 'No automated Midtrans checkout (Manual/WA only)',
+  'Tanpa Checkout Otomatis Duitku (Manual/WA saja)': 'No automated Duitku checkout (Manual/WA only)',
   'Tanpa Ekspedisi Kurir Otomatis Biteship': 'No automated Biteship couriers',
   'Tanpa Publikasi/Deploy Toko Online & Domain': 'No online store deployment & custom domain',
 
@@ -106,8 +106,8 @@ const PLAN_FEATURE_MAP: Record<string, string> = {
   'Katalog produk hingga 100 item': 'Product catalog up to 100 items',
   'Kapasitas hingga 50 produk & varian': 'Capacity up to 50 products & variants',
   'Deploy Toko Online Aktif (bisa diakses pembeli)': 'Live online store deployment (publicly accessible)',
-  'Automated Midtrans (QRIS, VA Bank, E-Wallet)': 'Automated Midtrans (QRIS, VA Bank, E-Wallet)',
-  'Checkout otomatis Midtrans (QRIS & VA Bank)': 'Automated Midtrans checkout (QRIS & VA Bank)',
+  'Automated Duitku (QRIS, VA Bank, E-Wallet)': 'Automated Duitku (QRIS, VA Bank, E-Wallet)',
+  'Checkout otomatis Duitku (QRIS & VA Bank)': 'Automated Duitku checkout (QRIS & VA Bank)',
   'Integrasi Ekspedisi Logistik (JNE, J&T via Biteship)': 'Logistics courier integration (JNE, J&T via Biteship)',
   'Cek ongkir & pengiriman otomatis Biteship': 'Automated shipping calculation & booking via Biteship',
   'Kapasitas Hosting Cloud Kroomify cepat': 'Fast Kroomify Cloud Hosting capacity',
@@ -122,8 +122,8 @@ const PLAN_FEATURE_MAP: Record<string, string> = {
   'Unlimited katalog produk & varian': 'Unlimited product catalog & variants',
   'Unlimited katalog produk & varian tanpa batas': 'Unlimited product catalog & variants without limits',
   'Prioritas DNS setup & SSL otomatis': 'Priority DNS setup & automated SSL',
-  'Semua channel Midtrans & Biteship aktif': 'All Midtrans & Biteship channels active',
-  'Full checkout Midtrans (QRIS, VA Bank, E-Wallet)': 'Full Midtrans checkout (QRIS, VA Bank, E-Wallet)',
+  'Semua channel Duitku & Biteship aktif': 'All Duitku & Biteship channels active',
+  'Full checkout Duitku (QRIS, VA Bank, E-Wallet)': 'Full Duitku checkout (QRIS, VA Bank, E-Wallet)',
   'Multi-gudang & multi-cabang pengiriman': 'Multi-warehouse & multi-branch shipping',
   'Laporan analitik omset & export data': 'Revenue analytics report & data export',
   'Cetak label resi pengiriman thermal massal': 'Bulk thermal shipping label printing',
@@ -147,10 +147,10 @@ const PLAN_FEATURE_MAP: Record<string, string> = {
   'Garansi uptime SLA 99.9%': '99.9% SLA uptime guarantee',
   'Prioritas engineering support': 'Priority engineering support',
   'Katalog produk hingga 25 item': 'Product catalog up to 25 items',
-  'Checkout otomatis via Midtrans (QRIS & VA)': 'Automated checkout via Midtrans (QRIS & VA)',
+  'Checkout otomatis via Duitku (QRIS & VA)': 'Automated checkout via Duitku (QRIS & VA)',
   'Cek ongkir otomatis ekspedisi (J&T, JNE)': 'Automated shipping rate check (J&T, JNE)',
   'Bebas watermark (white-label brand sendiri)': 'Watermark free (your own white-label brand)',
-  'Semua metode pembayaran Midtrans (QRIS, VA Bank, Kartu Kredit)': 'All Midtrans payment methods (QRIS, VA Bank, Credit Card)',
+  'Semua metode pembayaran Duitku (QRIS, VA Bank, Kartu Kredit)': 'All Duitku payment methods (QRIS, VA Bank, Credit Card)',
   'Visual layout builder & kustomisasi banner toko': 'Visual layout builder & store banner customization',
   'Cetak label pengiriman thermal massal': 'Bulk thermal shipping label printing',
   'Laporan analitik penjualan & omset real-time': 'Real-time sales & turnover analytics report',
@@ -217,7 +217,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         cycle: isEn ? 'Yearly' : 'Tahunan',
         date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
         amount: s.amount,
-        status: s.status === 'paid' ? (isEn ? 'Paid (Midtrans)' : 'Lunas (Midtrans)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
+        status: s.status === 'paid' ? (isEn ? 'Paid (Duitku)' : 'Lunas (Duitku)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
       }));
     }
     return [];
@@ -231,7 +231,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     });
   }, []);
 
-  // Auto-polling status from Midtrans while an invoice is pending
+  // Auto-polling status from Duitku while an invoice is pending
   useEffect(() => {
     if (!pendingSubscription || !pendingSubscription.orderId) return;
 
@@ -242,7 +242,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       if (isChecking || isVerifying) return;
       isChecking = true;
       try {
-        const checkRes = await midtransService.checkTransactionStatus(pendingSubscription.orderId!);
+        const checkRes = await duitkuService.checkTransactionStatus(pendingSubscription.orderId!);
         if (checkRes.isPaid && isMounted) {
           await handleActivatePlan(pendingSubscription);
         }
@@ -320,7 +320,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         cycle: isEn ? 'Yearly (1 Year)' : 'Tahunan (1 Tahun)',
         date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
         amount: s.amount,
-        status: s.status === 'paid' ? (isEn ? 'Paid (Midtrans)' : 'Lunas (Midtrans)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
+        status: s.status === 'paid' ? (isEn ? 'Paid (Duitku)' : 'Lunas (Duitku)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
       }))
     );
 
@@ -341,7 +341,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
   };
 
   /**
-   * Query status from Midtrans and activate plan if settlement is detected
+   * Query status from Duitku and activate plan if settlement is detected
    */
   const handleCheckPaymentStatus = async (sub: BillingSubscription, forceActivateDev = false) => {
     setIsVerifying(true);
@@ -358,14 +358,14 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         return;
       }
 
-      const checkRes = await midtransService.checkTransactionStatus(sub.orderId);
+      const checkRes = await duitkuService.checkTransactionStatus(sub.orderId);
       if (checkRes.isPaid) {
         await handleActivatePlan(sub);
       } else {
         if (onShowNotification) {
-          const msg = checkRes.transactionStatus
-            ? (isEn ? `Status Midtrans: "${checkRes.transactionStatus}". Pembayaran belum lunas.` : `Status transaksi Midtrans: "${checkRes.transactionStatus}". Pembayaran belum lunas.`)
-            : (checkRes.error || (isEn ? 'Payment not detected yet. Please complete payment via Midtrans Snap.' : 'Pembayaran belum terdeteksi di Midtrans. Silakan selesaikan pembayaran via Midtrans Snap.'));
+          const msg = checkRes.statusMessage
+            ? (isEn ? `Status Duitku: "${checkRes.statusMessage}". Pembayaran belum lunas.` : `Status transaksi Duitku: "${checkRes.statusMessage}". Pembayaran belum lunas.`)
+            : (isEn ? 'Payment not detected yet. Please complete payment via Duitku.' : 'Pembayaran belum terdeteksi di Duitku. Silakan selesaikan pembayaran via Duitku.');
           onShowNotification(msg);
         }
       }
@@ -373,7 +373,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       console.warn('Notice verifying payment:', err);
       if (onShowNotification) {
         onShowNotification(
-          err?.message || (isEn ? 'Failed to connect to Midtrans server.' : 'Gagal menghubungi server Midtrans untuk verifikasi status.')
+          err?.message || (isEn ? 'Failed to connect to Duitku server.' : 'Gagal menghubungi server Duitku untuk verifikasi status.')
         );
       }
     } finally {
@@ -396,7 +396,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         cycle: s.cycle === 'yearly' ? (isEn ? 'Yearly' : 'Tahunan') : (isEn ? 'Monthly' : 'Bulanan'),
         date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
         amount: s.amount,
-        status: s.status === 'paid' ? (isEn ? 'Paid (Midtrans)' : 'Lunas (Midtrans)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
+        status: s.status === 'paid' ? (isEn ? 'Paid (Duitku)' : 'Lunas (Duitku)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
       }))
     );
     if (onShowNotification) onShowNotification(isEn ? 'Pending invoice cancelled.' : 'Tagihan berhasil dibatalkan.');
@@ -431,7 +431,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       cycle: 'yearly',
       amount: price,
       status: 'pending',
-      paymentMethod: paymentMethod === 'qris' ? 'Midtrans QRIS' : 'Midtrans VA',
+      paymentMethod: paymentMethod === 'qris' ? 'Duitku QRIS' : 'Duitku BCA VA',
       invoiceNumber,
       orderId,
       paidAt: new Date().toISOString(),
@@ -452,15 +452,15 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     ]);
 
     try {
-      await midtransService.payWithSnap(
+      const duitkuMethod = paymentMethod === 'qris' ? 'SP' : 'BC';
+      await duitkuService.payWithDuitku(
         {
           orderId,
           grossAmount: price,
           customerName: store.name,
           customerPhone: store.phoneWhatsApp,
-          enabledPayments: paymentMethod === 'qris'
-            ? ['gopay', 'qris', 'shopeepay']
-            : ['bca_va', 'bni_va', 'bri_va', 'echannel', 'permata_va', 'other_va'],
+          paymentMethod: duitkuMethod,
+          productDetails: `Langganan ${selectedPlanForUpgrade.name} 1 Tahun`,
         },
         {
           onSuccess: async () => {
@@ -474,19 +474,19 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             if (onShowNotification) {
               onShowNotification(
                 isEn
-                  ? 'Invoice created. Complete payment and click "Check Status & Activate" button.'
-                  : 'Kode pembayaran Midtrans diterbitkan. Selesaikan pembayaran lalu klik "Cek Status & Aktifkan Paket".'
+                  ? 'Invoice created. Complete payment via Duitku and click "Check Status & Activate".'
+                  : 'Tagihan Duitku diterbitkan. Selesaikan pembayaran lalu klik "Cek Status & Aktifkan Paket".'
               );
             }
           },
-          onError: () => {
-            alert(isEn ? 'Midtrans payment cancelled or failed.' : 'Pembayaran Midtrans dibatalkan atau gagal.');
+          onError: (res) => {
+            alert(isEn ? 'Duitku payment cancelled or failed.' : (res?.statusMessage || 'Pembayaran Duitku dibatalkan atau gagal.'));
             setIsProcessing(false);
           },
           onClose: async () => {
             setIsProcessing(false);
             // On popup close, check if the payment was already settled
-            const res = await midtransService.checkTransactionStatus(orderId);
+            const res = await duitkuService.checkTransactionStatus(orderId);
             if (res.isPaid) {
               await handleActivatePlan(recordedPending);
             }
@@ -494,9 +494,9 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         }
       );
     } catch (err: any) {
-      console.error('Midtrans payment error:', err);
+      console.error('Duitku payment error:', err);
       setIsProcessing(false);
-      alert('Gagal membuka pembayaran Midtrans: ' + (err?.message || 'Terjadi kesalahan pada koneksi Midtrans.'));
+      alert('Gagal membuka pembayaran Duitku: ' + (err?.message || 'Terjadi kesalahan pada koneksi Duitku.'));
     }
   };
 
@@ -621,7 +621,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   </span>
                 </h3>
                 <p className="text-xs text-[#706866] leading-relaxed">
-                  Metode: <strong className="text-[#1F1F1F]">{pendingSubscription.paymentMethod}</strong> • Selesaikan pembayaran agar paket langsung aktif selama <strong>1 Tahun Penuh</strong>. Sistem secara otomatis mengecek pelunasan Midtrans di latar belakang.
+                  Metode: <strong className="text-[#1F1F1F]">{pendingSubscription.paymentMethod}</strong> • Selesaikan pembayaran agar paket langsung aktif selama <strong>1 Tahun Penuh</strong>. Sistem secara otomatis mengecek pelunasan Duitku di latar belakang.
                 </p>
                 <div className="flex items-center gap-2 pt-0.5 text-[11px] text-amber-800 font-medium">
                   <RefreshCw className="w-3 h-3 animate-spin text-amber-600" />
@@ -938,7 +938,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 onClick={handleExecuteUpgrade}
                 className="w-full py-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                <span>{isProcessing ? (isEn ? 'Processing Transaction...' : 'Memproses Transaksi...') : (isEn ? 'Pay Now via Midtrans' : 'Bayar Sekarang via Midtrans')}</span>
+                <span>{isProcessing ? (isEn ? 'Processing Transaction...' : 'Memproses Transaksi...') : (isEn ? 'Pay Now via Duitku' : 'Bayar Sekarang via Duitku')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
