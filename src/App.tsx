@@ -1681,24 +1681,27 @@ export default function App() {
                 </div>
               </div>
             )}
-            {/* Subtle Floating Switcher back to Dashboard */}
-            {new URLSearchParams(window.location.search).get('preview') !== 'true' && (
-              <div className="fixed bottom-4 left-4 z-50">
-                <button
-                  onClick={() => {
-                    if (user?.role === 'admin') {
-                      setViewMode('admin');
-                    } else {
-                      setViewMode('merchant-desktop');
-                    }
-                  }}
-                  className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
-                  title={user?.role === 'admin' ? 'Kembali ke Admin Panel' : 'Kembali ke Dashboard Merchant'}
-                >
-                  <Monitor className="w-3.5 h-3.5" />
-                  <span>{user?.role === 'admin' ? 'Admin Panel' : 'Dashboard'}</span>
-                </button>
-              </div>
+            {/* Subtle Floating Switcher back to Dashboard (TIDAK DITAMPILKAN jika toko sudah di-deploy atau diakses oleh pembeli) */}
+            {(!isPlatformHost(window.location.hostname) || Boolean(getStoreSlugFromHost(window.location.hostname))) ? null : (
+              Boolean(user && (user.role === 'admin' || (activeStore && activeStore.id === currentStore.id))) &&
+              new URLSearchParams(window.location.search).get('preview') !== 'true' && (
+                <div className="fixed bottom-4 left-4 z-50">
+                  <button
+                    onClick={() => {
+                      if (user?.role === 'admin') {
+                        setViewMode('admin');
+                      } else {
+                        setViewMode('merchant-desktop');
+                      }
+                    }}
+                    className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
+                    title={user?.role === 'admin' ? 'Kembali ke Admin Panel' : 'Kembali ke Dashboard Merchant'}
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    <span>{user?.role === 'admin' ? 'Admin Panel' : 'Dashboard'}</span>
+                  </button>
+                </div>
+              )
             )}
             {renderStorefrontContent()}
           </div>
