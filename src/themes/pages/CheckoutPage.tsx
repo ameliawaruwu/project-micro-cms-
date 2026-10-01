@@ -5,24 +5,23 @@ import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
 import {
-  ShoppingCart,
   Check,
   CreditCard,
   Truck,
   ShieldCheck,
-  ArrowRight,
   Loader2,
-  Clock,
-  MapPin,
-  RefreshCw,
   Lock,
   ChevronDown,
   ArrowLeft,
   Package,
+  Info,
+  AlertCircle,
+  Clock,
+  Sparkles,
+  MapPin,
 } from 'lucide-react';
 import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
-import { midtransService } from '../../services/midtransService';
 import { duitkuService } from '../../services/duitkuService';
 import { storeService } from '../../services/storeService';
 import { shippingService, INDONESIAN_CITIES } from '../../services/shippingService';
@@ -33,6 +32,7 @@ import {
   getLocalizedChannelDescription,
   getLocalizedChannelName,
 } from '../../services/paymentChannelService';
+import { wilayahService, WilayahItem, PostalCodeItem } from '../../services/wilayahService';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export function mapPaymentIdToDuitkuMethod(paymentId: string): string {
@@ -74,31 +74,55 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     fontFamily: 'sans-serif',
   };
 
-  // Customer & Shipping state - dimulai kosong agar pembeli mengisi formulir sendiri
+  // 1. Customer contact state - Starts empty so buyer fills in their own details
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [customerAddress, setCustomerAddress] = useState('');
-  const [customerCity, setCustomerCity] = useState('');
-  const [customerPostalCode, setCustomerPostalCode] = useState('');
 
-  // Couriers & Rates state
+  // 2. Hierarchical Address state: Province -> Regency/City -> District -> Village -> Postal Code
+  const [provinces, setProvinces] = useState<WilayahItem[]>([]);
+  const [selectedProvinceId, setSelectedProvinceId] = useState('');
+  const [selectedProvinceName, setSelectedProvinceName] = useState('');
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(false);
+
+  const [regencies, setRegencies] = useState<WilayahItem[]>([]);
+  const [selectedRegencyId, setSelectedRegencyId] = useState('');
+  const [selectedRegencyName, setSelectedRegencyName] = useState('');
+  const [isLoadingRegencies, setIsLoadingRegencies] = useState(false);
+
+  const [districts, setDistricts] = useState<WilayahItem[]>([]);
+  const [selectedDistrictId, setSelectedDistrictId] = useState('');
+  const [selectedDistrictName, setSelectedDistrictName] = useState('');
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
+
+  const [villages, setVillages] = useState<WilayahItem[]>([]);
+  const [selectedVillageId, setSelectedVillageId] = useState('');
+  const [selectedVillageName, setSelectedVillageName] = useState('');
+  const [isLoadingVillages, setIsLoadingVillages] = useState(false);
+
+  const [postalCodes, setPostalCodes] = useState<PostalCodeItem[]>([]);
+  const [selectedPostalCode, setSelectedPostalCode] = useState('');
+  const [isLoadingPostalCodes, setIsLoadingPostalCodes] = useState(false);
+
+  // Detailed address & notes
+  const [detailedAddress, setDetailedAddress] = useState('');
+  const [addressNotes, setAddressNotes] = useState('');
+
+  // 3. Couriers & Rates state
   const [availableRates, setAvailableRates] = useState<BiteshipRateOption[]>([]);
   const [selectedRate, setSelectedRate] = useState<BiteshipRateOption | null>(null);
   const [isLoadingRates, setIsLoadingRates] = useState(false);
   const [ratesError, setRatesError] = useState('');
 
-  // Merchant Active Integrations & Channels state
+  // 4. Merchant Active Integrations & Channels state
   const [activeCouriers, setActiveCouriers] = useState<string[]>([]);
   const [activePaymentChannels, setActivePaymentChannels] = useState<PaymentChannel[]>([]);
 
-  // Payment state
+  // 5. Payment state
   const [selectedPaymentId, setSelectedPaymentId] = useState<string>('qris');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
-
-  const isFreePlan = !store?.plan || store.plan === 'free';
 
   // Cart / sample items
   const cartItemsFromStorage = store?.slug ? cartService.getCart(store.slug) : [];
@@ -142,7 +166,29 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const subtotal: number = sampleItems.reduce((acc, item) => acc + Number(item.price || 0) * (item.quantity || 1), 0);
   const totalWeightGrams: number = Math.max(250, sampleItems.reduce((acc, item) => acc + (item.quantity || 1) * (item.weightGrams || 350), 0));
 
-  // 1. Load active shipping integrations & active payment channels from Merchant Settings with real-time sync
+  // Load provinces on initial render
+  useEffect(() => {
+    let isMounted = true;
+    const fetchProvinces = async () => {
+      setIsLoadingProvinces(true);
+      try {
+        const data = await wilayahService.getProvinces();
+        if (isMounted) {
+          setProvinces(data);
+        }
+      } catch (err) {
+        console.warn('Failed to load provinces:', err);
+      } finally {
+        if (isMounted) setIsLoadingProvinces(false);
+      }
+    };
+    fetchProvinces();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Load merchant shipping & payment settings
   const loadMerchantSettings = async () => {
     try {
       const shippingIntegrations = await integrationService.getShippingIntegrations();
@@ -176,31 +222,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     window.addEventListener('focus', handleSync);
     document.addEventListener('visibilitychange', handleSync);
 
-    let bcIntegrations: BroadcastChannel | null = null;
-    let bcPayments: BroadcastChannel | null = null;
-    try {
-      bcIntegrations = new BroadcastChannel('microcms_integrations_channel');
-      bcIntegrations.onmessage = handleSync;
-      bcPayments = new BroadcastChannel('microcms_payment_channel');
-      bcPayments.onmessage = handleSync;
-    } catch {
-      // ignore
-    }
-
     return () => {
       window.removeEventListener('microcms_integrations_updated', handleSync);
       window.removeEventListener('microcms_payment_channels_updated', handleSync);
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('focus', handleSync);
       document.removeEventListener('visibilitychange', handleSync);
-      bcIntegrations?.close();
-      bcPayments?.close();
     };
   }, []);
 
-  // Fetch rates dynamically based on postal code
-  const fetchBiteshipRates = async (postalCodeToUse?: string) => {
-    const destCode = (postalCodeToUse || customerPostalCode || '').trim();
+  // Fetch courier rates when postal code changes
+  const fetchBiteshipRates = async (postalCodeToUse: string) => {
+    const destCode = (postalCodeToUse || '').trim();
     if (!destCode) {
       setAvailableRates([]);
       setSelectedRate(null);
@@ -221,33 +254,33 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         setAvailableRates(result.rates);
       } else {
         setRatesError('Tidak ada layanan kurir yang tersedia untuk area ini.');
+        setAvailableRates([]);
+        setSelectedRate(null);
       }
     } catch (err: any) {
       console.warn('[Checkout] Failed to fetch rates:', err);
       setRatesError('Gagal memuat tarif kurir otomatis.');
+      setAvailableRates([]);
+      setSelectedRate(null);
     } finally {
       setIsLoadingRates(false);
     }
   };
 
-  useEffect(() => {
-    if (customerPostalCode) {
-      fetchBiteshipRates(customerPostalCode);
-    }
-  }, []);
-
-  // Filter couriers strictly based on merchant active integrations
+  // Filter couriers strictly based on merchant active integrations (with resilient fallback)
   const displayedRates = useMemo(() => {
     if (availableRates.length === 0) return [];
-    if (activeCouriers.length === 0) return [];
+    if (activeCouriers.length === 0) return availableRates;
 
-    return availableRates.filter((rate) => {
+    const filtered = availableRates.filter((rate) => {
       const code = (rate.courier_code || '').toLowerCase();
       return activeCouriers.some((active) => {
         if (!active || active === 'biteship') return false;
         return code === active || code.startsWith(active) || active.startsWith(code);
       });
     });
+
+    return filtered.length > 0 ? filtered : availableRates;
   }, [availableRates, activeCouriers]);
 
   // Keep selectedRate valid whenever displayedRates change
@@ -267,63 +300,57 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
   }, [displayedRates]);
 
-  // Dynamic shipping fee from selected courier
   const shippingFee = selectedRate ? selectedRate.price : 0;
   const total = subtotal + shippingFee;
 
-  // Generate active payment methods matching merchant payment settings strictly
+  // Active payment options
   const paymentOptions = useMemo(() => {
     const options: { id: string; name: string; description: string; badge?: string }[] = [];
 
-    activePaymentChannels.forEach((channel) => {
-      if (!channel.isEnabled) return;
+    const channelsToRender =
+      activePaymentChannels.filter((c) => c.isEnabled).length > 0
+        ? activePaymentChannels.filter((c) => c.isEnabled)
+        : [
+            { id: 'qris', name: 'QRIS & E-Wallet (Scan Otomatis GoPay, OVO, DANA, ShopeePay)', category: 'ewallet_qris', isEnabled: true, description: 'Bayar instan via scan kode QRIS dari aplikasi m-Banking atau E-Wallet mana pun.' },
+            { id: 'bca_va', name: 'BCA Virtual Account', category: 'virtual_account', isEnabled: true, description: 'Transfer langsung via BCA Mobile / KlikBCA verifikasi otomatis 24 jam.' },
+            { id: 'mandiri_va', name: 'Mandiri Virtual Account', category: 'virtual_account', isEnabled: true, description: 'Transfer langsung via Livin by Mandiri verifikasi otomatis.' },
+            { id: 'bri_va', name: 'BRI Virtual Account (BRIVA)', category: 'virtual_account', isEnabled: true, description: 'Transfer langsung via BRImo atau ATM BRI verifikasi otomatis.' },
+          ];
 
+    channelsToRender.forEach((channel) => {
       const localizedName = getLocalizedChannelName(channel.id, channel.name, language);
       const localizedDesc = getLocalizedChannelDescription(channel.id, channel.description, language);
 
       if (channel.id === 'qris') {
         options.push({
           id: 'qris',
-          name: isEn
-            ? 'QRIS & E-Wallet (Instant Scan GoPay, OVO, DANA, ShopeePay)'
-            : 'QRIS & E-Wallet (Scan Otomatis GoPay, OVO, DANA, ShopeePay)',
+          name: isEn ? 'QRIS & E-Wallet (Instant Scan GoPay, OVO, DANA, ShopeePay)' : 'QRIS & E-Wallet (Scan Otomatis GoPay, OVO, DANA, ShopeePay)',
           description: localizedDesc || (isEn ? 'Instant scan via QRIS code from any mobile banking or e-wallet.' : 'Bayar instan via scan kode QRIS dari aplikasi m-Banking atau E-Wallet mana pun.'),
-          badge: isEn ? 'Instant Auto' : 'Instan Otomatis',
+          badge: isEn ? 'Instant' : 'Instan',
         });
       } else if (channel.id === 'gopay') {
-        options.push({
-          id: 'gopay',
-          name: localizedName,
-          description: localizedDesc,
-          badge: 'E-Wallet',
-        });
+        options.push({ id: 'gopay', name: localizedName, description: localizedDesc, badge: 'E-Wallet' });
       } else if (channel.id === 'shopeepay') {
-        options.push({
-          id: 'shopeepay',
-          name: localizedName,
-          description: localizedDesc,
-          badge: 'E-Wallet',
-        });
-      } else if (channel.category === 'virtual_account') {
+        options.push({ id: 'shopeepay', name: localizedName, description: localizedDesc, badge: 'E-Wallet' });
+      } else if (channel.category === 'virtual_account' || channel.id.includes('va')) {
         options.push({
           id: channel.id,
           name: localizedName,
-          description: localizedDesc || (isEn ? 'Automatic transfer with instant 24/7 verification without receipt upload.' : 'Transfer otomatis dengan verifikasi instan 24 jam tanpa perlu upload bukti transfer.'),
-          badge: isEn ? 'Automated 24/7' : 'Otomatis 24/7',
+          description: localizedDesc || (isEn ? 'Automatic transfer with instant 24/7 verification.' : 'Transfer otomatis dengan verifikasi instan 24 jam tanpa perlu upload bukti transfer.'),
+          badge: 'Otomatis 24 Jam',
         });
       } else if (channel.id === 'credit_card') {
         options.push({
           id: 'credit_card',
           name: isEn ? 'Credit / Debit Card Online (Visa, Mastercard, JCB)' : 'Kartu Kredit / Debit Online (Visa, Mastercard, JCB)',
-          description: localizedDesc || (isEn ? 'Encrypted online payment with 3D Secure OTP protection.' : 'Pembayaran online terenkripsi dengan proteksi 3D Secure OTP.'),
+          description: localizedDesc || 'Pembayaran online terenkripsi dengan proteksi 3D Secure OTP.',
           badge: '3D Secure',
         });
-      } else if (channel.category === 'retail_paylater') {
+      } else {
         options.push({
           id: channel.id,
           name: localizedName,
-          description: localizedDesc || (isEn ? 'Pay cash at retail counter using a payment code.' : 'Bayar tunai di meja kasir dengan kode pembayaran.'),
-          badge: isEn ? 'Retail Counter' : 'Kasir Retail',
+          description: localizedDesc || 'Pembayaran resmi melalui gerbang Duitku.',
         });
       }
     });
@@ -341,30 +368,162 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
   }, [paymentOptions, selectedPaymentId]);
 
-  // Handle City Selection
-  const handleCitySelect = (cityName: string) => {
-    setCustomerCity(cityName);
-    if (!cityName) {
-      setCustomerPostalCode('');
-      setAvailableRates([]);
-      setSelectedRate(null);
-      return;
-    }
-    const matched = INDONESIAN_CITIES.find(
-      (c) => c.name.toLowerCase() === cityName.toLowerCase() || c.id === cityName
-    );
-    if (matched) {
-      setCustomerPostalCode(matched.postalCode);
-      fetchBiteshipRates(matched.postalCode);
+  // Cascading Address Selection Handlers
+  const handleProvinceChange = async (provId: string) => {
+    setSelectedProvinceId(provId);
+    const matched = provinces.find((p) => p.id === provId);
+    setSelectedProvinceName(matched?.name || '');
+
+    // Reset dependent levels
+    setSelectedRegencyId('');
+    setSelectedRegencyName('');
+    setRegencies([]);
+
+    setSelectedDistrictId('');
+    setSelectedDistrictName('');
+    setDistricts([]);
+
+    setSelectedVillageId('');
+    setSelectedVillageName('');
+    setVillages([]);
+
+    setSelectedPostalCode('');
+    setPostalCodes([]);
+    setAvailableRates([]);
+    setSelectedRate(null);
+
+    if (!provId) return;
+
+    setIsLoadingRegencies(true);
+    try {
+      const data = await wilayahService.getRegencies(provId);
+      setRegencies(data);
+    } catch (err) {
+      console.warn('Failed to load regencies:', err);
+    } finally {
+      setIsLoadingRegencies(false);
     }
   };
 
-  const sections = themeData?.sections || {};
-  const headerSection = Object.values(sections).find((s) => s.type === 'Header');
-  const footerSection = Object.values(sections).find((s) => s.type === 'Footer');
+  const handleRegencyChange = async (regId: string) => {
+    setSelectedRegencyId(regId);
+    const matched = regencies.find((r) => r.id === regId);
+    setSelectedRegencyName(matched?.name || '');
 
-  const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
-  const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
+    // Reset dependent levels
+    setSelectedDistrictId('');
+    setSelectedDistrictName('');
+    setDistricts([]);
+
+    setSelectedVillageId('');
+    setSelectedVillageName('');
+    setVillages([]);
+
+    setSelectedPostalCode('');
+    setPostalCodes([]);
+    setAvailableRates([]);
+    setSelectedRate(null);
+
+    if (!regId) return;
+
+    setIsLoadingDistricts(true);
+    try {
+      const data = await wilayahService.getDistricts(regId);
+      setDistricts(data);
+    } catch (err) {
+      console.warn('Failed to load districts:', err);
+    } finally {
+      setIsLoadingDistricts(false);
+    }
+  };
+
+  const handleDistrictChange = async (distId: string) => {
+    setSelectedDistrictId(distId);
+    const matched = districts.find((d) => d.id === distId);
+    setSelectedDistrictName(matched?.name || '');
+
+    // Reset dependent levels
+    setSelectedVillageId('');
+    setSelectedVillageName('');
+    setVillages([]);
+
+    setSelectedPostalCode('');
+    setPostalCodes([]);
+    setAvailableRates([]);
+    setSelectedRate(null);
+
+    if (!distId) return;
+
+    setIsLoadingVillages(true);
+    try {
+      const data = await wilayahService.getVillages(distId);
+      setVillages(data);
+    } catch (err) {
+      console.warn('Failed to load villages:', err);
+    } finally {
+      setIsLoadingVillages(false);
+    }
+  };
+
+  const handleVillageChange = async (vilId: string) => {
+    setSelectedVillageId(vilId);
+    const matched = villages.find((v) => v.id === vilId);
+    const vName = matched?.name || '';
+    setSelectedVillageName(vName);
+
+    // Reset postal code & shipping rates
+    setSelectedPostalCode('');
+    setPostalCodes([]);
+    setAvailableRates([]);
+    setSelectedRate(null);
+
+    if (!vilId || !vName) return;
+
+    setIsLoadingPostalCodes(true);
+    try {
+      let list = await wilayahService.getPostalCodes(vName, selectedDistrictName, selectedRegencyName);
+      if (!list || list.length === 0) {
+        list = await wilayahService.getPostalCodes('', selectedDistrictName, selectedRegencyName);
+      }
+      if (!list || list.length === 0) {
+        const single = await wilayahService.findPostalCode(vName, selectedDistrictName, selectedRegencyName);
+        if (single?.code) {
+          list = [{ code: single.code, village: vName, district: selectedDistrictName, isExact: true }];
+        }
+      }
+      if (!list || list.length === 0) {
+        const cleanRegency = (selectedRegencyName || '').toLowerCase().replace(/^(kabupaten|kota)\s+/i, '');
+        const cityMatch = INDONESIAN_CITIES.find(
+          (c) =>
+            c.name.toLowerCase().includes(cleanRegency) ||
+            cleanRegency.includes(c.name.toLowerCase())
+        );
+        if (cityMatch?.postalCode) {
+          list = [{ code: cityMatch.postalCode, village: vName, district: selectedDistrictName, isExact: true }];
+        }
+      }
+
+      setPostalCodes(list || []);
+      if (list && list.length > 0) {
+        setSelectedPostalCode(list[0].code);
+        fetchBiteshipRates(list[0].code);
+      }
+    } catch (err) {
+      console.warn('Failed to load postal codes:', err);
+    } finally {
+      setIsLoadingPostalCodes(false);
+    }
+  };
+
+  const handlePostalCodeChange = (code: string) => {
+    setSelectedPostalCode(code);
+    if (code) {
+      fetchBiteshipRates(code);
+    } else {
+      setAvailableRates([]);
+      setSelectedRate(null);
+    }
+  };
 
   const finalizeOrder = async (isPaid: boolean, methodDesc: string) => {
     const orderItems: OrderItem[] = sampleItems.map((s) => ({
@@ -378,16 +537,28 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
     const courierDisplayName = selectedRate
       ? `${selectedRate.courier_name} (${selectedRate.courier_service_name})`
-      : 'J&T Express (Reguler)';
+      : 'Pengiriman Standar';
+
+    const fullAddressParts = [
+      detailedAddress.trim(),
+      addressNotes.trim() ? `(Patokan / Catatan: ${addressNotes.trim()})` : '',
+      `Kel. ${selectedVillageName}`,
+      `Kec. ${selectedDistrictName}`,
+      selectedRegencyName,
+      selectedProvinceName,
+      selectedPostalCode ? `Kode Pos ${selectedPostalCode}` : '',
+    ].filter(Boolean);
+
+    const formattedFullAddress = fullAddressParts.join(', ');
 
     const newOrder = await orderService.createOrder({
       storeId: store?.id || '',
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
       customerEmail: customerEmail.trim() || undefined,
-      customerAddress: customerAddress.trim(),
-      customerCity: customerCity.trim() || 'Indonesia',
-      customerPostalCode: customerPostalCode.trim() || undefined,
+      customerAddress: formattedFullAddress,
+      customerCity: selectedRegencyName || 'Indonesia',
+      customerPostalCode: selectedPostalCode || undefined,
       items: orderItems,
       subtotal,
       shippingCost: shippingFee,
@@ -395,11 +566,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       grandTotal: total,
       paymentMethod: methodDesc as any,
       paymentStatus: isPaid ? 'Sudah Dibayar' : 'Belum Dibayar',
-      courier: (selectedRate?.courier_code?.toUpperCase() || 'J&T') as any,
-      courierCode: selectedRate?.courier_code || 'jnt',
-      courierService: selectedRate ? `${selectedRate.courier_service_name} • ${selectedRate.etd}` : 'Reguler • 1-3 Hari',
+      courier: (selectedRate?.courier_code?.toUpperCase() || 'KURIR') as any,
+      courierCode: selectedRate?.courier_code || 'kurir',
+      courierService: selectedRate ? `${selectedRate.courier_service_name} • ${selectedRate.etd}` : 'Reguler',
       shippingStatus: 'Baru',
-      notes: `Pesanan checkout storefront: ${activeThemeId}. Kurir: ${courierDisplayName}. Ongkir: Rp ${shippingFee.toLocaleString('id-ID')}`,
+      notes: `Alamat: ${formattedFullAddress}. Kurir: ${courierDisplayName}. Ongkir: Rp ${shippingFee.toLocaleString('id-ID')}`,
     });
 
     if (isPaid && store?.id) {
@@ -412,23 +583,27 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     if (store?.slug) {
       cartService.clearCart(store.slug);
     }
-    // Notify application & merchant store that new order has arrived
     window.dispatchEvent(new CustomEvent('microcms_order_created', { detail: newOrder }));
   };
 
   const handleProcessCheckout = async () => {
-    if (!customerName.trim() || !customerPhone.trim() || !customerAddress.trim()) {
-      alert('Silakan lengkapi Nama Lengkap, Nomor WhatsApp, dan Alamat Pengiriman.');
+    if (!customerName.trim() || !customerPhone.trim()) {
+      alert('Silakan lengkapi Nama Lengkap dan Nomor WhatsApp penerima.');
       return;
     }
 
-    if (!customerCity) {
-      alert('Silakan pilih Kota / Kabupaten Tujuan pengiriman.');
+    if (!selectedProvinceId || !selectedRegencyId || !selectedDistrictId || !selectedVillageId || !selectedPostalCode) {
+      alert('Silakan lengkapi pemilihan alamat bertingkat (Provinsi → Kota → Kecamatan → Kelurahan → Kode Pos).');
       return;
     }
 
-    if (displayedRates.length === 0) {
-      alert('Tidak ada opsi pengiriman aktif yang tersedia saat ini.');
+    if (!detailedAddress.trim()) {
+      alert('Silakan isi Detail Alamat (nama jalan, nomor rumah/gedung, RT/RW).');
+      return;
+    }
+
+    if (!selectedRate && displayedRates.length > 0) {
+      alert('Silakan pilih salah satu opsi pengiriman kurir.');
       return;
     }
 
@@ -495,53 +670,57 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
   };
 
+  const sections = themeData?.sections || {};
+  const headerSection = Object.values(sections).find((s) => s.type === 'Header');
+  const footerSection = Object.values(sections).find((s) => s.type === 'Footer');
+
+  const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
+  const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
+
   const renderContent = () => {
     // 1. ORDER COMPLETED VIEW
     if (isCompleted) {
       const orderNum = createdOrder?.orderNumber || '#ORD-88231';
       const courierInfo = selectedRate
         ? `${selectedRate.courier_name} (${selectedRate.courier_service_name})`
-        : 'J&T Express';
+        : 'Pengiriman Standar';
       const selectedPaymentName =
-        paymentOptions.find((p) => p.id === selectedPaymentId)?.name || 'Transfer Manual';
+        paymentOptions.find((p) => p.id === selectedPaymentId)?.name || 'Duitku Payment';
 
       return (
-        <div className="py-20 px-4 sm:px-6 max-w-2xl mx-auto text-center font-sans">
-          <div
-            className={`p-8 md:p-12 rounded-3xl border shadow-xl space-y-6 ${
-              activeThemeId === 'bold'
-                ? 'bg-yellow-300 text-black border-8 border-black shadow-[16px_16px_0px_rgba(0,0,0,1)]'
-                : activeThemeId === 'futuristic' || activeThemeId === 'modern'
-                ? 'bg-slate-900 text-white border border-cyan-500/30'
-                : 'bg-white text-gray-900 border-gray-200'
-            }`}
-          >
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+        <div className="py-16 sm:py-24 px-4 sm:px-6 max-w-2xl mx-auto text-center font-sans">
+          <div className="p-8 sm:p-10 rounded-3xl bg-white border border-gray-200/90 shadow-xl space-y-6">
+            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-100">
               <Check className="w-8 h-8 stroke-[2.5]" />
             </div>
             <div className="space-y-1">
-              <h1 className="text-2xl sm:text-3xl font-black">Pesanan Berhasil Dibuat!</h1>
-              <p className="text-sm font-medium text-gray-600">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Pesanan Berhasil Diproses!</h1>
+              <p className="text-sm font-medium text-gray-500">
                 Nomor Pesanan: <span className="font-bold font-mono text-gray-900">{orderNum}</span>
               </p>
             </div>
 
-            <div className="p-5 bg-emerald-50/80 rounded-2xl text-left text-xs text-emerald-950 space-y-2 border border-emerald-200/80">
-              <p className="font-bold">Status: <span className="text-emerald-700">Tersimpan ke Sistem Toko</span></p>
-              <p>Metode Pembayaran: <span className="font-semibold">{selectedPaymentName}</span></p>
-              <p>Penerima: <span className="font-semibold">{customerName} ({customerPhone})</span></p>
-              <p>Alamat: <span className="font-semibold">{customerAddress}, {customerCity} ({customerPostalCode})</span></p>
-              <p>Pengiriman: <span className="font-semibold">{courierInfo} • Rp {shippingFee.toLocaleString('id-ID')}</span></p>
-              <div className="pt-2 border-t border-emerald-200 flex justify-between items-center text-sm font-extrabold text-emerald-950">
+            <div className="p-5 bg-gray-50/90 rounded-2xl text-left text-xs text-gray-700 space-y-2.5 border border-gray-200/70">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                <span className="font-semibold text-gray-600">Status Transaksi:</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[11px]">
+                  Terkonfirmasi Duitku
+                </span>
+              </div>
+              <p><span className="text-gray-500">Metode Pembayaran:</span> <span className="font-semibold text-gray-900">{selectedPaymentName}</span></p>
+              <p><span className="text-gray-500">Penerima:</span> <span className="font-semibold text-gray-900">{customerName} ({customerPhone})</span></p>
+              <p><span className="text-gray-500">Alamat Pengiriman:</span> <span className="font-semibold text-gray-900">{createdOrder?.customerAddress || detailedAddress}</span></p>
+              <p><span className="text-gray-500">Kurir:</span> <span className="font-semibold text-gray-900">{courierInfo} • Rp {shippingFee.toLocaleString('id-ID')}</span></p>
+              <div className="pt-2.5 border-t border-gray-200 flex justify-between items-center text-sm font-extrabold text-gray-900">
                 <span>Total Tagihan</span>
-                <span>Rp {total.toLocaleString('id-ID')}</span>
+                <span className="text-blue-600 text-base">Rp {total.toLocaleString('id-ID')}</span>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
               <button
                 onClick={() => (onNavigate ? onNavigate('orders') : null)}
-                className="w-full sm:w-1/2 py-3.5 px-4 bg-black hover:bg-gray-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-sm"
+                className="w-full sm:w-1/2 py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-sm text-sm"
               >
                 <Package className="w-4 h-4" />
                 <span>Lihat Status Pesanan</span>
@@ -549,7 +728,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
               <button
                 onClick={() => (onNavigate ? onNavigate('homepage') : null)}
-                className="w-full sm:w-1/2 py-3.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition cursor-pointer"
+                className="w-full sm:w-1/2 py-3.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition cursor-pointer text-sm"
               >
                 Kembali ke Toko
               </button>
@@ -559,582 +738,451 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       );
     }
 
-    // 2. BOLD THEME
-    if (activeThemeId === 'bold') {
-      return (
-        <div className="pt-24 pb-24 bg-white text-black min-h-screen border-b-8 border-black font-sans">
-          <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-8">
-            <div className="md:col-span-7 bg-[#FF0000] p-8 border-8 border-black shadow-[12px_12px_0px_rgba(0,0,0,1)] space-y-6">
-              <h2 className="text-3xl font-black text-white uppercase">INFORMASI PENGIRIMAN</h2>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="NAMA LENGKAP"
-                  className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm"
-                />
-                <input
-                  type="tel"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="NOMOR WHATSAPP"
-                  className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm"
-                />
-                <input
-                  type="email"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="EMAIL"
-                  className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm"
-                />
-                <input
-                  type="text"
-                  value={customerAddress}
-                  onChange={(e) => setCustomerAddress(e.target.value)}
-                  placeholder="ALAMAT LENGKAP"
-                  className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm"
-                />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-black text-white uppercase mb-1">KOTA TUJUAN</label>
-                    <select
-                      value={customerCity}
-                      onChange={(e) => handleCitySelect(e.target.value)}
-                      className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm cursor-pointer"
-                    >
-                      <option value="">-- PILIH KOTA TUJUAN --</option>
-                      {INDONESIAN_CITIES.map((c) => (
-                        <option key={c.id} value={c.name}>{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black text-white uppercase mb-1">KODE POS</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={customerPostalCode}
-                        onChange={(e) => setCustomerPostalCode(e.target.value)}
-                        placeholder="KODE POS"
-                        className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fetchBiteshipRates(customerPostalCode)}
-                        className="px-4 bg-yellow-300 border-4 border-black font-black hover:bg-white cursor-pointer"
-                        title="Hitung Ulang Tarif"
-                      >
-                        <RefreshCw className={`w-5 h-5 ${isLoadingRates ? 'animate-spin' : ''}`} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Courier Selection Dropdown */}
-              <div className="pt-4 border-t-4 border-black space-y-2">
-                <h2 className="text-2xl font-black text-white uppercase flex items-center gap-2">
-                  <Truck className="w-6 h-6" />
-                  <span>LAYANAN PENGIRIMAN</span>
-                </h2>
-
-                {isLoadingRates ? (
-                  <div className="p-4 bg-white border-4 border-black font-black uppercase text-center flex items-center justify-center gap-3">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>MEMUAT PILIHAN KURIR...</span>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <select
-                      value={selectedRate ? `${selectedRate.courier_code}-${selectedRate.courier_service_code}` : ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const match = displayedRates.find((r) => `${r.courier_code}-${r.courier_service_code}` === val);
-                        if (match) setSelectedRate(match);
-                      }}
-                      className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm cursor-pointer"
-                    >
-                      {displayedRates.map((rate) => (
-                        <option
-                          key={`${rate.courier_code}-${rate.courier_service_code}`}
-                          value={`${rate.courier_code}-${rate.courier_service_code}`}
-                        >
-                          {rate.courier_name} - {rate.courier_service_name} ({rate.etd}) — Rp {rate.price.toLocaleString('id-ID')}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedRate && (
-                      <div className="p-3 bg-yellow-300 border-4 border-black font-black uppercase text-xs flex justify-between">
-                        <span>ESTIMASI: {selectedRate.etd}</span>
-                        <span>ONGKIR: Rp {selectedRate.price.toLocaleString('id-ID')}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Payment Method Dropdown */}
-              <div className="pt-4 border-t-4 border-black space-y-2">
-                <h2 className="text-2xl font-black text-white uppercase flex items-center gap-2">
-                  <CreditCard className="w-6 h-6" />
-                  <span>METODE PEMBAYARAN</span>
-                </h2>
-                <select
-                  value={selectedPaymentId}
-                  onChange={(e) => setSelectedPaymentId(e.target.value)}
-                  className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm cursor-pointer"
-                >
-                  {paymentOptions.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={handleProcessCheckout}
-                className="w-full py-6 bg-black text-white text-2xl font-black uppercase tracking-widest hover:bg-yellow-300 hover:text-black border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all cursor-pointer flex items-center justify-center gap-3"
-              >
-                {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <span>BAYAR SEKARANG ⚡</span>}
-              </button>
-            </div>
-
-            <div className="md:col-span-5 bg-yellow-300 p-8 border-8 border-black shadow-[12px_12px_0px_rgba(0,0,0,1)] space-y-6 h-fit sticky top-24">
-              <h2 className="text-2xl font-black uppercase border-b-4 border-black pb-3">RINGKASAN ITEM</h2>
-              {sampleItems.map((p) => (
-                <div key={p.id} className="flex justify-between items-center font-black border-b-2 border-black pb-3">
-                  <div>
-                    <p className="uppercase text-sm">{p.name}</p>
-                    <p className="text-xs text-gray-700">QTY: {p.quantity || 1}</p>
-                  </div>
-                  <p className="text-base">Rp {(p.price * (p.quantity || 1)).toLocaleString('id-ID')}</p>
-                </div>
-              ))}
-              <div className="pt-4 border-t-4 border-black space-y-2 font-black text-lg">
-                <div className="flex justify-between"><span>SUBTOTAL</span><span>Rp {subtotal.toLocaleString('id-ID')}</span></div>
-                <div className="flex justify-between">
-                  <span className="uppercase">ONGKIR ({selectedRate?.courier_name || 'KURIR'})</span>
-                  <span>Rp {shippingFee.toLocaleString('id-ID')}</span>
-                </div>
-                <div className="flex justify-between text-2xl bg-black text-white p-3 mt-4">
-                  <span>TOTAL</span><span>Rp {total.toLocaleString('id-ID')}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // 3. FUTURISTIC / MODERN THEME
-    if (activeThemeId === 'futuristic' || activeThemeId === 'modern') {
-      return (
-        <div className="pt-28 pb-24 bg-[#0B0F19] text-white min-h-screen font-mono">
-          <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-8">
-            <div className="md:col-span-7 bg-slate-900/60 border border-cyan-500/30 rounded-3xl p-8 backdrop-blur-md space-y-6">
-              <h2 className="text-xl font-bold text-cyan-300 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-cyan-400" />
-                <span>[1. DESTINATION_PARAMETERS]</span>
-              </h2>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="FULL_NAME"
-                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400"
-                />
-                <input
-                  type="tel"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="WHATSAPP_NUMBER"
-                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400"
-                />
-                <input
-                  type="email"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="EMAIL_ADDRESS"
-                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400"
-                />
-                <input
-                  type="text"
-                  value={customerAddress}
-                  onChange={(e) => setCustomerAddress(e.target.value)}
-                  placeholder="SHIPPING_STREET_ADDRESS"
-                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400"
-                />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-slate-400 mb-1">TARGET_CITY</label>
-                    <select
-                      value={customerCity}
-                      onChange={(e) => handleCitySelect(e.target.value)}
-                      className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400 cursor-pointer"
-                    >
-                      <option value="" className="bg-slate-950 text-slate-400">-- SELECT_TARGET_CITY --</option>
-                      {INDONESIAN_CITIES.map((c) => (
-                        <option key={c.id} value={c.name} className="bg-slate-950 text-white">{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-400 mb-1">POSTAL_CODE</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={customerPostalCode}
-                        onChange={(e) => setCustomerPostalCode(e.target.value)}
-                        placeholder="POSTAL_CODE"
-                        className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fetchBiteshipRates(customerPostalCode)}
-                        className="px-3 bg-cyan-950 border border-cyan-500/50 text-cyan-300 rounded-xl hover:bg-cyan-900/50 cursor-pointer"
-                      >
-                        <RefreshCw className={`w-4 h-4 ${isLoadingRates ? 'animate-spin text-cyan-400' : ''}`} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Courier Dropdown */}
-              <div className="pt-4 border-t border-slate-800 space-y-2">
-                <h2 className="text-xl font-bold text-cyan-300 flex items-center gap-2">
-                  <Truck className="w-5 h-5 text-cyan-400" />
-                  <span>[2. SHIPPING_PROVIDER]</span>
-                </h2>
-                <select
-                  value={selectedRate ? `${selectedRate.courier_code}-${selectedRate.courier_service_code}` : ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const match = displayedRates.find((r) => `${r.courier_code}-${r.courier_service_code}` === val);
-                    if (match) setSelectedRate(match);
-                  }}
-                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400 cursor-pointer"
-                >
-                  {displayedRates.map((rate) => (
-                    <option
-                      key={`${rate.courier_code}-${rate.courier_service_code}`}
-                      value={`${rate.courier_code}-${rate.courier_service_code}`}
-                      className="bg-slate-950 text-white"
-                    >
-                      {rate.courier_name} - {rate.courier_service_name} ({rate.etd}) — Rp {rate.price.toLocaleString('id-ID')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Payment Dropdown */}
-              <div className="pt-4 border-t border-slate-800 space-y-2">
-                <h2 className="text-xl font-bold text-cyan-300 flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-cyan-400" />
-                  <span>[3. PAYMENT_GATEWAY]</span>
-                </h2>
-                <select
-                  value={selectedPaymentId}
-                  onChange={(e) => setSelectedPaymentId(e.target.value)}
-                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400 cursor-pointer"
-                >
-                  {paymentOptions.map((opt) => (
-                    <option key={opt.id} value={opt.id} className="bg-slate-950 text-white">
-                      {opt.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={handleProcessCheckout}
-                className="w-full py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-xl font-bold text-sm uppercase tracking-wider text-white shadow-[0_0_20px_rgba(34,211,238,0.4)] cursor-pointer flex items-center justify-center gap-2 hover:opacity-95 transition"
-              >
-                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <span>CONFIRM_ORDER ⚡</span>}
-              </button>
-            </div>
-
-            <div className="md:col-span-5 bg-slate-900/60 border border-cyan-500/30 rounded-3xl p-8 backdrop-blur-md space-y-6 h-fit sticky top-24">
-              <h2 className="text-lg font-bold text-cyan-300 border-b border-slate-800 pb-3">[ORDER_MANIFEST]</h2>
-              {sampleItems.map((p) => (
-                <div key={p.id} className="flex justify-between items-center text-xs text-slate-300 border-b border-slate-800/60 pb-3">
-                  <span>{p.name} (x{p.quantity || 1})</span>
-                  <span className="font-bold text-cyan-400">Rp {(p.price * (p.quantity || 1)).toLocaleString('id-ID')}</span>
-                </div>
-              ))}
-              <div className="pt-4 border-t border-slate-800 space-y-2 text-sm">
-                <div className="flex justify-between text-slate-400"><span>SUBTOTAL</span><span>Rp {subtotal.toLocaleString('id-ID')}</span></div>
-                <div className="flex justify-between text-slate-400">
-                  <span>SHIPPING ({selectedRate?.courier_name || 'EXPEDITION'})</span>
-                  <span>Rp {shippingFee.toLocaleString('id-ID')}</span>
-                </div>
-                <div className="flex justify-between text-base font-bold text-cyan-300 pt-2 border-t border-slate-800">
-                  <span>TOTAL_CREDITS</span><span>Rp {total.toLocaleString('id-ID')}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // 4. DEFAULT HIGH-END PROFESSIONAL E-COMMERCE THEME (Minimalist, Editorial, Luxury, Cute, Nature)
+    // 2. MAIN REDESIGNED BALANCED CHECKOUT FLOW
     return (
-      <div className="pt-24 pb-28 bg-[#FBFBFC] text-[#1A1A1A] min-h-screen font-sans antialiased">
+      <div className="pt-20 pb-28 bg-[#F8FAFC] text-[#1E293B] min-h-screen font-sans antialiased">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header Navigation Link */}
+          {/* Top Bar Navigation */}
           <div className="mb-6 flex items-center justify-between">
             <button
               onClick={() => (onNavigate ? onNavigate('homepage') : null)}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-black transition cursor-pointer"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-blue-600 transition cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Kembali ke Belanja</span>
+              <span>Kembali ke Katalog Belanja</span>
             </button>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-[11px] font-semibold">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-[11px] font-semibold">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Enkripsi 256-Bit Aman</span>
-            </span>
+              <span>Duitku Payment Gateway • 256-Bit SSL</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left Column: Checkout Details Form */}
-            <div className="lg:col-span-7 space-y-6">
-              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/80 shadow-xs space-y-7">
-                {/* 1. Alamat Pengiriman */}
-                <div>
-                  <div className="flex items-center gap-2.5 pb-4 border-b border-gray-100 mb-5">
-                    <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold shrink-0">
-                      1
-                    </div>
-                    <div>
-                      <h2 className="text-base font-bold text-gray-900 tracking-tight">Detail Alamat Pengiriman</h2>
-                      <p className="text-xs text-gray-500">Masukkan alamat lengkap tujuan pengiriman pesanan Anda</p>
-                    </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            {/* Left Column: Checkout Details Form (lg:col-span-7) */}
+            <div className="lg:col-span-7 space-y-5">
+              {/* Card 1: Data Kontak Penerima */}
+              <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/90 shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                    1
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-gray-900">Informasi Kontak Penerima</h2>
+                    <p className="text-[11px] text-gray-500">Data penerima paket pesanan dan konfirmasi pembayaran</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Nama Lengkap *</label>
+                    <input
+                      type="text"
+                      required
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Nama lengkap penerima"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-white shadow-2xs"
+                    />
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">Nama Lengkap *</label>
-                        <input
-                          type="text"
-                          required
-                          value={customerName}
-                          onChange={(e) => setCustomerName(e.target.value)}
-                          placeholder="Nama lengkap penerima"
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">Nomor WhatsApp *</label>
-                        <input
-                          type="tel"
-                          required
-                          value={customerPhone}
-                          onChange={(e) => setCustomerPhone(e.target.value)}
-                          placeholder="08xxxxxxxxxx"
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition"
-                        />
-                      </div>
-                    </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Nomor WhatsApp *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="08xxxxxxxxxx"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-white shadow-2xs"
+                    />
+                  </div>
+                </div>
 
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Alamat Email <span className="text-gray-400 font-normal">(Untuk invoice &amp; tanda terima pesanan)</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="email@example.com"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-white shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              {/* Card 2: Hierarchical Address Selection */}
+              <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/90 shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                    2
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-gray-900">Alamat Pengiriman Bertingkat</h2>
+                    <p className="text-[11px] text-gray-500">Provinsi → Kota/Kabupaten → Kecamatan → Kelurahan/Desa → Kode Pos</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3.5">
+                  {/* Level 1 & 2: Provinsi & Kota/Kabupaten */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                        Alamat Email <span className="text-gray-400 font-normal">(Untuk tanda terima &amp; invoice)</span>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>1. Provinsi *</span>
+                        {isLoadingProvinces && <Loader2 className="w-3 h-3 animate-spin text-blue-600" />}
                       </label>
-                      <input
-                        type="email"
-                        value={customerEmail}
-                        onChange={(e) => setCustomerEmail(e.target.value)}
-                        placeholder="email@example.com"
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">Alamat Lengkap *</label>
-                      <textarea
-                        rows={2}
-                        required
-                        value={customerAddress}
-                        onChange={(e) => setCustomerAddress(e.target.value)}
-                        placeholder="Nama jalan, nomor bangunan, RT/RW, kelurahan, patokan"
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition resize-none"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">Kota / Kabupaten Tujuan *</label>
+                      <div className="relative">
                         <select
-                          value={customerCity}
-                          onChange={(e) => handleCitySelect(e.target.value)}
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition cursor-pointer"
+                          value={selectedProvinceId}
+                          onChange={(e) => handleProvinceChange(e.target.value)}
+                          className="w-full appearance-none px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition cursor-pointer pr-9 shadow-2xs"
                         >
-                          <option value="">-- Pilih Kota / Kabupaten Tujuan --</option>
-                          {INDONESIAN_CITIES.map((c) => (
-                            <option key={c.id} value={c.name}>
-                              {c.name} ({c.province})
+                          <option value="">-- Pilih Provinsi --</option>
+                          {provinces.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
                             </option>
                           ))}
                         </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">Kode Pos</label>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={customerPostalCode}
-                            onChange={(e) => setCustomerPostalCode(e.target.value)}
-                            placeholder="12730"
-                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => fetchBiteshipRates(customerPostalCode)}
-                            className="px-3.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 flex items-center justify-center transition cursor-pointer"
-                            title="Perbarui Tarif"
-                          >
-                            <RefreshCw className={`w-4 h-4 ${isLoadingRates ? 'animate-spin text-black' : ''}`} />
-                          </button>
-                        </div>
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>2. Kota / Kabupaten *</span>
+                        {isLoadingRegencies && <Loader2 className="w-3 h-3 animate-spin text-blue-600" />}
+                      </label>
+                      <div className="relative">
+                        <select
+                          disabled={!selectedProvinceId || isLoadingRegencies}
+                          value={selectedRegencyId}
+                          onChange={(e) => handleRegencyChange(e.target.value)}
+                          className={`w-full appearance-none px-3.5 py-2.5 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition pr-9 shadow-2xs ${
+                            !selectedProvinceId
+                              ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
+                              : 'bg-white border-gray-200 text-gray-900 cursor-pointer'
+                          }`}
+                        >
+                          <option value="">
+                            {isLoadingRegencies
+                              ? 'Memuat Kota / Kabupaten...'
+                              : !selectedProvinceId
+                              ? '-- Pilih Provinsi Terlebih Dahulu --'
+                              : '-- Pilih Kota / Kabupaten --'}
+                          </option>
+                          {regencies.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Level 3 & 4: Kecamatan & Kelurahan/Desa */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>3. Kecamatan *</span>
+                        {isLoadingDistricts && <Loader2 className="w-3 h-3 animate-spin text-blue-600" />}
+                      </label>
+                      <div className="relative">
+                        <select
+                          disabled={!selectedRegencyId || isLoadingDistricts}
+                          value={selectedDistrictId}
+                          onChange={(e) => handleDistrictChange(e.target.value)}
+                          className={`w-full appearance-none px-3.5 py-2.5 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition pr-9 shadow-2xs ${
+                            !selectedRegencyId
+                              ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
+                              : 'bg-white border-gray-200 text-gray-900 cursor-pointer'
+                          }`}
+                        >
+                          <option value="">
+                            {isLoadingDistricts
+                              ? 'Memuat Kecamatan...'
+                              : !selectedRegencyId
+                              ? '-- Pilih Kota Terlebih Dahulu --'
+                              : '-- Pilih Kecamatan --'}
+                          </option>
+                          {districts.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                        <span>4. Kelurahan / Desa *</span>
+                        {isLoadingVillages && <Loader2 className="w-3 h-3 animate-spin text-blue-600" />}
+                      </label>
+                      <div className="relative">
+                        <select
+                          disabled={!selectedDistrictId || isLoadingVillages}
+                          value={selectedVillageId}
+                          onChange={(e) => handleVillageChange(e.target.value)}
+                          className={`w-full appearance-none px-3.5 py-2.5 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition pr-9 shadow-2xs ${
+                            !selectedDistrictId
+                              ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
+                              : 'bg-white border-gray-200 text-gray-900 cursor-pointer'
+                          }`}
+                        >
+                          <option value="">
+                            {isLoadingVillages
+                              ? 'Memuat Kelurahan...'
+                              : !selectedDistrictId
+                              ? '-- Pilih Kecamatan Terlebih Dahulu --'
+                              : '-- Pilih Kelurahan / Desa --'}
+                          </option>
+                          {villages.map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Level 5: Kode Pos (Dropdown selection, NOT free-text input) */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                      <span>5. Kode Pos * (Pilihan Wilayah Valid)</span>
+                      {isLoadingPostalCodes && <Loader2 className="w-3 h-3 animate-spin text-blue-600" />}
+                    </label>
+                    <div className="relative">
+                      <select
+                        disabled={!selectedVillageId || isLoadingPostalCodes}
+                        value={selectedPostalCode}
+                        onChange={(e) => handlePostalCodeChange(e.target.value)}
+                        className={`w-full appearance-none px-3.5 py-2.5 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition pr-9 shadow-2xs ${
+                          !selectedVillageId
+                            ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-white border-gray-200 text-gray-900 cursor-pointer'
+                        }`}
+                      >
+                        <option value="">
+                          {isLoadingPostalCodes
+                            ? 'Memuat daftar kode pos...'
+                            : !selectedVillageId
+                            ? '-- Pilih Kelurahan / Desa Terlebih Dahulu --'
+                            : postalCodes.length === 0
+                            ? '-- Kode Pos Tidak Ditemukan --'
+                            : '-- Pilih Kode Pos Valid --'}
+                        </option>
+                        {postalCodes.map((item) => (
+                          <option key={item.code} value={item.code}>
+                            {item.code} {item.district ? `(${item.village}, Kec. ${item.district})` : `(${item.village})`}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Detailed Address (Street name, building number, unit, floor) */}
+                  <div className="pt-1">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                      Alamat Lengkap &amp; Nomor Bangunan *
+                    </label>
+                    <textarea
+                      rows={2}
+                      required
+                      value={detailedAddress}
+                      onChange={(e) => setDetailedAddress(e.target.value)}
+                      placeholder="Nama jalan, nomor rumah/gedung, RT/RW, lantai, unit, atau detail spesifik lainnya"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition resize-none bg-white shadow-2xs"
+                    />
+                  </div>
+
+                  {/* Address Notes (Patokan / Catatan Pengiriman) */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                      Catatan Alamat / Patokan <span className="text-gray-400 font-normal">(Opsional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={addressNotes}
+                      onChange={(e) => setAddressNotes(e.target.value)}
+                      placeholder="Contoh: Rumah cat putih pagar hitam depan musholla, titip di pos sekuriti"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-white shadow-2xs"
+                    />
                   </div>
                 </div>
+              </div>
+            </div>
 
-                {/* 2. Layanan Pengiriman (DROPDOWN) */}
+            {/* Right Column: Unified Card (lg:col-span-5) */}
+            {/* Hierarchy: Shipping/Courier -> Payment Method -> Order Manifest -> Order Total -> Checkout/Pay Button */}
+            <div className="lg:col-span-5 sticky top-24 space-y-4">
+              <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/90 shadow-xs space-y-5">
+                {/* 1. SHIPPING / COURIER SELECTION */}
                 <div>
-                  <div className="flex items-center gap-2.5 pb-4 border-b border-gray-100 mb-5">
-                    <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold shrink-0">
-                      2
+                  <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-3.5">
+                    <div className="flex items-center gap-2">
+                      <Truck className="w-4 h-4 text-blue-600" />
+                      <h3 className="text-sm font-bold text-gray-900">1. Pilihan Ekspedisi</h3>
                     </div>
-                    <div>
-                      <h2 className="text-base font-bold text-gray-900 tracking-tight">Layanan Pengiriman</h2>
-                      <p className="text-xs text-gray-500">Pilih kurir ekspedisi dan durasi pengiriman</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {isLoadingRates ? (
-                      <div className="p-4 rounded-xl bg-gray-50 border border-gray-200/80 text-center flex items-center justify-center gap-2.5 text-xs text-gray-600 font-medium">
-                        <Loader2 className="w-4 h-4 animate-spin text-gray-900" />
-                        <span>Memuat pilihan kurir dan tarif pengiriman...</span>
-                      </div>
-                    ) : displayedRates.length === 0 ? (
-                      <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
-                        {activeCouriers.length === 0
-                          ? 'Belum ada opsi ekspedisi pengiriman yang diaktifkan oleh toko saat ini.'
-                          : 'Tidak ada opsi kurir aktif yang melayani kode pos/alamat tujuan ini.'}
-                      </div>
-                    ) : (
-                      <>
-                        <div className="relative">
-                          <select
-                            value={selectedRate ? `${selectedRate.courier_code}-${selectedRate.courier_service_code}` : ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const match = displayedRates.find((r) => `${r.courier_code}-${r.courier_service_code}` === val);
-                              if (match) setSelectedRate(match);
-                            }}
-                            className="w-full appearance-none px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition cursor-pointer pr-10"
-                          >
-                            {displayedRates.map((rate) => (
-                              <option
-                                key={`${rate.courier_code}-${rate.courier_service_code}`}
-                                value={`${rate.courier_code}-${rate.courier_service_code}`}
-                              >
-                                {rate.courier_name} — {rate.courier_service_name} ({rate.etd}) — Rp {rate.price.toLocaleString('id-ID')}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="w-4 h-4 text-gray-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        </div>
-
-                        {selectedRate && (
-                          <div className="flex items-center justify-between p-3.5 bg-gray-50/90 rounded-xl border border-gray-100 text-xs">
-                            <div className="flex items-center gap-2 text-gray-700">
-                              <Truck className="w-4 h-4 text-gray-900" />
-                              <span className="font-semibold text-gray-900">{selectedRate.courier_name}</span>
-                              <span className="text-gray-400">•</span>
-                              <span className="text-gray-600">{selectedRate.courier_service_name}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 font-bold text-gray-900">
-                              <Clock className="w-3.5 h-3.5 text-gray-500" />
-                              <span>{selectedRate.etd}</span>
-                            </div>
-                          </div>
-                        )}
-                      </>
+                    {selectedRate && (
+                      <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
+                        {selectedRate.courier_name}
+                      </span>
                     )}
                   </div>
-                </div>
 
-                {/* 3. Metode Pembayaran (DROPDOWN) */}
-                <div>
-                  <div className="flex items-center gap-2.5 pb-4 border-b border-gray-100 mb-5">
-                    <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold shrink-0">
-                      3
+                  {!selectedPostalCode ? (
+                    <div className="p-3.5 rounded-xl bg-gray-50 border border-dashed border-gray-200 text-xs text-gray-500 flex items-start gap-2.5">
+                      <Info className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                      <span>Pilih wilayah pengiriman bertingkat dan kode pos di formulir sebelah kiri untuk melihat pilihan kurir dan tarif ongkir otomatis.</span>
                     </div>
-                    <div>
-                      <h2 className="text-base font-bold text-gray-900 tracking-tight">Metode Pembayaran</h2>
-                      <p className="text-xs text-gray-500">Pilih opsi pembayaran yang sesuai dengan preferensi Anda</p>
+                  ) : isLoadingRates ? (
+                    <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-2.5 text-xs text-gray-600 font-medium">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                      <span>Menghitung tarif ongkir resmi...</span>
                     </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {paymentOptions.length === 0 ? (
-                      <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
-                        Belum ada metode pembayaran yang diaktifkan oleh toko saat ini.
+                  ) : displayedRates.length === 0 ? (
+                    <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 text-xs text-amber-800 flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <span>{ratesError || 'Tidak ada kurir yang tersedia untuk kode pos ini.'}</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <select
+                          value={selectedRate ? `${selectedRate.courier_code}-${selectedRate.courier_service_code}` : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const match = displayedRates.find((r) => `${r.courier_code}-${r.courier_service_code}` === val);
+                            if (match) setSelectedRate(match);
+                          }}
+                          className="w-full appearance-none px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition cursor-pointer pr-9 shadow-2xs"
+                        >
+                          {displayedRates.map((rate) => (
+                            <option
+                              key={`${rate.courier_code}-${rate.courier_service_code}`}
+                              value={`${rate.courier_code}-${rate.courier_service_code}`}
+                            >
+                              {rate.courier_name} - {rate.courier_service_name} ({rate.etd}) — Rp {rate.price.toLocaleString('id-ID')}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
-                    ) : (
-                      <>
-                        <div className="relative">
-                          <select
-                            value={selectedPaymentId}
-                            onChange={(e) => setSelectedPaymentId(e.target.value)}
-                            className="w-full appearance-none px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition cursor-pointer pr-10"
-                          >
-                            {paymentOptions.map((opt) => (
-                              <option key={opt.id} value={opt.id}>
-                                {opt.name}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="w-4 h-4 text-gray-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        </div>
 
-                        <div className="p-3.5 bg-gray-50/90 rounded-xl border border-gray-100 text-xs text-gray-600 flex items-start gap-2.5">
-                          <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                          <span>{paymentOptions.find((p) => p.id === selectedPaymentId)?.description}</span>
+                      {selectedRate && (
+                        <div className="flex items-center justify-between px-3 py-2 bg-blue-50/60 rounded-lg border border-blue-100 text-[11px] text-blue-900">
+                          <span className="font-medium text-blue-700">Estimasi Tiba: {selectedRate.etd}</span>
+                          <span className="font-bold text-blue-950">Ongkir: Rp {selectedRate.price.toLocaleString('id-ID')}</span>
                         </div>
-                      </>
-                    )}
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. PAYMENT METHOD SELECTION */}
+                <div>
+                  <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-3.5">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-emerald-600" />
+                      <h3 className="text-sm font-bold text-gray-900">2. Metode Pembayaran</h3>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 uppercase tracking-wider">
+                      Duitku Resmi
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <select
+                        value={selectedPaymentId}
+                        onChange={(e) => setSelectedPaymentId(e.target.value)}
+                        className="w-full appearance-none px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition cursor-pointer pr-9 shadow-2xs"
+                      >
+                        {paymentOptions.map((opt) => (
+                          <option key={opt.id} value={opt.id}>
+                            {opt.name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+
+                    <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100 text-[11px] text-gray-600 flex items-start gap-2">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                      <span className="leading-relaxed">
+                        {paymentOptions.find((p) => p.id === selectedPaymentId)?.description ||
+                          'Pembayaran resmi terhubung langsung ke gerbang Duitku dengan verifikasi instan.'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Action Submit Button */}
-                <div className="pt-2 space-y-3">
+                {/* 3. ORDER ITEMS MANIFEST */}
+                <div>
+                  <div className="flex items-center justify-between pb-2.5 border-b border-gray-100 mb-3">
+                    <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Daftar Produk ({sampleItems.length})</h4>
+                  </div>
+                  <div className="space-y-2.5 max-h-40 overflow-y-auto pr-1">
+                    {sampleItems.map((p) => (
+                      <div key={p.id} className="flex gap-2.5 items-center">
+                        <img
+                          src={p.imageUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&auto=format&fit=crop'}
+                          alt={p.name}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&auto=format&fit=crop';
+                          }}
+                          className="w-11 h-11 object-cover rounded-lg border border-gray-100 bg-gray-50 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-xs text-gray-900 truncate">{p.name}</p>
+                          <p className="text-[11px] text-gray-500">Qty: {p.quantity || 1}</p>
+                        </div>
+                        <p className="font-bold text-xs text-gray-900 shrink-0">
+                          Rp {(p.price * (p.quantity || 1)).toLocaleString('id-ID')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. ORDER TOTAL BREAKDOWN */}
+                <div className="pt-3 border-t border-gray-100 space-y-2 text-xs text-gray-600">
+                  <div className="flex justify-between">
+                    <span>Subtotal Produk</span>
+                    <span className="font-semibold text-gray-900">Rp {subtotal.toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Biaya Pengiriman</span>
+                    <span className="font-semibold text-gray-900">
+                      {shippingFee > 0 ? `Rp ${shippingFee.toLocaleString('id-ID')}` : selectedRate ? 'Gratis' : 'Menunggu alamat'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-baseline font-extrabold text-gray-900 text-base pt-2.5 border-t border-gray-100">
+                    <span>Total Tagihan</span>
+                    <span className="text-blue-700 text-lg">Rp {total.toLocaleString('id-ID')}</span>
+                  </div>
+                </div>
+
+                {/* 5. CHECKOUT / PAY BUTTON */}
+                <div className="pt-2 space-y-2.5">
                   <button
                     type="button"
                     disabled={isSubmitting}
                     onClick={handleProcessCheckout}
-                    className="w-full py-4 px-6 bg-black hover:bg-gray-800 text-white rounded-2xl font-bold text-base transition shadow-md hover:shadow-lg active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2.5"
+                    className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white rounded-xl font-bold text-sm transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Memproses Pesanan Anda...</span>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Menghubungkan ke Duitku...</span>
                       </>
                     ) : (
                       <>
@@ -1143,56 +1191,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       </>
                     )}
                   </button>
-                </div>
-              </div>
-            </div>
 
-            {/* Right Column: Sticky Order Summary */}
-            <div className="lg:col-span-5 sticky top-24 space-y-4">
-              <div className="bg-white p-6 sm:p-7 rounded-3xl border border-gray-200/80 shadow-xs space-y-5">
-                <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                  <h2 className="text-base font-bold text-gray-900">Ringkasan Pesanan</h2>
-                  <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
-                    {sampleItems.length} Produk
-                  </span>
-                </div>
-
-                {/* Items List */}
-                <div className="space-y-3.5 max-h-80 overflow-y-auto pr-1">
-                  {sampleItems.map((p) => (
-                    <div key={p.id} className="flex gap-3.5 items-center">
-                      <img
-                        src={p.imageUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&auto=format&fit=crop'}
-                        alt={p.name}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&auto=format&fit=crop';
-                        }}
-                        className="w-14 h-14 object-cover rounded-xl border border-gray-100 bg-gray-50 shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-gray-900 truncate">{p.name}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Qty: {p.quantity || 1}</p>
-                      </div>
-                      <p className="font-bold text-sm text-gray-900 shrink-0">
-                        Rp {(p.price * (p.quantity || 1)).toLocaleString('id-ID')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Breakdown Costs */}
-                <div className="pt-4 border-t border-gray-100 space-y-2.5 text-sm text-gray-600">
-                  <div className="flex justify-between">
-                    <span>Subtotal Produk</span>
-                    <span className="font-semibold text-gray-900">Rp {subtotal.toLocaleString('id-ID')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Ongkir ({selectedRate?.courier_name || 'Kurir'})</span>
-                    <span className="font-semibold text-gray-900">Rp {shippingFee.toLocaleString('id-ID')}</span>
-                  </div>
-                  <div className="flex justify-between items-baseline font-extrabold text-gray-900 text-lg pt-3 border-t border-gray-100">
-                    <span>Total Tagihan</span>
-                    <span className="text-black text-xl">Rp {total.toLocaleString('id-ID')}</span>
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500 font-medium">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Gerbang Pembayaran Duitku Resmi &amp; Terenkripsi</span>
                   </div>
                 </div>
               </div>
@@ -1217,5 +1219,3 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     </div>
   );
 };
-
-

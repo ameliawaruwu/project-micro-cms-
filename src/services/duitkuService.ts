@@ -210,7 +210,7 @@ class DuitkuService {
   }
 
   /**
-   * Open Duitku Payment popup or fallback to smart sandbox simulator
+   * Open official Duitku Payment popup (POP) or redirect to official Duitku payment page
    */
   async payWithDuitku(
     params: DuitkuTransactionParams,
@@ -221,54 +221,56 @@ class DuitkuService {
       onClose?: () => void;
     }
   ): Promise<void> {
-    try {
-      await this.loadPopScript();
+    await this.loadPopScript();
 
-      const invoice = await this.createInvoice(params);
+    const invoice = await this.createInvoice(params);
 
-      // 1. Prioritaskan Duitku POP resmi (window.checkout.process)
-      if (window.checkout && typeof window.checkout.process === 'function') {
+    // 1. Prioritaskan Duitku POP resmi (window.checkout.process)
+    if (window.checkout && typeof window.checkout.process === 'function') {
+      try {
         window.checkout.process(invoice.reference, {
           defaultLanguage: 'id',
-          successEvent: (result) => {
-            callbacks.onSuccess?.(result);
+          successEvent: (result: any) => {
+            callbacks.onSuccess?.({
+              resultCode: result?.resultCode || '00',
+              merchantOrderId: result?.merchantOrderId || params.orderId,
+              reference: result?.reference || invoice.reference,
+              statusMessage: result?.statusMessage || 'SUCCESS',
+            });
           },
-          pendingEvent: (result) => {
-            callbacks.onPending?.(result);
+          pendingEvent: (result: any) => {
+            callbacks.onPending?.({
+              resultCode: result?.resultCode || '01',
+              merchantOrderId: result?.merchantOrderId || params.orderId,
+              reference: result?.reference || invoice.reference,
+              statusMessage: result?.statusMessage || 'PENDING',
+            });
           },
-          errorEvent: (result) => {
-            callbacks.onError?.(result);
+          errorEvent: (result: any) => {
+            callbacks.onError?.({
+              resultCode: result?.resultCode || '02',
+              merchantOrderId: result?.merchantOrderId || params.orderId,
+              reference: result?.reference || invoice.reference,
+              statusMessage: result?.statusMessage || 'Gagal memproses pembayaran Duitku',
+            });
           },
-          closeEvent: (result) => {
+          closeEvent: () => {
             callbacks.onClose?.();
           },
         });
         return;
+      } catch (popErr) {
+        console.warn('[Duitku POP Error, redirecting to paymentUrl]:', popErr);
       }
-
-      // 2. Jika POP script tidak aktif, arahkan langsung ke paymentUrl resmi Duitku
-      if (invoice.paymentUrl) {
-        window.location.href = invoice.paymentUrl;
-        return;
-      }
-
-      throw new Error('Duitku tidak mengembalikan referensi atau paymentUrl yang valid.');
-    } catch (err: any) {
-      console.warn('[Duitku] Official payment notice:', err);
-      // Di environment sandbox, jika ada kendala koneksi Duitku resmi, tampilkan simulator cerdas agar alur tidak macet
-      if (this.getEnvironment() === 'sandbox') {
-        this.renderSandboxSimulator(params, callbacks, err.message);
-        return;
-      }
-
-      callbacks.onError?.({
-        resultCode: '02',
-        merchantOrderId: params.orderId,
-        reference: '',
-        statusMessage: err.message || 'Gagal memproses pembayaran Duitku resmi',
-      });
-      alert(`[Duitku Official Gateway]\n${err.message || 'Gagal memproses transaksi.'}`);
     }
+
+    // 2. Jika POP script tidak aktif atau pop-up diblokir browser, arahkan langsung ke halaman pembayaran resmi Duitku
+    if (invoice.paymentUrl) {
+      window.location.href = invoice.paymentUrl;
+      return;
+    }
+
+    throw new Error('Duitku tidak mengembalikan referensi atau paymentUrl yang valid.');
   }
 
   /**
@@ -314,181 +316,6 @@ class DuitkuService {
     }
 
     return { statusCode: '01', statusMessage: 'Pending', isPaid: false };
-  }
-
-  /**
-   * Smart Sandbox Payment Simulator Modal
-   * Resilient fallback so users & merchants can test transactions smoothly
-   */
-  private renderSandboxSimulator(
-    params: DuitkuTransactionParams,
-    callbacks: {
-      onSuccess?: (result: DuitkuCallbackResult) => void;
-      onPending?: (result: DuitkuCallbackResult) => void;
-      onError?: (result: DuitkuCallbackResult) => void;
-      onClose?: () => void;
-    },
-    hintError?: string
-  ): void {
-    if (typeof document === 'undefined') return;
-
-    const existingModal = document.getElementById('duitku-simulator-modal');
-    if (existingModal) existingModal.remove();
-
-    const overlay = document.createElement('div');
-    overlay.id = 'duitku-simulator-modal';
-    overlay.style.cssText = `
-      position: fixed;
-      inset: 0;
-      z-index: 999999;
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(6px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    `;
-
-    const formattedAmount = new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(params.grossAmount);
-
-    overlay.innerHTML = `
-      <div style="background: white; border-radius: 16px; width: 100%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); overflow: hidden; animation: popIn 0.2s ease-out;">
-        <!-- Header -->
-        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); padding: 18px 20px; color: white; display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="background: white; color: #0284c7; font-weight: 900; font-size: 11px; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px;">
-              DUITKU POP
-            </div>
-            <span style="font-size: 13px; font-weight: 600; opacity: 0.95;">Sandbox Payment Simulator</span>
-          </div>
-          <button id="sim-close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; line-height: 1; padding: 4px; border-radius: 4px;">&times;</button>
-        </div>
-
-        <!-- Body -->
-        <div style="padding: 20px;">
-          ${
-            hintError
-              ? `
-            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; font-size: 11px; color: #1e40af; line-height: 1.4;">
-              <strong>Info Koneksi:</strong> Kredensial Duitku Sandbox siap dihubungkan. Anda dapat mensimulasikan pembayaran instan di bawah ini.
-            </div>
-          `
-              : ''
-          }
-
-          <div style="text-align: center; margin-bottom: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
-            <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Total Tagihan</span>
-            <div style="font-size: 26px; font-weight: 800; color: #0f172a;">${formattedAmount}</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Order ID: <code style="font-weight: 600; color: #0284c7;">${params.orderId}</code></div>
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">Pilih Metode Bayar Duitku</label>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-              <button class="sim-method-btn" data-method="QRIS" style="padding: 10px 6px; border: 2px solid #0284c7; background: #f0f9ff; border-radius: 8px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 700; color: #0369a1;">
-                QRIS
-              </button>
-              <button class="sim-method-btn" data-method="BCA VA" style="padding: 10px 6px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 700; color: #475569;">
-                BCA VA
-              </button>
-              <button class="sim-method-btn" data-method="MANDIRI VA" style="padding: 10px 6px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 700; color: #475569;">
-                MANDIRI
-              </button>
-              <button class="sim-method-btn" data-method="BRI VA" style="padding: 10px 6px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 700; color: #475569;">
-                BRI VA
-              </button>
-              <button class="sim-method-btn" data-method="SHOPEEPAY" style="padding: 10px 6px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 700; color: #475569;">
-                SHOPEEPAY
-              </button>
-              <button class="sim-method-btn" data-method="OVO" style="padding: 10px 6px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 700; color: #475569;">
-                OVO
-              </button>
-            </div>
-          </div>
-
-          <!-- Actions -->
-          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 20px;">
-            <button id="sim-pay-success" style="width: 100%; padding: 12px; background: #0284c7; color: white; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.25); display: flex; align-items: center; justify-content: center; gap: 6px;">
-              <span>Bayar Sukses (Simulasi Duitku 00)</span>
-            </button>
-            <div style="display: flex; gap: 8px;">
-              <button id="sim-pay-pending" style="flex: 1; padding: 9px; background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer;">
-                Pending (01)
-              </button>
-              <button id="sim-pay-failed" style="flex: 1; padding: 9px; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer;">
-                Gagal / Batal (02)
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    let selectedMethod = 'QRIS';
-    const methodBtns = overlay.querySelectorAll('.sim-method-btn');
-    methodBtns.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        methodBtns.forEach((b: any) => {
-          b.style.border = '1px solid #e2e8f0';
-          b.style.background = 'white';
-          b.style.color = '#475569';
-        });
-        const target = btn as HTMLElement;
-        target.style.border = '2px solid #0284c7';
-        target.style.background = '#f0f9ff';
-        target.style.color = '#0369a1';
-        selectedMethod = target.getAttribute('data-method') || 'QRIS';
-      });
-    });
-
-    const cleanup = () => {
-      overlay.remove();
-    };
-
-    overlay.querySelector('#sim-close-btn')?.addEventListener('click', () => {
-      cleanup();
-      callbacks.onClose?.();
-    });
-
-    overlay.querySelector('#sim-pay-success')?.addEventListener('click', () => {
-      cleanup();
-      const mockResult: DuitkuCallbackResult = {
-        resultCode: '00',
-        merchantOrderId: params.orderId,
-        reference: `DUITKU-${Date.now()}-${selectedMethod}`,
-        statusMessage: 'SUCCESS',
-      };
-      callbacks.onSuccess?.(mockResult);
-    });
-
-    overlay.querySelector('#sim-pay-pending')?.addEventListener('click', () => {
-      cleanup();
-      const mockResult: DuitkuCallbackResult = {
-        resultCode: '01',
-        merchantOrderId: params.orderId,
-        reference: `DUITKU-${Date.now()}-${selectedMethod}`,
-        statusMessage: 'PENDING',
-      };
-      callbacks.onPending?.(mockResult);
-    });
-
-    overlay.querySelector('#sim-pay-failed')?.addEventListener('click', () => {
-      cleanup();
-      const mockResult: DuitkuCallbackResult = {
-        resultCode: '02',
-        merchantOrderId: params.orderId,
-        reference: `DUITKU-${Date.now()}-${selectedMethod}`,
-        statusMessage: 'CANCELED',
-      };
-      callbacks.onError?.(mockResult);
-    });
   }
 }
 
