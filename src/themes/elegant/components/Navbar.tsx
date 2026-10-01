@@ -27,6 +27,11 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
           <a href="/" className="text-3xl md:text-4xl font-normal tracking-wide text-[#2C2A29]">
             {storeTitle}
           </a>
+          {(sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description) && (
+            <span className="text-[11px] tracking-[0.2em] uppercase text-[#6B6865] mt-1 font-sans">
+              {sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description}
+            </span>
+          )}
         </div>
 
         {/* Right: Actions */}

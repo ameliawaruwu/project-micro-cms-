@@ -24,7 +24,7 @@ export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options
     <div className="group block font-serif">
       <div className={`bg-white rounded-2xl p-3 shadow-xs border border-[#E8E4DB] flex flex-col h-full justify-between transition-all duration-300 ${readonly ? '' : 'hover:shadow-lg hover:-translate-y-1'}`}>
         <div>
-          <div className="relative aspect-square overflow-hidden rounded-xl bg-[#F9F6F0] mb-3.5 border border-[#E8E4DB]/60">
+          <div className="relative aspect-square min-h-[170px] sm:min-h-[200px] overflow-hidden rounded-xl bg-[#F9F6F0] mb-3.5 border border-[#E8E4DB]/60">
             <InlineEditableImage
               src={product.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80'}
               alt={product.name}
@@ -56,7 +56,7 @@ export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options
               </div>
             )}
 
-            <h3 className="text-sm sm:text-base font-serif font-bold text-[#2C3B2D] line-clamp-1 mb-1 group-hover:text-[#166534] transition-colors">
+            <h3 className="text-xs sm:text-sm md:text-base font-serif font-bold text-[#2C3B2D] line-clamp-1 mb-1 group-hover:text-[#166534] transition-colors storefront-card-title">
               <InlineEditableText
                 tagName="span"
                 value={product.name}
@@ -74,7 +74,7 @@ export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options
             )}
 
             {showPrice && (
-              <div className="font-sans font-bold text-sm sm:text-base text-[#166534] mb-3">
+              <div className="font-sans font-bold text-xs sm:text-sm md:text-base text-[#166534] mb-3 storefront-card-price">
                 <InlineEditableText
                   tagName="span"
                   value={`Rp ${product.price.toLocaleString('id-ID')}`}

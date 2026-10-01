@@ -131,14 +131,26 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                           >
                             {prod.name}
                           </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {prod.sku && (
+                              <span className="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                SKU: {prod.sku}
+                              </span>
+                            )}
+                            {prod.description && (
+                              <span className="text-[10px] text-gray-400 line-clamp-1 max-w-[240px]" title={prod.description}>
+                                {prod.description}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
 
-                    {/* Category - Plain text */}
+                    {/* Category */}
                     <td className="py-3.5 px-4">
-                      <span className="text-xs text-[#706866] font-medium">
-                        {prod.category}
+                      <span className="inline-block text-[11px] font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200">
+                        {prod.category || 'Umum'}
                       </span>
                     </td>
 
@@ -161,15 +173,28 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                       </div>
                     </td>
 
-                    {/* Stock - Plain count display */}
+                    {/* Stock & Status */}
                     <td className="py-3.5 px-4">
-                      <span className={`text-xs font-mono ${
-                        prod.stock <= 5
-                          ? 'font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200 inline-block'
-                          : 'font-semibold text-[#241A1A]'
-                      }`}>
-                        {prod.stock}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className={`text-xs font-mono font-bold ${
+                          prod.stock <= 0
+                            ? 'text-gray-400'
+                            : prod.stock <= 5
+                            ? 'text-red-600'
+                            : 'text-[#241A1A]'
+                        }`}>
+                          {prod.stock} unit
+                        </span>
+                        <span className={`inline-flex items-center w-fit text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                          prod.stock <= 0
+                            ? 'bg-gray-100 text-gray-600 border border-gray-200'
+                            : prod.stock <= 5
+                            ? 'bg-red-50 text-red-600 border border-red-200'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        }`}>
+                          {prod.stock <= 0 ? 'Habis' : prod.stock <= 5 ? 'Hampir Habis' : 'Tersedia'}
+                        </span>
+                      </div>
                     </td>
 
                     {/* Actions: Edit, Hapus */}
@@ -195,6 +220,12 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 ))}
               </tbody>
             </table>
+            
+            {/* Table Footer with Summary */}
+            <div className="px-6 py-3 bg-[#FAF7F7] border-t border-[#E5E0DD] flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#706866]">
+              <span>Total: <strong>{products.length}</strong> produk terdaftar</span>
+              <span className="text-[11px] text-gray-400">Klik nama produk atau ikon pensil untuk mengubah rincian produk</span>
+            </div>
           </div>
         )}
       </div>

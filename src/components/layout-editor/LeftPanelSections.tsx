@@ -31,6 +31,7 @@ import {
   Minus,
   AlignLeft,
 } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { StoreSectionConfig, StoreSectionType } from '../../types';
 
 interface LeftPanelSectionsProps {
@@ -60,6 +61,7 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
   onOpenThemeSettings,
   activePage = 'homepage',
 }) => {
+  const { isEn } = useLanguage();
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
@@ -108,32 +110,56 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
   };
 
   const getSectionLabel = (sec: StoreSectionConfig) => {
-    if (sec.title) return sec.title;
-    const labelMap: Record<string, string> = {
-      'announcement': 'Pengumuman',
-      'header': 'Header & Navbar',
-      'hero_banner': 'Hero Banner',
-      'search_category': 'Pencarian & Kategori',
-      'featured_products': 'Produk Unggulan',
-      'product_grid': 'Katalog Produk',
-      'promo_banner': 'Banner Promo',
-      'store_benefits': 'Keunggulan Toko',
-      'testimonials': 'Ulasan Pelanggan',
-      'newsletter': 'Newsletter',
-      'store_info': 'Info Toko',
-      'footer': 'Footer',
-      'rich_text': 'Teks Kaya',
-      'image_with_text': 'Gambar & Teks',
-      'gallery': 'Galeri',
-      'video': 'Video',
-      'cta': 'Call to Action',
-      'countdown': 'Countdown',
-      'spacer': 'Spacer',
-      'divider': 'Divider',
-      'columns': 'Kolom',
-      'contact': 'Kontak',
+    const labelMap: Record<string, { id: string; en: string }> = {
+      'announcement': { id: 'Pengumuman', en: 'Announcement Bar' },
+      'header': { id: 'Header & Navbar', en: 'Header & Navbar' },
+      'hero_banner': { id: 'Hero Banner', en: 'Hero Banner' },
+      'search_category': { id: 'Pencarian & Kategori', en: 'Search & Categories' },
+      'featured_products': { id: 'Produk Unggulan', en: 'Featured Products' },
+      'product_grid': { id: 'Katalog Produk', en: 'Product Catalog' },
+      'promo_banner': { id: 'Banner Promo', en: 'Promo Banner' },
+      'store_benefits': { id: 'Keunggulan Toko', en: 'Store Benefits' },
+      'testimonials': { id: 'Ulasan Pelanggan', en: 'Testimonials' },
+      'newsletter': { id: 'Newsletter', en: 'Newsletter' },
+      'store_info': { id: 'Info Toko', en: 'Store Information' },
+      'footer': { id: 'Footer', en: 'Footer' },
+      'rich_text': { id: 'Teks Kaya', en: 'Rich Text' },
+      'image_with_text': { id: 'Gambar & Teks', en: 'Image with Text' },
+      'gallery': { id: 'Galeri', en: 'Gallery' },
+      'video': { id: 'Video', en: 'Video' },
+      'cta': { id: 'Call to Action', en: 'Call to Action' },
+      'countdown': { id: 'Hitung Mundur', en: 'Countdown' },
+      'spacer': { id: 'Pemisah / Jarak', en: 'Spacer' },
+      'divider': { id: 'Garis Pembatas', en: 'Divider' },
+      'columns': { id: 'Kolom Konten', en: 'Columns' },
+      'contact': { id: 'Kontak Toko', en: 'Contact' },
+      'craftsmanship_story': { id: 'Kisah Keahlian', en: 'Craftsmanship Story' },
+      'signature_collection': { id: 'Koleksi Utama', en: 'Signature Collection' },
+      'private_collection': { id: 'Koleksi Privat', en: 'Private Collection' },
+      'brand_philosophy': { id: 'Filosofi Brand', en: 'Brand Philosophy' },
+      'collection_grid': { id: 'Grid Koleksi', en: 'Collection Grid' },
+      'tech_features': { id: 'Fitur Teknologi', en: 'Tech Features' },
+      'floating_showcase': { id: 'Showcase Mengambang', en: 'Floating Showcase' },
+      'innovation_cta': { id: 'Inovasi CTA', en: 'Innovation CTA' },
+      'lookbook': { id: 'Lookbook', en: 'Lookbook' },
+      'brand_story': { id: 'Kisah Brand', en: 'Brand Story' },
+      'journal': { id: 'Jurnal / Berita', en: 'Journal' },
+      'asymmetric_showcase': { id: 'Showcase Asimetris', en: 'Asymmetric Showcase' },
+      'ingredient_story': { id: 'Bahan Baku Alami', en: 'Ingredient Story' },
+      'sustainability': { id: 'Keberlanjutan', en: 'Sustainability' },
+      'latest_drop': { id: 'Rilisan Terbaru', en: 'Latest Drop' },
+      'community_board': { id: 'Papan Komunitas', en: 'Community Board' },
     };
-    return labelMap[sec.id] || sec.id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+    if (sec.title) {
+      const isDefaultTitle = Object.values(labelMap).some(entry => entry.id === sec.title || entry.en === sec.title);
+      if (!isDefaultTitle) return sec.title;
+    }
+
+    if (labelMap[sec.id]) {
+      return isEn ? labelMap[sec.id].en : labelMap[sec.id].id;
+    }
+    return sec.id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   // Drag & drop handlers
@@ -347,20 +373,20 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
   };
 
   const pageLabels: Record<string, string> = {
-    homepage: 'Halaman Utama',
-    catalog: 'Katalog Produk',
-    product: 'Detail Produk',
-    about: 'Tentang Toko',
-    contact: 'Kontak',
-    checkout: 'Checkout',
-    thank_you: 'Terima kasih',
-    login: 'Masuk',
-    orders: 'Pesanan',
-    order_status: 'Status pesanan',
-    profile: 'Profil',
+    homepage: isEn ? 'Homepage' : 'Halaman Utama',
+    catalog: isEn ? 'Product Catalog' : 'Katalog Produk',
+    product: isEn ? 'Product Detail' : 'Detail Produk',
+    about: isEn ? 'About Us' : 'Tentang Toko',
+    contact: isEn ? 'Contact' : 'Kontak',
+    checkout: isEn ? 'Checkout' : 'Checkout',
+    thank_you: isEn ? 'Thank You' : 'Terima Kasih',
+    login: isEn ? 'Sign In' : 'Masuk',
+    orders: isEn ? 'Orders' : 'Pesanan',
+    order_status: isEn ? 'Order Status' : 'Status Pesanan',
+    profile: isEn ? 'Profile' : 'Profil',
   };
 
-  const pageLabel = pageLabels[activePage] || 'Halaman Utama';
+  const pageLabel = pageLabels[activePage] || (isEn ? 'Homepage' : 'Halaman Utama');
 
   // Custom pages hierarchy configuration
   const customPageConfig = PAGE_SECTION_GROUPS[activePage];
@@ -375,7 +401,7 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
               <span>{pageLabel}</span>
             </h2>
             <p className="text-[11px] text-[#8C9196] mt-0.5">
-              Edit bagian halaman secara khusus
+              {isEn ? 'Customize page sections' : 'Edit bagian halaman secara khusus'}
             </p>
           </div>
           {onOpenThemeSettings && (
@@ -453,9 +479,9 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
         ) : (
           // Default Homepage Sections List
           <>
-            {renderGroup('header', 'Header', headerSections)}
-            {renderGroup('content', 'Konten', contentSections)}
-            {renderGroup('footer', 'Footer', footerSections)}
+            {renderGroup('header', isEn ? 'Header' : 'Header', headerSections)}
+            {renderGroup('content', isEn ? 'Content' : 'Konten', contentSections)}
+            {renderGroup('footer', isEn ? 'Footer' : 'Footer', footerSections)}
           </>
         )}
       </div>
@@ -468,7 +494,7 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
           className="w-full py-2.5 rounded-lg border border-dashed border-[#C9CCCF] hover:border-[#2C6ECB] text-[#2C6ECB] hover:bg-[#F1F8FF] text-[13px] font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          Tambah Bagian
+          {isEn ? 'Add Section' : 'Tambah Bagian'}
         </button>
       </div>
     </aside>

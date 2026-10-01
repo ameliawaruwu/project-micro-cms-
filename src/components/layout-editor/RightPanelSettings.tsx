@@ -47,6 +47,7 @@ interface RightPanelSettingsProps {
   globalSettings?: any;
   onUpdateGlobalSettings?: (newSettings: any) => void;
   showGlobalSettings?: boolean;
+  onUpdateStore?: (updates: Partial<Store>) => void;
 }
 
 export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
@@ -62,6 +63,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   globalSettings,
   onUpdateGlobalSettings,
   showGlobalSettings,
+  onUpdateStore,
 }) => {
   const cmsProducts = useCmsStore(state => state.products);
   const updateProduct = useCmsStore(state => state.updateProduct);
@@ -396,8 +398,9 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     else if (selectedSection.id === 'testimonials') handleOptionChange({ testimonialsTitle: e.target.value, heading: e.target.value });
                     else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterTitle: e.target.value, heading: e.target.value });
                     else if (selectedSection.id === 'header') {
-                      handleOptionChange({ heading: e.target.value, storeName: e.target.value });
+                      handleOptionChange({ heading: e.target.value, storeName: e.target.value, title: e.target.value });
                       useCmsStore.getState().updateStoreInfo({ name: e.target.value });
+                      if (onUpdateStore) onUpdateStore({ name: e.target.value });
                     }
                     else handleOptionChange({ heading: e.target.value });
                   }}
@@ -423,12 +426,13 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                         : opts.description || opts.subheading || opts.featuredSubtitle || opts.newsletterSubtitle || (opts as any).content || ''
                     }
                     onChange={(e) => {
-                      if (selectedSection.id === 'featured_products') handleOptionChange({ featuredSubtitle: e.target.value, subheading: e.target.value });
-                      else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterSubtitle: e.target.value });
-                      else if (selectedSection.id === 'footer') handleOptionChange({ copyrightText: e.target.value });
+                      if (selectedSection.id === 'featured_products') handleOptionChange({ featuredSubtitle: e.target.value, subheading: e.target.value, description: e.target.value });
+                      else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterSubtitle: e.target.value, description: e.target.value });
+                      else if (selectedSection.id === 'footer') handleOptionChange({ copyrightText: e.target.value, description: e.target.value });
                       else if (selectedSection.id === 'header') {
-                        handleOptionChange({ subheading: e.target.value, description: e.target.value, subtitle: e.target.value });
+                        handleOptionChange({ subheading: e.target.value, description: e.target.value, subtitle: e.target.value, tagline: e.target.value });
                         useCmsStore.getState().updateStoreInfo({ description: e.target.value });
+                        if (onUpdateStore) onUpdateStore({ description: e.target.value, tagline: e.target.value });
                       }
                       else handleOptionChange({ subheading: e.target.value, description: e.target.value, content: e.target.value });
                     }}

@@ -7,15 +7,23 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo.name || 'RAWSTATE';
+  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
 
   return (
     <nav className="w-full px-6 md:px-12 py-4 flex flex-col md:flex-row justify-between items-center bg-zinc-950/90 backdrop-blur-md text-white border-b border-zinc-800/80 sticky top-0 z-50 transition-all">
       <div className="w-full md:w-1/3 flex justify-center md:justify-start items-center">
         {showLogo && (
-          <a href="/" className="flex items-center gap-3 font-black tracking-tighter uppercase text-2xl md:text-3xl text-white hover:text-red-500 transition-colors group">
-            <span className="px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 text-white text-xs font-black tracking-widest rounded-md group-hover:scale-105 transition-transform shadow-md shadow-red-600/20">RAW</span>
-            <span className="font-extrabold tracking-tight">{storeTitle}</span>
-          </a>
+          <div className="flex flex-col">
+            <a href="/" className="flex items-center gap-3 font-black tracking-tighter uppercase text-2xl md:text-3xl text-white hover:text-red-500 transition-colors group">
+              <span className="px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 text-white text-xs font-black tracking-widest rounded-md group-hover:scale-105 transition-transform shadow-md shadow-red-600/20">RAW</span>
+              <span className="font-extrabold tracking-tight">{storeTitle}</span>
+            </a>
+            {storeSubtitle && (
+              <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 mt-0.5">
+                {storeSubtitle}
+              </span>
+            )}
+          </div>
         )}
       </div>
       
@@ -38,7 +46,7 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
 export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "LOUD & CLEAR";
-  const subheading = sectionOptions.subheading || "The New Standard in Streetwear & Modern Aesthetics";
+  const subheading = sectionOptions.subheading || sectionOptions.description || "The New Standard in Streetwear & Modern Aesthetics";
   const buttonLabel = sectionOptions.buttonLabel || "Explore Collection";
   const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1600&q=80";
 

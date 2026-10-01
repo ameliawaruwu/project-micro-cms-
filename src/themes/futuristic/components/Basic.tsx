@@ -6,11 +6,20 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOp
   
   const showLogo = sectionOptions.showLogo ?? true;
   const showNavMenu = sectionOptions.showNavMenu ?? true;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
 
   return (
     <nav className="w-full px-6 md:px-12 py-5 flex justify-between items-center bg-[#050505]/80 border-b border-purple-900/30 backdrop-blur-md sticky top-0 z-50">
-      <div className="text-xl font-black tracking-[0.2em] text-white">
-        {showLogo && <><span className="text-purple-500 mr-2">/</span>{storeInfo.name}</>}
+      <div className="flex flex-col">
+        <div className="text-xl font-black tracking-[0.2em] text-white">
+          {showLogo && <><span className="text-purple-500 mr-2">/</span>{storeTitle}</>}
+        </div>
+        {storeSubtitle && (
+          <span className="text-[10px] font-mono tracking-widest text-purple-400/80 mt-0.5">
+            {storeSubtitle}
+          </span>
+        )}
       </div>
       {showNavMenu && (
         <div className="hidden md:flex gap-8">
@@ -31,7 +40,7 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOp
 export const FuturisticHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "Next Gen Hardware";
-  const subheading = sectionOptions.subheading || "Engineered for the future. Equip your battle station with uncompromising technology.";
+  const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content || storeInfo?.description || "Engineered for the future. Equip your battle station with uncompromising technology.";
   const buttonLabel = sectionOptions.buttonLabel || "Initialize Sequence";
   const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2000&q=80";
   

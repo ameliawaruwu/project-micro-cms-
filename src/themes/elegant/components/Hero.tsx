@@ -23,11 +23,13 @@ export const ElegantHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions
             Maison de Couture
           </span>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-normal text-[#2C2A29] leading-[1.1] mb-8 italic">
-            {storeInfo.name}
+            {sectionOptions?.heading || storeInfo.name}
           </h1>
-          <p className="text-lg text-[#6B6865] mb-12 max-w-md leading-relaxed">
-            {storeInfo.description}
-          </p>
+          {(sectionOptions?.subheading || sectionOptions?.subtitle || sectionOptions?.description || storeInfo.description) && (
+            <p className="text-lg text-[#6B6865] mb-12 max-w-md leading-relaxed">
+              {sectionOptions?.subheading || sectionOptions?.subtitle || sectionOptions?.description || storeInfo.description}
+            </p>
+          )}
           <a 
             href="/produk" 
             className="group inline-flex items-center gap-4 text-[#2C2A29] font-sans text-xs uppercase tracking-[0.2em] pb-2 border-b border-[#2C2A29]/30 hover:border-[#2C2A29] transition-colors"

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Printer, Copy, Check, Mail, Globe } from 'lucide-react';
 import { Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { KroomifyLogo } from '../common/KroomifyLogo';
 
 export interface InvoiceRecord {
   id: string;
@@ -113,11 +114,11 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
           className="p-6 sm:p-8 bg-white text-gray-900 space-y-4 sm:space-y-5"
         >
           
-          {/* Header: Clean Brand Text on Left (No Logo), INVOICE title on Right */}
-          <div className="flex items-start justify-between">
-            {/* Brand Typography */}
-            <div className="space-y-0.5">
-              <h2 className="text-2xl font-black text-[#66000E] tracking-tight uppercase">KROOMSTORE</h2>
+          {/* Header: Kroomify Brand Logo on Left, INVOICE title on Right */}
+          <div className="flex items-start justify-between gap-4">
+            {/* Brand Logo & Tagline */}
+            <div className="space-y-1">
+              <KroomifyLogo size="lg" className="h-8 sm:h-9" />
               <p className="text-[11px] font-semibold text-gray-500">
                 {isEn ? 'MSME Micro-CMS & Online Store Platform' : 'Platform Micro-CMS & Toko Online UMKM'}
               </p>
@@ -128,7 +129,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
               <h1 className="text-xl sm:text-2xl font-black text-black tracking-[0.25em] uppercase">
                 INVOICE
               </h1>
-              <p className="font-bold text-xs sm:text-sm text-[#66000E] tracking-wide">
+              <p className="font-bold text-xs sm:text-sm text-[#66000E] tracking-wide font-mono">
                 {invoice.id}
               </p>
             </div>
@@ -147,7 +148,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
                   <tr>
                     <td className="font-medium text-gray-600 pr-3 py-0.5">{isEn ? 'Seller' : 'Penjual'}</td>
                     <td className="font-medium text-gray-600 pr-2 py-0.5">:</td>
-                    <td className="font-bold text-gray-900 py-0.5">KroomStore</td>
+                    <td className="font-bold text-gray-900 py-0.5">Kroomify</td>
                   </tr>
                 </tbody>
               </table>
@@ -198,7 +199,9 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
                 <tr>
                   <td className="py-4 px-3 align-top">
                     <p className="font-bold text-gray-900 text-xs leading-snug">
-                      {isEn ? `KroomStore Platform Subscription — ${invoice.plan} (${invoice.cycle}) + Store Domain (${store.slug ? `kroomstore.id/${store.slug}` : 'kroomstore.id'})` : `Langganan Platform KroomStore — ${invoice.plan} (${invoice.cycle}) + Domain Toko (${store.slug ? `kroomstore.id/${store.slug}` : 'kroomstore.id'})`}
+                      {isEn
+                        ? `Kroomify Platform Subscription — ${invoice.plan} (${invoice.cycle}) + Store Domain (${store.slug ? `${store.slug}.kroombox.com` : 'kroomify.kroombox.com'})`
+                        : `Langganan Platform Kroomify — ${invoice.plan} (${invoice.cycle}) + Domain Toko (${store.slug ? `${store.slug}.kroombox.com` : 'kroomify.kroombox.com'})`}
                     </p>
                     <p className="text-[10.5px] text-gray-500 mt-0.5">
                       {isEn ? 'Access to online store features, product catalog, automated payment gateway, and store showcase domain' : 'Akses fitur jualan online, katalog produk, payment gateway otomatis, dan domain etalase toko'}
@@ -262,11 +265,11 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
               </span>
               <div className="flex items-center gap-1.5 text-gray-700 font-medium">
                 <Mail className="w-3.5 h-3.5 text-[#66000E]" />
-                <span>support@kroomstore.id</span>
+                <span>support@kroombox.com</span>
               </div>
               <div className="flex items-center gap-1.5 text-gray-700 font-medium">
                 <Globe className="w-3.5 h-3.5 text-[#66000E]" />
-                <span>kroomstore.id</span>
+                <span>kroomify.kroombox.com</span>
               </div>
             </div>
 

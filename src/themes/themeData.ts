@@ -20,9 +20,9 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
     },
     categories: [
       { id: "mc1", name: "Ceramics", slug: "ceramics", image: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=800&q=80" },
-      { id: "mc2", name: "Textiles", slug: "textiles", image: "https://images.unsplash.com/photo-1584346535787-83d47d4e5f7f?w=800&q=80" },
+      { id: "mc2", name: "Textiles", slug: "textiles", image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80" },
       { id: "mc3", name: "Lighting", slug: "lighting", image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800&q=80" },
-      { id: "mc4", name: "Woodwork", slug: "woodwork", image: "https://images.unsplash.com/photo-1618684992925-508544e31fb0?w=800&q=80" }
+      { id: "mc4", name: "Woodwork", slug: "woodwork", image: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&q=80" }
     ],
     products: [
       {
@@ -34,14 +34,14 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "mp2", name: "Woven Organic Linen Cushion", slug: "linen-cushion", price: 250000,
-        image: "https://images.unsplash.com/photo-1584346535787-83d47d4e5f7f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
         categoryId: "mc2", categoryName: "Textiles",
         description: "Pure organic linen cushion cover with concealed metal zipper.",
         status: "active", isFeatured: true, isNew: false, stock: 30
       },
       {
         id: "mp3", name: "Solid Oak Serving Tray", slug: "oak-tray", price: 320000,
-        image: "https://images.unsplash.com/photo-1618684992925-508544e31fb0?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&q=80",
         categoryId: "mc4", categoryName: "Woodwork",
         description: "Minimalist solid oak serving tray finished with natural beeswax.",
         status: "active", isFeatured: false, isNew: true, stock: 15
@@ -128,7 +128,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "mod_p4", name: "MagSafe 10000mAh Powerbank", slug: "magsafe-powerbank", price: 490000,
-        image: "https://images.unsplash.com/photo-1609592424074-12ec313e648f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80",
         categoryId: "mod_c3", categoryName: "Workspace",
         description: "Fast wireless magnetic charging power bank with aluminum body.",
         status: "active", isFeatured: true, isNew: false, stock: 80
@@ -309,7 +309,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "lp7", name: "Chronograph Tourbillon Rose Gold", slug: "tourbillon-watch", price: 65000000,
-        image: "https://images.unsplash.com/photo-1547996160-012745cc5836?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80",
         categoryId: "lc2", categoryName: "Timepieces",
         description: "Limited-edition rose gold skeleton tourbillon timepiece with alligator strap.",
         status: "active", isFeatured: true, isNew: true, stock: 1
@@ -549,7 +549,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "np7", name: "Wortel Brastagi Manis 1 Kg", slug: "wortel-brastagi", price: 22000,
-        image: "https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&q=80",
         categoryId: "nc1", categoryName: "Sayur Segar & Hidroponik",
         description: "Wortel manis segar tanah vulkanik Brastagi, cocok untuk jus sehat dan aneka masakan keluarga.",
         status: "active", isFeatured: true, isNew: true, stock: 30
@@ -580,14 +580,14 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       socials: { instagram: "@kreativ.lab" }
     },
     categories: [
-      { id: "crt_c1", name: "Art Prints", slug: "art-prints", image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80" },
+      { id: "crt_c1", name: "Art Prints", slug: "art-prints", image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80" },
       { id: "crt_c2", name: "Stationery", slug: "stationery", image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&q=80" },
       { id: "crt_c3", name: "Creative Objects", slug: "objects", image: "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&q=80" }
     ],
     products: [
       {
         id: "crt_p1", name: "Abstract Geometry Risograph Print A3", slug: "art-print-riso", price: 240000,
-        image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80",
         categoryId: "crt_c1", categoryName: "Art Prints",
         description: "Limited edition 3-color risograph print on 250gsm archival cotton paper.",
         status: "active", isFeatured: true, isNew: true, stock: 25
@@ -661,7 +661,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
     },
     categories: [
       { id: "pro_c1", name: "Executive Gear", slug: "executive", image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&q=80" },
-      { id: "pro_c2", name: "Ergonomics", slug: "ergonomics", image: "https://images.unsplash.com/photo-1580481072645-022f9a6d8310?w=800&q=80" },
+      { id: "pro_c2", name: "Ergonomics", slug: "ergonomics", image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&q=80" },
       { id: "pro_c3", name: "Desk Accessories", slug: "desk-acc", image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&q=80" }
     ],
     products: [
@@ -674,7 +674,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "pro_p2", name: "Ergonomic Executive Mesh Chair", slug: "ergo-chair", price: 3450000,
-        image: "https://images.unsplash.com/photo-1580481072645-022f9a6d8310?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&q=80",
         categoryId: "pro_c2", categoryName: "Ergonomics",
         description: "High-back breathable mesh office chair with 4D lumbar support & headrest.",
         status: "active", isFeatured: true, isNew: true, stock: 15
@@ -702,7 +702,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "pro_p6", name: "Felt & Vegan Leather Desk Pad", slug: "desk-pad", price: 260000,
-        image: "https://images.unsplash.com/photo-1609592424074-12ec313e648f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1593640495253-23196b27a87f?w=800&q=80",
         categoryId: "pro_c3", categoryName: "Desk Accessories",
         description: "Waterproof dual-sided desk blotter mat 90cm x 45cm for keyboard & mouse.",
         status: "active", isFeatured: false, isNew: false, stock: 60
@@ -847,7 +847,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "cute_p4", name: "Fluffy Bunny Zip Pencil Case", slug: "bunny-pencil-case", price: 95000,
-        image: "https://images.unsplash.com/photo-1584346535787-83d47d4e5f7f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=800&q=80",
         categoryId: "cute_c1", categoryName: "Plushies & Toys",
         description: "Soft plush zip pouch for pens, makeup brushes or trinkets.",
         status: "active", isFeatured: true, isNew: false, stock: 100
@@ -861,21 +861,21 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "cute_p6", name: "Strawberry Fluffy Bed Socks", slug: "strawberry-socks", price: 55000,
-        image: "https://images.unsplash.com/photo-1584346535787-83d47d4e5f7f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=800&q=80",
         categoryId: "cute_c2", categoryName: "Desk & Gifts",
         description: "Ultra cozy micro-fleece sleeping socks with embroidery details.",
         status: "active", isFeatured: false, isNew: true, stock: 120
       },
       {
         id: "cute_p7", name: "Kawaii Animals Vinyl Sticker Pack", slug: "sticker-pack", price: 45000,
-        image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80",
         categoryId: "cute_c2", categoryName: "Desk & Gifts",
         description: "Pack of 50 waterproof vinyl stickers for laptops, bottles & journals.",
         status: "active", isFeatured: false, isNew: false, stock: 150
       },
       {
         id: "cute_p8", name: "Soft Cloud Reading Floor Pillow", slug: "cloud-pillow", price: 245000,
-        image: "https://images.unsplash.com/photo-1584346535787-83d47d4e5f7f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1567016432779-094069958ea5?w=800&q=80",
         categoryId: "cute_c1", categoryName: "Plushies & Toys",
         description: "Large cloud-shaped floor cushion in pastel lavender plush fabric.",
         status: "active", isFeatured: true, isNew: false, stock: 25

@@ -44,27 +44,31 @@ export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any }> = ({ se
       <div className="max-w-7xl mx-auto px-6 md:px-16">
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{heading}</h2>
-            <p className="text-gray-600">Browse our comprehensive selection of business-grade products.</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-4 storefront-heading-section">{heading}</h2>
+            <p className="text-xs sm:text-sm text-gray-600">Browse our comprehensive selection of business-grade products.</p>
           </div>
           <div className="flex gap-4 w-full md:w-auto">
-            <input type="text" placeholder="Search by SKU or Name..." className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm" />
-            <button className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Filter</button>
+            <input type="text" placeholder="Search by SKU or Name..." className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm" />
+            <button className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50">Filter</button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {products.map(product => (
-            <div key={product.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow group">
-              <div className="aspect-[4/3] bg-gray-100 overflow-hidden relative">
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                <div className="absolute top-2 right-2 px-2 py-1 bg-green-100 text-green-800 text-[10px] font-bold uppercase rounded">In Stock</div>
+            <div key={product.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow group flex flex-col justify-between">
+              <div>
+                <div className="aspect-[4/3] min-h-[160px] sm:min-h-[190px] bg-gray-100 overflow-hidden relative">
+                  <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="absolute top-2 right-2 px-2 py-1 bg-green-100 text-green-800 text-[10px] font-bold uppercase rounded">In Stock</div>
+                </div>
+                <div className="p-4 sm:p-5">
+                  <p className="text-[10px] sm:text-xs text-gray-500 mb-1 font-mono">SKU: {Math.random().toString(36).substr(2, 8).toUpperCase()}</p>
+                  <h3 className="font-bold text-gray-900 text-xs sm:text-sm md:text-base mb-1.5 truncate storefront-card-title">{product.name}</h3>
+                  <p className="text-sm sm:text-base md:text-lg font-bold text-[#1E40AF] mb-3 sm:mb-4 storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
+                </div>
               </div>
-              <div className="p-5">
-                <p className="text-xs text-gray-500 mb-1 font-mono">SKU: {Math.random().toString(36).substr(2, 8).toUpperCase()}</p>
-                <h3 className="font-bold text-gray-900 mb-2 truncate">{product.name}</h3>
-                <p className="text-lg font-bold text-[#1E40AF] mb-4">Rp {product.price.toLocaleString('id-ID')}</p>
-                <button className="w-full py-2 bg-gray-50 border border-gray-300 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors">
+              <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+                <button className="w-full py-2 bg-gray-50 border border-gray-300 rounded-md text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors">
                   Add to Quote
                 </button>
               </div>

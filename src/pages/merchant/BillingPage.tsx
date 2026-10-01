@@ -11,12 +11,14 @@ import {
   Clock,
   RefreshCw,
   Zap,
+  AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Store as StoreType, BillingPlan, BillingSubscription } from '../../types';
 import { storeService } from '../../services/storeService';
 import { duitkuService } from '../../services/duitkuService';
-import { billingPlanService } from '../../services/billingPlanService';
+import { billingPlanService, resolvePlanSlug, ALLOWED_PLAN_SLUGS } from '../../services/billingPlanService';
 import { formatRupiah } from '../../utils/formatters';
 import { BillingInvoiceModal } from '../../components/billing/BillingInvoiceModal';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
@@ -202,6 +204,8 @@ export const BillingPage: React.FC<BillingPageProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<'qris' | 'bca_va'>('qris');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Active Pending Subscription if merchant has an unpaid bill
   const [pendingSubscription, setPendingSubscription] = useState<BillingSubscription | null>(() => {
@@ -226,10 +230,33 @@ export const BillingPage: React.FC<BillingPageProps> = ({
   useEffect(() => {
     billingPlanService.fetchPlansFromDatabase().then((fetched) => {
       if (fetched && fetched.length > 0) {
-        setPlans(fetched.filter((p) => p.isActive));
+        setPlans(fetched.filter((p) => p.isActive && (ALLOWED_PLAN_SLUGS as readonly string[]).includes(p.slug)));
       }
     });
-  }, []);
+
+    // Check & sync real active subscription for this store from DB
+    if (store.id) {
+      billingPlanService.getActiveSubscriptionForStore(store.id).then((subInfo) => {
+        if (subInfo.hasActivePaidPlan) {
+          if (store.plan !== subInfo.planSlug || store.planExpiresAt !== subInfo.expiresAt) {
+            storeService.updateStore(store.id, {
+              plan: subInfo.planSlug,
+              planExpiresAt: subInfo.expiresAt,
+              planSubscribedAt: subInfo.subscribedAt,
+            }, store.merchantId).then((updated) => {
+              onUpdateStore(updated);
+            });
+          }
+        } else if (subInfo.isExpired && store.plan && store.plan !== 'free') {
+          storeService.updateStore(store.id, {
+            plan: 'free',
+          }, store.merchantId).then((updated) => {
+            onUpdateStore(updated);
+          });
+        }
+      });
+    }
+  }, [store.id]);
 
   // Auto-polling status from Duitku while an invoice is pending
   useEffect(() => {
@@ -256,6 +283,17 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     // Auto-check immediately when merchant refocuses the window
     const handleFocus = () => {
       checkStatus();
+      if (store.id) {
+        billingPlanService.getActiveSubscriptionForStore(store.id).then((subInfo) => {
+          if (subInfo.hasActivePaidPlan && store.plan !== subInfo.planSlug) {
+            storeService.updateStore(store.id, {
+              plan: subInfo.planSlug,
+              planExpiresAt: subInfo.expiresAt,
+              planSubscribedAt: subInfo.subscribedAt,
+            }, store.merchantId).then(onUpdateStore);
+          }
+        });
+      }
     };
     window.addEventListener('focus', handleFocus);
 
@@ -267,31 +305,34 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       window.removeEventListener('focus', handleFocus);
       clearInterval(timer);
     };
-  }, [pendingSubscription?.id, pendingSubscription?.orderId, isVerifying]);
+  }, [pendingSubscription?.id, pendingSubscription?.orderId, isVerifying, store.id]);
 
-  const currentPlan = store.plan || 'free';
+  const currentPlan = resolvePlanSlug(store.plan);
 
   const handleOpenUpgrade = (plan: BillingPlan) => {
-    if (plan.slug === currentPlan || (plan.slug === 'free' && (!store.plan || store.plan === 'free' || store.plan === 'starter'))) return;
+    const targetSlug = resolvePlanSlug(plan.slug);
+    if (targetSlug === currentPlan) return;
+    if (targetSlug === 'free' && currentPlan === 'free') return;
     setSelectedPlanForUpgrade(plan);
     setIsModalOpen(true);
   };
 
   /**
-   * Activate plan immediately on merchant store & mark subscription as paid for 1 year
+   * Activate plan immediately on merchant store & mark subscription as paid for exactly 1 year (365 days)
    */
   const handleActivatePlan = async (sub: BillingSubscription) => {
-    const planSlug = sub.planId.replace(/^plan_/, '');
+    const planSlug = resolvePlanSlug(sub.planId || sub.planName);
 
-    // Calculate 1 Year (365 Days) Expiration Date
+    // Calculate 1 Year (365 Days) Expiration Date from actual payment time
     const now = new Date();
-    const oneYearLater = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+    const paidAtIso = sub.paidAt || now.toISOString();
+    const paidTime = new Date(paidAtIso).getTime();
+    const oneYearLater = new Date((isNaN(paidTime) ? now.getTime() : paidTime) + 365 * 24 * 60 * 60 * 1000);
     const expiresAtIso = oneYearLater.toISOString();
-    const paidAtIso = now.toISOString();
 
     // 1. Update store record & notify parent state (App.tsx)
     const updated = await storeService.updateStore(store.id, {
-      plan: planSlug as any,
+      plan: planSlug,
       planExpiresAt: expiresAtIso,
       planSubscribedAt: paidAtIso,
       layoutSettings: {
@@ -382,24 +423,32 @@ export const BillingPage: React.FC<BillingPageProps> = ({
   };
 
   /**
-   * Cancel pending subscription
+   * Cancel pending subscription via custom confirmation modal
    */
-  const handleCancelPendingSubscription = async (sub: BillingSubscription) => {
-    if (!window.confirm(isEn ? 'Cancel this pending invoice?' : 'Batalkan tagihan yang sedang menunggu pembayaran ini?')) return;
-    await billingPlanService.updateSubscriptionStatus(sub.id, 'cancelled');
-    setPendingSubscription(null);
-    const subs = billingPlanService.getStoreSubscriptions(store.id);
-    setInvoices(
-      subs.map((s) => ({
-        id: s.invoiceNumber,
-        plan: s.planName,
-        cycle: s.cycle === 'yearly' ? (isEn ? 'Yearly' : 'Tahunan') : (isEn ? 'Monthly' : 'Bulanan'),
-        date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-        amount: s.amount,
-        status: s.status === 'paid' ? (isEn ? 'Paid (Duitku)' : 'Lunas (Duitku)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
-      }))
-    );
-    if (onShowNotification) onShowNotification(isEn ? 'Pending invoice cancelled.' : 'Tagihan berhasil dibatalkan.');
+  const handleConfirmCancelPayment = async () => {
+    if (!pendingSubscription) return;
+    setIsCancelling(true);
+    try {
+      await billingPlanService.updateSubscriptionStatus(pendingSubscription.id, 'cancelled');
+      setPendingSubscription(null);
+      const subs = billingPlanService.getStoreSubscriptions(store.id);
+      setInvoices(
+        subs.map((s) => ({
+          id: s.invoiceNumber,
+          plan: s.planName,
+          cycle: s.cycle === 'yearly' ? (isEn ? 'Yearly' : 'Tahunan') : (isEn ? 'Monthly' : 'Bulanan'),
+          date: new Date(s.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+          amount: s.amount,
+          status: s.status === 'paid' ? (isEn ? 'Paid (Duitku)' : 'Lunas (Duitku)') : (s.status === 'cancelled' ? (isEn ? 'Cancelled' : 'Dibatalkan') : (isEn ? 'Pending Payment' : 'Menunggu Pembayaran')),
+        }))
+      );
+      setIsCancelModalOpen(false);
+      if (onShowNotification) onShowNotification(isEn ? 'Pending payment cancelled.' : 'Tagihan pembayaran berhasil dibatalkan.');
+    } catch (err: any) {
+      console.error('Error cancelling subscription:', err);
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   const handleExecuteUpgrade = async () => {
@@ -474,13 +523,16 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             if (onShowNotification) {
               onShowNotification(
                 isEn
-                  ? 'Invoice created. Complete payment via Duitku and click "Check Status & Activate".'
-                  : 'Tagihan Duitku diterbitkan. Selesaikan pembayaran lalu klik "Cek Status & Aktifkan Paket".'
+                  ? 'Invoice created. Please complete payment.'
+                  : 'Tagihan diterbitkan. Silakan selesaikan pembayaran.'
               );
             }
           },
           onError: (res) => {
-            alert(isEn ? 'Duitku payment cancelled or failed.' : (res?.statusMessage || 'Pembayaran Duitku dibatalkan atau gagal.'));
+            const errorMsg = isEn ? 'Duitku payment cancelled or failed.' : (res?.statusMessage || 'Pembayaran Duitku dibatalkan atau gagal.');
+            if (onShowNotification) {
+              onShowNotification(errorMsg);
+            }
             setIsProcessing(false);
           },
           onClose: async () => {
@@ -496,12 +548,17 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     } catch (err: any) {
       console.error('Duitku payment error:', err);
       setIsProcessing(false);
-      alert('Gagal membuka pembayaran Duitku: ' + (err?.message || 'Terjadi kesalahan pada koneksi Duitku.'));
+      const errorMsg = isEn
+        ? 'Failed to open Duitku payment: ' + (err?.message || 'Connection error.')
+        : 'Gagal membuka pembayaran Duitku: ' + (err?.message || 'Terjadi kesalahan pada koneksi Duitku.');
+      if (onShowNotification) {
+        onShowNotification(errorMsg);
+      }
     }
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 text-left w-full">
+    <div className="max-w-5xl mx-auto space-y-3.5 sm:space-y-4 animate-in fade-in duration-200 font-sans pb-16 lg:pb-8 text-left w-full">
       {/* Breadcrumb Navigation */}
       <Breadcrumb
         items={[
@@ -511,17 +568,16 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       />
 
       {/* 1. Clean Page Header */}
-      <div className="pb-3 border-b border-[#E5E0DD] flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="pb-2.5 border-b border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div>
-          <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-            <Crown className="w-5 h-5 text-[#66000E]" />
+          <h1 className="text-base sm:text-lg font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2">
+            <Crown className="w-4.5 h-4.5 text-[#66000E]" />
             <span>{t('nav_billing', 'Paket Langganan')}</span>
           </h1>
         </div>
 
         {/* Top Controls: Current Plan Status & Riwayat Berlangganan Button */}
-        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
             type="button"
             onClick={() => {
@@ -540,7 +596,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
               }
               setIsHistoryOpen(true);
             }}
-            className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#FAF7F7] border border-[#E5E0DD] text-xs font-semibold text-[#241A1A] hover:text-[#66000E] hover:border-[#66000E] transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#FAF7F7] border border-[#E5E0DD] text-xs font-semibold text-[#241A1A] hover:text-[#66000E] hover:border-[#66000E] transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5 text-[#66000E]" />
             <span>{isEn ? 'Subscription History' : 'Riwayat Berlangganan'}</span>
@@ -550,42 +606,41 @@ export const BillingPage: React.FC<BillingPageProps> = ({
 
       {/* Active Annual Subscription Banner (When merchant has an active paid plan) */}
       {store.plan && store.plan !== 'free' && store.plan !== 'starter' && (
-        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50/80 via-white to-emerald-50/40 p-5 shadow-2xs text-left transition hover:shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start sm:items-center gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Crown className="w-6 h-6" />
+        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50/80 via-white to-emerald-50/40 p-3.5 sm:p-4 shadow-2xs text-left transition hover:shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Crown className="w-5 h-5" />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    <Check className="w-3 h-3 stroke-[3]" />
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
                     {isEn ? 'Active Plan (1 Year)' : 'Paket Aktif (1 Tahun)'}
                   </span>
                   {store.planExpiresAt && (
-                    <span className="text-[11px] font-semibold text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-200 shadow-2xs">
+                    <span className="text-[10px] font-semibold text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-200 shadow-2xs">
                       {Math.max(0, Math.ceil((new Date(store.planExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} {isEn ? 'days remaining' : 'hari tersisa'}
                     </span>
                   )}
                 </div>
-                <h3 className="font-extrabold text-base sm:text-lg text-gray-900">
-                  {store.plan === 'community' ? 'Community UMKM' : (store.plan === 'personal' ? 'Personal Toko' : store.plan)}
+                <h3 className="font-bold text-sm sm:text-base text-gray-900 flex items-center gap-2">
+                  <span>{store.plan === 'community' ? 'Community UMKM' : (store.plan === 'personal' ? 'Personal Toko' : store.plan)}</span>
+                  <span className="text-xs font-normal text-gray-500">
+                    • {isEn ? 'Active until' : 'Berlaku s/d'}{' '}
+                    <strong className="text-gray-700 font-semibold">
+                      {store.planExpiresAt
+                        ? new Date(store.planExpiresAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : (isEn ? '1 Year Ahead' : '1 Tahun Penuh')}
+                    </strong>
+                  </span>
                 </h3>
-                <p className="text-xs text-gray-600">
-                  {isEn ? 'Subscription active until' : 'Masa langganan aktif berlaku hingga'}:{' '}
-                  <strong className="text-emerald-950 font-bold">
-                    {store.planExpiresAt
-                      ? new Date(store.planExpiresAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-                      : (isEn ? '1 Year Ahead' : '1 Tahun Penuh')}
-                  </strong>
-                  . {isEn ? 'All premium features, automated checkout & logistics are active.' : 'Semua fitur checkout otomatis Midtrans, kurir ekspedisi logistik Biteship, dan publikasi toko online aktif penuh.'}
-                </p>
               </div>
             </div>
 
             <div className="shrink-0 flex items-center gap-2 pt-1 sm:pt-0">
-              <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-emerald-600/10 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-600/10 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 {isEn ? 'Live & Protected' : 'Toko Berlangganan Aktif'}
               </span>
             </div>
@@ -593,59 +648,33 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         </div>
       )}
 
-      {/* Pending Subscription Banner */}
+      {/* Pending Subscription Banner - Compact & Clean */}
       {pendingSubscription && (
-        <div className="rounded-2xl border border-amber-300 border-l-4 border-l-amber-500 bg-amber-50/40 p-5 shadow-2xs text-left transition hover:shadow-xs">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-            <div className="flex items-start gap-4">
-              <div className="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                <Clock className="w-5 h-5 animate-pulse text-amber-700" />
+        <div className="rounded-2xl border border-amber-300 border-l-[3.5px] border-l-amber-500 bg-amber-50/50 p-3 sm:p-3.5 shadow-2xs text-left transition hover:shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center shrink-0 shadow-2xs">
+                <Clock className="w-4 h-4 text-amber-700 animate-pulse" />
               </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-                    {isEn ? 'Payment Pending' : 'Menunggu Pembayaran'}
-                  </span>
-                  <span className="text-xs font-mono font-semibold text-gray-600 bg-white border border-amber-200 px-2 py-0.5 rounded-md">
-                    {pendingSubscription.invoiceNumber}
-                  </span>
-                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-300 px-2 py-0.5 rounded-md">
-                    {isEn ? '1 Year (Annual)' : '1 Tahun (Tahunan)'}
-                  </span>
-                </div>
-                <h3 className="font-extrabold text-base sm:text-lg text-[#1F1F1F] flex items-center gap-2 flex-wrap">
-                  <span>{pendingSubscription.planName}</span>
-                  <span className="text-[#66000E] font-black text-base">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                  {isEn ? 'Payment Pending' : 'Menunggu Pembayaran'}
+                </span>
+                <h3 className="font-bold text-xs sm:text-sm text-[#1F1F1F] flex items-center gap-1.5 flex-wrap">
+                  <span>{getPlanName(pendingSubscription.planName)}</span>
+                  <span className="text-[#66000E] font-black">
                     ({formatRupiah(pendingSubscription.amount === 35000 ? 350000 : (pendingSubscription.amount === 99000 ? 1000000 : pendingSubscription.amount))} / tahun)
                   </span>
                 </h3>
-                <p className="text-xs text-[#706866] leading-relaxed">
-                  Metode: <strong className="text-[#1F1F1F]">{pendingSubscription.paymentMethod}</strong> • Selesaikan pembayaran agar paket langsung aktif selama <strong>1 Tahun Penuh</strong>. Sistem secara otomatis mengecek pelunasan Duitku di latar belakang.
-                </p>
-                <div className="flex items-center gap-2 pt-0.5 text-[11px] text-amber-800 font-medium">
-                  <RefreshCw className="w-3 h-3 animate-spin text-amber-600" />
-                  <span>Mengecek status pembayaran otomatis setiap beberapa detik...</span>
-                </div>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap shrink-0 pt-2 lg:pt-0">
+            <div className="flex items-center shrink-0 self-start sm:self-center">
               <button
                 type="button"
-                disabled={isVerifying}
-                onClick={() => handleCheckPaymentStatus(pendingSubscription)}
-                className="px-4 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-xs transition flex items-center gap-2 cursor-pointer disabled:opacity-60"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? 'animate-spin' : ''}`} />
-                <span>{isVerifying ? (isEn ? 'Verifying...' : 'Memverifikasi...') : (isEn ? 'Check Status & Activate' : 'Cek Status & Aktifkan Paket')}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleCancelPendingSubscription(pendingSubscription)}
-                className="px-3 py-2.5 rounded-xl bg-white hover:bg-red-50 text-gray-600 hover:text-red-700 border border-[#E5E0DD] hover:border-red-200 text-xs font-semibold transition cursor-pointer"
+                onClick={() => setIsCancelModalOpen(true)}
+                className="px-3 py-1.5 rounded-lg bg-white hover:bg-red-50 text-gray-600 hover:text-red-700 border border-[#E5E0DD] hover:border-red-200 text-xs font-semibold transition cursor-pointer"
               >
                 {isEn ? 'Cancel' : 'Batalkan'}
               </button>
@@ -654,14 +683,12 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         </div>
       )}
 
-      {/* 2. Pricing Cards Grid (Responsive & Squarish Balanced Ratio) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch pt-2">
+      {/* 2. Pricing Cards Grid (Compact, Balanced SaaS Design) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 items-stretch pt-1">
         {plans.map((plan) => {
-          const isCurrent =
-            plan.slug === store.plan ||
-            (plan.slug === 'free' && (!store.plan || store.plan === 'free' || store.plan === 'starter')) ||
-            (plan.slug === 'community' && store.plan === 'premium');
-          const isStorePaid = store.plan && store.plan !== 'free' && store.plan !== 'starter';
+          const targetPlanSlug = resolvePlanSlug(plan.slug);
+          const isCurrent = targetPlanSlug === currentPlan;
+          const isStorePaid = currentPlan !== 'free';
           const price = plan.priceYearly;
 
           // Filter out redundant breakdown items and limit to top 4 highlights to keep card squarish and compact
@@ -676,29 +703,29 @@ export const BillingPage: React.FC<BillingPageProps> = ({
           return (
             <div
               key={plan.id}
-              className={`rounded-2xl bg-white p-4 sm:p-5 border transition-all duration-200 flex flex-col justify-between relative shadow-2xs hover:shadow-md ${
+              className={`rounded-2xl bg-white p-3.5 sm:p-4 border transition-all duration-200 flex flex-col justify-between relative shadow-2xs hover:shadow-xs ${
                 isCurrent
-                  ? 'border-2 border-[#66000E] ring-4 ring-[#66000E]/5'
+                  ? 'border-2 border-[#66000E] ring-3 ring-[#66000E]/5'
                   : plan.badge
-                    ? 'border-amber-400 ring-2 ring-amber-400/20'
+                    ? 'border-amber-400 ring-1 ring-amber-400/30'
                     : 'border-[#E5E0DD]'
               }`}
             >
               <div className="flex-1 flex flex-col">
                 {/* Header Row */}
-                <div className="flex items-start justify-between gap-2 min-h-[36px]">
+                <div className="flex items-start justify-between gap-2 min-h-[32px]">
                   <div>
                     {plan.badge && (
-                      <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-2xs inline-block mb-1">
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-amber-500 text-white shadow-2xs inline-block mb-1">
                         ★ {getPlanBadge(plan.badge)}
                       </span>
                     )}
-                    <h3 className="font-extrabold text-base text-[#241A1A] leading-tight">{getPlanName(plan.name)}</h3>
+                    <h3 className="font-bold text-sm sm:text-base text-[#241A1A] leading-tight">{getPlanName(plan.name)}</h3>
                   </div>
                   {isCurrent && (
                     <div className="text-right shrink-0">
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block">
-                        {isStorePaid && plan.slug !== 'free' ? (isEn ? 'Active' : 'Aktif') : (isEn ? 'Active' : 'Aktif')}
+                        {isEn ? 'Active' : 'Aktif'}
                       </span>
                       {isStorePaid && plan.slug !== 'free' && store.planExpiresAt && (
                         <span className="text-[9px] text-gray-500 font-medium block mt-0.5">
@@ -709,12 +736,12 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   )}
                 </div>
 
-                <p className="text-[11px] text-[#706866] mt-1 line-clamp-1">{getPlanTagline(plan.tagline)}</p>
+                <p className="text-[11px] text-[#706866] mt-0.5 line-clamp-1">{getPlanTagline(plan.tagline)}</p>
 
                 {/* Price */}
-                <div className="py-2.5 border-y border-[#FAF7F7] my-2.5">
+                <div className="py-2 border-y border-[#F0ECE9] my-2">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-[#241A1A] tracking-tight">
+                    <span className="text-xl sm:text-2xl font-black text-[#241A1A] tracking-tight">
                       {price === 0 ? (isEn ? 'Free' : 'Gratis') : formatRupiah(price)}
                     </span>
                     <span className="text-[11px] text-[#706866]">
@@ -725,20 +752,20 @@ export const BillingPage: React.FC<BillingPageProps> = ({
 
                 {/* Compact Transparent Breakdown Tag */}
                 {plan.hostingPriceYearly !== undefined && plan.cmsPriceYearly !== undefined && price > 0 ? (
-                  <div className="flex items-center justify-between text-[10px] text-[#706866] bg-[#FAF7F7] px-2.5 py-1.5 rounded-lg border border-[#E5E0DD]/70 mb-3">
+                  <div className="flex items-center justify-between text-[10px] text-[#706866] bg-[#FAF7F7] px-2 py-1 rounded-md border border-[#E5E0DD]/70 mb-2.5">
                     <span>Hosting: <strong className="text-[#241A1A]">{formatRupiah(plan.hostingPriceYearly)}</strong></span>
                     <span className="text-gray-300">•</span>
                     <span>CMS: <strong className="text-[#241A1A]">{formatRupiah(plan.cmsPriceYearly)}</strong></span>
                   </div>
                 ) : (
-                  <div className="text-[10px] text-[#706866] bg-[#FAF7F7] px-2.5 py-1.5 rounded-lg border border-[#E5E0DD]/70 mb-3 flex items-center justify-between">
+                  <div className="text-[10px] text-[#706866] bg-[#FAF7F7] px-2 py-1 rounded-md border border-[#E5E0DD]/70 mb-2.5 flex items-center justify-between">
                     <span>{isEn ? 'Community Hosting Free' : 'Hosting Komunitas Gratis'}</span>
                     <span className="text-emerald-700 font-bold">Rp 0</span>
                   </div>
                 )}
 
                 {/* Features List (Compact 4 Key Items) */}
-                <ul className="space-y-2 text-[11px] text-[#241A1A] mb-4 flex-1">
+                <ul className="space-y-1.5 text-[11px] text-[#241A1A] mb-3 flex-1">
                   {displayFeatures.map((feat, idx) => {
                     const isNegative = feat.startsWith('❌');
                     return (
@@ -763,7 +790,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   type="button"
                   disabled={isCurrent}
                   onClick={() => handleOpenUpgrade(plan)}
-                  className={`w-full py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  className={`w-full py-2 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
                     isCurrent
                       ? 'bg-[#FAF7F7] text-[#706866] border border-[#E5E0DD] cursor-default'
                       : 'bg-[#66000E] hover:bg-[#801010] text-white shadow-xs active:scale-95'
@@ -784,78 +811,123 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         })}
       </div>
 
-      {/* Modal: Riwayat Berlangganan & Tagihan */}
+      {/* Modal: Riwayat Berlangganan & Tagihan (Responsive, Constrained Height & Clean Layout) */}
       {isHistoryOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-gray-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-white rounded-3xl p-6 border border-[#E5E0DD] shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 text-left">
-            <div className="flex items-center justify-between pb-3 border-b border-[#FAF7F7]">
-              <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-[#66000E]" />
+        <div
+          onClick={() => setIsHistoryOpen(false)}
+          className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-4xl max-h-[85vh] bg-white rounded-3xl p-4 sm:p-6 border border-[#E5E0DD] shadow-2xl flex flex-col animate-in zoom-in-95 duration-150 text-left"
+          >
+            {/* Modal Header */}
+            <div className="shrink-0 flex items-center justify-between pb-3.5 border-b border-[#E5E0DD]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#F5E8EA] border border-[#66000E]/20 text-[#66000E] flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
                 <div>
-                  <h3 className="font-bold text-base text-[#241A1A]">{isEn ? 'Subscription History' : 'Riwayat Berlangganan'}</h3>
-                  <p className="text-xs text-[#706866]">{isEn ? 'Transaction history of your store subscription plan' : 'Catatan transaksi paket langganan toko Anda'}</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-base sm:text-lg text-[#1F1F1F]">{isEn ? 'Subscription History' : 'Riwayat Berlangganan'}</h3>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                      {invoices.length}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#706866] mt-0.5">{isEn ? 'Transaction history of your store subscription plan' : 'Catatan transaksi paket langganan toko Anda'}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsHistoryOpen(false)}
-                className="p-1 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                title={isEn ? 'Close' : 'Tutup'}
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left text-[#241A1A]">
-                <thead className="bg-[#FAF7F7] text-[#706866] border-b border-[#E5E0DD]">
-                  <tr>
-                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Invoice No.' : 'No. Invoice'}</th>
-                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Plan' : 'Paket'}</th>
-                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Cycle' : 'Siklus'}</th>
-                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Date' : 'Tanggal'}</th>
-                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Total' : 'Total'}</th>
-                    <th className="py-2.5 px-3 font-semibold">{isEn ? 'Status' : 'Status'}</th>
-                    <th className="py-2.5 px-3 font-semibold text-right">{isEn ? 'Action' : 'Aksi'}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#FAF7F7]">
-                  {invoices.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-[#FAF7F7]/60 transition">
-                      <td className="py-3 px-3 font-mono font-semibold">{inv.id}</td>
-                      <td className="py-3 px-3 font-bold">{getPlanName(inv.plan)}</td>
-                      <td className="py-3 px-3 text-[#706866]">{inv.cycle}</td>
-                      <td className="py-3 px-3 text-[#706866]">{inv.date}</td>
-                      <td className="py-3 px-3 font-bold text-[#66000E]">{formatRupiah(inv.amount)}</td>
-                      <td className="py-3 px-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${inv.status.includes('Lunas') || inv.status.includes('Paid')
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}>
-                          {inv.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setViewingInvoice(inv)}
-                          className="text-[#66000E] hover:underline font-semibold flex items-center gap-1 ml-auto cursor-pointer"
-                          title={isEn ? 'View & Download Official Invoice' : 'Lihat & Unduh Bukti Invoice Resmi'}
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>{isEn ? 'Download' : 'Unduh'}</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Modal Body - Scrollable Table */}
+            <div className="flex-1 overflow-hidden my-3.5 flex flex-col min-h-0">
+              {invoices.length === 0 ? (
+                <div className="py-12 px-4 text-center space-y-2.5 my-auto">
+                  <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 mx-auto flex items-center justify-center">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <p className="font-semibold text-sm text-[#1F1F1F]">{isEn ? 'No subscription history yet' : 'Belum ada riwayat langganan'}</p>
+                  <p className="text-xs text-[#706866] max-w-sm mx-auto">
+                    {isEn ? 'Invoices for your plan upgrades will automatically appear here.' : 'Daftar invoice dan transaksi upgrade paket toko Anda akan otomatis tercatat di sini.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto overflow-y-auto border border-[#E5E0DD] rounded-2xl bg-white shadow-2xs max-h-[50vh] sm:max-h-[52vh]">
+                  <table className="w-full text-xs text-left text-[#1F1F1F]">
+                    <thead className="sticky top-0 z-10 bg-[#FAF7F7] text-[#706866] border-b border-[#E5E0DD] shadow-2xs">
+                      <tr>
+                        <th className="py-2.5 px-3.5 font-semibold whitespace-nowrap">{isEn ? 'Invoice No.' : 'No. Invoice'}</th>
+                        <th className="py-2.5 px-3.5 font-semibold whitespace-nowrap">{isEn ? 'Plan' : 'Paket'}</th>
+                        <th className="py-2.5 px-3.5 font-semibold whitespace-nowrap">{isEn ? 'Cycle' : 'Siklus'}</th>
+                        <th className="py-2.5 px-3.5 font-semibold whitespace-nowrap">{isEn ? 'Date' : 'Tanggal'}</th>
+                        <th className="py-2.5 px-3.5 font-semibold whitespace-nowrap">{isEn ? 'Total' : 'Total'}</th>
+                        <th className="py-2.5 px-3.5 font-semibold whitespace-nowrap">{isEn ? 'Status' : 'Status'}</th>
+                        <th className="py-2.5 px-3.5 font-semibold text-right whitespace-nowrap">{isEn ? 'Action' : 'Aksi'}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#FAF7F7]">
+                      {invoices.map((inv) => {
+                        const isPaid = /lunas|paid/i.test(inv.status);
+                        const isCancelled = /batal|cancel/i.test(inv.status);
+                        const statusBadgeClass = isPaid
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : isCancelled
+                          ? 'bg-gray-100 text-gray-600 border-gray-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200';
+
+                        return (
+                          <tr key={inv.id} className="hover:bg-[#FAF7F7]/70 transition">
+                            <td className="py-3 px-3.5 font-mono text-[11px] font-semibold text-gray-700 whitespace-nowrap">
+                              <span className="bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-md">
+                                {inv.id}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3.5 font-bold text-[#1F1F1F] whitespace-nowrap">{getPlanName(inv.plan)}</td>
+                            <td className="py-3 px-3.5 text-[#706866] whitespace-nowrap">{inv.cycle}</td>
+                            <td className="py-3 px-3.5 text-[#706866] whitespace-nowrap">{inv.date}</td>
+                            <td className="py-3 px-3.5 font-bold text-[#66000E] whitespace-nowrap">{formatRupiah(inv.amount)}</td>
+                            <td className="py-3 px-3.5 whitespace-nowrap">
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border inline-block ${statusBadgeClass}`}>
+                                {inv.status}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3.5 text-right whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => setViewingInvoice(inv)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FAF7F7] hover:bg-[#F5E8EA] text-[#66000E] hover:text-[#801010] border border-[#E5E0DD] hover:border-[#66000E]/30 font-semibold text-xs transition cursor-pointer"
+                                title={isEn ? 'View & Download Official Invoice' : 'Lihat & Unduh Bukti Invoice Resmi'}
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>{isEn ? 'Download' : 'Unduh'}</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
-            <div className="pt-2 flex justify-end">
+            {/* Modal Footer */}
+            <div className="shrink-0 pt-3 border-t border-[#E5E0DD] flex items-center justify-between gap-3">
+              <span className="text-xs text-[#706866]">
+                {isEn ? `Total: ${invoices.length} transaction records` : `Total: ${invoices.length} catatan transaksi`}
+              </span>
               <button
                 type="button"
                 onClick={() => setIsHistoryOpen(false)}
-                className="px-4 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#706866] hover:bg-[#FAF7F7] transition cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#706866] hover:bg-[#FAF7F7] hover:text-[#1F1F1F] transition cursor-pointer"
               >
                 {isEn ? 'Close' : 'Tutup'}
               </button>
@@ -961,6 +1033,77 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         isOpen={Boolean(viewingInvoice)}
         onClose={() => setViewingInvoice(null)}
       />
+
+      {/* Modal: Konfirmasi Pembatalan Tagihan (Custom UI instead of browser dialog) */}
+      {isCancelModalOpen && pendingSubscription && (
+        <div className="fixed inset-0 z-50 overflow-hidden bg-gray-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 border border-[#E5E0DD] shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 text-left">
+            <div className="flex items-start justify-between pb-3 border-b border-[#FAF7F7]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm sm:text-base text-[#1F1F1F]">
+                    {isEn ? 'Cancel Payment?' : 'Batalkan Tagihan Pembayaran?'}
+                  </h3>
+                  <p className="text-[11px] text-[#706866]">
+                    {isEn ? 'Invoice cancellation confirmation' : 'Konfirmasi pembatalan tagihan'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={() => setIsCancelModalOpen(false)}
+                className="text-gray-400 hover:text-gray-700 cursor-pointer p-1 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#706866] leading-relaxed">
+              {isEn
+                ? 'Are you sure you want to cancel this pending payment? You can choose or re-subscribe to any plan anytime.'
+                : 'Apakah Anda yakin ingin membatalkan tagihan pembayaran yang sedang menunggu ini? Anda tetap dapat memilih dan berlangganan paket kembali kapan saja.'}
+            </p>
+
+            <div className="bg-[#FAF7F7] p-3.5 rounded-2xl border border-[#E5E0DD] flex items-center justify-between text-xs">
+              <div>
+                <span className="text-[#706866] text-[11px] block">{isEn ? 'Selected Plan:' : 'Paket Langganan:'}</span>
+                <span className="font-bold text-[#1F1F1F] text-sm">{getPlanName(pendingSubscription.planName)}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[#706866] text-[11px] block">{isEn ? 'Total Cost:' : 'Nominal:'}</span>
+                <span className="font-black text-[#66000E] text-sm">
+                  {formatRupiah(pendingSubscription.amount === 35000 ? 350000 : (pendingSubscription.amount === 99000 ? 1000000 : pendingSubscription.amount))}
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center gap-2.5">
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={() => setIsCancelModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-[#E5E0DD] bg-white hover:bg-gray-50 text-xs font-semibold text-[#706866] hover:text-[#1F1F1F] transition cursor-pointer text-center disabled:opacity-50"
+              >
+                {isEn ? 'Keep Payment' : 'Kembali'}
+              </button>
+
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={handleConfirmCancelPayment}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isCancelling ? (isEn ? 'Cancelling...' : 'Membatalkan...') : (isEn ? 'Yes, Cancel' : 'Ya, Batalkan')}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

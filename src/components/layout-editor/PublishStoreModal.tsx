@@ -50,8 +50,6 @@ interface DeployStage {
 
 const BASE_DOMAINS = [
   { value: 'kroombox.com', label: '.kroombox.com', tag: 'Default Edge' },
-  { value: 'kromify.id', label: '.kromify.id', tag: 'Official Store' },
-  { value: 'mykolab.store', label: '.mykolab.store', tag: 'Fast CDN' },
 ];
 
 export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
@@ -325,8 +323,6 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
               ) : step === 'auto_deploy' ? (
                 <Rocket className="w-5 h-5 text-blue-600 animate-pulse" />
-              ) : step === 'confirm_subdomain' ? (
-                <Sparkles className="w-5 h-5 text-[#66000E]" />
               ) : (
                 <Globe className="w-5 h-5 text-[#66000E]" />
               )}
@@ -380,21 +376,16 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                     <Globe className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs sm:text-sm font-bold text-gray-900">
-                        Domain Random (Subdomain Otomatis)
-                      </h4>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Gratis &amp; Cepat
-                      </span>
-                    </div>
+                    <h4 className="text-xs sm:text-sm font-bold text-gray-900">
+                      Domain Random
+                    </h4>
                     <p className="text-[11px] text-gray-500 truncate mt-0.5 font-mono">
                       {randomSubdomain || store.slug
                         ? `https://${randomSubdomain || store.slug}.${selectedBaseDomain}`
                         : `https://[nama-toko].${selectedBaseDomain}`}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-1">
-                      Bisa diacak ulang (regenerate) di tahap konfirmasi berikutnya.
+                      Bisa diacak ulang di tahap konfirmasi berikutnya.
                     </p>
                   </div>
                 </div>
@@ -426,21 +417,10 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                         : 'bg-gray-100 text-gray-500'
                     }`}
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <Globe className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs sm:text-sm font-bold text-gray-900">Custom Domain Pribadi</h4>
-                      {hasActiveCustomDomain ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          Aktif
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                          .com / .id
-                        </span>
-                      )}
-                    </div>
+                    <h4 className="text-xs sm:text-sm font-bold text-gray-900">Custom Domain Pribadi</h4>
                     <p className="text-[11px] text-gray-500 truncate mt-0.5">
                       {hasActiveCustomDomain
                         ? `https://${activeCustomDomainName}`
@@ -508,8 +488,8 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
               <div className="bg-gradient-to-br from-[#FAF7F7] to-rose-50/40 p-4 rounded-2xl border border-[#E5E0DD] space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-[#706866] uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#66000E]" />
-                    <span>Subdomain Random Terpilih</span>
+                    <Globe className="w-3.5 h-3.5 text-[#66000E]" />
+                    <span>Subdomain Toko Terpilih</span>
                   </span>
                   <div className="flex items-center gap-1.5">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
@@ -522,8 +502,8 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 {/* Subdomain Input & Regenerate Button */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 flex items-center bg-white border-2 border-[#D5CEC8] focus-within:border-[#66000E] rounded-xl px-3 py-2 shadow-2xs transition-colors">
-                      <span className="text-xs font-semibold text-gray-400 select-none">https://</span>
+                    <div className="flex-1 min-w-0 flex items-center bg-white border border-[#D5CEC8] focus-within:border-[#66000E] focus-within:ring-1 focus-within:ring-[#66000E] rounded-xl px-3 py-2 shadow-2xs transition-colors">
+                      <span className="text-xs font-medium text-gray-400 select-none shrink-0">https://</span>
                       <input
                         type="text"
                         value={randomSubdomain}
@@ -532,10 +512,10 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                             e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
                           )
                         }
-                        className="flex-1 text-xs font-bold text-gray-900 outline-none px-1 font-mono"
+                        className="w-full min-w-0 text-xs font-bold text-gray-900 outline-none px-1.5 font-mono"
                         placeholder="nama-subdomain"
                       />
-                      <span className="text-xs font-semibold text-gray-400 select-none">
+                      <span className="text-xs font-medium text-gray-500 select-none shrink-0">
                         .{selectedBaseDomain}
                       </span>
                     </div>
@@ -546,12 +526,12 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                       onClick={handleRegenerateSubdomain}
                       disabled={isRegenerating}
                       title="Acak ulang subdomain"
-                      className="px-3.5 py-2 rounded-xl bg-white hover:bg-rose-50 border-2 border-gray-200 hover:border-[#66000E] text-[#66000E] text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
+                      className="px-3 py-2 rounded-xl bg-white hover:bg-rose-50 border border-gray-200 hover:border-[#66000E] text-[#66000E] text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
                     >
                       <RotateCcw
-                        className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`}
+                        className={`w-3.5 h-3.5 shrink-0 ${isRegenerating ? 'animate-spin' : ''}`}
                       />
-                      <span>Acak Ulang</span>
+                      <span className="whitespace-nowrap">Acak Ulang</span>
                     </button>
                   </div>
                   <p className="text-[10px] text-gray-500">
@@ -559,41 +539,14 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                   </p>
                 </div>
 
-                {/* Pilihan Ekstensi Base Domain */}
+                {/* Domain Jaringan */}
                 <div className="space-y-1.5 pt-1">
-                  <label className="text-[11px] font-bold text-gray-700">Pilih Domain Jaringan:</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {BASE_DOMAINS.map((dom) => (
-                      <button
-                        key={dom.value}
-                        type="button"
-                        onClick={() => setSelectedBaseDomain(dom.value)}
-                        className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
-                          selectedBaseDomain === dom.value
-                            ? 'border-[#66000E] bg-white shadow-xs ring-1 ring-[#66000E]'
-                            : 'border-gray-200 bg-white/60 hover:bg-white text-gray-600'
-                        }`}
-                      >
-                        <div className="text-[11px] font-bold text-gray-900 font-mono truncate">
-                          {dom.label}
-                        </div>
-                        <div className="text-[9px] text-gray-500">{dom.tag}</div>
-                      </button>
-                    ))}
+                  <label className="text-[11px] font-bold text-gray-700">Domain Jaringan:</label>
+                  <div className="p-2.5 rounded-xl border border-[#66000E] bg-white shadow-xs ring-1 ring-[#66000E]">
+                    <div className="text-xs font-bold text-gray-900 font-mono">
+                      .kroombox.com
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Info Auto Deploy Eksternal */}
-              <div className="p-3.5 bg-blue-50/60 border border-blue-200 rounded-xl flex items-start gap-2.5 text-xs text-blue-950">
-                <div className="p-1.5 bg-blue-100 rounded-lg text-blue-700 shrink-0 mt-0.5">
-                  <Zap className="w-3.5 h-3.5" />
-                </div>
-                <div className="space-y-1 text-[11px] leading-relaxed">
-                  <span className="font-bold text-blue-900 block">Fitur Auto Deploy Terintegrasi</span>
-                  <span>
-                    Setelah Anda mengonfirmasi subdomain ini, sistem akan otomatis mengeksekusi pipeline deployment melalui <strong>API Eksternal Kroombox</strong>, mengalokasikan DNS Anycast, dan mengaktifkan toko secara live.
-                  </span>
                 </div>
               </div>
             </div>
@@ -794,19 +747,19 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setStep('confirm_subdomain')}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-lg shadow-2xs transition active:scale-[0.98] cursor-pointer"
                 >
-                  <span>Lanjut ke Konfirmasi Subdomain</span>
+                  <span>Lanjutkan</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={startAutoDeploySimulation}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-lg shadow-2xs transition active:scale-[0.98] cursor-pointer"
                 >
                   <Rocket className="w-3.5 h-3.5" />
-                  <span>Publikasikan dengan Custom Domain</span>
+                  <span>Publikasikan Toko</span>
                 </button>
               )}
             </div>
@@ -818,7 +771,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
               <button
                 type="button"
                 onClick={() => setStep('choose_domain')}
-                className="px-4 py-2 text-xs font-semibold text-[#706866] hover:text-[#241A1A] hover:bg-white rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-2 text-xs font-medium text-[#706866] hover:text-[#241A1A] hover:bg-white rounded-lg transition cursor-pointer flex items-center gap-1.5"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Kembali</span>
@@ -827,10 +780,10 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
               <button
                 type="button"
                 onClick={startAutoDeploySimulation}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-lg shadow-2xs transition active:scale-[0.98] cursor-pointer"
               >
                 <Rocket className="w-3.5 h-3.5" />
-                <span>Konfirmasi Subdomain &amp; Mulai Auto Deploy</span>
+                <span>Konfirmasi &amp; Mulai Deploy</span>
               </button>
             </div>
           )}

@@ -4,6 +4,7 @@ import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
 import { Phone, Mail, MapPin, Send } from 'lucide-react';
+import { useCmsStore } from '../../cms/useCmsStore';
 
 interface ContactPageProps {
   themeData?: ThemeSchema;
@@ -14,6 +15,7 @@ interface ContactPageProps {
 
 export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: propThemeId, store, onNavigate }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
+  const liveStoreInfo = useCmsStore((state) => state.storeInfo);
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',
     textColor: '#1A1A1A',
@@ -21,9 +23,29 @@ export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: pr
     fontFamily: 'sans-serif'
   };
 
+  const storeName = liveStoreInfo?.name || store?.name || 'Toko Kami';
+  const storeDesc = liveStoreInfo?.description || store?.description || '';
+
   const sections = themeData?.sections || {};
   const headerSection = Object.values(sections).find(s => s.type === 'Header');
   const footerSection = Object.values(sections).find(s => s.type === 'Footer');
+
+  const navbarOptions = {
+    heading: storeName,
+    subheading: storeDesc,
+    description: storeDesc,
+    subtitle: storeDesc,
+    tagline: storeDesc,
+    ...((headerSection as any)?.options || (headerSection as any)?.settings)
+  };
+
+  const footerOptions = {
+    heading: storeName,
+    subheading: storeDesc,
+    description: storeDesc,
+    subtitle: storeDesc,
+    ...((footerSection as any)?.options || (footerSection as any)?.settings)
+  };
 
   const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
   const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
@@ -106,13 +128,17 @@ export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: pr
 
   return (
     <div className="flex flex-col w-full min-h-screen">
-      {CustomNavbar ? <CustomNavbar /> : headerSection && (
+      {CustomNavbar ? (
+        <CustomNavbar sectionOptions={navbarOptions} />
+      ) : headerSection && (
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
       
       <div className="flex-1">{renderContent()}</div>
 
-      {CustomFooter ? <CustomFooter /> : footerSection && (
+      {CustomFooter ? (
+        <CustomFooter sectionOptions={footerOptions} />
+      ) : footerSection && (
         <FooterSection settings={footerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
     </div>

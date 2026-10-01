@@ -6,6 +6,7 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const navigation = useCmsStore((state) => state.navigation);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
 
   return (
     <header className="w-full bg-[#FFF5F7] border-b-4 border-[#FFD1DC] py-4 px-6 sticky top-0 z-50 font-['Outfit',sans-serif] rounded-b-3xl shadow-sm">
@@ -32,6 +33,11 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
           <a href="/" className="text-2xl font-black text-[#FF85A1] tracking-tight">
             {storeTitle}
           </a>
+          {storeSubtitle && (
+            <span className="text-xs font-semibold text-[#FF85A1]/80 mt-0.5 max-w-[200px] truncate">
+              {storeSubtitle}
+            </span>
+          )}
         </div>
 
         {/* Center: Desktop Navigation */}

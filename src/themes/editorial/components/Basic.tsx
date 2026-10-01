@@ -15,7 +15,7 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
   const rawTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeTitle = (!rawTitle || rawTitle === 'Green Market Indonesia') ? 'LOOKSEE' : rawTitle;
-  const leftSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || "The Journal";
+  const leftSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description || "The Journal";
 
   const navItems = (sectionOptions.navMenuItems && sectionOptions.navMenuItems.length > 0)
     ? sectionOptions.navMenuItems.map((item: any, i: number) => ({
@@ -54,15 +54,20 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
         </div>
 
         {/* Center: Brand Title (Dominant & Never Overlapped) */}
-        <div className="flex-1 flex justify-center items-center text-center px-2 min-w-0">
+        <div className="flex-1 flex flex-col justify-center items-center text-center px-2 min-w-0">
           {showLogo && (
             <a
               href="/"
-              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif italic tracking-tight text-gray-950 hover:opacity-80 transition-opacity truncate max-w-full inline-block py-1"
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif italic tracking-tight text-gray-950 hover:opacity-80 transition-opacity truncate max-w-full inline-block py-0.5"
               title={storeTitle}
             >
               {storeTitle}
             </a>
+          )}
+          {leftSubtitle && (
+            <span className="text-[10px] sm:text-[11px] font-sans font-medium tracking-[0.25em] uppercase text-gray-500 truncate max-w-full">
+              {leftSubtitle}
+            </span>
           )}
         </div>
 
@@ -166,13 +171,18 @@ export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
         </div>
       </div>
       
-      <div className="z-10 text-center text-white mix-blend-difference mt-auto mb-24 pointer-events-none">
+      <div className="z-10 text-center text-white mix-blend-difference mt-auto mb-24 pointer-events-none px-4">
         <p className="text-[10px] md:text-xs uppercase tracking-[0.4em] mb-6 md:mb-8 font-medium">
           {announcementText}
         </p>
         <h1 className="text-5xl md:text-8xl lg:text-[10rem] font-serif italic leading-none">
           {heading}
         </h1>
+        {(sectionOptions.subheading || sectionOptions.description) && (
+          <p className="text-sm md:text-base lg:text-xl font-serif italic mt-6 max-w-xl mx-auto opacity-90 leading-relaxed">
+            {sectionOptions.subheading || sectionOptions.description}
+          </p>
+        )}
       </div>
     </section>
   );
@@ -188,7 +198,12 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOpt
 
   return (
     <footer className="w-full px-6 md:px-12 py-24 bg-gray-900 text-white flex flex-col items-center">
-      <h2 className="text-4xl md:text-5xl font-serif italic mb-12">{storeTitle}</h2>
+      <h2 className="text-4xl md:text-5xl font-serif italic mb-4">{storeTitle}</h2>
+      {(sectionOptions.description || storeInfo?.description) && (
+        <p className="text-xs md:text-sm font-serif italic text-gray-400 max-w-md text-center mb-10 leading-relaxed">
+          {sectionOptions.description || storeInfo?.description}
+        </p>
+      )}
       <div className="flex flex-col md:flex-row gap-8 md:gap-16 text-center mb-16">
         <div>
           <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-4">Headquarters</p>

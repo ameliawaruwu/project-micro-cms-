@@ -24,10 +24,10 @@ export const CuteHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = 
             ✨ Toko Paling Gemas
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[#FF85A1] leading-[1.1] mb-6">
-            Selamat Datang di {storeInfo.name}! 💖
+            {sectionOptions?.heading || `Selamat Datang di ${storeInfo.name}! 💖`}
           </h1>
           <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-lg font-medium leading-relaxed">
-            {storeInfo.description}
+            {sectionOptions?.subheading || sectionOptions?.subtitle || sectionOptions?.description || storeInfo.description}
           </p>
           <a 
             href="/produk" 

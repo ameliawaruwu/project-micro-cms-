@@ -88,11 +88,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const sidebarContent = (
     <div className="h-full flex flex-col justify-between bg-white text-gray-900 font-poppins">
       {/* Top Header Logo */}
-      <div className="p-3.5 flex items-center justify-between border-b border-gray-100 shrink-0">
+      <div className="p-2.5 sm:p-3 flex items-center justify-between border-b border-gray-100 shrink-0">
         <button
           type="button"
           onClick={() => handleItemClick('beranda')}
-          className="flex items-center gap-2.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none"
+          className="flex items-center gap-2 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none"
           title="Kroomify"
         >
           <KroomifyLogo
@@ -105,7 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {isOpenMobile && onCloseMobile && (
           <button
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+            className="lg:hidden p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
             aria-label={t('open_menu', 'Tutup Menu')}
           >
             <X className="w-4 h-4" />
@@ -114,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto font-poppins">
+      <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto font-poppins">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.isParent 
@@ -127,7 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div key={item.id} className="space-y-0.5">
                 <button
                   onClick={() => setIsWebsiteMenuExpanded(!isWebsiteMenuExpanded)}
-                  className={`w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
+                  className={`w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
                     isActive
                       ? 'bg-[#F5E8EA] text-[#66000E] font-semibold'
                       : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
@@ -159,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <button
                           key={child.id}
                           onClick={() => handleItemClick(child.id)}
-                          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium font-poppins transition-colors cursor-pointer ${
+                          className={`w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium font-poppins transition-colors cursor-pointer ${
                             isChildActive
                               ? 'text-[#66000E] font-semibold bg-[#F5E8EA]'
                               : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
@@ -179,7 +179,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => handleItemClick(item.id as MerchantTab)}
-              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
                 isActive
                   ? 'bg-[#F5E8EA] text-[#66000E] font-semibold'
                   : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
@@ -211,7 +211,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
 
       {/* Logout Bottom Action */}
-      <div className="p-2.5 border-t border-gray-100 shrink-0 font-poppins">
+      <div className="p-2 border-t border-gray-100 shrink-0 font-poppins">
         {(!isCollapsed || isOpenMobile) ? (
           <button
             type="button"
@@ -219,7 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               if (onLogout) onLogout();
               if (onCloseMobile) onCloseMobile();
             }}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-xl text-xs font-medium text-gray-600 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 transition cursor-pointer"
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 transition cursor-pointer"
             title={t('nav_logout', 'Keluar')}
           >
             <LogOut className="w-3.5 h-3.5 text-gray-400" />
@@ -230,7 +230,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={onLogout}
-              className="w-8 h-8 rounded-xl text-gray-400 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 flex items-center justify-center transition cursor-pointer"
+              className="w-7 h-7 rounded-lg text-gray-400 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 flex items-center justify-center transition cursor-pointer"
               title={t('nav_logout', 'Keluar')}
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -247,7 +247,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside
         id="sidebar-navigation-desktop"
         className={`hidden lg:flex relative h-full flex-col justify-between z-30 transition-all duration-200 border-r border-gray-200 shrink-0 bg-white ${
-          isCollapsed ? 'w-16' : 'w-56'
+          isCollapsed ? 'w-14' : 'w-52'
         }`}
       >
         {sidebarContent}
@@ -256,7 +256,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 shadow-xs hover:shadow-sm flex items-center justify-center transition-all cursor-pointer z-40 focus:outline-none hover:scale-105"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 w-5.5 h-5.5 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 shadow-xs hover:shadow-sm flex items-center justify-center transition-all cursor-pointer z-40 focus:outline-none hover:scale-105"
           title={isCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
         >
           {isCollapsed ? (
@@ -278,7 +278,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <aside
             id="sidebar-navigation-mobile"
-            className="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] h-full shadow-xl z-50 animate-in slide-in-from-left duration-200 border-r border-gray-200 bg-white"
+            className="fixed top-0 left-0 bottom-0 w-56 max-w-[80vw] h-full shadow-xl z-50 animate-in slide-in-from-left duration-200 border-r border-gray-200 bg-white"
           >
             {sidebarContent}
           </aside>

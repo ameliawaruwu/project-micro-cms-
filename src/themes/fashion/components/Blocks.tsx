@@ -15,7 +15,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOpt
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
           <div className="md:col-span-7">
             <div className="relative group overflow-hidden h-[60vh] md:h-[80vh]">
-              <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1550614000-4b95d415d183?w=1200&q=80"} alt="Lookbook 1" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+              <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&q=80"} alt="Lookbook 1" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500"></div>
               <div className="absolute bottom-8 left-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                 <p className="text-xs uppercase tracking-widest mb-2">Look 01</p>
@@ -54,26 +54,26 @@ export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any }> = ({ se
   return (
     <section className="py-24 md:py-32 bg-[#F9F9F9] text-[#18181B]">
       <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-        <div className="flex justify-between items-end mb-16">
-          <h2 className="text-4xl font-serif italic">{heading}</h2>
+        <div className="flex justify-between items-end mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif italic storefront-heading-section">{heading}</h2>
           <a href="#" className="text-[10px] uppercase tracking-[0.2em] border-b border-black pb-1 hidden md:block hover:text-gray-500 transition-colors">
             Shop All Arrivals
           </a>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 md:gap-x-8 md:gap-y-16">
           {products.slice(0, 4).map((p, i) => (
-            <div key={p.id} className={`group cursor-pointer ${i % 2 !== 0 ? 'md:mt-16' : ''}`}>
-              <div className="relative overflow-hidden mb-6 aspect-[3/4]">
+            <div key={p.id} className={`group cursor-pointer ${i % 2 !== 0 ? 'md:mt-12 lg:mt-16' : ''}`}>
+              <div className="relative overflow-hidden mb-4 sm:mb-6 aspect-[3/4] min-h-[220px] sm:min-h-[260px]">
                 <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s]" />
                 <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
-                <button className="absolute bottom-0 left-0 w-full bg-white text-black text-[10px] uppercase tracking-[0.2em] py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 font-medium">
+                <button className="absolute bottom-0 left-0 w-full bg-white text-black text-[10px] uppercase tracking-[0.2em] py-3 sm:py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 font-medium">
                   Quick Add
                 </button>
               </div>
               <div className="text-center">
-                <h3 className="text-sm font-medium mb-2 group-hover:text-gray-500 transition-colors">{p.name}</h3>
-                <p className="text-xs text-gray-500 tracking-widest">Rp {p.price.toLocaleString('id-ID')}</p>
+                <h3 className="text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 group-hover:text-gray-500 transition-colors storefront-card-title">{p.name}</h3>
+                <p className="text-xs sm:text-sm text-gray-500 tracking-widest storefront-card-price">Rp {p.price.toLocaleString('id-ID')}</p>
               </div>
             </div>
           ))}

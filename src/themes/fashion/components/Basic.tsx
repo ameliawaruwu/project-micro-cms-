@@ -6,6 +6,7 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
 
   return (
     <nav className="w-full bg-[#18181B] text-white border-b border-white/10 sticky top-0 z-50">
@@ -21,9 +22,16 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
         
         <div className="w-1/3 flex justify-center">
           {showLogo && (
-            <a href="/" className="text-3xl md:text-4xl font-serif italic tracking-wider hover:opacity-80 transition-opacity text-center">
-              {storeTitle}
-            </a>
+            <div className="flex flex-col items-center">
+              <a href="/" className="text-3xl md:text-4xl font-serif italic tracking-wider hover:opacity-80 transition-opacity text-center">
+                {storeTitle}
+              </a>
+              {storeSubtitle && (
+                <span className="text-[11px] uppercase tracking-[0.25em] text-gray-400 mt-1 font-sans">
+                  {storeSubtitle}
+                </span>
+              )}
+            </div>
           )}
         </div>
         
@@ -42,7 +50,9 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
 };
 
 export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { storeInfo } = useCmsStore();
   const heading = sectionOptions.heading || "CHIC & URBAN";
+  const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content || storeInfo?.description;
   const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1600&q=80";
 
   return (
@@ -58,9 +68,14 @@ export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions
       
       <div className="z-10 text-center relative mt-32">
         <p className="text-[10px] md:text-xs uppercase tracking-[0.5em] text-gray-300 mb-6">New Season</p>
-        <h1 className="text-6xl md:text-9xl font-serif italic text-white drop-shadow-2xl mb-12">
+        <h1 className="text-6xl md:text-9xl font-serif italic text-white drop-shadow-2xl mb-6">
           {heading}
         </h1>
+        {subheading && (
+          <p className="text-sm md:text-base text-gray-300 max-w-lg mx-auto mb-10 tracking-wider font-light leading-relaxed">
+            {subheading}
+          </p>
+        )}
         <button className="px-10 py-4 border border-white text-white text-xs uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-colors duration-500">
           Shop The Collection
         </button>
@@ -71,16 +86,18 @@ export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions
 
 export const FashionFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name}`;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
 
   return (
     <footer className="w-full bg-[#18181B] text-white pt-24 pb-12 border-t border-white/10">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
           <div className="col-span-1 md:col-span-2">
-            <h2 className="text-3xl font-serif italic mb-6">{storeInfo.name}</h2>
+            <h2 className="text-3xl font-serif italic mb-6">{storeTitle}</h2>
             <p className="text-sm text-gray-400 leading-loose max-w-md mb-8">
-              {storeInfo.description || "Defining the modern silhouette with a blend of chic urban aesthetics and timeless elegance. Designed for the bold and the beautiful."}
+              {storeDesc || "Defining the modern silhouette with a blend of chic urban aesthetics and timeless elegance. Designed for the bold and the beautiful."}
             </p>
             <div className="flex gap-6">
               <a href="#" className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-colors">

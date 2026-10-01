@@ -37,7 +37,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
         <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           {settings.title && (
             <div className="flex items-end justify-between mb-10 border-b border-gray-200 pb-4">
-              <h2 className="text-2xl md:text-4xl font-black text-gray-900 uppercase tracking-tighter">{settings.title}</h2>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 uppercase tracking-tighter storefront-heading-section">{settings.title}</h2>
               <Link to="/products" className="text-sm font-bold text-[#0055FF] hover:text-blue-700 transition-colors flex items-center gap-2 group">
                 Lihat Semua 
                 <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-[#0055FF] group-hover:text-white transition-colors">
@@ -64,15 +64,15 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
                   </button>
                 </div>
 
-                <div className="aspect-square overflow-hidden bg-gray-50/50 p-6 relative">
+                <div className="aspect-square min-h-[160px] sm:min-h-[180px] overflow-hidden bg-gray-50/50 p-4 sm:p-6 relative">
                   <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />
                 </div>
                 
-                <div className="p-4 md:p-5 flex flex-col flex-1 bg-white">
-                  <h3 className="text-sm text-gray-600 font-semibold line-clamp-2 mb-2 group-hover:text-[#0055FF] transition-colors">{product.name}</h3>
+                <div className="p-3 sm:p-4 md:p-5 flex flex-col flex-1 bg-white">
+                  <h3 className="text-xs sm:text-sm text-gray-600 font-semibold line-clamp-2 mb-2 group-hover:text-[#0055FF] transition-colors storefront-card-title">{product.name}</h3>
                   <div className="mt-auto">
                     {settings.showPrices && (
-                      <p className="text-[#0055FF] font-black text-lg">Rp {product.price.toLocaleString('id-ID')}</p>
+                      <p className="text-[#0055FF] font-black text-sm sm:text-base md:text-lg storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
                     )}
                     <button className="w-full mt-4 py-2.5 bg-gray-50 text-gray-900 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#0055FF] hover:text-white transition-colors flex items-center justify-center gap-2 group/btn" onClick={(e) => { e.stopPropagation(); navigate('/cart'); }}>
                       <ShoppingCart className="w-4 h-4 group-hover/btn:scale-110 transition-transform" /> Beli
@@ -153,7 +153,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
         <div className="mx-auto px-6 max-w-7xl">
           {settings.title && (
             <div className="flex flex-col items-center mb-10 sm:mb-16 relative px-2">
-              <h2 className="text-3xl sm:text-6xl md:text-[8rem] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 uppercase tracking-tighter leading-none z-10 break-words text-center" style={{ fontFamily: themeSettings.fontFamily }}>
+              <h2 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 uppercase tracking-tighter leading-none z-10 break-words text-center storefront-heading-hero" style={{ fontFamily: themeSettings.fontFamily }}>
                 {settings.title}
               </h2>
               <div className="absolute top-1/2 left-0 right-0 h-1.5 sm:h-2 bg-[#FF0000] -translate-y-1/2 z-0"></div>
@@ -163,17 +163,17 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-10">
             {displayProducts.map((product, idx) => (
               <div key={product.id || idx} className="bg-white relative group cursor-pointer shadow-[4px_4px_0_rgba(255,0,0,1)] sm:shadow-[8px_8px_0_rgba(255,0,0,1)] hover:shadow-[16px_16px_0_rgba(255,0,0,1)] hover:-translate-y-2 hover:-translate-x-2 transition-all duration-300 border-4 border-black" onClick={() => navigate(`/product/${product.id}`)}>
-                <div className="aspect-[4/5] overflow-hidden border-b-4 border-black relative bg-gray-100">
+                <div className="aspect-[4/5] min-h-[220px] sm:min-h-[260px] overflow-hidden border-b-4 border-black relative bg-gray-100">
                   {/* Glitch Effect Overlay on Hover */}
                   <div className="absolute inset-0 bg-[#FF0000] mix-blend-color-burn opacity-0 group-hover:opacity-40 transition-opacity duration-300 z-10"></div>
                   <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 contrast-125 transition-all duration-500 scale-100 group-hover:scale-110" />
                 </div>
-                <div className="p-4 sm:p-6 relative overflow-hidden bg-white z-20 flex flex-col justify-between min-h-[140px] sm:min-h-[180px]">
+                <div className="p-3.5 sm:p-5 relative overflow-hidden bg-white z-20 flex flex-col justify-between min-h-[130px] sm:min-h-[160px]">
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-black text-black uppercase tracking-tighter mb-2 group-hover:text-[#FF0000] transition-colors line-clamp-2 leading-tight break-words">{product.name}</h3>
+                    <h3 className="text-sm sm:text-lg md:text-xl font-black text-black uppercase tracking-tighter mb-2 group-hover:text-[#FF0000] transition-colors line-clamp-2 leading-tight break-words storefront-card-title">{product.name}</h3>
                   </div>
                   {settings.showPrices && (
-                    <p className="text-2xl sm:text-3xl font-black text-black tracking-tighter mt-auto">Rp {product.price.toLocaleString('id-ID')}</p>
+                    <p className="text-lg sm:text-xl md:text-2xl font-black text-black tracking-tighter mt-auto storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
                   )}
                   
                   {/* Buy Button overlay */}
@@ -206,10 +206,10 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
             </div>
           )}
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {displayProducts.map((product, idx) => (
               <div key={product.id || idx} className="group cursor-pointer flex flex-col" onClick={() => navigate(`/product/${product.id}`)}>
-                <div className="aspect-[4/5] rounded-2xl sm:rounded-[2rem] overflow-hidden mb-4 sm:mb-6 shadow-sm group-hover:shadow-[0_20px_40px_-15px_rgba(217,160,91,0.2)] transition-all duration-500 bg-white relative">
+                <div className="aspect-[4/5] min-h-[200px] sm:min-h-[240px] rounded-2xl sm:rounded-[2rem] overflow-hidden mb-3 sm:mb-4 shadow-sm group-hover:shadow-[0_20px_40px_-15px_rgba(217,160,91,0.2)] transition-all duration-500 bg-white relative">
                   
                   {/* Hover Add to Cart Overlay */}
                   <div className="absolute inset-x-3 sm:inset-x-4 bottom-3 sm:bottom-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-20">
@@ -222,9 +222,9 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
                 </div>
                 
                 <div className="flex flex-col text-center px-2 sm:px-4">
-                  <h3 className="text-sm sm:text-[15px] font-medium text-[#3E3E3E] mb-1 sm:mb-2 group-hover:text-[#D9A05B] transition-colors break-words">{product.name}</h3>
+                  <h3 className="text-xs sm:text-sm font-medium text-[#3E3E3E] mb-1 sm:mb-2 group-hover:text-[#D9A05B] transition-colors break-words storefront-card-title">{product.name}</h3>
                   {settings.showPrices && (
-                    <p className="text-[#3E3E3E]/60 font-medium text-xs sm:text-sm">Rp {product.price.toLocaleString('id-ID')}</p>
+                    <p className="text-[#3E3E3E]/60 font-medium text-xs sm:text-sm storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
                   )}
                 </div>
               </div>
@@ -250,7 +250,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 sm:gap-x-12 gap-y-10 sm:gap-y-20">
           {displayProducts.slice(0, settings.columns === 3 ? 3 : 6).map((product, idx) => (
             <div key={product.id || idx} className="group cursor-pointer flex flex-col" onClick={() => navigate(`/product/${product.id}`)}>
-              <div className="aspect-[3/4] overflow-hidden mb-5 sm:mb-8 bg-[#F9F9F9] relative">
+              <div className="aspect-[3/4] min-h-[220px] sm:min-h-[260px] overflow-hidden mb-4 sm:mb-6 bg-[#F9F9F9] relative">
                 <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover object-center transform transition-transform duration-[3s] ease-out group-hover:scale-105" />
                 
                 {/* Minimalist Hover Overlay */}
@@ -262,11 +262,11 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
               </div>
               
               <div className="text-center md:text-left flex flex-col md:flex-row justify-between items-center md:items-start gap-2 sm:gap-4">
-                <h3 className="text-xs sm:text-sm font-medium tracking-wide text-[#1A1A1A] uppercase leading-relaxed max-w-full md:max-w-[80%] break-words">
+                <h3 className="text-xs sm:text-sm font-medium tracking-wide text-[#1A1A1A] uppercase leading-relaxed max-w-full md:max-w-[80%] break-words storefront-card-title">
                   {product.name}
                 </h3>
                 {settings.showPrices && (
-                  <p className="text-xs sm:text-sm text-gray-500 font-light whitespace-nowrap">
+                  <p className="text-xs sm:text-sm text-gray-500 font-light whitespace-nowrap storefront-card-price">
                     Rp {product.price.toLocaleString('id-ID')}
                   </p>
                 )}

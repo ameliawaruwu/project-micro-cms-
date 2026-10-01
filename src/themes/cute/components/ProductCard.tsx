@@ -23,7 +23,7 @@ export const CuteProductCard: React.FC<ProductCardProps> = ({ product, options =
     <div className="group block font-['Outfit',sans-serif]">
       <div className="bg-white rounded-[2rem] p-3 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-4 border-[#FFF5F7] flex flex-col h-full justify-between">
         <div>
-          <div className="relative aspect-square overflow-hidden rounded-3xl bg-[#FFF5F7] mb-4 border-2 border-white shadow-inner">
+          <div className="relative aspect-square min-h-[170px] sm:min-h-[200px] overflow-hidden rounded-3xl bg-[#FFF5F7] mb-3 sm:mb-4 border-2 border-white shadow-inner">
             <InlineEditableImage
               src={product.image || 'https://via.placeholder.com/400'}
               alt={product.name}
@@ -53,7 +53,7 @@ export const CuteProductCard: React.FC<ProductCardProps> = ({ product, options =
               </div>
             )}
 
-            <h3 className="text-base font-black text-gray-800 line-clamp-1 mb-1">
+            <h3 className="text-xs sm:text-sm md:text-base font-black text-gray-800 line-clamp-1 mb-1 storefront-card-title">
               <InlineEditableText
                 tagName="span"
                 value={product.name}
@@ -70,7 +70,7 @@ export const CuteProductCard: React.FC<ProductCardProps> = ({ product, options =
 
             {showPrice && (
               <div className="flex items-center justify-center gap-2 mt-1">
-                <p className="text-lg font-black text-[#FF85A1]">
+                <p className="text-sm sm:text-base md:text-lg font-black text-[#FF85A1] storefront-card-price">
                   <span>Rp </span>
                   <InlineEditableText
                     tagName="span"

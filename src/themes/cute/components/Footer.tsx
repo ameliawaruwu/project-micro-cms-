@@ -2,9 +2,11 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Heart } from 'lucide-react';
 
-export const CuteFooter: React.FC = () => {
+export const CuteFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
 
   return (
     <footer className="w-full bg-[#FFF5F7] pt-20 pb-10 px-6 mt-12 rounded-t-[3rem] font-['Outfit',sans-serif] border-t-8 border-[#FFD1DC]">
@@ -16,10 +18,10 @@ export const CuteFooter: React.FC = () => {
             <Heart className="w-8 h-8 text-[#FF85A1] fill-[#FF85A1]" />
           </div>
           <h3 className="text-2xl font-black tracking-tight text-[#FF85A1] mb-4">
-            {storeInfo.name}
+            {storeTitle}
           </h3>
           <p className="text-gray-600 font-medium text-sm leading-relaxed mb-6">
-            {storeInfo.description}
+            {storeDesc}
           </p>
           <div className="flex items-center gap-3">
             {storeInfo.socials.instagram && (

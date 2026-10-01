@@ -34,6 +34,10 @@ export const NatureNavbar: React.FC<{
 
   const rawName = sectionOptions.heading || sectionOptions.storeName || storeInfo?.name;
   const storeName = (!rawName || rawName === 'NEON//CORE Electronics') ? 'Green Market Indonesia' : rawName;
+  const rawSub = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const storeSubtitle = (!rawSub || rawSub.includes("Komponen Komputer") || rawSub.includes("PC Gaming") || rawSub.includes("GPU RTX"))
+    ? undefined
+    : rawSub;
 
   const navList = (navigation && navigation.length > 0) ? navigation : [
     { id: 'nn1', label: 'Pasar Segar', route: '/katalog' },
@@ -58,9 +62,16 @@ export const NatureNavbar: React.FC<{
       
       <div className="shrink-0 flex justify-center items-center px-2 sm:px-6">
         {showLogo && (
-          <a href="/" className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-serif text-[#2C3B2D] tracking-wide hover:opacity-80 transition-opacity font-bold whitespace-nowrap inline-block text-center">
-            {storeName}
-          </a>
+          <div className="flex flex-col items-center">
+            <a href="/" className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-serif text-[#2C3B2D] tracking-wide hover:opacity-80 transition-opacity font-bold whitespace-nowrap inline-block text-center">
+              {storeName}
+            </a>
+            {storeSubtitle && (
+              <span className="text-xs font-sans text-[#5C6B5D] tracking-wider mt-0.5">
+                {storeSubtitle}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
@@ -102,7 +113,7 @@ export const NatureHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   const rawStoreName = sectionOptions.storeName || storeInfo?.name;
   const storeName = (!rawStoreName || rawStoreName === 'NEON//CORE Electronics') ? 'Green Market' : rawStoreName;
   const heading = sectionOptions.heading || storeName || "Pasar Segar Organik";
-  const rawSub = sectionOptions.subheading || sectionOptions.description || storeInfo?.description;
+  const rawSub = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || storeInfo?.description;
   const subheading = (!rawSub || rawSub.includes("Komponen Komputer") || rawSub.includes("PC Gaming") || rawSub.includes("GPU RTX"))
     ? "Pilihan sayur, buah segar, dan produk pangan organik langsung dari mitra petani lokal."
     : rawSub;
@@ -144,7 +155,7 @@ export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
   const rawStoreName = sectionOptions.heading || sectionOptions.storeName || storeInfo?.name;
   const storeName = (!rawStoreName || rawStoreName === 'NEON//CORE Electronics') ? 'Green Market' : rawStoreName;
 
-  const rawDesc = sectionOptions.description || storeInfo?.description;
+  const rawDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
   const description = (!rawDesc || rawDesc.includes("Komponen Komputer") || rawDesc.includes("PC Gaming") || rawDesc.includes("GPU RTX Series"))
     ? "Pasar pangan segar dan produk organik langsung dari mitra petani lokal binaan. Sayuran hidroponik, buah pilihan, madu murni, dan bahan pangan alami berkualitas tinggi."
     : rawDesc;

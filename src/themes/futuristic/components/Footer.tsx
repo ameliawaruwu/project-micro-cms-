@@ -2,8 +2,10 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Cpu, ShieldCheck, Truck, CreditCard, Headphones, Send, Phone, Mail, MapPin, Instagram, Youtube, Clock } from 'lucide-react';
 
-export const FuturisticFooter: React.FC<{ sectionOptions?: any }> = () => {
+export const FuturisticFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
 
   return (
     <footer className="w-full bg-[#070A14] text-gray-300 pt-16 pb-8 px-6 md:px-12 font-['Space_Grotesk',sans-serif] border-t border-purple-900/30 relative overflow-hidden">
@@ -55,11 +57,11 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any }> = () => {
                 <Cpu className="w-5 h-5" />
               </div>
               <h3 className="text-2xl font-extrabold tracking-wider uppercase text-white">
-                {storeInfo.name || "KROOM//HARDWARE"}
+                {storeTitle || "KROOM//HARDWARE"}
               </h3>
             </div>
             <p className="text-gray-400 text-xs leading-relaxed max-w-sm">
-              {storeInfo.description || "Pusat Hardware, Component PC High-End, Gaming Gear & Watercooling System Terpercaya di Indonesia."}
+              {storeDesc || "Pusat Hardware, Component PC High-End, Gaming Gear & Watercooling System Terpercaya di Indonesia."}
             </p>
             <div className="space-y-2 text-xs text-gray-400 pt-2 font-mono">
               <p className="flex items-center gap-2.5"><MapPin className="w-3.5 h-3.5 text-purple-400 shrink-0" /> {storeInfo.address || "Neo Cyber District, Jakarta"}</p>

@@ -70,8 +70,8 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     SignatureCollection: LuxurySignatureCollection,
     CraftsmanshipStory: LuxuryCraftsmanship,
     PrivateCollection: LuxuryPrivateCollection,
-    FeaturedProducts: CuteFeaturedProducts,
-    ProductGrid: CuteFeaturedProducts,
+    FeaturedProducts: LuxurySignatureCollection,
+    ProductGrid: LuxurySignatureCollection,
   },
   bold: {
     Navbar: BoldNavbar,

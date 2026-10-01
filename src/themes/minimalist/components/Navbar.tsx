@@ -10,6 +10,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
 
   const navItems = (sectionOptions.navMenuItems && sectionOptions.navMenuItems.length > 0)
     ? sectionOptions.navMenuItems.map((item: any, i: number) => ({
@@ -46,6 +47,11 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
             >
               {storeTitle}
             </a>
+          )}
+          {storeSubtitle && (
+            <span className="text-[10px] text-gray-500 tracking-wider block truncate max-w-[240px] mx-auto md:mx-0 font-normal mt-0.5">
+              {storeSubtitle}
+            </span>
           )}
         </div>
 

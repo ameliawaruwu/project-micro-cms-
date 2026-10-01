@@ -4,6 +4,7 @@ import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
 import { Award, ShieldCheck, Heart, Sparkles, Compass } from 'lucide-react';
+import { useCmsStore } from '../../cms/useCmsStore';
 
 interface AboutPageProps {
   themeData?: ThemeSchema;
@@ -14,6 +15,7 @@ interface AboutPageProps {
 
 export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propThemeId, store, onNavigate }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
+  const liveStoreInfo = useCmsStore((state) => state.storeInfo);
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',
     textColor: '#1A1A1A',
@@ -21,12 +23,29 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
     fontFamily: 'sans-serif'
   };
 
-  const storeName = store?.name || 'Toko Kami';
-  const storeDesc = store?.description || 'Kami hadir dengan dedikasi tinggi untuk menghadirkan produk-produk berkualitas prima dan pelayanan terbaik bagi Anda.';
+  const storeName = liveStoreInfo?.name || store?.name || 'Toko Kami';
+  const storeDesc = liveStoreInfo?.description || store?.description || 'Kami hadir dengan dedikasi tinggi untuk menghadirkan produk-produk berkualitas prima dan pelayanan terbaik bagi Anda.';
 
   const sections = themeData?.sections || {};
   const headerSection = Object.values(sections).find(s => s.type === 'Header');
   const footerSection = Object.values(sections).find(s => s.type === 'Footer');
+
+  const navbarOptions = {
+    heading: storeName,
+    subheading: storeDesc,
+    description: storeDesc,
+    subtitle: storeDesc,
+    tagline: storeDesc,
+    ...((headerSection as any)?.options || (headerSection as any)?.settings)
+  };
+
+  const footerOptions = {
+    heading: storeName,
+    subheading: storeDesc,
+    description: storeDesc,
+    subtitle: storeDesc,
+    ...((footerSection as any)?.options || (footerSection as any)?.settings)
+  };
 
   const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
   const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
@@ -161,13 +180,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
 
   return (
     <div className="flex flex-col w-full min-h-screen">
-      {CustomNavbar ? <CustomNavbar /> : headerSection && (
+      {CustomNavbar ? (
+        <CustomNavbar sectionOptions={navbarOptions} />
+      ) : headerSection && (
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
       
       <div className="flex-1">{renderAboutContent()}</div>
 
-      {CustomFooter ? <CustomFooter /> : footerSection && (
+      {CustomFooter ? (
+        <CustomFooter sectionOptions={footerOptions} />
+      ) : footerSection && (
         <FooterSection settings={footerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
     </div>

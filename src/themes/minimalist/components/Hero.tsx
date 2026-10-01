@@ -5,7 +5,7 @@ export const MinimalistHero: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   const storeInfo = useCmsStore(state => state.storeInfo);
   
   const heading = sectionOptions.heading || storeInfo.name;
-  const subheading = sectionOptions.subheading || storeInfo.description;
+  const subheading = sectionOptions.subheading || sectionOptions.description || storeInfo.description;
   const buttonLabel = sectionOptions.buttonLabel || 'View Collection';
   const buttonLink = sectionOptions.buttonLink || '/products';
   // Use imageUrl/bannerUrl from options if available, else a minimalist default

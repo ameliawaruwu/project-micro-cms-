@@ -5,6 +5,7 @@ import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
 import { Key, Mail, Lock, User, ArrowRight, Sparkles, CheckCircle, ShieldCheck } from 'lucide-react';
 import { THEME_DATA_MAP } from '../themeData';
+import { useCmsStore } from '../../cms/useCmsStore';
 
 interface LoginPageProps {
   themeData?: ThemeSchema;
@@ -25,7 +26,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
   const themeDataObj = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['minimalist'];
-  const brandName = store?.name || themeDataObj?.storeInfo?.name || 'STORE';
+  const liveStoreInfo = useCmsStore((state) => state.storeInfo);
+  const brandName = liveStoreInfo?.name || store?.name || themeDataObj?.storeInfo?.name || 'STORE';
+  const brandDesc = liveStoreInfo?.description || store?.description || '';
 
   const viewMode = propMode || (isRegister ? 'register' : 'login');
   const [resetSent, setResetSent] = useState(false);
@@ -40,6 +43,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const sections = themeData?.sections || {};
   const headerSection = Object.values(sections).find(s => s.type === 'Header');
   const footerSection = Object.values(sections).find(s => s.type === 'Footer');
+
+  const navbarOptions = {
+    heading: brandName,
+    subheading: brandDesc,
+    description: brandDesc,
+    subtitle: brandDesc,
+    tagline: brandDesc,
+    ...((headerSection as any)?.options || (headerSection as any)?.settings)
+  };
+
+  const footerOptions = {
+    heading: brandName,
+    subheading: brandDesc,
+    description: brandDesc,
+    subtitle: brandDesc,
+    ...((footerSection as any)?.options || (footerSection as any)?.settings)
+  };
 
   const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
   const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
@@ -192,38 +212,38 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       );
     }
 
-    // 3. LUXURY / ELEGANT THEME (MAISON GOLD & OBSIDIAN)
+    // 3. LUXURY / ELEGANT THEME (MAISON COUTURE)
     if (activeThemeId === 'luxury' || activeThemeId === 'elegant') {
       return (
-        <div className="pt-28 pb-24 bg-[#09090b] text-amber-50 min-h-screen font-serif flex items-center justify-center">
+        <div className="pt-28 pb-24 bg-[#F7F2EB] text-[#36281D] min-h-screen font-serif flex items-center justify-center">
           <div className="w-full max-w-md px-6">
             <div className="text-center mb-8">
-              <span className="text-[11px] font-sans tracking-[0.3em] uppercase text-amber-400 block mb-2">{brandName} CONCIERGE</span>
-              <h1 className="text-3xl sm:text-4xl font-light text-white tracking-tight italic">
+              <span className="text-[11px] font-mono tracking-[0.35em] uppercase text-[#9A6027] block mb-2 font-medium">{brandName} CONCIERGE</span>
+              <h1 className="text-3xl sm:text-4xl font-normal text-[#36281D] tracking-tight">
                 {viewMode === 'register' ? 'Create a Boutique Account' : viewMode === 'forgot_password' ? 'Reset Your Key' : 'Welcome Back'}
               </h1>
             </div>
 
-            <div className="bg-zinc-900/90 border border-amber-500/20 rounded-2xl p-8 shadow-2xl backdrop-blur-md space-y-6 font-sans">
+            <div className="bg-[#FFFDF9] border border-[#EADBCE] rounded-2xl p-8 shadow-[0_16px_36px_rgba(90,65,40,0.08)] space-y-5 font-sans">
               {viewMode === 'forgot_password' ? (
                 <>
                   {resetSent ? (
-                    <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs text-center">
+                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs text-center font-medium">
                       ✨ A password reset link has been dispatched to your email address.
                     </div>
                   ) : (
                     <>
-                      <p className="text-xs text-zinc-400">Enter your registered email address to receive concierge instructions:</p>
-                      <input type="email" defaultValue="concierge@maisonelan.com" placeholder="Email Address" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-amber-100 text-sm focus:border-amber-500 focus:outline-none" />
+                      <p className="text-xs text-[#7D6E63]">Enter your registered email address to receive concierge instructions:</p>
+                      <input type="email" defaultValue="concierge@maisonelan.com" placeholder="Email Address" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
                       <button 
                         onClick={() => setResetSent(true)}
-                        className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 rounded-xl font-bold text-xs uppercase tracking-widest text-zinc-950 shadow-lg transition-all cursor-pointer"
+                        className="w-full py-4 bg-[#8C531B] hover:bg-[#724113] rounded-xl font-medium text-xs uppercase tracking-[0.2em] text-[#FFFDF9] shadow-sm transition-all duration-300 cursor-pointer"
                       >
                         Send Reset Link ✨
                       </button>
                     </>
                   )}
-                  <div className="text-center pt-2 text-xs text-amber-400/80">
+                  <div className="text-center pt-2 text-xs text-[#9A6027]">
                     <button onClick={() => onNavigate?.('login')} className="hover:underline cursor-pointer">
                       ← Return to Sign In
                     </button>
@@ -232,23 +252,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               ) : (
                 <>
                   {viewMode === 'register' && (
-                    <input type="text" defaultValue="Alya Permata" placeholder="Full Name" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-amber-100 text-sm focus:border-amber-500 focus:outline-none" />
+                    <input type="text" defaultValue="Alya Permata" placeholder="Full Name" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
                   )}
-                  <input type="email" defaultValue="client@maisonelan.com" placeholder="Email Address" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-amber-100 text-sm focus:border-amber-500 focus:outline-none" />
-                  <input type="password" defaultValue="••••••••" placeholder="Password" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-amber-100 text-sm focus:border-amber-500 focus:outline-none" />
+                  <input type="email" defaultValue="client@maisonelan.com" placeholder="Email Address" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
+                  <input type="password" defaultValue="••••••••" placeholder="Password" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
                   
                   <button 
                     onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'profile')}
-                    className="w-full py-4 bg-amber-400 hover:bg-amber-300 rounded-xl font-bold text-xs uppercase tracking-widest text-zinc-950 shadow-lg shadow-amber-400/10 transition-all cursor-pointer"
+                    className="w-full py-4 bg-[#8C531B] hover:bg-[#724113] rounded-xl font-medium text-xs uppercase tracking-[0.2em] text-[#FFFDF9] shadow-sm transition-all duration-300 cursor-pointer"
                   >
                     {viewMode === 'register' ? 'Register Account ✨' : 'Sign In To Concierge ✨'}
                   </button>
 
-                  <div className="flex justify-between items-center pt-2 text-xs text-amber-400/80">
-                    <button onClick={() => onNavigate?.('forgot_password')} className="hover:underline cursor-pointer">
+                  <div className="flex justify-between items-center pt-2 text-xs text-[#7D6E63]">
+                    <button onClick={() => onNavigate?.('forgot_password')} className="hover:text-[#9A6027] hover:underline cursor-pointer">
                       Forgot Password?
                     </button>
-                    <button onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'register')} className="hover:underline cursor-pointer font-semibold text-amber-300">
+                    <button onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'register')} className="hover:underline cursor-pointer font-medium text-[#9A6027]">
                       {viewMode === 'register' ? 'Already Have Account' : 'Create New Account'}
                     </button>
                   </div>
@@ -465,13 +485,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
   return (
     <div className="flex flex-col w-full min-h-screen">
-      {CustomNavbar ? <CustomNavbar /> : headerSection && (
+      {CustomNavbar ? (
+        <CustomNavbar sectionOptions={navbarOptions} />
+      ) : headerSection && (
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
       
       <div className="flex-1">{renderContent()}</div>
 
-      {CustomFooter ? <CustomFooter /> : footerSection && (
+      {CustomFooter ? (
+        <CustomFooter sectionOptions={footerOptions} />
+      ) : footerSection && (
         <FooterSection settings={footerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
     </div>

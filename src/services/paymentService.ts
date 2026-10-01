@@ -54,7 +54,7 @@ export const paymentOptions: PaymentOption[] = [
     id: 'STRIPE',
     name: 'Kartu Kredit / Debit (Visa, Mastercard)',
     category: 'card',
-    logo: 'https://images.unsplash.com/photo-1556742049-0a67e5572293?w=100&auto=format&fit=crop&q=80',
+    logo: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=100&auto=format&fit=crop&q=80',
     instructions: [
       'Masukkan nomor kartu 16 digit, masa berlaku (MM/YY), dan CVC.',
       'Masukkan kode OTP yang dikirimkan bank penerbit via SMS.',

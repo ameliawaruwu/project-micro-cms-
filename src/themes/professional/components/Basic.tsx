@@ -5,6 +5,8 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any }> = ({ section
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
 
   return (
     <nav className="w-full bg-[#1E40AF] text-white shadow-md sticky top-0 z-50">
@@ -21,14 +23,21 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any }> = ({ section
       <div className="w-full px-6 md:px-16 py-5 flex justify-between items-center">
         <div className="flex items-center gap-12">
           {showLogo && (
-            <a href="/" className="text-2xl font-bold tracking-tight flex items-center gap-3">
-              <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center">
-                <span className="text-[#1E40AF] font-bold text-xl leading-none">
-                  {(sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo.name || 'P')[0]?.toUpperCase()}
+            <div className="flex flex-col">
+              <a href="/" className="text-2xl font-bold tracking-tight flex items-center gap-3">
+                <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center shrink-0">
+                  <span className="text-[#1E40AF] font-bold text-xl leading-none">
+                    {(storeTitle || 'P')[0]?.toUpperCase()}
+                  </span>
+                </div>
+                <span>{storeTitle}</span>
+              </a>
+              {storeSubtitle && (
+                <span className="text-xs text-blue-200 font-medium pl-11 -mt-1">
+                  {storeSubtitle}
                 </span>
-              </div>
-              {sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo.name}
-            </a>
+              )}
+            </div>
           )}
           {showNav && (
             <div className="hidden md:flex gap-8">
@@ -56,7 +65,7 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any }> = ({ section
 export const ProfessionalHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "Professional B2B Solutions";
-  const subheading = sectionOptions.subheading || "Streamline your procurement process with our enterprise-grade supplies and dedicated account management.";
+  const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || storeInfo?.description || "Streamline your procurement process with our enterprise-grade supplies and dedicated account management.";
   const buttonLabel = sectionOptions.buttonLabel || "Request a Quote";
   const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1600&q=80";
 
@@ -109,6 +118,7 @@ export const ProfessionalHero: React.FC<{ sectionOptions?: any }> = ({ sectionOp
 export const ProfessionalFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. All rights reserved.`;
 
   return (
@@ -125,7 +135,7 @@ export const ProfessionalFooter: React.FC<{ sectionOptions?: any }> = ({ section
               {storeTitle}
             </h2>
             <p className="text-sm text-gray-400 leading-relaxed mb-6">
-              {storeInfo.description || "Providing enterprise-grade solutions and dedicated support for businesses worldwide."}
+              {storeDesc || "Providing enterprise-grade solutions and dedicated support for businesses worldwide."}
             </p>
           </div>
           

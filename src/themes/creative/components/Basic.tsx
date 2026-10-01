@@ -6,14 +6,22 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
 
   return (
     <nav className="w-full px-8 py-6 flex justify-between items-center bg-[#E11D48] text-white sticky top-0 z-50">
       <div className="flex-1 flex justify-start">
         {showLogo && (
-          <a href="/" className="text-3xl font-extrabold tracking-tighter hover:text-yellow-300 transition-colors transform hover:-rotate-3">
-            {storeTitle}
-          </a>
+          <div className="flex flex-col">
+            <a href="/" className="text-3xl font-extrabold tracking-tighter hover:text-yellow-300 transition-colors transform hover:-rotate-3">
+              {storeTitle}
+            </a>
+            {storeSubtitle && (
+              <span className="text-xs font-semibold tracking-wider text-pink-200 mt-0.5">
+                {storeSubtitle}
+              </span>
+            )}
+          </div>
         )}
       </div>
       
@@ -37,15 +45,22 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
 };
 
 export const CreativeHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { storeInfo } = useCmsStore();
   const heading = sectionOptions.heading || "Where Art Meets Commerce";
+  const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content || storeInfo?.description;
   const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1600&q=80";
 
   return (
     <section className="relative w-full h-[85vh] bg-[#E11D48] flex flex-col md:flex-row items-center overflow-hidden">
       <div className="w-full md:w-1/2 h-1/2 md:h-full relative z-10 flex flex-col justify-center px-12 md:px-24">
-        <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.9] mb-8 mix-blend-difference z-20 transform -rotate-2">
+        <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.9] mb-6 mix-blend-difference z-20 transform -rotate-2">
           {heading}
         </h1>
+        {subheading && (
+          <p className="text-lg md:text-xl font-medium text-pink-100 mb-8 max-w-lg z-20 leading-relaxed">
+            {subheading}
+          </p>
+        )}
         <div className="flex gap-4 z-20">
           <button className="px-8 py-4 bg-yellow-300 text-black font-bold uppercase tracking-wider rounded-full hover:bg-white transition-colors transform hover:scale-105 shadow-xl">
             View Gallery
@@ -70,15 +85,21 @@ export const CreativeHero: React.FC<{ sectionOptions?: any }> = ({ sectionOption
 export const CreativeFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
 
   return (
     <footer className="w-full px-8 py-20 bg-black text-white flex flex-col items-center relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-[#E11D48] via-yellow-300 to-blue-500"></div>
       
-      <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-[#E11D48] mb-12 transform hover:scale-110 transition-transform cursor-default">
+      <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-[#E11D48] mb-4 transform hover:scale-110 transition-transform cursor-default">
         {storeTitle}
       </h2>
+      {storeDesc && (
+        <p className="text-sm md:text-base text-gray-300 max-w-md text-center mb-10 font-medium leading-relaxed">
+          {storeDesc}
+        </p>
+      )}
       
       <div className="flex gap-8 mb-16 text-sm font-bold uppercase tracking-widest">
         <a href="#" className="hover:text-yellow-300 transition-colors">Behance</a>

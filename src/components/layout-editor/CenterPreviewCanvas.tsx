@@ -1543,7 +1543,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                        </div>
                      </div>
     
-                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
                        {filteredProducts.map(p => {
                          // Normalize product to handle both Product and CmsProduct structures
                          const normalizedProduct = {
@@ -1561,11 +1561,11 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                              ) : (
                                /* Generic Fallback Product Card */
                                <div className="group cursor-pointer">
-                                 <div className="relative aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden mb-3">
+                                 <div className="relative aspect-[4/5] min-h-[180px] sm:min-h-[220px] bg-gray-100 rounded-lg overflow-hidden mb-3">
                                    <img src={normalizedProduct.image} alt={normalizedProduct.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                                  </div>
-                                 <h3 className="font-semibold text-gray-900 truncate">{normalizedProduct.name}</h3>
-                                 <p className="text-gray-500 text-sm">Rp {normalizedProduct.price.toLocaleString('id-ID')}</p>
+                                 <h3 className="font-semibold text-gray-900 text-xs sm:text-sm md:text-base truncate storefront-card-title">{normalizedProduct.name}</h3>
+                                 <p className="text-gray-500 text-xs sm:text-sm storefront-card-price">Rp {normalizedProduct.price.toLocaleString('id-ID')}</p>
                                </div>
                              )}
                            </div>

@@ -684,7 +684,7 @@ export const STORE_TEMPLATES: StoreTemplate[] = [
   {
     id: "editorial_luxury", name: "Maison", category: "Luxury", primaryAccent: "#92400E",
     bannerUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d",
-    tagline: "Elegansi Klasik",
+    tagline: "Timeless Elegance",
     sections: [
       { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
       { id: "hero_banner", isVisible: true, options: { bannerStyle: "full" } },
@@ -759,14 +759,14 @@ export const STORE_TEMPLATES: StoreTemplate[] = [
     ]
   },
   {
-    id: "pro_corporate", name: "Pro Commerce", category: "Korporat", primaryAccent: "#1E40AF",
+    id: "pro_corporate", name: "Pro Commerce", category: "Korporat", primaryAccent: "#0F766E",
     bannerUrl: "https://images.unsplash.com/photo-1497215728101-856f4ea42174",
     tagline: "Solusi B2B",
     sections: [
-      { id: "header", isVisible: true, options: { headerStyle: "brand" } },
-      { id: "hero_banner", isVisible: true, options: { bannerStyle: "split" } },
+      { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "typographic", textAlignment: "left" } },
       { id: "store_benefits", isVisible: true, options: {} },
-      { id: "product_grid", isVisible: true, options: { gridColumns: 4 } },
+      { id: "featured_products", isVisible: true, options: { layout: "asymmetric" } },
       { id: "testimonials", isVisible: true, options: {} },
       { id: "footer", isVisible: true, options: {} }
     ]

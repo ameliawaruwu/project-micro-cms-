@@ -162,7 +162,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         name: activeName,
         description: currentStore.description || themeData.storeInfo.description,
         address: currentStore.address || themeData.storeInfo.address,
-        email: currentStore.email || themeData.storeInfo.email,
+        email: (currentStore as any).email || themeData.storeInfo.email,
         phone: currentStore.phoneWhatsApp || themeData.storeInfo.phone,
       });
     }
@@ -1130,10 +1130,20 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     });
     setSections(updated);
 
-    // If updating heading or storeName, sync to storeInfo so all theme templates react immediately
+    // If updating heading or storeName, sync to storeInfo & currentStore so all theme templates react immediately
     if (newOptions.heading || (newOptions as any).storeName) {
       const newName = newOptions.heading || (newOptions as any).storeName;
       useCmsStore.getState().updateStoreInfo({ name: newName });
+      setCurrentStore((prev) => ({ ...prev, name: newName }));
+    }
+
+    // If updating description / subheading / subtitle, sync to storeInfo & currentStore
+    const newDesc = newOptions.description !== undefined 
+      ? newOptions.description 
+      : (newOptions.subheading !== undefined ? newOptions.subheading : (newOptions as any).subtitle);
+    if (newDesc !== undefined) {
+      useCmsStore.getState().updateStoreInfo({ description: newDesc });
+      setCurrentStore((prev) => ({ ...prev, description: newDesc, tagline: newDesc }));
     }
 
     pushToHistory(updated);
@@ -1655,6 +1665,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 store={currentStore}
                 selectedSection={selectedSection}
                 onUpdateSectionOptions={handleUpdateSectionOptions}
+                onUpdateStore={handleUpdateStore}
                 onUpdateSectionTitle={handleRenameSection}
                 onToggleVisibility={handleToggleVisibility}
                 onDuplicateSection={handleDuplicateSection}

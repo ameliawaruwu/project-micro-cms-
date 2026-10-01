@@ -2,6 +2,7 @@ import { Store } from '../types';
 import { supabase } from './supabaseClient';
 import { getWibIsoString } from '../utils/formatters';
 import { idService } from './idService';
+import { billingPlanService } from './billingPlanService';
 
 const STORE_KEY = 'microcms_stores_v2';
 const ACTIVE_STORE_KEY = 'microcms_active_store_id';
@@ -164,17 +165,56 @@ class StoreService {
           createdAt: row.created_at || new Date().toISOString(),
         }));
 
+        // Hydrate each store's real active subscription from store_subscriptions database table
+        const hydratedStores: Store[] = await Promise.all(
+          mappedStores.map(async (st) => {
+            try {
+              const subInfo = await billingPlanService.getActiveSubscriptionForStore(st.id);
+              if (subInfo.hasActivePaidPlan) {
+                st.plan = subInfo.planSlug;
+                st.planExpiresAt = subInfo.expiresAt;
+                st.planSubscribedAt = subInfo.subscribedAt;
+                if (st.onboarding) st.onboarding.paymentConnected = true;
+                // Auto-heal stores table if it was desynced
+                if (st.plan !== subInfo.planSlug) {
+                  await supabase.from('stores').update({ plan: subInfo.planSlug }).eq('id', st.id);
+                }
+              } else if (subInfo.isExpired) {
+                st.plan = 'free';
+              }
+            } catch (subErr) {
+              console.warn('[storeService] Sub hydration error for store', st.id, subErr);
+            }
+            return st;
+          })
+        );
+
         // Cache synced cloud stores locally
         const allOther = this.getStoredStores().filter((s) => s.merchantId !== userId);
-        this.saveStores([...allOther, ...mappedStores]);
-        return mappedStores;
+        this.saveStores([...allOther, ...hydratedStores]);
+        return hydratedStores;
       }
     } catch (e) {
       console.warn('Supabase fetch stores error:', e);
     }
 
-    // In case of network error/offline, return local stores only for this user
-    return localStores;
+    // In case of network error/offline, hydrate local stores with cached subscriptions
+    const localHydrated = await Promise.all(
+      localStores.map(async (st) => {
+        try {
+          const subInfo = await billingPlanService.getActiveSubscriptionForStore(st.id);
+          if (subInfo.hasActivePaidPlan) {
+            st.plan = subInfo.planSlug;
+            st.planExpiresAt = subInfo.expiresAt;
+            st.planSubscribedAt = subInfo.subscribedAt;
+          } else if (subInfo.isExpired) {
+            st.plan = 'free';
+          }
+        } catch { /* ignore */ }
+        return st;
+      })
+    );
+    return localHydrated;
   }
 
   async getStoreById(id: string, ownerUserId?: string): Promise<Store | undefined> {
@@ -227,12 +267,26 @@ class StoreService {
           currency: 'IDR',
           balance: Number(data.balance || 0),
           plan: data.plan || 'free',
+          planExpiresAt: data.theme_settings?.planExpiresAt,
+          planSubscribedAt: data.theme_settings?.planSubscribedAt,
           isPublished: isPub,
           layoutSettings: data.theme_settings,
           customDomain: data.custom_domain,
           createdAt: data.created_at || new Date().toISOString(),
           onboarding: data.theme_settings?.onboarding || {},
         };
+
+        // Hydrate from active subscription
+        try {
+          const subInfo = await billingPlanService.getActiveSubscriptionForStore(mapped.id);
+          if (subInfo.hasActivePaidPlan) {
+            mapped.plan = subInfo.planSlug;
+            mapped.planExpiresAt = subInfo.expiresAt;
+            mapped.planSubscribedAt = subInfo.subscribedAt;
+          } else if (subInfo.isExpired) {
+            mapped.plan = 'free';
+          }
+        } catch { /* ignore */ }
 
         const currentStored = this.getStoredStores();
         this.saveStores([...currentStored.filter((s) => s.id !== mapped.id), mapped]);
@@ -446,6 +500,13 @@ class StoreService {
         const parsed = JSON.parse(activeAuthStoreStr);
         if (parsed.id === storeId) {
           localStorage.setItem('microcms_auth_store', JSON.stringify(stores[index]));
+        }
+      }
+      const activeStoreStr = localStorage.getItem('microcms_active_store');
+      if (activeStoreStr) {
+        const parsed = JSON.parse(activeStoreStr);
+        if (parsed.id === storeId) {
+          localStorage.setItem('microcms_active_store', JSON.stringify(stores[index]));
         }
       }
     } catch (e) {}

@@ -26,22 +26,45 @@ import { midtransService } from '../../services/midtransService';
 import { formatRupiah } from '../../utils/formatters';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
+import { billingPlanService, resolvePlanSlug, ActiveSubscriptionInfo } from '../../services/billingPlanService';
 import confetti from 'canvas-confetti';
 
 interface DomainPageProps {
   store: Store;
+  onUpdateStore?: (updated: Store) => void;
   onNavigateBilling?: () => void;
   onNavigateDashboard?: () => void;
 }
 
 export const DomainPage: React.FC<DomainPageProps> = ({
   store,
+  onUpdateStore,
   onNavigateBilling,
   onNavigateDashboard,
 }) => {
   const { t, language } = useLanguage();
   const isEn = language === 'en';
-  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial';
+
+  const [subInfo, setSubInfo] = useState<ActiveSubscriptionInfo | null>(null);
+
+  useEffect(() => {
+    if (store?.id) {
+      billingPlanService.getActiveSubscriptionForStore(store.id).then((info) => {
+        setSubInfo(info);
+        if (info.hasActivePaidPlan && onUpdateStore && (store.plan !== info.planSlug || store.planExpiresAt !== info.expiresAt)) {
+          onUpdateStore({
+            ...store,
+            plan: info.planSlug,
+            planExpiresAt: info.expiresAt,
+            planSubscribedAt: info.subscribedAt,
+          });
+        }
+      });
+    }
+  }, [store?.id]);
+
+  const effectivePlan = subInfo?.hasActivePaidPlan ? subInfo.planSlug : resolvePlanSlug(store?.plan);
+  const isFreePlan = effectivePlan === 'free';
   const [domainType, setDomainType] = useState<'random' | 'custom'>(
     store.domainType || (store.customDomain ? 'custom' : 'random')
   );

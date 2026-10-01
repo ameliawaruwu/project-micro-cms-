@@ -1,9 +1,11 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 
-export const ElegantFooter: React.FC = () => {
+export const ElegantFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
 
   return (
     <footer className="w-full bg-[#1A1918] text-[#FAF9F6] pt-24 pb-12 px-8 md:px-16 font-['Cormorant_Garamond',serif]">
@@ -12,10 +14,10 @@ export const ElegantFooter: React.FC = () => {
         {/* Brand */}
         <div className="flex-1 md:max-w-sm">
           <h3 className="text-3xl font-normal tracking-widest uppercase mb-8">
-            {storeInfo.name}
+            {storeTitle}
           </h3>
           <p className="text-[#A39D98] text-lg italic leading-relaxed mb-8">
-            {storeInfo.description}
+            {storeDesc}
           </p>
         </div>
 

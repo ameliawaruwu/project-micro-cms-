@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useCmsStore } from '../../../cms/useCmsStore';
+import { useCmsStore, cmsProductToProduct } from '../../../cms/useCmsStore';
 import { THEME_DATA_MAP } from '../../themeData';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { Search, ShoppingBag } from 'lucide-react';
@@ -90,10 +90,10 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
       ? 'grid-cols-1 gap-6'
       : 'grid-cols-2 gap-4'
     : gridColumns === 2
-    ? 'grid-cols-2 gap-8 md:gap-12'
+    ? 'grid-cols-1 sm:grid-cols-2 gap-6 md:gap-10'
     : gridColumns === 4
-    ? 'grid-cols-2 md:grid-cols-4 gap-6 md:gap-8'
-    : 'grid-cols-1 md:grid-cols-3 gap-8 md:gap-12';
+    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8'
+    : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-10';
 
   const handleUpdateField = (field: string, val: any) => {
     if (onUpdateSectionOptions && sectionKey) {
@@ -119,7 +119,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
             tagName="h2"
             value={heading}
             onSave={(val) => handleUpdateField('heading', val)}
-            className="text-4xl sm:text-5xl lg:text-6xl font-normal font-serif tracking-wide text-[#241A1A] cursor-text"
+            className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-normal font-serif tracking-wide text-[#241A1A] cursor-text storefront-heading-hero"
             readonly={readonly}
           />
           <div className="w-16 h-px bg-[#241A1A]/30 mx-auto mt-6"></div>
@@ -177,7 +177,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
               return (
                 <div key={product.id} className="group flex flex-col cursor-pointer">
                   {/* Image container */}
-                  <div className="aspect-[3/4] bg-white overflow-hidden mb-5 relative shadow-xs">
+                  <div className="aspect-[3/4] min-h-[220px] sm:min-h-[260px] bg-white overflow-hidden mb-4 sm:mb-5 relative shadow-xs">
                     <img
                       src={pImage}
                       alt={product.name}
@@ -196,11 +196,11 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
                       {pCategory}
                     </span>
                   )}
-                  <h3 className="font-serif text-lg md:text-xl font-normal leading-snug mb-1.5 text-[#241A1A] group-hover:text-[#706866] transition-colors">
+                  <h3 className="font-serif text-base sm:text-lg md:text-xl font-normal leading-snug mb-1 sm:mb-1.5 text-[#241A1A] group-hover:text-[#706866] transition-colors storefront-card-title">
                     {product.name}
                   </h3>
                   {showPrice && (
-                    <p className="font-serif italic text-sm md:text-base text-[#706866] mb-3">
+                    <p className="font-serif italic text-xs sm:text-sm md:text-base text-[#706866] mb-3 storefront-card-price">
                       Rp {pPrice.toLocaleString('id-ID')}
                     </p>
                   )}
@@ -210,13 +210,8 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      cartService.addItem({
-                        id: product.id,
-                        name: product.name,
-                        price: pPrice,
-                        image: pImage,
-                        quantity: 1,
-                      });
+                      const pObj = cmsProductToProduct(product as any);
+                      cartService.addToCart('editorial', pObj, 1);
                     }}
                     className="mt-auto py-2.5 px-4 border border-[#241A1A] text-[#241A1A] text-[10px] uppercase tracking-[0.2em] font-sans hover:bg-[#241A1A] hover:text-white transition-colors duration-200 flex items-center justify-center gap-2"
                   >
