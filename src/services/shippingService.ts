@@ -8,6 +8,7 @@ import {
 } from '../types';
 import { supabase } from './supabaseClient';
 import { branchService } from './branchService';
+import { getApiEndpoint } from '../utils/apiConfig';
 
 export interface ShippingRate {
   courier: CourierType;
@@ -167,7 +168,8 @@ export const shippingService = {
 
     // 2. Gunakan proxy server internal /api/shipping/rates untuk keamanan API key
     try {
-      const proxyRes = await fetch('/api/shipping/rates', {
+      const endpoint = getApiEndpoint('/api/shipping/rates');
+      const proxyRes = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

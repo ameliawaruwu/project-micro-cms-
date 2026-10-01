@@ -69,9 +69,9 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    # Proxy API Dinamis Kroomify (Midtrans Snap, Biteship Ongkir, Notifikasi, Email)
+    # Proxy API Dinamis Kroomify (Midtrans Snap, Biteship Ongkir, Notifikasi, Email, Duitku)
     location /api/ {
-        proxy_pass http://127.0.0.1:${this.apiBackendPort}/;
+        proxy_pass http://127.0.0.1:${this.apiBackendPort};
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

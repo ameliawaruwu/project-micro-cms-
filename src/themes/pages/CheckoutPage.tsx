@@ -23,6 +23,7 @@ import {
 import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
 import { midtransService } from '../../services/midtransService';
+import { duitkuService } from '../../services/duitkuService';
 import { storeService } from '../../services/storeService';
 import { shippingService, INDONESIAN_CITIES } from '../../services/shippingService';
 import { integrationService } from '../../services/integrationService';
@@ -33,6 +34,20 @@ import {
   getLocalizedChannelName,
 } from '../../services/paymentChannelService';
 import { useLanguage } from '../../contexts/LanguageContext';
+
+export function mapPaymentIdToDuitkuMethod(paymentId: string): string {
+  const p = (paymentId || '').toLowerCase();
+  if (p.includes('qris') || p.includes('shopee') || p.includes('gopay') || p.includes('ovo') || p.includes('dana')) return 'SP';
+  if (p.includes('bca')) return 'BC';
+  if (p.includes('bri')) return 'BR';
+  if (p.includes('mandiri') || p.includes('echannel')) return 'M2';
+  if (p.includes('bni')) return 'I1';
+  if (p.includes('permata')) return 'BT';
+  if (p.includes('cimb')) return 'B1';
+  if (p.includes('card') || p.includes('credit')) return 'VC';
+  if (p.includes('alfa') || p.includes('retail') || p.includes('indo')) return 'FT';
+  return 'SP';
+}
 
 interface CheckoutPageProps {
   themeData?: ThemeSchema;
@@ -59,13 +74,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     fontFamily: 'sans-serif',
   };
 
-  // Customer & Shipping state
-  const [customerName, setCustomerName] = useState('Budi Santoso');
-  const [customerEmail, setCustomerEmail] = useState('budi@example.com');
-  const [customerPhone, setCustomerPhone] = useState('081234567890');
-  const [customerAddress, setCustomerAddress] = useState('Jl. Sudirman No 123, RT 01 / RW 02');
-  const [customerCity, setCustomerCity] = useState('Jakarta Selatan');
-  const [customerPostalCode, setCustomerPostalCode] = useState('12730');
+  // Customer & Shipping state - dimulai kosong agar pembeli mengisi formulir sendiri
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [customerCity, setCustomerCity] = useState('');
+  const [customerPostalCode, setCustomerPostalCode] = useState('');
 
   // Couriers & Rates state
   const [availableRates, setAvailableRates] = useState<BiteshipRateOption[]>([]);
@@ -185,7 +200,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
   // Fetch rates dynamically based on postal code
   const fetchBiteshipRates = async (postalCodeToUse?: string) => {
-    const destCode = (postalCodeToUse || customerPostalCode || '12730').trim();
+    const destCode = (postalCodeToUse || customerPostalCode || '').trim();
+    if (!destCode) {
+      setAvailableRates([]);
+      setSelectedRate(null);
+      return;
+    }
     setIsLoadingRates(true);
     setRatesError('');
 
@@ -211,7 +231,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   };
 
   useEffect(() => {
-    fetchBiteshipRates(customerPostalCode);
+    if (customerPostalCode) {
+      fetchBiteshipRates(customerPostalCode);
+    }
   }, []);
 
   // Filter couriers strictly based on merchant active integrations
@@ -322,6 +344,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   // Handle City Selection
   const handleCitySelect = (cityName: string) => {
     setCustomerCity(cityName);
+    if (!cityName) {
+      setCustomerPostalCode('');
+      setAvailableRates([]);
+      setSelectedRate(null);
+      return;
+    }
     const matched = INDONESIAN_CITIES.find(
       (c) => c.name.toLowerCase() === cityName.toLowerCase() || c.id === cityName
     );
@@ -394,6 +422,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       return;
     }
 
+    if (!customerCity) {
+      alert('Silakan pilih Kota / Kabupaten Tujuan pengiriman.');
+      return;
+    }
+
     if (displayedRates.length === 0) {
       alert('Tidak ada opsi pengiriman aktif yang tersedia saat ini.');
       return;
@@ -407,13 +440,19 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     setIsSubmitting(true);
     try {
       const orderId = `INV-${Date.now()}`;
-      await midtransService.payWithSnap(
+      const duitkuMethod = mapPaymentIdToDuitkuMethod(selectedPaymentId);
+      const selectedOption = paymentOptions.find((p) => p.id === selectedPaymentId);
+      const methodLabel = selectedOption?.name || 'Duitku Payment';
+
+      await duitkuService.payWithDuitku(
         {
           orderId,
           grossAmount: total,
           customerName: customerName.trim(),
           customerEmail: customerEmail.trim() || 'customer@example.com',
           customerPhone: customerPhone.trim(),
+          paymentMethod: duitkuMethod,
+          productDetails: `Pesanan ${orderId} - ${store?.name || 'Store'}`,
           items: [
             ...sampleItems.map((s) => ({
               id: s.id,
@@ -431,19 +470,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         },
         {
           onSuccess: async (result) => {
-            const methodLabel = paymentOptions.find((p) => p.id === selectedPaymentId)?.name || 'Online Payment';
-            await finalizeOrder(true, `Midtrans (${result.payment_type || methodLabel})`);
+            await finalizeOrder(true, `Duitku (${methodLabel})`);
             setIsSubmitting(false);
           },
           onPending: async (result) => {
-            const methodLabel = paymentOptions.find((p) => p.id === selectedPaymentId)?.name || 'Online Payment';
-            await finalizeOrder(false, `Midtrans Pending (${result.payment_type || methodLabel})`);
+            await finalizeOrder(false, `Duitku Pending (${methodLabel})`);
             setIsSubmitting(false);
           },
           onError: (err) => {
-            console.error('Midtrans Snap error:', err);
+            console.error('Duitku payment notice:', err);
             setIsSubmitting(false);
-            alert('Pembayaran dibatalkan atau terjadi kendala. Silakan coba lagi.');
+            alert('Kendala pembayaran: ' + (err?.statusMessage || 'Pembayaran dibatalkan atau terjadi kendala. Silakan coba lagi.'));
           },
           onClose: () => {
             setIsSubmitting(false);
@@ -567,6 +604,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       onChange={(e) => handleCitySelect(e.target.value)}
                       className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm cursor-pointer"
                     >
+                      <option value="">-- PILIH KOTA TUJUAN --</option>
                       {INDONESIAN_CITIES.map((c) => (
                         <option key={c.id} value={c.name}>{c.name}</option>
                       ))}
@@ -741,6 +779,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       onChange={(e) => handleCitySelect(e.target.value)}
                       className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400 cursor-pointer"
                     >
+                      <option value="" className="bg-slate-950 text-slate-400">-- SELECT_TARGET_CITY --</option>
                       {INDONESIAN_CITIES.map((c) => (
                         <option key={c.id} value={c.name} className="bg-slate-950 text-white">{c.name}</option>
                       ))}
@@ -942,6 +981,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                           onChange={(e) => handleCitySelect(e.target.value)}
                           className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition cursor-pointer"
                         >
+                          <option value="">-- Pilih Kota / Kabupaten Tujuan --</option>
                           {INDONESIAN_CITIES.map((c) => (
                             <option key={c.id} value={c.name}>
                               {c.name} ({c.province})

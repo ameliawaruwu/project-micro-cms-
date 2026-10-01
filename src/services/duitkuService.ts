@@ -1,5 +1,6 @@
 // Service to communicate with Duitku Payment Gateway (API & POP)
 import { supabase } from './supabaseClient';
+import { getApiEndpoint } from '../utils/apiConfig';
 
 export interface DuitkuItemDetail {
   name: string;
@@ -124,7 +125,8 @@ class DuitkuService {
    */
   async getPaymentMethods(amount: number): Promise<DuitkuPaymentMethod[]> {
     try {
-      const res = await fetch('/api/duitku/payment-methods', {
+      const endpoint = getApiEndpoint('/api/duitku/payment-methods');
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: Math.round(amount) }),
@@ -150,47 +152,58 @@ class DuitkuService {
     statusMessage: string;
   }> {
     let lastErrorMsg = 'Gagal membuat invoice Duitku';
+    const primaryEndpoint = getApiEndpoint('/api/duitku/create-invoice');
+    const fallbackEndpoint = 'https://kroomify.kroombox.com/api/duitku/create-invoice';
+    const endpointsToTry = [primaryEndpoint];
+    if (primaryEndpoint !== fallbackEndpoint) {
+      endpointsToTry.push(fallbackEndpoint);
+    }
 
-    try {
-      const response = await fetch('/api/duitku/create-invoice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: params.orderId,
-          grossAmount: params.grossAmount,
-          customerName: params.customerName,
-          customerEmail: params.customerEmail,
-          customerPhone: params.customerPhone,
-          productDetails: params.productDetails,
-          paymentMethod: params.paymentMethod || 'SP',
-          items: params.items || [],
-        }),
-      });
+    const payload = JSON.stringify({
+      orderId: params.orderId,
+      grossAmount: params.grossAmount,
+      customerName: params.customerName,
+      customerEmail: params.customerEmail,
+      customerPhone: params.customerPhone,
+      productDetails: params.productDetails,
+      paymentMethod: params.paymentMethod || 'SP',
+      items: params.items || [],
+    });
 
-      const rawText = await response.text();
-      let resData: any = {};
+    for (const url of endpointsToTry) {
       try {
-        resData = JSON.parse(rawText);
-      } catch {
-        throw new Error(`Respon server tidak berformat JSON (HTTP ${response.status}). Mohon segarkan browser Anda (Ctrl+F5) dan coba lagi.`);
-      }
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+        });
 
-      if (response.ok && resData.reference) {
-        return {
-          reference: resData.reference,
-          paymentUrl: resData.paymentUrl || '',
-          vaNumber: resData.vaNumber,
-          qrString: resData.qrString,
-          statusCode: resData.statusCode || '00',
-          statusMessage: resData.statusMessage || 'SUCCESS',
-        };
-      }
+        const rawText = await response.text();
+        let resData: any = {};
+        try {
+          resData = JSON.parse(rawText);
+        } catch {
+          lastErrorMsg = `Respon server dari ${url} tidak berformat JSON (HTTP ${response.status}).`;
+          continue;
+        }
 
-      if (resData.message) {
-        lastErrorMsg = resData.message;
+        if (response.ok && resData.reference) {
+          return {
+            reference: resData.reference,
+            paymentUrl: resData.paymentUrl || '',
+            vaNumber: resData.vaNumber,
+            qrString: resData.qrString,
+            statusCode: resData.statusCode || '00',
+            statusMessage: resData.statusMessage || 'SUCCESS',
+          };
+        }
+
+        if (resData.message) {
+          lastErrorMsg = resData.message;
+        }
+      } catch (err: any) {
+        lastErrorMsg = err.message || lastErrorMsg;
       }
-    } catch (err: any) {
-      lastErrorMsg = err.message || lastErrorMsg;
     }
 
     throw new Error(lastErrorMsg);
@@ -241,7 +254,13 @@ class DuitkuService {
 
       throw new Error('Duitku tidak mengembalikan referensi atau paymentUrl yang valid.');
     } catch (err: any) {
-      console.error('Duitku Official Error:', err);
+      console.warn('[Duitku] Official payment notice:', err);
+      // Di environment sandbox, jika ada kendala koneksi Duitku resmi, tampilkan simulator cerdas agar alur tidak macet
+      if (this.getEnvironment() === 'sandbox') {
+        this.renderSandboxSimulator(params, callbacks, err.message);
+        return;
+      }
+
       callbacks.onError?.({
         resultCode: '02',
         merchantOrderId: params.orderId,
@@ -261,7 +280,8 @@ class DuitkuService {
     isPaid: boolean;
   }> {
     try {
-      const res = await fetch('/api/duitku/check-status', {
+      const endpoint = getApiEndpoint('/api/duitku/check-status');
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ merchantOrderId }),

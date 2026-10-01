@@ -66,8 +66,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('Jakarta Selatan');
-  const [postalCode, setPostalCode] = useState('12730');
+  const [city, setCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
   const [courier, setCourier] = useState<CourierType>('J&T');
   const [selectedBranch, setSelectedBranch] = useState<ShippingBranch | null>(null);
   const [selectedBiteshipRate, setSelectedBiteshipRate] = useState<BiteshipRateOption | null>(null);
@@ -502,13 +502,18 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       onChange={(e) => {
                         const selectedCity = e.target.value;
                         setCity(selectedCity);
+                        if (!selectedCity) {
+                          setPostalCode('');
+                          return;
+                        }
                         const matchCity = INDONESIAN_CITIES.find((c) => c.name === selectedCity);
                         if (matchCity?.postalCode) {
                           setPostalCode(matchCity.postalCode);
                         }
                       }}
-                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#241A1A] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
+                      className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#241A1A] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition cursor-pointer"
                     >
+                      <option value="">-- Pilih Kota Tujuan --</option>
                       {INDONESIAN_CITIES.map((c) => (
                         <option key={c.id} value={c.name}>
                           {c.name} ({c.province})
