@@ -13,6 +13,9 @@ import {
   Zap,
   AlertCircle,
   Trash2,
+  Sparkles,
+  ShieldCheck,
+  Building2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Store as StoreType, BillingPlan, BillingSubscription } from '../../types';
@@ -48,6 +51,105 @@ const INITIAL_INVOICES: InvoiceItem[] = [
     date: '11 Sep 2026',
     amount: 99000,
     status: 'Lunas (Duitku)',
+  },
+];
+
+export interface DuitkuChannelOption {
+  code: string;
+  name: string;
+  category: 'qris' | 'va';
+  image: string;
+  badge?: string;
+  fee?: string;
+}
+
+export const DEFAULT_QRIS_CHANNELS: DuitkuChannelOption[] = [
+  {
+    code: 'SP',
+    name: 'ShopeePay QRIS',
+    category: 'qris',
+    image: 'https://images.duitku.com/hotlink-ok/SHOPEEPAY.PNG',
+    badge: 'Rekomendasi Instan',
+  },
+  {
+    code: 'NQ',
+    name: 'Nobu QRIS (Semua Bank & E-Wallet)',
+    category: 'qris',
+    image: 'https://images.duitku.com/hotlink-ok/NQ.PNG',
+    badge: 'Scan Universal',
+  },
+  {
+    code: 'DA',
+    name: 'DANA E-Wallet',
+    category: 'qris',
+    image: 'https://images.duitku.com/hotlink-ok/DA.PNG',
+    badge: 'Instan',
+  },
+  {
+    code: 'OV',
+    name: 'OVO E-Wallet',
+    category: 'qris',
+    image: 'https://images.duitku.com/hotlink-ok/OV.PNG',
+    badge: 'Instan',
+  },
+];
+
+export const DEFAULT_VA_CHANNELS: DuitkuChannelOption[] = [
+  {
+    code: 'BC',
+    name: 'BCA Virtual Account',
+    category: 'va',
+    image: 'https://images.duitku.com/hotlink-ok/BCA.SVG',
+    badge: 'Otomatis 24 Jam',
+  },
+  {
+    code: 'M2',
+    name: 'Mandiri Virtual Account',
+    category: 'va',
+    image: 'https://images.duitku.com/hotlink-ok/MV.PNG',
+    badge: 'Otomatis 24 Jam',
+  },
+  {
+    code: 'BR',
+    name: 'BRI Virtual Account (BRIVA)',
+    category: 'va',
+    image: 'https://images.duitku.com/hotlink-ok/BR.PNG',
+    badge: 'Otomatis 24 Jam',
+  },
+  {
+    code: 'I1',
+    name: 'BNI Virtual Account',
+    category: 'va',
+    image: 'https://images.duitku.com/hotlink-ok/I1.PNG',
+    badge: 'Otomatis 24 Jam',
+  },
+  {
+    code: 'BV',
+    name: 'BSI Virtual Account (Syariah)',
+    category: 'va',
+    image: 'https://images.duitku.com/hotlink-ok/BSI.PNG',
+    badge: 'Otomatis 24 Jam',
+  },
+  {
+    code: 'BT',
+    name: 'Permata Virtual Account',
+    category: 'va',
+    image: 'https://images.duitku.com/hotlink-ok/PERMATA.PNG',
+    badge: 'Otomatis 24 Jam',
+  },
+  {
+    code: 'B1',
+    name: 'CIMB Niaga Virtual Account',
+    category: 'va',
+    image: 'https://images.duitku.com/hotlink-ok/B1.PNG',
+    badge: 'Otomatis 24 Jam',
+  },
+  {
+    code: 'VA',
+    name: 'Maybank Virtual Account',
+    category: 'va',
+    image: 'https://images.duitku.com/hotlink-ok/VA.PNG',
+    badge: 'Otomatis 24 Jam',
   },
 ];
 
@@ -201,11 +303,28 @@ export const BillingPage: React.FC<BillingPageProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [viewingInvoice, setViewingInvoice] = useState<InvoiceItem | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'qris' | 'bca_va'>('qris');
+
+  // State: Payment Category & Provider Selection from Duitku
+  const [paymentCategory, setPaymentCategory] = useState<'qris' | 'va'>('qris');
+  const [selectedChannelCode, setSelectedChannelCode] = useState<string>('SP');
+  const [channelsLoading, setChannelsLoading] = useState(false);
+  const [qrisChannels, setQrisChannels] = useState<DuitkuChannelOption[]>(DEFAULT_QRIS_CHANNELS);
+  const [vaChannels, setVaChannels] = useState<DuitkuChannelOption[]>(DEFAULT_VA_CHANNELS);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+
+  // State: Celebration Confirmation Modal on Successful Subscription
+  const [successSubscription, setSuccessSubscription] = useState<{
+    planName: string;
+    planSlug: string;
+    expiryDate: string;
+    invoiceNumber: string;
+    amount: number;
+    paymentMethod: string;
+  } | null>(null);
 
   // Active Pending Subscription if merchant has an unpaid bill
   const [pendingSubscription, setPendingSubscription] = useState<BillingSubscription | null>(() => {
@@ -226,6 +345,69 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     }
     return [];
   });
+
+  // Verify return from Duitku payment gateway (e.g. ?billing_return=true&merchantOrderId=BILL-...)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const isBillingReturn = params.get('billing_return') === 'true';
+    const returnOrderId = params.get('merchantOrderId') || params.get('order_id');
+
+    if (isBillingReturn || returnOrderId?.startsWith('BILL-')) {
+      const orderToCheck = returnOrderId || pendingSubscription?.orderId;
+      if (orderToCheck) {
+        setIsVerifying(true);
+        duitkuService.checkTransactionStatus(orderToCheck).then(async (res) => {
+          if (res.isPaid) {
+            const targetSub =
+              pendingSubscription ||
+              billingPlanService.getStoreSubscriptions(store.id).find(
+                (s) => s.orderId === orderToCheck || s.invoiceNumber === orderToCheck
+              );
+
+            if (targetSub) {
+              await handleActivatePlan(targetSub);
+            } else {
+              const activeSub = await billingPlanService.getActiveSubscriptionForStore(store.id);
+              if (activeSub.hasActivePaidPlan) {
+                const updated = await storeService.updateStore(
+                  store.id,
+                  {
+                    plan: activeSub.planSlug,
+                    planExpiresAt: activeSub.expiresAt,
+                    planSubscribedAt: activeSub.subscribedAt,
+                  },
+                  store.merchantId
+                );
+                onUpdateStore(updated);
+                setSuccessSubscription({
+                  planName: activeSub.planName,
+                  planSlug: activeSub.planSlug,
+                  expiryDate: new Date(activeSub.expiresAt || Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString(
+                    isEn ? 'en-US' : 'id-ID',
+                    { day: 'numeric', month: 'long', year: 'numeric' }
+                  ),
+                  invoiceNumber: activeSub.subscription?.invoiceNumber || orderToCheck,
+                  amount: activeSub.subscription?.amount || 1000000,
+                  paymentMethod: 'Duitku Payment Gateway',
+                });
+                confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+              }
+            }
+          }
+        }).catch((err) => {
+          console.warn('[Duitku Return Verification Error]', err);
+        }).finally(() => {
+          setIsVerifying(false);
+          // Clean up search query params to keep URL clean and prevent repeated checks
+          try {
+            const cleanUrl = window.location.origin + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+          } catch { /* ignore */ }
+        });
+      }
+    }
+  }, [store.id]);
 
   useEffect(() => {
     billingPlanService.fetchPlansFromDatabase().then((fetched) => {
@@ -309,12 +491,87 @@ export const BillingPage: React.FC<BillingPageProps> = ({
 
   const currentPlan = resolvePlanSlug(store.plan);
 
-  const handleOpenUpgrade = (plan: BillingPlan) => {
+  const handleOpenUpgrade = async (plan: BillingPlan) => {
     const targetSlug = resolvePlanSlug(plan.slug);
     if (targetSlug === currentPlan) return;
     if (targetSlug === 'free' && currentPlan === 'free') return;
     setSelectedPlanForUpgrade(plan);
     setIsModalOpen(true);
+    setChannelsLoading(true);
+
+    try {
+      const methods = await duitkuService.getPaymentMethods(plan.priceYearly);
+      if (Array.isArray(methods) && methods.length > 0) {
+        const dynamicQris: DuitkuChannelOption[] = [];
+        const dynamicVa: DuitkuChannelOption[] = [];
+
+        methods.forEach((m) => {
+          const code = m.paymentMethod;
+          const name = m.paymentName;
+          const image = m.paymentImage;
+          const fee = m.totalFee;
+
+          const isQris = ['SP', 'NQ', 'SQ', 'OV', 'DA', 'LA', 'SA'].includes(code) || /qris|shopee|nobu|dana|ovo|linkaja/i.test(name);
+          const isVa = ['BC', 'M2', 'BR', 'I1', 'BT', 'B1', 'BV', 'NC', 'VA', 'A1', 'AG', 'S1'].includes(code) || /va|virtual/i.test(name);
+
+          if (isQris) {
+            let cleanName = name;
+            if (code === 'SP') cleanName = 'ShopeePay QRIS';
+            if (code === 'NQ') cleanName = 'Nobu QRIS (Semua Bank & E-Wallet)';
+            if (code === 'DA') cleanName = 'DANA E-Wallet';
+            if (code === 'OV') cleanName = 'OVO E-Wallet';
+            dynamicQris.push({
+              code,
+              name: cleanName,
+              category: 'qris',
+              image,
+              fee,
+              badge: code === 'SP' ? 'Instan Tercepat' : 'Scan Bebas Biaya',
+            });
+          } else if (isVa) {
+            let cleanName = name;
+            if (code === 'BC') cleanName = 'BCA Virtual Account';
+            if (code === 'M2') cleanName = 'Mandiri Virtual Account';
+            if (code === 'BR') cleanName = 'BRI Virtual Account (BRIVA)';
+            if (code === 'I1') cleanName = 'BNI Virtual Account';
+            if (code === 'BV') cleanName = 'BSI Virtual Account (Syariah)';
+            if (code === 'BT') cleanName = 'Permata Virtual Account';
+            if (code === 'B1') cleanName = 'CIMB Niaga Virtual Account';
+            if (code === 'VA') cleanName = 'Maybank Virtual Account';
+            dynamicVa.push({
+              code,
+              name: cleanName,
+              category: 'va',
+              image,
+              fee,
+              badge: 'Otomatis 24/7',
+            });
+          }
+        });
+
+        if (dynamicQris.length > 0) setQrisChannels(dynamicQris);
+        if (dynamicVa.length > 0) setVaChannels(dynamicVa);
+
+        if (paymentCategory === 'qris' && dynamicQris.length > 0) {
+          setSelectedChannelCode(dynamicQris[0].code);
+        } else if (paymentCategory === 'va' && dynamicVa.length > 0) {
+          setSelectedChannelCode(dynamicVa[0].code);
+        }
+      }
+    } catch (e) {
+      console.warn('Error loading dynamic Duitku payment channels:', e);
+    } finally {
+      setChannelsLoading(false);
+    }
+  };
+
+  const handleSelectCategory = (cat: 'qris' | 'va') => {
+    setPaymentCategory(cat);
+    if (cat === 'qris') {
+      setSelectedChannelCode(qrisChannels[0]?.code || 'SP');
+    } else {
+      setSelectedChannelCode(vaChannels[0]?.code || 'BC');
+    }
   };
 
   /**
@@ -347,6 +604,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     await billingPlanService.updateSubscriptionStatus(sub.id, 'paid', {
       paidAt: paidAtIso,
       expiresAt: expiresAtIso,
+      orderId: sub.orderId,
     });
 
     // 3. Clear pending state
@@ -369,6 +627,16 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       day: 'numeric',
       month: 'long',
       year: 'numeric',
+    });
+
+    // 5. Open Celebration Confirmation Modal
+    setSuccessSubscription({
+      planName: sub.planName,
+      planSlug,
+      expiryDate: formattedExpiryDate,
+      invoiceNumber: sub.invoiceNumber,
+      amount: sub.amount,
+      paymentMethod: sub.paymentMethod || 'Duitku Payment Gateway',
     });
 
     if (onShowNotification) {
@@ -471,6 +739,14 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     const orderId = `BILL-${Date.now()}`;
     const invoiceNumber = `INV-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
+    const activeChannelList = paymentCategory === 'qris' ? qrisChannels : vaChannels;
+    const currentChannel =
+      activeChannelList.find((c) => c.code === selectedChannelCode) ||
+      activeChannelList[0] || {
+        code: paymentCategory === 'qris' ? 'SP' : 'BC',
+        name: paymentCategory === 'qris' ? 'ShopeePay QRIS' : 'BCA Virtual Account',
+      };
+
     // Record subscription immediately so merchant has an invoice and orderId
     const recordedPending = await billingPlanService.recordSubscription({
       storeId: store.id,
@@ -480,7 +756,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       cycle: 'yearly',
       amount: price,
       status: 'pending',
-      paymentMethod: paymentMethod === 'qris' ? 'Duitku QRIS' : 'Duitku BCA VA',
+      paymentMethod: `Duitku ${currentChannel.name}`,
       invoiceNumber,
       orderId,
       paidAt: new Date().toISOString(),
@@ -501,21 +777,20 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     ]);
 
     try {
-      const duitkuMethod = paymentMethod === 'qris' ? 'SP' : 'BC';
       await duitkuService.payWithDuitku(
         {
           orderId,
           grossAmount: price,
           customerName: store.name,
           customerPhone: store.phoneWhatsApp,
-          paymentMethod: duitkuMethod,
+          paymentMethod: currentChannel.code,
           productDetails: `Langganan ${selectedPlanForUpgrade.name} 1 Tahun`,
         },
         {
           onSuccess: async () => {
-            await handleActivatePlan(recordedPending);
             setIsProcessing(false);
             setIsModalOpen(false);
+            await handleActivatePlan(recordedPending);
           },
           onPending: async () => {
             setIsProcessing(false);
@@ -540,6 +815,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             // On popup close, check if the payment was already settled
             const res = await duitkuService.checkTransactionStatus(orderId);
             if (res.isPaid) {
+              setIsModalOpen(false);
               await handleActivatePlan(recordedPending);
             }
           },
@@ -670,7 +946,27 @@ export const BillingPage: React.FC<BillingPageProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center shrink-0 self-start sm:self-center">
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-center flex-wrap sm:flex-nowrap">
+              <button
+                type="button"
+                disabled={isVerifying}
+                onClick={() => handleCheckPaymentStatus(pendingSubscription)}
+                className="px-3.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs transition flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-60"
+                title={isEn ? 'Check latest payment status with Duitku' : 'Cek status pembayaran terbaru dengan Duitku'}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? 'animate-spin' : ''}`} />
+                <span>{isVerifying ? (isEn ? 'Checking...' : 'Memeriksa...') : (isEn ? 'Check Payment Status' : 'Cek Status Pembayaran')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleCheckPaymentStatus(pendingSubscription, true)}
+                className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold text-[11px] transition cursor-pointer shadow-2xs"
+                title="Simulasi pelunasan instan untuk pengujian sandbox"
+              >
+                <span>{isEn ? '⚡ Simulate Paid (Dev)' : '⚡ Simulasi Lunas'}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setIsCancelModalOpen(true)}
@@ -976,30 +1272,115 @@ export const BillingPage: React.FC<BillingPageProps> = ({
               </div>
             </div>
 
-            <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-[#241A1A] block">{isEn ? 'Payment Method:' : 'Metode Pembayaran:'}</label>
-              <div className="grid grid-cols-2 gap-2">
-                <div
-                  onClick={() => setPaymentMethod('qris')}
-                  className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer ${paymentMethod === 'qris'
-                      ? 'border-[#66000E] bg-[#F5E8EA]/40 font-bold text-[#66000E]'
-                      : 'border-[#E5E0DD] bg-white text-[#706866]'
-                    }`}
-                >
-                  <QrCode className="w-4 h-4" />
-                  <span>{isEn ? 'Instant QRIS' : 'QRIS Instan'}</span>
-                </div>
+            {/* Category & Provider Selection from Duitku */}
+            <div className="space-y-2 text-xs">
+              <label className="font-bold text-[#241A1A] block">
+                {isEn ? 'Select Payment Method:' : 'Pilih Metode Pembayaran:'}
+              </label>
 
-                <div
-                  onClick={() => setPaymentMethod('bca_va')}
-                  className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer ${paymentMethod === 'bca_va'
-                      ? 'border-[#66000E] bg-[#F5E8EA]/40 font-bold text-[#66000E]'
-                      : 'border-[#E5E0DD] bg-white text-[#706866]'
-                    }`}
+              {/* Category Switcher Tabs */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSelectCategory('qris')}
+                  className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 transition cursor-pointer font-bold text-xs ${
+                    paymentCategory === 'qris'
+                      ? 'border-[#66000E] bg-[#F5E8EA]/60 text-[#66000E] shadow-2xs'
+                      : 'border-[#E5E0DD] bg-white text-[#706866] hover:bg-[#FAF7F7]'
+                  }`}
                 >
-                  <CreditCard className="w-4 h-4" />
+                  <QrCode className="w-4 h-4 shrink-0" />
+                  <span>{isEn ? 'Instant QRIS' : 'QRIS Instan'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectCategory('va')}
+                  className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 transition cursor-pointer font-bold text-xs ${
+                    paymentCategory === 'va'
+                      ? 'border-[#66000E] bg-[#F5E8EA]/60 text-[#66000E] shadow-2xs'
+                      : 'border-[#E5E0DD] bg-white text-[#706866] hover:bg-[#FAF7F7]'
+                  }`}
+                >
+                  <CreditCard className="w-4 h-4 shrink-0" />
                   <span>{isEn ? 'Virtual Account' : 'Virtual Account'}</span>
-                </div>
+                </button>
+              </div>
+
+              {/* Sub-label for Provider Selection */}
+              <div className="pt-1 flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-gray-500">
+                  {paymentCategory === 'qris'
+                    ? (isEn ? 'Choose QRIS / E-Wallet Provider:' : 'Pilih Penyedia QRIS / E-Wallet:')
+                    : (isEn ? 'Choose Bank Virtual Account:' : 'Pilih Bank Virtual Account:')}
+                </span>
+                {channelsLoading && (
+                  <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                    <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                    <span>{isEn ? 'Loading channels...' : 'Memuat saluran Duitku...'}</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Provider List / Grid with Real Duitku Logos */}
+              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                {(paymentCategory === 'qris' ? qrisChannels : vaChannels).map((channel) => {
+                  const isSelected = selectedChannelCode === channel.code;
+                  return (
+                    <div
+                      key={channel.code}
+                      onClick={() => setSelectedChannelCode(channel.code)}
+                      className={`p-2.5 rounded-xl border flex items-center justify-between gap-2.5 transition cursor-pointer ${
+                        isSelected
+                          ? 'border-[#66000E] bg-[#F5E8EA]/40 ring-1 ring-[#66000E]'
+                          : 'border-[#E5E0DD] bg-white hover:bg-[#FAF7F7] hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {/* Channel Logo */}
+                        <div className="w-9 h-6.5 rounded-md border border-[#E5E0DD] bg-white flex items-center justify-center p-0.5 shrink-0 overflow-hidden shadow-2xs">
+                          {channel.image ? (
+                            <img
+                              src={channel.image}
+                              alt={channel.name}
+                              className="max-h-full max-w-full object-contain"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <span className="font-bold text-[9px] text-gray-600">{channel.code}</span>
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="font-bold text-xs text-[#241A1A] truncate">{channel.name}</div>
+                          <div className="text-[10px] text-gray-500 flex items-center gap-1.5">
+                            {channel.badge && (
+                              <span className="text-emerald-700 font-medium">{channel.badge}</span>
+                            )}
+                            {channel.fee && Number(channel.fee) > 0 ? (
+                              <span>• Biaya: {formatRupiah(Number(channel.fee))}</span>
+                            ) : (
+                              <span>• Bebas Biaya Admin</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Radio Selection Dot */}
+                      <div
+                        className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                          isSelected
+                            ? 'border-[#66000E] bg-[#66000E] text-white'
+                            : 'border-gray-300 bg-white'
+                        }`}
+                      >
+                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -1010,7 +1391,13 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 onClick={handleExecuteUpgrade}
                 className="w-full py-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                <span>{isProcessing ? (isEn ? 'Processing Transaction...' : 'Memproses Transaksi...') : (isEn ? 'Pay Now via Duitku' : 'Bayar Sekarang via Duitku')}</span>
+                <span>
+                  {isProcessing
+                    ? (isEn ? 'Processing Transaction...' : 'Memproses Transaksi...')
+                    : (isEn
+                        ? `Pay Now via Duitku (${(paymentCategory === 'qris' ? qrisChannels : vaChannels).find((c) => c.code === selectedChannelCode)?.name || 'Duitku'})`
+                        : `Bayar via Duitku (${(paymentCategory === 'qris' ? qrisChannels : vaChannels).find((c) => c.code === selectedChannelCode)?.name || 'Duitku'})`)}
+                </span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
@@ -1021,6 +1408,139 @@ export const BillingPage: React.FC<BillingPageProps> = ({
               >
                 {isEn ? 'Cancel' : 'Batal'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KONFIRMASI BERHASIL BERLANGGANAN (CELEBRATION CONFIRMATION MODAL) */}
+      {successSubscription && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white rounded-3xl p-6 sm:p-7 border border-emerald-200 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 text-left relative overflow-hidden">
+            {/* Top decorative gradient glow */}
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-500 via-[#66000E] to-amber-500" />
+
+            {/* Header Icon & Title */}
+            <div className="text-center space-y-2 pt-2">
+              <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-emerald-600 to-emerald-400 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-600/25 ring-8 ring-emerald-50">
+                <Crown className="w-8 h-8 stroke-[2.2]" />
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                <span>{isEn ? 'Payment Verified & Active' : 'Pembayaran Lunas & Terverifikasi'}</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-[#1F1F1F] tracking-tight">
+                {isEn ? '🎉 Subscription Activated Successfully!' : '🎉 Selamat! Toko Anda Berhasil Berlangganan!'}
+              </h3>
+              <p className="text-xs text-[#706866] max-w-sm mx-auto leading-relaxed">
+                {isEn
+                  ? 'Your store is now upgraded and all premium features are active for 1 full year.'
+                  : 'Paket langganan tahunan toko Anda telah resmi aktif. Semua fitur unggulan siap digunakan.'}
+              </p>
+            </div>
+
+            {/* Summary Detail Card */}
+            <div className="bg-[#FAF7F7] p-4 rounded-2xl border border-[#E5E0DD] space-y-2.5 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
+                <span className="text-[#706866]">{isEn ? 'Store Name:' : 'Nama Toko:'}</span>
+                <span className="font-bold text-[#1F1F1F]">{store.name}</span>
+              </div>
+              <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
+                <span className="text-[#706866]">{isEn ? 'Active Plan:' : 'Paket Langganan:'}</span>
+                <span className="font-black text-[#66000E] text-sm bg-white px-2.5 py-0.5 rounded-lg border border-[#66000E]/20 shadow-2xs">
+                  {getPlanName(successSubscription.planName)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
+                <span className="text-[#706866]">{isEn ? 'Active Period:' : 'Masa Berlaku:'}</span>
+                <span className="font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                  {isEn ? '1 Full Year (365 Days)' : '1 Tahun Penuh (365 Hari)'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
+                <span className="text-[#706866]">{isEn ? 'Valid Until:' : 'Berlaku Hingga:'}</span>
+                <strong className="text-[#1F1F1F] font-bold">{successSubscription.expiryDate}</strong>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#706866]">{isEn ? 'Invoice Reference:' : 'No. Invoice:'}</span>
+                <span className="font-mono font-semibold text-gray-700 bg-white px-2 py-0.5 rounded border border-gray-200">
+                  {successSubscription.invoiceNumber}
+                </span>
+              </div>
+            </div>
+
+            {/* Feature Highlights Grid */}
+            <div className="space-y-1.5">
+              <h4 className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                {isEn ? 'Active Features Unlocked:' : 'Fitur Toko Yang Kini Aktif:'}
+              </h4>
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-[#241A1A]">
+                <div className="p-2 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0 stroke-[3]" />
+                  <span className="font-medium line-clamp-1">{isEn ? 'Duitku QRIS & VA' : 'Checkout Duitku Otomatis'}</span>
+                </div>
+                <div className="p-2 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0 stroke-[3]" />
+                  <span className="font-medium line-clamp-1">{isEn ? 'Biteship Shipping' : 'Ekspedisi Kurir Biteship'}</span>
+                </div>
+                <div className="p-2 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0 stroke-[3]" />
+                  <span className="font-medium line-clamp-1">{isEn ? 'Custom Domain Ready' : 'Dukungan Custom Domain'}</span>
+                </div>
+                <div className="p-2 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0 stroke-[3]" />
+                  <span className="font-medium line-clamp-1">{isEn ? 'White-Label Branding' : 'Bebas Watermark 100%'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setSuccessSubscription(null);
+                  if (onNavigateDashboard) onNavigateDashboard();
+                }}
+                className="w-full py-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>{isEn ? 'Go to Store Dashboard' : 'Mulai Kelola Toko (Dashboard)'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const foundInv = invoices.find((inv) => inv.id === successSubscription.invoiceNumber);
+                    if (foundInv) {
+                      setViewingInvoice(foundInv);
+                    } else {
+                      setViewingInvoice({
+                        id: successSubscription.invoiceNumber,
+                        plan: successSubscription.planName,
+                        cycle: isEn ? 'Yearly (1 Year)' : 'Tahunan (1 Tahun)',
+                        date: new Date().toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+                        amount: successSubscription.amount,
+                        status: isEn ? 'Paid (Duitku)' : 'Lunas (Duitku)',
+                      });
+                    }
+                    setSuccessSubscription(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl border border-[#E5E0DD] bg-white hover:bg-[#FAF7F7] text-xs font-semibold text-[#241A1A] transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#66000E]" />
+                  <span>{isEn ? 'View Invoice' : 'Lihat Invoice Resmi'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSuccessSubscription(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-[#706866] hover:text-[#1F1F1F] hover:bg-gray-100 transition cursor-pointer"
+                >
+                  {isEn ? 'Close' : 'Tutup'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

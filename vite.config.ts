@@ -587,19 +587,33 @@ function duitkuDevPlugin(): Plugin {
             if (!paymentMethod) {
               paymentMethod = 'SP'; // Default ShopeePay QRIS
             } else {
-              const pmLower = paymentMethod.toLowerCase();
-              if (pmLower === 'qris' || pmLower.includes('qris') || pmLower.includes('gopay') || pmLower.includes('shopee')) {
-                paymentMethod = 'SP';
-              } else if (pmLower === 'bca_va' || pmLower.includes('bca') || pmLower === 'va' || pmLower.includes('virtual_account')) {
-                paymentMethod = 'BC';
-              } else if (pmLower.includes('bri')) {
-                paymentMethod = 'BR';
-              } else if (pmLower.includes('mandiri') || pmLower.includes('echannel')) {
-                paymentMethod = 'M2';
-              } else if (pmLower.includes('bni')) {
-                paymentMethod = 'I1';
-              } else if (pmLower.includes('permata')) {
-                paymentMethod = 'BT';
+              const pmUpper = paymentMethod.toUpperCase();
+              const KNOWN_DUITKU_CODES = ['SP', 'NQ', 'SQ', 'BC', 'M2', 'BR', 'I1', 'BT', 'B1', 'BV', 'NC', 'VA', 'A1', 'AG', 'S1', 'OV', 'DA', 'LA', 'SA', 'VC', 'FT', 'IR'];
+              if (KNOWN_DUITKU_CODES.includes(pmUpper)) {
+                paymentMethod = pmUpper;
+              } else {
+                const pmLower = paymentMethod.toLowerCase();
+                if (pmLower.includes('qris') || pmLower.includes('gopay') || pmLower.includes('shopee')) {
+                  paymentMethod = 'SP';
+                } else if (pmLower.includes('bca') || pmLower === 'bca_va') {
+                  paymentMethod = 'BC';
+                } else if (pmLower.includes('bri')) {
+                  paymentMethod = 'BR';
+                } else if (pmLower.includes('mandiri') || pmLower.includes('echannel')) {
+                  paymentMethod = 'M2';
+                } else if (pmLower.includes('bni')) {
+                  paymentMethod = 'I1';
+                } else if (pmLower.includes('permata')) {
+                  paymentMethod = 'BT';
+                } else if (pmLower.includes('cimb')) {
+                  paymentMethod = 'B1';
+                } else if (pmLower.includes('bsi')) {
+                  paymentMethod = 'BV';
+                } else if (pmLower.includes('maybank')) {
+                  paymentMethod = 'VA';
+                } else {
+                  paymentMethod = 'SP';
+                }
               }
             }
 
@@ -608,7 +622,9 @@ function duitkuDevPlugin(): Plugin {
 
             const appUrl = (process.env.APP_URL || 'https://kroomify.kroombox.com').replace(/\/$/, '');
             const callbackUrl = `${appUrl}/api/payment/callback`;
-            const returnUrl = `${appUrl}/`;
+            const returnUrl = merchantOrderId.startsWith('BILL-')
+              ? `${appUrl}/?billing_return=true&merchantOrderId=${encodeURIComponent(merchantOrderId)}`
+              : `${appUrl}/`;
 
             const apiUrl =
               env === 'production'
@@ -798,6 +814,145 @@ function duitkuDevPlugin(): Plugin {
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ success: false, message: err?.message || 'Gagal menghubungi server Duitku' }));
         }
+      });
+
+      // 5. Callback Webhook Duitku (Dev Server)
+      const callbackPaths = ['/api/payment/callback', '/api/callback', '/api/duitku/callback'];
+      callbackPaths.forEach((path) => {
+        server.middlewares.use(path, async (req, res) => {
+          if (req.method !== 'POST') {
+            res.statusCode = 405;
+            res.end('Method Not Allowed');
+            return;
+          }
+
+          let body = '';
+          req.on('data', (chunk) => {
+            body += chunk;
+          });
+
+          req.on('end', async () => {
+            try {
+              let parsedBody: any = {};
+              try {
+                parsedBody = JSON.parse(body);
+              } catch {
+                parsedBody = Object.fromEntries(new URLSearchParams(body));
+              }
+
+              const { merchantCode: receivedCode, amount, merchantOrderId, signature, resultCode } = parsedBody;
+              const { merchantCode, apiKey } = await getDevDuitkuConfig();
+
+              if (!merchantOrderId || !amount || !signature) {
+                res.statusCode = 400;
+                res.end('Bad Parameter');
+                return;
+              }
+
+              const code = receivedCode || merchantCode;
+              const md5Signature = nodeCrypto.createHash('md5').update(`${code}${amount}${merchantOrderId}${apiKey}`).digest('hex');
+              const sha256Signature = nodeCrypto.createHash('sha256').update(`${code}${amount}${merchantOrderId}${apiKey}`).digest('hex');
+
+              const isValid =
+                signature.toLowerCase() === md5Signature.toLowerCase() ||
+                signature.toLowerCase() === sha256Signature.toLowerCase();
+
+              if (!isValid) {
+                res.statusCode = 400;
+                res.end('Wrong Signature');
+                return;
+              }
+
+              if (resultCode === '00') {
+                const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+                const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+
+                if (supabaseUrl && supabaseAnonKey) {
+                  try {
+                    const subRes = await fetch(
+                      `${supabaseUrl}/rest/v1/store_subscriptions?or=(order_id.eq.${encodeURIComponent(merchantOrderId)},invoice_number.eq.${encodeURIComponent(merchantOrderId)},id.eq.${encodeURIComponent(merchantOrderId)})`,
+                      {
+                        headers: {
+                          apikey: supabaseAnonKey,
+                          Authorization: `Bearer ${supabaseAnonKey}`,
+                        },
+                      }
+                    );
+                    if (subRes.ok) {
+                      const subs = await subRes.json();
+                      if (Array.isArray(subs) && subs.length > 0) {
+                        const sub = subs[0];
+                        const paidAt = new Date().toISOString();
+                        const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+                        await fetch(`${supabaseUrl}/rest/v1/store_subscriptions?id=eq.${encodeURIComponent(sub.id)}`, {
+                          method: 'PATCH',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            apikey: supabaseAnonKey,
+                            Authorization: `Bearer ${supabaseAnonKey}`,
+                          },
+                          body: JSON.stringify({
+                            status: 'paid',
+                            paid_at: paidAt,
+                            expires_at: expiresAt,
+                            order_id: merchantOrderId,
+                          }),
+                        });
+
+                        if (sub.store_id) {
+                          let planSlug = 'personal';
+                          const pName = (sub.plan_name || sub.plan_id || '').toLowerCase();
+                          if (pName.includes('community') || pName.includes('scale') || pName.includes('pln003')) {
+                            planSlug = 'community';
+                          } else if (pName.includes('personal') || pName.includes('pro') || pName.includes('pln002')) {
+                            planSlug = 'personal';
+                          }
+
+                          await fetch(`${supabaseUrl}/rest/v1/stores?id=eq.${encodeURIComponent(sub.store_id)}`, {
+                            method: 'PATCH',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              apikey: supabaseAnonKey,
+                              Authorization: `Bearer ${supabaseAnonKey}`,
+                            },
+                            body: JSON.stringify({
+                              plan: planSlug,
+                              updated_at: paidAt,
+                            }),
+                          });
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    console.warn('[Vite Duitku Callback Error]', e);
+                  }
+
+                  // Update product order if any
+                  await fetch(`${supabaseUrl}/rest/v1/orders?order_number=eq.${encodeURIComponent(merchantOrderId)}`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      apikey: supabaseAnonKey,
+                      Authorization: `Bearer ${supabaseAnonKey}`,
+                    },
+                    body: JSON.stringify({
+                      payment_status: 'paid',
+                      order_status: 'processing',
+                      updated_at: new Date().toISOString(),
+                    }),
+                  }).catch(() => {});
+                }
+              }
+
+              res.statusCode = 200;
+              res.end('Success');
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.end(err?.message || 'Internal Error');
+            }
+          });
+        });
       });
     },
   };

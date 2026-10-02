@@ -382,8 +382,9 @@ class BillingPlanService {
         cycle: r.cycle || 'monthly',
         amount: Number(r.amount || 0),
         status: r.status || 'paid',
-        paymentMethod: r.payment_method || 'Midtrans',
+        paymentMethod: r.payment_method || 'Duitku',
         invoiceNumber: r.invoice_number || `INV-${r.id}`,
+        orderId: r.order_id || r.invoice_number || (r.id ? `BILL-${r.id}` : undefined),
         paidAt: r.paid_at || r.created_at || new Date().toISOString(),
         expiresAt: r.expires_at || new Date().toISOString(),
         createdAt: r.created_at || new Date().toISOString(),
@@ -422,6 +423,7 @@ class BillingPlanService {
           status: newSub.status,
           payment_method: newSub.paymentMethod,
           invoice_number: newSub.invoiceNumber,
+          order_id: newSub.orderId || newSub.invoiceNumber,
           paid_at: newSub.paidAt,
           expires_at: newSub.expiresAt,
           created_at: newSub.createdAt,
@@ -482,8 +484,9 @@ class BillingPlanService {
           cycle: r.cycle || 'yearly',
           amount: Number(r.amount || 0),
           status: r.status || 'paid',
-          paymentMethod: r.payment_method || 'Midtrans',
+          paymentMethod: r.payment_method || 'Duitku',
           invoiceNumber: r.invoice_number || `INV-${r.id}`,
+          orderId: r.order_id || r.invoice_number || (r.id ? `BILL-${r.id}` : undefined),
           paidAt: r.paid_at || r.created_at || new Date().toISOString(),
           expiresAt: r.expires_at || new Date(new Date(r.paid_at || r.created_at || Date.now()).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(),
           createdAt: r.created_at || new Date().toISOString(),
@@ -695,13 +698,16 @@ class BillingPlanService {
 
     // Sync to Supabase
     try {
+      const dbUpdates: any = {
+        status: updated.status,
+        paid_at: updated.paidAt,
+        expires_at: updated.expiresAt,
+      };
+      if (updated.orderId) dbUpdates.order_id = updated.orderId;
+
       await supabase
         .from('store_subscriptions')
-        .update({
-          status: updated.status,
-          paid_at: updated.paidAt,
-          expires_at: updated.expiresAt,
-        })
+        .update(dbUpdates)
         .eq('id', updated.id);
 
       // Auto-update stores table in Supabase when paid

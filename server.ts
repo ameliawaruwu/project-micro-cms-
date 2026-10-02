@@ -511,19 +511,33 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
     if (!paymentMethod) {
       paymentMethod = 'SP'; // Default ShopeePay QRIS jika tidak ditentukan
     } else {
-      const pmLower = paymentMethod.toLowerCase();
-      if (pmLower === 'qris' || pmLower.includes('qris') || pmLower.includes('gopay') || pmLower.includes('shopee')) {
-        paymentMethod = 'SP';
-      } else if (pmLower === 'bca_va' || pmLower.includes('bca') || pmLower === 'va' || pmLower.includes('virtual_account')) {
-        paymentMethod = 'BC';
-      } else if (pmLower.includes('bri')) {
-        paymentMethod = 'BR';
-      } else if (pmLower.includes('mandiri') || pmLower.includes('echannel')) {
-        paymentMethod = 'M2';
-      } else if (pmLower.includes('bni')) {
-        paymentMethod = 'I1';
-      } else if (pmLower.includes('permata')) {
-        paymentMethod = 'BT';
+      const pmUpper = paymentMethod.toUpperCase();
+      const KNOWN_DUITKU_CODES = ['SP', 'NQ', 'SQ', 'BC', 'M2', 'BR', 'I1', 'BT', 'B1', 'BV', 'NC', 'VA', 'A1', 'AG', 'S1', 'OV', 'DA', 'LA', 'SA', 'VC', 'FT', 'IR'];
+      if (KNOWN_DUITKU_CODES.includes(pmUpper)) {
+        paymentMethod = pmUpper;
+      } else {
+        const pmLower = paymentMethod.toLowerCase();
+        if (pmLower.includes('qris') || pmLower.includes('gopay') || pmLower.includes('shopee')) {
+          paymentMethod = 'SP';
+        } else if (pmLower.includes('bca') || pmLower === 'bca_va') {
+          paymentMethod = 'BC';
+        } else if (pmLower.includes('bri')) {
+          paymentMethod = 'BR';
+        } else if (pmLower.includes('mandiri') || pmLower.includes('echannel')) {
+          paymentMethod = 'M2';
+        } else if (pmLower.includes('bni')) {
+          paymentMethod = 'I1';
+        } else if (pmLower.includes('permata')) {
+          paymentMethod = 'BT';
+        } else if (pmLower.includes('cimb')) {
+          paymentMethod = 'B1';
+        } else if (pmLower.includes('bsi')) {
+          paymentMethod = 'BV';
+        } else if (pmLower.includes('maybank')) {
+          paymentMethod = 'VA';
+        } else {
+          paymentMethod = 'SP';
+        }
       }
     }
 
@@ -533,7 +547,9 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
 
     const appUrl = (process.env.APP_URL || 'https://kroomify.kroombox.com').replace(/\/$/, '');
     const callbackUrl = `${appUrl}/api/payment/callback`;
-    const returnUrl = `${appUrl}/`;
+    const returnUrl = merchantOrderId.startsWith('BILL-')
+      ? `${appUrl}/?billing_return=true&merchantOrderId=${encodeURIComponent(merchantOrderId)}`
+      : `${appUrl}/`;
 
     const apiUrl =
       env === 'production'
@@ -738,7 +754,71 @@ app.post(['/api/payment/callback', '/api/callback', '/api/duitku/callback'], asy
       const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
       if (supabaseUrl && supabaseAnonKey) {
-        // Update Order di database
+        // 1. Cek apakah ini pembayaran paket berlangganan toko (store_subscriptions)
+        try {
+          const subRes = await fetch(
+            `${supabaseUrl}/rest/v1/store_subscriptions?or=(order_id.eq.${encodeURIComponent(merchantOrderId)},invoice_number.eq.${encodeURIComponent(merchantOrderId)},id.eq.${encodeURIComponent(merchantOrderId)})`,
+            {
+              headers: {
+                apikey: supabaseAnonKey,
+                Authorization: `Bearer ${supabaseAnonKey}`,
+              },
+            }
+          );
+          if (subRes.ok) {
+            const subs = await subRes.json();
+            if (Array.isArray(subs) && subs.length > 0) {
+              const sub = subs[0];
+              const paidAt = new Date().toISOString();
+              const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+              // Update subscription menjadi paid
+              await fetch(`${supabaseUrl}/rest/v1/store_subscriptions?id=eq.${encodeURIComponent(sub.id)}`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  apikey: supabaseAnonKey,
+                  Authorization: `Bearer ${supabaseAnonKey}`,
+                },
+                body: JSON.stringify({
+                  status: 'paid',
+                  paid_at: paidAt,
+                  expires_at: expiresAt,
+                  order_id: merchantOrderId,
+                }),
+              });
+
+              // Update plan toko di tabel stores
+              if (sub.store_id) {
+                let planSlug = 'personal';
+                const pName = (sub.plan_name || sub.plan_id || '').toLowerCase();
+                if (pName.includes('community') || pName.includes('scale') || pName.includes('pln003')) {
+                  planSlug = 'community';
+                } else if (pName.includes('personal') || pName.includes('pro') || pName.includes('pln002')) {
+                  planSlug = 'personal';
+                }
+
+                await fetch(`${supabaseUrl}/rest/v1/stores?id=eq.${encodeURIComponent(sub.store_id)}`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    apikey: supabaseAnonKey,
+                    Authorization: `Bearer ${supabaseAnonKey}`,
+                  },
+                  body: JSON.stringify({
+                    plan: planSlug,
+                    updated_at: paidAt,
+                  }),
+                });
+              }
+              console.log(`[Duitku Callback] Berhasil mengaktifkan langganan toko ${sub.store_id} untuk order ${merchantOrderId}`);
+            }
+          }
+        } catch (subErr) {
+          console.error('[Duitku Callback Subscription Handler Error]', subErr);
+        }
+
+        // 2. Update Order produk di database jika ada
         await fetch(`${supabaseUrl}/rest/v1/orders?order_number=eq.${encodeURIComponent(merchantOrderId)}`, {
           method: 'PATCH',
           headers: {

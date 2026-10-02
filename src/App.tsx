@@ -194,7 +194,19 @@ export default function App() {
     }
     return null;
   });
-  const [activeTab, setActiveTab] = useState<MerchantTab>('beranda');
+  const [activeTab, setActiveTab] = useState<MerchantTab>(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (
+        searchParams.get('billing_return') === 'true' ||
+        searchParams.get('merchantOrderId')?.startsWith('BILL-') ||
+        searchParams.get('order_id')?.startsWith('BILL-')
+      ) {
+        return 'billing';
+      }
+    }
+    return 'beranda';
+  });
   
   // Inisialisasi viewMode langsung dari session tersimpan untuk mencegah flicker Landing Page saat reload
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
