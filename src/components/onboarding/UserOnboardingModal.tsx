@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Store as StoreIcon,
-  Phone,
   ArrowRight,
-  ShieldCheck,
   Check,
   Loader2,
-  Package,
+  Globe,
 } from 'lucide-react';
 import { Store, User } from '../../types';
 import { storeService } from '../../services/storeService';
@@ -27,7 +24,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
   store,
   onComplete,
 }) => {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const isEn = language === 'en';
 
   // Step 1: 'store_info' (skippable)
@@ -143,7 +140,6 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       setCurrentStep('claim_free_plan');
     } catch (err) {
       console.warn('Gagal menyimpan profil toko:', err);
-      // Tetap lanjutkan ke langkah klaim agar user tidak terblokir
       localStorage.setItem('kroomify_onboarding_step', 'claim_free_plan');
       setCurrentStep('claim_free_plan');
     } finally {
@@ -218,7 +214,6 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       onComplete(updated);
     } catch (err) {
       console.error('Error claiming free plan:', err);
-      // Fallback: update store locally and complete
       const fallbackStore = { ...(store || {}), plan: 'free' } as Store;
       localStorage.removeItem('kroomify_onboarding_pending');
       localStorage.removeItem('kroomify_onboarding_step');
@@ -232,63 +227,55 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-sans select-none animate-in fade-in duration-200"
-      // Prevent outside click dismissal for mandatory onboarding
+      className="fixed inset-0 z-[95] bg-black/50 backdrop-blur-md flex items-center justify-center p-4 font-sans select-none animate-in fade-in duration-200"
       onClick={(e) => e.stopPropagation()}
     >
       <div
-        className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-[480px] bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Accent Stripe */}
-        <div className="h-1.5 bg-gradient-to-r from-[#66000E] via-red-600 to-amber-500 w-full" />
+        {/* Subtle Top Accent */}
+        <div className="h-1 bg-gradient-to-r from-[#66000E] via-[#9E1228] to-[#66000E] w-full" />
 
-        {/* Header & Step Indicator */}
-        <div className="px-6 pt-5 pb-3 border-b border-gray-100">
-          <div className="flex items-center justify-between gap-4 mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-[#66000E]/10 text-[#66000E]">
-                {currentStep === 'store_info'
-                  ? isEn ? 'Step 1 of 2' : 'Langkah 1 dari 2'
-                  : isEn ? 'Step 2 of 2' : 'Langkah 2 dari 2'}
-              </span>
-              <span className="text-xs text-gray-400 font-medium">
-                {currentStep === 'store_info'
-                  ? isEn ? 'Store Information' : 'Informasi Toko'
-                  : isEn ? 'Package Activation' : 'Aktivasi Paket'}
-              </span>
-            </div>
+        {/* Clean Minimal Header */}
+        <div className="px-6 pt-5 pb-4 border-b border-slate-100">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-[11px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-[#66000E]/8 text-[#66000E]">
+              {currentStep === 'store_info'
+                ? isEn ? 'Step 1 of 2' : 'Langkah 1 dari 2'
+                : isEn ? 'Step 2 of 2' : 'Langkah 2 dari 2'}
+            </span>
 
-            {/* Segmented Progress Indicator */}
+            {/* Micro 2-Segment Indicator */}
             <div className="flex items-center gap-1.5">
               <div
-                className={`h-1.5 w-7 rounded-full transition-colors duration-300 ${
+                className={`h-1.5 w-6 rounded-full transition-colors duration-300 ${
                   currentStep === 'store_info' || currentStep === 'claim_free_plan'
                     ? 'bg-[#66000E]'
-                    : 'bg-gray-200'
+                    : 'bg-slate-200'
                 }`}
               />
               <div
-                className={`h-1.5 w-7 rounded-full transition-colors duration-300 ${
-                  currentStep === 'claim_free_plan' ? 'bg-[#66000E]' : 'bg-gray-200'
+                className={`h-1.5 w-6 rounded-full transition-colors duration-300 ${
+                  currentStep === 'claim_free_plan' ? 'bg-[#66000E]' : 'bg-slate-200'
                 }`}
               />
             </div>
           </div>
 
-          <h2 className="text-base font-bold text-gray-900 leading-tight">
+          <h2 className="text-lg font-bold text-slate-900 tracking-tight">
             {currentStep === 'store_info'
-              ? isEn ? 'Set Up Your Online Store' : 'Atur Profil Toko Online Anda'
-              : isEn ? 'Claim Free Subscription' : 'Klaim Paket Berlangganan Gratis'}
+              ? isEn ? 'Set Up Your Store' : 'Informasi Toko Online'
+              : isEn ? 'Activate Free Plan' : 'Klaim Paket Berlangganan'}
           </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             {currentStep === 'store_info'
               ? isEn
-                ? 'Complete your basic business details. You can also edit these anytime later.'
-                : 'Lengkapi identitas dasar toko Anda. Data ini dapat Anda ubah kapan saja dari dashboard.'
+                ? 'Fill in your basic store details. You can edit this anytime.'
+                : 'Lengkapi profil dasar toko Anda. Data ini dapat diubah kapan saja.'
               : isEn
-                ? 'Activate your free package to start managing products and accessing all dashboard features.'
-                : 'Aktifkan paket Free untuk mulai mengelola katalog dan mengakses seluruh fitur dashboard.'}
+                ? 'Claim your free plan to unlock the dashboard and start selling.'
+                : 'Aktifkan paket Free untuk mulai mengelola katalog dan pesanan.'}
           </p>
         </div>
 
@@ -296,41 +283,41 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         {/* STEP 1: STORE INFORMATION FORM (SKIPPABLE)                               */}
         {/* ========================================================================= */}
         {currentStep === 'store_info' && (
-          <form onSubmit={handleSaveStoreInfo} className="p-6 space-y-4">
-            {/* Store Name & Slug */}
+          <form onSubmit={handleSaveStoreInfo} className="p-6 space-y-3.5">
+            {/* Store Name & Link Preview */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1.5">
-                {isEn ? 'Store Name' : 'Nama Toko Online'} <span className="text-[#66000E]">*</span>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {isEn ? 'Store Name' : 'Nama Toko'} <span className="text-[#66000E]">*</span>
               </label>
-              <div className="relative">
-                <StoreIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  ref={nameInputRef}
-                  type="text"
-                  required
-                  value={storeName}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder={isEn ? 'e.g. Nusantara Roastery, Batik Sekar' : 'Contoh: Dapur Nusantara, Batik Sekar'}
-                  className="w-full pl-9 pr-3 py-2.5 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 transition"
-                />
+              <input
+                ref={nameInputRef}
+                type="text"
+                required
+                value={storeName}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder={isEn ? 'e.g. Nusantara Roastery, Batik Sekar' : 'Contoh: Dapur Nusantara, Batik Sekar'}
+                className="w-full px-3.5 py-2.5 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-4 focus:ring-[#66000E]/10 transition-all"
+              />
+
+              {/* Integrated SaaS URL Preview */}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 mt-2 rounded-lg bg-slate-100/70 text-[11px] font-mono text-slate-500">
+                <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="text-slate-400 truncate">https://</span>
+                <span className="font-semibold text-[#66000E] truncate">{storeSlug || 'toko-saya'}</span>
+                <span className="text-slate-400 truncate">.kroombox.com</span>
               </div>
-              {storeName && (
-                <p className="text-[11px] text-gray-500 mt-1 font-mono">
-                  Link toko: <span className="text-[#66000E] font-semibold">{storeSlug || 'toko-saya'}</span>.kroombox.com
-                </p>
-              )}
             </div>
 
-            {/* Category & WhatsApp */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Category & WhatsApp (2 Columns) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
               <div>
-                <label className="block text-xs font-bold text-gray-800 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   {isEn ? 'Business Category' : 'Kategori Usaha'}
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2.5 text-xs font-medium bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 transition cursor-pointer"
+                  className="w-full px-3 py-2.5 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-4 focus:ring-[#66000E]/10 transition-all cursor-pointer"
                 >
                   <option value="">{isEn ? '-- Select Category --' : '-- Pilih Kategori --'}</option>
                   {UMKM_CATEGORIES.map((cat) => (
@@ -342,41 +329,38 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-800 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   {isEn ? 'WhatsApp Phone' : 'Nomor WhatsApp'}
                 </label>
-                <div className="relative">
-                  <Phone className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    value={phoneWhatsApp}
-                    onChange={(e) => setPhoneWhatsApp(e.target.value.replace(/\D/g, ''))}
-                    placeholder="081234567890"
-                    className="w-full pl-8 pr-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 transition"
-                  />
-                </div>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  value={phoneWhatsApp}
+                  onChange={(e) => setPhoneWhatsApp(e.target.value.replace(/\D/g, ''))}
+                  placeholder="081234567890"
+                  className="w-full px-3 py-2.5 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-4 focus:ring-[#66000E]/10 transition-all"
+                />
               </div>
             </div>
 
             {/* Short Tagline */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1.5">
-                {isEn ? 'Short Tagline' : 'Tagline Singkat'}
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {isEn ? 'Tagline' : 'Tagline Singkat'}
               </label>
               <input
                 type="text"
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
                 placeholder={isEn ? 'e.g. Authentic homemade culinary flavors' : 'Contoh: Cita rasa autentik khas nusantara'}
-                className="w-full px-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 transition"
+                className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-4 focus:ring-[#66000E]/10 transition-all"
               />
             </div>
 
             {/* Store Description */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1.5">
-                {isEn ? 'Store Description' : 'Deskripsi Singkat Toko'}
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {isEn ? 'Description' : 'Deskripsi Toko'}
               </label>
               <textarea
                 rows={2}
@@ -385,9 +369,9 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
                 placeholder={
                   isEn
                     ? 'Write a brief summary of your products and services...'
-                    : 'Tuliskan deskripsi singkat mengenai produk dan keunggulan toko Anda...'
+                    : 'Tuliskan ringkasan produk atau keunggulan usaha Anda...'
                 }
-                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 transition resize-none"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-4 focus:ring-[#66000E]/10 transition-all resize-none"
               />
             </div>
 
@@ -397,7 +381,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
                 type="button"
                 onClick={handleSkipStoreInfo}
                 disabled={isSavingStore}
-                className="px-4 py-2.5 text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                className="px-4 py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
               >
                 {isEn ? 'Skip for now' : 'Lewati untuk sekarang'}
               </button>
@@ -405,7 +389,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
               <button
                 type="submit"
                 disabled={isSavingStore || !storeName.trim()}
-                className="px-5 py-2.5 bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="px-5 py-2.5 bg-[#66000E] hover:bg-[#7D0012] text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isSavingStore ? (
                   <>
@@ -427,48 +411,47 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         {/* STEP 2: CLAIM FREE PACKAGE (MANDATORY / NOT SKIPPABLE)                    */}
         {/* ========================================================================= */}
         {currentStep === 'claim_free_plan' && (
-          <div className="p-6 space-y-5">
-            {/* Free Plan SaaS Card */}
-            <div className="rounded-xl border-2 border-[#66000E]/20 bg-gradient-to-b from-[#66000E]/[0.02] to-transparent p-5 space-y-4">
+          <div className="p-6 space-y-4">
+            {/* Elevated Free Plan Card */}
+            <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50/70 to-white p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-base text-gray-900">
+                    <span className="font-bold text-base text-slate-900">
                       {isEn ? 'Free Plan' : 'Paket Free'}
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700">
+                    <span className="text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                       {isEn ? 'Free Forever' : 'Gratis Selamanya'}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     {isEn
-                      ? 'Essential starter toolkit to launch your digital catalog.'
-                      : 'Solusi awal untuk mulai membangun dan mengelola katalog produk digital Anda.'}
+                      ? 'Essential starter tools to launch and manage your digital store.'
+                      : 'Layanan awal untuk mengelola katalog produk dan operasional toko.'}
                   </p>
                 </div>
 
                 <div className="text-right">
-                  <div className="text-xl font-black text-[#66000E]">
+                  <div className="text-2xl font-black text-[#66000E] tracking-tight">
                     Rp 0
                   </div>
-                  <div className="text-[10px] text-gray-400 font-medium">
-                    {isEn ? '/ 1 year validity' : '/ 1 tahun aktif'}
+                  <div className="text-[11px] text-slate-400 font-medium">
+                    {isEn ? '/ 1 year' : '/ tahun'}
                   </div>
                 </div>
               </div>
 
-              {/* Feature Checklist */}
-              <div className="pt-2 border-t border-gray-100 space-y-2">
+              {/* Minimal Clean Feature List */}
+              <div className="pt-3 border-t border-slate-100 space-y-2.5">
                 {[
-                  isEn ? 'Free store preview subdomain (yourstore.kroombox.com)' : 'Subdomain pratinjau toko gratis (namatoko.kroombox.com)',
-                  isEn ? 'Basic product catalog up to 10 items' : 'Katalog produk dasar hingga 10 item produk',
-                  isEn ? 'Full access to Kroomify CMS Dashboard' : 'Akses penuh ke Dashboard CMS Kroomify',
-                  isEn ? 'Direct order management and product organization' : 'Manajemen pesanan langsung dan pengaturan produk',
-                  isEn ? 'Upgradeable to Pro plans anytime' : 'Dapat di-upgrade ke paket berbayar kapan saja',
+                  isEn ? 'Store subdomain (namatoko.kroombox.com)' : 'Subdomain toko resmi (namatoko.kroombox.com)',
+                  isEn ? 'Product catalog up to 10 items' : 'Kapasitas katalog hingga 10 produk',
+                  isEn ? 'Full access to CMS & order management' : 'Akses penuh dashboard & manajemen pesanan',
+                  isEn ? 'Upgradeable to custom domain anytime' : 'Bebas upgrade ke domain sendiri kapan saja',
                 ].map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 text-xs text-gray-700">
-                    <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  <div key={idx} className="flex items-center gap-2.5 text-xs text-slate-700">
+                    <div className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                      <Check className="w-2.5 h-2.5 stroke-[2.5]" />
                     </div>
                     <span>{item}</span>
                   </div>
@@ -476,32 +459,29 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
               </div>
             </div>
 
-            {/* Mandatory Reassurance Notice */}
-            <div className="flex items-center gap-2.5 text-[11px] text-gray-500 bg-gray-50 px-3.5 py-2.5 rounded-xl border border-gray-100">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>
-                {isEn
-                  ? 'No credit card or payment required. Immediate activation upon claim.'
-                  : 'Tanpa kartu kredit atau biaya apapun. Paket langsung aktif seketika setelah diklaim.'}
-              </span>
-            </div>
+            {/* Micro Reassurance */}
+            <p className="text-center text-[11px] text-slate-400">
+              {isEn
+                ? 'No credit card or payment required. Immediate activation.'
+                : 'Tanpa biaya & tanpa kartu kredit. Aktif langsung setelah diklaim.'}
+            </p>
 
-            {/* Mandatory Action Button (NO SKIP BUTTON) */}
+            {/* Primary Action Button (Mandatory) */}
             <button
               type="button"
               onClick={handleClaimFreePlan}
               disabled={isClaimingPlan}
-              className="w-full py-3.5 bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-md shadow-[#66000E]/20 active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full py-3 bg-[#66000E] hover:bg-[#7D0012] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isClaimingPlan ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   <span>{isEn ? 'Activating Package...' : 'Mengaktifkan Paket Free...'}</span>
                 </>
               ) : (
                 <>
                   <span>{isEn ? 'Claim Free Package & Open Dashboard' : 'Klaim Paket Gratis & Buka Dashboard'}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
             </button>
