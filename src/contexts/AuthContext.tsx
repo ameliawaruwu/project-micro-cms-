@@ -92,32 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const exists = await authService.checkAccountExists(googleEmail);
 
             if (!exists) {
-              // Jika akun TIDAK ADA di database Supabase (belum terdaftar atau telah dihapus):
-              // Jika user BUKAN berasal dari alur pendaftaran eksplisit ("Daftar dengan Google"):
-              if (oauthIntent !== 'register') {
-                console.warn(`[AuthContext] Akun Google ${googleEmail} belum terdaftar. Menolak akses login.`);
-                try {
-                  await supabase.auth.signOut();
-                } catch (e) {}
-                await authService.logout();
-                setUser(null);
-                setMerchant(null);
-                setStore(null);
-
-                const errorMsg = `Akun Google (${googleEmail}) belum terdaftar. Silakan lakukan Registrasi / Pendaftaran terlebih dahulu untuk membuat toko.`;
-                sessionStorage.setItem('auth_redirect_err', errorMsg);
-                window.dispatchEvent(
-                  new CustomEvent('auth_google_unregistered', {
-                    detail: {
-                      email: googleEmail,
-                      message: errorMsg,
-                    },
-                  })
-                );
-                return;
-              }
-
-              // Hanya buat akun baru jika user memang mengklik tombol "Daftar dengan Google" di halaman Registrasi
+              // Akun Google belum ada di sistem: buat akun baru secara otomatis tanpa alur registrasi terpisah
               const authData = await authService.registerWithGoogle({
                 googleEmail,
                 fullName,
@@ -126,14 +101,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setUser(authData.user);
               setMerchant(authData.merchant);
               setStore(authData.store);
-              window.dispatchEvent(new CustomEvent('auth_google_success', { detail: authData }));
+              localStorage.setItem('kroomify_onboarding_pending', 'true');
+              localStorage.setItem('kroomify_onboarding_step', 'store_info');
+              window.dispatchEvent(
+                new CustomEvent('auth_google_success', {
+                  detail: { ...authData, isNewUser: true },
+                })
+              );
             } else {
               // Existing user: log in directly
               const authData = await authService.login(googleEmail, 'google-auth');
               setUser(authData.user);
               setMerchant(authData.merchant);
               setStore(authData.store);
-              window.dispatchEvent(new CustomEvent('auth_google_success', { detail: authData }));
+              window.dispatchEvent(
+                new CustomEvent('auth_google_success', {
+                  detail: { ...authData, isNewUser: false },
+                })
+              );
             }
           }
         }

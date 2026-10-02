@@ -93,7 +93,7 @@ import { ReceiptModal } from './components/orders/ReceiptModal';
 import { OrderDetailModal } from './components/orders/OrderDetailModal';
 import { MerchantWalletModal } from './components/wallet/MerchantWalletModal';
 import { UpgradePlanModal } from './components/billing/UpgradePlanModal';
-import { StoreNameSetupModal } from './components/common/StoreNameSetupModal';
+import { UserOnboardingModal } from './components/onboarding/UserOnboardingModal';
 import { KroomifyLogo } from './components/common/KroomifyLogo';
 
 // Storefront Components
@@ -124,11 +124,15 @@ export default function App() {
     };
     const handleGoogleSuccess = (e: any) => {
       const gUser = e.detail?.user;
+      const isNewUser = e.detail?.isNewUser;
       const targetMode = gUser?.role === 'admin' ? 'admin' : 'merchant-desktop';
       setViewMode(targetMode);
       setAuthView(null);
       loadData();
-      addToast('Berhasil masuk dengan akun Google!');
+      if (isNewUser) {
+        setIsOnboardingModalOpen(true);
+      }
+      addToast(isNewUser ? 'Akun Google berhasil dibuat! Lengkapi informasi toko Anda.' : 'Berhasil masuk dengan akun Google!');
     };
 
     const handleSessionInvalidated = () => {
@@ -532,6 +536,13 @@ export default function App() {
         setOrders(storeOrders);
         setIntegrations(storeIntegrations);
         setCartItems(initialCart);
+
+        // Check if onboarding modal should be displayed
+        const isPendingOnboarding = localStorage.getItem('kroomify_onboarding_pending') === 'true';
+        const isPlanActive = finalStore.plan && ['free', 'personal', 'community', 'starter', 'premium'].includes(finalStore.plan.toLowerCase());
+        if (isPendingOnboarding || (!isPlanActive && user?.role === 'merchant')) {
+          setIsOnboardingModalOpen(true);
+        }
       }
     } catch (err) {
       console.error('Error loading store data:', err);
@@ -2086,28 +2097,18 @@ export default function App() {
         }}
       />
 
-      {/* 11. Store Name Onboarding Modal (for new Google users or stores with placeholder names) */}
-      <StoreNameSetupModal
+      {/* 11. User Onboarding Modal (Two-step: Store Info [skippable] & Free Package Claim [mandatory]) */}
+      <UserOnboardingModal
         isOpen={isOnboardingModalOpen && !isAuthLoading && !!currentStore?.id}
-        currentStore={currentStore}
-        onSave={async (name, slug) => {
-          try {
-            const updated = await storeService.updateStore(currentStore.id, {
-              name,
-              slug,
-              onboarding: {
-                ...currentStore.onboarding,
-                storeNameSet: true,
-              },
-            }, user?.id);
-            setActiveStore(updated);
-            setIsOnboardingModalOpen(false);
-            addToast(`🎉 Nama toko "${updated.name}" berhasil disimpan!`);
-          } catch (err: any) {
-            addToast('Gagal menyimpan nama toko: ' + (err?.message || err), 'error');
-          }
+        user={user}
+        store={currentStore}
+        onComplete={async (updatedStore) => {
+          setActiveStore(updatedStore);
+          setStores((prev) => [updatedStore, ...prev.filter((s) => s.id !== updatedStore.id)]);
+          setIsOnboardingModalOpen(false);
+          addToast('🎉 Selamat! Toko dan Paket Free Anda berhasil diaktifkan.');
+          await loadData(updatedStore.id);
         }}
-        onCancel={() => setIsOnboardingModalOpen(false)}
       />
 
       {/* Global Toast Notification Container */}

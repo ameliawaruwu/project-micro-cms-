@@ -614,14 +614,80 @@ class AuthService {
       createdAt: new Date().toISOString(),
     };
 
-    // User will create their store explicitly when ready. Do NOT automatically create a dummy store.
     const userStores = await storeService.getStoresForUser(userId);
     const existingStore = userStores.length > 0 ? userStores[0] : undefined;
+
+    let userStore = existingStore;
+    if (!userStore) {
+      const storeId = await idService.generateNextId('stores');
+      const storeSlug = 'toko-' + userId.toLowerCase().replace(/[^a-z0-9]/g, '').slice(-6);
+      userStore = {
+        id: storeId,
+        merchantId: userId,
+        name: `Toko ${finalName}`,
+        slug: storeSlug,
+        tagline: '',
+        description: '',
+        logoUrl: '',
+        bannerUrl: '',
+        phoneWhatsApp: '',
+        city: '',
+        province: '',
+        district: '',
+        subdistrict: '',
+        village: '',
+        addressDetail: '',
+        postalCode: '',
+        address: '',
+        category: '',
+        currency: 'IDR',
+        balance: 0,
+        plan: '', // Unclaimed! Will be claimed during mandatory onboarding step 2
+        isPublished: false,
+        onboarding: {
+          storeNameSet: false,
+          productUploaded: false,
+          paymentConnected: false,
+        },
+        createdAt: new Date().toISOString(),
+      };
+
+      const storedStores = storeService.getStoredStores();
+      storedStores.push(userStore);
+      localStorage.setItem('microcms_stores', JSON.stringify(storedStores));
+      localStorage.setItem(ACTIVE_STORE_ID_KEY, userStore.id);
+
+      try {
+        const nowWib = getWibIsoString();
+        await supabase.from('stores').upsert({
+          id: userStore.id,
+          user_id: userId,
+          name: userStore.name,
+          slug: userStore.slug,
+          tagline: '',
+          description: '',
+          logo_url: '',
+          banner_url: '',
+          phone_whatsapp: '',
+          city: '',
+          address: '',
+          category: '',
+          plan: null,
+          balance: 0,
+          theme_settings: {},
+          is_published: false,
+          created_at: userStore.createdAt,
+          updated_at: nowWib,
+        });
+      } catch (err) {
+        console.warn('Supabase store create in registerWithGoogle error:', err);
+      }
+    }
 
     const merchant: Merchant = {
       id: `merch-${userId}`,
       userId: userId,
-      storeId: existingStore?.id || '',
+      storeId: userStore.id,
       plan: 'free',
       isVerified: true,
     };
@@ -659,21 +725,10 @@ class AuthService {
     localStorage.removeItem('microcms_explicit_logout');
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
     localStorage.setItem(AUTH_MERCHANT_KEY, JSON.stringify(merchant));
-    if (existingStore) {
-      localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(existingStore));
-      localStorage.setItem(ACTIVE_STORE_ID_KEY, existingStore.id);
-    } else {
-      localStorage.removeItem(AUTH_STORE_KEY);
-      localStorage.removeItem(ACTIVE_STORE_ID_KEY);
-      try {
-        localStorage.removeItem('microcms_preview_draft');
-        sessionStorage.removeItem('microcms_preview_draft');
-        localStorage.removeItem('microcms_cms_products');
-        sessionStorage.removeItem('microcms_cms_products');
-      } catch (e) {}
-    }
+    localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(userStore));
+    localStorage.setItem(ACTIVE_STORE_ID_KEY, userStore.id);
 
-    return { user, merchant, store: (existingStore || null) as any };
+    return { user, merchant, store: userStore };
   }
 
 
