@@ -418,15 +418,17 @@ class AuthService {
         category: '',
         currency: 'IDR',
         balance: 0,
-        plan: 'free',
+        plan: '', // Belum klaim paket - wajib diklaim di langkah 2 onboarding!
         isPublished: false,
         onboarding: {
-          storeNameSet: true,
+          storeNameSet: Boolean(params.storeName?.trim()),
           productUploaded: false,
           paymentConnected: false,
         },
         createdAt: new Date().toISOString(),
       };
+      localStorage.setItem('kroomify_onboarding_pending', 'true');
+      localStorage.setItem('kroomify_onboarding_step', 'store_info');
     }
 
     const merchant: Merchant = {
@@ -506,7 +508,7 @@ class AuthService {
           postal_code: '',
           address: '',
           category: '',
-          plan: 'free',
+          plan: null,
           balance: 0,
           theme_settings: {},
           is_published: false,
