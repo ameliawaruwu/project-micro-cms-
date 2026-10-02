@@ -40,6 +40,7 @@ import { InlineEditableButton } from './InlineEditableButton';
 import { ThemeId, ThemeRegistry, normalizeThemeId } from '../../themes/ThemeRegistry';
 import { ThemeSectionRenderer } from './ThemeSectionRenderer';
 import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage } from '../../themes/pages';
+import { loadGoogleFont } from '../../utils/fontLoader';
 
 const hasThemeComponent = (themeId: any, sectionId: string) => {
   const normalizedId = normalizeThemeId(themeId);
@@ -103,6 +104,30 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('Semua');
   const [searchPreviewQuery, setSearchPreviewQuery] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+
+  const typography = store.layoutSettings?.globalThemeSettings?.typography;
+  const headingFont = typography?.headingFont || store.layoutSettings?.fontFamily || 'Inter';
+  const bodyFont = typography?.bodyFont || store.layoutSettings?.fontFamily || 'Inter';
+
+  React.useEffect(() => {
+    loadGoogleFont(headingFont);
+    loadGoogleFont(bodyFont);
+  }, [headingFont, bodyFont]);
+
+  const fontStyles = `
+    .storefront-font-scope {
+      font-family: '${bodyFont}', sans-serif;
+    }
+    .storefront-font-scope h1,
+    .storefront-font-scope h2,
+    .storefront-font-scope h3,
+    .storefront-font-scope h4,
+    .storefront-font-scope h5,
+    .storefront-font-scope h6,
+    .storefront-font-scope .font-heading {
+      font-family: '${headingFont}', sans-serif;
+    }
+  `;
 
   const isMobile = deviceMode === 'mobile';
   const isTablet = deviceMode === 'tablet';
@@ -468,7 +493,13 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     const customContent = renderPageCustomContent(activePage);
 
     return (
-      <div className="flex-1 w-full max-w-full overflow-x-hidden bg-white relative pb-0 box-border flex flex-col min-h-screen" onClickCapture={handleCanvasClick} onClick={handleCanvasClick}>
+      <div
+        className="storefront-font-scope flex-1 w-full max-w-full overflow-x-hidden bg-white relative pb-0 box-border flex flex-col min-h-screen"
+        style={{ fontFamily: `'${bodyFont}', sans-serif` }}
+        onClickCapture={handleCanvasClick}
+        onClick={handleCanvasClick}
+      >
+        <style dangerouslySetInnerHTML={{ __html: fontStyles }} />
         {customContent ? (
           customContent
         ) : visibleSections.length === 0 ? (
@@ -1500,7 +1531,13 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           )}
 
           {/* STOREFRONT PREVIEW SCROLLABLE CONTENT */}
-          <div className="bg-white w-full max-w-full min-h-[620px] max-h-[calc(100vh-130px)] overflow-y-auto overflow-x-hidden custom-scrollbar relative selection:bg-[#F5E8EA] box-border" onClickCapture={handleCanvasClick} onClick={handleCanvasClick}>
+          <div
+            className="storefront-font-scope bg-white w-full max-w-full min-h-[620px] max-h-[calc(100vh-130px)] overflow-y-auto overflow-x-hidden custom-scrollbar relative selection:bg-[#F5E8EA] box-border"
+            style={{ fontFamily: `'${bodyFont}', sans-serif` }}
+            onClickCapture={handleCanvasClick}
+            onClick={handleCanvasClick}
+          >
+            <style dangerouslySetInnerHTML={{ __html: fontStyles }} />
             {renderPageCustomContent(activePage) ? (
               renderPageCustomContent(activePage)
             ) : activePage === 'katalog' ? (

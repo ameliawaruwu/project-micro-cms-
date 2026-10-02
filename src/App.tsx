@@ -397,10 +397,10 @@ export default function App() {
       return;
     }
     try {
-      // 0. Cek jika ada preloaded store dari site packager (Prioritaskan selalu di awal agar storefront instan termuat tanpa flicker)
+      // 0. Cek jika ada preloaded store dari site packager (Hanya untuk storefront publik tanpa login)
       const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
       const injectedProducts = (window as any).__KROOMIFY_INITIAL_PRODUCTS__;
-      if (injectedStore && (injectedStore.id || injectedStore.slug)) {
+      if (!user && injectedStore && (injectedStore.id || injectedStore.slug)) {
         const hydratedStore: Store = {
           ...injectedStore,
           isPublished: injectedStore.isPublished !== undefined ? Boolean(injectedStore.isPublished) : (injectedStore.is_published !== undefined ? Boolean(injectedStore.is_published) : true),
@@ -408,8 +408,9 @@ export default function App() {
         setActiveStore(hydratedStore);
         setStores([hydratedStore]);
         if (Array.isArray(injectedProducts) && injectedProducts.length > 0) {
-          setProducts(injectedProducts);
-          useCmsStore.getState().setProductsFromMerchant(injectedProducts as any);
+          const cleanInjected = injectedProducts.filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
+          setProducts(cleanInjected);
+          useCmsStore.getState().setProductsFromMerchant(cleanInjected as any);
         } else if (hydratedStore.id) {
           const storeProducts = await productService.getProductsByStore(hydratedStore.id);
           setProducts(storeProducts);
@@ -664,14 +665,7 @@ export default function App() {
               initialProducts = draftStore.products;
             }
 
-            const rawTheme = (draftStore.layoutSettings as any)?.activeThemeId || draftStore.layoutSettings?.themeStyle || 'nature';
-            const normalizedTheme = normalizeThemeId(rawTheme);
-            if (normalizedTheme === 'nature') {
-              const hasCosmetics = initialProducts.some(p => /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || ''));
-              if (hasCosmetics || initialProducts.length === 0) {
-                initialProducts = THEME_DATA_MAP['nature'].products;
-              }
-            }
+            initialProducts = (initialProducts || []).filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
             useCmsStore.setState({ products: initialProducts });
             
             Promise.all([
@@ -794,21 +788,13 @@ export default function App() {
             parsedProds = draftStore.products;
           }
 
-          const rawTheme = (draftStore.layoutSettings as any)?.activeThemeId || draftStore.layoutSettings?.themeStyle || 'nature';
-          const normalizedTheme = normalizeThemeId(rawTheme);
-          if (normalizedTheme === 'nature') {
-            const hasCosmetics = parsedProds.some(p => /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || ''));
-            if (hasCosmetics || parsedProds.length === 0) {
-              parsedProds = THEME_DATA_MAP['nature'].products;
-            }
-          }
+          parsedProds = (parsedProds || []).filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
 
-          if (parsedProds.length > 0) {
-            useCmsStore.setState({ products: parsedProds });
-            setProducts(parsedProds);
-          }
+          useCmsStore.setState({ products: parsedProds });
+          setProducts(parsedProds);
 
           if (draftStore.layoutSettings?.activeThemeId) {
+            const normalizedTheme = normalizeThemeId(draftStore.layoutSettings.activeThemeId);
             useCmsStore.getState().loadThemeData(normalizedTheme);
           }
         }

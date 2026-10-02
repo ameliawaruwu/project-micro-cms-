@@ -84,7 +84,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
 
   const handleToggleActive = async (branch: ShippingBranch) => {
     try {
-      await branchService.toggleActiveBranch(branch.id);
+      await branchService.toggleActiveBranch(branch.id, storeId || branch.storeId);
       onShowNotification(t('branch_status_updated', 'Status cabang berhasil diperbarui.'));
       await loadBranches();
     } catch (err: any) {
@@ -98,10 +98,15 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
       return;
     }
 
+    if (branches.length <= 1) {
+      alert('Minimal harus ada 1 cabang gudang yang terdaftar');
+      return;
+    }
+
     const confirmMsg = t('branch_delete_confirm', 'Apakah Anda yakin ingin menghapus cabang "{name}"?').replace('{name}', branch.branchName);
     if (confirm(confirmMsg)) {
       try {
-        await branchService.deleteBranch(branch.id);
+        await branchService.deleteBranch(branch.id, storeId || branch.storeId);
         onShowNotification(
           t('branch_deleted_success', 'Cabang "{name}" berhasil dihapus.').replace('{name}', branch.branchName)
         );

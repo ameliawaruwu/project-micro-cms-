@@ -101,22 +101,13 @@ const getInitialProducts = () => {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-
-      // Check if draft has an active theme
-      const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
-      if (draftStr) {
-        const draft = JSON.parse(draftStr);
-        const themeId = normalizeThemeId(draft.layoutSettings?.activeThemeId || draft.layoutSettings?.themeStyle || 'editorial');
-        if (THEME_DATA_MAP[themeId]?.products) {
-          return THEME_DATA_MAP[themeId].products;
+          const filtered = parsed.filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
+          if (filtered.length > 0) return filtered;
         }
       }
     } catch (e) {}
   }
-  return THEME_DATA_MAP['editorial']?.products || THEME_DATA_MAP['minimalist']?.products || [];
+  return [];
 };
 
 const getInitialStoreInfo = (): CmsStoreInfo => {
@@ -287,7 +278,7 @@ export const useCmsStore = create<CmsState>((set, get) => ({
 
     const themeData = THEME_DATA_MAP[cleanThemeId] || THEME_DATA_MAP['editorial'] || THEME_DATA_MAP['minimalist'];
     if (themeData) {
-      const finalProducts = activeProds.length > 0 ? activeProds : themeData.products;
+      const realProducts = activeProds.filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
       set((state) => ({
         storeInfo: {
           ...themeData.storeInfo,
@@ -296,9 +287,9 @@ export const useCmsStore = create<CmsState>((set, get) => ({
             ? state.storeInfo.name
             : themeData.storeInfo.name,
         },
-        products: finalProducts,
-        categories: themeData.categories,
-        navigation: themeData.navigation.sort((a, b) => a.order - b.order),
+        products: realProducts,
+        categories: themeData.categories || [],
+        navigation: (themeData.navigation || []).sort((a: any, b: any) => a.order - b.order),
       }));
     }
   },

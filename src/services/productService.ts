@@ -70,7 +70,10 @@ class ProductService {
       if (!data) return [];
       try {
         const parsed: Product[] = JSON.parse(data);
-        return Array.isArray(parsed) ? parsed : [];
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter(
+          (p) => p && p.id && !p.id.startsWith('pro_p') && !p.id.startsWith('mock-')
+        );
       } catch {
         return [];
       }
@@ -79,22 +82,17 @@ class ProductService {
   }
 
   private saveProducts(storeId: string, productsToSave: Product[]) {
-    const existing = this.getStoredProducts(storeId);
-    const uniqueMap = new Map<string, Product>();
-    existing.forEach((p) => {
-      if (p && p.id) uniqueMap.set(p.id, p);
-    });
-    productsToSave.forEach((p) => {
-      if (p && p.id) uniqueMap.set(p.id, p);
-    });
-    const finalProducts = Array.from(uniqueMap.values());
+    // Sanitize to remove any mock/dummy items
+    const cleanProductsToSave = productsToSave.filter(
+      (p) => p && p.id && !p.id.startsWith('pro_p') && !p.id.startsWith('mock-')
+    );
     
     try {
-      localStorage.setItem(this.storeKey(storeId), JSON.stringify(finalProducts));
+      localStorage.setItem(this.storeKey(storeId), JSON.stringify(cleanProductsToSave));
     } catch (quotaError: any) {
       console.warn('[productService] LocalStorage quota exceeded, optimizing image payloads...');
       // Strip heavy data:image base64 for local storage caching so UI never breaks
-      const cleanProducts = finalProducts.map((p) => {
+      const cleanProducts = cleanProductsToSave.map((p) => {
         const isDataUrl = p.imageUrl?.startsWith('data:');
         return {
           ...p,
@@ -108,6 +106,8 @@ class ProductService {
         console.error('[productService] Critical localStorage error:', inner);
       }
     }
+
+    const finalProducts = cleanProductsToSave;
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: finalProducts }));
@@ -174,36 +174,19 @@ class ProductService {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        const dbProducts = data.map(mapSupabaseRowToProduct);
+        const dbProducts = data
+          .map(mapSupabaseRowToProduct)
+          .filter((p) => !p.id.startsWith('pro_p') && !p.id.startsWith('mock-'));
 
-        if (dbProducts.length > 0) {
-          // Merge db products with any local-only products and preserve local originalPrice
-          const map = new Map<string, Product>();
-          dbProducts.forEach((p) => {
-            const local = localProducts.find((lp) => lp.id === p.id);
-            if (local && local.originalPrice && !p.originalPrice) {
-              p.originalPrice = local.originalPrice;
-            }
-            map.set(p.id, p);
-          });
-          localProducts.forEach((p) => {
-            if (!map.has(p.id)) map.set(p.id, p);
-          });
-          const merged = Array.from(map.values());
-          this.saveProducts(storeId, merged);
-          return merged;
-        } else if (localProducts.length > 0) {
-          // Supabase kosong, gunakan local
-          return localProducts;
-        }
-
-        return [];
+        // If Supabase query succeeded, database is source of truth for this store
+        this.saveProducts(storeId, dbProducts);
+        return dbProducts;
       }
     } catch (err: any) {
       console.warn('[Supabase Database] Offline fallback for products:', err?.message || err);
     }
 
-    // 2. Fallback ke LocalStorage
+    // 2. Fallback ke LocalStorage (only when network/offline error)
     return localProducts;
   }
 

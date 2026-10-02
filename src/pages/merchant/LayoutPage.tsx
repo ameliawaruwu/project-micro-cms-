@@ -135,15 +135,26 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   }, []);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
-  const [globalSettings, setGlobalSettings] = useState<any>(
-    store.layoutSettings?.globalThemeSettings || {
+  const [globalSettings, setGlobalSettings] = useState<any>(() => {
+    const defaultSettings = {
       colors: { primary: '#2C6ECB', secondary: '#1E40AF', background: '#FFFFFF', surface: '#F6F6F7', text: '#202223', mutedText: '#6D7175', border: '#E1E3E5' },
-      typography: { headingFont: 'Inter', bodyFont: 'Inter', headingSize: 'md', bodySize: 'md' },
+      typography: { headingFont: store.layoutSettings?.fontFamily || 'Inter', bodyFont: store.layoutSettings?.fontFamily || 'Inter', headingSize: 'md', bodySize: 'md' },
       buttons: { radius: 'md', style: 'solid' },
       cards: { radius: 'lg', shadow: 'sm', border: true },
       layout: { contentWidth: 'normal', sectionSpacing: 'normal' }
-    }
-  );
+    };
+    const incoming = store.layoutSettings?.globalThemeSettings;
+    if (!incoming) return defaultSettings;
+    return {
+      ...defaultSettings,
+      ...incoming,
+      colors: { ...defaultSettings.colors, ...(incoming.colors || {}) },
+      typography: { ...defaultSettings.typography, ...(incoming.typography || {}) },
+      buttons: { ...defaultSettings.buttons, ...(incoming.buttons || {}) },
+      cards: { ...defaultSettings.cards, ...(incoming.cards || {}) },
+      layout: { ...defaultSettings.layout, ...(incoming.layout || {}) },
+    };
+  });
 
   // Keep useCmsStore synchronized when merchant products are updated
   useEffect(() => {
@@ -168,52 +179,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   }, [activeThemeId, currentStore.name]);
 
-  const rawDisplayProducts = cmsProducts.length > 0 ? cmsProducts : (products || []);
+  const rawDisplayProducts = (products && products.length > 0) ? products : cmsProducts;
   const displayProducts = useMemo(() => {
-    if (activeThemeId === 'nature') {
-      const hasCosmetics = rawDisplayProducts.some(p => /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || ''));
-      if (hasCosmetics || rawDisplayProducts.length === 0) {
-        return THEME_DATA_MAP['nature'].products.map(cp => ({
-          id: cp.id,
-          storeId: currentStore.id,
-          name: cp.name,
-          slug: cp.slug,
-          price: cp.price,
-          originalPrice: cp.originalPrice,
-          imageUrl: cp.image,
-          images: cp.images,
-          category: cp.categoryName,
-          description: cp.description,
-          status: 'Tersedia' as const,
-          stock: cp.stock,
-          isFeatured: cp.isFeatured,
-          weight: 1000,
-        }));
-      }
-    }
-    if (activeThemeId === 'editorial') {
-      const hasVegetables = rawDisplayProducts.some(p => /bayam|kangkung|sayur|wortel|tomat|hidroponik|alpukat|madu/i.test(p.name || ''));
-      if (hasVegetables || rawDisplayProducts.length === 0) {
-        return THEME_DATA_MAP['editorial'].products.map(cp => ({
-          id: cp.id,
-          storeId: currentStore.id,
-          name: cp.name,
-          slug: cp.slug,
-          price: cp.price,
-          originalPrice: cp.originalPrice,
-          imageUrl: cp.image,
-          images: cp.images,
-          category: cp.categoryName,
-          description: cp.description,
-          status: 'Tersedia' as const,
-          stock: cp.stock,
-          isFeatured: cp.isFeatured,
-          weight: 1000,
-        }));
-      }
-    }
-    return rawDisplayProducts;
-  }, [rawDisplayProducts, activeThemeId, currentStore.id]);
+    return (rawDisplayProducts || []).filter(p => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
+  }, [rawDisplayProducts]);
 
   // Multi-page sections map state
   const [pageSectionsMap, setPageSectionsMap] = useState<Record<string, StoreSectionConfig[]>>(() => {
@@ -439,9 +408,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       sections: secs,
     }));
 
-    const finalProducts = (activeThemeId === 'nature' && displayProducts.length > 0)
-      ? displayProducts
-      : (cmsProducts && cmsProducts.length > 0 ? cmsProducts : (products || []));
+    const finalProducts = (products && products.length > 0)
+      ? products
+      : (cmsProducts || []).filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
 
     const draftStore = {
       ...currentStore,
@@ -449,6 +418,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         ...currentStore.layoutSettings,
         sections: updatedMap['homepage'] || sections,
         primaryAccent,
+        fontFamily: globalSettings?.typography?.headingFont || globalSettings?.typography?.bodyFont || currentStore.layoutSettings?.fontFamily || 'Inter',
         globalThemeSettings: globalSettings,
         activeThemeId,
         themeStyle: activeThemeId,
@@ -470,12 +440,15 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       if (finalProducts && finalProducts.length > 0) {
         sessionStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
         localStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
+      } else {
+        sessionStorage.removeItem('microcms_cms_products');
+        localStorage.removeItem('microcms_cms_products');
       }
       window.dispatchEvent(new Event('cms_draft_updated'));
     } catch (e) {
       console.error('Failed to sync preview draft:', e);
     }
-  }, [sections, pageSectionsMap, activePage, primaryAccent, globalSettings, activeThemeId, currentStore, displayProducts]);
+  }, [sections, pageSectionsMap, activePage, primaryAccent, globalSettings, activeThemeId, currentStore, products, cmsProducts]);
 
   const handleOpenPreviewTab = () => {
     const updatedMap = { ...pageSectionsMap, [activePage]: sections };
@@ -486,9 +459,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       sections: secs,
     }));
 
-    const finalProducts = (activeThemeId === 'nature' && displayProducts.length > 0)
-      ? displayProducts
-      : (cmsProducts && cmsProducts.length > 0 ? cmsProducts : (products || []));
+    const finalProducts = (products && products.length > 0)
+      ? products
+      : (cmsProducts || []).filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
 
     const previewSlug = currentStore.slug || (user ? `toko-${user.id.replace(/[^a-z0-9]/g, '').slice(0, 10)}` : 'toko-preview');
 
@@ -499,6 +472,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         ...currentStore.layoutSettings,
         sections: updatedMap['homepage'] || sections,
         primaryAccent,
+        fontFamily: globalSettings?.typography?.headingFont || globalSettings?.typography?.bodyFont || currentStore.layoutSettings?.fontFamily || 'Inter',
         globalThemeSettings: globalSettings,
         activeThemeId,
         themeStyle: activeThemeId,
@@ -517,6 +491,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       if (finalProducts && finalProducts.length > 0) {
         sessionStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
         localStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
+      } else {
+        sessionStorage.removeItem('microcms_cms_products');
+        localStorage.removeItem('microcms_cms_products');
       }
       window.dispatchEvent(new Event('cms_draft_updated'));
     } catch (e) {
@@ -1208,6 +1185,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       themeStyle: activeThemeId,
       primaryAccent,
       activeThemeId,
+      fontFamily: globalSettings?.typography?.headingFont || globalSettings?.typography?.bodyFont || currentStore.layoutSettings?.fontFamily || 'Inter',
       globalThemeSettings: globalSettings,
       pages: pagesConfig,
       activePage,
@@ -1250,10 +1228,26 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
   const handlePublish = () => {
     setIsSaving(true);
+    const updatedMap = {
+      ...pageSectionsMap,
+      [activePage]: sections,
+    };
+    const pagesConfig = Object.entries(updatedMap).map(([slug, secs]) => ({
+      id: slug,
+      title: slug === 'homepage' ? 'Halaman Utama' : slug.charAt(0).toUpperCase() + slug.slice(1),
+      slug,
+      sections: secs,
+    }));
+
     const layoutSettings: StoreLayoutSettings = {
-      sections,
-      themeStyle: store.layoutSettings?.themeStyle || 'minimal',
+      sections: updatedMap['homepage'] || sections,
+      themeStyle: activeThemeId || store.layoutSettings?.themeStyle || 'minimal',
       primaryAccent,
+      activeThemeId,
+      fontFamily: globalSettings?.typography?.headingFont || globalSettings?.typography?.bodyFont || currentStore.layoutSettings?.fontFamily || 'Inter',
+      globalThemeSettings: globalSettings,
+      pages: pagesConfig,
+      activePage,
     };
 
     onSaveLayout(layoutSettings);

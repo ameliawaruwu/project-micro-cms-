@@ -257,36 +257,112 @@ class BranchService {
   }
 
   async toggleActiveBranch(id: string, storeId?: string): Promise<ShippingBranch> {
-    const branches = this.getStoredBranches(storeId);
-    const target = branches.find((b) => b.id === id);
+    let resolvedStoreId = storeId;
+    let target: ShippingBranch | undefined;
+    if (resolvedStoreId) {
+      const branches = this.getStoredBranches(resolvedStoreId);
+      target = branches.find((b) => b.id === id);
+    }
+    if (!target) {
+      try {
+        const { data } = await supabase.from('shipping_branches').select('*').eq('id', id).maybeSingle();
+        if (data) {
+          target = mapDbRowToBranch(data);
+          resolvedStoreId = target.storeId;
+        }
+      } catch { /* ignore */ }
+    }
     if (!target) throw new Error('Cabang gudang tidak ditemukan');
 
-    return this.updateBranch(id, { isActive: !target.isActive, storeId: storeId || target.storeId });
+    return this.updateBranch(id, { isActive: !target.isActive, storeId: resolvedStoreId || target.storeId });
   }
 
   async deleteBranch(id: string, storeId?: string): Promise<boolean> {
-    const branches = this.getStoredBranches(storeId);
-    if (branches.length <= 1) {
+    // 1. Resolve store ID and branch info from Supabase or local cache
+    let resolvedStoreId = storeId;
+    let targetBranch: any = null;
+
+    try {
+      const { data, error } = await supabase
+        .from('shipping_branches')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (!error && data) {
+        targetBranch = data;
+        if (!resolvedStoreId) {
+          resolvedStoreId = data.store_id;
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase fetch branch before delete error:', err);
+    }
+
+    if (!resolvedStoreId && targetBranch?.store_id) {
+      resolvedStoreId = targetBranch.store_id;
+    }
+
+    // 2. Check total branches directly from actual database data for this store
+    if (resolvedStoreId) {
+      try {
+        const { data: dbBranches, error: listError } = await supabase
+          .from('shipping_branches')
+          .select('id, is_default, store_id')
+          .eq('store_id', resolvedStoreId);
+
+        if (!listError && dbBranches) {
+          if (dbBranches.length <= 1) {
+            throw new Error('Minimal harus ada 1 cabang gudang yang terdaftar');
+          }
+
+          const targetInDb = dbBranches.find((b) => b.id === id);
+          if (targetInDb?.is_default || targetBranch?.is_default) {
+            throw new Error('Cabang utama tidak dapat dihapus. Silakan jadikan cabang lain sebagai cabang utama terlebih dahulu.');
+          }
+
+          // Execute actual database delete with strict store_id ownership check
+          const { error: deleteError } = await supabase
+            .from('shipping_branches')
+            .delete()
+            .eq('id', id)
+            .eq('store_id', resolvedStoreId);
+
+          if (deleteError) {
+            throw new Error(`Gagal menghapus cabang dari database: ${deleteError.message}`);
+          }
+
+          // Update local cache
+          const cachedBranches = this.getStoredBranches(resolvedStoreId);
+          const updatedCache = cachedBranches.filter((b) => b.id !== id);
+          localStorage.setItem(this.storeKey(resolvedStoreId), JSON.stringify(updatedCache));
+
+          return true;
+        }
+      } catch (dbErr: any) {
+        if (dbErr.message === 'Minimal harus ada 1 cabang gudang yang terdaftar' || 
+            dbErr.message.includes('Cabang utama tidak dapat dihapus')) {
+          throw dbErr;
+        }
+        console.warn('Supabase database count failed, falling back to local verification:', dbErr);
+      }
+    }
+
+    // 3. Fallback verification if database was completely offline
+    const localBranches = this.getStoredBranches(resolvedStoreId);
+    if (localBranches.length <= 1) {
       throw new Error('Minimal harus ada 1 cabang gudang yang terdaftar');
     }
 
-    const target = branches.find((b) => b.id === id);
-    if (target?.isDefault) {
+    const localTarget = localBranches.find((b) => b.id === id);
+    if (localTarget?.isDefault) {
       throw new Error('Cabang utama tidak dapat dihapus. Silakan jadikan cabang lain sebagai cabang utama terlebih dahulu.');
     }
 
-    const resolvedStoreId = storeId || target?.storeId || '';
-    const updatedList = branches.filter((b) => b.id !== id);
-    this.saveBranches(resolvedStoreId, updatedList);
-
-    try {
-      await supabase
-        .from('shipping_branches')
-        .delete()
-        .eq('id', id)
-        .eq('store_id', resolvedStoreId); // ownership check
-    } catch (err) {
-      console.warn('Supabase branch delete skipped:', err);
+    const fallbackStoreId = resolvedStoreId || localTarget?.storeId || '';
+    const updatedList = localBranches.filter((b) => b.id !== id);
+    if (fallbackStoreId) {
+      localStorage.setItem(this.storeKey(fallbackStoreId), JSON.stringify(updatedList));
     }
 
     return true;

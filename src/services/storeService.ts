@@ -87,7 +87,7 @@ class StoreService {
           currency: row.currency || 'IDR',
           balance: Number(row.balance || 0),
           isPublished: row.is_published !== false,
-          layoutSettings: row.layout_settings,
+          layoutSettings: row.theme_settings || row.layout_settings,
           onboarding: row.onboarding || {
             storeNameSet: true,
             productUploaded: false,

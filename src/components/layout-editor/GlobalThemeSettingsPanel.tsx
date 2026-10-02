@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Palette,
   ChevronLeft,
@@ -9,28 +9,102 @@ import {
   Check,
 } from 'lucide-react';
 import { GlobalThemeSettings } from '../../types';
+import { AVAILABLE_FONTS, loadGoogleFont } from '../../utils/fontLoader';
 
 interface GlobalThemeSettingsPanelProps {
-  settings: GlobalThemeSettings;
+  settings?: GlobalThemeSettings;
   onUpdate: (newSettings: Partial<GlobalThemeSettings>) => void;
   onClose?: () => void;
 }
+
+const DEFAULT_GLOBAL_SETTINGS: GlobalThemeSettings = {
+  colors: {
+    primary: '#2C6ECB',
+    secondary: '#1E40AF',
+    background: '#FFFFFF',
+    surface: '#F6F6F7',
+    text: '#202223',
+    mutedText: '#6D7175',
+    border: '#E1E3E5',
+  },
+  typography: {
+    headingFont: 'Inter',
+    bodyFont: 'Inter',
+    headingSize: 'md',
+    bodySize: 'md',
+  },
+  buttons: { radius: 'md', style: 'solid' },
+  cards: { radius: 'lg', shadow: 'sm', border: true },
+  layout: { contentWidth: 'normal', sectionSpacing: 'normal' },
+};
 
 export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> = ({
   settings,
   onUpdate,
   onClose,
 }) => {
+  const safeColors = {
+    ...DEFAULT_GLOBAL_SETTINGS.colors,
+    ...(settings?.colors || {}),
+  };
+
+  const safeTypography = {
+    ...DEFAULT_GLOBAL_SETTINGS.typography,
+    ...(settings?.typography || {}),
+  };
+
+  const safeButtons = {
+    ...DEFAULT_GLOBAL_SETTINGS.buttons,
+    ...(settings?.buttons || {}),
+  };
+
+  const safeCards = {
+    ...DEFAULT_GLOBAL_SETTINGS.cards,
+    ...(settings?.cards || {}),
+  };
+
+  const safeLayout = {
+    ...DEFAULT_GLOBAL_SETTINGS.layout,
+    ...(settings?.layout || {}),
+  };
+
+  // Pre-load current fonts
+  useEffect(() => {
+    loadGoogleFont(safeTypography.headingFont);
+    loadGoogleFont(safeTypography.bodyFont);
+  }, [safeTypography.headingFont, safeTypography.bodyFont]);
+
   const updateColors = (newColors: Partial<GlobalThemeSettings['colors']>) => {
-    onUpdate({ colors: { ...settings.colors, ...newColors } });
+    onUpdate({
+      colors: { ...safeColors, ...newColors },
+      typography: safeTypography,
+      buttons: safeButtons,
+      cards: safeCards,
+      layout: safeLayout,
+    });
   };
 
   const updateTypography = (newTypography: Partial<GlobalThemeSettings['typography']>) => {
-    onUpdate({ typography: { ...settings.typography, ...newTypography } });
+    if (newTypography.headingFont) loadGoogleFont(newTypography.headingFont);
+    if (newTypography.bodyFont) loadGoogleFont(newTypography.bodyFont);
+
+    onUpdate({
+      colors: safeColors,
+      typography: { ...safeTypography, ...newTypography },
+      buttons: safeButtons,
+      cards: safeCards,
+      layout: safeLayout,
+    });
   };
 
   const updateButtons = (newButtons: Partial<GlobalThemeSettings['buttons']>) => {
-    onUpdate({ buttons: { ...settings.buttons, ...newButtons } });
+    onUpdate({
+      colors: safeColors,
+      typography: safeTypography,
+      buttons: { ...safeButtons, ...newButtons },
+      cards: safeCards,
+      layout: safeLayout,
+    });
   };
 
   return (
@@ -63,10 +137,10 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
             <Palette className="w-3.5 h-3.5 text-[#8C9196]" /> Warna
           </h3>
           <div className="space-y-2">
-            <ColorPickerItem label="Warna Utama" value={settings.colors.primary} onChange={(val) => updateColors({ primary: val })} />
-            <ColorPickerItem label="Warna Sekunder" value={settings.colors.secondary} onChange={(val) => updateColors({ secondary: val })} />
-            <ColorPickerItem label="Latar Belakang" value={settings.colors.background} onChange={(val) => updateColors({ background: val })} />
-            <ColorPickerItem label="Teks Utama" value={settings.colors.text} onChange={(val) => updateColors({ text: val })} />
+            <ColorPickerItem label="Warna Utama" value={safeColors.primary || '#2C6ECB'} onChange={(val) => updateColors({ primary: val })} />
+            <ColorPickerItem label="Warna Sekunder" value={safeColors.secondary || '#1E40AF'} onChange={(val) => updateColors({ secondary: val })} />
+            <ColorPickerItem label="Latar Belakang" value={safeColors.background || '#FFFFFF'} onChange={(val) => updateColors({ background: val })} />
+            <ColorPickerItem label="Teks Utama" value={safeColors.text || '#202223'} onChange={(val) => updateColors({ text: val })} />
           </div>
         </div>
 
@@ -77,31 +151,32 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
           </h3>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-[#6D7175]">Font Heading</label>
+              <label className="text-[11px] font-semibold text-[#6D7175]">Font Heading (Judul)</label>
               <select
-                value={settings.typography.headingFont}
+                value={safeTypography.headingFont || 'Inter'}
                 onChange={(e) => updateTypography({ headingFont: e.target.value })}
-                className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[13px] text-[#202223]"
+                className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[13px] text-[#202223] font-medium"
               >
-                <option value="Inter">Inter (Modern)</option>
-                <option value="Space Grotesk">Space Grotesk (Tech)</option>
-                <option value="Cormorant Garamond">Cormorant (Elegant)</option>
-                <option value="Anton">Anton (Bold)</option>
-                <option value="Lora">Lora (Editorial)</option>
+                {AVAILABLE_FONTS.map(font => (
+                  <option key={font.name} value={font.name} style={{ fontFamily: font.name }}>
+                    {font.name} ({font.category})
+                  </option>
+                ))}
               </select>
             </div>
             
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-[#6D7175]">Font Tubuh</label>
+              <label className="text-[11px] font-semibold text-[#6D7175]">Font Tubuh (Isi & Konten)</label>
               <select
-                value={settings.typography.bodyFont}
+                value={safeTypography.bodyFont || 'Inter'}
                 onChange={(e) => updateTypography({ bodyFont: e.target.value })}
-                className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[13px] text-[#202223]"
+                className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[13px] text-[#202223] font-medium"
               >
-                <option value="Inter">Inter</option>
-                <option value="Roboto">Roboto</option>
-                <option value="DM Sans">DM Sans</option>
-                <option value="Outfit">Outfit</option>
+                {AVAILABLE_FONTS.map(font => (
+                  <option key={font.name} value={font.name} style={{ fontFamily: font.name }}>
+                    {font.name} ({font.category})
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -121,7 +196,7 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
                     key={radius}
                     onClick={() => updateButtons({ radius: radius as any })}
                     className={`flex-1 py-1 flex items-center justify-center rounded-md transition ${
-                      settings.buttons.radius === radius
+                      safeButtons.radius === radius
                         ? 'bg-white shadow-sm font-semibold text-[#202223]'
                         : 'text-[#6D7175] hover:text-[#202223]'
                     }`}
