@@ -25,6 +25,12 @@
    - Aksi **Biteship Ongkir** Wajib memanggil `POST /api/shipping/rates`.
    - Aksi **Notifikasi Email** Wajib memanggil `POST /api/send-email`.
    DILARANG KERAS hanya melakukan simulasi state di Supabase tanpa mengeksekusi endpoint backend terkait!
+3. **JANGAN AUTO-DEPLOY KE LIVE SERVER (CUKUP COMMIT DULU)**:
+   - AI Agent **DILARANG KERAS** melakukan auto-deploy ke server NAS (seperti otomatis mengeksekusi `kroombox_run_cicd_pipeline`, restart PM2 live, atau modifikasi file di NAS) tanpa persetujuan / instruksi eksplisit dari developer.
+   - Batas pekerjaan otomatis default:
+     1. Edit dan uji lokal di Windows (`npm run dev`, `npx tsc --noEmit`).
+     2. Lakukan **Git commit** (dan push ke GitHub jika diminta).
+     3. Laporkan perubahan kepada developer dan tunggu perintah untuk deploy ke server produksi NAS.
 
 ---
 
