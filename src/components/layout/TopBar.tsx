@@ -3,6 +3,7 @@ import {
   ChevronDown,
   Menu,
   User as UserIcon,
+  Sparkles,
 } from 'lucide-react';
 import { Store as StoreType, ViewMode, User } from '../../types';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
@@ -102,6 +103,20 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <span>{t('account_status', 'Status Akun:')}</span>
                     <span className="font-medium text-emerald-700">{t('verified', 'Terverifikasi')}</span>
                   </div>
+                </div>
+
+                <div className="pt-2 border-t border-[#E5E0DD] mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      window.dispatchEvent(new CustomEvent('open_store_onboarding'));
+                    }}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#66000E] bg-[#66000E]/5 hover:bg-[#66000E]/10 transition cursor-pointer"
+                  >
+                    <span>{t('store_onboarding_wizard', 'Setup / Onboarding Toko')}</span>
+                    <Sparkles className="w-3.5 h-3.5 text-[#66000E]" />
+                  </button>
                 </div>
               </div>
             </>

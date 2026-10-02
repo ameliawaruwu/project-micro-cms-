@@ -498,15 +498,27 @@ export default function App() {
       }
 
       let userStores = await storeService.getStoresForUser(user.id);
-      setStores(userStores);
 
       if (userStores.length === 0) {
-        setActiveStore(EMPTY_STORE);
-        setProducts([]);
-        setOrders([]);
-        setIntegrations([]);
-        useCmsStore.getState().setProductsFromMerchant([]);
-        return;
+        // Otomatis buat toko awal untuk merchant baru
+        const newStore = await storeService.createStore({
+          merchantId: user.id,
+          name: `Toko ${user.name || 'UMKM'}`,
+          slug: `toko-${user.name ? user.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'umkm'}-${Date.now().toString().slice(-4)}`,
+          phoneWhatsApp: user.phoneWhatsApp || '',
+          plan: '', // Belum klaim paket
+          onboarding: {
+            storeNameSet: false,
+            productUploaded: false,
+            paymentConnected: false,
+          },
+        });
+        userStores = [newStore];
+        setStores([newStore]);
+        setActiveStore(newStore);
+        setIsOnboardingModalOpen(true);
+      } else {
+        setStores(userStores);
       }
 
       let current: Store | undefined;
@@ -2099,7 +2111,7 @@ export default function App() {
 
       {/* 11. User Onboarding Modal (Two-step: Store Info [skippable] & Free Package Claim [mandatory]) */}
       <UserOnboardingModal
-        isOpen={isOnboardingModalOpen && !isAuthLoading && !!currentStore?.id}
+        isOpen={isOnboardingModalOpen && !isAuthLoading && !!user}
         user={user}
         store={currentStore}
         onComplete={async (updatedStore) => {

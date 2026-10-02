@@ -97,7 +97,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
   // Submit Step 1 -> Save store info and advance to Step 2
   const handleSaveStoreInfo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!store?.id && !user?.id) return;
+    if (!user?.id) return;
 
     setIsSavingStore(true);
     try {
@@ -121,6 +121,22 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
           },
           user?.id
         );
+      } else {
+        await storeService.createStore({
+          merchantId: user.id,
+          name: finalName,
+          slug: finalSlug,
+          category: category.trim(),
+          phoneWhatsApp: phoneWhatsApp.trim(),
+          tagline: tagline.trim(),
+          description: description.trim(),
+          plan: '',
+          onboarding: {
+            storeNameSet: true,
+            productUploaded: false,
+            paymentConnected: false,
+          },
+        });
       }
 
       localStorage.setItem('kroomify_onboarding_step', 'claim_free_plan');
@@ -137,18 +153,39 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
 
   // Step 2: Claim Free Package (Mandatory)
   const handleClaimFreePlan = async () => {
-    if (!store?.id) return;
+    if (!user?.id) return;
 
     setIsClaimingPlan(true);
     try {
+      let activeStore = store;
+      if (!activeStore?.id) {
+        const finalName = storeName.trim() || `Toko ${user.name || 'UMKM'}`;
+        const finalSlug = storeSlug.trim() || finalName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        activeStore = await storeService.createStore({
+          merchantId: user.id,
+          name: finalName,
+          slug: finalSlug,
+          category: category.trim(),
+          phoneWhatsApp: phoneWhatsApp.trim(),
+          tagline: tagline.trim(),
+          description: description.trim(),
+          plan: 'free',
+          onboarding: {
+            storeNameSet: true,
+            productUploaded: false,
+            paymentConnected: false,
+          },
+        });
+      }
+
       const now = new Date();
       const expires = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
       const invoiceNumber = `INV-FREE-${Date.now().toString().slice(-6)}`;
 
       // 1. Record free subscription in database
       await billingPlanService.recordSubscription({
-        storeId: store.id,
-        storeName: store.name || storeName || `Toko ${user?.name || 'UMKM'}`,
+        storeId: activeStore.id,
+        storeName: activeStore.name || storeName || `Toko ${user?.name || 'UMKM'}`,
         planId: 'PLN001',
         planName: 'Paket Free',
         cycle: 'yearly',
@@ -162,11 +199,11 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
 
       // 2. Update store record to active free plan
       const updated = await storeService.updateStore(
-        store.id,
+        activeStore.id,
         {
           plan: 'free',
           onboarding: {
-            ...store.onboarding,
+            ...activeStore.onboarding,
             storeNameSet: true,
           },
         },
@@ -182,7 +219,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
     } catch (err) {
       console.error('Error claiming free plan:', err);
       // Fallback: update store locally and complete
-      const fallbackStore = { ...store, plan: 'free' };
+      const fallbackStore = { ...(store || {}), plan: 'free' } as Store;
       localStorage.removeItem('kroomify_onboarding_pending');
       localStorage.removeItem('kroomify_onboarding_step');
       onComplete(fallbackStore);
