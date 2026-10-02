@@ -23,6 +23,15 @@ deployRouter.post('/publish', async (req: Request, res: Response) => {
   try {
     const { storeId, slug, baseDomain = 'kroombox.com', customDomain, store, products = [] } = req.body;
 
+    const plan = ((store && store.plan) || '').toLowerCase();
+    const isPaidPlan = ['personal', 'community', 'corporate', 'startup', 'premium'].includes(plan);
+    if (!isPaidPlan) {
+      return res.status(403).json({
+        success: false,
+        error: 'Toko pada Paket Free tidak dapat dipublikasikan ke publik (hanya mode pratinjau/lihat-lihat saja). Silakan upgrade ke paket berbayar untuk mempublikasikan toko online Anda.',
+      });
+    }
+
     if (!slug || typeof slug !== 'string') {
       return res.status(400).json({ error: 'Parameter slug toko wajib diisi' });
     }

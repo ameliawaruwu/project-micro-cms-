@@ -1206,6 +1206,16 @@ export default function App() {
       addToast('Akses ditolak: Anda tidak dapat mempublikasikan toko milik merchant lain.', 'error');
       return;
     }
+
+    // Toko pada Paket Free tidak dapat dipublikasikan ke publik (hanya mode pratinjau/lihat-lihat saja)
+    const targetStore = stores.find((s) => s.id === targetId) || (activeStore?.id === targetId ? activeStore : currentStore);
+    const planLower = (targetStore?.plan || '').toLowerCase();
+    const isPaidPlan = ['personal', 'community', 'corporate', 'startup', 'premium'].includes(planLower);
+    if (!isPaidPlan) {
+      addToast('Toko pada Paket Free tidak dapat dipublikasikan ke publik (hanya mode pratinjau/lihat-lihat saja). Silakan upgrade ke paket berbayar.', 'info');
+      setIsUpgradePlanModalOpen(true);
+      return;
+    }
     try {
       const updated = await storeService.setPublishedStatus(targetId, true, user?.id);
       setActiveStore(updated);
