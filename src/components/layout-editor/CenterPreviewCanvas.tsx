@@ -104,6 +104,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('Semua');
   const [searchPreviewQuery, setSearchPreviewQuery] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
   const typography = store.layoutSettings?.globalThemeSettings?.typography;
   const headingFont = typography?.headingFont || store.layoutSettings?.fontFamily || 'Inter';
@@ -151,6 +152,18 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     const cleanHref = (href || '').toLowerCase().trim();
     const text = (anchorText || '').toLowerCase().trim();
 
+    // 0. External Links (WhatsApp, Instagram, Phone, Mailto, External URLs)
+    if (
+      cleanHref.startsWith('http://') || 
+      cleanHref.startsWith('https://') || 
+      cleanHref.startsWith('tel:') || 
+      cleanHref.startsWith('mailto:') ||
+      cleanHref.startsWith('//')
+    ) {
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     // 1. Homepage / Beranda
     if (cleanHref === '/' || cleanHref === '/beranda' || cleanHref === '#beranda' || text === 'beranda' || text === 'home') {
       if (onPageChange) onPageChange('homepage');
@@ -159,19 +172,27 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
       return;
     }
 
-    // 2. Katalog / Shop / Products / Collection / Drops / Gadget / Wearables / Fine Necklaces
+    // 2. Product Detail (Check BEFORE Katalog to match /produk/:slug properly)
+    if (cleanHref.includes('/product/') || cleanHref.includes('/produk/')) {
+      const parts = cleanHref.split('/');
+      const slugOrId = parts[parts.length - 1] || '';
+      const matched = products?.find(p => p.slug === slugOrId || p.id === slugOrId);
+      if (matched) {
+        setSelectedProductId(matched.id);
+      } else if (slugOrId) {
+        setSelectedProductId(slugOrId);
+      }
+      if (onPageChange) onPageChange('product');
+      return;
+    }
+
+    // 3. Katalog / Shop / Products / Collection / Drops / Gadget / Wearables / Fine Necklaces
     if (
       cleanHref.includes('/katalog') || cleanHref.includes('/products') || cleanHref.includes('/catalog') || cleanHref === '#katalog' ||
       text.includes('shop') || text.includes('katalog') || text.includes('produk') || text.includes('collection') || text.includes('drop') || 
       text.includes('gadget') || text.includes('jewelry') || text.includes('new arrival') || text.includes('explore') || text.includes('koleksi') || text.includes('etalase')
     ) {
       if (onPageChange) onPageChange('katalog');
-      return;
-    }
-
-    // 3. Product Detail
-    if (cleanHref.includes('/product/')) {
-      if (onPageChange) onPageChange('product');
       return;
     }
 
@@ -286,8 +307,20 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     const button = target.closest('button');
 
     if (anchor) {
-      e.preventDefault();
       const href = anchor.getAttribute('href') || '';
+      const isExternal =
+        href.startsWith('http://') ||
+        href.startsWith('https://') ||
+        href.startsWith('tel:') ||
+        href.startsWith('mailto:') ||
+        href.startsWith('//') ||
+        anchor.getAttribute('target') === '_blank';
+
+      if (isExternal) {
+        return;
+      }
+
+      e.preventDefault();
       const text = anchor.textContent || '';
       handleNavClick(href, text);
       return;
@@ -330,6 +363,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           themeId={activeThemeId}
           store={store}
           products={products}
+          productId={selectedProductId || undefined}
           onNavigate={(p) => onPageChange && onPageChange(p)}
         />
       );
@@ -527,8 +561,18 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                   const target = e.target as HTMLElement;
                   const anchor = target.closest('a');
                   if (anchor) {
-                    e.preventDefault();
-                    handleNavClick(anchor.getAttribute('href') || '', anchor.textContent || '');
+                    const href = anchor.getAttribute('href') || '';
+                    const isExternal =
+                      href.startsWith('http://') ||
+                      href.startsWith('https://') ||
+                      href.startsWith('tel:') ||
+                      href.startsWith('mailto:') ||
+                      href.startsWith('//') ||
+                      anchor.getAttribute('target') === '_blank';
+                    if (!isExternal) {
+                      e.preventDefault();
+                      handleNavClick(href, anchor.textContent || '');
+                    }
                   }
                 }}
                 onClick={(e) => {
@@ -1646,13 +1690,22 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                       // Don't intercept floating action toolbar buttons
                       if (target.closest('.section-floating-toolbar')) return;
 
-                      // Prevent default browser navigation on any anchor or link
+                      // Prevent default browser navigation on any internal anchor or link
                       const anchor = target.closest('a');
                       if (anchor) {
-                        e.preventDefault();
                         const href = anchor.getAttribute('href') || '';
-                        const text = anchor.textContent || '';
-                        handleNavClick(href, text);
+                        const isExternal =
+                          href.startsWith('http://') ||
+                          href.startsWith('https://') ||
+                          href.startsWith('tel:') ||
+                          href.startsWith('mailto:') ||
+                          href.startsWith('//') ||
+                          anchor.getAttribute('target') === '_blank';
+                        if (!isExternal) {
+                          e.preventDefault();
+                          const text = anchor.textContent || '';
+                          handleNavClick(href, text);
+                        }
                       }
 
                       // Intercept buttons with href

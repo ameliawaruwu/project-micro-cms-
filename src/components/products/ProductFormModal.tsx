@@ -35,7 +35,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [originalPriceDisplay, setOriginalPriceDisplay] = useState('');
   const [discountPercent, setDiscountPercent] = useState('');
   const [sellingPriceDisplay, setSellingPriceDisplay] = useState('');
-  const [stockDisplay, setStockDisplay] = useState('10');
+  const [stockDisplay, setStockDisplay] = useState('');
   const [category, setCategory] = useState('');
   const [customCategory, setCustomCategory] = useState('');
   const [description, setDescription] = useState('');
@@ -213,7 +213,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setOriginalPriceDisplay('');
         setDiscountPercent('');
         setSellingPriceDisplay('');
-        setStockDisplay('10');
+        setStockDisplay('');
         setCategory(availableCategories[0] || (isEn ? 'Clothing & Fashion' : 'Pakaian & Fashion'));
         setCustomCategory('');
         setDescription('');
@@ -678,7 +678,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       type="text"
                       inputMode="numeric"
                       required
-                      placeholder="10"
+                      placeholder={isEn ? 'e.g. 10' : 'Contoh: 10'}
                       value={stockDisplay}
                       onChange={handleStockChange}
                       className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs sm:text-sm font-normal text-[#241A1A] placeholder:text-[#9A9290] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10"

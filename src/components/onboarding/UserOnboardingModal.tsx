@@ -30,6 +30,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
   // Step 1: 'store_info' (skippable)
   // Step 2: 'claim_free_plan' (mandatory / not skippable)
   const [currentStep, setCurrentStep] = useState<'store_info' | 'claim_free_plan'>('store_info');
+  const [registeredStore, setRegisteredStore] = useState<Store | null>(null);
 
   // Form state for store information
   const [storeName, setStoreName] = useState('');
@@ -99,15 +100,17 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
     try {
       const finalName = storeName.trim() || store?.name || `Toko ${user?.name || 'UMKM'}`;
       const finalSlug = storeSlug.trim() || finalName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const cleanPhone = phoneWhatsApp.trim();
 
+      let savedStore: Store;
       if (store?.id) {
-        await storeService.updateStore(
+        savedStore = await storeService.updateStore(
           store.id,
           {
             name: finalName,
             slug: finalSlug,
             category: category.trim(),
-            phoneWhatsApp: phoneWhatsApp.trim(),
+            phoneWhatsApp: cleanPhone,
             tagline: tagline.trim(),
             description: description.trim(),
             onboarding: {
@@ -118,12 +121,12 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
           user?.id
         );
       } else {
-        await storeService.createStore({
+        savedStore = await storeService.createStore({
           merchantId: user.id,
           name: finalName,
           slug: finalSlug,
           category: category.trim(),
-          phoneWhatsApp: phoneWhatsApp.trim(),
+          phoneWhatsApp: cleanPhone,
           tagline: tagline.trim(),
           description: description.trim(),
           plan: '',
@@ -135,6 +138,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         });
       }
 
+      setRegisteredStore(savedStore);
       localStorage.setItem('kroomify_onboarding_step', 'claim_free_plan');
       setCurrentStep('claim_free_plan');
     } catch (err) {
@@ -152,7 +156,9 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
 
     setIsClaimingPlan(true);
     try {
-      let activeStore = store;
+      let activeStore = registeredStore || store;
+      const cleanPhone = phoneWhatsApp.trim();
+
       if (!activeStore?.id) {
         const finalName = storeName.trim() || `Toko ${user.name || 'UMKM'}`;
         const finalSlug = storeSlug.trim() || finalName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -161,7 +167,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
           name: finalName,
           slug: finalSlug,
           category: category.trim(),
-          phoneWhatsApp: phoneWhatsApp.trim(),
+          phoneWhatsApp: cleanPhone,
           tagline: tagline.trim(),
           description: description.trim(),
           plan: 'free',
@@ -192,11 +198,12 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         expiresAt: expires.toISOString(),
       });
 
-      // 2. Update store record to active free plan
+      // 2. Update store record to active free plan (preserving phoneWhatsApp)
       const updated = await storeService.updateStore(
         activeStore.id,
         {
           plan: 'free',
+          phoneWhatsApp: cleanPhone || activeStore.phoneWhatsApp,
           onboarding: {
             ...activeStore.onboarding,
             storeNameSet: true,
@@ -213,7 +220,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       onComplete(updated);
     } catch (err) {
       console.error('Error claiming free plan:', err);
-      const fallbackStore = { ...(store || {}), plan: 'free' } as Store;
+      const fallbackStore = { ...(registeredStore || store || {}), plan: 'free', phoneWhatsApp: phoneWhatsApp.trim() || (registeredStore || store)?.phoneWhatsApp } as Store;
       localStorage.removeItem('kroomify_onboarding_pending');
       localStorage.removeItem('kroomify_onboarding_step');
       onComplete(fallbackStore);

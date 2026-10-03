@@ -20,7 +20,7 @@ const resolveInitialPage = (store?: Store): string => {
   if (currentPath.includes('/katalog') || currentPath.includes('/products') || currentPath.includes('/catalog') || currentPath.includes('/produk')) return 'katalog';
   if (currentPath.includes('/about') || currentPath.includes('/tentang')) return 'about';
   if (currentPath.includes('/contact') || currentPath.includes('/kontak')) return 'contact';
-  if (currentPath.includes('/product/')) return 'product';
+  if (currentPath.includes('/product/') || currentPath.includes('/produk/')) return 'product';
   if (currentPath.includes('/cart') || currentPath.includes('/keranjang')) return 'cart';
   if (currentPath.includes('/checkout')) return 'checkout';
   if (currentPath.includes('/orders') || currentPath.includes('/pesanan')) return 'orders';

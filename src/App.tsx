@@ -362,10 +362,14 @@ export default function App() {
     };
     window.addEventListener('microcms_store_created', handleStoreCreated);
 
+    const handleOpenCart = () => setIsCartOpen(true);
+    window.addEventListener('open_cart', handleOpenCart);
+
     return () => {
       window.removeEventListener('toast_notification', handleToastNotification);
       window.removeEventListener('open_store_onboarding', handleOpenOnboarding);
       window.removeEventListener('microcms_store_created', handleStoreCreated);
+      window.removeEventListener('open_cart', handleOpenCart);
     };
   }, []);
 
@@ -614,7 +618,7 @@ export default function App() {
       }
     }
 
-    if (previewThemeParam || editThemeParam || modeParam === 'editor') {
+    if (editThemeParam || modeParam === 'editor') {
       const loggedUser = authService.getCurrentUser().user;
       if (loggedUser) {
         storeService.getStoresForUser(loggedUser.id).then((userStores) => {
@@ -639,6 +643,37 @@ export default function App() {
       return;
     }
 
+    if (previewThemeParam) {
+      setViewMode('storefront-live');
+      setIsStoreLoading(false);
+      setStoreNotFound(false);
+      const normalizedTheme = normalizeThemeId(previewThemeParam);
+      useCmsStore.getState().loadThemeData(normalizedTheme);
+      if (tokoParam) {
+        storeService.getStoreBySlug(tokoParam).then((targetStore) => {
+          if (targetStore) {
+            setActiveStore({
+              ...targetStore,
+              isPublished: true,
+              layoutSettings: {
+                ...targetStore.layoutSettings,
+                activeThemeId: normalizedTheme,
+                themeStyle: normalizedTheme,
+              }
+            });
+            Promise.all([
+              productService.getProductsByStore(targetStore.id),
+              orderService.getOrdersByStore(targetStore.id),
+            ]).then(([storeProducts, storeOrders]) => {
+              setProducts(storeProducts);
+              setOrders(storeOrders);
+            }).catch(() => {});
+          }
+        });
+      }
+      return;
+    }
+
     if (params.get('preview') === 'true' || tokoParam || modeParam === 'storefront' || isKnownRoute) {
       setViewMode('storefront-live');
       
@@ -649,6 +684,7 @@ export default function App() {
           if (draftStr) {
             const draftStore = JSON.parse(draftStr);
             setActiveStore(draftStore);
+            setStoreNotFound(false);
 
             if (draftStore.layoutSettings?.activeThemeId) {
               const normalizedTheme = normalizeThemeId(draftStore.layoutSettings.activeThemeId);
@@ -668,16 +704,22 @@ export default function App() {
             initialProducts = (initialProducts || []).filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
             useCmsStore.setState({ products: initialProducts });
             
-            Promise.all([
-              productService.getProductsByStore(draftStore.id),
-              orderService.getOrdersByStore(draftStore.id),
-            ]).then(([storeProducts, storeOrders]) => {
-              const initialCart = cartService.getCart(draftStore.slug);
-              setProducts(initialProducts.length > 0 ? initialProducts : storeProducts);
-              setOrders(storeOrders);
-              setCartItems(initialCart);
+            if (draftStore.id) {
+              Promise.all([
+                productService.getProductsByStore(draftStore.id),
+                orderService.getOrdersByStore(draftStore.id),
+              ]).then(([storeProducts, storeOrders]) => {
+                const initialCart = cartService.getCart(draftStore.slug);
+                setProducts(initialProducts.length > 0 ? initialProducts : storeProducts);
+                setOrders(storeOrders);
+                setCartItems(initialCart);
+                setIsStoreLoading(false);
+              }).catch(() => {
+                setIsStoreLoading(false);
+              });
+            } else {
               setIsStoreLoading(false);
-            });
+            }
             return;
           }
         } catch (e) {
@@ -886,7 +928,10 @@ export default function App() {
 
   // Route Users: Jika login arahkan ke dashboard, jika tidak login / akun dihapus kembalikan ke landing page
   useEffect(() => {
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === 'true') {
+    if (typeof window !== 'undefined' && (
+      new URLSearchParams(window.location.search).get('preview') === 'true' ||
+      Boolean(new URLSearchParams(window.location.search).get('previewTheme'))
+    )) {
       return;
     }
 
@@ -1075,20 +1120,30 @@ export default function App() {
   const handleConfirmDeleteProduct = async () => {
     if (!productToDelete) return;
     setIsDeletingProduct(true);
+    const targetId = productToDelete.id;
+    const targetStoreId = productToDelete.storeId || currentStore.id;
+    const targetName = productToDelete.name;
+
+    // Update state secara optimistik dan instan di antarmuka
+    setProducts((prev) => {
+      const next = prev.filter((p) => p.id !== targetId);
+      useCmsStore.getState().setProductsFromMerchant(next);
+      return next;
+    });
+    if (selectedMerchantProduct?.id === targetId) {
+      setSelectedMerchantProduct(null);
+    }
+    setProductToDelete(null);
+
     try {
-      await productService.deleteProduct(productToDelete.id);
-      setProducts((prev) => {
-        const next = prev.filter((p) => p.id !== productToDelete.id);
-        useCmsStore.getState().setProductsFromMerchant(next);
-        return next;
-      });
-      if (selectedMerchantProduct?.id === productToDelete.id) {
-        setSelectedMerchantProduct(null);
-      }
-      addToast(`Produk "${productToDelete.name}" berhasil dihapus.`);
-      setProductToDelete(null);
+      await productService.deleteProduct(targetId, targetStoreId);
+      addToast(`Produk "${targetName}" berhasil dihapus.`);
     } catch (err: any) {
       addToast(`Gagal menghapus produk: ${err.message}`, 'error');
+      if (targetStoreId) {
+        const fresh = await productService.getProductsByStore(targetStoreId);
+        setProducts(fresh);
+      }
     } finally {
       setIsDeletingProduct(false);
     }
@@ -1443,7 +1498,11 @@ export default function App() {
 
   // Render Public Storefront Content (Using New Dynamic Theme Engine)
   const renderStorefrontContent = () => {
-    const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+    const isPreview = 
+      viewMode === 'storefront' ||
+      viewMode === 'storefront-phone' ||
+      new URLSearchParams(window.location.search).get('preview') === 'true' ||
+      Boolean(new URLSearchParams(window.location.search).get('previewTheme'));
     const isPublished = Boolean(currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published);
 
     // Jika toko belum dipublikasikan atau toko belum ada dan bukan di mode preview
@@ -1626,7 +1685,9 @@ export default function App() {
 
       {/* 2. PURE STANDALONE STOREFRONT (100% FULL SCREEN - NO PREVIEW / NO FRAMES) */}
       {viewMode === 'storefront-live' && (() => {
-        const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+        const isPreview = 
+          new URLSearchParams(window.location.search).get('preview') === 'true' ||
+          Boolean(new URLSearchParams(window.location.search).get('previewTheme'));
         const isPublished = Boolean(currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published);
 
         // Jika store belum terbaca dan masih dalam status loading

@@ -395,21 +395,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     return found || null;
   };
 
-  // Handler otomatis ketika memilih atau menggeser pin pada live maps
+  // Handler otomatis ketika memilih atau menggeser pin pada live maps / Ambil Titik GPS
   const handleLocationSelectFromMap = async (loc: ReverseGeocodeResult) => {
-    // 1. Perbarui nilai formData alamat secara langsung
+    // 1. Langsung REPLACE seluruh nilai formData alamat dengan data deteksi GPS baru
+    const newAddress = loc.address || loc.displayName || '';
+    const newDetail = loc.addressDetail || '';
+    const newProvince = loc.province || '';
+    const newCity = loc.city || '';
+    const newDistrict = loc.district || '';
+    const newVillage = loc.village || '';
+    const newPostalCode = loc.postalCode || '';
+
     setFormData((prev) => ({
       ...prev,
       latitude: loc.latitude,
       longitude: loc.longitude,
-      address: loc.address ? loc.address : prev.address,
-      addressDetail: loc.addressDetail ? loc.addressDetail : prev.addressDetail,
-      province: loc.province ? loc.province : prev.province,
-      city: loc.city ? loc.city : prev.city,
-      district: loc.district ? loc.district : prev.district,
-      village: loc.village ? loc.village : prev.village,
-      subdistrict: loc.village ? loc.village : (loc.district ? loc.district : prev.subdistrict),
-      postalCode: loc.postalCode ? loc.postalCode : prev.postalCode,
+      address: newAddress,
+      addressDetail: newDetail,
+      province: newProvince,
+      city: newCity,
+      district: newDistrict,
+      village: newVillage,
+      subdistrict: newVillage || newDistrict,
+      postalCode: newPostalCode,
     }));
 
     // 2. Sinkronkan cascade dropdown wilayah Indonesia secara otomatis
@@ -421,45 +429,53 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       }
 
       // Cocokkan Provinsi
-      if (loc.province) {
-        const matchedProv = findBestWilayah(currentProvinces, loc.province);
+      if (newProvince) {
+        const matchedProv = findBestWilayah(currentProvinces, newProvince);
         if (matchedProv) {
           setSelectedProvinceId(matchedProv.id);
+          setFormData((prev) => ({ ...prev, province: matchedProv.name }));
           setLoadingRegencies(true);
           const regs = await wilayahService.getRegencies(matchedProv.id);
           setRegencies(regs);
           setLoadingRegencies(false);
 
           // Cocokkan Kabupaten / Kota
-          if (loc.city) {
-            const matchedReg = findBestWilayah(regs, loc.city);
+          if (newCity) {
+            const matchedReg = findBestWilayah(regs, newCity);
             if (matchedReg) {
               setSelectedRegencyId(matchedReg.id);
+              setFormData((prev) => ({ ...prev, city: matchedReg.name }));
               setLoadingDistricts(true);
               const dists = await wilayahService.getDistricts(matchedReg.id);
               setDistricts(dists);
               setLoadingDistricts(false);
 
               // Cocokkan Kecamatan
-              if (loc.district) {
-                const matchedDist = findBestWilayah(dists, loc.district);
+              if (newDistrict) {
+                const matchedDist = findBestWilayah(dists, newDistrict);
                 if (matchedDist) {
                   setSelectedDistrictId(matchedDist.id);
+                  setFormData((prev) => ({ ...prev, district: matchedDist.name }));
                   setLoadingVillages(true);
                   const vills = await wilayahService.getVillages(matchedDist.id);
                   setVillages(vills);
                   setLoadingVillages(false);
 
                   // Cocokkan Desa / Kelurahan
-                  if (loc.village) {
-                    const matchedVill = findBestWilayah(vills, loc.village);
+                  if (newVillage) {
+                    const matchedVill = findBestWilayah(vills, newVillage);
                     if (matchedVill) {
                       setSelectedVillageId(matchedVill.id);
+                      setFormData((prev) => ({
+                        ...prev,
+                        village: matchedVill.name,
+                        subdistrict: matchedVill.name,
+                      }));
                     }
                   }
 
                   // Muat daftar kode pos dropdown
-                  const vName = loc.village || (vills[0] ? vills[0].name : '');
+                  const vName = newVillage || (vills[0] ? vills[0].name : '');
                   setLoadingPostalCodes(true);
                   const codes = await wilayahService.getPostalCodes(
                     vName,
@@ -467,10 +483,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     matchedReg.name
                   );
                   if (codes.length > 0) {
-                    if (loc.postalCode && !codes.some((c) => c.code === loc.postalCode)) {
+                    const chosenCode = (newPostalCode && codes.some((c) => c.code === newPostalCode))
+                      ? newPostalCode
+                      : codes[0].code;
+                    setFormData((prev) => ({ ...prev, postalCode: chosenCode }));
+                    if (newPostalCode && !codes.some((c) => c.code === newPostalCode)) {
                       setPostalCodes([
                         {
-                          code: loc.postalCode,
+                          code: newPostalCode,
                           village: vName,
                           district: matchedDist.name,
                           isExact: true,

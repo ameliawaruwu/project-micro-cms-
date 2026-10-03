@@ -1,11 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { cartService } from '../../../services/cartService';
 import { Search, ShoppingBag, Menu, X } from 'lucide-react';
 
 export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const navigation = useCmsStore((state) => state.navigation);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const storeSlug = (storeInfo as any)?.slug || '';
+  const [cartCount, setCartCount] = useState<number>(() => {
+    if (!storeSlug) return 0;
+    try {
+      const items = cartService.getCart(storeSlug);
+      return items.reduce((acc, it) => acc + (it.quantity || 1), 0);
+    } catch (e) {
+      return 0;
+    }
+  });
+
+  useEffect(() => {
+    const updateCount = () => {
+      const currentSlug = (storeInfo as any)?.slug || '';
+      if (currentSlug) {
+        try {
+          const items = cartService.getCart(currentSlug);
+          setCartCount(items.reduce((acc, it) => acc + (it.quantity || 1), 0));
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('cart_updated', updateCount);
+    return () => window.removeEventListener('cart_updated', updateCount);
+  }, [storeInfo]);
   
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
@@ -72,23 +98,28 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
 
         {/* Right Action Icons (Compact & perfectly aligned on mobile) */}
         <div className="flex-shrink-0 flex items-center justify-end gap-1.5 sm:gap-3 md:gap-6">
-          <button 
-            type="button" 
+          <a 
+            href="/katalog"
             aria-label="Pencarian Produk"
-            className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform p-1.5 rounded-lg focus:outline-none cursor-pointer"
+            className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform p-1.5 rounded-lg focus:outline-none cursor-pointer inline-flex items-center"
           >
             <Search className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.5]" />
-          </button>
-          <button 
-            type="button" 
+          </a>
+          <a 
+            href="/cart"
             aria-label="Keranjang Belanja"
-            className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform relative p-1.5 rounded-lg focus:outline-none cursor-pointer"
+            onClick={(e) => {
+              window.dispatchEvent(new CustomEvent('open_cart'));
+            }}
+            className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform relative p-1.5 rounded-lg focus:outline-none cursor-pointer inline-flex items-center"
           >
             <ShoppingBag className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.5]" />
-            <span className="absolute 0 top-0.5 right-0.5 bg-gray-900 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
-              0
-            </span>
-          </button>
+            {cartCount > 0 && (
+              <span className="absolute 0 top-0.5 right-0.5 bg-gray-900 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
+          </a>
         </div>
 
       </div>

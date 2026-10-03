@@ -447,6 +447,7 @@ class StoreService {
       if (updates.slug !== undefined) dbUpdates.slug = updates.slug;
       if (updates.tagline !== undefined) dbUpdates.tagline = updates.tagline;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.phoneWhatsApp !== undefined) dbUpdates.phone_whatsapp = updates.phoneWhatsApp;
       if (updates.city !== undefined) dbUpdates.city = updates.city;
       if (updates.province !== undefined) dbUpdates.province = updates.province;
       if (updates.district !== undefined) dbUpdates.district = updates.district;

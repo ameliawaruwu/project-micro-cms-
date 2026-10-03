@@ -8,6 +8,7 @@ import { ThemeRegistry } from '../ThemeRegistry';
 import { ShoppingCart, Heart, ShieldCheck, Truck, Star, ArrowRight, Sparkles } from 'lucide-react';
 
 import { useCmsStore } from '../../cms/useCmsStore';
+import { cartService } from '../../services/cartService';
 
 interface ProductDetailPageProps {
   themeData?: ThemeSchema;
@@ -40,7 +41,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   const displayProducts = (products && products.length > 0) ? products : (cmsProducts && cmsProducts.length > 0 ? (cmsProducts as any[]) : []);
 
-  const product = displayProducts?.find(p => p.id === id) || displayProducts[0] || {
+  const product = displayProducts?.find(p => p.id === id || p.slug === id) || displayProducts[0] || {
     id: 'sample-1',
     name: 'Produk Unggulan Premium',
     price: 349000,
@@ -51,6 +52,32 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const liveStoreInfo = useCmsStore((state) => state.storeInfo);
   const storeName = liveStoreInfo?.name || store?.name || 'Toko Kami';
   const storeDesc = liveStoreInfo?.description || store?.description || '';
+
+  const handleAddToCart = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const activeStoreSlug = store?.slug || (liveStoreInfo as any)?.slug;
+    if (activeStoreSlug && product) {
+      cartService.addToCart(activeStoreSlug, product as any, 1);
+      window.dispatchEvent(new CustomEvent('cart_updated'));
+      window.dispatchEvent(new CustomEvent('toast_notification', {
+        detail: { message: `"${product.name}" berhasil dimasukkan ke keranjang!`, type: 'success' }
+      }));
+    }
+  };
+
+  const handleBuyNow = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const activeStoreSlug = store?.slug || (liveStoreInfo as any)?.slug;
+    if (activeStoreSlug && product) {
+      cartService.addToCart(activeStoreSlug, product as any, 1);
+      window.dispatchEvent(new CustomEvent('cart_updated'));
+      if (onNavigate) {
+        onNavigate('checkout');
+      } else {
+        window.dispatchEvent(new CustomEvent('open_cart'));
+      }
+    }
+  };
 
   const sections = themeData?.sections || {};
   const headerSection = Object.values(sections).find(s => s.type === 'Header');
@@ -99,7 +126,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 {product.description}
               </p>
               <div className="space-y-4">
-                <button className="w-full py-4 sm:py-6 bg-black text-white text-lg sm:text-xl md:text-2xl font-black uppercase tracking-widest hover:bg-[#FF0000] transition-all border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_rgba(0,0,0,1)]">
+                <button 
+                  onClick={handleBuyNow}
+                  className="w-full py-4 sm:py-6 bg-black text-white text-lg sm:text-xl md:text-2xl font-black uppercase tracking-widest hover:bg-[#FF0000] transition-all border-4 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_rgba(0,0,0,1)] cursor-pointer"
+                >
                   BELI SEKARANG 🛒
                 </button>
               </div>
@@ -125,7 +155,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <p className="text-xs sm:text-sm md:text-base text-[#241A1A] leading-relaxed sm:leading-loose mb-6 sm:mb-10 font-serif storefront-card-desc">
                 {product.description}
               </p>
-              <button className="w-full py-4 border border-[#241A1A] text-[#241A1A] font-serif uppercase tracking-[0.2em] hover:bg-[#241A1A] hover:text-white transition-colors duration-500">
+              <button 
+                onClick={handleAddToCart}
+                className="w-full py-4 border border-[#241A1A] text-[#241A1A] font-serif uppercase tracking-[0.2em] hover:bg-[#241A1A] hover:text-white transition-colors duration-500 cursor-pointer"
+              >
                 Add to Cart
               </button>
             </div>
@@ -162,7 +195,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 {product.description}
               </div>
               <div className="pt-4 space-y-3">
-                <button className="w-full py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-xl font-bold text-sm uppercase tracking-wider text-white shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:opacity-90">
+                <button 
+                  onClick={handleBuyNow}
+                  className="w-full py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-xl font-bold text-sm uppercase tracking-wider text-white shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:opacity-90 cursor-pointer"
+                >
                   ACQUIRE ITEM
                 </button>
               </div>
@@ -187,7 +223,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-[#1B3B2B] storefront-heading-hero">{product.name}</h1>
               <p className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#2D5A27] storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
               <p className="text-[#1B3B2B]/80 text-xs sm:text-sm md:text-base leading-relaxed storefront-card-desc">{product.description}</p>
-              <button className="w-full py-4 bg-[#2D5A27] text-white rounded-2xl font-bold text-base hover:bg-[#1B3B2B] transition-colors shadow-lg">
+              <button 
+                onClick={handleBuyNow}
+                className="w-full py-4 bg-[#2D5A27] text-white rounded-2xl font-bold text-base hover:bg-[#1B3B2B] transition-colors shadow-lg cursor-pointer"
+              >
                 Beli Sekarang 🍃
               </button>
             </div>
@@ -210,7 +249,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <p className="text-xl sm:text-2xl md:text-3xl font-mono text-[#8C531B] font-bold storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
               <div className="w-16 h-px bg-[#C8A97E]"></div>
               <p className="text-[#7D6E63] text-xs sm:text-sm md:text-base leading-relaxed font-sans font-light storefront-card-desc">{product.description}</p>
-              <button className="w-full py-4 bg-[#8C531B] hover:bg-[#724113] text-[#FFFDF9] font-sans text-xs uppercase tracking-[0.2em] rounded-lg shadow-sm transition-all duration-300 cursor-pointer">
+              <button 
+                onClick={handleBuyNow}
+                className="w-full py-4 bg-[#8C531B] hover:bg-[#724113] text-[#FFFDF9] font-sans text-xs uppercase tracking-[0.2em] rounded-lg shadow-sm transition-all duration-300 cursor-pointer"
+              >
                 Pesan Koleksi Eksklusif
               </button>
             </div>
@@ -234,7 +276,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-[#4A154B] storefront-heading-hero">{product.name}</h1>
               <p className="text-xl sm:text-2xl md:text-3xl font-black text-pink-500 storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
               <p className="text-[#4A154B]/80 text-xs sm:text-sm md:text-base leading-relaxed storefront-card-desc">{product.description}</p>
-              <button className="w-full py-4 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-base shadow-lg shadow-pink-200 hover:scale-102 transition-transform">
+              <button 
+                onClick={handleAddToCart}
+                className="w-full py-4 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-base shadow-lg shadow-pink-200 hover:scale-102 transition-transform cursor-pointer"
+              >
                 Masukkan Keranjang Belanja 🛍️
               </button>
             </div>
@@ -257,9 +302,22 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <p className="text-lg sm:text-xl md:text-2xl text-gray-900 font-bold storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
             <div className="w-12 h-px bg-gray-300"></div>
             <p className="text-gray-600 text-xs sm:text-sm leading-relaxed storefront-card-desc">{product.description}</p>
-            <button className="w-full py-4 bg-[#1A1A1A] text-white text-sm font-bold uppercase tracking-[0.2em] hover:bg-gray-800 transition-colors rounded-lg">
-              Tambah ke Keranjang
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button 
+                onClick={handleAddToCart}
+                className="flex-1 py-3.5 px-6 border-2 border-[#1A1A1A] text-[#1A1A1A] text-xs sm:text-sm font-semibold uppercase tracking-wider hover:bg-gray-50 transition-colors rounded-lg cursor-pointer flex items-center justify-center gap-2"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span>Tambah ke Keranjang</span>
+              </button>
+              <button 
+                onClick={handleBuyNow}
+                className="flex-1 py-3.5 px-6 bg-[#1A1A1A] text-white text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors rounded-lg cursor-pointer shadow-md flex items-center justify-center gap-2"
+              >
+                <span>Beli Sekarang</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -773,7 +773,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   // Handle clicking a template card → redirect to new tab like Canva
   const handlePreviewTemplate = (template: TemplateGalleryItem) => {
     const mappedThemeId = normalizeThemeId(template.storeTemplate?.id || template.id);
-    window.open(`/?previewTheme=${mappedThemeId}&toko=${currentStore.slug}`, '_blank');
+    const storeSlug = currentStore.slug || (user ? `toko-${user.id.replace(/[^a-z0-9]/g, '').slice(0, 10)}` : 'toko-preview');
+    window.open(`/?previewTheme=${mappedThemeId}&toko=${encodeURIComponent(storeSlug)}&preview=true`, '_blank');
   };
 
   const toggleFullscreen = () => {

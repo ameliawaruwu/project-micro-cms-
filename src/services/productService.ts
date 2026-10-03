@@ -389,18 +389,7 @@ class ProductService {
     // Temukan storeId yang tepat untuk isolasi
     const resolvedStoreId = storeId || this._findStoreIdForProduct(id);
 
-    // 1. Delete from localStorage (partisi per toko)
-    if (resolvedStoreId) {
-      let products = this.getStoredProducts(resolvedStoreId);
-      products = products.filter((p) => p.id !== id);
-      localStorage.setItem(this.storeKey(resolvedStoreId), JSON.stringify(products));
-    }
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: [] }));
-      window.dispatchEvent(new Event('cms_draft_updated'));
-    }
-
-    // 2. Sync delete ke Supabase — validasi ownership dengan store_id
+    // 1. Sync delete ke Supabase terlebih dahulu — validasi ownership dengan store_id
     try {
       let query = supabase.from('products').delete().eq('id', id);
       if (resolvedStoreId) {
@@ -412,6 +401,32 @@ class ProductService {
       }
     } catch (err: any) {
       console.warn('[Supabase Database] Gagal hapus dari cloud:', err);
+    }
+
+    // 2. Delete from localStorage (partisi per toko)
+    let remaining: Product[] = [];
+    if (resolvedStoreId) {
+      const current = this.getStoredProducts(resolvedStoreId);
+      remaining = current.filter((p) => p.id !== id);
+      this.saveProducts(resolvedStoreId, remaining);
+    }
+
+    // 3. Bersihkan dari CMS storage dan beri tahu subscriber
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            const next = parsed.filter((p: any) => p.id !== id);
+            sessionStorage.setItem('microcms_cms_products', JSON.stringify(next));
+            localStorage.setItem('microcms_cms_products', JSON.stringify(next));
+          }
+        }
+      } catch (e) {}
+
+      window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: remaining }));
+      window.dispatchEvent(new Event('cms_draft_updated'));
     }
   }
 

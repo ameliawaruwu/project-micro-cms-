@@ -631,7 +631,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                   min="0"
                   value={stockDisplay}
                   onChange={(e) => setStockDisplay(e.target.value)}
-                  placeholder="0"
+                  placeholder={t('stock_amount_placeholder', 'Contoh: 10')}
                   className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E] transition"
                 />
               </div>

@@ -1,11 +1,12 @@
 import React from 'react';
 import { ThemeSchema } from '../schema';
-import { Product } from '../../types';
+import { Product, CartItem } from '../../types';
 import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
-import { ShoppingBag, ArrowRight, Trash2, ShieldCheck, Sparkles } from 'lucide-react';
+import { ShoppingBag, ArrowRight, Trash2 } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
+import { cartService } from '../../services/cartService';
 
 interface CartPageProps {
   themeData?: ThemeSchema;
@@ -27,12 +28,44 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
 
   const storeName = liveStoreInfo?.name || store?.name || 'Toko Kami';
   const storeDesc = liveStoreInfo?.description || store?.description || '';
+  const activeStoreSlug = store?.slug || (liveStoreInfo as any)?.slug;
 
-  const sampleItem = products[0] || {
-    name: 'Sample Item Premium',
-    price: 150000,
-    imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop'
+  const [cartItems, setCartItems] = React.useState<CartItem[]>(() => {
+    if (!activeStoreSlug) return [];
+    try {
+      return cartService.getCart(activeStoreSlug);
+    } catch (e) {
+      return [];
+    }
+  });
+
+  React.useEffect(() => {
+    const handleUpdate = () => {
+      if (activeStoreSlug) {
+        try {
+          setCartItems(cartService.getCart(activeStoreSlug));
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('cart_updated', handleUpdate);
+    return () => window.removeEventListener('cart_updated', handleUpdate);
+  }, [activeStoreSlug]);
+
+  const handleRemove = (productId: string) => {
+    if (!activeStoreSlug) return;
+    const updated = cartService.removeFromCart(activeStoreSlug, productId);
+    setCartItems([...updated]);
+    window.dispatchEvent(new CustomEvent('cart_updated'));
   };
+
+  const handleUpdateQty = (productId: string, qty: number) => {
+    if (!activeStoreSlug) return;
+    const updated = cartService.updateQuantity(activeStoreSlug, productId, qty);
+    setCartItems([...updated]);
+    window.dispatchEvent(new CustomEvent('cart_updated'));
+  };
+
+  const totalAmount = cartItems.reduce((acc, it) => acc + (it.product.price * it.quantity), 0);
 
   const sections = themeData?.sections || {};
   const headerSection = Object.values(sections).find(s => s.type === 'Header');
@@ -58,35 +91,66 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
   const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
   const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
 
+  const renderEmptyCart = () => (
+    <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-16 text-center min-h-[50vh]">
+      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4 text-gray-400">
+        <ShoppingBag className="w-8 h-8 sm:w-10 sm:h-10" />
+      </div>
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Keranjang Belanja Kosong</h2>
+      <p className="text-xs sm:text-sm text-gray-500 max-w-md mb-6 leading-relaxed">
+        Anda belum menambahkan barang apapun ke keranjang belanja. Jelajahi katalog kami dan temukan produk terbaik.
+      </p>
+      <button 
+        type="button"
+        onClick={() => onNavigate ? onNavigate('katalog') : null}
+        className="px-6 py-3 bg-[#1A1A1A] text-white rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition cursor-pointer shadow-md"
+      >
+        Mulai Belanja
+      </button>
+    </div>
+  );
+
   const renderCartContent = () => {
+    if (cartItems.length === 0) {
+      return renderEmptyCart();
+    }
+
     // 1. BOLD THEME
     if (activeThemeId === 'bold') {
       return (
         <div className="pt-24 pb-24 bg-white text-black min-h-screen border-b-8 border-black">
           <div className="max-w-5xl mx-auto px-6">
-            <h1 className="text-6xl md:text-8xl font-black text-black uppercase tracking-tighter mb-8">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-black uppercase tracking-tighter mb-8">
               KERANJANG BELANJA
             </h1>
-            <div className="bg-[#FF0000] p-8 md:p-12 border-8 border-black shadow-[16px_16px_0px_rgba(0,0,0,1)] space-y-6">
-              <div className="bg-white p-6 border-4 border-black flex items-center justify-between shadow-[6px_6px_0px_rgba(0,0,0,1)]">
-                <div className="flex items-center gap-4">
-                  <img src={sampleItem.imageUrl || (sampleItem as any).image} alt={sampleItem.name} className="w-20 h-20 object-cover border-2 border-black" />
-                  <div>
-                    <h3 className="font-black text-xl uppercase">{sampleItem.name}</h3>
-                    <p className="font-black text-lg text-[#FF0000]">Rp {sampleItem.price.toLocaleString('id-ID')}</p>
+            <div className="bg-[#FF0000] p-6 md:p-12 border-8 border-black shadow-[16px_16px_0px_rgba(0,0,0,1)] space-y-4 sm:space-y-6">
+              {cartItems.map((item) => (
+                <div key={item.product.id} className="bg-white p-4 sm:p-6 border-4 border-black flex items-center justify-between shadow-[6px_6px_0px_rgba(0,0,0,1)] gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <img src={item.product.imageUrl || (item.product as any).image} alt={item.product.name} className="w-16 h-16 sm:w-20 sm:h-20 object-cover border-2 border-black shrink-0" />
+                    <div className="min-w-0">
+                      <h3 className="font-black text-base sm:text-xl uppercase truncate">{item.product.name}</h3>
+                      <p className="font-black text-sm sm:text-lg text-[#FF0000]">Rp {item.product.price.toLocaleString('id-ID')} x {item.quantity}</p>
+                    </div>
                   </div>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemove(item.product.id)}
+                    className="p-2 sm:p-3 bg-black text-white font-black hover:bg-[#FF0000] border-2 border-black cursor-pointer shrink-0"
+                    title="Hapus barang"
+                  >
+                    <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
                 </div>
-                <button className="p-3 bg-black text-white font-black hover:bg-[#FF0000] border-2 border-black">
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="bg-yellow-300 p-6 border-4 border-black flex justify-between items-center text-xl font-black">
+              ))}
+              <div className="bg-yellow-300 p-4 sm:p-6 border-4 border-black flex justify-between items-center text-lg sm:text-xl font-black">
                 <span>TOTAL:</span>
-                <span>Rp {sampleItem.price.toLocaleString('id-ID')}</span>
+                <span>Rp {totalAmount.toLocaleString('id-ID')}</span>
               </div>
               <button 
+                type="button"
                 onClick={() => onNavigate ? onNavigate('checkout') : null}
-                className="w-full py-6 bg-black text-white text-2xl font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)]"
+                className="w-full py-4 sm:py-6 bg-black text-white text-xl sm:text-2xl font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] cursor-pointer"
               >
                 LANJUT PENGIRIMAN 🚀
               </button>
@@ -96,170 +160,68 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
       );
     }
 
-    // 2. EDITORIAL THEME
-    if (activeThemeId === 'editorial') {
-      return (
-        <div className="pt-32 pb-32 bg-[#FAF7F7] text-[#241A1A] min-h-screen">
-          <div className="max-w-4xl mx-auto px-6 text-center">
-            <h1 className="text-5xl lg:text-7xl font-normal font-serif mb-8 uppercase tracking-widest">
-              Your Selection
-            </h1>
-            <div className="border-t border-b border-[#241A1A]/10 py-12 my-12 text-left space-y-6">
-              <div className="flex items-center justify-between border-b border-[#241A1A]/10 pb-6">
-                <div className="flex items-center gap-6">
-                  <img src={sampleItem.imageUrl || (sampleItem as any).image} alt={sampleItem.name} className="w-24 h-24 object-cover" />
-                  <div>
-                    <h3 className="font-serif text-2xl mb-1">{sampleItem.name}</h3>
-                    <p className="font-serif italic text-[#706866]">Rp {sampleItem.price.toLocaleString('id-ID')}</p>
-                  </div>
-                </div>
-                <span className="font-serif italic text-xl">1 Item</span>
-              </div>
-              <div className="flex justify-between font-serif text-2xl pt-4">
-                <span>Subtotal</span>
-                <span>Rp {sampleItem.price.toLocaleString('id-ID')}</span>
-              </div>
-            </div>
-            <button 
-              onClick={() => onNavigate ? onNavigate('checkout') : null}
-              className="px-12 py-4 border border-[#241A1A] text-[#241A1A] font-serif uppercase tracking-[0.2em] hover:bg-[#241A1A] hover:text-white transition-colors duration-500"
-            >
-              Proceed to Checkout
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    // 3. FUTURISTIC / MODERN THEME
-    if (activeThemeId === 'futuristic' || activeThemeId === 'modern') {
-      return (
-        <div className="pt-28 pb-24 bg-[#0B0F19] text-white min-h-screen font-mono">
-          <div className="max-w-4xl mx-auto px-6">
-            <div className="border-b border-cyan-500/20 pb-6 mb-8">
-              <span className="text-xs text-cyan-400 uppercase tracking-widest">[CART_STATUS: ACTIVE]</span>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
-                ACQUISITION BUFFER
-              </h1>
-            </div>
-            <div className="bg-slate-900/60 border border-cyan-500/20 rounded-2xl p-6 backdrop-blur-md space-y-6">
-              <div className="flex items-center justify-between p-4 bg-slate-950 border border-slate-800 rounded-xl">
-                <div className="flex items-center gap-4">
-                  <img src={sampleItem.imageUrl || (sampleItem as any).image} alt={sampleItem.name} className="w-16 h-16 object-cover rounded-lg border border-cyan-500/30" />
-                  <div>
-                    <h3 className="font-bold text-slate-100">{sampleItem.name}</h3>
-                    <p className="text-cyan-400 text-sm">Rp {sampleItem.price.toLocaleString('id-ID')}</p>
-                  </div>
-                </div>
-                <span className="text-xs px-3 py-1 bg-cyan-500/20 text-cyan-300 rounded border border-cyan-400">QTY: 1</span>
-              </div>
-              <div className="pt-4 border-t border-slate-800 flex justify-between text-lg font-bold text-cyan-300">
-                <span>TOTAL_CREDITS:</span>
-                <span>Rp {sampleItem.price.toLocaleString('id-ID')}</span>
-              </div>
-              <button 
-                onClick={() => onNavigate ? onNavigate('checkout') : null}
-                className="w-full py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-xl font-bold text-sm uppercase tracking-wider text-white shadow-[0_0_20px_rgba(34,211,238,0.4)]"
-              >
-                EXECUTE TRANSACTION ⚡
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // 4. NATURE THEME
-    if (activeThemeId === 'nature') {
-      return (
-        <div className="pt-28 pb-24 bg-[#F4F7F4] text-[#1B3B2B] min-h-screen font-sans">
-          <div className="max-w-4xl mx-auto px-6">
-            <h1 className="text-4xl font-extrabold mb-8 text-[#1B3B2B]">Keranjang Pesanan</h1>
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-[#2D5A27]/10 space-y-6">
-              <div className="flex items-center justify-between border-b border-[#2D5A27]/10 pb-6">
-                <div className="flex items-center gap-4">
-                  <img src={sampleItem.imageUrl || (sampleItem as any).image} alt={sampleItem.name} className="w-20 h-20 object-cover rounded-2xl" />
-                  <div>
-                    <h3 className="font-bold text-lg text-[#1B3B2B]">{sampleItem.name}</h3>
-                    <p className="text-[#2D5A27] font-extrabold">Rp {sampleItem.price.toLocaleString('id-ID')}</p>
-                  </div>
-                </div>
-                <button className="text-[#2D5A27] hover:text-red-500"><Trash2 className="w-5 h-5" /></button>
-              </div>
-              <div className="flex justify-between font-extrabold text-xl text-[#1B3B2B] pt-2">
-                <span>Total Pesanan</span>
-                <span className="text-[#2D5A27]">Rp {sampleItem.price.toLocaleString('id-ID')}</span>
-              </div>
-              <button 
-                onClick={() => onNavigate ? onNavigate('checkout') : null}
-                className="w-full py-4 bg-[#2D5A27] text-white rounded-2xl font-bold text-base hover:bg-[#1B3B2B] transition-colors shadow-lg"
-              >
-                Lanjut ke Checkout 🌿
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // 5. CUTE THEME
-    if (activeThemeId === 'cute') {
-      return (
-        <div className="pt-28 pb-24 bg-[#FFF5F8] text-[#4A154B] min-h-screen">
-          <div className="max-w-4xl mx-auto px-6">
-            <h1 className="text-4xl font-black mb-8 text-[#4A154B]">Keranjang Cantik 💖</h1>
-            <div className="bg-white rounded-3xl p-8 shadow-lg shadow-pink-100 border border-pink-100 space-y-6">
-              <div className="flex items-center justify-between border-b border-pink-100 pb-6">
-                <div className="flex items-center gap-4">
-                  <img src={sampleItem.imageUrl || (sampleItem as any).image} alt={sampleItem.name} className="w-20 h-20 object-cover rounded-2xl" />
-                  <div>
-                    <h3 className="font-bold text-lg text-[#4A154B]">{sampleItem.name}</h3>
-                    <p className="text-pink-500 font-black">Rp {sampleItem.price.toLocaleString('id-ID')}</p>
-                  </div>
-                </div>
-                <button className="text-pink-400 hover:text-red-500"><Trash2 className="w-5 h-5" /></button>
-              </div>
-              <div className="flex justify-between font-black text-xl text-[#4A154B]">
-                <span>Total Belanja</span>
-                <span className="text-pink-500">Rp {sampleItem.price.toLocaleString('id-ID')}</span>
-              </div>
-              <button 
-                onClick={() => onNavigate ? onNavigate('checkout') : null}
-                className="w-full py-4 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-base shadow-md shadow-pink-200"
-              >
-                Bayar Sekarang ✨
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // 6. DEFAULT / MINIMALIST / LUXURY / CREATIVE / PROFESSIONAL / ELEGANT / FASHION
+    // 2. DEFAULT / MINIMALIST / OTHERS
     return (
-      <div className="pt-32 pb-24 bg-white text-[#1A1A1A] min-h-screen">
-        <div className="max-w-4xl mx-auto px-6">
-          <h1 className="text-4xl font-light tracking-tight mb-8">Keranjang Belanja</h1>
-          <div className="bg-gray-50 rounded-xl p-8 border border-gray-200 space-y-6">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-6">
-              <div className="flex items-center gap-4">
-                <img src={sampleItem.imageUrl || (sampleItem as any).image} alt={sampleItem.name} className="w-20 h-20 object-cover rounded-lg" />
-                <div>
-                  <h3 className="font-semibold text-gray-900">{sampleItem.name}</h3>
-                  <p className="text-gray-600 font-medium">Rp {sampleItem.price.toLocaleString('id-ID')}</p>
+      <div className="pt-28 pb-24 bg-white text-[#1A1A1A] min-h-screen">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <h1 className="text-2xl sm:text-4xl font-light tracking-tight mb-6 sm:mb-8">Keranjang Belanja ({cartItems.reduce((acc, it) => acc + it.quantity, 0)} Item)</h1>
+          <div className="bg-gray-50 rounded-2xl p-4 sm:p-8 border border-gray-200 space-y-4 sm:space-y-6">
+            <div className="divide-y divide-gray-200">
+              {cartItems.map((item) => (
+                <div key={item.product.id} className="py-4 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <img src={item.product.imageUrl || (item.product as any).image} alt={item.product.name} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl border border-gray-200 shrink-0" />
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-sm sm:text-base text-gray-900 truncate">{item.product.name}</h3>
+                      <p className="text-gray-600 text-xs sm:text-sm font-medium">Rp {item.product.price.toLocaleString('id-ID')}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQty(item.product.id, Math.max(1, item.quantity - 1))}
+                          className="w-6 h-6 rounded border border-gray-300 bg-white text-gray-700 flex items-center justify-center text-xs font-bold hover:bg-gray-100 cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <span className="text-xs font-semibold text-gray-800 px-1">{item.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQty(item.product.id, item.quantity + 1)}
+                          className="w-6 h-6 rounded border border-gray-300 bg-white text-gray-700 flex items-center justify-center text-xs font-bold hover:bg-gray-100 cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <span className="font-bold text-sm sm:text-base text-gray-900">
+                      Rp {(item.product.price * item.quantity).toLocaleString('id-ID')}
+                    </span>
+                    <button 
+                      type="button"
+                      onClick={() => handleRemove(item.product.id)}
+                      className="text-gray-400 hover:text-red-500 p-1 transition cursor-pointer"
+                      title="Hapus dari keranjang"
+                    >
+                      <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <button className="text-gray-400 hover:text-red-500"><Trash2 className="w-5 h-5" /></button>
+              ))}
             </div>
-            <div className="flex justify-between font-bold text-xl text-gray-900">
-              <span>Total</span>
-              <span>Rp {sampleItem.price.toLocaleString('id-ID')}</span>
+            
+            <div className="border-t border-gray-200 pt-4 flex justify-between items-center font-bold text-lg sm:text-xl text-gray-900">
+              <span>Total Pembayaran</span>
+              <span className="text-[#66000E]">Rp {totalAmount.toLocaleString('id-ID')}</span>
             </div>
+
             <button 
+              type="button"
               onClick={() => onNavigate ? onNavigate('checkout') : null}
-              className="w-full py-4 bg-black text-white rounded-lg font-bold text-sm uppercase tracking-widest hover:bg-gray-800 transition"
+              className="w-full py-3.5 sm:py-4 bg-[#1A1A1A] hover:bg-black text-white rounded-xl font-bold text-xs sm:text-sm uppercase tracking-widest transition cursor-pointer shadow-md flex items-center justify-center gap-2"
             >
-              Lanjut ke Checkout
+              <span>Lanjut ke Pembayaran &amp; Checkout</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
