@@ -610,13 +610,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open_store_onboarding'))}
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-[#66000E]/25 text-[#66000E] bg-[#66000E]/5 hover:bg-[#66000E]/10 transition flex items-center gap-1 cursor-pointer"
-              >
-                <span>Onboarding Wizard</span>
-              </button>
               {!isNewStore && (
                 <span className={`text-[10px] sm:text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
                   Boolean(store.isPublished)
