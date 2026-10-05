@@ -395,41 +395,41 @@ class AuthService {
       : '';
     const storeId = await idService.generateNextId('stores');
 
-    let newStore: Store | null = null;
-    if (cleanStoreName) {
-      newStore = {
-        id: storeId,
-        merchantId: userId,
-        name: cleanStoreName,
-        slug: cleanStoreSlug,
-        tagline: '',
-        description: '',
-        logoUrl: '',
-        bannerUrl: '',
-        phoneWhatsApp: (params.phoneWhatsApp || '').trim(),
-        city: '',
-        province: '',
-        district: '',
-        subdistrict: '',
-        village: '',
-        addressDetail: '',
-        postalCode: '',
-        address: '',
-        category: '',
-        currency: 'IDR',
-        balance: 0,
-        plan: '', // Belum klaim paket - wajib diklaim di langkah 2 onboarding!
-        isPublished: false,
-        onboarding: {
-          storeNameSet: Boolean(params.storeName?.trim()),
-          productUploaded: false,
-          paymentConnected: false,
-        },
-        createdAt: new Date().toISOString(),
-      };
-      localStorage.setItem('kroomify_onboarding_pending', 'true');
-      localStorage.setItem('kroomify_onboarding_step', 'store_info');
-    }
+    const finalStoreName = cleanStoreName || `Toko ${params.fullName.trim() || 'UMKM'}`;
+    const finalStoreSlug = cleanStoreSlug || `toko-${params.fullName ? params.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'umkm'}-${Date.now().toString().slice(-4)}`;
+
+    const newStore: Store = {
+      id: storeId,
+      merchantId: userId,
+      name: finalStoreName,
+      slug: finalStoreSlug,
+      tagline: '',
+      description: '',
+      logoUrl: '',
+      bannerUrl: '',
+      phoneWhatsApp: (params.phoneWhatsApp || '').trim(),
+      city: '',
+      province: '',
+      district: '',
+      subdistrict: '',
+      village: '',
+      addressDetail: '',
+      postalCode: '',
+      address: '',
+      category: '',
+      currency: 'IDR',
+      balance: 0,
+      plan: '',
+      isPublished: false,
+      onboarding: {
+        storeNameSet: Boolean(params.storeName?.trim()),
+        productUploaded: false,
+        paymentConnected: false,
+      },
+      createdAt: new Date().toISOString(),
+    };
+    localStorage.setItem('kroomify_onboarding_pending', 'true');
+    localStorage.setItem('kroomify_onboarding_step', 'store_info');
 
     const merchant: Merchant = {
       id: `merch-${userId}`,

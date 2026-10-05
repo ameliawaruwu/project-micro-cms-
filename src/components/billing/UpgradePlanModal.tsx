@@ -157,6 +157,12 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
       setIsProcessing(true);
 
       if (planId !== 'free' && selectedPlan) {
+        if (paymentMethod === 'qris') {
+          // Direct in-modal QRIS processing without external redirect
+          await completeUpgradeProcess(planId);
+          return;
+        }
+
         const price = selectedPlan.priceYearly;
         const orderId = `PLAN-${planId.toUpperCase()}-${Date.now()}`;
 

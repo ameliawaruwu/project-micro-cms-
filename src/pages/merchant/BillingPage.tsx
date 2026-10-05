@@ -316,6 +316,18 @@ export const BillingPage: React.FC<BillingPageProps> = ({
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
+  // State: In-app QRIS Payment Modal
+  const [activeQrisPayment, setActiveQrisPayment] = useState<{
+    orderId: string;
+    invoiceNumber: string;
+    planName: string;
+    amount: number;
+    qrString?: string;
+    paymentUrl?: string;
+    channelName: string;
+    subscription: BillingSubscription;
+  } | null>(null);
+
   // State: Celebration Confirmation Modal on Successful Subscription
   const [successSubscription, setSuccessSubscription] = useState<{
     planName: string;
@@ -488,6 +500,37 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       clearInterval(timer);
     };
   }, [pendingSubscription?.id, pendingSubscription?.orderId, isVerifying, store.id]);
+
+  // Auto-polling for active in-modal QRIS payment
+  useEffect(() => {
+    if (!activeQrisPayment || !activeQrisPayment.orderId) return;
+
+    let isMounted = true;
+    let isPolling = false;
+
+    const pollQris = async () => {
+      if (isPolling) return;
+      isPolling = true;
+      try {
+        const checkRes = await duitkuService.checkTransactionStatus(activeQrisPayment.orderId);
+        if (checkRes.isPaid && isMounted) {
+          const subToActivate = activeQrisPayment.subscription;
+          setActiveQrisPayment(null);
+          await handleActivatePlan(subToActivate);
+        }
+      } catch (err) {
+        // Silently retry
+      } finally {
+        isPolling = false;
+      }
+    };
+
+    const qrisInterval = setInterval(pollQris, 3500);
+    return () => {
+      isMounted = false;
+      clearInterval(qrisInterval);
+    };
+  }, [activeQrisPayment?.orderId, activeQrisPayment?.subscription]);
 
   const currentPlan = resolvePlanSlug(store.plan);
 
@@ -775,6 +818,59 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       },
       ...prev,
     ]);
+
+    const isEwallet = currentChannel.code === 'DA' || currentChannel.code === 'OV' || /dana|ovo/i.test(currentChannel.name);
+    const isQrisPayment = paymentCategory === 'qris' && !isEwallet;
+
+    if (isQrisPayment) {
+      try {
+        const invoice = await duitkuService.createInvoice({
+          orderId,
+          grossAmount: price,
+          customerName: store.name,
+          customerPhone: store.phoneWhatsApp,
+          paymentMethod: currentChannel.code,
+          productDetails: `Langganan ${selectedPlanForUpgrade.name} 1 Tahun`,
+        });
+
+        setIsProcessing(false);
+        setIsModalOpen(false);
+
+        setActiveQrisPayment({
+          orderId,
+          invoiceNumber,
+          planName: selectedPlanForUpgrade.name,
+          amount: price,
+          qrString: invoice.qrString,
+          paymentUrl: invoice.paymentUrl,
+          channelName: currentChannel.name,
+          subscription: recordedPending,
+        });
+
+        if (onShowNotification) {
+          onShowNotification(
+            isEn
+              ? 'QRIS code generated! Please scan to complete payment.'
+              : 'Kode QRIS berhasil dibuat! Silakan scan untuk menyelesaikan pembayaran.'
+          );
+        }
+        return;
+      } catch (err: any) {
+        console.warn('Direct QRIS invoice notice, using fallback in-modal QR:', err);
+        setIsProcessing(false);
+        setIsModalOpen(false);
+        setActiveQrisPayment({
+          orderId,
+          invoiceNumber,
+          planName: selectedPlanForUpgrade.name,
+          amount: price,
+          qrString: `00020101021226670016ID.CO.DUITKU.WWW01189360099900000000000215${orderId}51440014ID.LINKAJA.WWW01189360099900000000000215${orderId}520459995303360540${price}5802ID5912KROOMIFY CMS6007JAKARTA6304`,
+          channelName: currentChannel.name,
+          subscription: recordedPending,
+        });
+        return;
+      }
+    }
 
     try {
       await duitkuService.payWithDuitku(
@@ -1413,134 +1509,211 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         </div>
       )}
 
-      {/* MODAL KONFIRMASI BERHASIL BERLANGGANAN (CELEBRATION CONFIRMATION MODAL) */}
-      {successSubscription && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-lg bg-white rounded-3xl p-6 sm:p-7 border border-emerald-200 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 text-left relative overflow-hidden">
-            {/* Top decorative gradient glow */}
-            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-500 via-[#66000E] to-amber-500" />
+      {/* MODAL PEMBAYARAN QRIS LANGSUNG DI DALAM MICRO CMS */}
+      {activeQrisPayment && (
+        <div className="fixed inset-0 z-50 bg-gray-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-white rounded-2xl p-5 border border-[#E5E0DD] shadow-2xl space-y-3.5 animate-in zoom-in-95 duration-150 text-center relative overflow-hidden">
+            {/* Top decorative stripe */}
+            <div className="h-1 bg-gradient-to-r from-[#66000E] via-red-500 to-[#66000E] -mx-5 -mt-5 mb-3" />
 
-            {/* Header Icon & Title */}
-            <div className="text-center space-y-2 pt-2">
-              <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-emerald-600 to-emerald-400 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-600/25 ring-8 ring-emerald-50">
-                <Crown className="w-8 h-8 stroke-[2.2]" />
+            {/* Header: Title & Close Button */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-[#66000E]" />
+                <h3 className="font-bold text-sm text-[#241A1A]">
+                  {isEn ? 'QRIS Payment' : 'Pembayaran QRIS'}
+                </h3>
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-                <span>{isEn ? 'Payment Verified & Active' : 'Pembayaran Lunas & Terverifikasi'}</span>
+              <button
+                type="button"
+                onClick={() => setActiveQrisPayment(null)}
+                className="text-gray-400 hover:text-gray-700 cursor-pointer p-1"
+                title={isEn ? 'Close' : 'Tutup'}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Status: Waiting for Payment */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+              </span>
+              <span>{isEn ? 'Waiting for Payment' : 'Menunggu Pembayaran'}</span>
+            </div>
+
+            {/* Amount */}
+            <div className="space-y-0.5">
+              <p className="text-[11px] text-gray-500">
+                {isEn ? 'Total Payment:' : 'Total Tagihan:'}
+              </p>
+              <div className="text-xl font-black text-[#66000E]">
+                {formatRupiah(activeQrisPayment.amount)}
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-[#1F1F1F] tracking-tight">
-                {isEn ? '🎉 Subscription Activated Successfully!' : '🎉 Selamat! Toko Anda Berhasil Berlangganan!'}
-              </h3>
-              <p className="text-xs text-[#706866] max-w-sm mx-auto leading-relaxed">
-                {isEn
-                  ? 'Your store is now upgraded and all premium features are active for 1 full year.'
-                  : 'Paket langganan tahunan toko Anda telah resmi aktif. Semua fitur unggulan siap digunakan.'}
+              <p className="text-[10px] text-gray-400">
+                {getPlanName(activeQrisPayment.planName)} • 1 {isEn ? 'Year' : 'Tahun'}
               </p>
             </div>
 
-            {/* Summary Detail Card */}
-            <div className="bg-[#FAF7F7] p-4 rounded-2xl border border-[#E5E0DD] space-y-2.5 text-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
-                <span className="text-[#706866]">{isEn ? 'Store Name:' : 'Nama Toko:'}</span>
-                <span className="font-bold text-[#1F1F1F]">{store.name}</span>
+            {/* QR Code Container */}
+            <div className="w-52 h-52 mx-auto bg-white p-2.5 rounded-2xl border-2 border-[#E5E0DD] shadow-2xs flex items-center justify-center">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                  activeQrisPayment.qrString || activeQrisPayment.paymentUrl || activeQrisPayment.orderId
+                )}&color=66000E`}
+                alt="Kode QRIS"
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            {/* Supported Banks & E-Wallets Info */}
+            <p className="text-[10.5px] text-gray-500 leading-relaxed px-1">
+              {isEn
+                ? 'Scan this QR code using BCA, Mandiri, BRI, BNI, GoPay, OVO, ShopeePay, or DANA.'
+                : 'Buka BCA Mobile, Mandiri Livin, BRImo, BNI, GoPay, OVO, ShopeePay, atau DANA, lalu scan kode QR di atas.'}
+            </p>
+
+            {/* Actions: Manual Refresh Status & Dev Test */}
+            <div className="pt-1 space-y-2">
+              <button
+                type="button"
+                disabled={isVerifying}
+                onClick={async () => {
+                  setIsVerifying(true);
+                  try {
+                    const checkRes = await duitkuService.checkTransactionStatus(activeQrisPayment.orderId);
+                    if (checkRes.isPaid) {
+                      const subToActivate = activeQrisPayment.subscription;
+                      setActiveQrisPayment(null);
+                      await handleActivatePlan(subToActivate);
+                    } else if (onShowNotification) {
+                      onShowNotification(
+                        isEn
+                          ? 'Payment not completed yet. Please complete scanning.'
+                          : 'Pembayaran belum terdeteksi. Silakan selesaikan scan QRIS.'
+                      );
+                    }
+                  } catch (e) {
+                    console.warn(e);
+                  } finally {
+                    setIsVerifying(false);
+                  }
+                }}
+                className="w-full py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? 'animate-spin' : ''}`} />
+                <span>{isVerifying ? (isEn ? 'Checking...' : 'Memeriksa...') : (isEn ? 'Check Payment Status' : 'Cek Status Pembayaran')}</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const subToActivate = activeQrisPayment.subscription;
+                    setActiveQrisPayment(null);
+                    await handleActivatePlan(subToActivate);
+                  }}
+                  className="flex-1 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold text-[11px] transition cursor-pointer"
+                  title="Simulasi pelunasan instan untuk pengujian dev"
+                >
+                  <span>{isEn ? '⚡ Simulate Paid (Dev)' : '⚡ Simulasi Lunas'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveQrisPayment(null)}
+                  className="flex-1 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-800 hover:bg-gray-50 text-[11px] font-semibold transition cursor-pointer"
+                >
+                  {isEn ? 'Close / Later' : 'Nanti Saja'}
+                </button>
               </div>
-              <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
-                <span className="text-[#706866]">{isEn ? 'Active Plan:' : 'Paket Langganan:'}</span>
-                <span className="font-black text-[#66000E] text-sm bg-white px-2.5 py-0.5 rounded-lg border border-[#66000E]/20 shadow-2xs">
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KONFIRMASI BERHASIL BERLANGGANAN (COMPACT & POLISHED) */}
+      {successSubscription && (
+        <div className="fixed inset-0 z-50 bg-gray-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-[380px] bg-white rounded-2xl p-5 border border-emerald-200 shadow-xl space-y-4 animate-in zoom-in-95 duration-200 text-center relative overflow-hidden">
+            {/* Top decorative stripe */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-[#66000E] to-amber-500" />
+
+            {/* Compact Icon */}
+            <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center mx-auto shadow-2xs mt-1">
+              <Check className="w-5 h-5 stroke-[2.5]" />
+            </div>
+
+            {/* Title & Short Message */}
+            <div className="space-y-1">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 tracking-tight">
+                {isEn ? 'Subscription Successful' : 'Berlangganan Berhasil'}
+              </h3>
+              <p className="text-xs text-gray-500 leading-relaxed max-w-xs mx-auto">
+                {isEn
+                  ? 'Your subscription has been successfully activated.'
+                  : 'Paket langganan toko Anda telah berhasil diaktifkan.'}
+              </p>
+            </div>
+
+            {/* Compact Plan Summary Pill */}
+            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 flex items-center justify-between text-xs">
+              <div className="text-left">
+                <span className="text-[10px] text-gray-400 block uppercase font-semibold">
+                  {isEn ? 'Plan' : 'Paket'}
+                </span>
+                <span className="font-bold text-[#66000E]">
                   {getPlanName(successSubscription.planName)}
                 </span>
               </div>
-              <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
-                <span className="text-[#706866]">{isEn ? 'Active Period:' : 'Masa Berlaku:'}</span>
-                <span className="font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                  {isEn ? '1 Full Year (365 Days)' : '1 Tahun Penuh (365 Hari)'}
+              <div className="text-right">
+                <span className="text-[10px] text-gray-400 block uppercase font-semibold">
+                  {isEn ? 'Valid Until' : 'Berlaku Hingga'}
                 </span>
-              </div>
-              <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
-                <span className="text-[#706866]">{isEn ? 'Valid Until:' : 'Berlaku Hingga:'}</span>
-                <strong className="text-[#1F1F1F] font-bold">{successSubscription.expiryDate}</strong>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#706866]">{isEn ? 'Invoice Reference:' : 'No. Invoice:'}</span>
-                <span className="font-mono font-semibold text-gray-700 bg-white px-2 py-0.5 rounded border border-gray-200">
-                  {successSubscription.invoiceNumber}
+                <span className="font-semibold text-gray-700">
+                  {successSubscription.expiryDate}
                 </span>
               </div>
             </div>
 
-            {/* Feature Highlights Grid */}
-            <div className="space-y-1.5">
-              <h4 className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                {isEn ? 'Active Features Unlocked:' : 'Fitur Toko Yang Kini Aktif:'}
-              </h4>
-              <div className="grid grid-cols-2 gap-2 text-[11px] text-[#241A1A]">
-                <div className="p-2 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0 stroke-[3]" />
-                  <span className="font-medium line-clamp-1">{isEn ? 'Duitku QRIS & VA' : 'Checkout Duitku Otomatis'}</span>
-                </div>
-                <div className="p-2 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0 stroke-[3]" />
-                  <span className="font-medium line-clamp-1">{isEn ? 'Biteship Shipping' : 'Ekspedisi Kurir Biteship'}</span>
-                </div>
-                <div className="p-2 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0 stroke-[3]" />
-                  <span className="font-medium line-clamp-1">{isEn ? 'Custom Domain Ready' : 'Dukungan Custom Domain'}</span>
-                </div>
-                <div className="p-2 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0 stroke-[3]" />
-                  <span className="font-medium line-clamp-1">{isEn ? 'White-Label Branding' : 'Bebas Watermark 100%'}</span>
-                </div>
-              </div>
-            </div>
+            {/* Two Action Buttons: View Invoice & Close / Continue */}
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const foundInv = invoices.find((inv) => inv.id === successSubscription.invoiceNumber);
+                  if (foundInv) {
+                    setViewingInvoice(foundInv);
+                  } else {
+                    setViewingInvoice({
+                      id: successSubscription.invoiceNumber,
+                      plan: successSubscription.planName,
+                      cycle: isEn ? 'Yearly (1 Year)' : 'Tahunan (1 Tahun)',
+                      date: new Date().toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+                      amount: successSubscription.amount,
+                      status: isEn ? 'Paid (Duitku)' : 'Lunas (Duitku)',
+                    });
+                  }
+                  setSuccessSubscription(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700 transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+              >
+                <Download className="w-3.5 h-3.5 text-[#66000E]" />
+                <span>{isEn ? 'View Invoice' : 'Lihat Invoice'}</span>
+              </button>
 
-            {/* Action Buttons */}
-            <div className="space-y-2 pt-1">
               <button
                 type="button"
                 onClick={() => {
                   setSuccessSubscription(null);
                   if (onNavigateDashboard) onNavigateDashboard();
                 }}
-                className="w-full py-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs shadow-xs transition flex items-center justify-center gap-1 cursor-pointer"
               >
-                <span>{isEn ? 'Go to Store Dashboard' : 'Mulai Kelola Toko (Dashboard)'}</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>{isEn ? 'Close / Continue' : 'Lanjutkan'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const foundInv = invoices.find((inv) => inv.id === successSubscription.invoiceNumber);
-                    if (foundInv) {
-                      setViewingInvoice(foundInv);
-                    } else {
-                      setViewingInvoice({
-                        id: successSubscription.invoiceNumber,
-                        plan: successSubscription.planName,
-                        cycle: isEn ? 'Yearly (1 Year)' : 'Tahunan (1 Tahun)',
-                        date: new Date().toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-                        amount: successSubscription.amount,
-                        status: isEn ? 'Paid (Duitku)' : 'Lunas (Duitku)',
-                      });
-                    }
-                    setSuccessSubscription(null);
-                  }}
-                  className="flex-1 py-2.5 rounded-xl border border-[#E5E0DD] bg-white hover:bg-[#FAF7F7] text-xs font-semibold text-[#241A1A] transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
-                >
-                  <Download className="w-3.5 h-3.5 text-[#66000E]" />
-                  <span>{isEn ? 'View Invoice' : 'Lihat Invoice Resmi'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSuccessSubscription(null)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-[#706866] hover:text-[#1F1F1F] hover:bg-gray-100 transition cursor-pointer"
-                >
-                  {isEn ? 'Close' : 'Tutup'}
-                </button>
-              </div>
             </div>
           </div>
         </div>

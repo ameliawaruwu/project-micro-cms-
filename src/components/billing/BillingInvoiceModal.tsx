@@ -53,37 +53,37 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
   return (
     <div
       id="invoice-modal-overlay"
-      className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-5 bg-gray-950/70 backdrop-blur-xs overflow-y-auto font-sans"
+      className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-gray-950/70 backdrop-blur-xs font-sans"
     >
-      {/* Modal Card Wrapper */}
+      {/* Modal Card Wrapper - Compact, Proportional & Internal Scroll */}
       <div
         id="invoice-modal-card"
-        className="bg-white rounded-2xl max-w-2xl w-full p-0 shadow-2xl border border-gray-200 my-4 animate-in fade-in zoom-in-95 duration-150 text-left overflow-hidden flex flex-col"
+        className="bg-white rounded-2xl max-w-lg w-full max-h-[88vh] shadow-2xl border border-gray-200 animate-in fade-in zoom-in-95 duration-150 text-left overflow-hidden flex flex-col"
       >
         {/* Top Control Bar (Hidden on Print) */}
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-b border-gray-200 print:hidden">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="font-bold text-xs text-gray-700">
-              {isEn ? 'Official Invoice Preview' : 'Preview Invoice Resmi'} — {invoice.id}
+        <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200 shrink-0 print:hidden">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <span className="font-bold text-xs text-gray-700 truncate">
+              {invoice.id}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={handleCopyInvoiceNumber}
-              className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              className="px-2.5 py-1 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-[11px] flex items-center gap-1 transition cursor-pointer shadow-2xs"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-bold">{isEn ? 'Copied!' : 'Tersalin!'}</span>
+                  <Check className="w-3 h-3 text-emerald-600" />
+                  <span className="text-emerald-700 font-bold">{isEn ? 'Copied' : 'Tersalin'}</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5 text-gray-500" />
-                  <span>{isEn ? 'Copy Inv No.' : 'Salin No. Inv'}</span>
+                  <Copy className="w-3 h-3 text-gray-500" />
+                  <span>{isEn ? 'Copy' : 'Salin'}</span>
                 </>
               )}
             </button>
@@ -91,63 +91,61 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+              className="px-3 py-1 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-[11px] flex items-center gap-1 shadow-2xs transition cursor-pointer"
             >
-              <Printer className="w-3.5 h-3.5" />
-              <span>{isEn ? 'Print / Download PDF' : 'Cetak / Unduh PDF'}</span>
+              <Printer className="w-3 h-3" />
+              <span>{isEn ? 'Print / PDF' : 'Cetak / PDF'}</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+              className="p-1 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
               title={isEn ? 'Close' : 'Tutup'}
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* ================= Printable Document Area ================= */}
+        {/* ================= Printable Document Area (Scrollable Internally) ================= */}
         <div
           id="invoice-printable-area"
-          className="p-6 sm:p-8 bg-white text-gray-900 space-y-4 sm:space-y-5"
+          className="p-4 sm:p-5 bg-white text-gray-900 space-y-3.5 overflow-y-auto"
         >
-          
           {/* Header: Kroomify Brand Logo on Left, INVOICE title on Right */}
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-3">
             {/* Brand Logo & Tagline */}
-            <div className="space-y-1">
-              <KroomifyLogo size="lg" className="h-8 sm:h-9" />
-              <p className="text-[11px] font-semibold text-gray-500">
-                {isEn ? 'MSME Micro-CMS & Online Store Platform' : 'Platform Micro-CMS & Toko Online UMKM'}
+            <div className="space-y-0.5">
+              <KroomifyLogo size="md" className="h-6 sm:h-7" />
+              <p className="text-[10px] font-semibold text-gray-500">
+                {isEn ? 'MSME Micro-CMS & Store Platform' : 'Platform Micro-CMS & Toko Online UMKM'}
               </p>
             </div>
 
             {/* Invoice Title & Number */}
-            <div className="text-right space-y-1">
-              <h1 className="text-xl sm:text-2xl font-black text-black tracking-[0.25em] uppercase">
+            <div className="text-right space-y-0.5">
+              <h1 className="text-base sm:text-lg font-black text-black tracking-[0.18em] uppercase leading-none">
                 INVOICE
               </h1>
-              <p className="font-bold text-xs sm:text-sm text-[#66000E] tracking-wide font-mono">
+              <p className="font-bold text-xs text-[#66000E] tracking-wide font-mono">
                 {invoice.id}
               </p>
             </div>
           </div>
 
           {/* DITERBITKAN ATAS NAMA & UNTUK */}
-          <div className="grid grid-cols-2 gap-6 text-[11px] leading-relaxed pt-2">
-            
+          <div className="grid grid-cols-2 gap-3 text-[10.5px] leading-snug pt-1">
             {/* Left: Diterbitkan Atas Nama */}
             <div>
-              <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider block mb-1.5">
-                {isEn ? 'ISSUED ON BEHALF OF' : 'DITERBITKAN ATAS NAMA'}
+              <span className="text-[9px] font-bold uppercase text-gray-500 tracking-wider block mb-1">
+                {isEn ? 'ISSUED BY' : 'DITERBITKAN ATAS NAMA'}
               </span>
-              <table className="text-[11px]">
+              <table className="text-[10.5px]">
                 <tbody>
                   <tr>
-                    <td className="font-medium text-gray-600 pr-3 py-0.5">{isEn ? 'Seller' : 'Penjual'}</td>
-                    <td className="font-medium text-gray-600 pr-2 py-0.5">:</td>
+                    <td className="font-medium text-gray-500 pr-2 py-0.5">{isEn ? 'Seller' : 'Penjual'}</td>
+                    <td className="font-medium text-gray-500 pr-1 py-0.5">:</td>
                     <td className="font-bold text-gray-900 py-0.5">Kroomify</td>
                   </tr>
                 </tbody>
@@ -156,21 +154,21 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
 
             {/* Right: Untuk */}
             <div>
-              <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider block mb-1.5">
+              <span className="text-[9px] font-bold uppercase text-gray-500 tracking-wider block mb-1">
                 {isEn ? 'FOR' : 'UNTUK'}
               </span>
-              <table className="text-[11px]">
+              <table className="text-[10.5px]">
                 <tbody>
                   <tr>
-                    <td className="font-medium text-gray-600 pr-3 py-0.5 whitespace-nowrap">{isEn ? 'Buyer' : 'Pembeli'}</td>
-                    <td className="font-medium text-gray-600 pr-2 py-0.5">:</td>
-                    <td className="font-bold text-gray-900 py-0.5 uppercase">
+                    <td className="font-medium text-gray-500 pr-2 py-0.5 whitespace-nowrap">{isEn ? 'Buyer' : 'Pembeli'}</td>
+                    <td className="font-medium text-gray-500 pr-1 py-0.5">:</td>
+                    <td className="font-bold text-gray-900 py-0.5 uppercase truncate max-w-[120px]">
                       {store.name}
                     </td>
                   </tr>
                   <tr>
-                    <td className="font-medium text-gray-600 pr-3 py-0.5 whitespace-nowrap">{isEn ? 'Purchase Date' : 'Tanggal Pembelian'}</td>
-                    <td className="font-medium text-gray-600 pr-2 py-0.5">:</td>
+                    <td className="font-medium text-gray-500 pr-2 py-0.5 whitespace-nowrap">{isEn ? 'Date' : 'Tanggal'}</td>
+                    <td className="font-medium text-gray-500 pr-1 py-0.5">:</td>
                     <td className="font-bold text-gray-900 py-0.5">
                       {invoice.date}
                     </td>
@@ -178,42 +176,41 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
                 </tbody>
               </table>
             </div>
-
           </div>
 
           {/* Solid Separator Line (Micro CMS Brand Color) */}
-          <div className="h-[2.5px] bg-[#66000E] w-full" />
+          <div className="h-[2px] bg-[#66000E] w-full" />
 
           {/* Table Products */}
-          <div className="overflow-hidden">
+          <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse">
               <thead>
-                <tr className="bg-[#66000E] text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
-                  <th className="py-2.5 px-3 text-left">{isEn ? 'PRODUCT INFO' : 'INFO PRODUK'}</th>
-                  <th className="py-2.5 px-2 text-center w-14">QTY</th>
-                  <th className="py-2.5 px-3 text-right">{isEn ? 'UNIT PRICE' : 'HARGA SATUAN'}</th>
-                  <th className="py-2.5 px-3 text-right">{isEn ? 'TOTAL PRICE' : 'TOTAL HARGA'}</th>
+                <tr className="bg-[#66000E] text-white text-[10px] font-bold uppercase tracking-wider">
+                  <th className="py-2 px-2.5 text-left">{isEn ? 'ITEM' : 'PRODUK'}</th>
+                  <th className="py-2 px-1.5 text-center w-10">QTY</th>
+                  <th className="py-2 px-2.5 text-right">{isEn ? 'PRICE' : 'HARGA'}</th>
+                  <th className="py-2 px-2.5 text-right">{isEn ? 'TOTAL' : 'TOTAL'}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 text-[11px]">
                 <tr>
-                  <td className="py-4 px-3 align-top">
-                    <p className="font-bold text-gray-900 text-xs leading-snug">
+                  <td className="py-2.5 px-2.5 align-top">
+                    <p className="font-bold text-gray-900 leading-snug">
                       {isEn
-                        ? `Kroomify Platform Subscription — ${invoice.plan} (${invoice.cycle}) + Store Domain (${store.slug ? `${store.slug}.kroombox.com` : 'kroomify.kroombox.com'})`
-                        : `Langganan Platform Kroomify — ${invoice.plan} (${invoice.cycle}) + Domain Toko (${store.slug ? `${store.slug}.kroombox.com` : 'kroomify.kroombox.com'})`}
+                        ? `Platform Subscription — ${invoice.plan} (${invoice.cycle})`
+                        : `Langganan Platform — ${invoice.plan} (${invoice.cycle})`}
                     </p>
-                    <p className="text-[10.5px] text-gray-500 mt-0.5">
-                      {isEn ? 'Access to online store features, product catalog, automated payment gateway, and store showcase domain' : 'Akses fitur jualan online, katalog produk, payment gateway otomatis, dan domain etalase toko'}
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      {store.slug ? `${store.slug}.kroombox.com` : 'kroomify.kroombox.com'}
                     </p>
                   </td>
-                  <td className="py-4 px-2 text-center font-semibold text-gray-800 align-top">
+                  <td className="py-2.5 px-1.5 text-center font-semibold text-gray-800 align-top">
                     1
                   </td>
-                  <td className="py-4 px-3 text-right font-semibold text-gray-800 align-top">
+                  <td className="py-2.5 px-2.5 text-right font-semibold text-gray-800 align-top">
                     {formatInvoiceCurrency(invoice.amount)}
                   </td>
-                  <td className="py-4 px-3 text-right font-bold text-gray-900 align-top">
+                  <td className="py-2.5 px-2.5 text-right font-bold text-gray-900 align-top">
                     {formatInvoiceCurrency(invoice.amount)}
                   </td>
                 </tr>
@@ -222,33 +219,24 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
           </div>
 
           {/* Summary Calculation Area (Right Aligned) */}
-          <div className="flex justify-end pt-2">
-            <div className="w-72 space-y-1.5 text-xs">
-              <div className="flex justify-between items-center text-gray-600 text-[11px]">
-                <span className="uppercase font-semibold text-[10px] tracking-wide">
-                  {isEn ? 'TOTAL PRICE (1 ITEM)' : 'TOTAL HARGA (1 BARANG)'}
+          <div className="flex justify-end pt-1">
+            <div className="w-60 space-y-1 text-xs">
+              <div className="flex justify-between items-center text-gray-600 text-[10.5px]">
+                <span className="uppercase font-semibold tracking-wide">
+                  {isEn ? 'SUBTOTAL' : 'SUBTOTAL'}
                 </span>
                 <span className="font-bold text-gray-900">
                   {formatInvoiceCurrency(invoice.amount)}
                 </span>
               </div>
 
-              <div className="flex justify-between items-center text-gray-600 text-[11px]">
-                <span className="uppercase font-semibold text-[10px] tracking-wide">
-                  {isEn ? 'SHOPPING TOTAL' : 'TOTAL BELANJA'}
-                </span>
-                <span className="font-bold text-gray-900">
-                  {formatInvoiceCurrency(invoice.amount)}
-                </span>
-              </div>
+              <div className="border-t border-gray-200 my-1" />
 
-              <div className="border-t border-gray-300 my-1.5" />
-
-              <div className="flex justify-between items-center pt-0.5">
+              <div className="flex justify-between items-center">
                 <span className="uppercase font-bold text-xs text-gray-900 tracking-wide">
-                  {isEn ? 'TOTAL BILL' : 'TOTAL TAGIHAN'}
+                  {isEn ? 'TOTAL' : 'TOTAL TAGIHAN'}
                 </span>
-                <span className="font-bold text-base text-[#66000E]">
+                <span className="font-black text-sm text-[#66000E]">
                   {formatInvoiceCurrency(invoice.amount)}
                 </span>
               </div>
@@ -256,32 +244,24 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
           </div>
 
           {/* Footer: HUBUNGI KAMI on Left, Dicetak pada on Right */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 text-[10.5px] pt-4 border-t border-gray-200">
-            
-            {/* Contact Info */}
-            <div className="space-y-1">
-              <span className="font-bold text-gray-500 uppercase tracking-wider text-[9.5px] block">
-                {isEn ? 'CONTACT US' : 'HUBUNGI KAMI'}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[10px] pt-2.5 border-t border-gray-200">
+            <div className="flex items-center gap-3 text-gray-600">
+              <span className="flex items-center gap-1">
+                <Mail className="w-3 h-3 text-[#66000E]" />
+                support@kroombox.com
               </span>
-              <div className="flex items-center gap-1.5 text-gray-700 font-medium">
-                <Mail className="w-3.5 h-3.5 text-[#66000E]" />
-                <span>support@kroombox.com</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-gray-700 font-medium">
-                <Globe className="w-3.5 h-3.5 text-[#66000E]" />
-                <span>kroomify.kroombox.com</span>
-              </div>
+              <span className="flex items-center gap-1">
+                <Globe className="w-3 h-3 text-[#66000E]" />
+                kroombox.com
+              </span>
             </div>
 
-            {/* Print Date */}
             <div className="text-left sm:text-right">
-              <span className="italic text-[10px] text-gray-400">
-                {isEn ? 'Printed on:' : 'Dicetak pada:'} {printTimestamp}
+              <span className="italic text-gray-400">
+                {isEn ? 'Printed:' : 'Dicetak:'} {printTimestamp}
               </span>
             </div>
-
           </div>
-
         </div>
 
       </div>

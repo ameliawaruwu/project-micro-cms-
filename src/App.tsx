@@ -521,7 +521,12 @@ export default function App() {
         userStores = [newStore];
         setStores([newStore]);
         setActiveStore(newStore);
-        setIsOnboardingModalOpen(true);
+        const isDismissed =
+          sessionStorage.getItem('kroomify_store_info_dismissed') === 'true' ||
+          (user?.id ? localStorage.getItem(`kroomify_store_info_dismissed_${user.id}`) === 'true' : false);
+        if (!isDismissed) {
+          setIsOnboardingModalOpen(true);
+        }
       } else {
         setStores(userStores);
       }
@@ -554,11 +559,16 @@ export default function App() {
         setIntegrations(storeIntegrations);
         setCartItems(initialCart);
 
-        // Check if onboarding modal should be displayed
-        const isPendingOnboarding = localStorage.getItem('kroomify_onboarding_pending') === 'true';
-        const isPlanActive = finalStore.plan && ['free', 'personal', 'community', 'starter', 'premium'].includes(finalStore.plan.toLowerCase());
-        if (isPendingOnboarding || (!isPlanActive && user?.role === 'merchant')) {
+        // Check if store information popup should be displayed
+        const isDismissed =
+          sessionStorage.getItem('kroomify_store_info_dismissed') === 'true' ||
+          (user?.id ? localStorage.getItem(`kroomify_store_info_dismissed_${user.id}`) === 'true' : false);
+        const hasStoreInfo = Boolean(finalStore.onboarding?.storeNameSet);
+
+        if (user?.role === 'merchant' && !hasStoreInfo && !isDismissed) {
           setIsOnboardingModalOpen(true);
+        } else {
+          setIsOnboardingModalOpen(false);
         }
       }
     } catch (err) {
@@ -2166,16 +2176,23 @@ export default function App() {
         }}
       />
 
-      {/* 11. User Onboarding Modal (Two-step: Store Info [skippable] & Free Package Claim [mandatory]) */}
+      {/* 11. User Store Information Popup */}
       <UserOnboardingModal
         isOpen={isOnboardingModalOpen && !isAuthLoading && !!user}
         user={user}
         store={currentStore}
+        onClose={() => {
+          sessionStorage.setItem('kroomify_store_info_dismissed', 'true');
+          if (user?.id) {
+            localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
+          }
+          setIsOnboardingModalOpen(false);
+        }}
         onComplete={async (updatedStore) => {
           setActiveStore(updatedStore);
           setStores((prev) => [updatedStore, ...prev.filter((s) => s.id !== updatedStore.id)]);
           setIsOnboardingModalOpen(false);
-          addToast('🎉 Selamat! Toko dan Paket Free Anda berhasil diaktifkan.');
+          addToast('🎉 Informasi toko Anda berhasil disimpan!');
           await loadData(updatedStore.id);
         }}
       />
