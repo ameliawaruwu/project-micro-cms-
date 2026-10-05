@@ -386,6 +386,12 @@ class DomainRequestService {
       console.warn('Failed update Supabase domain_requests approve:', err);
     }
 
+    if (typeof window !== 'undefined' && req) {
+      try {
+        window.dispatchEvent(new CustomEvent('domain_approval_updated', { detail: { storeId: req.storeId } }));
+      } catch {}
+    }
+
     return true;
   }
 
@@ -540,6 +546,39 @@ class DomainRequestService {
     }
 
     return true;
+  }
+
+  /**
+   * Hitung jumlah persetujuan domain yang belum dibaca merchant untuk toko tertentu
+   */
+  getUnreadApprovedDomainCount(storeId: string): number {
+    if (!storeId || typeof window === 'undefined') return 0;
+    try {
+      const readIdsRaw = localStorage.getItem(`kroomify_domain_read_${storeId}`);
+      const readIds: string[] = readIdsRaw ? JSON.parse(readIdsRaw) : [];
+      const requests = this.getStoredRequestsForStore(storeId);
+      const unreadApproved = requests.filter(
+        (r) => r.status === 'approved' && !readIds.includes(r.id)
+      );
+      return unreadApproved.length;
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
+   * Tandai persetujuan domain sebagai sudah dibaca untuk toko ini
+   */
+  markApprovedDomainAsRead(storeId: string): void {
+    if (!storeId || typeof window === 'undefined') return;
+    try {
+      const requests = this.getStoredRequestsForStore(storeId);
+      const approvedIds = requests.filter((r) => r.status === 'approved').map((r) => r.id);
+      localStorage.setItem(`kroomify_domain_read_${storeId}`, JSON.stringify(approvedIds));
+      window.dispatchEvent(new CustomEvent('domain_approval_read', { detail: { storeId } }));
+    } catch (e) {
+      console.warn('Failed to mark approved domain as read:', e);
+    }
   }
 }
 

@@ -33,7 +33,6 @@ const TEMPLATE_CATEGORIES = [
   { id: 'minimalist', labelId: 'Minimalist', labelEn: 'Minimalist', icon: LayoutTemplate },
   { id: 'modern', labelId: 'Modern', labelEn: 'Modern', icon: Zap },
   { id: 'futuristic', labelId: 'Futuristic', labelEn: 'Futuristic', icon: Sparkles },
-  { id: 'elegant', labelId: 'Elegant', labelEn: 'Elegant', icon: Crown },
   { id: 'bold', labelId: 'Bold', labelEn: 'Bold', icon: Flame },
   { id: 'editorial', labelId: 'Editorial', labelEn: 'Editorial', icon: BookOpen },
   { id: 'luxury', labelId: 'Luxury', labelEn: 'Luxury', icon: Gem },
@@ -136,8 +135,8 @@ export const TEMPLATE_GALLERY_ITEMS: TemplateGalleryItem[] = [
   {
     id: 'maison',
     name: 'Maison',
-    category: 'elegant',
-    categories: ['elegant', 'luxury'],
+    category: 'luxury',
+    categories: ['luxury'],
     description: 'Tipografi premium serif, whitespace berlimpah, layout sophisticated untuk brand luxury.',
     sectionCount: 6,
     thumbnailUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1200&auto=format&fit=crop',
@@ -361,14 +360,21 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
                   const isMenuOpen = openActionMenuId === savedTmpl.id;
 
                   return (
-                    <div key={savedTmpl.id} className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#FAF7F7] transition ${!isLast ? 'border-b border-[#E5E0DD]' : ''} relative`}>
-                      <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[#E5E0DD] bg-gray-50 flex items-center justify-center shadow-inner">
+                    <div
+                      key={savedTmpl.id}
+                      className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#FAF7F7] transition ${!isLast ? 'border-b border-[#E5E0DD]' : ''} relative`}
+                    >
+                      <div
+                        className="flex items-center gap-4 min-w-0 cursor-pointer flex-1"
+                        onClick={() => onApplyTemplate?.(savedTmpl)}
+                        title={isEn ? 'Click to edit draft' : 'Klik untuk mengedit draf'}
+                      >
+                        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-[#E5E0DD] bg-gray-50 flex items-center justify-center shadow-inner hover:opacity-90 transition">
                           <img src={savedTmpl.thumbnailUrl} alt={savedTmpl.name} className="w-full h-full object-cover" />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                            <h4 className="font-bold text-[15px] text-[#1F1F1F] truncate">{savedTmpl.name}</h4>
+                            <h4 className="font-bold text-[15px] text-[#1F1F1F] truncate hover:text-[#66000E] transition">{savedTmpl.name}</h4>
                             {isCurrentActive ? (
                               <span className="px-2 py-0.5 bg-[#E4F8EB] text-[#008060] text-[10px] font-bold rounded-full uppercase tracking-wider">{isEn ? 'Published' : 'Dipublikasikan'}</span>
                             ) : isEditingActive ? (
@@ -565,17 +571,35 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {filteredTemplates.map((template) => (
-                <TemplateCard
-                  key={template.id}
-                  template={template}
-                  isActive={currentTemplateId === template.storeTemplate.id}
-                  isLoading={loadingTemplateId === template.id}
-                  isEn={isEn}
-                  onPreview={() => onPreviewTemplate?.(template)}
-                  onUse={() => handleUseTemplate(template)}
-                />
-              ))}
+              {filteredTemplates.map((template) => {
+                const existingDraft = savedThemes.find(
+                  (t) => t.id === template.id || t.storeTemplate?.id === template.storeTemplate?.id
+                );
+                return (
+                  <TemplateCard
+                    key={template.id}
+                    template={template}
+                    savedDraft={existingDraft}
+                    isActive={currentTemplateId === template.storeTemplate.id}
+                    isLoading={loadingTemplateId === template.id}
+                    isEn={isEn}
+                    onPreview={() => {
+                      if (existingDraft) {
+                        onApplyTemplate?.(existingDraft);
+                      } else {
+                        onPreviewTemplate?.(template);
+                      }
+                    }}
+                    onUse={() => {
+                      if (existingDraft) {
+                        onApplyTemplate?.(existingDraft);
+                      } else {
+                        handleUseTemplate(template);
+                      }
+                    }}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
@@ -766,12 +790,13 @@ const MiniTemplatePreview: React.FC<{
 // ─── Template Card ───────────────────────────────────────────────────
 const TemplateCard: React.FC<{
   template: TemplateGalleryItem;
+  savedDraft?: SavedThemeItem;
   isActive: boolean;
   isLoading?: boolean;
   isEn?: boolean;
   onPreview: () => void;
   onUse: () => void;
-}> = ({ template, isActive, isLoading = false, isEn = false, onPreview, onUse }) => {
+}> = ({ template, savedDraft, isActive, isLoading = false, isEn = false, onPreview, onUse }) => {
   const themeData = THEME_DATA_MAP[template.storeTemplate.id] || THEME_DATA_MAP['minimalist'];
 
   return (
@@ -807,6 +832,8 @@ const TemplateCard: React.FC<{
               ? 'bg-[#66000E] text-white border-[#66000E]'
               : isLoading
               ? 'bg-[#FAF7F7] border-[#E5E0DD] text-[#706866] cursor-wait'
+              : savedDraft
+              ? 'bg-[#66000E] hover:bg-[#52000B] text-white border-[#66000E]'
               : 'bg-white border-[#E5E0DD] text-[#241A1A] hover:bg-[#FAF7F7] hover:border-[#66000E]'
           }`}
         >
@@ -817,6 +844,8 @@ const TemplateCard: React.FC<{
             </>
           ) : isActive ? (
             isEn ? 'Active' : 'Aktif'
+          ) : savedDraft ? (
+            isEn ? 'Edit Template' : 'Edit Template'
           ) : (
             isEn ? 'Add' : 'Tambahkan'
           )}

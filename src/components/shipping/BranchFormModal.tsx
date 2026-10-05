@@ -82,6 +82,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
     try {
       if (editingBranch) {
         await branchService.updateBranch(editingBranch.id, {
+          storeId: storeId || editingBranch.storeId,
           branchName: branchName.trim(),
           picName: picName.trim(),
           picPhone: picPhone.trim(),

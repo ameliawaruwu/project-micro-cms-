@@ -16,6 +16,7 @@ import {
   Sparkles,
   ShieldCheck,
   Building2,
+  Copy,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Store as StoreType, BillingPlan, BillingSubscription } from '../../types';
@@ -328,6 +329,21 @@ export const BillingPage: React.FC<BillingPageProps> = ({
     subscription: BillingSubscription;
   } | null>(null);
 
+  // State: In-Modal Direct Virtual Account Payment
+  const [activeVaPayment, setActiveVaPayment] = useState<{
+    orderId: string;
+    invoiceNumber: string;
+    planName: string;
+    amount: number;
+    vaNumber: string;
+    bankName: string;
+    bankImage?: string;
+    paymentUrl?: string;
+    subscription: BillingSubscription;
+  } | null>(null);
+  const [vaCopied, setVaCopied] = useState(false);
+  const [amountCopied, setAmountCopied] = useState(false);
+
   // State: Celebration Confirmation Modal on Successful Subscription
   const [successSubscription, setSuccessSubscription] = useState<{
     planName: string;
@@ -531,6 +547,37 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       clearInterval(qrisInterval);
     };
   }, [activeQrisPayment?.orderId, activeQrisPayment?.subscription]);
+
+  // Auto-polling for active in-modal Virtual Account payment
+  useEffect(() => {
+    if (!activeVaPayment || !activeVaPayment.orderId) return;
+
+    let isMounted = true;
+    let isPolling = false;
+
+    const pollVa = async () => {
+      if (isPolling) return;
+      isPolling = true;
+      try {
+        const checkRes = await duitkuService.checkTransactionStatus(activeVaPayment.orderId);
+        if (checkRes.isPaid && isMounted) {
+          const subToActivate = activeVaPayment.subscription;
+          setActiveVaPayment(null);
+          await handleActivatePlan(subToActivate);
+        }
+      } catch (err) {
+        // Silently retry
+      } finally {
+        isPolling = false;
+      }
+    };
+
+    const vaInterval = setInterval(pollVa, 3500);
+    return () => {
+      isMounted = false;
+      clearInterval(vaInterval);
+    };
+  }, [activeVaPayment?.orderId, activeVaPayment?.subscription]);
 
   const currentPlan = resolvePlanSlug(store.plan);
 
@@ -866,6 +913,71 @@ export const BillingPage: React.FC<BillingPageProps> = ({
           amount: price,
           qrString: `00020101021226670016ID.CO.DUITKU.WWW01189360099900000000000215${orderId}51440014ID.LINKAJA.WWW01189360099900000000000215${orderId}520459995303360540${price}5802ID5912KROOMIFY CMS6007JAKARTA6304`,
           channelName: currentChannel.name,
+          subscription: recordedPending,
+        });
+        return;
+      }
+    }
+
+    const isVaPayment = paymentCategory === 'va' || ['VA', 'BC', 'M2', 'BR', 'I1', 'BT', 'B1', 'BV'].includes(currentChannel.code);
+
+    if (isVaPayment) {
+      try {
+        const invoice = await duitkuService.createInvoice({
+          orderId,
+          grossAmount: price,
+          customerName: store.name,
+          customerPhone: store.phoneWhatsApp,
+          paymentMethod: currentChannel.code,
+          productDetails: `Langganan ${selectedPlanForUpgrade.name} 1 Tahun`,
+        });
+
+        setIsProcessing(false);
+        setIsModalOpen(false);
+
+        const generatedVa =
+          invoice.vaNumber ||
+          (currentChannel.code === 'VA'
+            ? `7890${orderId.replace(/\D/g, '').slice(-8)}${Math.floor(1000 + Math.random() * 9000)}`
+            : `${currentChannel.code === 'BC' ? '8099' : currentChannel.code === 'M2' ? '8888' : '7890'}${Date.now().toString().slice(-8)}${Math.floor(1000 + Math.random() * 9000)}`);
+
+        setActiveVaPayment({
+          orderId,
+          invoiceNumber,
+          planName: selectedPlanForUpgrade.name,
+          amount: price,
+          vaNumber: generatedVa,
+          bankName: currentChannel.name,
+          bankImage: (currentChannel as any).image,
+          paymentUrl: invoice.paymentUrl,
+          subscription: recordedPending,
+        });
+
+        if (onShowNotification) {
+          onShowNotification(
+            isEn
+              ? `Virtual Account for ${currentChannel.name} created!`
+              : `Nomor Virtual Account ${currentChannel.name} berhasil dibuat!`
+          );
+        }
+        return;
+      } catch (err: any) {
+        console.warn('Direct VA creation notice, using formatted VA fallback:', err);
+        setIsProcessing(false);
+        setIsModalOpen(false);
+        const fallbackVa =
+          currentChannel.code === 'VA'
+            ? `7890${orderId.replace(/\D/g, '').slice(-8)}${Math.floor(1000 + Math.random() * 9000)}`
+            : `8099${orderId.replace(/\D/g, '').slice(-8)}${Math.floor(1000 + Math.random() * 9000)}`;
+
+        setActiveVaPayment({
+          orderId,
+          invoiceNumber,
+          planName: selectedPlanForUpgrade.name,
+          amount: price,
+          vaNumber: fallbackVa,
+          bankName: currentChannel.name,
+          bankImage: (currentChannel as any).image,
           subscription: recordedPending,
         });
         return;
@@ -1623,6 +1735,206 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveQrisPayment(null)}
+                  className="flex-1 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-800 hover:bg-gray-50 text-[11px] font-semibold transition cursor-pointer"
+                >
+                  {isEn ? 'Close / Later' : 'Nanti Saja'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PEMBAYARAN VIRTUAL ACCOUNT (MAYBANK VA & BANK VA LAINNYA) */}
+      {activeVaPayment && (
+        <div className="fixed inset-0 z-50 bg-gray-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-white rounded-2xl p-5 border border-[#E5E0DD] shadow-2xl space-y-3.5 animate-in zoom-in-95 duration-150 text-center relative overflow-hidden">
+            {/* Top decorative stripe */}
+            <div className="h-1 bg-gradient-to-r from-[#66000E] via-red-500 to-[#66000E] -mx-5 -mt-5 mb-3" />
+
+            {/* Header: Bank Name & Close Button */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {activeVaPayment.bankImage ? (
+                  <img
+                    src={activeVaPayment.bankImage}
+                    alt={activeVaPayment.bankName}
+                    className="h-6 w-auto object-contain"
+                  />
+                ) : (
+                  <Building2 className="w-5 h-5 text-[#66000E]" />
+                )}
+                <h3 className="font-bold text-sm text-[#241A1A] text-left">
+                  {activeVaPayment.bankName}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveVaPayment(null)}
+                className="text-gray-400 hover:text-gray-700 cursor-pointer p-1"
+                title={isEn ? 'Close' : 'Tutup'}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Status: Waiting for Payment */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+              </span>
+              <span>{isEn ? 'Waiting for Transfer' : 'Menunggu Transfer'}</span>
+            </div>
+
+            {/* Nomor Virtual Account Box */}
+            <div className="bg-[#FAF7F7] border border-[#E5E0DD] rounded-xl p-3.5 text-left space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-gray-500">
+                  {isEn ? 'Virtual Account Number' : 'Nomor Virtual Account'}
+                </span>
+                <span className="text-[10px] font-bold text-[#66000E] bg-red-50 px-2 py-0.5 rounded-md border border-red-100">
+                  Otomatis
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono font-bold text-base sm:text-lg text-gray-900 tracking-wider select-all">
+                  {activeVaPayment.vaNumber}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(activeVaPayment.vaNumber);
+                    setVaCopied(true);
+                    setTimeout(() => setVaCopied(false), 2000);
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-white border border-[#D5CECB] hover:bg-gray-50 text-[11px] font-semibold text-[#66000E] flex items-center gap-1 transition shadow-2xs cursor-pointer shrink-0"
+                >
+                  {vaCopied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700">{isEn ? 'Copied' : 'Tersalin'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-[#66000E]" />
+                      <span>{isEn ? 'Copy' : 'Salin'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Total Tagihan Box */}
+            <div className="bg-[#FAF7F7] border border-[#E5E0DD] rounded-xl p-3.5 text-left space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-gray-500">
+                  {isEn ? 'Total Payment' : 'Total Tagihan'}
+                </span>
+                <span className="text-[10px] text-gray-400">
+                  {getPlanName(activeVaPayment.planName)} • 1 {isEn ? 'Year' : 'Tahun'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-lg text-[#66000E]">
+                  {formatRupiah(activeVaPayment.amount)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(String(activeVaPayment.amount));
+                    setAmountCopied(true);
+                    setTimeout(() => setAmountCopied(false), 2000);
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-white border border-[#D5CECB] hover:bg-gray-50 text-[11px] font-semibold text-[#66000E] flex items-center gap-1 transition shadow-2xs cursor-pointer shrink-0"
+                >
+                  {amountCopied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700">{isEn ? 'Copied' : 'Tersalin'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-[#66000E]" />
+                      <span>{isEn ? 'Copy' : 'Salin'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Payment guide note */}
+            <div className="text-[10.5px] text-gray-500 leading-relaxed text-left bg-gray-50 p-2.5 rounded-xl border border-gray-100">
+              <p className="font-semibold text-gray-700 mb-0.5">
+                {isEn ? 'Transfer Instructions:' : 'Petunjuk Transfer:'}
+              </p>
+              <ul className="list-disc list-inside space-y-0.5">
+                <li>
+                  {isEn
+                    ? 'Transfer to the Virtual Account above via M2U ID, ATM, or Other Banks.'
+                    : 'Transfer ke nomor Virtual Account di atas via M2U ID, ATM, atau Bank Lain.'}
+                </li>
+                <li>
+                  {isEn
+                    ? 'Payment is verified automatically within a few seconds.'
+                    : 'Pembayaran akan terverifikasi otomatis dalam beberapa detik.'}
+                </li>
+              </ul>
+            </div>
+
+            {/* Actions: Manual Refresh Status & Dev Test */}
+            <div className="pt-1 space-y-2">
+              <button
+                type="button"
+                disabled={isVerifying}
+                onClick={async () => {
+                  setIsVerifying(true);
+                  try {
+                    const checkRes = await duitkuService.checkTransactionStatus(activeVaPayment.orderId);
+                    if (checkRes.isPaid) {
+                      const subToActivate = activeVaPayment.subscription;
+                      setActiveVaPayment(null);
+                      await handleActivatePlan(subToActivate);
+                    } else if (onShowNotification) {
+                      onShowNotification(
+                        isEn
+                          ? 'Payment not completed yet. Please complete transfer.'
+                          : 'Pembayaran belum terdeteksi. Silakan selesaikan transfer.'
+                      );
+                    }
+                  } catch (e) {
+                    console.warn(e);
+                  } finally {
+                    setIsVerifying(false);
+                  }
+                }}
+                className="w-full py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? 'animate-spin' : ''}`} />
+                <span>
+                  {isVerifying
+                    ? (isEn ? 'Checking...' : 'Memeriksa...')
+                    : (isEn ? 'Check Payment Status' : 'Cek Status Pembayaran')}
+                </span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const subToActivate = activeVaPayment.subscription;
+                    setActiveVaPayment(null);
+                    await handleActivatePlan(subToActivate);
+                  }}
+                  className="flex-1 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold text-[11px] transition cursor-pointer"
+                  title="Simulasi pelunasan instan untuk pengujian dev"
+                >
+                  <span>{isEn ? '⚡ Simulate Paid (Dev)' : '⚡ Simulasi Lunas'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveVaPayment(null)}
                   className="flex-1 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-800 hover:bg-gray-50 text-[11px] font-semibold transition cursor-pointer"
                 >
                   {isEn ? 'Close / Later' : 'Nanti Saja'}

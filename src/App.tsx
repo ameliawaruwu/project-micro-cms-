@@ -1206,6 +1206,10 @@ export default function App() {
 
   const handleCreateStoreFromSettings = async (data: Partial<Store>) => {
     if (!user) return;
+    if (stores && stores.length > 0 && stores[0].id) {
+      addToast('Akun Anda sudah memiliki toko terdaftar. Satu akun hanya diperbolehkan memiliki satu toko.', 'error');
+      return;
+    }
     try {
       const newStore = await storeService.createStore({
         merchantId: user.id,

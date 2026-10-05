@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { X, Printer, Copy, Check, Mail, Globe } from 'lucide-react';
+import { X, Printer, Copy, Check, Mail, Globe, Download, Loader2 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { KroomifyLogo } from '../common/KroomifyLogo';
@@ -29,11 +31,37 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
   const { language } = useLanguage();
   const isEn = language === 'en';
   const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   if (!isOpen || !invoice) return null;
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('invoice-printable-area');
+    if (!element || isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(pdfHeight, 295));
+      pdf.save(`${invoice.id}.pdf`);
+    } catch (err) {
+      console.error('PDF download error:', err);
+      window.print();
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleCopyInvoiceNumber = () => {
@@ -90,11 +118,30 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
 
             <button
               type="button"
-              onClick={handlePrint}
-              className="px-3 py-1 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-[11px] flex items-center gap-1 shadow-2xs transition cursor-pointer"
+              disabled={isDownloading}
+              onClick={handleDownloadPdf}
+              className="px-3 py-1 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-[11px] flex items-center gap-1 shadow-2xs transition cursor-pointer disabled:opacity-50"
             >
-              <Printer className="w-3 h-3" />
-              <span>{isEn ? 'Print / PDF' : 'Cetak / PDF'}</span>
+              {isDownloading ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>{isEn ? 'Downloading...' : 'Mengunduh...'}</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3 h-3" />
+                  <span>{isEn ? 'Download PDF' : 'Unduh PDF'}</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="px-2.5 py-1 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-[11px] flex items-center gap-1 shadow-2xs transition cursor-pointer"
+            >
+              <Printer className="w-3 h-3 text-gray-500" />
+              <span>{isEn ? 'Print' : 'Cetak'}</span>
             </button>
 
             <button

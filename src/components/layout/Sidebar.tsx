@@ -19,6 +19,7 @@ import { MerchantTab, Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
 import { KroomifyLogo } from '../common/KroomifyLogo';
+import { domainRequestService } from '../../services/domainRequestService';
 
 interface SidebarProps {
   activeTab: MerchantTab;
@@ -39,6 +40,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   pendingOrdersCount,
+  activeStore,
   isCollapsed,
   isOpenMobile = false,
   onCloseMobile,
@@ -47,6 +49,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onLogout,
 }) => {
   const { t } = useLanguage();
+
+  const [unreadDomainCount, setUnreadDomainCount] = useState<number>(0);
+
+  useEffect(() => {
+    const updateCount = () => {
+      if (activeStore?.id) {
+        setUnreadDomainCount(domainRequestService.getUnreadApprovedDomainCount(activeStore.id));
+      } else {
+        setUnreadDomainCount(0);
+      }
+    };
+
+    updateCount();
+    window.addEventListener('domain_approval_updated', updateCount);
+    window.addEventListener('domain_approval_read', updateCount);
+    window.addEventListener('storage', updateCount);
+    return () => {
+      window.removeEventListener('domain_approval_updated', updateCount);
+      window.removeEventListener('domain_approval_read', updateCount);
+      window.removeEventListener('storage', updateCount);
+    };
+  }, [activeStore?.id]);
+
+  useEffect(() => {
+    if (activeTab === 'domain' && activeStore?.id) {
+      domainRequestService.markApprovedDomainAsRead(activeStore.id);
+      setUnreadDomainCount(0);
+    }
+  }, [activeTab, activeStore?.id]);
 
   const navItems = [
     { id: 'beranda' as MerchantTab, label: t('nav_dashboard', 'Dashboard'), icon: LayoutDashboard },
@@ -59,7 +90,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       isParent: true,
       children: [
         { id: 'layout' as MerchantTab, label: t('nav_layout', 'Layout Toko') },
-        { id: 'domain' as MerchantTab, label: 'Domain' }
+        { 
+          id: 'domain' as MerchantTab, 
+          label: unreadDomainCount > 0 ? `Domain (${unreadDomainCount})` : 'Domain' 
+        }
       ]
     },
     { id: 'pembayaran' as MerchantTab, label: t('nav_payment', 'Pembayaran'), icon: CreditCard },

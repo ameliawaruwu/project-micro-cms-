@@ -139,7 +139,7 @@ export const normalizeThemeId = (id?: string): ThemeId => {
   if (cleanId === 'professional' || cleanId === 'pro_corporate' || cleanId === 'pro_commerce' || cleanId.includes('pro')) return 'professional';
   if (cleanId === 'cute' || cleanId === 'cute_store' || cleanId.includes('cute')) return 'cute';
   if (cleanId === 'fashion' || cleanId === 'fashion_store' || cleanId === 'chic_fashion' || cleanId.includes('fashion')) return 'fashion';
-  if (cleanId === 'elegant' || cleanId === 'elegant_store' || cleanId.includes('elegant')) return 'elegant';
+  if (cleanId === 'elegant' || cleanId === 'elegant_store' || cleanId.includes('elegant')) return 'luxury';
 
   return 'minimalist';
 };
@@ -157,5 +157,6 @@ export const normalizeThemeId = (id?: string): ThemeId => {
 (ThemeRegistry as any)['chic_fashion'] = ThemeRegistry['fashion'];
 (ThemeRegistry as any)['cute_store'] = ThemeRegistry['cute'];
 (ThemeRegistry as any)['fashion_store'] = ThemeRegistry['fashion'];
-(ThemeRegistry as any)['elegant_store'] = ThemeRegistry['elegant'];
+(ThemeRegistry as any)['elegant_store'] = ThemeRegistry['luxury'];
+(ThemeRegistry as any)['elegant'] = ThemeRegistry['luxury'];
 

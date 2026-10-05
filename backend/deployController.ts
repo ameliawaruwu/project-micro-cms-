@@ -49,8 +49,13 @@ deployRouter.post('/publish', async (req: Request, res: Response) => {
 
     if (customDomain && typeof customDomain === 'string' && customDomain.trim()) {
       cleanCustomDomain = customDomain.toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '').trim();
-      if (!serverNames.includes(cleanCustomDomain)) {
-        serverNames.push(cleanCustomDomain);
+      const customNoWww = cleanCustomDomain.replace(/^www\./, '');
+      const customWww = `www.${customNoWww}`;
+      if (!serverNames.includes(customNoWww)) {
+        serverNames.push(customNoWww);
+      }
+      if (!serverNames.includes(customWww)) {
+        serverNames.push(customWww);
       }
     }
 

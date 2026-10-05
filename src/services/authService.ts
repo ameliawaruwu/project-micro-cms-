@@ -377,6 +377,57 @@ class AuthService {
     await new Promise((res) => setTimeout(res, 450));
 
     const cleanEmail = params.email.toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new Error('Alamat email tidak valid.');
+    }
+
+    // Enforce: 1 Email / Akun = 1 Toko
+    const priorAccounts = this.getStoredAccounts();
+    const localExisting = priorAccounts.find((a) => a.email.toLowerCase() === cleanEmail);
+
+    let dbExistingUser: any = null;
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+      if (data) dbExistingUser = data;
+    } catch (e) {
+      console.warn('Supabase check existing user notice:', e);
+    }
+
+    const existingUserId = dbExistingUser?.id || localExisting?.user?.id;
+    if (existingUserId) {
+      let existingStoreName = '';
+      if (localExisting?.storeId) {
+        const foundStore = storeService.getStoredStores().find((s) => s.id === localExisting.storeId);
+        if (foundStore?.name) {
+          existingStoreName = foundStore.name;
+        }
+      }
+      if (!existingStoreName) {
+        try {
+          const { data: storeData } = await supabase
+            .from('stores')
+            .select('id, name')
+            .eq('user_id', existingUserId)
+            .maybeSingle();
+          if (storeData) existingStoreName = storeData.name;
+        } catch (e) {}
+      }
+
+      if (existingStoreName) {
+        throw new Error(
+          `Akun dengan email "${cleanEmail}" sudah terdaftar dan telah memiliki toko "${existingStoreName}". Setiap akun hanya diperbolehkan memiliki satu toko. Silakan masuk (login) untuk mengelola toko Anda.`
+        );
+      } else {
+        throw new Error(
+          `Akun dengan email "${cleanEmail}" sudah terdaftar. Silakan masuk (login) menggunakan kata sandi Anda.`
+        );
+      }
+    }
+
     const userId = await idService.generateNextId('users');
 
     const user: User = {
@@ -596,6 +647,18 @@ class AuthService {
       // User already registered via Google before, log them in
       return this.login(cleanEmail, 'google-auth');
     }
+
+    // Check if user already exists in Supabase
+    try {
+      const { data: dbUser } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .eq('email', cleanEmail)
+        .maybeSingle();
+      if (dbUser) {
+        return this.login(cleanEmail, 'google-auth');
+      }
+    } catch (e) {}
 
     const userId = await idService.generateNextId('users');
 

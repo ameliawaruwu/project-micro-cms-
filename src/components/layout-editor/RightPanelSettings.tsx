@@ -24,6 +24,8 @@ import {
   FileText,
   SlidersHorizontal,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   ArrowUp,
   ArrowDown,
   Upload,
@@ -73,6 +75,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   const [newMenuLabel, setNewMenuLabel] = useState('');
   const [newMenuHref, setNewMenuHref] = useState('');
   const [showAddMenuForm, setShowAddMenuForm] = useState(false);
+  const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // If no section is selected, show Global Theme Settings
@@ -423,6 +426,10 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     value={
                       selectedSection.id === 'footer'
                         ? opts.copyrightText || ''
+                        : selectedSection.id === 'header'
+                        ? ((opts as any).headerSubtitle ?? opts.subheading ?? opts.subtitle ?? '')
+                        : selectedSection.id === 'hero_banner'
+                        ? ((opts as any).heroSubtitle ?? opts.description ?? opts.subheading ?? '')
                         : opts.description || opts.subheading || opts.featuredSubtitle || opts.newsletterSubtitle || (opts as any).content || ''
                     }
                     onChange={(e) => {
@@ -430,9 +437,10 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterSubtitle: e.target.value, description: e.target.value });
                       else if (selectedSection.id === 'footer') handleOptionChange({ copyrightText: e.target.value, description: e.target.value });
                       else if (selectedSection.id === 'header') {
-                        handleOptionChange({ subheading: e.target.value, description: e.target.value, subtitle: e.target.value, tagline: e.target.value });
-                        useCmsStore.getState().updateStoreInfo({ description: e.target.value });
-                        if (onUpdateStore) onUpdateStore({ description: e.target.value, tagline: e.target.value });
+                        handleOptionChange({ headerSubtitle: e.target.value, subheading: e.target.value, subtitle: e.target.value });
+                      }
+                      else if (selectedSection.id === 'hero_banner') {
+                        handleOptionChange({ heroSubtitle: e.target.value, subheading: e.target.value, description: e.target.value });
                       }
                       else handleOptionChange({ subheading: e.target.value, description: e.target.value, content: e.target.value });
                     }}
@@ -664,7 +672,16 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             )}
 
             {/* ── KATALOG PRODUK / FEATURED PRODUCTS SPECIFIC SETTINGS (TAB KONTEN) ── */}
-            {(selectedSection.id === 'featured_products' || selectedSection.id === 'product_grid') && (
+            {([
+              'featured_products',
+              'product_grid',
+              'collection_grid',
+              'lookbook',
+              'signature_collection',
+              'asymmetric_showcase',
+              'latest_drop',
+              'catalog',
+            ].includes(selectedSection.id) || selectedSection.id.includes('product')) && (
               <div className="space-y-4 pt-4 border-t border-[#E1E3E5]">
                 {/* Filter Kategori */}
                 <div className="space-y-1.5">
@@ -675,7 +692,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                   >
                     <option value="all">Semua Kategori Produk</option>
-                    {Array.from(new Set(cmsProducts.map(p => (p as any).category || p.categoryName).filter(Boolean))).map(cat => (
+                    {Array.from(new Set((cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || [])).map((p: any) => p.category || p.categoryName).filter(Boolean))).map((cat: any) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
@@ -720,8 +737,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 <div className="space-y-2 pt-3 border-t border-[#E1E3E5]">
                   <label className="text-[12px] font-bold text-[#202223]">Pilih Produk Spesifik (Manual)</label>
                   <p className="text-[10px] text-[#8C9196]">Centang produk yang ingin ditampilkan khusus pada section ini:</p>
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar p-2 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg">
-                    {cmsProducts.map(product => {
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar p-2 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg">
+                    {(cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || [])).map((product: any) => {
                       const selectedIds = opts.selectedProductIds || [];
                       const isChecked = selectedIds.length === 0 || selectedIds.includes(product.id);
                       return (
@@ -730,109 +747,180 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                             type="checkbox"
                             checked={isChecked}
                             onChange={(e) => {
-                              let newIds = [...(opts.selectedProductIds || cmsProducts.map(p => p.id))];
+                              const allProds = cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || []);
+                              let newIds = [...(opts.selectedProductIds || allProds.map((p: any) => p.id))];
                               if (e.target.checked) {
                                 if (!newIds.includes(product.id)) newIds.push(product.id);
                               } else {
-                                newIds = newIds.filter(id => id !== product.id);
+                                newIds = newIds.filter((id: any) => id !== product.id);
                               }
                               handleOptionChange({ selectedProductIds: newIds });
                             }}
                             className="w-3.5 h-3.5 rounded text-[#202223]"
                           />
                           <span className="truncate flex-1 font-medium">{product.name}</span>
-                          <span className="text-[#8C9196] font-mono shrink-0">Rp {product.price.toLocaleString('id-ID')}</span>
+                          <span className="text-[#8C9196] font-mono shrink-0">Rp {Number(product.price || 0).toLocaleString('id-ID')}</span>
                         </label>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Data Produk Direct Editor */}
+                {/* Data Produk Direct Editor (Full controls: name, description, price, stock, category, image) */}
                 <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
                   <div className="flex items-center justify-between">
-                    <label className="text-[12px] font-bold text-[#202223]">Data Produk (Edit Teks & Gambar)</label>
-                    <span className="text-[10px] text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded font-semibold">Real-time CMS</span>
+                    <div>
+                      <label className="text-[12px] font-bold text-[#202223] block">Editor Detail Produk</label>
+                      <span className="text-[10px] text-[#8C9196]">Klik produk untuk mengedit data lengkap</span>
+                    </div>
+                    <span className="text-[10px] text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded font-semibold shrink-0">Real-time CMS</span>
                   </div>
-                  <div className="space-y-3 max-h-[260px] overflow-y-auto custom-scrollbar pr-1">
-                    {cmsProducts.map(product => (
-                      <div key={product.id} className="p-3 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg space-y-2">
-                        <div className="flex gap-2">
-                          <div className="relative group w-12 h-12 shrink-0 cursor-pointer">
-                            <img
-                              src={product.image || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=300'}
-                              alt={product.name}
-                              className="w-full h-full object-cover rounded-md border border-[#E1E3E5]"
-                              referrerPolicy="no-referrer"
-                            />
-                            <label
-                              htmlFor={`product-img-upload-${product.id}`}
-                              className="absolute inset-0 bg-black/50 text-white rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
-                              title="Ganti Foto dari Perangkat"
-                            >
-                              <Upload className="w-4 h-4" />
-                            </label>
-                          </div>
 
-                          <div className="flex-1 space-y-1.5 min-w-0">
-                            <input
-                              type="text"
-                              value={product.name}
-                              onChange={(e) => updateProduct({ ...product, name: e.target.value })}
-                              className="w-full px-2 py-1 text-[12px] font-semibold text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
-                              placeholder="Nama Produk"
-                            />
-                            <input
-                              type="number"
-                              value={product.price}
-                              onChange={(e) => updateProduct({ ...product, price: Number(e.target.value) })}
-                              className="w-full px-2 py-1 text-[12px] text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
-                              placeholder="Harga"
-                            />
-                          </div>
-                        </div>
+                  <div className="space-y-2.5 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
+                    {(cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || [])).map((product: any) => {
+                      const isExpanded = expandedProductId === product.id;
 
-                        {/* Upload Button + URL Input Combo */}
-                        <div className="flex items-center gap-1.5">
-                          <label
-                            htmlFor={`product-img-upload-${product.id}`}
-                            className="py-1 px-2 rounded border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center gap-1 shrink-0"
-                            title="Upload foto dari galeri HP atau komputer"
+                      const handleSaveProduct = (updated: any) => {
+                        updateProduct(updated, store.id);
+                        if (onUpdateStore && (store as any).products) {
+                          const newProds = (store as any).products.map((p: any) => p.id === updated.id ? { ...p, ...updated } : p);
+                          (onUpdateStore as any)({ products: newProds });
+                        }
+                      };
+
+                      return (
+                        <div key={product.id} className="bg-[#FAF7F7] border border-[#E1E3E5] rounded-xl overflow-hidden shadow-2xs transition">
+                          {/* Collapsible Header */}
+                          <div
+                            onClick={() => setExpandedProductId(isExpanded ? null : product.id)}
+                            className="p-2.5 bg-white hover:bg-gray-50 flex items-center justify-between gap-2.5 cursor-pointer border-b border-[#E1E3E5]"
                           >
-                            <Upload className="w-3 h-3" />
-                            <span>Upload Foto</span>
-                          </label>
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <img
+                                src={product.image || product.imageUrl || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=300'}
+                                alt={product.name}
+                                className="w-9 h-9 object-cover rounded-lg border border-[#E1E3E5] shrink-0"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="min-w-0">
+                                <h4 className="text-[12px] font-bold text-[#202223] truncate">{product.name}</h4>
+                                <div className="flex items-center gap-2 text-[10px] text-[#8C9196]">
+                                  <span>Rp {Number(product.price || 0).toLocaleString('id-ID')}</span>
+                                  <span>•</span>
+                                  <span>Stok: {product.stock ?? 10}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-gray-400 p-1 shrink-0">
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </div>
+                          </div>
 
-                          <input
-                            type="file"
-                            id={`product-img-upload-${product.id}`}
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  const dataUrl = event.target?.result as string;
-                                  if (dataUrl) {
-                                    updateProduct({ ...product, image: dataUrl } as any);
-                                  }
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
+                          {/* Expanded Full Edit Form */}
+                          {isExpanded && (
+                            <div className="p-3 space-y-3 bg-[#FAF7F7]">
+                              {/* 1. Nama Produk */}
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-gray-700">Nama Produk</label>
+                                <input
+                                  type="text"
+                                  value={product.name || ''}
+                                  onChange={(e) => handleSaveProduct({ ...product, name: e.target.value })}
+                                  placeholder="Nama Produk"
+                                  className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                />
+                              </div>
 
-                          <input
-                            type="text"
-                            value={product.image || ''}
-                            onChange={(e) => updateProduct({ ...product, image: e.target.value } as any)}
-                            className="flex-1 min-w-0 px-2 py-1 text-[11px] text-[#6D7175] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
-                            placeholder="Atau Tempel URL Gambar"
-                          />
+                              {/* 2. Deskripsi Produk */}
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-gray-700">Deskripsi Produk</label>
+                                <textarea
+                                  rows={2}
+                                  value={product.description || ''}
+                                  onChange={(e) => handleSaveProduct({ ...product, description: e.target.value })}
+                                  placeholder="Deskripsi singkat produk..."
+                                  className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                />
+                              </div>
+
+                              {/* 3. Harga & Stok */}
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold text-gray-700">Harga (Rp)</label>
+                                  <input
+                                    type="number"
+                                    value={product.price || 0}
+                                    onChange={(e) => handleSaveProduct({ ...product, price: Number(e.target.value) })}
+                                    className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold text-gray-700">Stok</label>
+                                  <input
+                                    type="number"
+                                    value={product.stock ?? 10}
+                                    onChange={(e) => handleSaveProduct({ ...product, stock: Number(e.target.value) })}
+                                    className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* 4. Kategori */}
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-gray-700">Kategori</label>
+                                <input
+                                  type="text"
+                                  value={product.categoryName || product.category || ''}
+                                  onChange={(e) => handleSaveProduct({ ...product, categoryName: e.target.value, category: e.target.value })}
+                                  placeholder="Kategori (mis: Pakaian, Seni, Makanan)"
+                                  className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                />
+                              </div>
+
+                              {/* 5. Gambar Produk (Upload + URL) */}
+                              <div className="space-y-1.5 pt-1">
+                                <label className="text-[11px] font-bold text-gray-700">Foto Produk</label>
+                                <div className="flex items-center gap-2">
+                                  <label
+                                    htmlFor={`full-product-upload-${product.id}`}
+                                    className="py-1 px-2.5 rounded-lg border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center gap-1.5 shrink-0"
+                                  >
+                                    <Upload className="w-3.5 h-3.5" />
+                                    <span>Upload</span>
+                                  </label>
+                                  <input
+                                    type="file"
+                                    id={`full-product-upload-${product.id}`}
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const reader = new FileReader();
+                                        reader.onload = (event) => {
+                                          const dataUrl = event.target?.result as string;
+                                          if (dataUrl) {
+                                            handleSaveProduct({ ...product, image: dataUrl, imageUrl: dataUrl });
+                                          }
+                                        };
+                                        reader.readAsDataURL(file);
+                                      }
+                                    }}
+                                  />
+                                  <input
+                                    type="text"
+                                    value={product.image || product.imageUrl || ''}
+                                    onChange={(e) => handleSaveProduct({ ...product, image: e.target.value, imageUrl: e.target.value })}
+                                    className="flex-1 min-w-0 px-2.5 py-1.5 text-[11px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                    placeholder="Atau masukkan URL Foto"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>

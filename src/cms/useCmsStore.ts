@@ -276,21 +276,36 @@ export const useCmsStore = create<CmsState>((set, get) => ({
       } catch (e) {}
     }
 
-    const themeData = THEME_DATA_MAP[cleanThemeId] || THEME_DATA_MAP['editorial'] || THEME_DATA_MAP['minimalist'];
+    const themeData = THEME_DATA_MAP[cleanThemeId] || THEME_DATA_MAP['minimalist'];
     if (themeData) {
       const realProducts = activeProds.filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
-      set((state) => ({
-        storeInfo: {
-          ...themeData.storeInfo,
-          // Preserve custom name if already modified by merchant and not the old generic ones
-          name: state.storeInfo.name && state.storeInfo.name !== 'Green Market Indonesia' && state.storeInfo.name !== 'Toko Sayur'
-            ? state.storeInfo.name
-            : themeData.storeInfo.name,
-        },
-        products: realProducts,
-        categories: themeData.categories || [],
-        navigation: (themeData.navigation || []).sort((a: any, b: any) => a.order - b.order),
-      }));
+      set((state) => {
+        // ALWAYS resolve to the current logged-in merchant's store name
+        let merchantStoreName = '';
+        if (typeof window !== 'undefined') {
+          try {
+            const rawAuth = localStorage.getItem('microcms_auth_store');
+            if (rawAuth) {
+              const parsed = JSON.parse(rawAuth);
+              if (parsed?.name && parsed.name.trim()) merchantStoreName = parsed.name.trim();
+            }
+          } catch {}
+        }
+
+        const currentName = state.storeInfo.name;
+        const isGenericOldName = !currentName || currentName === 'Green Market Indonesia' || currentName === 'Toko Sayur' || currentName === 'NOIRÉ ARCHIVE';
+        const finalName = merchantStoreName || (!isGenericOldName ? currentName : (themeData.storeInfo.name || 'Toko Saya'));
+
+        return {
+          storeInfo: {
+            ...themeData.storeInfo,
+            name: finalName,
+          },
+          products: realProducts.length > 0 ? realProducts : themeData.products,
+          categories: themeData.categories || [],
+          navigation: (themeData.navigation || []).sort((a: any, b: any) => a.order - b.order),
+        };
+      });
     }
   },
 }));

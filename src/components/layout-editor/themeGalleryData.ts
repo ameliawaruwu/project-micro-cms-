@@ -19,7 +19,6 @@ export const TEMPLATE_CATEGORIES = [
   { id: 'minimalist', label: 'Minimalist', icon: LayoutTemplate },
   { id: 'modern', label: 'Modern', icon: Zap },
   { id: 'futuristic', label: 'Futuristic', icon: Sparkles },
-  { id: 'elegant', label: 'Elegant', icon: Crown },
   { id: 'bold', label: 'Bold', icon: Flame },
   { id: 'editorial', label: 'Editorial', icon: BookOpen },
   { id: 'luxury', label: 'Luxury', icon: Gem },
@@ -91,8 +90,8 @@ export const TEMPLATE_GALLERY_ITEMS: TemplateGalleryItem[] = [
   {
     id: 'maison',
     name: 'Maison',
-    category: 'elegant',
-    categories: ['elegant', 'luxury'],
+    category: 'luxury',
+    categories: ['luxury'],
     description: 'Tipografi premium serif, whitespace berlimpah, layout sophisticated untuk brand luxury.',
     sectionCount: 6,
     thumbnailUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1200&auto=format&fit=crop',

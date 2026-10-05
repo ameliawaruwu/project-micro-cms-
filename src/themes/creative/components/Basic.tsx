@@ -6,7 +6,7 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const storeSubtitle = sectionOptions.headerSubtitle ?? sectionOptions.subheading ?? sectionOptions.tagline ?? sectionOptions.subtitle ?? '';
 
   return (
     <nav className="w-full px-8 py-6 flex justify-between items-center bg-[#E11D48] text-white sticky top-0 z-50">
@@ -45,9 +45,8 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
 };
 
 export const CreativeHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const { storeInfo } = useCmsStore();
   const heading = sectionOptions.heading || "Where Art Meets Commerce";
-  const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content || storeInfo?.description;
+  const subheading = sectionOptions.heroSubtitle ?? sectionOptions.description ?? sectionOptions.subheading ?? sectionOptions.content ?? "Explore unique handcrafted art supplies, pigments, canvases, and creative tools crafted for visionary artists.";
   const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1600&q=80";
 
   return (

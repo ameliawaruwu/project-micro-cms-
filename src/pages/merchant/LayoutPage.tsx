@@ -770,11 +770,16 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     onShowNotification('Draf tema berhasil dihapus dari Pustaka Tema.');
   };
 
-  // Handle clicking a template card → redirect to new tab like Canva
+  // Handle clicking a template card → open template in editor directly without redirecting to a new tab
   const handlePreviewTemplate = (template: TemplateGalleryItem) => {
-    const mappedThemeId = normalizeThemeId(template.storeTemplate?.id || template.id);
-    const storeSlug = currentStore.slug || (user ? `toko-${user.id.replace(/[^a-z0-9]/g, '').slice(0, 10)}` : 'toko-preview');
-    window.open(`/?previewTheme=${mappedThemeId}&toko=${encodeURIComponent(storeSlug)}&preview=true`, '_blank');
+    const existingDraft = savedThemes.find(
+      (t) => t.id === template.id || t.storeTemplate?.id === template.storeTemplate?.id
+    );
+    if (existingDraft) {
+      handleApplyAndEdit(existingDraft);
+      return;
+    }
+    handleApplyAndEdit(template as SavedThemeItem);
   };
 
   const toggleFullscreen = () => {
@@ -789,13 +794,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setHasChanges(true);
   };
 
-  // Handle "Sesuaikan Draf" / "Coba tema" → restore customized sections or template defaults
+  // Handle "Sesuaikan Draf" / "Pilih Template" → restore customized sections or template defaults directly
   const handleApplyAndEdit = (template: SavedThemeItem) => {
     setEditingDraftId(template.id);
     handleAddSavedTheme(template);
-    setLoadingTemplateName(template.name);
-    setLoadingProgress(0);
-    setPageMode('loading');
 
     const rawId = template.customLayoutSettings?.activeThemeId || 
                   template.storeTemplate?.id || 
@@ -860,22 +862,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
 
     useCmsStore.getState().loadThemeData(mappedThemeId);
-    // Animate progress bar over ~1.5 seconds, then switch to editor
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 25 + 15;
-      if (progress >= 100) {
-        progress = 100;
-        setLoadingProgress(100);
-        clearInterval(interval);
-        setTimeout(() => {
-          setPageMode('editor');
-          setPreviewTemplate(null);
-        }, 300);
-      } else {
-        setLoadingProgress(Math.min(progress, 95));
-      }
-    }, 200);
+    setPageMode('editor');
+    setPreviewTemplate(null);
   };
 
   // Keyboard shortcut listener for Esc to exit fullscreen

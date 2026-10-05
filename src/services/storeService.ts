@@ -304,21 +304,32 @@ class StoreService {
       return undefined;
     }
 
-    const clean = slug.toLowerCase().trim();
+    const clean = slug.toLowerCase().trim().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+    const cleanNoWww = clean.replace(/^www\./, '');
+    const cleanWithWww = clean.startsWith('www.') ? clean : `www.${clean}`;
 
     // 1. Fetch live from Supabase cloud so status is 100% synchronized across devices/browsers
     try {
+      const orConditions = [
+        `slug.ilike.${clean}`,
+        `slug.ilike.${cleanNoWww}`,
+        `custom_domain.ilike.${clean}`,
+        `custom_domain.ilike.${cleanNoWww}`,
+        `custom_domain.ilike.${cleanWithWww}`,
+        `id.eq.${clean}`,
+      ].join(',');
+
       let { data, error } = await supabase
         .from('stores')
         .select('*')
-        .or(`slug.ilike.${clean},id.eq.${clean},custom_domain.ilike.${clean}`)
+        .or(orConditions)
         .limit(1);
 
       if (error) {
         const fallback = await supabase
           .from('stores')
           .select('*')
-          .or(`slug.ilike.${clean},id.eq.${clean}`)
+          .or(`slug.ilike.${clean},slug.ilike.${cleanNoWww},id.eq.${clean}`)
           .limit(1);
         data = fallback.data;
         error = fallback.error;
@@ -377,7 +388,29 @@ class StoreService {
 
     // 2. Search local stored stores
     const stores = this.getStoredStores();
-    const exact = stores.find((s) => s.slug?.toLowerCase() === clean || s.id?.toLowerCase() === clean);
+    const exact = stores.find((s) => {
+      const sSlug = s.slug?.toLowerCase();
+      const sId = s.id?.toLowerCase();
+      const sDomain = s.customDomain?.toLowerCase().trim().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+      const sDomainNoWww = sDomain?.replace(/^www\./, '');
+      const sDomainWww = sDomain ? (sDomain.startsWith('www.') ? sDomain : `www.${sDomain}`) : '';
+      const reqDomain = (s.layoutSettings as any)?.domainRequest?.fullDomain?.toLowerCase().trim().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+      const reqDomainNoWww = reqDomain?.replace(/^www\./, '');
+
+      return (
+        sSlug === clean ||
+        sSlug === cleanNoWww ||
+        sId === clean ||
+        sDomain === clean ||
+        sDomain === cleanNoWww ||
+        sDomain === cleanWithWww ||
+        sDomainNoWww === cleanNoWww ||
+        sDomainWww === clean ||
+        reqDomain === clean ||
+        reqDomain === cleanNoWww ||
+        reqDomainNoWww === cleanNoWww
+      );
+    });
     if (exact) return exact;
 
     const fuzzy = stores.find((s) => {
@@ -616,6 +649,14 @@ class StoreService {
       const existing = stores.find((s) => s.id === data.id);
       if (existing) {
         return existing;
+      }
+    }
+
+    // Enforce 1 Account / Email = 1 Store
+    if (data.merchantId) {
+      const existingMerchantStore = stores.find((s) => s.merchantId === data.merchantId);
+      if (existingMerchantStore) {
+        return existingMerchantStore;
       }
     }
 

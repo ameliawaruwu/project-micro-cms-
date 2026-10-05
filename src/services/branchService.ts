@@ -56,11 +56,8 @@ class BranchService {
   }
 
   private saveBranches(storeId: string, branchesToSave: ShippingBranch[]) {
-    const existing = this.getStoredBranches(storeId);
+    if (!storeId) return;
     const map = new Map<string, ShippingBranch>();
-    existing.forEach((b) => {
-      if (b && b.id) map.set(b.id, b);
-    });
     branchesToSave.forEach((b) => {
       if (b && b.id) map.set(b.id, b);
     });
@@ -176,28 +173,96 @@ class BranchService {
     id: string,
     updates: Partial<Omit<ShippingBranch, 'id'>>
   ): Promise<ShippingBranch> {
-    const storeId = updates.storeId || '';
-    const branches = this.getStoredBranches(storeId);
-    const index = branches.findIndex((b) => b.id === id);
+    let resolvedStoreId = updates.storeId || '';
+    let branches = this.getStoredBranches(resolvedStoreId);
+    let index = branches.findIndex((b) => b.id === id);
+
+    // Jika tidak ditemukan di storeId yang diberikan, cari di seluruh cache localStorage
+    if (index === -1 && typeof window !== 'undefined') {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(BRANCHES_STORAGE_KEY_PREFIX)) {
+          try {
+            const list: ShippingBranch[] = JSON.parse(localStorage.getItem(key) || '[]');
+            const foundIdx = list.findIndex((b) => b.id === id);
+            if (foundIdx !== -1) {
+              resolvedStoreId = list[foundIdx].storeId || key.replace(BRANCHES_STORAGE_KEY_PREFIX, '');
+              branches = list;
+              index = foundIdx;
+              break;
+            }
+          } catch { /* ignore */ }
+        }
+      }
+    }
+
+    // Jika masih belum ditemukan, coba ambil dari Supabase
+    if (index === -1) {
+      try {
+        const { data } = await supabase.from('shipping_branches').select('*').eq('id', id).maybeSingle();
+        if (data) {
+          const branchFromDb = mapDbRowToBranch(data);
+          resolvedStoreId = resolvedStoreId || branchFromDb.storeId;
+          branches = [branchFromDb];
+          index = 0;
+        }
+      } catch { /* ignore */ }
+    }
+
     if (index === -1) throw new Error('Cabang gudang tidak ditemukan');
 
     let updatedList = [...branches];
 
-    if (updates.isDefault) {
-      // Hanya nonaktifkan default untuk branch milik toko yang sama
-      updatedList = updatedList.map((b) => ({ ...b, isDefault: false }));
+    if (updates.isDefault === true) {
+      // Hanya cabang ini yang menjadi cabang utama (isDefault: true)
+      updatedList = updatedList.map((b) => ({ ...b, isDefault: b.id === id }));
+    } else if (updates.isDefault === false) {
+      const otherBranches = updatedList.filter((b) => b.id !== id);
+      if (otherBranches.length === 0) {
+        // Satu-satunya cabang, wajib tetap default
+        updates.isDefault = true;
+      } else {
+        const hasOtherDefault = otherBranches.some((b) => b.isDefault);
+        if (!hasOtherDefault) {
+          // Jadikan cabang pertama lainnya sebagai cabang utama baru
+          const newDefaultId = otherBranches[0].id;
+          updatedList = updatedList.map((b) => ({
+            ...b,
+            isDefault: b.id === newDefaultId,
+          }));
+          try {
+            await supabase
+              .from('shipping_branches')
+              .update({ is_default: true })
+              .eq('id', newDefaultId)
+              .eq('store_id', resolvedStoreId);
+          } catch (err) {
+            console.warn('Supabase fallback default branch update skipped:', err);
+          }
+        }
+      }
     }
 
     const updatedBranch: ShippingBranch = {
       ...updatedList[index],
       ...updates,
+      storeId: resolvedStoreId || updatedList[index].storeId,
       updatedAt: new Date().toISOString(),
     };
 
     updatedList[index] = updatedBranch;
-    this.saveBranches(storeId || updatedBranch.storeId || '', updatedList);
+    this.saveBranches(resolvedStoreId || updatedBranch.storeId, updatedList);
 
     try {
+      if (updatedBranch.isDefault) {
+        // Nonaktifkan cabang utama lain dari toko yang sama
+        await supabase
+          .from('shipping_branches')
+          .update({ is_default: false })
+          .eq('store_id', resolvedStoreId)
+          .neq('id', id);
+      }
+
       await supabase
         .from('shipping_branches')
         .update({
@@ -214,7 +279,7 @@ class BranchService {
           updated_at: updatedBranch.updatedAt,
         })
         .eq('id', id)
-        .eq('store_id', updatedBranch.storeId || storeId); // ownership check
+        .eq('store_id', resolvedStoreId || updatedBranch.storeId); // ownership check
     } catch (err) {
       console.warn('Supabase branch update skipped:', err);
     }

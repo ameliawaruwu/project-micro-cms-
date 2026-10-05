@@ -569,83 +569,84 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
     ]
   },
 
-  // 8. CREATIVE (KREATIV LAB - Art Prints, Stationery & Creative Goods)
+  // 8. CREATIVE (Art Supplies, Canvas, Brushes & Drawing Tools)
   creative: {
     storeInfo: {
-      name: "KREATIV LAB",
-      description: "Art Prints, Creative Stationery & Design Objects for Curious Minds.",
-      address: "Art District Bldg 12, Yogyakarta",
-      email: "hello@kreativlab.id",
-      phone: "+62 811 2222 3333",
-      socials: { instagram: "@kreativ.lab" }
+      name: "",
+      description: "Pusat perlengkapan seni rupa, cat lukis, kuas, kanvas, dan alat gambar berkualitas tinggi untuk para seniman.",
+      address: "Creative Studio Hub, Art District",
+      email: "hello@creativestudio.com",
+      phone: "+62 812 3456 7890",
+      socials: { instagram: "@creative.artsupplies" }
     },
     categories: [
-      { id: "crt_c1", name: "Art Prints", slug: "art-prints", image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80" },
-      { id: "crt_c2", name: "Stationery", slug: "stationery", image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&q=80" },
-      { id: "crt_c3", name: "Creative Objects", slug: "objects", image: "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&q=80" }
+      { id: "art_c1", name: "Cat Lukis & Pigmen", slug: "cat-lukis", image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&q=80" },
+      { id: "art_c2", name: "Kuas & Palet", slug: "kuas-palet", image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80" },
+      { id: "art_c3", name: "Kanvas & Easel", slug: "kanvas-easel", image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80" },
+      { id: "art_c4", name: "Alat Gambar & Sketsa", slug: "alat-sketsa", image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=800&q=80" }
     ],
     products: [
       {
-        id: "crt_p1", name: "Abstract Geometry Risograph Print A3", slug: "art-print-riso", price: 240000,
+        id: "art_p1", name: "Set Cat Akrilik Artist Grade 24 Warna", slug: "set-cat-akrilik-24-warna", price: 185000,
+        image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&q=80",
+        categoryId: "art_c1", categoryName: "Cat Lukis & Pigmen",
+        description: "Cat akrilik pigmen tinggi dengan saturasi pekat, cepat kering, dan tahan luntur untuk berbagai media lukis.",
+        status: "active", isFeatured: true, isNew: true, stock: 45
+      },
+      {
+        id: "art_p2", name: "Set Kuas Lukis Nylon Bulu Halus (12 Pcs)", slug: "set-kuas-lukis-nylon", price: 125000,
         image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80",
-        categoryId: "crt_c1", categoryName: "Art Prints",
-        description: "Limited edition 3-color risograph print on 250gsm archival cotton paper.",
-        status: "active", isFeatured: true, isNew: true, stock: 25
+        categoryId: "art_c2", categoryName: "Kuas & Palet",
+        description: "Set kuas lukis berbagai ukuran (flat, round, filbert) dengan bulu nylon sintetis elastis dan gagang kayu kokoh.",
+        status: "active", isFeatured: true, isNew: false, stock: 60
       },
       {
-        id: "crt_p2", name: "Clothbound Designer Grid Journal", slug: "grid-journal", price: 185000,
-        image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&q=80",
-        categoryId: "crt_c2", categoryName: "Stationery",
-        description: "Hardcover 160-page bullet grid journal with fountain pen friendly paper.",
-        status: "active", isFeatured: true, isNew: false, stock: 40
+        id: "art_p3", name: "Kanvas Lukis Stretched Canvas 40x50 cm", slug: "stretched-canvas-40x50", price: 65000,
+        image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80",
+        categoryId: "art_c3", categoryName: "Kanvas & Easel",
+        description: "Kanvas katun 100% dengan triple gesso primer, siap pakai untuk cat minyak dan cat akrilik.",
+        status: "active", isFeatured: true, isNew: true, stock: 80
       },
       {
-        id: "crt_p3", name: "Hand-Thrown Clay Terracotta Vase", slug: "terracotta-vase", price: 380000,
-        image: "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&q=80",
-        categoryId: "crt_c3", categoryName: "Creative Objects",
-        description: "Unique hand-thrown pottery vase with raw clay finish and organic texture.",
-        status: "active", isFeatured: true, isNew: true, stock: 10
+        id: "art_p4", name: "Drawing Pencil Set Grade 2H - 8B (12 Pensil)", slug: "drawing-pencil-set", price: 85000,
+        image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=800&q=80",
+        categoryId: "art_c4", categoryName: "Alat Gambar & Sketsa",
+        description: "Set pensil grafit profesional untuk shading, arsir halus, dan sketsa detail dengan lead padat anti patah.",
+        status: "active", isFeatured: false, isNew: false, stock: 75
       },
       {
-        id: "crt_p4", name: "Sculptural Wave Soy Wax Candle", slug: "wave-candle", price: 175000,
-        image: "https://images.unsplash.com/photo-1603006905003-be475563bc59?w=800&q=80",
-        categoryId: "crt_c3", categoryName: "Creative Objects",
-        description: "Hand-poured pillar candle shaped in wave geometry, unscented soy blend.",
-        status: "active", isFeatured: false, isNew: true, stock: 40
+        id: "art_p5", name: "Set Cat Minyak Oil Color Classic 12 Tabung", slug: "cat-minyak-oil-color-12", price: 210000,
+        image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&q=80",
+        categoryId: "art_c1", categoryName: "Cat Lukis & Pigmen",
+        description: "Cat minyak bertekstur kental dengan pigmen murni untuk teknik impasto maupun glaze transparan.",
+        status: "active", isFeatured: true, isNew: true, stock: 30
       },
       {
-        id: "fp5_crt", name: "Brass Geometric Desk Ruler Set", slug: "brass-ruler", price: 150000,
-        image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=800&q=80",
-        categoryId: "crt_c2", categoryName: "Stationery",
-        description: "Solid raw brass 15cm ruler and triangle set that develops a unique patina.",
-        status: "active", isFeatured: false, isNew: false, stock: 35
+        id: "art_p6", name: "Standing Tripod Wooden Easel Kayu Pinus", slug: "standing-wooden-easel", price: 195000,
+        image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80",
+        categoryId: "art_c3", categoryName: "Kanvas & Easel",
+        description: "Kuda-kuda lukis (easel) kayu pinus solid setinggi 150 cm yang dapat diatur kemiringan dan tingginya.",
+        status: "active", isFeatured: true, isNew: false, stock: 25
       },
       {
-        id: "fp6_crt", name: "Enamel Pins Illustration Set (3x)", slug: "enamel-pins", price: 120000,
-        image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800&q=80",
-        categoryId: "crt_c3", categoryName: "Creative Objects",
-        description: "Set of 3 custom hard enamel lapel pins featuring original illustrations.",
-        status: "active", isFeatured: true, isNew: false, stock: 50
+        id: "art_p7", name: "Palet Cat Kayu Oval Tradisional Artist", slug: "palet-cat-kayu-oval", price: 45000,
+        image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80",
+        categoryId: "art_c2", categoryName: "Kuas & Palet",
+        description: "Palet kayu oval ergonomis dengan lubang ibu jari untuk kenyamanan melukis berjam-jam.",
+        status: "active", isFeatured: false, isNew: false, stock: 50
       },
       {
-        id: "fp7_crt", name: "Botanical Illustration Postcard Box", slug: "postcard-box", price: 165000,
-        image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800&q=80",
-        categoryId: "crt_c2", categoryName: "Stationery",
-        description: "Box of 20 unique botanical postcards printed on textured watercolor paper.",
-        status: "active", isFeatured: false, isNew: true, stock: 30
-      },
-      {
-        id: "fp8_crt", name: "Hand-Woven Tapestry Wall Art", slug: "tapestry-art", price: 490000,
-        image: "https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=800&q=80",
-        categoryId: "crt_c3", categoryName: "Creative Objects",
-        description: "Hand-woven cotton fringe hanging banner with wooden dowel support.",
-        status: "active", isFeatured: true, isNew: false, stock: 8
+        id: "art_p8", name: "Buku Sketsa Sketchbook Spiral A4 200 GSM", slug: "sketchbook-spiral-a4", price: 75000,
+        image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=800&q=80",
+        categoryId: "art_c4", categoryName: "Alat Gambar & Sketsa",
+        description: "Kertas acid-free tebal 200 GSM cocok untuk cat air, gouache, marker, dan pensil gambar.",
+        status: "active", isFeatured: false, isNew: true, stock: 90
       }
     ],
     navigation: [
-      { id: "crt_n1", label: "Gallery", route: "/katalog", order: 1, isActive: true },
-      { id: "crt_n2", label: "Workshops", route: "/berita", order: 2, isActive: true },
-      { id: "crt_n3", label: "About Studio", route: "/tentang", order: 3, isActive: true }
+      { id: "art_n1", label: "Katalog Alat Seni", route: "/katalog", order: 1, isActive: true },
+      { id: "art_n2", label: "Galeri & Inspirasi", route: "/berita", order: 2, isActive: true },
+      { id: "art_n3", label: "Tentang Studio", route: "/tentang", order: 3, isActive: true }
     ]
   },
 
