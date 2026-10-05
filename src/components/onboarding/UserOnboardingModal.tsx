@@ -221,6 +221,19 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
 
         {/* Form Body - Compact & Responsive */}
         <form onSubmit={handleSaveStoreInfo} className="p-5 space-y-3 overflow-y-auto">
+          {/* Automatic Free Plan Notification Badge */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11.5px] leading-tight">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <div className="flex-1">
+              <span className="font-semibold text-emerald-900">
+                {isEn ? 'Free Plan Active' : 'Paket Free Otomatis Aktif'}
+              </span>
+              <span className="text-emerald-700 ml-1">
+                {isEn ? '— Toko siap dipakai tanpa biaya.' : '— Toko siap dipakai tanpa biaya.'}
+              </span>
+            </div>
+          </div>
+
           {/* Store Name */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
