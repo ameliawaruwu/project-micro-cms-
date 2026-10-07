@@ -216,19 +216,19 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                         <div className="col-span-7 grid grid-cols-2 gap-1.5">
                           {/* Pouch */}
                           <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-12 shadow-2xs overflow-hidden">
-                            <img src="/assets/3d/kraft_pouch.jpg" alt="Pouch" className="h-10 w-full object-contain mix-blend-multiply" />
+                            <img src="/assets/3d/kraft_pouch.png" alt="Pouch" className="h-10 w-full object-contain filter drop-shadow-xs" />
                           </div>
                           {/* Green Mug */}
                           <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-12 shadow-2xs overflow-hidden">
-                            <img src="/assets/3d/green_mug.jpg" alt="Mug" className="h-10 w-full object-contain mix-blend-multiply" />
+                            <img src="/assets/3d/green_mug.png" alt="Mug" className="h-10 w-full object-contain filter drop-shadow-xs" />
                           </div>
                           {/* Blue Bottle */}
                           <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-12 shadow-2xs overflow-hidden">
-                            <img src="/assets/3d/blue_bottle.jpg" alt="Serum" className="h-10 w-full object-contain mix-blend-multiply" />
+                            <img src="/assets/3d/blue_bottle.png" alt="Serum" className="h-10 w-full object-contain filter drop-shadow-xs" />
                           </div>
                           {/* Cardboard Box */}
                           <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-12 shadow-2xs overflow-hidden">
-                            <img src="/assets/3d/cardboard_box.jpg" alt="Box" className="h-10 w-full object-contain mix-blend-multiply" />
+                            <img src="/assets/3d/cardboard_box.png" alt="Box" className="h-10 w-full object-contain filter drop-shadow-xs" />
                           </div>
                         </div>
 
@@ -259,17 +259,17 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
                 {/* Bottom Left: 3D Red Shopping Bags */}
                 <div className="absolute -bottom-8 -left-10 z-20 transition-transform hover:scale-105">
-                  <img src="/assets/3d/red_bags.jpg" alt="Red Bags" className="w-20 h-20 object-contain filter drop-shadow-xl mix-blend-multiply" />
+                  <img src="/assets/3d/red_bags.png" alt="Red Bags" className="w-20 h-20 object-contain filter drop-shadow-xl" />
                 </div>
 
                 {/* Bottom Center: Cute 3D Physical Store Front Building */}
                 <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 z-30 transition-transform hover:scale-105">
-                  <img src="/assets/3d/mini_storefront.jpg" alt="Storefront" className="w-28 h-28 object-contain filter drop-shadow-2xl mix-blend-multiply" />
+                  <img src="/assets/3d/mini_storefront.png" alt="Storefront" className="w-28 h-28 object-contain filter drop-shadow-2xl" />
                 </div>
 
                 {/* Bottom Right: Floating 3D Cardboard Box */}
                 <div className="absolute -bottom-7 right-0 z-20 animate-bounce-gentle">
-                  <img src="/assets/3d/cardboard_box.jpg" alt="Shipping Box" className="w-16 h-16 object-contain filter drop-shadow-xl mix-blend-multiply" />
+                  <img src="/assets/3d/cardboard_box.png" alt="Shipping Box" className="w-16 h-16 object-contain filter drop-shadow-xl" />
                 </div>
               </div>
 
@@ -286,8 +286,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   <p className="text-[11px] font-extrabold text-[#241A1A] ml-5 mb-2">Katalog Produk</p>
                   {/* Miniature Product Props */}
                   <div className="flex items-end justify-center gap-1 bg-[#FAF7F7] rounded-xl p-1 border border-[#F0EAEB] h-12 overflow-hidden">
-                    <img src="/assets/3d/kraft_pouch.jpg" alt="Pouch" className="h-10 object-contain mix-blend-multiply" />
-                    <img src="/assets/3d/green_mug.jpg" alt="Mug" className="h-10 object-contain mix-blend-multiply" />
+                    <img src="/assets/3d/kraft_pouch.png" alt="Pouch" className="h-10 object-contain" />
+                    <img src="/assets/3d/green_mug.png" alt="Mug" className="h-10 object-contain" />
                   </div>
                 </div>
               </div>
@@ -307,14 +307,14 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   {/* Order List Rows */}
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 bg-[#FAF7F7] rounded-lg p-1.5 border border-[#F0EAEB]">
-                      <img src="/assets/3d/kraft_pouch.jpg" alt="Thumbnail" className="w-5 h-6 object-contain mix-blend-multiply shrink-0" />
+                      <img src="/assets/3d/kraft_pouch.png" alt="Thumbnail" className="w-5 h-6 object-contain shrink-0" />
                       <div className="flex-1 space-y-1">
                         <div className="h-1 bg-[#D8CECE] rounded-full w-full" />
                         <div className="h-1 bg-[#EDE7E7] rounded-full w-2/3" />
                       </div>
                     </div>
                     <div className="flex items-center gap-2 bg-[#FAF7F7] rounded-lg p-1.5 border border-[#F0EAEB]">
-                      <img src="/assets/3d/green_mug.jpg" alt="Thumbnail" className="w-5 h-6 object-contain mix-blend-multiply shrink-0" />
+                      <img src="/assets/3d/green_mug.png" alt="Thumbnail" className="w-5 h-6 object-contain shrink-0" />
                       <div className="flex-1 space-y-1">
                         <div className="h-1 bg-[#D8CECE] rounded-full w-3/4" />
                         <div className="h-1 bg-[#EDE7E7] rounded-full w-1/2" />
@@ -376,7 +376,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   <p className="text-[11px] font-extrabold text-[#241A1A] ml-5 mb-2">Pengiriman</p>
                   {/* Package Icon & Tracking bar */}
                   <div className="flex flex-col items-center bg-[#FAF7F7] rounded-xl p-2 border border-[#F0EAEB]">
-                    <img src="/assets/3d/cardboard_box.jpg" alt="Box" className="w-10 h-10 object-contain mix-blend-multiply mb-1" />
+                    <img src="/assets/3d/cardboard_box.png" alt="Box" className="w-10 h-10 object-contain mb-1" />
                     <p className="text-[7px] font-semibold text-[#706866] mb-1">Dalam Pengiriman</p>
                     {/* Progress track */}
                     <div className="w-full h-1.5 bg-[#EADBDB] rounded-full relative">
@@ -426,15 +426,15 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   {/* Stock Grid */}
                   <div className="grid grid-cols-3 gap-1 bg-[#FAF7F7] p-1.5 rounded-xl border border-[#F0EAEB] items-end">
                     <div className="flex flex-col items-center">
-                      <img src="/assets/3d/green_mug.jpg" alt="Item" className="w-6 h-7 object-contain mix-blend-multiply mb-0.5" />
+                      <img src="/assets/3d/green_mug.png" alt="Item" className="w-6 h-7 object-contain mb-0.5" />
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     </div>
                     <div className="flex flex-col items-center">
-                      <img src="/assets/3d/kraft_pouch.jpg" alt="Item" className="w-6 h-7 object-contain mix-blend-multiply mb-0.5" />
+                      <img src="/assets/3d/kraft_pouch.png" alt="Item" className="w-6 h-7 object-contain mb-0.5" />
                       <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
                     </div>
                     <div className="flex flex-col items-center">
-                      <img src="/assets/3d/blue_bottle.jpg" alt="Item" className="w-6 h-7 object-contain mix-blend-multiply mb-0.5" />
+                      <img src="/assets/3d/blue_bottle.png" alt="Item" className="w-6 h-7 object-contain mb-0.5" />
                       <div className="w-1.5 h-1.5 rounded-full bg-sky-500" />
                     </div>
                   </div>
