@@ -236,10 +236,11 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                         <div className="col-span-5 bg-white rounded-xl p-2 border border-[#EADBDB] shadow-2xs flex flex-col justify-between">
                           <div>
                             <p className="text-[7px] font-semibold text-[#706866]">Total Penjualan</p>
-                            <p className="text-[10px] font-extrabold text-[#241A1A] leading-tight">Rp 12.450.000</p>
-                            <span className="inline-block mt-0.5 px-1 py-0.2 rounded bg-emerald-100 text-emerald-700 text-[6px] font-bold">
-                              + 12%
-                            </span>
+                            <div className="h-2.5 bg-[#241A1A]/20 rounded-full w-full my-1.5" />
+                            <div className="flex items-center gap-1">
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              <div className="h-1.5 bg-emerald-500/30 rounded-full w-8" />
+                            </div>
                           </div>
                           {/* Mini Bar Chart */}
                           <div className="flex items-end gap-0.5 h-7 pt-1">
@@ -299,10 +300,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   <div className="absolute -top-3 -left-3 z-30 w-8 h-8 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
                     <Bell className="w-4 h-4 text-white" />
                   </div>
-                  {/* Notification count */}
-                  <span className="absolute -top-1.5 left-3 z-40 w-4 h-4 bg-red-500 rounded-full text-[8px] text-white flex items-center justify-center font-bold border-2 border-white shadow-xs">
-                    3
-                  </span>
+                  {/* Notification dot */}
+                  <span className="absolute -top-1 left-3 z-40 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-xs" />
                   <p className="text-[11px] font-extrabold text-[#241A1A] ml-5 mb-2">Pesanan Masuk</p>
                   {/* Order List Rows */}
                   <div className="space-y-1.5">
