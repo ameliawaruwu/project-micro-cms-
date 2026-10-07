@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Store,
   Share2,
@@ -6,7 +6,13 @@ import {
   ShoppingBag,
   ExternalLink,
   Check,
+  Rotate3d,
+  Network,
+  Sparkles,
+  CheckCircle2,
+  TrendingUp,
 } from 'lucide-react';
+import BrainCellAnimation from './BrainCellAnimation';
 
 interface StorefrontShowcaseProps {
   onViewStorefrontDemo: () => void;
@@ -18,6 +24,11 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
   onNavigateRegister,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [activeBranchTab, setActiveBranchTab] = useState<'pusat' | 'bandung' | 'surabaya'>('pusat');
+
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleCopyLink = () => {
     navigator.clipboard?.writeText?.('https://kroomify.id/toko-batik');
@@ -25,35 +36,97 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
     setTimeout(() => setCopied(false), 2500);
   };
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 10;
+    const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 10;
+
+    setMousePos({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseEnter = () => setIsHovered(true);
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setMousePos({ x: 0, y: 0 });
+  };
+
+  const transformStyle = isHovered
+    ? `perspective(1200px) rotateX(${mousePos.x}deg) rotateY(${mousePos.y}deg) scale3d(1.015, 1.015, 1.015)`
+    : 'perspective(1200px) rotateX(2deg) rotateY(-3deg) scale3d(1, 1, 1)';
+
   return (
-    <section className="py-16 sm:py-20 lg:py-24 bg-[#FAF7F7] border-t border-[#E8DDDE]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-16 sm:py-20 lg:py-24 bg-[#FAF7F7] border-t border-[#E8DDDE] overflow-hidden relative">
+      {/* Background glow effects */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[#66000E]/5 blur-3xl -z-10 pointer-events-none rounded-full" />
+      
+      <BrainCellAnimation />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-semibold mb-3">
-            <Store className="w-3.5 h-3.5" />
-            <span>Halaman Toko Pembeli Modern</span>
+            <Network className="w-3.5 h-3.5" />
+            <span>Rantai Toko Digital & Multi-Branch Online</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#241A1A] tracking-tight leading-snug mb-2">
-            Punya Toko Online Sendiri.
+            Etalase Digital Rantai Toko Berotasi 3D.
           </h2>
           <p className="text-[#5F5652] text-xs sm:text-sm leading-relaxed font-normal">
-            Setiap bisnis mendapatkan halaman toko yang dapat dibagikan langsung kepada pelanggan melalui WhatsApp, Instagram, dan TikTok.
+            Setiap cabang fisik memiliki halaman toko digital independen & terhubung langsung ke link WhatsApp, Instagram, dan TikTok.
           </p>
         </div>
 
-        {/* Storefront Visual Container */}
-        <div className="max-w-4xl mx-auto rounded-2xl bg-white border border-[#E8DDDE] shadow-md overflow-hidden">
+        {/* 3D Perspective Controls Indicator */}
+        <div className="max-w-4xl mx-auto mb-2 flex items-center justify-between text-xs text-[#5F5652]">
+          <div className="flex items-center gap-2">
+            <Rotate3d className="w-4 h-4 text-[#66000E] animate-spin" />
+            <span className="font-medium text-[#241A1A]">Animasi 3D Interaktif Rantai Toko</span>
+          </div>
+          <span className="text-[11px] text-[#857C76]">Arahkan kursor untuk rotasi 3D</span>
+        </div>
+
+        {/* Storefront 3D Rotational Container */}
+        <div 
+          ref={containerRef}
+          onMouseMove={handleMouseMove}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          style={{
+            transform: transformStyle,
+            transition: isHovered ? 'transform 0.1s ease-out' : 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+          className="max-w-4xl mx-auto rounded-2xl bg-white border border-[#E8DDDE] shadow-2xl overflow-hidden preserve-3d relative transition-all"
+        >
           
+          {/* FLOATING 3D DEPTH BADGE (Layer Z: 40px) */}
+          <div 
+            style={{ transform: 'translateZ(40px)' }}
+            className="absolute top-14 right-4 z-40 bg-white/95 backdrop-blur-md rounded-xl p-2.5 shadow-lg border border-[#E8DDDE] hidden sm:flex items-center gap-2 text-xs font-bold text-[#241A1A]"
+          >
+            <div className="w-6 h-6 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
+              ✓
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-[#241A1A]">Multi-Branch Synced</p>
+              <p className="text-[9px] text-[#857C76] font-normal">Stok realtime 3 cabang</p>
+            </div>
+          </div>
+
           {/* Top Browser URL Bar */}
           <div className="bg-[#241A1A] text-white p-3 sm:p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 w-full sm:w-auto">
-
               <div className="px-3 py-1 rounded-lg bg-white/10 text-white font-mono text-xs flex items-center gap-1.5 flex-1 sm:flex-initial">
                 <Store className="w-3.5 h-3.5 text-[#F5E8EA]" />
                 <span className="font-normal">kroomify.id/toko-batik</span>
               </div>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-medium border border-emerald-500/30">
+                ● Live 3D Chain
+              </span>
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -87,20 +160,57 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
               />
               <div className="text-center sm:text-left flex-1">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-                  <h3 className="text-xl sm:text-2xl font-bold text-white">Toko Batik Kirana</h3>
+                  <h3 className="text-xl sm:text-2xl font-bold text-white">Toko Batik Kirana (Rantai Toko)</h3>
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F5E8EA] text-[#66000E]">
                     ✓ Resmi Terverifikasi
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-neutral-300 font-normal">
-                  Batik Lokal Berkualitas • Asli Pekalongan & Solo
+                  Batik Lokal Berkualitas • Pekalongan, Solo, & Jakarta
                 </p>
-                <div className="mt-2.5 flex items-center justify-center sm:justify-start gap-3 text-xs text-neutral-300 font-normal">
-                  <span>📍 Pekalongan, Jawa Tengah</span>
+                <div className="mt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-neutral-300 font-normal">
+                  <span>📍 3 Cabang Aktif</span>
                   <span>•</span>
                   <span>⭐ 4.9 (140+ Ulasan)</span>
+                  <span>•</span>
+                  <span className="text-emerald-400 font-semibold">⚡ Delivery Biteship Instant</span>
                 </div>
               </div>
+            </div>
+
+            {/* Branch Switcher Tabs */}
+            <div className="flex items-center gap-2 p-1.5 bg-white rounded-xl border border-[#E8DDDE] text-xs">
+              <span className="font-bold text-[#241A1A] px-2 text-[11px]">Etalase Cabang:</span>
+              <button
+                onClick={() => setActiveBranchTab('pusat')}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
+                  activeBranchTab === 'pusat'
+                    ? 'bg-[#66000E] text-white shadow-2xs'
+                    : 'text-[#5F5652] hover:bg-[#FAF7F7]'
+                }`}
+              >
+                Pusat (Jakarta)
+              </button>
+              <button
+                onClick={() => setActiveBranchTab('bandung')}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
+                  activeBranchTab === 'bandung'
+                    ? 'bg-[#66000E] text-white shadow-2xs'
+                    : 'text-[#5F5652] hover:bg-[#FAF7F7]'
+                }`}
+              >
+                Cabang Bandung
+              </button>
+              <button
+                onClick={() => setActiveBranchTab('surabaya')}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
+                  activeBranchTab === 'surabaya'
+                    ? 'bg-[#66000E] text-white shadow-2xs'
+                    : 'text-[#5F5652] hover:bg-[#FAF7F7]'
+                }`}
+              >
+                Cabang Surabaya
+              </button>
             </div>
 
             {/* Search and Categories bar */}
@@ -134,14 +244,14 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
                 />
                 <div>
                   <span className="text-[10px] font-semibold text-[#66000E] bg-[#F5E8EA] px-2 py-0.5 rounded-full border border-[#E8DDDE]">
-                    Terlaris
+                    Terlaris • {activeBranchTab === 'pusat' ? 'Pusat' : activeBranchTab === 'bandung' ? 'Bandung' : 'Surabaya'}
                   </span>
                   <h4 className="text-xs sm:text-sm font-bold text-[#241A1A] mt-1.5 truncate">Batik Parang Pekalongan</h4>
                   <p className="text-xs text-[#5F5652] font-normal line-clamp-1">Kain katun primisima halus dan adem</p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 150.000</span>
-                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px]">
+                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px] cursor-pointer">
                     <ShoppingBag className="w-3 h-3" />
                     <span>Beli</span>
                   </button>
@@ -164,7 +274,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 175.000</span>
-                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px]">
+                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px] cursor-pointer">
                     <ShoppingBag className="w-3 h-3" />
                     <span>Beli</span>
                   </button>
@@ -187,7 +297,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 225.000</span>
-                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px]">
+                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px] cursor-pointer">
                     <ShoppingBag className="w-3 h-3" />
                     <span>Beli</span>
                   </button>
@@ -204,4 +314,3 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
     </section>
   );
 };
-

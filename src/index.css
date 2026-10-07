@@ -178,6 +178,37 @@
   }
 }
 
+/* ============================================================================ */
+/* Subtle Float Utilities for Physical-to-Digital Scene                         */
+/* ============================================================================ */
+
+@keyframes float-subtle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float-subtle {
+  animation: float-subtle 4.5s ease-in-out infinite;
+}
+
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0) translateX(-50%); }
+  50% { transform: translateY(-4px) translateX(-50%); }
+}
+.animate-bounce-gentle {
+  animation: bounce-gentle 2s ease-in-out infinite;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+
+
+
+
 @media (prefers-reduced-motion: reduce) {
   .animate-float-subtle {
     animation: none !important;

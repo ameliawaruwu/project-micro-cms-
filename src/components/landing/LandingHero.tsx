@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   ArrowRight,
-  Sparkles,
   CheckCircle2,
   TrendingUp,
+  Store,
   ShoppingBag,
-  Package,
+  Bell,
   CreditCard,
-  ChevronRight,
-  Play,
+  Truck,
+  Box,
+  Users,
+  BarChart3,
+  Package,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -20,318 +23,369 @@ interface LandingHeroProps {
   isAuthenticated?: boolean;
 }
 
+/* ──────────────────────────────────────────
+   IconBadge — the round icon that sits at
+   the top-left corner of each floating card
+   ────────────────────────────────────────── */
+const IconBadge: React.FC<{
+  icon: React.ReactNode;
+  bg?: string;
+  className?: string;
+}> = ({ icon, bg = 'bg-[#66000E]', className = '' }) => (
+  <div className={`absolute -top-3 -left-3 z-30 w-7 h-7 ${bg} rounded-full flex items-center justify-center shadow-md border-2 border-white ${className}`}>
+    {icon}
+  </div>
+);
+
 export const LandingHero: React.FC<LandingHeroProps> = ({
   onNavigateRegister,
-  onNavigateLogin,
-  onLaunchDemo,
   onScrollToHowItWorks,
 }) => {
-  const { t, language } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products'>('overview');
-
-  const daysOfWeek = language === 'en'
-    ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    : ['Sn', 'Sl', 'Rb', 'Km', 'Jm', 'Sb', 'Mg'];
+  const { t } = useLanguage();
 
   return (
-    <section 
-      id="hero" 
-      className="relative min-h-[calc(100svh-64px)] min-h-[calc(100dvh-64px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center pt-4 pb-20 sm:py-8 lg:py-16 overflow-hidden bg-white scroll-mt-16 sm:scroll-mt-20"
+    <section
+      id="hero"
+      className="relative min-h-[calc(100svh-64px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center pt-8 pb-20 sm:py-12 lg:py-16 overflow-hidden bg-[#FAFAFA] font-sans"
     >
-      {/* Subtle Warm Ambient Glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#66000E]/4 blur-3xl -z-10 pointer-events-none rounded-full" />
+      <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-0 items-center">
 
-      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-center">
-          
-          {/* Left Column: Headline & Quick Actions */}
-          <div className="lg:col-span-6 space-y-4 sm:space-y-5 text-center lg:text-left">
-            
-            {/* Small UMKM Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5E8EA] border border-[#E8DDDE] text-[#66000E] text-xs font-medium shadow-2xs">
-              <Sparkles className="w-3.5 h-3.5 text-[#66000E]" />
-              <span>{t('hero_umkm_badge', 'Solusi Toko Online UMKM')}</span>
-            </div>
-
-            {/* Main Headline - Balanced Size & Weight */}
-            <h1 className="font-semibold text-xl sm:text-3xl lg:text-4xl text-[#241A1A] tracking-tight leading-snug max-w-[540px] mx-auto lg:mx-0">
-              {t('hero_title_p1', 'Bikin Toko Online,')}{' '}
-              <span className="text-[#66000E]">
-                {t('hero_title_highlight', 'Semudah Mengelola')}
-              </span>{' '}
-              {t('hero_title_p2', 'Toko Sendiri')}
+          {/* ═══════ LEFT COLUMN ═══════ */}
+          <div className="lg:col-span-5 space-y-6 text-center lg:text-left z-20 py-10">
+            <h1 className="font-extrabold text-4xl sm:text-5xl lg:text-[52px] text-[#241A1A] tracking-tight leading-[1.15]">
+              Bikin Toko Online,<br />
+              <span className="text-[#66000E] relative inline-block italic">
+                Semudah Mengelola
+                <svg className="absolute -bottom-2 left-0 w-full h-3 text-[#66000E]/20" viewBox="0 0 100 12" preserveAspectRatio="none">
+                  <path d="M0,6 Q50,12 100,2" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                </svg>
+              </span><br />
+              Toko Sendiri
             </h1>
 
-            {/* Short Concise Description */}
-            <p className="text-xs sm:text-sm lg:text-base text-[#5F5652] max-w-[460px] mx-auto lg:mx-0 leading-relaxed font-normal">
-              {t('hero_subtitle', 'Kelola produk, pesanan, dan pembayaran otomatis dalam satu aplikasi.')}
+            <p className="text-[14px] lg:text-[15px] text-[#5F5652] max-w-[420px] mx-auto lg:mx-0 leading-relaxed font-medium">
+              Platform e-commerce modern berkecepatan tinggi dengan integrasi otomatis payment gateway, kurir logistik real-time, cloud CDN, dan enkripsi data aman.
             </p>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-2 sm:gap-2.5 pt-1">
-              <button
-                onClick={onNavigateRegister}
-                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-6 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-medium text-xs sm:text-sm shadow-xs hover:shadow-sm active:scale-[0.98] transition-all cursor-pointer"
-              >
-                <span>{t('hero_cta_primary', 'Mulai Gratis')}</span>
-                <ArrowRight className="w-3.5 h-3.5 text-white group-hover:translate-x-0.5 transition-transform" />
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
+              <button onClick={onNavigateRegister} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 lg:h-13 px-8 rounded-full bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-sm shadow-md hover:shadow-lg hover:shadow-[#66000E]/20 active:scale-[0.98] transition-all cursor-pointer">
+                <span>Mulai Gratis</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
-
-              <button
-                onClick={onScrollToHowItWorks}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-11 sm:h-12 px-4.5 rounded-xl bg-[#FAF7F7] hover:bg-[#F5E8EA] text-[#66000E] font-medium text-xs sm:text-sm border border-[#E8DDDE] active:scale-[0.98] transition-all cursor-pointer"
-              >
-                <span>{t('hero_cta_how', 'Lihat Cara Kerja')}</span>
-                <ChevronRight className="w-3.5 h-3.5 text-[#857C76]" />
+              <button onClick={onScrollToHowItWorks} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 lg:h-13 px-8 rounded-full bg-white hover:bg-[#FAF7F7] text-[#241A1A] font-semibold text-sm border border-[#E8DDDE] shadow-sm active:scale-[0.98] transition-all cursor-pointer">
+                <span>Lihat Cara Kerja</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#857C76] group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>
 
-            {/* 3 Small Trust Indicators */}
-            <div className="pt-1.5 flex flex-wrap items-center justify-center lg:justify-start gap-y-1.5 gap-x-4 sm:gap-x-5 text-xs font-normal text-[#706866]">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
-                <span>{t('hero_trust_easy', 'Mudah digunakan')}</span>
+            <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-y-3 gap-x-6 text-[12px] font-bold text-[#706866]">
+              <div className="flex items-center gap-2">
+                <div className="bg-[#66000E] rounded-full p-0.5"><CheckCircle2 className="w-3.5 h-3.5 text-white" /></div>
+                <span>Cloud CDN Subdomain</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
-                <span>{t('hero_trust_hasslefree', 'Tanpa ribet')}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
-                <span>{t('hero_trust_umkm', 'Siap untuk UMKM')}</span>
+              <div className="flex items-center gap-2">
+                <div className="bg-sky-500 rounded-full p-0.5"><CheckCircle2 className="w-3.5 h-3.5 text-white" /></div>
+                <span>API Payment & Logistik</span>
               </div>
             </div>
-
-            {/* Mobile Quick Highlight Badge */}
-            <div className="pt-2 lg:hidden flex items-center justify-center">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] text-[11px] text-[#5F5652] font-normal">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{t('hero_active_stores', '10.000+ Toko Aktif')}</span>
-                <span className="text-[#857C76]">•</span>
-                <span>{t('hero_setup_time', 'Setup 5 Menit')}</span>
-              </div>
-            </div>
-
           </div>
 
-          {/* Right Column: Visually Dominant Dashboard Mockup (Desktop Only) */}
-          <div className="hidden lg:block lg:col-span-6 relative mt-4 lg:mt-0">
-            
-            {/* FLOATING BADGE 1: +8 Pesanan Baru (Top Left) */}
-            <div className="absolute -top-3.5 -left-3 z-20 bg-white rounded-2xl p-2.5 sm:p-3 shadow-md border border-[#E8DDDE] flex items-center gap-2.5 hidden sm:flex animate-bounce-gentle">
-              <div className="w-8 h-8 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0">
-                <ShoppingBag className="w-4 h-4" />
+
+          {/* ═══════ RIGHT COLUMN ═══════ */}
+          <div className="lg:col-span-7 relative flex justify-center items-center min-h-[500px] lg:min-h-[600px]">
+
+            {/* Soft elliptical background glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#66000E]/[0.03] blur-[60px] pointer-events-none" />
+
+            {/* Animated Brain Cell / Synapse Connection Lines */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 660 600" fill="none">
+              <defs>
+                <linearGradient id="synapse-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#66000E" stopOpacity="0" />
+                  <stop offset="50%" stopColor="#66000E" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#66000E" stopOpacity="0" />
+                </linearGradient>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                  <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+
+              <style>
+                {`
+                  .synapse-path {
+                    stroke-dasharray: 40 400;
+                    animation: synapse-flow linear infinite;
+                  }
+                  @keyframes synapse-flow {
+                    0% { stroke-dashoffset: 440; opacity: 0; }
+                    20% { opacity: 1; }
+                    80% { opacity: 1; }
+                    100% { stroke-dashoffset: 0; opacity: 0; }
+                  }
+                  .d1 { animation-delay: 0s; animation-duration: 3s; }
+                  .d2 { animation-delay: 0.5s; animation-duration: 4s; }
+                  .d3 { animation-delay: 1s; animation-duration: 3.5s; }
+                  .d4 { animation-delay: 1.5s; animation-duration: 4.5s; }
+                  .d5 { animation-delay: 2s; animation-duration: 3.2s; }
+                  .d6 { animation-delay: 2.5s; animation-duration: 3.8s; }
+                  .d7 { animation-delay: 0.8s; animation-duration: 3.6s; }
+                `}
+              </style>
+
+              {/* Base faint lines */}
+              <g stroke="#66000E" strokeWidth="1" strokeOpacity="0.08">
+                <path d="M330,300 C230,200 160,160 110,120" />
+                <path d="M330,300 C330,180 370,110 370,70" />
+                <path d="M330,300 C450,200 540,140 570,100" />
+                <path d="M330,300 C500,280 560,250 590,240" />
+                <path d="M330,300 C480,380 530,430 560,460" />
+                <path d="M330,300 C300,430 270,480 250,500" />
+                <path d="M330,300 C200,320 130,310 80,290" />
+              </g>
+
+              {/* Animated glowing lines */}
+              <g stroke="url(#synapse-gradient)" strokeWidth="2.5" strokeLinecap="round" filter="url(#glow)">
+                <path className="synapse-path d1" d="M330,300 C230,200 160,160 110,120" />
+                <path className="synapse-path d2" d="M330,300 C330,180 370,110 370,70" />
+                <path className="synapse-path d3" d="M330,300 C450,200 540,140 570,100" />
+                <path className="synapse-path d4" d="M330,300 C500,280 560,250 590,240" />
+                <path className="synapse-path d5" d="M330,300 C480,380 530,430 560,460" />
+                <path className="synapse-path d6" d="M330,300 C300,430 270,480 250,500" />
+                <path className="synapse-path d7" d="M330,300 C200,320 130,310 80,290" />
+              </g>
+            </svg>
+
+
+            {/* ──── CENTRAL BROWSER ──── */}
+            <div
+              className="relative z-10"
+              style={{
+                width: 300,
+                transform: 'perspective(900px) rotateY(-10deg) rotateX(4deg)',
+              }}
+            >
+              <div className="bg-white rounded-xl shadow-[0_20px_50px_-10px_rgba(102,0,14,0.15)] overflow-hidden flex flex-col border border-[#EDE7E7]" style={{ height: 230 }}>
+                {/* Browser chrome */}
+                <div className="bg-[#8A1A2A] px-3 py-2 flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-white/40" />
+                  <div className="w-2 h-2 rounded-full bg-white/40" />
+                  <div className="w-2 h-2 rounded-full bg-white/40" />
+                </div>
+                {/* Awning strip */}
+                <div className="h-3 w-full flex">
+                  {[...Array(16)].map((_, i) => (
+                    <div key={i} className={`flex-1 ${i % 2 === 0 ? 'bg-[#8A1A2A]' : 'bg-white'}`} />
+                  ))}
+                </div>
+                {/* Dashboard body */}
+                <div className="flex-1 bg-[#FAF7F7] p-3 flex gap-2.5">
+                  {/* Sidebar */}
+                  <div className="w-6 flex flex-col gap-2 items-center pt-1 border-r border-[#E8DDDE] pr-2">
+                    <Store className="w-3 h-3 text-[#66000E]" />
+                    <Package className="w-3 h-3 text-[#857C76]" />
+                    <Users className="w-3 h-3 text-[#857C76]" />
+                    <BarChart3 className="w-3 h-3 text-[#857C76]" />
+                  </div>
+                  {/* Main content */}
+                  <div className="flex-1 flex flex-col gap-2">
+                    {/* Revenue card */}
+                    <div className="bg-white rounded-lg p-2 shadow-sm border border-[#EDE7E7] flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center shrink-0">
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-[7px] text-[#857C76] font-semibold leading-none">Total Penjualan</p>
+                        <p className="text-[11px] font-bold text-[#241A1A] leading-tight">Rp 12.450.000</p>
+                        <p className="text-[6px] text-emerald-600 font-bold leading-none">+12%</p>
+                      </div>
+                    </div>
+                    {/* Product grid */}
+                    <div className="grid grid-cols-3 gap-1.5 flex-1">
+                      {[
+                        { c: '#D4B895', h: 'h-8' },
+                        { c: '#E2D5D6', h: 'h-8' },
+                        { c: '#C8A882', h: 'h-8' },
+                        { c: '#7C8A76', h: 'h-8' },
+                        { c: '#D4E4E6', h: 'h-8' },
+                        { c: '#A69085', h: 'h-8' },
+                      ].map((p, i) => (
+                        <div key={i} className="bg-white rounded-md p-1 border border-[#EDE7E7] flex flex-col items-center">
+                          <div className={`w-full ${p.h} rounded-sm bg-gray-50/80 flex items-center justify-center`}>
+                            <div className="w-3 h-5 rounded-sm opacity-80" style={{ backgroundColor: p.c }} />
+                          </div>
+                          <div className="w-full h-[2px] bg-[#E8DDDE] rounded-full mt-1" />
+                          <div className="w-2/3 h-[2px] bg-[#F5E8EA] rounded-full mt-0.5" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-bold text-[#241A1A]">{t('hero_badge_new_orders', '+8 Pesanan Baru')}</p>
-                <p className="text-[10px] text-[#857C76] font-normal">{t('hero_badge_ready_process', 'Siap diproses')}</p>
+
+              {/* Decorative shopping bags */}
+              <div className="absolute -bottom-7 -left-6 flex items-end gap-1 z-20">
+                <div className="w-8 h-10 bg-[#8A1A2A] rounded-t-sm rounded-b-md shadow-lg flex items-center justify-center">
+                  <ShoppingBag className="w-4 h-4 text-white/40" />
+                </div>
+                <div className="w-6 h-8 bg-gray-100 rounded-t-sm rounded-b-md shadow-md border border-gray-200 flex items-center justify-center">
+                  <ShoppingBag className="w-3 h-3 text-gray-300" />
+                </div>
+              </div>
+
+              {/* Mini physical storefront */}
+              <div className="absolute -bottom-8 right-4 z-20">
+                <div className="w-16 h-14 bg-white rounded-lg shadow-lg border border-[#EDE7E7] flex flex-col overflow-hidden">
+                  <div className="h-3.5 w-full flex">
+                    {[...Array(8)].map((_, i) => (
+                      <div key={i} className={`flex-1 ${i % 2 === 0 ? 'bg-[#8A1A2A]' : 'bg-white'}`} />
+                    ))}
+                  </div>
+                  <div className="flex-1 bg-[#FAF7F7] flex gap-1 items-end justify-center pb-1 px-1">
+                    <div className="w-3 h-5 bg-[#241A1A] rounded-sm" />
+                    <div className="w-4 h-3.5 bg-[#66000E] rounded-sm" />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* FLOATING BADGE 2: Penjualan Hari Ini (Bottom Left) */}
-            <div className="absolute -bottom-4 -left-2 z-20 bg-white rounded-2xl p-2.5 sm:p-3 shadow-md border border-[#E8DDDE] flex items-center gap-2.5 hidden sm:flex">
-              <div className="w-8 h-8 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0">
-                <TrendingUp className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-[10px] text-[#857C76] font-normal">{t('hero_dash_sales_today', 'Penjualan Hari Ini')}</p>
-                <p className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 8.638.000</p>
+
+            {/* ──── FLOATING CARDS WITH ICON BADGES ──── */}
+
+            {/* 1 · Katalog Produk — Top Left */}
+            <div className="absolute z-20 animate-float-subtle" style={{ top: '8%', left: '4%', animationDelay: '0.2s' }}>
+              <div className="relative bg-white rounded-2xl p-3 shadow-[0_8px_24px_rgba(0,0,0,0.07)] border border-[#F0EAEA] w-[130px]">
+                <IconBadge icon={<ShoppingBag className="w-3.5 h-3.5 text-white" />} />
+                <div className="flex gap-2 mb-2 justify-center pt-2">
+                  <div className="w-5 h-7 bg-[#D4B895] rounded-sm shadow-sm" />
+                  <div className="w-4 h-5 bg-[#7C8A76] rounded-full mt-2 shadow-sm" />
+                  <div className="w-5 h-6 bg-[#E2D5D6] rounded-sm mt-1 shadow-sm" />
+                </div>
+                <p className="text-[9px] font-bold text-[#241A1A] text-center">Katalog Produk</p>
               </div>
             </div>
 
-            {/* FLOATING BADGE 3: Pembayaran Berhasil (Top Right) */}
-            <div className="absolute top-4 -right-3 z-20 bg-white text-[#241A1A] rounded-2xl p-2.5 sm:p-3 shadow-md border border-[#E8DDDE] flex items-center gap-2 hidden sm:flex">
-              <div className="w-6 h-6 rounded-lg bg-[#66000E] text-white flex items-center justify-center font-bold text-xs">
-                ✓
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[#241A1A]">{t('hero_badge_payment_success', 'Pembayaran Berhasil')}</p>
-                <p className="text-[10px] text-[#857C76] font-normal">{t('hero_badge_qris_bank', 'QRIS & Bank')}</p>
+            {/* 2 · Pesanan Masuk — Top Center */}
+            <div className="absolute z-20 animate-float-subtle" style={{ top: '2%', left: '38%', animationDelay: '0.7s' }}>
+              <div className="relative bg-white rounded-2xl p-3 shadow-[0_8px_24px_rgba(0,0,0,0.07)] border border-[#F0EAEA] w-[140px]">
+                <IconBadge icon={<Bell className="w-3.5 h-3.5 text-white" />} className="!-top-3 !-left-3" />
+                <span className="absolute -top-1 left-3 w-4 h-4 bg-red-500 rounded-full text-[7px] text-white flex items-center justify-center font-bold border-2 border-white z-40">3</span>
+                <p className="text-[9px] font-bold text-[#241A1A] mb-2 mt-1 ml-4">Pesanan Masuk</p>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 bg-[#FAF7F7] rounded-md p-1.5">
+                    <div className="w-4 h-5 bg-[#D4B895] rounded-sm shrink-0" />
+                    <div className="flex-1 space-y-1">
+                      <div className="h-[3px] bg-[#E8DDDE] rounded-full w-full" />
+                      <div className="h-[3px] bg-[#F5E8EA] rounded-full w-2/3" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 bg-[#FAF7F7] rounded-md p-1.5">
+                    <div className="w-4 h-5 bg-[#E2D5D6] rounded-sm shrink-0" />
+                    <div className="flex-1 space-y-1">
+                      <div className="h-[3px] bg-[#E8DDDE] rounded-full w-3/4" />
+                      <div className="h-[3px] bg-[#F5E8EA] rounded-full w-1/2" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* MAIN DASHBOARD MOCKUP CONTAINER */}
-            <div className="relative rounded-2xl bg-white p-4 sm:p-5 shadow-xl border border-[#E8DDDE] overflow-hidden">
-              
-              {/* Mockup Header */}
-              <div className="bg-[#FAF7F7] rounded-xl p-3 mb-3 flex items-center justify-between border border-[#E8DDDE]">
-                <div className="flex items-center gap-2.5">
-                  <img src="/Logo.png" alt="Kroomify" className="h-6.5 w-auto object-contain shrink-0 drop-shadow-2xs" />
+            {/* 3 · Pembayaran — Top Right */}
+            <div className="absolute z-20 animate-float-subtle" style={{ top: '10%', right: '2%', animationDelay: '1s' }}>
+              <div className="relative bg-white rounded-2xl p-3 shadow-[0_8px_24px_rgba(0,0,0,0.07)] border border-[#F0EAEA] w-[130px]">
+                <IconBadge icon={<CreditCard className="w-3.5 h-3.5 text-white" />} bg="bg-sky-500" />
+                <p className="text-[9px] font-bold text-[#241A1A] mb-2 mt-1 ml-4">Pembayaran</p>
+                <div className="flex items-center gap-2 bg-emerald-50 rounded-lg p-2 border border-emerald-100">
+                  <div className="bg-emerald-500 p-0.5 rounded-full shrink-0">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                  </div>
                   <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-[#241A1A] tracking-tight">{t('hero_dash_title', 'Kroomify Dashboard')}</span>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-800 font-medium border border-emerald-200">
-                        {t('hero_dash_status_online', 'Online')}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-[#857C76] font-normal">Toko Batik Nusantara</p>
+                    <p className="text-[7px] font-bold text-emerald-700 leading-tight">Pembayaran</p>
+                    <p className="text-[7px] font-bold text-emerald-700 leading-tight">Berhasil</p>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setActiveTab('overview')}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-medium transition cursor-pointer ${
-                      activeTab === 'overview'
-                        ? 'bg-[#66000E] text-white font-semibold'
-                        : 'text-[#5F5652] hover:bg-white'
-                    }`}
-                  >
-                    {t('hero_dash_tab_overview', 'Ringkasan')}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('orders')}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-medium transition cursor-pointer ${
-                      activeTab === 'orders'
-                        ? 'bg-[#66000E] text-white font-semibold'
-                        : 'text-[#5F5652] hover:bg-white'
-                    }`}
-                  >
-                    {t('hero_dash_tab_orders', 'Pesanan')}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('products')}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-medium transition cursor-pointer ${
-                      activeTab === 'products'
-                        ? 'bg-[#66000E] text-white font-semibold'
-                        : 'text-[#5F5652] hover:bg-white'
-                    }`}
-                  >
-                    {t('hero_dash_tab_products', 'Produk')}
-                  </button>
                 </div>
               </div>
+            </div>
 
-              {/* Dynamic Mockup Body */}
-              <div className="space-y-3">
-                
-                {/* 3 Metric Cards */}
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="p-2.5 sm:p-3 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE]">
-                    <p className="text-[10px] text-[#857C76] font-normal">{t('hero_dash_sales_today', 'Penjualan Hari Ini')}</p>
-                    <p className="text-xs sm:text-sm font-bold text-[#66000E] mt-0.5">Rp 8.638.000</p>
-                    <span className="text-[8px] sm:text-[9px] font-medium text-emerald-800 mt-0.5 inline-block">
-                      {t('hero_dash_growth_week', '↑ 24% minggu ini')}
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 sm:p-3 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE]">
-                    <p className="text-[10px] text-[#857C76] font-normal">{t('hero_dash_orders_in', 'Pesanan Masuk')}</p>
-                    <p className="text-xs sm:text-sm font-bold text-[#241A1A] mt-0.5">8 {t('hero_dash_tab_orders', 'Pesanan')}</p>
-                    <span className="text-[8px] sm:text-[9px] font-medium text-[#66000E] mt-0.5 inline-block">
-                      {t('hero_dash_ready_ship', '3 siap kirim')}
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 sm:p-3 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE]">
-                    <p className="text-[10px] text-[#857C76] font-normal">{t('hero_dash_active_catalog', 'Katalog Aktif')}</p>
-                    <p className="text-xs sm:text-sm font-bold text-[#241A1A] mt-0.5">18 {t('hero_dash_tab_products', 'Produk')}</p>
-                    <span className="text-[8px] sm:text-[9px] font-medium text-[#857C76] mt-0.5 inline-block">
-                      {t('hero_dash_low_stock_notice', '3 stok menipis')}
-                    </span>
+            {/* 4 · Pengiriman — Right Middle */}
+            <div className="absolute z-20 animate-float-subtle" style={{ top: '45%', right: '0%', animationDelay: '0.5s' }}>
+              <div className="relative bg-white rounded-2xl p-3 shadow-[0_8px_24px_rgba(0,0,0,0.07)] border border-[#F0EAEA] w-[130px]">
+                <IconBadge icon={<Truck className="w-3.5 h-3.5 text-white" />} />
+                <p className="text-[9px] font-bold text-[#241A1A] mb-2 mt-1 ml-4">Pengiriman</p>
+                {/* Package box icon */}
+                <div className="flex justify-center mb-2">
+                  <div className="w-10 h-8 bg-[#D4B895] rounded shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 w-full h-2 bg-[#C2A380]" />
+                    <div className="absolute left-1/2 -translate-x-1/2 w-1.5 h-full bg-[#C2A380]" />
                   </div>
                 </div>
+                <p className="text-[7px] text-[#857C76] font-semibold mb-1">Dalam Pengiriman</p>
+                <div className="w-full h-1.5 bg-[#E8DDDE] rounded-full relative">
+                  <div className="absolute top-0 left-0 h-full w-2/3 bg-[#66000E] rounded-full" />
+                  <div className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-[#66000E] rounded-full border-2 border-white shadow-sm" style={{ left: 'calc(66% - 4px)' }} />
+                </div>
+              </div>
+            </div>
 
-                {activeTab === 'overview' && (
-                  <>
-                    {/* Sales Activity Bar Chart */}
-                    <div className="p-2.5 sm:p-3 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE]">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-semibold text-[#241A1A]">{t('hero_dash_sales_act', 'Aktivitas Penjualan')}</span>
-                        <span className="text-[10px] text-[#66000E] font-semibold">{t('hero_dash_today_plus', '+Rp 1.450.000 hari ini')}</span>
-                      </div>
-                      <div className="grid grid-cols-7 gap-1.5 items-end h-14 pt-1">
-                        {[35, 45, 60, 40, 75, 90, 100].map((height, i) => (
-                          <div key={i} className="flex flex-col items-center gap-1 h-full justify-end">
-                            <div
-                              style={{ height: `${height}%` }}
-                              className={`w-full rounded-t-sm transition-all ${
-                                i === 6
-                                    ? 'bg-[#66000E]'
-                                  : 'bg-[#E8DDDE] hover:bg-[#66000E]/30'
-                              }`}
-                            />
-                            <span className="text-[8px] text-[#857C76]">
-                              {daysOfWeek[i]}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Recent Order Preview */}
-                    <div className="p-2.5 rounded-xl bg-white border border-[#E8DDDE]">
-                      <div className="flex items-center justify-between p-1.5 rounded-lg bg-[#FAF7F7] text-[11px]">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded bg-[#F5E8EA] text-[#66000E] text-[9px] font-bold flex items-center justify-center border border-[#E8DDDE]">
-                            BK
-                          </div>
-                          <div>
-                            <p className="font-medium text-[#241A1A] leading-tight">Batik Parang Premium (2 pcs)</p>
-                            <p className="text-[9px] text-[#857C76]">Dina R. • Jakarta</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-[#241A1A]">Rp 350.000</p>
-                          <span className="text-[8px] font-medium px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            {t('hero_dash_paid_ship', 'Lunas • Kirim')}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {activeTab === 'orders' && (
-                  <div className="space-y-1.5 animate-in fade-in duration-150">
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] text-[11px]">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-[#F5E8EA] text-[#66000E] text-[9px] font-bold flex items-center justify-center">
-                          #01
-                        </div>
-                        <div>
-                          <p className="font-semibold text-[#241A1A]">Dina Rahayu (2 items)</p>
-                          <p className="text-[9px] text-[#857C76]">JNE Reguler • {t('hero_dash_auto_receipt', 'Resi Otomatis')}</p>
-                        </div>
-                      </div>
-                      <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        {t('hero_dash_ready_ship', 'Siap Kirim')}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] text-[11px]">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-[#E8DDDE]/60 text-[#5F5652] text-[9px] font-bold flex items-center justify-center">
-                          #02
-                        </div>
-                        <div>
-                          <p className="font-semibold text-[#241A1A]">Budi Santoso (1 item)</p>
-                          <p className="text-[9px] text-[#857C76]">QRIS • {t('hero_dash_tab_orders', 'Pembayaran Masuk')}</p>
-                        </div>
-                      </div>
-                      <span className="text-[9px] font-bold text-[#66000E] bg-[#F5E8EA] px-2 py-0.5 rounded border border-[#E8DDDE]">
-                        {t('hero_dash_need_process', 'Perlu Diproses')}
-                      </span>
-                    </div>
+            {/* 5 · Stok — Bottom Right */}
+            <div className="absolute z-20 animate-float-subtle" style={{ bottom: '8%', right: '12%', animationDelay: '1.2s' }}>
+              <div className="relative bg-white rounded-2xl p-3 shadow-[0_8px_24px_rgba(0,0,0,0.07)] border border-[#F0EAEA] w-[130px]">
+                <IconBadge icon={<Box className="w-3.5 h-3.5 text-white" />} />
+                <p className="text-[9px] font-bold text-[#241A1A] mb-2 mt-1 ml-4">Stok</p>
+                <div className="flex justify-center gap-2 mb-2">
+                  <div className="w-4 h-7 bg-emerald-500 rounded-sm shadow-sm" />
+                  <div className="w-4 h-7 bg-red-400 rounded-sm shadow-sm" />
+                  <div className="w-3.5 h-8 bg-sky-500 rounded-sm shadow-sm" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <div className="flex-1 h-1 bg-emerald-200 rounded-full" />
                   </div>
-                )}
-
-                {activeTab === 'products' && (
-                  <div className="grid grid-cols-2 gap-2 animate-in fade-in duration-150">
-                    <div className="p-2 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] text-[11px]">
-                      <p className="font-bold text-[#241A1A] truncate">Batik Parang Tulis</p>
-                      <p className="text-[10px] text-[#66000E] font-semibold mt-0.5">Rp 175.000</p>
-                      <span className="text-[8px] text-[#857C76]">{t('stock', 'Stok')}: 24 pcs</span>
-                    </div>
-
-                    <div className="p-2 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] text-[11px]">
-                      <p className="font-bold text-[#241A1A] truncate">Kemeja Tenun Solo</p>
-                      <p className="text-[10px] text-[#66000E] font-semibold mt-0.5">Rp 225.000</p>
-                      <span className="text-[8px] text-amber-700 font-medium">{t('stock', 'Stok')}: 3 pcs ({t('product_status_low', 'Menipis')})</span>
-                    </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                    <div className="flex-1 h-1 bg-red-200 rounded-full" />
                   </div>
-                )}
+                </div>
+              </div>
+            </div>
 
+            {/* 6 · Pelanggan — Bottom Left */}
+            <div className="absolute z-20 animate-float-subtle" style={{ bottom: '6%', left: '8%', animationDelay: '0.8s' }}>
+              <div className="relative bg-white rounded-2xl p-3 shadow-[0_8px_24px_rgba(0,0,0,0.07)] border border-[#F0EAEA] w-[135px]">
+                <IconBadge icon={<Users className="w-3.5 h-3.5 text-white" />} />
+                <p className="text-[9px] font-bold text-[#241A1A] mb-2 mt-1 ml-4">Pelanggan</p>
+                <div className="flex items-center bg-[#FAF7F7] p-1.5 rounded-lg border border-[#EDE7E7]">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className={`w-5 h-5 rounded-full border-2 border-white overflow-hidden ${i > 1 ? '-ml-2' : ''}`}
+                      style={{ backgroundColor: ['#93C5FD', '#FCD34D', '#6EE7B7', '#C4B5FD'][i - 1] }}
+                    >
+                      <img src={`https://i.pravatar.cc/40?img=${i + 10}`} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                  <span className="text-[7px] font-bold text-[#857C76] ml-1.5">+</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 7 · Laporan Penjualan — Left Middle */}
+            <div className="absolute z-20 animate-float-subtle" style={{ top: '38%', left: '0%', animationDelay: '0.3s' }}>
+              <div className="relative bg-white rounded-2xl p-3 shadow-[0_8px_24px_rgba(0,0,0,0.07)] border border-[#F0EAEA] w-[130px]">
+                <IconBadge icon={<BarChart3 className="w-3.5 h-3.5 text-white" />} />
+                <p className="text-[9px] font-bold text-[#241A1A] mb-2 mt-1 ml-4">Laporan Penjualan</p>
+                <div className="flex items-end justify-between h-10 px-1">
+                  <div className="w-3 bg-[#E8DDDE] rounded-sm h-[25%]" />
+                  <div className="w-3 bg-[#E8DDDE] rounded-sm h-[40%]" />
+                  <div className="w-3 bg-[#E8DDDE] rounded-sm h-[55%]" />
+                  <div className="w-3 bg-[#E8DDDE] rounded-sm h-[75%]" />
+                  <div className="w-3 bg-[#8A1A2A] rounded-sm h-[95%]" />
+                </div>
               </div>
             </div>
 
@@ -342,6 +396,3 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
     </section>
   );
 };
-
-
-
