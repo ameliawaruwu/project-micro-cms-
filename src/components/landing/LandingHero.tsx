@@ -93,13 +93,13 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
 
           {/* ═══════ RIGHT COLUMN: 3D STORE & ECOSYSTEM NODES ═══════ */}
-          <div className="lg:col-span-7 relative flex justify-center items-center min-h-[540px] sm:min-h-[600px] lg:min-h-[640px] w-full select-none">
+          <div className="lg:col-span-7 relative flex justify-center items-center min-h-[440px] sm:min-h-[480px] lg:min-h-[520px] w-full select-none">
             
             {/* Scale wrapper for small mobile screens */}
-            <div className="relative w-full max-w-[660px] h-[540px] sm:h-[600px] flex items-center justify-center scale-[0.82] sm:scale-95 lg:scale-100 transition-transform origin-center">
+            <div className="relative w-full max-w-[560px] h-[440px] sm:h-[480px] flex items-center justify-center scale-[0.72] sm:scale-[0.82] lg:scale-[0.88] transition-transform origin-center">
               
               {/* Soft background ambient glow */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full bg-[#66000E]/[0.04] blur-[80px] pointer-events-none" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-[#66000E]/[0.04] blur-[70px] pointer-events-none" />
 
               {/* ──── SVG NETWORK CONNECTION LINES (CONNECTING CARDS TO CENTER) ──── */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible" viewBox="0 0 660 600" fill="none">
@@ -173,12 +173,12 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               <div
                 className="relative z-10 transition-transform duration-500 hover:scale-[1.02]"
                 style={{
-                  width: 340,
+                  width: 290,
                   transform: 'perspective(1000px) rotateY(-8deg) rotateX(4deg)',
                 }}
               >
                 {/* Main Browser Frame */}
-                <div className="bg-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(128,12,25,0.2)] border border-[#EADBDB] overflow-hidden flex flex-col" style={{ height: 260 }}>
+                <div className="bg-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(128,12,25,0.2)] border border-[#EADBDB] overflow-hidden flex flex-col" style={{ height: 220 }}>
                   
                   {/* Browser Crimson Header Bar */}
                   <div className="bg-[#800C19] px-3.5 py-2.5 flex items-center justify-between">
@@ -215,20 +215,20 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                         {/* 4 Product Grid Cards */}
                         <div className="col-span-7 grid grid-cols-2 gap-1.5">
                           {/* Pouch */}
-                          <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-12 shadow-2xs overflow-hidden">
-                            <img src="/assets/3d/kraft_pouch.png" alt="Pouch" className="h-10 w-full object-contain filter drop-shadow-xs" />
+                          <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-10 shadow-2xs overflow-hidden">
+                            <img src="/assets/3d/kraft_pouch.png" alt="Pouch" className="h-8 w-full object-contain filter drop-shadow-xs" />
                           </div>
                           {/* Green Mug */}
-                          <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-12 shadow-2xs overflow-hidden">
-                            <img src="/assets/3d/green_mug.png" alt="Mug" className="h-10 w-full object-contain filter drop-shadow-xs" />
+                          <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-10 shadow-2xs overflow-hidden">
+                            <img src="/assets/3d/green_mug.png" alt="Mug" className="h-8 w-full object-contain filter drop-shadow-xs" />
                           </div>
                           {/* Blue Bottle */}
-                          <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-12 shadow-2xs overflow-hidden">
-                            <img src="/assets/3d/blue_bottle.png" alt="Serum" className="h-10 w-full object-contain filter drop-shadow-xs" />
+                          <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-10 shadow-2xs overflow-hidden">
+                            <img src="/assets/3d/blue_bottle.png" alt="Serum" className="h-8 w-full object-contain filter drop-shadow-xs" />
                           </div>
                           {/* Cardboard Box */}
-                          <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-12 shadow-2xs overflow-hidden">
-                            <img src="/assets/3d/cardboard_box.png" alt="Box" className="h-10 w-full object-contain filter drop-shadow-xs" />
+                          <div className="bg-white rounded-lg p-1 border border-[#EADBDB] flex items-center justify-center h-10 shadow-2xs overflow-hidden">
+                            <img src="/assets/3d/cardboard_box.png" alt="Box" className="h-8 w-full object-contain filter drop-shadow-xs" />
                           </div>
                         </div>
 
@@ -260,17 +260,17 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
                 {/* Bottom Left: 3D Red Shopping Bags */}
                 <div className="absolute -bottom-8 -left-10 z-20 transition-transform hover:scale-105">
-                  <img src="/assets/3d/red_bags.png" alt="Red Bags" className="w-20 h-20 object-contain filter drop-shadow-xl" />
+                  <img src="/assets/3d/red_bags.png" alt="Red Bags" className="w-14 h-14 object-contain filter drop-shadow-xl" />
                 </div>
 
                 {/* Bottom Center: Cute 3D Physical Store Front Building */}
                 <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 z-30 transition-transform hover:scale-105">
-                  <img src="/assets/3d/mini_storefront.png" alt="Storefront" className="w-28 h-28 object-contain filter drop-shadow-2xl" />
+                  <img src="/assets/3d/mini_storefront.png" alt="Storefront" className="w-20 h-20 object-contain filter drop-shadow-2xl" />
                 </div>
 
                 {/* Bottom Right: Floating 3D Cardboard Box */}
                 <div className="absolute -bottom-7 right-0 z-20 animate-bounce-gentle">
-                  <img src="/assets/3d/cardboard_box.png" alt="Shipping Box" className="w-16 h-16 object-contain filter drop-shadow-xl" />
+                  <img src="/assets/3d/cardboard_box.png" alt="Shipping Box" className="w-12 h-12 object-contain filter drop-shadow-xl" />
                 </div>
               </div>
 
@@ -279,30 +279,30 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
               {/* 1 · Katalog Produk — Top Left */}
               <div className="absolute z-20 animate-float-subtle" style={{ top: '4%', left: '2%', animationDelay: '0.2s' }}>
-                <div className="relative bg-white rounded-2xl p-3 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[150px] hover:shadow-xl transition-shadow">
+                <div className="relative bg-white rounded-2xl p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[130px] hover:shadow-xl transition-shadow">
                   {/* Badge */}
-                  <div className="absolute -top-3 -left-3 z-30 w-8 h-8 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                    <ShoppingBag className="w-4 h-4 text-white" />
+                  <div className="absolute -top-2.5 -left-2.5 z-30 w-6 h-6 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                    <ShoppingBag className="w-3 h-3 text-white" />
                   </div>
-                  <p className="text-[11px] font-extrabold text-[#241A1A] ml-5 mb-2">Katalog Produk</p>
+                  <p className="text-[10px] font-extrabold text-[#241A1A] ml-4 mb-1.5">Katalog Produk</p>
                   {/* Miniature Product Props */}
-                  <div className="flex items-end justify-center gap-1 bg-[#FAF7F7] rounded-xl p-1 border border-[#F0EAEB] h-12 overflow-hidden">
-                    <img src="/assets/3d/kraft_pouch.png" alt="Pouch" className="h-10 object-contain" />
-                    <img src="/assets/3d/green_mug.png" alt="Mug" className="h-10 object-contain" />
+                  <div className="flex items-end justify-center gap-1 bg-[#FAF7F7] rounded-xl p-1 border border-[#F0EAEB] h-10 overflow-hidden">
+                    <img src="/assets/3d/kraft_pouch.png" alt="Pouch" className="h-8 object-contain" />
+                    <img src="/assets/3d/green_mug.png" alt="Mug" className="h-8 object-contain" />
                   </div>
                 </div>
               </div>
 
               {/* 2 · Pesanan Masuk — Top Center */}
               <div className="absolute z-20 animate-float-subtle" style={{ top: '0%', left: '38%', animationDelay: '0.8s' }}>
-                <div className="relative bg-white rounded-2xl p-3 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[155px] hover:shadow-xl transition-shadow">
+                <div className="relative bg-white rounded-2xl p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[135px] hover:shadow-xl transition-shadow">
                   {/* Badge */}
-                  <div className="absolute -top-3 -left-3 z-30 w-8 h-8 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                    <Bell className="w-4 h-4 text-white" />
+                  <div className="absolute -top-2.5 -left-2.5 z-30 w-6 h-6 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                    <Bell className="w-3 h-3 text-white" />
                   </div>
                   {/* Notification dot */}
-                  <span className="absolute -top-1 left-3 z-40 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-xs" />
-                  <p className="text-[11px] font-extrabold text-[#241A1A] ml-5 mb-2">Pesanan Masuk</p>
+                  <span className="absolute -top-1 left-2.5 z-40 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-xs" />
+                  <p className="text-[10px] font-extrabold text-[#241A1A] ml-4 mb-1.5">Pesanan Masuk</p>
                   {/* Order List Rows */}
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 bg-[#FAF7F7] rounded-lg p-1.5 border border-[#F0EAEB]">
@@ -325,12 +325,12 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
               {/* 3 · Pembayaran — Top Right */}
               <div className="absolute z-20 animate-float-subtle" style={{ top: '6%', right: '2%', animationDelay: '1.4s' }}>
-                <div className="relative bg-white rounded-2xl p-3 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[150px] hover:shadow-xl transition-shadow">
+                <div className="relative bg-white rounded-2xl p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[130px] hover:shadow-xl transition-shadow">
                   {/* Badge */}
-                  <div className="absolute -top-3 -left-3 z-30 w-8 h-8 bg-[#1E75C0] rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                    <CreditCard className="w-4 h-4 text-white" />
+                  <div className="absolute -top-2.5 -left-2.5 z-30 w-6 h-6 bg-[#1E75C0] rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                    <CreditCard className="w-3 h-3 text-white" />
                   </div>
-                  <p className="text-[11px] font-extrabold text-[#241A1A] ml-5 mb-2">Pembayaran</p>
+                  <p className="text-[10px] font-extrabold text-[#241A1A] ml-4 mb-1.5">Pembayaran</p>
                   {/* Success Status Pill */}
                   <div className="flex items-center gap-2 bg-[#E8F5E9] rounded-xl p-2 border border-emerald-200">
                     <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 shadow-xs">
@@ -346,13 +346,13 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
               {/* 4 · Laporan Penjualan — Middle Left */}
               <div className="absolute z-20 animate-float-subtle" style={{ top: '40%', left: '-2%', animationDelay: '0.4s' }}>
-                <div className="relative bg-white rounded-2xl p-3 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[155px] hover:shadow-xl transition-shadow">
+                <div className="relative bg-white rounded-2xl p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[135px] hover:shadow-xl transition-shadow">
                   {/* Badge */}
-                  <div className="absolute -top-3 -left-3 z-30 w-8 h-8 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                    <BarChart3 className="w-4 h-4 text-white" />
+                  <div className="absolute -top-2.5 -left-2.5 z-30 w-6 h-6 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                    <BarChart3 className="w-3 h-3 text-white" />
                   </div>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] font-extrabold text-[#241A1A] ml-5 truncate">Laporan Penjualan</p>
+                    <p className="text-[9px] font-extrabold text-[#241A1A] ml-4 truncate">Laporan Penjualan</p>
                   </div>
                   {/* Bar Chart Visual */}
                   <div className="flex items-end justify-between h-11 px-1 bg-[#FAF7F7] rounded-xl p-1.5 border border-[#F0EAEB]">
@@ -367,15 +367,15 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
               {/* 5 · Pengiriman — Middle Right */}
               <div className="absolute z-20 animate-float-subtle" style={{ top: '40%', right: '-2%', animationDelay: '1.0s' }}>
-                <div className="relative bg-white rounded-2xl p-3 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[150px] hover:shadow-xl transition-shadow">
+                <div className="relative bg-white rounded-2xl p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[130px] hover:shadow-xl transition-shadow">
                   {/* Badge */}
-                  <div className="absolute -top-3 -left-3 z-30 w-8 h-8 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                    <Truck className="w-4 h-4 text-white" />
+                  <div className="absolute -top-2.5 -left-2.5 z-30 w-6 h-6 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                    <Truck className="w-3 h-3 text-white" />
                   </div>
-                  <p className="text-[11px] font-extrabold text-[#241A1A] ml-5 mb-2">Pengiriman</p>
+                  <p className="text-[10px] font-extrabold text-[#241A1A] ml-4 mb-1.5">Pengiriman</p>
                   {/* Package Icon & Tracking bar */}
                   <div className="flex flex-col items-center bg-[#FAF7F7] rounded-xl p-2 border border-[#F0EAEB]">
-                    <img src="/assets/3d/cardboard_box.png" alt="Box" className="w-10 h-10 object-contain mb-1" />
+                    <img src="/assets/3d/cardboard_box.png" alt="Box" className="w-8 h-8 object-contain mb-1" />
                     <p className="text-[7px] font-semibold text-[#706866] mb-1">Dalam Pengiriman</p>
                     {/* Progress track */}
                     <div className="w-full h-1.5 bg-[#EADBDB] rounded-full relative">
@@ -388,12 +388,12 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
               {/* 6 · Pelanggan — Bottom Left */}
               <div className="absolute z-20 animate-float-subtle" style={{ bottom: '2%', left: '4%', animationDelay: '0.6s' }}>
-                <div className="relative bg-white rounded-2xl p-3 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[150px] hover:shadow-xl transition-shadow">
+                <div className="relative bg-white rounded-2xl p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[130px] hover:shadow-xl transition-shadow">
                   {/* Badge */}
-                  <div className="absolute -top-3 -left-3 z-30 w-8 h-8 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                    <Users className="w-4 h-4 text-white" />
+                  <div className="absolute -top-2.5 -left-2.5 z-30 w-6 h-6 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                    <Users className="w-3 h-3 text-white" />
                   </div>
-                  <p className="text-[11px] font-extrabold text-[#241A1A] ml-5 mb-2">Pelanggan</p>
+                  <p className="text-[10px] font-extrabold text-[#241A1A] ml-4 mb-1.5">Pelanggan</p>
                   {/* Avatars */}
                   <div className="flex items-center justify-between bg-[#FAF7F7] p-1.5 rounded-xl border border-[#F0EAEB]">
                     <div className="flex items-center -space-x-1.5">
@@ -416,12 +416,12 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
               {/* 7 · Stok — Bottom Right */}
               <div className="absolute z-20 animate-float-subtle" style={{ bottom: '2%', right: '4%', animationDelay: '1.2s' }}>
-                <div className="relative bg-white rounded-2xl p-3 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[155px] hover:shadow-xl transition-shadow">
+                <div className="relative bg-white rounded-2xl p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] border border-[#F2EBEB] w-[135px] hover:shadow-xl transition-shadow">
                   {/* Badge */}
-                  <div className="absolute -top-3 -left-3 z-30 w-8 h-8 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                    <Package className="w-4 h-4 text-white" />
+                  <div className="absolute -top-2.5 -left-2.5 z-30 w-6 h-6 bg-[#800C19] rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                    <Package className="w-3 h-3 text-white" />
                   </div>
-                  <p className="text-[11px] font-extrabold text-[#241A1A] ml-5 mb-2">Stok</p>
+                  <p className="text-[10px] font-extrabold text-[#241A1A] ml-4 mb-1.5">Stok</p>
                   {/* Stock Grid */}
                   <div className="grid grid-cols-3 gap-1 bg-[#FAF7F7] p-1.5 rounded-xl border border-[#F0EAEB] items-end">
                     <div className="flex flex-col items-center">
