@@ -42,16 +42,8 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      const initialName = store?.name && !store.name.startsWith('Toko usr_')
-        ? store.name
-        : (user?.name ? `Toko ${user.name}` : '');
-      setStoreName(initialName);
-      const autoSlug = initialName
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      setStoreSlug(store?.slug && !store.slug.startsWith('toko-usr-') ? store.slug : autoSlug);
+      setStoreName('');
+      setStoreSlug('');
 
       if (store) {
         setCategory(store.category && store.category !== 'Bisnis UMKM' ? store.category : '');

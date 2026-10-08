@@ -91,6 +91,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       !store ||
       !store.id ||
       !store.name ||
+      !store.onboarding?.storeNameSet ||
       store.name === 'Belum Memiliki Toko' ||
       store.name === 'Toko Baru UMKM' ||
       store.name.trim() === '';
