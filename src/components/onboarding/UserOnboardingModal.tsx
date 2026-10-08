@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Loader2,
   Globe,
-  X,
   Sparkles,
 } from 'lucide-react';
 import { Store, User } from '../../types';
@@ -67,16 +66,6 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
     setStoreSlug(autoSlug);
-  };
-
-  const handleDismiss = () => {
-    sessionStorage.setItem('kroomify_store_info_dismissed', 'true');
-    if (user?.id) {
-      localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
-    }
-    if (onClose) {
-      onClose();
-    }
   };
 
   const handleSaveStoreInfo = async (e: React.FormEvent) => {
@@ -211,32 +200,10 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
               </p>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer shrink-0"
-            title={isEn ? 'Close' : 'Tutup'}
-            aria-label={isEn ? 'Close' : 'Tutup'}
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Form Body - Compact & Responsive */}
         <form onSubmit={handleSaveStoreInfo} className="p-5 space-y-3 overflow-y-auto">
-          {/* Automatic Free Plan Notification Badge */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11.5px] leading-tight">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-            <div className="flex-1">
-              <span className="font-semibold text-emerald-900">
-                {isEn ? 'Free Plan Active' : 'Paket Free Otomatis Aktif'}
-              </span>
-              <span className="text-emerald-700 ml-1">
-                {isEn ? '— Toko siap dipakai tanpa biaya.' : '— Toko siap dipakai tanpa biaya.'}
-              </span>
-            </div>
-          </div>
 
           {/* Store Name */}
           <div>
@@ -320,21 +287,12 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
               : 'Informasi toko dapat diubah kapan saja melalui menu Pengaturan.'}
           </p>
 
-          {/* Footer Action Buttons */}
-          <div className="pt-2 flex items-center justify-between gap-2.5">
-            <button
-              type="button"
-              onClick={handleDismiss}
-              disabled={isSaving}
-              className="px-3.5 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-            >
-              {isEn ? 'Skip for now' : 'Lewati'}
-            </button>
-
+          {/* Footer Action Button */}
+          <div className="pt-2">
             <button
               type="submit"
               disabled={isSaving || !storeName.trim()}
-              className="px-4 py-2 bg-[#66000E] hover:bg-[#7D0012] text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-2xs active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full py-2.5 bg-[#66000E] hover:bg-[#7D0012] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 shadow-2xs active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSaving ? (
                 <>
