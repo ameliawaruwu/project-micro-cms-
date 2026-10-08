@@ -126,44 +126,52 @@ class StoreService {
           return [];
         }
 
-        const mappedStores: Store[] = data.map((row) => ({
-          id: row.id,
-          merchantId: row.user_id,
-          name: row.name,
-          slug: row.slug,
-          tagline: row.tagline || '',
-          description: row.description || '',
-          logoUrl: row.logo_url || '',
-          bannerUrl: row.banner_url || '',
-          phoneWhatsApp: row.phone_whatsapp || '',
-          city: row.city || 'Indonesia',
-          province: row.province || '',
-          district: row.district || '',
-          subdistrict: row.subdistrict || '',
-          village: row.village || '',
-          addressDetail: row.address_detail || '',
-          postalCode: row.postal_code || '',
-          address: row.address || '',
-          latitude: row.latitude ? Number(row.latitude) : undefined,
-          longitude: row.longitude ? Number(row.longitude) : undefined,
-          category: row.category || 'Bisnis UMKM',
-          currency: 'IDR',
-          balance: Number(row.balance || 0),
-          plan: row.plan || 'free',
-          planExpiresAt: row.plan_expires_at || row.theme_settings?.planExpiresAt || undefined,
-          planSubscribedAt: row.plan_subscribed_at || row.theme_settings?.planSubscribedAt || undefined,
-          isPublished: row.is_published !== undefined && row.is_published !== null
-            ? Boolean(row.is_published)
-            : ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id),
-          layoutSettings: row.theme_settings,
-          customDomain: row.custom_domain,
-          onboarding: {
-            storeNameSet: !row.name.startsWith('Toko usr_'),
-            productUploaded: false,
-            paymentConnected: row.plan !== 'free',
-          },
-          createdAt: row.created_at || new Date().toISOString(),
-        }));
+        const mappedStores: Store[] = data.map((row) => {
+          const isPresetDemo = ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id);
+          const hasExplicitOnboarding = row.theme_settings?.onboarding?.storeNameSet !== undefined;
+          const isStoreConfigured = isPresetDemo || (hasExplicitOnboarding
+            ? Boolean(row.theme_settings.onboarding.storeNameSet)
+            : (Boolean(row.category && row.category !== 'Bisnis UMKM') || Boolean(row.tagline)));
+
+          return {
+            id: row.id,
+            merchantId: row.user_id,
+            name: row.name,
+            slug: row.slug,
+            tagline: row.tagline || '',
+            description: row.description || '',
+            logoUrl: row.logo_url || '',
+            bannerUrl: row.banner_url || '',
+            phoneWhatsApp: row.phone_whatsapp || '',
+            city: row.city || 'Indonesia',
+            province: row.province || '',
+            district: row.district || '',
+            subdistrict: row.subdistrict || '',
+            village: row.village || '',
+            addressDetail: row.address_detail || '',
+            postalCode: row.postal_code || '',
+            address: row.address || '',
+            latitude: row.latitude ? Number(row.latitude) : undefined,
+            longitude: row.longitude ? Number(row.longitude) : undefined,
+            category: row.category || 'Bisnis UMKM',
+            currency: 'IDR',
+            balance: Number(row.balance || 0),
+            plan: row.plan || 'free',
+            planExpiresAt: row.plan_expires_at || row.theme_settings?.planExpiresAt || undefined,
+            planSubscribedAt: row.plan_subscribed_at || row.theme_settings?.planSubscribedAt || undefined,
+            isPublished: row.is_published !== undefined && row.is_published !== null
+              ? Boolean(row.is_published)
+              : ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id),
+            layoutSettings: row.theme_settings,
+            customDomain: row.custom_domain,
+            onboarding: {
+              storeNameSet: isStoreConfigured,
+              productUploaded: Boolean(row.theme_settings?.onboarding?.productUploaded),
+              paymentConnected: Boolean(row.theme_settings?.onboarding?.paymentConnected) || row.plan !== 'free',
+            },
+            createdAt: row.created_at || new Date().toISOString(),
+          };
+        });
 
         // Hydrate each store's real active subscription from store_subscriptions database table
         const hydratedStores: Store[] = await Promise.all(
@@ -501,12 +509,18 @@ class StoreService {
 
       // Only include theme_settings when layout is explicitly being changed
       // (avoids oversized payload on publish-only or metadata-only updates)
-      if (updates.layoutSettings !== undefined || updates.planExpiresAt !== undefined || updates.planSubscribedAt !== undefined) {
+      if (
+        updates.layoutSettings !== undefined ||
+        updates.planExpiresAt !== undefined ||
+        updates.planSubscribedAt !== undefined ||
+        updates.onboarding !== undefined
+      ) {
         const combinedThemeSettings = {
           ...(stores[index].layoutSettings || {}),
           ...(updates.layoutSettings || {}),
           ...(updates.planExpiresAt ? { planExpiresAt: updates.planExpiresAt } : {}),
           ...(updates.planSubscribedAt ? { planSubscribedAt: updates.planSubscribedAt } : {}),
+          ...(updates.onboarding ? { onboarding: updates.onboarding } : {}),
         };
         delete (combinedThemeSettings as any).isPublished;
         dbUpdates.theme_settings = combinedThemeSettings;

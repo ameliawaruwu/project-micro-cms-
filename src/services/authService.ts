@@ -480,7 +480,10 @@ class AuthService {
       createdAt: new Date().toISOString(),
     };
     localStorage.setItem('kroomify_onboarding_pending', 'true');
+    localStorage.setItem(`kroomify_onboarding_pending_${userId}`, 'true');
     localStorage.setItem('kroomify_onboarding_step', 'store_info');
+    sessionStorage.removeItem('kroomify_store_info_dismissed');
+    localStorage.removeItem(`kroomify_store_info_dismissed_${userId}`);
 
     const merchant: Merchant = {
       id: `merch-${userId}`,
@@ -561,7 +564,13 @@ class AuthService {
           category: '',
           plan: null,
           balance: 0,
-          theme_settings: {},
+          theme_settings: {
+            onboarding: {
+              storeNameSet: Boolean(params.storeName?.trim()),
+              productUploaded: false,
+              paymentConnected: false,
+            },
+          },
           is_published: false,
           created_at: newStore.createdAt,
           updated_at: nowWib,
@@ -739,7 +748,13 @@ class AuthService {
           category: '',
           plan: null,
           balance: 0,
-          theme_settings: {},
+          theme_settings: {
+            onboarding: {
+              storeNameSet: false,
+              productUploaded: false,
+              paymentConnected: false,
+            },
+          },
           is_published: false,
           created_at: userStore.createdAt,
           updated_at: nowWib,

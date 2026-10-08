@@ -42,11 +42,19 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setStoreName('');
-      setStoreSlug('');
+      const initialName = store?.name && !store.name.startsWith('Toko usr_')
+        ? store.name
+        : (user?.name ? `Toko ${user.name}` : '');
+      setStoreName(initialName);
+      const autoSlug = initialName
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      setStoreSlug(store?.slug && !store.slug.startsWith('toko-usr-') ? store.slug : autoSlug);
 
       if (store) {
-        setCategory(store.category || '');
+        setCategory(store.category && store.category !== 'Bisnis UMKM' ? store.category : '');
         setPhoneWhatsApp(store.phoneWhatsApp || user?.phoneWhatsApp || '');
         setTagline(store.tagline || '');
       } else if (user) {
@@ -160,6 +168,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       sessionStorage.removeItem('kroomify_store_info_dismissed');
       if (user?.id) {
         localStorage.removeItem(`kroomify_store_info_dismissed_${user.id}`);
+        localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
       }
 
       onComplete(savedStore);
@@ -174,6 +183,9 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         onboarding: { storeNameSet: true },
       } as Store;
       localStorage.removeItem('kroomify_onboarding_pending');
+      if (user?.id) {
+        localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
+      }
       onComplete(fallback);
     } finally {
       setIsSaving(false);

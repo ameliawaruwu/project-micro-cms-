@@ -560,14 +560,19 @@ export default function App() {
         setCartItems(initialCart);
 
         // Check if store information popup should be displayed
+        const isPendingOnboarding =
+          localStorage.getItem('kroomify_onboarding_pending') === 'true' ||
+          (user?.id ? localStorage.getItem(`kroomify_onboarding_pending_${user.id}`) === 'true' : false);
         const isDismissed =
-          sessionStorage.getItem('kroomify_store_info_dismissed') === 'true' ||
-          (user?.id ? localStorage.getItem(`kroomify_store_info_dismissed_${user.id}`) === 'true' : false);
+          !isPendingOnboarding && (
+            sessionStorage.getItem('kroomify_store_info_dismissed') === 'true' ||
+            (user?.id ? localStorage.getItem(`kroomify_store_info_dismissed_${user.id}`) === 'true' : false)
+          );
         const hasStoreInfo = Boolean(finalStore.onboarding?.storeNameSet);
 
-        if (user?.role === 'merchant' && !hasStoreInfo && !isDismissed) {
+        if (user?.role === 'merchant' && (!hasStoreInfo || isPendingOnboarding) && !isDismissed) {
           setIsOnboardingModalOpen(true);
-        } else {
+        } else if (hasStoreInfo && !isPendingOnboarding) {
           setIsOnboardingModalOpen(false);
         }
       }
@@ -1481,6 +1486,12 @@ export default function App() {
             } else {
               loadData();
               addToast('Berhasil masuk ke Dashboard Toko!');
+              const isPending =
+                localStorage.getItem('kroomify_onboarding_pending') === 'true' ||
+                (currentUser?.id ? localStorage.getItem(`kroomify_onboarding_pending_${currentUser.id}`) === 'true' : false);
+              if (isPending) {
+                setIsOnboardingModalOpen(true);
+              }
             }
           }}
           onNavigateRegister={() => setAuthView('register')}
