@@ -521,12 +521,6 @@ export default function App() {
         userStores = [newStore];
         setStores([newStore]);
         setActiveStore(newStore);
-        const isDismissed =
-          sessionStorage.getItem('kroomify_store_info_dismissed') === 'true' ||
-          (user?.id ? localStorage.getItem(`kroomify_store_info_dismissed_${user.id}`) === 'true' : false);
-        if (!isDismissed) {
-          setIsOnboardingModalOpen(true);
-        }
       } else {
         setStores(userStores);
       }
@@ -559,20 +553,23 @@ export default function App() {
         setIntegrations(storeIntegrations);
         setCartItems(initialCart);
 
-        // Check if store information popup should be displayed
-        const isPendingOnboarding =
-          localStorage.getItem('kroomify_onboarding_pending') === 'true' ||
-          (user?.id ? localStorage.getItem(`kroomify_onboarding_pending_${user.id}`) === 'true' : false);
-        const isDismissed =
-          !isPendingOnboarding && (
-            sessionStorage.getItem('kroomify_store_info_dismissed') === 'true' ||
-            (user?.id ? localStorage.getItem(`kroomify_store_info_dismissed_${user.id}`) === 'true' : false)
-          );
-        const hasStoreInfo = Boolean(finalStore.onboarding?.storeNameSet);
+        // Pop up onboarding HANYA boleh muncul jika pengguna login pertama kali setelah register,
+        // dan BUKAN pada setiap loadData atau login normal.
+        const isFirstLoginAfterRegister =
+          Boolean(user?.id && localStorage.getItem(`kroomify_first_login_after_register_${user.id}`) === 'true') ||
+          localStorage.getItem('kroomify_first_login_after_register') === 'true';
+        const isCompleted =
+          Boolean(user?.id && localStorage.getItem(`kroomify_onboarding_completed_${user.id}`) === 'true') ||
+          localStorage.getItem('kroomify_onboarding_completed') === 'true' ||
+          sessionStorage.getItem('kroomify_store_info_dismissed') === 'true' ||
+          (user?.id ? localStorage.getItem(`kroomify_store_info_dismissed_${user.id}`) === 'true' : false);
 
-        if (user?.role === 'merchant' && (!hasStoreInfo || isPendingOnboarding) && !isDismissed) {
+        if (isCompleted) {
+          setIsOnboardingModalOpen(false);
+        } else if (user?.role === 'merchant' && isFirstLoginAfterRegister) {
           setIsOnboardingModalOpen(true);
-        } else if (hasStoreInfo && !isPendingOnboarding) {
+        } else {
+          // Normal login / page load: jangan tampilkan pop up
           setIsOnboardingModalOpen(false);
         }
       }
@@ -1486,11 +1483,25 @@ export default function App() {
             } else {
               loadData();
               addToast('Berhasil masuk ke Dashboard Toko!');
-              const isPending =
-                localStorage.getItem('kroomify_onboarding_pending') === 'true' ||
-                (currentUser?.id ? localStorage.getItem(`kroomify_onboarding_pending_${currentUser.id}`) === 'true' : false);
-              if (isPending) {
+              // Onboarding popup HANYA muncul ketika login pertama kali setelah register
+              const isFirstLogin =
+                Boolean(currentUser?.id && localStorage.getItem(`kroomify_first_login_after_register_${currentUser.id}`) === 'true') ||
+                localStorage.getItem('kroomify_first_login_after_register') === 'true';
+              const isAlreadyDone =
+                Boolean(currentUser?.id && localStorage.getItem(`kroomify_onboarding_completed_${currentUser.id}`) === 'true') ||
+                localStorage.getItem('kroomify_onboarding_completed') === 'true';
+
+              if (isFirstLogin && !isAlreadyDone) {
                 setIsOnboardingModalOpen(true);
+                // Langsung konsumsi flag agar login-login berikutnya tidak pernah memicu popup lagi
+                if (currentUser?.id) {
+                  localStorage.removeItem(`kroomify_first_login_after_register_${currentUser.id}`);
+                  localStorage.removeItem(`kroomify_onboarding_pending_${currentUser.id}`);
+                }
+                localStorage.removeItem('kroomify_first_login_after_register');
+                localStorage.removeItem('kroomify_onboarding_pending');
+              } else {
+                setIsOnboardingModalOpen(false);
               }
             }
           }}
@@ -2200,10 +2211,27 @@ export default function App() {
           sessionStorage.setItem('kroomify_store_info_dismissed', 'true');
           if (user?.id) {
             localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
+            localStorage.setItem(`kroomify_onboarding_completed_${user.id}`, 'true');
+            localStorage.removeItem(`kroomify_first_login_after_register_${user.id}`);
+            localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
           }
+          localStorage.setItem('kroomify_onboarding_completed', 'true');
+          localStorage.removeItem('kroomify_first_login_after_register');
+          localStorage.removeItem('kroomify_onboarding_pending');
+          localStorage.removeItem('kroomify_onboarding_step');
           setIsOnboardingModalOpen(false);
         }}
         onComplete={async (updatedStore) => {
+          if (user?.id) {
+            localStorage.setItem(`kroomify_onboarding_completed_${user.id}`, 'true');
+            localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
+            localStorage.removeItem(`kroomify_first_login_after_register_${user.id}`);
+            localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
+          }
+          localStorage.setItem('kroomify_onboarding_completed', 'true');
+          localStorage.removeItem('kroomify_first_login_after_register');
+          localStorage.removeItem('kroomify_onboarding_pending');
+          localStorage.removeItem('kroomify_onboarding_step');
           setActiveStore(updatedStore);
           setStores((prev) => [updatedStore, ...prev.filter((s) => s.id !== updatedStore.id)]);
           setIsOnboardingModalOpen(false);

@@ -8,6 +8,7 @@ import {
   Loader2,
   Globe,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { Store, User } from '../../types';
 import { storeService } from '../../services/storeService';
@@ -28,6 +29,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
   user,
   store,
   onComplete,
+  onClose,
 }) => {
   const { language } = useLanguage();
   const isEn = language === 'en';
@@ -58,9 +60,14 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         setCurrentStep('store_info');
       }
 
-      // Jangan menawarkan nama toko otomatis: mulai dengan input kosong
-      setStoreName('');
-      setStoreSlug('');
+      // Pertahankan nama toko yang sudah diisi agar tidak ter-reset
+      if (store?.name && !store.name.startsWith('Toko usr_') && store.name !== 'Toko UMKM' && store.name !== 'Toko Baru UMKM') {
+        setStoreName(store.name);
+        setStoreSlug(store.slug || '');
+      } else {
+        setStoreName('');
+        setStoreSlug('');
+      }
 
       if (store) {
         setCategory(store.category && store.category !== 'Bisnis UMKM' ? store.category : '');
@@ -138,10 +145,30 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         });
       }
 
+      // Langsung tandai bahwa user ini telah menyelesaikan pengisian informasi toko
+      if (user?.id) {
+        localStorage.setItem(`kroomify_onboarding_completed_${user.id}`, 'true');
+        localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
+        localStorage.removeItem(`kroomify_first_login_after_register_${user.id}`);
+        localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
+      }
+      localStorage.setItem('kroomify_onboarding_completed', 'true');
+      localStorage.removeItem('kroomify_first_login_after_register');
+      localStorage.removeItem('kroomify_onboarding_pending');
+
       localStorage.setItem('kroomify_onboarding_step', 'claim_free_plan');
       setCurrentStep('claim_free_plan');
     } catch (err) {
       console.warn('Gagal menyimpan profil toko:', err);
+      if (user?.id) {
+        localStorage.setItem(`kroomify_onboarding_completed_${user.id}`, 'true');
+        localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
+        localStorage.removeItem(`kroomify_first_login_after_register_${user.id}`);
+        localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
+      }
+      localStorage.setItem('kroomify_onboarding_completed', 'true');
+      localStorage.removeItem('kroomify_first_login_after_register');
+      localStorage.removeItem('kroomify_onboarding_pending');
       // Lanjut ke langkah klaim agar user tidak terblokir
       localStorage.setItem('kroomify_onboarding_step', 'claim_free_plan');
       setCurrentStep('claim_free_plan');
@@ -212,10 +239,14 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       // 3. Bersihkan flag onboarding agar tidak muncul lagi
       localStorage.removeItem('kroomify_onboarding_pending');
       localStorage.removeItem('kroomify_onboarding_step');
-      sessionStorage.removeItem('kroomify_store_info_dismissed');
+      localStorage.removeItem('kroomify_first_login_after_register');
+      localStorage.setItem('kroomify_onboarding_completed', 'true');
+      sessionStorage.setItem('kroomify_store_info_dismissed', 'true');
       if (user?.id) {
-        localStorage.removeItem(`kroomify_store_info_dismissed_${user.id}`);
+        localStorage.setItem(`kroomify_onboarding_completed_${user.id}`, 'true');
+        localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
         localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
+        localStorage.removeItem(`kroomify_first_login_after_register_${user.id}`);
       }
 
       // 4. Selesaikan proses
@@ -271,20 +302,35 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
               </span>
             </div>
 
-            {/* Segmented Progress Indicator */}
-            <div className="flex items-center gap-1.5">
-              <div
-                className={`h-1.5 w-6 rounded-full transition-colors duration-300 ${
-                  currentStep === 'store_info' || currentStep === 'claim_free_plan'
-                    ? 'bg-[#66000E]'
-                    : 'bg-slate-200'
-                }`}
-              />
-              <div
-                className={`h-1.5 w-6 rounded-full transition-colors duration-300 ${
-                  currentStep === 'claim_free_plan' ? 'bg-[#66000E]' : 'bg-slate-200'
-                }`}
-              />
+            <div className="flex items-center gap-2">
+              {/* Segmented Progress Indicator */}
+              <div className="flex items-center gap-1.5">
+                <div
+                  className={`h-1.5 w-6 rounded-full transition-colors duration-300 ${
+                    currentStep === 'store_info' || currentStep === 'claim_free_plan'
+                      ? 'bg-[#66000E]'
+                      : 'bg-slate-200'
+                  }`}
+                />
+                <div
+                  className={`h-1.5 w-6 rounded-full transition-colors duration-300 ${
+                    currentStep === 'claim_free_plan' ? 'bg-[#66000E]' : 'bg-slate-200'
+                  }`}
+                />
+              </div>
+
+              {/* Close Button (X) */}
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1 -mr-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                  title={isEn ? 'Close' : 'Tutup'}
+                  aria-label={isEn ? 'Close' : 'Tutup'}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 

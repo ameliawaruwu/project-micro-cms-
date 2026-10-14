@@ -479,11 +479,15 @@ class AuthService {
       },
       createdAt: new Date().toISOString(),
     };
+    localStorage.setItem('kroomify_first_login_after_register', 'true');
+    localStorage.setItem(`kroomify_first_login_after_register_${userId}`, 'true');
     localStorage.setItem('kroomify_onboarding_pending', 'true');
     localStorage.setItem(`kroomify_onboarding_pending_${userId}`, 'true');
     localStorage.setItem('kroomify_onboarding_step', 'store_info');
     sessionStorage.removeItem('kroomify_store_info_dismissed');
     localStorage.removeItem(`kroomify_store_info_dismissed_${userId}`);
+    localStorage.removeItem(`kroomify_onboarding_completed_${userId}`);
+    localStorage.removeItem('kroomify_onboarding_completed');
 
     const merchant: Merchant = {
       id: `merch-${userId}`,
