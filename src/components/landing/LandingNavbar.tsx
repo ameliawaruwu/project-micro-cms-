@@ -137,30 +137,27 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
           </div>
 
           {/* 2. Desktop Navigation Center Links */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 text-[14px] font-medium text-[#706866]">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-[14px] font-medium text-[#706866]">
             {navItems.map((item) => {
               const isActive = activeSection === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`relative min-h-[42px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer font-medium ${
+                  className={`transition-colors cursor-pointer text-[14px] p-0 bg-transparent border-0 focus:outline-none ${
                     isActive
-                      ? 'text-[#66000E] font-semibold bg-[#FAF7F7]'
-                      : 'hover:text-[#66000E] hover:bg-[#FAF7F7]'
+                      ? 'text-[#66000E] font-bold'
+                      : 'text-[#706866] hover:text-[#66000E] font-medium'
                   }`}
                 >
                   <span>{item.label}</span>
-                  {isActive && (
-                    <span className="absolute bottom-1.5 left-3.5 right-3.5 h-[2px] bg-[#66000E] rounded-full" />
-                  )}
                 </button>
               );
             })}
           </nav>
 
           {/* 3. Desktop Actions & Language Switcher */}
-          <div className="hidden lg:flex items-center gap-2.5 xl:gap-3.5 shrink-0">
+          <div className="hidden lg:flex items-center gap-4 xl:gap-5 shrink-0">
             
             {/* Language Switch Button */}
             <LanguageSwitchButton compact />
@@ -176,7 +173,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
             ) : (
               <button
                 onClick={onNavigateLogin}
-                className="min-h-[42px] px-4 py-2 rounded-xl text-[14px] font-semibold text-[#66000E] bg-[#F5E8EA] hover:bg-[#ebd3d6] transition-colors cursor-pointer border border-[#E8DDDE]"
+                className="text-[14px] font-semibold text-[#66000E] hover:text-[#801010] transition-colors cursor-pointer px-2 py-1.5 bg-transparent border-0 focus:outline-none"
               >
                 {t('landing_login', 'Masuk Akun')}
               </button>
@@ -211,14 +208,13 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`w-full min-h-[46px] text-left px-4 py-2.5 rounded-xl text-[15px] font-medium transition-colors flex items-center justify-between cursor-pointer ${
+                  className={`w-full py-2.5 px-3 text-left text-[15px] transition-colors flex items-center justify-between cursor-pointer ${
                     isActive
-                      ? 'bg-[#F5E8EA] text-[#66000E] font-semibold'
-                      : 'text-[#5F5652] hover:bg-[#FAF7F7] hover:text-[#66000E]'
+                      ? 'text-[#66000E] font-bold'
+                      : 'text-[#5F5652] hover:text-[#66000E] font-medium'
                   }`}
                 >
                   <span>{item.label}</span>
-                  {isActive && <div className="w-2 h-2 rounded-full bg-[#66000E]" />}
                 </button>
               );
             })}
@@ -227,7 +223,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
             <div className="pt-4 border-t border-[#E5E0DD] flex flex-col gap-2.5">
               
               {/* Language Switch Row */}
-              <div className="flex items-center justify-between px-2 py-1 bg-[#FAF7F7] rounded-xl border border-[#E5E0DD]">
+              <div className="flex items-center justify-between px-3 py-2 bg-[#FAF7F7] rounded-xl border border-[#E5E0DD]">
                 <span className="text-xs font-semibold text-[#5F5652]">Bahasa / Language:</span>
                 <LanguageSwitchButton compact />
               </div>
@@ -238,7 +234,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
                   setMobileMenuOpen(false);
                   onNavigateLogin();
                 }}
-                className="w-full min-h-[46px] py-2.5 px-4 rounded-xl border border-[#E5E0DD] text-[#66000E] font-semibold text-[15px] flex items-center justify-center gap-2 bg-[#FAF7F7] hover:bg-[#F5E8EA] transition cursor-pointer active:scale-[0.98]"
+                className="w-full py-2.5 px-4 text-[#66000E] font-semibold text-[15px] flex items-center justify-center gap-2 hover:text-[#801010] transition cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />
                 <span>{t('landing_login', 'Masuk Akun')}</span>

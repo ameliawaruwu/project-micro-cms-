@@ -1010,115 +1010,62 @@ export const LanguageSwitchButton: React.FC<{
 }) => {
   const { language, setLanguage } = useLanguage();
 
+  const toggleLanguage = () => {
+    setLanguage(language === 'id' ? 'en' : 'id');
+  };
+
   if (variant === 'dark') {
     return (
-      <div
-        className={`inline-flex items-center p-0.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/15 shadow-md font-sans select-none ${className}`}
-        role="group"
+      <button
+        type="button"
+        onClick={toggleLanguage}
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/20 shadow-md flex items-center justify-center cursor-pointer transition-all active:scale-95 group shrink-0 select-none ${className}`}
+        title={language === 'id' ? 'Ganti ke English (EN)' : 'Switch to Bahasa Indonesia (ID)'}
         aria-label="Switch Language / Ganti Bahasa"
       >
-        <button
-          type="button"
-          onClick={() => setLanguage('id')}
-          className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-            language === 'id'
-              ? 'bg-white text-[#66000E] shadow-sm font-bold'
-              : 'text-white/80 hover:text-white hover:bg-white/10'
-          }`}
-          title="Bahasa Indonesia"
-        >
-          <IndonesiaFlagSvg />
-          <span className={compact ? 'text-[11px]' : 'text-xs'}>ID</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setLanguage('en')}
-          className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-            language === 'en'
-              ? 'bg-white text-[#66000E] shadow-sm font-bold'
-              : 'text-white/80 hover:text-white hover:bg-white/10'
-          }`}
-          title="English"
-        >
-          <UkFlagSvg />
-          <span className={compact ? 'text-[11px]' : 'text-xs'}>EN</span>
-        </button>
-      </div>
+        <div className="flex items-center justify-center gap-1">
+          {language === 'id' ? <IndonesiaFlagSvg /> : <UkFlagSvg />}
+          <span className="text-[11px] font-bold text-white group-hover:text-amber-200 uppercase">
+            {language}
+          </span>
+        </div>
+      </button>
     );
   }
 
   if (variant === 'glass') {
     return (
-      <div
-        className={`inline-flex items-center p-0.5 rounded-xl bg-white/70 backdrop-blur-md border border-[#E5E0DD] shadow-2xs font-sans select-none ${className}`}
-        role="group"
+      <button
+        type="button"
+        onClick={toggleLanguage}
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/80 hover:bg-white backdrop-blur-md border border-[#E5E0DD] shadow-xs flex items-center justify-center cursor-pointer transition-all active:scale-95 group shrink-0 select-none ${className}`}
+        title={language === 'id' ? 'Ganti ke English (EN)' : 'Switch to Bahasa Indonesia (ID)'}
         aria-label="Switch Language / Ganti Bahasa"
       >
-        <button
-          type="button"
-          onClick={() => setLanguage('id')}
-          className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-            language === 'id'
-              ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]/80 font-bold'
-              : 'text-[#706866] hover:text-[#241A1A] hover:bg-white/50'
-          }`}
-          title="Bahasa Indonesia"
-        >
-          <IndonesiaFlagSvg />
-          <span className={compact ? 'text-[11px]' : 'text-xs'}>ID</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setLanguage('en')}
-          className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-            language === 'en'
-              ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]/80 font-bold'
-              : 'text-[#706866] hover:text-[#241A1A] hover:bg-white/50'
-          }`}
-          title="English"
-        >
-          <UkFlagSvg />
-          <span className={compact ? 'text-[11px]' : 'text-xs'}>EN</span>
-        </button>
-      </div>
+        <div className="flex items-center justify-center gap-1">
+          {language === 'id' ? <IndonesiaFlagSvg /> : <UkFlagSvg />}
+          <span className="text-[11px] font-bold text-[#241A1A] group-hover:text-[#66000E] uppercase">
+            {language}
+          </span>
+        </div>
+      </button>
     );
   }
 
   return (
-    <div
-      className={`inline-flex items-center p-0.5 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] shadow-2xs font-sans select-none ${className}`}
-      role="group"
+    <button
+      type="button"
+      onClick={toggleLanguage}
+      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#FAF7F7] hover:bg-white border border-[#E5E0DD] shadow-2xs flex items-center justify-center cursor-pointer transition-all active:scale-95 group shrink-0 select-none ${className}`}
+      title={language === 'id' ? 'Ganti ke English (EN)' : 'Switch to Bahasa Indonesia (ID)'}
       aria-label="Switch Language / Ganti Bahasa"
     >
-      <button
-        type="button"
-        onClick={() => setLanguage('id')}
-        className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-          language === 'id'
-            ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]/80 font-bold'
-            : 'text-[#706866] hover:text-[#241A1A] hover:bg-white/50'
-        }`}
-        title="Bahasa Indonesia"
-      >
-        <IndonesiaFlagSvg />
-        <span className={compact ? 'text-[11px]' : 'text-xs'}>ID</span>
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setLanguage('en')}
-        className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-          language === 'en'
-            ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]/80 font-bold'
-            : 'text-[#706866] hover:text-[#241A1A] hover:bg-white/50'
-        }`}
-        title="English"
-      >
-        <UkFlagSvg />
-        <span className={compact ? 'text-[11px]' : 'text-xs'}>EN</span>
-      </button>
-    </div>
+      <div className="flex items-center justify-center gap-1">
+        {language === 'id' ? <IndonesiaFlagSvg /> : <UkFlagSvg />}
+        <span className="text-[11px] font-bold text-[#241A1A] group-hover:text-[#66000E] uppercase">
+          {language}
+        </span>
+      </div>
+    </button>
   );
 };

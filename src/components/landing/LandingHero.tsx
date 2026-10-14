@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  ArrowRight,
   CheckCircle2,
   TrendingUp,
   Store,
@@ -69,25 +68,12 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
-              <button onClick={onNavigateRegister} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 lg:h-13 px-8 rounded-full bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-sm shadow-md hover:shadow-lg hover:shadow-[#66000E]/20 active:scale-[0.98] transition-all cursor-pointer">
+              <button onClick={onNavigateRegister} className="w-full sm:w-auto inline-flex items-center justify-center h-12 lg:h-13 px-8 rounded-full bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-sm shadow-md hover:shadow-lg hover:shadow-[#66000E]/20 active:scale-[0.98] transition-all cursor-pointer">
                 <span>Mulai Gratis</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button onClick={onScrollToHowItWorks} className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 h-12 lg:h-13 px-8 rounded-full bg-white hover:bg-[#FAF7F7] text-[#241A1A] font-semibold text-sm border border-[#E8DDDE] shadow-sm active:scale-[0.98] transition-all cursor-pointer">
+              <button onClick={onScrollToHowItWorks} className="w-full sm:w-auto inline-flex items-center justify-center h-12 lg:h-13 px-8 rounded-full bg-white hover:bg-[#FAF7F7] text-[#241A1A] font-semibold text-sm border border-[#E8DDDE] shadow-sm active:scale-[0.98] transition-all cursor-pointer">
                 <span>Lihat Cara Kerja</span>
-                <ArrowRight className="w-3.5 h-3.5 text-[#857C76] group-hover:translate-x-0.5 transition-transform" />
               </button>
-            </div>
-
-            <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-y-3 gap-x-6 text-[12px] font-bold text-[#706866]">
-              <div className="flex items-center gap-2">
-                <div className="bg-[#66000E] rounded-full p-0.5"><CheckCircle2 className="w-3.5 h-3.5 text-white" /></div>
-                <span>Cloud CDN Subdomain</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="bg-sky-500 rounded-full p-0.5"><CheckCircle2 className="w-3.5 h-3.5 text-white" /></div>
-                <span>API Payment & Logistik</span>
-              </div>
             </div>
           </div>
 
