@@ -972,14 +972,14 @@ export const useLanguage = (): LanguageContextType => {
  * Crisp SVG Vector Flags to fix Windows/cross-platform emoji rendering issues
  */
 const IndonesiaFlagSvg = () => (
-  <svg className="w-3.5 h-3.5 rounded-full overflow-hidden border border-black/10 shrink-0 shadow-2xs" viewBox="0 0 24 24">
-    <rect width="24" height="12" fill="#E11D48" />
-    <rect y="12" width="24" height="12" fill="#FFFFFF" />
+  <svg className="w-4 h-2.5 rounded-[2px] overflow-hidden border border-black/10 shrink-0 shadow-2xs" viewBox="0 0 24 16">
+    <rect width="24" height="8" fill="#E11D48" />
+    <rect y="8" width="24" height="8" fill="#FFFFFF" />
   </svg>
 );
 
 const UkFlagSvg = () => (
-  <svg className="w-3.5 h-3.5 rounded-full overflow-hidden border border-black/10 shrink-0 shadow-2xs" viewBox="0 0 60 30">
+  <svg className="w-4 h-2.5 rounded-[2px] overflow-hidden border border-black/10 shrink-0 shadow-2xs" viewBox="0 0 60 30">
     <clipPath id="lang_uk_clip">
       <path d="M0,0 v30 h60 v-30 z"/>
     </clipPath>
@@ -1019,35 +1019,14 @@ export const LanguageSwitchButton: React.FC<{
       <button
         type="button"
         onClick={toggleLanguage}
-        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/20 shadow-md flex items-center justify-center cursor-pointer transition-all active:scale-95 group shrink-0 select-none ${className}`}
+        className={`inline-flex items-center gap-1.5 px-2 py-1 text-[13px] font-semibold text-white/90 hover:text-white transition-colors cursor-pointer select-none bg-transparent border-0 focus:outline-none shrink-0 ${className}`}
         title={language === 'id' ? 'Ganti ke English (EN)' : 'Switch to Bahasa Indonesia (ID)'}
         aria-label="Switch Language / Ganti Bahasa"
       >
-        <div className="flex items-center justify-center gap-1">
-          {language === 'id' ? <IndonesiaFlagSvg /> : <UkFlagSvg />}
-          <span className="text-[11px] font-bold text-white group-hover:text-amber-200 uppercase">
-            {language}
-          </span>
-        </div>
-      </button>
-    );
-  }
-
-  if (variant === 'glass') {
-    return (
-      <button
-        type="button"
-        onClick={toggleLanguage}
-        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/80 hover:bg-white backdrop-blur-md border border-[#E5E0DD] shadow-xs flex items-center justify-center cursor-pointer transition-all active:scale-95 group shrink-0 select-none ${className}`}
-        title={language === 'id' ? 'Ganti ke English (EN)' : 'Switch to Bahasa Indonesia (ID)'}
-        aria-label="Switch Language / Ganti Bahasa"
-      >
-        <div className="flex items-center justify-center gap-1">
-          {language === 'id' ? <IndonesiaFlagSvg /> : <UkFlagSvg />}
-          <span className="text-[11px] font-bold text-[#241A1A] group-hover:text-[#66000E] uppercase">
-            {language}
-          </span>
-        </div>
+        {language === 'id' ? <IndonesiaFlagSvg /> : <UkFlagSvg />}
+        <span className="text-[12px] font-bold uppercase tracking-wide">
+          {language}
+        </span>
       </button>
     );
   }
@@ -1056,16 +1035,14 @@ export const LanguageSwitchButton: React.FC<{
     <button
       type="button"
       onClick={toggleLanguage}
-      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#FAF7F7] hover:bg-white border border-[#E5E0DD] shadow-2xs flex items-center justify-center cursor-pointer transition-all active:scale-95 group shrink-0 select-none ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-1 text-[13px] font-semibold text-[#706866] hover:text-[#66000E] transition-colors cursor-pointer select-none bg-transparent border-0 focus:outline-none shrink-0 ${className}`}
       title={language === 'id' ? 'Ganti ke English (EN)' : 'Switch to Bahasa Indonesia (ID)'}
       aria-label="Switch Language / Ganti Bahasa"
     >
-      <div className="flex items-center justify-center gap-1">
-        {language === 'id' ? <IndonesiaFlagSvg /> : <UkFlagSvg />}
-        <span className="text-[11px] font-bold text-[#241A1A] group-hover:text-[#66000E] uppercase">
-          {language}
-        </span>
-      </div>
+      {language === 'id' ? <IndonesiaFlagSvg /> : <UkFlagSvg />}
+      <span className="text-[12px] font-bold uppercase tracking-wide">
+        {language}
+      </span>
     </button>
   );
 };
