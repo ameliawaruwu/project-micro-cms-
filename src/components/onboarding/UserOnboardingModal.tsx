@@ -334,6 +334,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
                   ref={nameInputRef}
                   type="text"
                   required
+                  autoComplete="off"
                   value={storeName}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder={isEn ? 'e.g. Dapur Nusantara, Batik Sekar' : 'Contoh: Dapur Nusantara, Batik Sekar'}
@@ -379,6 +380,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
                   <input
                     type="tel"
                     inputMode="numeric"
+                    autoComplete="off"
                     value={phoneWhatsApp}
                     onChange={(e) => setPhoneWhatsApp(e.target.value.replace(/\D/g, ''))}
                     placeholder="081234567890"
@@ -395,6 +397,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
               </label>
               <input
                 type="text"
+                autoComplete="off"
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
                 placeholder={isEn ? 'e.g. Authentic handmade flavors' : 'Contoh: Cita rasa autentik khas nusantara'}

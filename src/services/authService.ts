@@ -446,8 +446,10 @@ class AuthService {
       : '';
     const storeId = await idService.generateNextId('stores');
 
-    const finalStoreName = cleanStoreName || `Toko ${params.fullName.trim() || 'UMKM'}`;
-    const finalStoreSlug = cleanStoreSlug || `toko-${params.fullName ? params.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'umkm'}-${Date.now().toString().slice(-4)}`;
+    // JANGAN membuat nama toko default dengan "Toko [NamaUser]" jika params.storeName kosong.
+    // Nama toko harus dibiarkan kosong agar merchant mengisinya sendiri pada modal onboarding.
+    const finalStoreName = cleanStoreName || '';
+    const finalStoreSlug = cleanStoreSlug || '';
 
     const newStore: Store = {
       id: storeId,
@@ -473,7 +475,7 @@ class AuthService {
       plan: '',
       isPublished: false,
       onboarding: {
-        storeNameSet: Boolean(params.storeName?.trim()),
+        storeNameSet: Boolean(cleanStoreName),
         productUploaded: false,
         paymentConnected: false,
       },

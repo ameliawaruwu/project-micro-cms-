@@ -505,11 +505,11 @@ export default function App() {
       let userStores = await storeService.getStoresForUser(user.id);
 
       if (userStores.length === 0) {
-        // Otomatis buat toko awal untuk merchant baru
+        // Otomatis buat toko awal untuk merchant baru tanpa nama default
         const newStore = await storeService.createStore({
           merchantId: user.id,
-          name: `Toko ${user.name || 'UMKM'}`,
-          slug: `toko-${user.name ? user.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'umkm'}-${Date.now().toString().slice(-4)}`,
+          name: '',
+          slug: '',
           phoneWhatsApp: user.phoneWhatsApp || '',
           plan: '', // Belum klaim paket
           onboarding: {
@@ -553,24 +553,26 @@ export default function App() {
         setIntegrations(storeIntegrations);
         setCartItems(initialCart);
 
-        // Pop up onboarding HANYA boleh muncul jika pengguna login pertama kali setelah register,
-        // dan BUKAN pada setiap loadData atau login normal.
-        const isFirstLoginAfterRegister =
-          Boolean(user?.id && localStorage.getItem(`kroomify_first_login_after_register_${user.id}`) === 'true') ||
-          localStorage.getItem('kroomify_first_login_after_register') === 'true';
-        const isCompleted =
+        // Pop up onboarding harus tetap terbuka jika merchant belum menyelesaikan setup toko & klaim paket
+        const isStoreSetupDone = Boolean(
+          finalStore &&
+          finalStore.name &&
+          finalStore.name.trim() !== '' &&
+          !finalStore.name.startsWith('Toko usr_') &&
+          finalStore.onboarding?.storeNameSet &&
+          finalStore.plan &&
+          finalStore.plan.trim() !== ''
+        );
+
+        const isUserCompleted =
           Boolean(user?.id && localStorage.getItem(`kroomify_onboarding_completed_${user.id}`) === 'true') ||
-          localStorage.getItem('kroomify_onboarding_completed') === 'true' ||
-          sessionStorage.getItem('kroomify_store_info_dismissed') === 'true' ||
           (user?.id ? localStorage.getItem(`kroomify_store_info_dismissed_${user.id}`) === 'true' : false);
 
-        if (isCompleted) {
+        if (isStoreSetupDone || isUserCompleted) {
           setIsOnboardingModalOpen(false);
-        } else if (user?.role === 'merchant' && isFirstLoginAfterRegister) {
+        } else if (user?.role === 'merchant') {
+          // Merchant belum menyelesaikan onboarding: pastikan modal onboarding tetap terbuka
           setIsOnboardingModalOpen(true);
-        } else {
-          // Normal login / page load: jangan tampilkan pop up
-          setIsOnboardingModalOpen(false);
         }
       }
     } catch (err) {
