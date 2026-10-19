@@ -60,28 +60,17 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         setCurrentStep('store_info');
       }
 
-      // Pertahankan nama toko yang sudah diisi agar tidak ter-reset
-      if (store?.name && !store.name.startsWith('Toko usr_') && store.name !== 'Toko UMKM' && store.name !== 'Toko Baru UMKM') {
-        setStoreName(store.name);
-        setStoreSlug(store.slug || '');
-      } else {
-        setStoreName('');
-        setStoreSlug('');
-      }
+      // JANGAN TERISI OTOMATIS:
+      // Form harus selalu kosong bersih (blank) agar merchant mengisi informasi toko sendiri
+      setStoreName('');
+      setStoreSlug('');
+      setCategory('');
+      setPhoneWhatsApp('');
+      setTagline('');
 
-      if (store) {
-        setCategory(store.category && store.category !== 'Bisnis UMKM' ? store.category : '');
-        setPhoneWhatsApp(store.phoneWhatsApp || user?.phoneWhatsApp || '');
-        setTagline(store.tagline || '');
-      } else if (user) {
-        setPhoneWhatsApp(user.phoneWhatsApp || '');
-      }
-
-      if (currentStep === 'store_info') {
-        setTimeout(() => nameInputRef.current?.focus(), 150);
-      }
+      setTimeout(() => nameInputRef.current?.focus(), 150);
     }
-  }, [isOpen, store?.id, user?.id]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -95,7 +84,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
     setStoreSlug(autoSlug);
   };
 
-  // Submit Langkah 1: Simpan Informasi Toko & Lanjut ke Langkah 2 Konfirmasi Paket
+  // Submit Langkah 1: Simpan Informasi Toko & Lanjut ke Langkah 2 Informasi Paket Free
   const handleSaveStoreInfo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.id) return;
@@ -145,31 +134,13 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         });
       }
 
-      // Langsung tandai bahwa user ini telah menyelesaikan pengisian informasi toko
-      if (user?.id) {
-        localStorage.setItem(`kroomify_onboarding_completed_${user.id}`, 'true');
-        localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
-        localStorage.removeItem(`kroomify_first_login_after_register_${user.id}`);
-        localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
-      }
-      localStorage.setItem('kroomify_onboarding_completed', 'true');
-      localStorage.removeItem('kroomify_first_login_after_register');
-      localStorage.removeItem('kroomify_onboarding_pending');
-
+      // HANYA pindah step ke konfirmasi Paket Free.
+      // JANGAN set 'onboarding_completed' di sini agar popup tidak hilang sebelum user klik Selesai!
       localStorage.setItem('kroomify_onboarding_step', 'claim_free_plan');
       setCurrentStep('claim_free_plan');
     } catch (err) {
       console.warn('Gagal menyimpan profil toko:', err);
-      if (user?.id) {
-        localStorage.setItem(`kroomify_onboarding_completed_${user.id}`, 'true');
-        localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
-        localStorage.removeItem(`kroomify_first_login_after_register_${user.id}`);
-        localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
-      }
-      localStorage.setItem('kroomify_onboarding_completed', 'true');
-      localStorage.removeItem('kroomify_first_login_after_register');
-      localStorage.removeItem('kroomify_onboarding_pending');
-      // Lanjut ke langkah klaim agar user tidak terblokir
+      // Lanjut ke langkah 2 agar alur tetap dapat berlanjut
       localStorage.setItem('kroomify_onboarding_step', 'claim_free_plan');
       setCurrentStep('claim_free_plan');
     } finally {
@@ -177,7 +148,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
     }
   };
 
-  // Submit Langkah 2: Konfirmasi / Klaim Paket Utama Gratis
+  // Submit Langkah 2: Selesai Konfirmasi Informasi Paket Free
   const handleClaimFreePlan = async () => {
     const targetStoreId = store?.id;
     if (!targetStoreId && !user?.id) return;
@@ -193,19 +164,23 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       const invoiceNumber = `INV-FREE-${Date.now().toString().slice(-6)}`;
 
       // 1. Catat langganan paket gratis di database
-      await billingPlanService.recordSubscription({
-        storeId: storeIdToUse,
-        storeName: storeNameToUse,
-        planId: 'PLN001',
-        planName: 'Paket Free',
-        cycle: 'yearly',
-        amount: 0,
-        status: 'paid',
-        paymentMethod: 'Aktivasi Gratis',
-        invoiceNumber,
-        paidAt: now.toISOString(),
-        expiresAt: expires.toISOString(),
-      });
+      try {
+        await billingPlanService.recordSubscription({
+          storeId: storeIdToUse,
+          storeName: storeNameToUse,
+          planId: 'PLN001',
+          planName: 'Paket Free',
+          cycle: 'yearly',
+          amount: 0,
+          status: 'paid',
+          paymentMethod: 'Aktivasi Gratis',
+          invoiceNumber,
+          paidAt: now.toISOString(),
+          expiresAt: expires.toISOString(),
+        });
+      } catch (subErr) {
+        console.warn('Subscription record warning:', subErr);
+      }
 
       // 2. Perbarui data toko menjadi paket free aktif
       let updatedStore: Store;
@@ -226,7 +201,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       } else {
         updatedStore = {
           ...(store || {}),
-          name: storeName.trim(),
+          name: storeName.trim() || store?.name || '',
           plan: 'free',
           onboarding: {
             storeNameSet: true,
@@ -236,7 +211,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         } as Store;
       }
 
-      // 3. Bersihkan flag onboarding agar tidak muncul lagi
+      // 3. SELESAI: Bersihkan flag onboarding dan tandai selesai agar popup tertutup & tidak muncul lagi
       localStorage.removeItem('kroomify_onboarding_pending');
       localStorage.removeItem('kroomify_onboarding_step');
       localStorage.removeItem('kroomify_first_login_after_register');
@@ -249,13 +224,13 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         localStorage.removeItem(`kroomify_first_login_after_register_${user.id}`);
       }
 
-      // 4. Selesaikan proses
+      // 4. Tutup modal dan kirim data toko yang sudah diperbarui
       onComplete(updatedStore);
     } catch (err) {
       console.error('Error claiming free plan:', err);
       const fallback = {
         ...(store || {}),
-        name: storeName.trim() || store?.name,
+        name: storeName.trim() || store?.name || '',
         plan: 'free',
         onboarding: {
           storeNameSet: true,
@@ -265,8 +240,14 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       } as Store;
       localStorage.removeItem('kroomify_onboarding_pending');
       localStorage.removeItem('kroomify_onboarding_step');
+      localStorage.removeItem('kroomify_first_login_after_register');
+      localStorage.setItem('kroomify_onboarding_completed', 'true');
+      sessionStorage.setItem('kroomify_store_info_dismissed', 'true');
       if (user?.id) {
+        localStorage.setItem(`kroomify_onboarding_completed_${user.id}`, 'true');
+        localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
         localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
+        localStorage.removeItem(`kroomify_first_login_after_register_${user.id}`);
       }
       onComplete(fallback);
     } finally {
@@ -318,26 +299,13 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
                   }`}
                 />
               </div>
-
-              {/* Close Button (X) */}
-              {onClose && (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="p-1 -mr-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                  title={isEn ? 'Close' : 'Tutup'}
-                  aria-label={isEn ? 'Close' : 'Tutup'}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
             </div>
           </div>
 
           <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
             {currentStep === 'store_info'
               ? isEn ? 'Set Up Your Online Store' : 'Informasi Toko Online'
-              : isEn ? 'Confirm Free Main Plan' : 'Konfirmasi Paket Utama Gratis'}
+              : isEn ? 'Free Plan Information' : 'Informasi Paket Akun'}
           </h2>
           <p className="text-[11px] text-slate-500 mt-0.5">
             {currentStep === 'store_info'
@@ -345,13 +313,13 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
                 ? 'Enter your store details to get started.'
                 : 'Lengkapi identitas dasar toko Anda untuk memulai.'
               : isEn
-                ? 'Confirm your free package to activate and access your store catalog.'
-                : 'Konfirmasi paket gratis ini untuk langsung mengaktifkan dan mengelola toko Anda.'}
+                ? 'Your account is currently active on the Free Plan. Click Done to access your dashboard.'
+                : 'Saat ini akun Anda aktif menggunakan Paket Free. Klik Selesai untuk membuka dashboard.'}
           </p>
         </div>
 
         {/* ========================================================================= */}
-        {/* LANGKAH 1: FORM INFORMASI TOKO ONLINE (MANDATORI / TANPA TOMBOL LEWATI)   */}
+        {/* LANGKAH 1: FORM INFORMASI TOKO ONLINE (MANDATORI / TANPA PREFILL)         */}
         {/* ========================================================================= */}
         {currentStep === 'store_info' && (
           <form onSubmit={handleSaveStoreInfo} className="p-5 space-y-3 overflow-y-auto">
@@ -440,7 +408,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
                 : 'Informasi toko dapat diubah kapan saja melalui menu Pengaturan.'}
             </p>
 
-            {/* Footer Action Button (Tanpa Tombol Lewati) */}
+            {/* Footer Action Button */}
             <div className="pt-2">
               <button
                 type="submit"
@@ -464,7 +432,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* LANGKAH 2: KONFIRMASI PAKET UTAMA GRATIS (FREE PLAN CONFIRMATION)         */}
+        {/* LANGKAH 2: INFORMASI PAKET FREE & SELESAI                                  */}
         {/* ========================================================================= */}
         {currentStep === 'claim_free_plan' && (
           <div className="p-5 space-y-4 overflow-y-auto">
@@ -477,13 +445,13 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
                       {isEn ? 'Free Plan' : 'Paket Free'}
                     </span>
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700">
-                      {isEn ? 'Free Forever' : 'Gratis Selamanya'}
+                      {isEn ? 'Active • Free' : 'Aktif • Gratis'}
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1 leading-snug">
                     {isEn
-                      ? 'Essential starter toolkit to launch your digital catalog.'
-                      : 'Solusi awal untuk mulai membangun dan mengelola katalog produk digital Anda.'}
+                      ? 'Starter package activated to launch and manage your digital storefront.'
+                      : 'Paket starter aktif untuk mulai mengelola katalog dan etalase toko online Anda.'}
                   </p>
                 </div>
 
@@ -521,28 +489,28 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
                 {isEn
-                  ? 'No credit card or payment required. Immediate activation upon claim.'
-                  : 'Tanpa biaya atau kartu kredit. Paket langsung aktif setelah dikonfirmasi.'}
+                  ? 'Your account automatically receives Free Plan privileges without any subscription charges.'
+                  : 'Akun Anda otomatis menikmati fitur paket Free tanpa biaya berlangganan.'}
               </span>
             </div>
 
-            {/* Mandatory Action Button */}
+            {/* Tombol Selesai */}
             <div className="pt-1">
               <button
                 type="button"
                 onClick={handleClaimFreePlan}
                 disabled={isClaimingPlan}
-                className="w-full py-2.5 bg-[#66000E] hover:bg-[#7D0012] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 shadow-2xs active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full py-2.5 bg-[#66000E] hover:bg-[#7D0012] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-2xs active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isClaimingPlan ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>{isEn ? 'Activating Package...' : 'Mengaktifkan Paket Free...'}</span>
+                    <span>{isEn ? 'Completing Setup...' : 'Menyelesaikan Setup...'}</span>
                   </>
                 ) : (
                   <>
-                    <span>{isEn ? 'Claim Free Package & Open Dashboard' : 'Klaim Paket Gratis & Buka Dashboard'}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <Check className="w-4 h-4 stroke-[2.5]" />
+                    <span>{isEn ? 'Done' : 'Selesai'}</span>
                   </>
                 )}
               </button>

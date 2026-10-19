@@ -1493,13 +1493,6 @@ export default function App() {
 
               if (isFirstLogin && !isAlreadyDone) {
                 setIsOnboardingModalOpen(true);
-                // Langsung konsumsi flag agar login-login berikutnya tidak pernah memicu popup lagi
-                if (currentUser?.id) {
-                  localStorage.removeItem(`kroomify_first_login_after_register_${currentUser.id}`);
-                  localStorage.removeItem(`kroomify_onboarding_pending_${currentUser.id}`);
-                }
-                localStorage.removeItem('kroomify_first_login_after_register');
-                localStorage.removeItem('kroomify_onboarding_pending');
               } else {
                 setIsOnboardingModalOpen(false);
               }
@@ -2207,20 +2200,6 @@ export default function App() {
         isOpen={isOnboardingModalOpen && !isAuthLoading && !!user}
         user={user}
         store={currentStore}
-        onClose={() => {
-          sessionStorage.setItem('kroomify_store_info_dismissed', 'true');
-          if (user?.id) {
-            localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
-            localStorage.setItem(`kroomify_onboarding_completed_${user.id}`, 'true');
-            localStorage.removeItem(`kroomify_first_login_after_register_${user.id}`);
-            localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
-          }
-          localStorage.setItem('kroomify_onboarding_completed', 'true');
-          localStorage.removeItem('kroomify_first_login_after_register');
-          localStorage.removeItem('kroomify_onboarding_pending');
-          localStorage.removeItem('kroomify_onboarding_step');
-          setIsOnboardingModalOpen(false);
-        }}
         onComplete={async (updatedStore) => {
           if (user?.id) {
             localStorage.setItem(`kroomify_onboarding_completed_${user.id}`, 'true');
