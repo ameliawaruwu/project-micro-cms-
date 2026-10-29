@@ -125,7 +125,8 @@ export default function App() {
     const handleGoogleSuccess = (e: any) => {
       const gUser = e.detail?.user;
       const isNewUser = e.detail?.isNewUser;
-      const targetMode = gUser?.role === 'admin' ? 'admin' : 'merchant-desktop';
+      const isGoogleAdmin = gUser?.role === 'admin' || gUser?.role === 'sub_admin' || gUser?.role === 'community_admin';
+      const targetMode = isGoogleAdmin ? 'admin' : 'merchant-desktop';
       setViewMode(targetMode);
       setAuthView(null);
       loadData();
@@ -1420,7 +1421,8 @@ export default function App() {
   // LANDING PAGE VIEW (Hanya untuk user yang belum terotentikasi)
   if (viewMode === 'landing' && authView === null) {
     if (isAuthenticated && user) {
-      setViewMode(user.role === 'admin' ? 'admin' : 'merchant-desktop');
+      const isAnyAdmin = user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin';
+      setViewMode(isAnyAdmin ? 'admin' : 'merchant-desktop');
       return null;
     }
     return (
@@ -1434,7 +1436,8 @@ export default function App() {
           }}
           onNavigateDashboard={() => {
             if (user) {
-              setViewMode(user.role === 'admin' ? 'admin' : 'merchant-desktop');
+              const isAnyAdmin = user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin';
+              setViewMode(isAnyAdmin ? 'admin' : 'merchant-desktop');
             } else {
               setAuthView('login');
             }
@@ -1478,11 +1481,16 @@ export default function App() {
           initialEmail={registeredEmailForLogin}
           onSuccess={() => {
             const currentUser = authService.getCurrentUser().user || user;
-            const targetMode = currentUser?.role === 'admin' ? 'admin' : 'merchant-desktop';
+            const isAnyAdmin = currentUser?.role === 'admin' || currentUser?.role === 'sub_admin' || currentUser?.role === 'community_admin';
+            const targetMode = isAnyAdmin ? 'admin' : 'merchant-desktop';
             setViewMode(targetMode);
             setAuthView(null);
             if (targetMode === 'admin') {
-              addToast('Selamat datang di Super Admin Panel!');
+              if (currentUser?.role === 'sub_admin' || currentUser?.role === 'community_admin') {
+                addToast('Selamat datang di Portal Koordinator GMPS!');
+              } else {
+                addToast('Selamat datang di Super Admin Panel!');
+              }
             } else {
               loadData();
               addToast('Berhasil masuk ke Dashboard Toko!');
@@ -1540,7 +1548,7 @@ export default function App() {
     // Jika toko belum dipublikasikan atau toko belum ada dan bukan di mode preview
     if ((!currentStore || !currentStore.id || !isPublished) && !isPreview) {
       const isOwner = user && activeStore && activeStore.id === currentStore?.id;
-      const isAdmin = user && user.role === 'admin';
+      const isAdmin = user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin');
       return (
         <StoreNotFoundPage
           store={currentStore}
@@ -1645,7 +1653,7 @@ export default function App() {
 
               <button
                 onClick={() => {
-                  if (user?.role === 'admin') {
+                  if (user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') {
                     setViewMode('admin');
                   } else {
                     setViewMode('merchant-desktop');
@@ -1654,7 +1662,7 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg bg-[#FFD358] hover:bg-[#FFB915] text-[#002A45] font-extrabold flex items-center gap-1 shadow-xs cursor-pointer text-xs"
               >
                 <Monitor className="w-3.5 h-3.5" />
-                <span>{user?.role === 'admin' ? 'Ke Admin' : 'Kembali'}</span>
+                <span>{(user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') ? 'Ke Admin' : 'Kembali'}</span>
               </button>
             </div>
           </div>
@@ -1746,7 +1754,8 @@ export default function App() {
               isAdmin={false}
               onGoToDashboard={() => {
                 if (isPlatformHost(window.location.hostname)) {
-                  setViewMode(user ? (user.role === 'admin' ? 'admin' : 'merchant-desktop') : 'landing');
+                  const isAnyAdmin = user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin');
+                  setViewMode(user ? (isAnyAdmin ? 'admin' : 'merchant-desktop') : 'landing');
                 } else {
                   window.location.href = 'https://kroomify.kroombox.com';
                 }
@@ -1812,17 +1821,17 @@ export default function App() {
                 <div className="fixed bottom-4 left-4 z-50">
                   <button
                     onClick={() => {
-                      if (user?.role === 'admin') {
+                      if (user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') {
                         setViewMode('admin');
                       } else {
                         setViewMode('merchant-desktop');
                       }
                     }}
                     className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
-                    title={user?.role === 'admin' ? 'Kembali ke Admin Panel' : 'Kembali ke Dashboard Merchant'}
+                    title={(user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') ? 'Kembali ke Admin Panel' : 'Kembali ke Dashboard Merchant'}
                   >
                     <Monitor className="w-3.5 h-3.5" />
-                    <span>{user?.role === 'admin' ? 'Admin Panel' : 'Dashboard'}</span>
+                    <span>{(user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') ? 'Admin Panel' : 'Dashboard'}</span>
                   </button>
                 </div>
               )
@@ -1837,7 +1846,7 @@ export default function App() {
         <DeviceSimulatorFrame
           title={`Toko Online ${currentStore.name}`}
           urlPath={`microcms.id/${currentStore.slug}`}
-          onClose={() => setViewMode(user?.role === 'admin' ? 'admin' : 'merchant-desktop')}
+          onClose={() => setViewMode((user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') ? 'admin' : 'merchant-desktop')}
         >
           {renderStorefrontContent()}
         </DeviceSimulatorFrame>

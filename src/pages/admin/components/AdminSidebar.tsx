@@ -10,6 +10,7 @@ import { AdminTab, AdminNavItem } from '../types';
 import { KroomifyLogo } from '../../../components/common/KroomifyLogo';
 
 interface AdminSidebarProps {
+  isSubAdmin?: boolean;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
   activeTab: AdminTab;
@@ -29,6 +30,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onBackToMerchant,
   onLogout,
   language,
+  isSubAdmin,
 }) => {
   return (
     <>
@@ -53,7 +55,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <KroomifyLogo
                 size="sm"
                 showText={isSidebarOpen}
-                badge="ADMIN"
+                badge={isSubAdmin ? 'GMPS' : 'ADMIN'}
               />
             </div>
 

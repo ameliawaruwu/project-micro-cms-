@@ -77,11 +77,11 @@ const defaultAccounts: StoredAccount[] = [
     storeId: '',
   },
   {
-    id: 'USR_SUB_GMPS',
+    id: 'USR036',
     email: 'gmps@kroomify.id',
     password: 'gmps123',
     user: {
-      id: 'USR_SUB_GMPS',
+      id: 'USR036',
       name: 'Koordinator Komunitas GMPS',
       email: 'gmps@kroomify.id',
       phoneWhatsApp: '081234567890',
@@ -93,7 +93,7 @@ const defaultAccounts: StoredAccount[] = [
     },
     merchant: {
       id: 'merch-gmps',
-      userId: 'USR_SUB_GMPS',
+      userId: 'USR036',
       storeId: '',
       plan: 'premium',
       isVerified: true,
@@ -140,6 +140,7 @@ class AuthService {
 
   purgeLocalAccount(email: string): void {
     const cleanEmail = email.toLowerCase().trim();
+    if (cleanEmail === 'admin@kroomify.id' || cleanEmail === 'gmps@kroomify.id') return;
     try {
       const accounts = this.getStoredAccounts().filter((a) => a.email.toLowerCase() !== cleanEmail);
       this.saveAccounts(accounts);
@@ -301,7 +302,7 @@ class AuthService {
         throw new Error('Akun belum terdaftar. Silakan lakukan registrasi terlebih dahulu.');
       }
       // Khusus mode offline darurat untuk akun demo
-      if (account.id === 'usr-admin-1' || account.id === 'usr-andhika-01') {
+      if (account.id === 'usr-admin-1' || account.id === 'usr-andhika-01' || account.id === 'USR_SUB_GMPS' || account.id === 'USR036' || account.id === 'USR013') {
         dbUser = {
           id: account.id,
           name: account.user.name,
@@ -336,15 +337,19 @@ class AuthService {
     // 5. Bangun user, merchant, dan store dari data database yang valid
     const userId = dbUser.id;
     const userName = dbUser.name || cleanEmail.split('@')[0];
-    const userRole = (dbUser.role as 'admin' | 'merchant') || 'merchant';
+    const defaultAcc = defaultAccounts.find((d) => d.email.toLowerCase() === cleanEmail);
+    const userRole = (dbUser.role as User['role']) || defaultAcc?.user.role || 'merchant';
+    const isSubAdmin = userRole === 'sub_admin' || userRole === 'community_admin' || cleanEmail === 'gmps@kroomify.id';
 
     const user: User = {
       id: userId,
       name: userName,
       email: cleanEmail,
       phoneWhatsApp: dbUser.phone || '',
-      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1F4072&color=FFD358&bold=true`,
+      avatarUrl: defaultAcc?.user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1F4072&color=FFD358&bold=true`,
       role: userRole,
+      communityId: defaultAcc?.user.communityId || (isSubAdmin ? 'comm_gmps' : undefined),
+      communityName: defaultAcc?.user.communityName || (isSubAdmin ? 'Komunitas GMPS' : undefined),
       createdAt: dbUser.created_at || new Date().toISOString(),
     };
 
@@ -359,7 +364,7 @@ class AuthService {
       id: `merch-${userId}`,
       userId: userId,
       storeId: storeToUse?.id || '',
-      plan: 'free',
+      plan: defaultAcc?.merchant.plan || 'free',
       isVerified: true,
     };
 

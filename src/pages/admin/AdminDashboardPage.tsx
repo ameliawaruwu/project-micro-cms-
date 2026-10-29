@@ -453,6 +453,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         onBackToMerchant={onBackToMerchant}
         onLogout={onLogout}
         language={language}
+        isSubAdmin={isSubAdmin}
       />
 
       {/* MAIN CONTENT WRAPPER */}
