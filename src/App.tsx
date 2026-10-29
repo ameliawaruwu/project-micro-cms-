@@ -2009,6 +2009,7 @@ export default function App() {
               {activeTab === 'pembayaran' && (
                 <PaymentListPage
                   store={currentStore}
+                  onUpdateStore={handleUpdateStore}
                   onNavigateBilling={() => setActiveTab('billing')}
                   onShowNotification={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
@@ -2032,6 +2033,7 @@ export default function App() {
               {activeTab === 'integrasi' && (
                 <PaymentListPage
                   store={currentStore}
+                  onUpdateStore={handleUpdateStore}
                   onNavigateBilling={() => setActiveTab('billing')}
                   onShowNotification={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}

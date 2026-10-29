@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ThemeSchema } from '../schema';
-import { Product, OrderItem, Order, BiteshipRateOption } from '../../types';
+import { Product, OrderItem, Order, BiteshipRateOption, StorePaymentConfig } from '../../types';
 import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
@@ -19,6 +19,11 @@ import {
   Clock,
   Sparkles,
   MapPin,
+  Banknote,
+  QrCode,
+  Copy,
+  MessageCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
@@ -123,6 +128,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopyText = (text: string, field: string) => {
+    try {
+      navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch {
+      // ignore
+    }
+  };
 
   // Cart / sample items
   const cartItemsFromStorage = store?.slug ? cartService.getCart(store.slug) : [];
@@ -303,60 +319,127 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const shippingFee = selectedRate ? selectedRate.price : 0;
   const total = subtotal + shippingFee;
 
+  // Store payment configuration (COD, Manual QRIS/Bank, Payment Gateway)
+  const paymentConfig: StorePaymentConfig = useMemo(() => {
+    return (
+      store?.paymentConfig || {
+        enableCod: true,
+        codInstructions: 'Siapkan uang pas saat barang diantar oleh kurir/penjual.',
+        enableManualTransfer: true,
+        manualBankName: 'BCA (Bank Central Asia)',
+        manualBankAccountNumber: '',
+        manualBankAccountHolder: '',
+        manualQrisImageUrl: '',
+        manualInstructions: 'Scan QRIS atau transfer ke rekening toko di atas, lalu konfirmasi pesanan ke WhatsApp toko.',
+        enablePaymentGateway: true,
+      }
+    );
+  }, [store?.paymentConfig]);
+
   // Active payment options
   const paymentOptions = useMemo(() => {
-    const options: { id: string; name: string; description: string; badge?: string }[] = [];
+    const options: { id: string; name: string; description: string; badge?: string; type: 'cod' | 'manual' | 'gateway' }[] = [];
 
-    const channelsToRender =
-      activePaymentChannels.filter((c) => c.isEnabled).length > 0
-        ? activePaymentChannels.filter((c) => c.isEnabled)
-        : [
-            { id: 'qris', name: 'QRIS & E-Wallet (Scan Otomatis GoPay, OVO, DANA, ShopeePay)', category: 'ewallet_qris', isEnabled: true, description: 'Bayar instan via scan kode QRIS dari aplikasi m-Banking atau E-Wallet mana pun.' },
-            { id: 'bca_va', name: 'BCA Virtual Account', category: 'virtual_account', isEnabled: true, description: 'Transfer langsung via BCA Mobile / KlikBCA verifikasi otomatis 24 jam.' },
-            { id: 'mandiri_va', name: 'Mandiri Virtual Account', category: 'virtual_account', isEnabled: true, description: 'Transfer langsung via Livin by Mandiri verifikasi otomatis.' },
-            { id: 'bri_va', name: 'BRI Virtual Account (BRIVA)', category: 'virtual_account', isEnabled: true, description: 'Transfer langsung via BRImo atau ATM BRI verifikasi otomatis.' },
-          ];
+    // 1. Bayar di Tempat (COD)
+    if (paymentConfig.enableCod) {
+      options.push({
+        id: 'cod',
+        name: isEn ? 'Cash on Delivery (COD)' : 'Bayar di Tempat (COD / Tunai)',
+        description:
+          paymentConfig.codInstructions ||
+          (isEn
+            ? 'Pay with cash directly to the courier or seller when package arrives.'
+            : 'Bayar secara tunai kepada kurir atau penjual saat barang tiba di alamat Anda.'),
+        badge: isEn ? 'COD Cash' : 'COD Tunai',
+        type: 'cod',
+      });
+    }
 
-    channelsToRender.forEach((channel) => {
-      const localizedName = getLocalizedChannelName(channel.id, channel.name, language);
-      const localizedDesc = getLocalizedChannelDescription(channel.id, channel.description, language);
+    // 2. QRIS Statis & Transfer Bank Langsung Milik Toko
+    if (paymentConfig.enableManualTransfer) {
+      const bankDetails = paymentConfig.manualBankAccountNumber
+        ? `${paymentConfig.manualBankName || 'Bank'} (${paymentConfig.manualBankAccountNumber} a.n ${paymentConfig.manualBankAccountHolder || store?.name || 'Toko'})`
+        : 'Rekening Toko / Barcode QRIS';
 
-      if (channel.id === 'qris') {
-        options.push({
-          id: 'qris',
-          name: isEn ? 'QRIS & E-Wallet (Instant Scan GoPay, OVO, DANA, ShopeePay)' : 'QRIS & E-Wallet (Scan Otomatis GoPay, OVO, DANA, ShopeePay)',
-          description: localizedDesc || (isEn ? 'Instant scan via QRIS code from any mobile banking or e-wallet.' : 'Bayar instan via scan kode QRIS dari aplikasi m-Banking atau E-Wallet mana pun.'),
-          badge: isEn ? 'Instant' : 'Instan',
-        });
-      } else if (channel.id === 'gopay') {
-        options.push({ id: 'gopay', name: localizedName, description: localizedDesc, badge: 'E-Wallet' });
-      } else if (channel.id === 'shopeepay') {
-        options.push({ id: 'shopeepay', name: localizedName, description: localizedDesc, badge: 'E-Wallet' });
-      } else if (channel.category === 'virtual_account' || channel.id.includes('va')) {
-        options.push({
-          id: channel.id,
-          name: localizedName,
-          description: localizedDesc || (isEn ? 'Automatic transfer with instant 24/7 verification.' : 'Transfer otomatis dengan verifikasi instan 24 jam tanpa perlu upload bukti transfer.'),
-          badge: 'Otomatis 24 Jam',
-        });
-      } else if (channel.id === 'credit_card') {
-        options.push({
-          id: 'credit_card',
-          name: isEn ? 'Credit / Debit Card Online (Visa, Mastercard, JCB)' : 'Kartu Kredit / Debit Online (Visa, Mastercard, JCB)',
-          description: localizedDesc || 'Pembayaran online terenkripsi dengan proteksi 3D Secure OTP.',
-          badge: '3D Secure',
-        });
-      } else {
-        options.push({
-          id: channel.id,
-          name: localizedName,
-          description: localizedDesc || 'Pembayaran resmi melalui gerbang Duitku.',
-        });
-      }
-    });
+      options.push({
+        id: 'manual_transfer',
+        name: isEn ? 'Direct Bank Transfer / QRIS' : 'QRIS & Transfer Bank Langsung Milik Toko',
+        description:
+          paymentConfig.manualInstructions ||
+          `Transfer langsung ke ${bankDetails} atau scan QRIS toko, lalu kirim bukti transfer ke WhatsApp.`,
+        badge: '0% Biaya Gateway',
+        type: 'manual',
+      });
+    }
+
+    // 3. Automated Gateway Channels (Duitku / Midtrans)
+    if (paymentConfig.enablePaymentGateway) {
+      const channelsToRender =
+        activePaymentChannels.filter((c) => c.isEnabled).length > 0
+          ? activePaymentChannels.filter((c) => c.isEnabled)
+          : [
+              { id: 'qris', name: 'QRIS Real-Time (Scan Otomatis GoPay, OVO, DANA, ShopeePay)', category: 'ewallet_qris', isEnabled: true, description: 'Bayar instan via scan kode QRIS otomatis dari m-Banking atau E-Wallet mana pun.' },
+              { id: 'bca_va', name: 'BCA Virtual Account', category: 'virtual_account', isEnabled: true, description: 'Transfer langsung via BCA Mobile / KlikBCA verifikasi otomatis 24 jam.' },
+              { id: 'mandiri_va', name: 'Mandiri Virtual Account', category: 'virtual_account', isEnabled: true, description: 'Transfer langsung via Livin by Mandiri verifikasi otomatis.' },
+              { id: 'bri_va', name: 'BRI Virtual Account (BRIVA)', category: 'virtual_account', isEnabled: true, description: 'Transfer langsung via BRImo atau ATM BRI verifikasi otomatis.' },
+            ];
+
+      channelsToRender.forEach((channel) => {
+        const localizedName = getLocalizedChannelName(channel.id, channel.name, language);
+        const localizedDesc = getLocalizedChannelDescription(channel.id, channel.description, language);
+
+        if (channel.id === 'qris') {
+          options.push({
+            id: 'qris',
+            name: isEn ? 'QRIS Real-Time (Instant Scan GoPay, OVO, DANA, ShopeePay)' : 'QRIS Real-Time (Scan Otomatis GoPay, OVO, DANA, ShopeePay)',
+            description: localizedDesc || 'Bayar instan via scan kode QRIS otomatis dari aplikasi m-Banking atau E-Wallet mana pun.',
+            badge: isEn ? 'Instant' : 'Instan Otomatis',
+            type: 'gateway',
+          });
+        } else if (channel.id === 'gopay') {
+          options.push({ id: 'gopay', name: localizedName, description: localizedDesc, badge: 'E-Wallet', type: 'gateway' });
+        } else if (channel.id === 'shopeepay') {
+          options.push({ id: 'shopeepay', name: localizedName, description: localizedDesc, badge: 'E-Wallet', type: 'gateway' });
+        } else if (channel.category === 'virtual_account' || channel.id.includes('va')) {
+          options.push({
+            id: channel.id,
+            name: localizedName,
+            description: localizedDesc || (isEn ? 'Automatic transfer with instant 24/7 verification.' : 'Transfer otomatis dengan verifikasi instan 24 jam tanpa perlu upload bukti transfer.'),
+            badge: 'Otomatis 24 Jam',
+            type: 'gateway',
+          });
+        } else if (channel.id === 'credit_card') {
+          options.push({
+            id: 'credit_card',
+            name: isEn ? 'Credit / Debit Card Online (Visa, Mastercard, JCB)' : 'Kartu Kredit / Debit Online (Visa, Mastercard, JCB)',
+            description: localizedDesc || 'Pembayaran online terenkripsi dengan proteksi 3D Secure OTP.',
+            badge: '3D Secure',
+            type: 'gateway',
+          });
+        } else {
+          options.push({
+            id: channel.id,
+            name: localizedName,
+            description: localizedDesc || 'Pembayaran resmi melalui gerbang Duitku.',
+            badge: 'Otomatis',
+            type: 'gateway',
+          });
+        }
+      });
+    }
+
+    if (options.length === 0) {
+      options.push({
+        id: 'cod',
+        name: 'Bayar di Tempat (COD)',
+        description: 'Bayar secara tunai langsung kepada kurir saat barang tiba.',
+        badge: 'COD Tunai',
+        type: 'cod',
+      });
+    }
 
     return options;
-  }, [activePaymentChannels, language, isEn]);
+  }, [paymentConfig, activePaymentChannels, language, isEn, store?.name]);
 
   // Sync selectedPaymentId with available options
   useEffect(() => {
@@ -612,12 +695,43 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       return;
     }
 
+    const selectedOption = paymentOptions.find((p) => p.id === selectedPaymentId) || paymentOptions[0];
+
+    // 1. Direct COD Checkout (Bayar Tunai di Tempat)
+    if (selectedOption?.type === 'cod' || selectedPaymentId === 'cod') {
+      setIsSubmitting(true);
+      try {
+        await finalizeOrder(false, 'Bayar di Tempat (COD)');
+      } catch (err: any) {
+        console.error('COD checkout error:', err);
+        alert('Gagal memproses pesanan COD: ' + (err?.message || 'Silakan coba lagi.'));
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // 2. Direct QRIS & Transfer Bank Langsung Milik Toko
+    if (selectedOption?.type === 'manual' || selectedPaymentId === 'manual_transfer') {
+      setIsSubmitting(true);
+      try {
+        const title = `QRIS & Transfer Bank Langsung (${paymentConfig.manualBankName || 'Toko'})`;
+        await finalizeOrder(false, title);
+      } catch (err: any) {
+        console.error('Manual transfer checkout error:', err);
+        alert('Gagal memproses pesanan: ' + (err?.message || 'Silakan coba lagi.'));
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // 3. Automated Gateway (Duitku)
     setIsSubmitting(true);
     try {
       const orderId = `INV-${Date.now()}`;
       const duitkuMethod = mapPaymentIdToDuitkuMethod(selectedPaymentId);
-      const selectedOption = paymentOptions.find((p) => p.id === selectedPaymentId);
-      const methodLabel = selectedOption?.name || 'Duitku Payment';
+      const methodLabel = selectedOption?.name || 'Payment Gateway';
 
       await duitkuService.payWithDuitku(
         {
@@ -685,26 +799,167 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         ? `${selectedRate.courier_name} (${selectedRate.courier_service_name})`
         : 'Pengiriman Standar';
       const selectedPaymentName =
-        paymentOptions.find((p) => p.id === selectedPaymentId)?.name || 'Duitku Payment';
+        paymentOptions.find((p) => p.id === selectedPaymentId)?.name || 'Metode Pembayaran';
+
+      const isCodOrder = createdOrder?.paymentMethod?.includes('COD') || selectedPaymentId === 'cod';
+      const isManualTransfer =
+        createdOrder?.paymentMethod?.includes('Transfer') ||
+        createdOrder?.paymentMethod?.includes('QRIS & Transfer') ||
+        selectedPaymentId === 'manual_transfer';
+
+      const cleanPhone = (store?.phoneWhatsApp || '081234567890').replace(/[^0-9]/g, '');
+      const finalWaPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
+
+      const waOrderMsg = isCodOrder
+        ? `Halo ${store?.name || 'Toko'}, saya sudah melakukan pemesanan COD dengan Nomor Pesanan ${orderNum} sebesar Rp ${total.toLocaleString('id-ID')}. Mohon konfirmasi dan segera dikirim ke alamat saya. Terima kasih!`
+        : `Halo ${store?.name || 'Toko'}, saya sudah melakukan pemesanan dengan Nomor Pesanan ${orderNum} sebesar Rp ${total.toLocaleString('id-ID')}. Berikut bukti pembayaran transfer/QRIS saya. Mohon diproses ya!`;
+
+      const waLink = `https://wa.me/${finalWaPhone}?text=${encodeURIComponent(waOrderMsg)}`;
 
       return (
-        <div className="py-16 sm:py-24 px-4 sm:px-6 max-w-2xl mx-auto text-center font-sans">
-          <div className="p-8 sm:p-10 rounded-3xl bg-white border border-gray-200/90 shadow-xl space-y-6">
-            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-100">
-              <Check className="w-8 h-8 stroke-[2.5]" />
+        <div className="py-12 sm:py-20 px-4 sm:px-6 max-w-2xl mx-auto text-center font-sans">
+          <div className="p-6 sm:p-10 rounded-3xl bg-white border border-gray-200/90 shadow-xl space-y-6">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto border ${
+              isCodOrder
+                ? 'bg-amber-50 text-amber-600 border-amber-200'
+                : isManualTransfer
+                ? 'bg-blue-50 text-blue-600 border-blue-200'
+                : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+            }`}>
+              {isCodOrder ? (
+                <Banknote className="w-8 h-8 stroke-[2.5]" />
+              ) : isManualTransfer ? (
+                <QrCode className="w-8 h-8 stroke-[2.5]" />
+              ) : (
+                <Check className="w-8 h-8 stroke-[2.5]" />
+              )}
             </div>
+
             <div className="space-y-1">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Pesanan Berhasil Diproses!</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                {isCodOrder
+                  ? 'Pesanan COD Berhasil Diterima!'
+                  : isManualTransfer
+                  ? 'Pesanan Diterima! Selesaikan Pembayaran'
+                  : 'Pesanan Berhasil Diproses!'}
+              </h1>
               <p className="text-sm font-medium text-gray-500">
                 Nomor Pesanan: <span className="font-bold font-mono text-gray-900">{orderNum}</span>
               </p>
             </div>
 
+            {/* Instruction Box for COD */}
+            {isCodOrder && (
+              <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-left text-xs text-amber-900 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-amber-950">
+                  <Banknote className="w-4 h-4 text-amber-700" />
+                  <span>Petunjuk Pembayaran Tunai (COD)</span>
+                </div>
+                <p className="leading-relaxed">
+                  {paymentConfig.codInstructions || 'Siapkan uang tunai pas saat barang diantar oleh kurir atau penjual.'}
+                </p>
+                <p className="text-[11px] text-amber-800 font-medium pt-1">
+                  Total yang harus dibayarkan:{' '}
+                  <strong className="text-amber-950 text-sm">Rp {total.toLocaleString('id-ID')}</strong>
+                </p>
+              </div>
+            )}
+
+            {/* Instruction Box for Manual Transfer / QRIS */}
+            {isManualTransfer && (
+              <div className="p-5 rounded-2xl bg-blue-50/70 border border-blue-200 text-left text-xs text-blue-950 space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-blue-200/70">
+                  <div className="flex items-center gap-2 font-bold text-blue-900 text-sm">
+                    <QrCode className="w-4 h-4 text-blue-700" />
+                    <span>Rekening &amp; QRIS Pembayaran Toko</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">
+                    Direct Transfer
+                  </span>
+                </div>
+
+                {/* QRIS Image if available */}
+                {paymentConfig.manualQrisImageUrl && (
+                  <div className="text-center py-2 bg-white p-3 rounded-xl border border-blue-100 space-y-2">
+                    <p className="text-[11px] font-bold text-gray-700">Scan QR Code Barcode di Bawah Ini:</p>
+                    <img
+                      src={paymentConfig.manualQrisImageUrl}
+                      alt="Barcode QRIS Toko"
+                      className="w-48 h-48 mx-auto object-contain rounded-lg border border-gray-200 shadow-2xs"
+                    />
+                    <p className="text-[10px] text-gray-500">Mendukung BCA, Mandiri, BRI, BNI, GoPay, OVO, DANA, ShopeePay</p>
+                  </div>
+                )}
+
+                {/* Bank Account Info Card */}
+                <div className="bg-white p-3.5 rounded-xl border border-blue-100 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-500 font-medium">Bank Tujuan:</span>
+                    <span className="font-bold text-gray-900">{paymentConfig.manualBankName || 'Transfer Bank'}</span>
+                  </div>
+                  {paymentConfig.manualBankAccountNumber && (
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-500 font-medium">Nomor Rekening:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-extrabold text-blue-900 text-sm">
+                          {paymentConfig.manualBankAccountNumber}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyText(paymentConfig.manualBankAccountNumber!, 'account')}
+                          className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-[10px] font-bold border border-blue-200 transition cursor-pointer"
+                        >
+                          {copiedField === 'account' ? 'Tersalin!' : 'Salin'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {paymentConfig.manualBankAccountHolder && (
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-500 font-medium">Atas Nama:</span>
+                      <span className="font-bold text-gray-900">{paymentConfig.manualBankAccountHolder}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center text-xs pt-2 border-t border-gray-100">
+                    <span className="text-gray-500 font-medium">Total Nominal Transfer:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-blue-700 text-base">
+                        Rp {total.toLocaleString('id-ID')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyText(String(total), 'amount')}
+                        className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-[10px] font-bold border border-blue-200 transition cursor-pointer"
+                      >
+                        {copiedField === 'amount' ? 'Tersalin!' : 'Salin'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-blue-900/90 leading-relaxed">
+                  {paymentConfig.manualInstructions ||
+                    'Setelah melakukan transfer atau scan QRIS, mohon klik tombol WhatsApp di bawah untuk mengirimkan bukti transfer ke toko.'}
+                </p>
+              </div>
+            )}
+
+            {/* General Manifest Details */}
             <div className="p-5 bg-gray-50/90 rounded-2xl text-left text-xs text-gray-700 space-y-2.5 border border-gray-200/70">
               <div className="flex justify-between items-center pb-2 border-b border-gray-200">
                 <span className="font-semibold text-gray-600">Status Transaksi:</span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[11px]">
-                  Terkonfirmasi Duitku
+                <span className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] ${
+                  isCodOrder
+                    ? 'bg-amber-100 text-amber-800'
+                    : isManualTransfer
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-emerald-100 text-emerald-800'
+                }`}>
+                  {isCodOrder
+                    ? 'Menunggu Pengantaran (COD)'
+                    : isManualTransfer
+                    ? 'Menunggu Verifikasi Bukti Bayar'
+                    : 'Terkonfirmasi Otomatis'}
                 </span>
               </div>
               <p><span className="text-gray-500">Metode Pembayaran:</span> <span className="font-semibold text-gray-900">{selectedPaymentName}</span></p>
@@ -717,21 +972,38 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-              <button
-                onClick={() => (onNavigate ? onNavigate('orders') : null)}
-                className="w-full sm:w-1/2 py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-sm text-sm"
+            {/* Action Buttons */}
+            <div className="space-y-2.5 pt-1">
+              <a
+                href={waLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-md text-sm"
               >
-                <Package className="w-4 h-4" />
-                <span>Lihat Status Pesanan</span>
-              </button>
+                <MessageCircle className="w-4 h-4" />
+                <span>
+                  {isManualTransfer
+                    ? 'Kirim Bukti Pembayaran ke WhatsApp Toko'
+                    : 'Hubungi Penjual via WhatsApp'}
+                </span>
+              </a>
 
-              <button
-                onClick={() => (onNavigate ? onNavigate('homepage') : null)}
-                className="w-full sm:w-1/2 py-3.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition cursor-pointer text-sm"
-              >
-                Kembali ke Toko
-              </button>
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <button
+                  onClick={() => (onNavigate ? onNavigate('orders') : null)}
+                  className="w-full sm:w-1/2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-xs text-xs"
+                >
+                  <Package className="w-4 h-4" />
+                  <span>Lihat Riwayat Pesanan</span>
+                </button>
+
+                <button
+                  onClick={() => (onNavigate ? onNavigate('homepage') : null)}
+                  className="w-full sm:w-1/2 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition cursor-pointer text-xs"
+                >
+                  Kembali Belanja
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1094,8 +1366,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       <CreditCard className="w-4 h-4 text-emerald-600" />
                       <h3 className="text-sm font-bold text-gray-900">2. Metode Pembayaran</h3>
                     </div>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 uppercase tracking-wider">
-                      Duitku Resmi
+                    <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60 uppercase tracking-wider">
+                      {paymentOptions.find((p) => p.id === selectedPaymentId)?.badge || 'Pilihan Toko'}
                     </span>
                   </div>
 
@@ -1182,19 +1454,35 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     {isSubmitting ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Menghubungkan ke Duitku...</span>
+                        <span>Memproses Pesanan...</span>
+                      </>
+                    ) : selectedPaymentId === 'cod' ? (
+                      <>
+                        <Banknote className="w-4 h-4" />
+                        <span>Pesan Sekarang (Bayar COD) • Rp {total.toLocaleString('id-ID')}</span>
+                      </>
+                    ) : selectedPaymentId === 'manual_transfer' ? (
+                      <>
+                        <QrCode className="w-4 h-4" />
+                        <span>Lanjut Pembayaran Transfer • Rp {total.toLocaleString('id-ID')}</span>
                       </>
                     ) : (
                       <>
                         <Lock className="w-4 h-4" />
-                        <span>Bayar Sekarang • Rp {total.toLocaleString('id-ID')}</span>
+                        <span>Bayar Sekarang (Otomatis) • Rp {total.toLocaleString('id-ID')}</span>
                       </>
                     )}
                   </button>
 
                   <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500 font-medium">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Gerbang Pembayaran Duitku Resmi &amp; Terenkripsi</span>
+                    <span>
+                      {selectedPaymentId === 'cod'
+                        ? 'Transaksi Aman Bayar di Tempat (COD)'
+                        : selectedPaymentId === 'manual_transfer'
+                        ? 'Transfer Langsung ke Rekening Resmi Toko'
+                        : 'Gerbang Pembayaran Otomatis Resmi & Terenkripsi'}
+                    </span>
                   </div>
                 </div>
               </div>

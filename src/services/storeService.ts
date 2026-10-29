@@ -37,6 +37,18 @@ class StoreService {
             }
             return;
           }
+          if (!s.paymentConfig) {
+            s.paymentConfig = {
+              enableCod: true,
+              codInstructions: 'Siapkan uang pas saat barang diantar.',
+              enableManualTransfer: true,
+              manualBankName: 'BCA',
+              manualBankAccountNumber: '',
+              manualBankAccountHolder: '',
+              manualInstructions: 'Transfer ke rekening atau scan QRIS, lalu konfirmasi via WhatsApp.',
+              enablePaymentGateway: false,
+            };
+          }
           storeMap.set(s.id, s);
         }
       });
@@ -88,6 +100,16 @@ class StoreService {
           balance: Number(row.balance || 0),
           isPublished: row.is_published !== false,
           layoutSettings: row.theme_settings || row.layout_settings,
+          paymentConfig: row.theme_settings?.paymentConfig || row.layout_settings?.paymentConfig || {
+            enableCod: true,
+            codInstructions: 'Siapkan uang pas saat barang diantar.',
+            enableManualTransfer: true,
+            manualBankName: 'BCA',
+            manualBankAccountNumber: '',
+            manualBankAccountHolder: '',
+            manualInstructions: 'Transfer ke rekening atau scan QRIS, lalu konfirmasi via WhatsApp.',
+            enablePaymentGateway: false,
+          },
           onboarding: row.onboarding || {
             storeNameSet: true,
             productUploaded: false,
@@ -163,6 +185,16 @@ class StoreService {
               ? Boolean(row.is_published)
               : ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id),
             layoutSettings: row.theme_settings,
+            paymentConfig: row.theme_settings?.paymentConfig || {
+              enableCod: true,
+              codInstructions: 'Siapkan uang pas saat barang diantar.',
+              enableManualTransfer: true,
+              manualBankName: 'BCA',
+              manualBankAccountNumber: '',
+              manualBankAccountHolder: '',
+              manualInstructions: 'Transfer ke rekening atau scan QRIS, lalu konfirmasi via WhatsApp.',
+              enablePaymentGateway: false,
+            },
             customDomain: row.custom_domain,
             onboarding: {
               storeNameSet: isStoreConfigured,
@@ -279,6 +311,16 @@ class StoreService {
           planSubscribedAt: data.theme_settings?.planSubscribedAt,
           isPublished: isPub,
           layoutSettings: data.theme_settings,
+          paymentConfig: data.theme_settings?.paymentConfig || {
+            enableCod: true,
+            codInstructions: 'Siapkan uang pas saat barang diantar.',
+            enableManualTransfer: true,
+            manualBankName: 'BCA',
+            manualBankAccountNumber: '',
+            manualBankAccountHolder: '',
+            manualInstructions: 'Transfer ke rekening atau scan QRIS, lalu konfirmasi via WhatsApp.',
+            enablePaymentGateway: false,
+          },
           customDomain: data.custom_domain,
           createdAt: data.created_at || new Date().toISOString(),
           onboarding: data.theme_settings?.onboarding || {},
@@ -375,6 +417,17 @@ class StoreService {
           plan: row.plan || 'free',
           isPublished: isPub,
           layoutSettings: row.theme_settings,
+          paymentConfig: row.theme_settings?.paymentConfig || {
+            enableCod: true,
+            codInstructions: 'Siapkan uang pas saat barang diantar.',
+            enableManualTransfer: true,
+            manualBankName: 'BCA',
+            manualBankAccountNumber: '',
+            manualBankAccountHolder: '',
+            manualInstructions: 'Transfer ke rekening atau scan QRIS, lalu konfirmasi via WhatsApp.',
+            enablePaymentGateway: false,
+          },
+
           customDomain: row.custom_domain,
           createdAt: row.created_at || new Date().toISOString(),
           onboarding: row.theme_settings?.onboarding || {},
@@ -511,6 +564,7 @@ class StoreService {
       // (avoids oversized payload on publish-only or metadata-only updates)
       if (
         updates.layoutSettings !== undefined ||
+        updates.paymentConfig !== undefined ||
         updates.planExpiresAt !== undefined ||
         updates.planSubscribedAt !== undefined ||
         updates.onboarding !== undefined
@@ -518,6 +572,11 @@ class StoreService {
         const combinedThemeSettings = {
           ...(stores[index].layoutSettings || {}),
           ...(updates.layoutSettings || {}),
+          ...(updates.paymentConfig !== undefined
+            ? { paymentConfig: updates.paymentConfig }
+            : stores[index].paymentConfig
+            ? { paymentConfig: stores[index].paymentConfig }
+            : {}),
           ...(updates.planExpiresAt ? { planExpiresAt: updates.planExpiresAt } : {}),
           ...(updates.planSubscribedAt ? { planSubscribedAt: updates.planSubscribedAt } : {}),
           ...(updates.onboarding ? { onboarding: updates.onboarding } : {}),

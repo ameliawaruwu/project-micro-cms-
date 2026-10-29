@@ -4,7 +4,7 @@ export interface User {
   email: string;
   phoneWhatsApp: string;
   avatarUrl?: string;
-  role: 'merchant' | 'admin' | 'buyer';
+  role: 'merchant' | 'admin' | 'sub_admin' | 'community_admin' | 'buyer';
   createdAt: string;
 }
 
@@ -301,9 +301,26 @@ export interface StoreLayoutSettings {
   [key: string]: any;
 }
 
+export interface StorePaymentConfig {
+  enableCod: boolean;
+  codInstructions?: string;
+  enableManualTransfer: boolean;
+  manualQrisImageUrl?: string;
+  manualBankName?: string;
+  manualBankAccountNumber?: string;
+  manualBankAccountHolder?: string;
+  manualInstructions?: string;
+  enablePaymentGateway: boolean;
+  gatewayProvider?: 'midtrans' | 'duitku';
+}
+
 export interface Store {
   id: string;
   merchantId?: string;
+  communityId?: string;
+  communityName?: string;
+  paymentConfig?: StorePaymentConfig;
+
   name: string;
   slug: string;
   tagline: string;
