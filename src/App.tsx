@@ -504,6 +504,14 @@ export default function App() {
         return;
       }
 
+      const isAnyAdmin = user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin';
+      if (isAnyAdmin) {
+        setActiveStore(EMPTY_STORE);
+        setStores([]);
+        setIsStoreLoading(false);
+        return;
+      }
+
       let userStores = await storeService.getStoresForUser(user.id);
 
       if (userStores.length === 0) {
@@ -1769,7 +1777,7 @@ export default function App() {
         // Jika toko belum dipublikasikan atau sedang di-unpublish dan pengunjung bukan di mode preview
         if (!isPublished && !isPreview) {
           const isOwner = user && activeStore && activeStore.id === currentStore.id;
-          const isAdmin = user && user.role === 'admin';
+          const isAdmin = user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin');
           return (
             <StoreNotFoundPage
               store={currentStore}
@@ -1816,7 +1824,7 @@ export default function App() {
             )}
             {/* Subtle Floating Switcher back to Dashboard (TIDAK DITAMPILKAN jika toko sudah di-deploy atau diakses oleh pembeli) */}
             {(!isPlatformHost(window.location.hostname) || Boolean(getStoreSlugFromHost(window.location.hostname))) ? null : (
-              Boolean(user && (user.role === 'admin' || (activeStore && activeStore.id === currentStore.id))) &&
+              Boolean(user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin' || (activeStore && activeStore.id === currentStore.id))) &&
               new URLSearchParams(window.location.search).get('preview') !== 'true' && (
                 <div className="fixed bottom-4 left-4 z-50">
                   <button

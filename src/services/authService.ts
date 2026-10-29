@@ -115,12 +115,16 @@ class AuthService {
       const filtered = parsed.filter(
         (a) => a.id !== 'USR000' && a.email.toLowerCase() !== 'andhika@gmail.com'
       );
-      // Merge with defaultAccounts if missing
-      const existingIds = new Set(filtered.map((a) => a.id));
-      const existingEmails = new Set(filtered.map((a) => a.email.toLowerCase()));
+      // Merge and sync with defaultAccounts
       let changed = filtered.length !== parsed.length;
       defaultAccounts.forEach((def) => {
-        if (!existingIds.has(def.id) && !existingEmails.has(def.email.toLowerCase())) {
+        const idx = filtered.findIndex((a) => a.email.toLowerCase() === def.email.toLowerCase());
+        if (idx >= 0) {
+          if (filtered[idx].id !== def.id || filtered[idx].user.role !== def.user.role) {
+            filtered[idx] = def;
+            changed = true;
+          }
+        } else {
           filtered.push(def);
           changed = true;
         }
