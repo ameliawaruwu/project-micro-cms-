@@ -76,6 +76,30 @@ const defaultAccounts: StoredAccount[] = [
     },
     storeId: '',
   },
+  {
+    id: 'USR_SUB_GMPS',
+    email: 'gmps@kroomify.id',
+    password: 'gmps123',
+    user: {
+      id: 'USR_SUB_GMPS',
+      name: 'Koordinator Komunitas GMPS',
+      email: 'gmps@kroomify.id',
+      phoneWhatsApp: '081234567890',
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
+      role: 'sub_admin',
+      communityId: 'comm_gmps',
+      communityName: 'Komunitas GMPS',
+      createdAt: '2026-01-01T00:00:00Z',
+    },
+    merchant: {
+      id: 'merch-gmps',
+      userId: 'USR_SUB_GMPS',
+      storeId: '',
+      plan: 'premium',
+      isVerified: true,
+    },
+    storeId: '',
+  },
 ];
 
 class AuthService {

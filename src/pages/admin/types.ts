@@ -4,6 +4,7 @@ import { User, Store, WithdrawalRequest, AdminPlatformStats, Order, BillingPlan,
 export type AdminTab =
   | 'overview'
   | 'stores'
+  | 'communities'
   | 'domain-requests'
   | 'withdrawals'
   | 'plans'

@@ -5,6 +5,8 @@ export interface User {
   phoneWhatsApp: string;
   avatarUrl?: string;
   role: 'merchant' | 'admin' | 'sub_admin' | 'community_admin' | 'buyer';
+  communityId?: string;
+  communityName?: string;
   createdAt: string;
 }
 
@@ -658,6 +660,38 @@ export interface BillingPlan {
   sortOrder: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface Community {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  coordinatorName: string;
+  coordinatorEmail: string;
+  coordinatorPhone: string;
+  turnoverFeePercent: number; // Persentase tagihan omset (contoh: 2.5%)
+  logoUrl?: string;
+  status: 'active' | 'pending' | 'inactive';
+  merchantCount?: number;
+  totalTurnover?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CommunityTurnoverInvoice {
+  id: string;
+  communityId: string;
+  communityName: string;
+  invoiceNumber: string;
+  period: string; // misal 'Oktober 2026'
+  totalTurnover: number;
+  feePercent: number;
+  totalBilled: number;
+  status: 'unpaid' | 'paid';
+  dueDate: string;
+  paidAt?: string;
+  createdAt: string;
 }
 
 export interface BillingSubscription {

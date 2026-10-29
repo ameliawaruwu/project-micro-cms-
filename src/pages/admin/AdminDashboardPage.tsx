@@ -9,6 +9,7 @@ import {
   Settings as SettingsIcon,
   LayoutDashboard,
   Globe,
+  Users,
 } from 'lucide-react';
 import { Store, WithdrawalRequest, AdminPlatformStats, Order, BillingPlan, BillingSubscription, User } from '../../types';
 import { adminService } from '../../services/adminService';
@@ -28,6 +29,7 @@ import { AdminPlansTab } from './tabs/AdminPlansTab';
 import { AdminOrdersShippingTab } from './tabs/AdminOrdersShippingTab';
 import { AdminTransactionsTab } from './tabs/AdminTransactionsTab';
 import { AdminSettingsTab } from './tabs/AdminSettingsTab';
+import { AdminCommunitiesTab } from './tabs/AdminCommunitiesTab';
 import {
   getShippingStatusBadgeStyle,
   getShippingStatusLabel,
@@ -55,11 +57,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [domainRequests, setDomainRequests] = useState<DomainRequest[]>([]);
   const [suspendedIds, setSuspendedIds] = useState<string[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const loggedInUser = currentUser || authService.getCurrentUser().user;
-  const activeAdminName = loggedInUser?.name || 'Super Admin Kroomify';
-  const activeAdminEmail = loggedInUser?.email || 'admin@kroomify.id';
+  const isSubAdmin = loggedInUser?.role === 'sub_admin' || loggedInUser?.role === 'community_admin';
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => (isSubAdmin ? 'communities' : 'overview'));
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const activeAdminName = loggedInUser?.name || (isSubAdmin ? 'Koordinator Komunitas GMPS' : 'Super Admin Kroomify');
+  const activeAdminEmail = loggedInUser?.email || (isSubAdmin ? 'gmps@kroomify.id' : 'admin@kroomify.id');
   const activeAdminAvatar = loggedInUser?.avatarUrl;
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
@@ -392,31 +395,43 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     return matchesSearch && matchesStatus && matchesCourier && matchesStore;
   });
 
-  const navItems: AdminNavItem[] = [
-    { id: 'overview', label: language === 'en' ? 'Overview' : 'Ringkasan', icon: LayoutDashboard },
-    { id: 'stores', label: language === 'en' ? 'Manage Stores' : 'Kelola Toko', icon: StoreIcon, count: stores.length },
-    {
-      id: 'domain-requests',
-      label: language === 'en' ? 'Domain Requests' : 'Permintaan Domain',
-      icon: Globe,
-      badge: pendingDomainRequests.length > 0 ? pendingDomainRequests.length : undefined,
-    },
-    {
-      id: 'withdrawals',
-      label: language === 'en' ? 'Payouts' : 'Pencairan Dana',
-      icon: Wallet,
-      badge: pendingWithdrawals.length > 0 ? pendingWithdrawals.length : undefined,
-    },
-    { id: 'plans', label: language === 'en' ? 'Billing Plans' : 'Paket Langganan', icon: Crown },
-    {
-      id: 'orders-shipping',
-      label: language === 'en' ? 'Orders & Shipping' : 'Pesanan & Pengiriman',
-      icon: Truck,
-      badge: processingOrdersCount > 0 ? processingOrdersCount : undefined,
-    },
-    { id: 'transactions', label: language === 'en' ? 'Transaction Logs' : 'Log Transaksi', icon: Receipt },
-    { id: 'settings', label: language === 'en' ? 'System Settings' : 'Pengaturan Sistem', icon: SettingsIcon },
-  ];
+  const navItems: AdminNavItem[] = isSubAdmin
+    ? [
+        { id: 'communities', label: language === 'en' ? 'GMPS Portal & Billing' : 'Komunitas GMPS & Tagihan', icon: Users },
+        { id: 'stores', label: language === 'en' ? 'GMPS Merchants' : 'Lapak Anggota GMPS', icon: StoreIcon, count: stores.length },
+        {
+          id: 'orders-shipping',
+          label: language === 'en' ? 'GMPS Orders' : 'Pesanan Lapak GMPS',
+          icon: Truck,
+          badge: processingOrdersCount > 0 ? processingOrdersCount : undefined,
+        },
+      ]
+    : [
+        { id: 'overview', label: language === 'en' ? 'Overview' : 'Ringkasan', icon: LayoutDashboard },
+        { id: 'stores', label: language === 'en' ? 'Manage Stores' : 'Kelola Toko', icon: StoreIcon, count: stores.length },
+        { id: 'communities', label: language === 'en' ? 'Communities & Sub-Admin' : 'Komunitas & Sub-Admin', icon: Users },
+        {
+          id: 'domain-requests',
+          label: language === 'en' ? 'Domain Requests' : 'Permintaan Domain',
+          icon: Globe,
+          badge: pendingDomainRequests.length > 0 ? pendingDomainRequests.length : undefined,
+        },
+        {
+          id: 'withdrawals',
+          label: language === 'en' ? 'Payouts' : 'Pencairan Dana',
+          icon: Wallet,
+          badge: pendingWithdrawals.length > 0 ? pendingWithdrawals.length : undefined,
+        },
+        { id: 'plans', label: language === 'en' ? 'Billing Plans' : 'Paket Langganan', icon: Crown },
+        {
+          id: 'orders-shipping',
+          label: language === 'en' ? 'Orders & Shipping' : 'Pesanan & Pengiriman',
+          icon: Truck,
+          badge: processingOrdersCount > 0 ? processingOrdersCount : undefined,
+        },
+        { id: 'transactions', label: language === 'en' ? 'Transaction Logs' : 'Log Transaksi', icon: Receipt },
+        { id: 'settings', label: language === 'en' ? 'System Settings' : 'Pengaturan Sistem', icon: SettingsIcon },
+      ];
 
   return (
     <div className="h-screen w-full bg-gray-50/60 text-gray-900 font-sans flex overflow-hidden">
@@ -463,6 +478,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               pendingDomainRequestsCount={pendingDomainRequests.length}
               setActiveTab={setActiveTab}
               language={language}
+            />
+          )}
+
+          {activeTab === 'communities' && (
+            <AdminCommunitiesTab
+              currentUser={loggedInUser}
+              onOpenStorefront={onOpenStorefront}
+              onShowToast={showToast}
             />
           )}
 

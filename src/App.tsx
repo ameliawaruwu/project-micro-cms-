@@ -257,7 +257,8 @@ export default function App() {
 
     const cachedUser = authService.getCurrentUser().user;
     if (cachedUser) {
-      return cachedUser.role === 'admin' ? 'admin' : 'merchant-desktop';
+      const isAnyAdmin = cachedUser.role === 'admin' || cachedUser.role === 'sub_admin' || cachedUser.role === 'community_admin';
+      return isAnyAdmin ? 'admin' : 'merchant-desktop';
     }
     return 'landing';
   });
@@ -958,7 +959,7 @@ export default function App() {
 
     if (!isAuthLoading) {
       if (user && viewMode === 'landing') {
-        if (user.role === 'admin') {
+        if (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin') {
           setViewMode('admin');
         } else {
           setViewMode('merchant-desktop');
@@ -1843,7 +1844,7 @@ export default function App() {
       )}
 
       {/* 4. SUPER ADMIN DASHBOARD VIEW */}
-      {viewMode === 'admin' && Boolean(user && user.role === 'admin') && (
+      {viewMode === 'admin' && Boolean(user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin')) && (
         <AdminDashboardPage
           currentUser={user}
           onOpenStorefront={async (slug) => {
