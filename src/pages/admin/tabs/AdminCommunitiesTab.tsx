@@ -139,21 +139,9 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       const found = communities.find((c) => c.id === targetCommunityId);
       if (found) return found;
     }
-    return (
-      communities.find((c) => c.id === selectedCommunityId) ||
-      communities[0] || {
-        id: 'comm_default',
-        name: 'Sentra UMKM Nusantara',
-        slug: 'sentra-umkm',
-        description: 'Organisasi & Lapak Binaan Terpadu',
-        coordinatorName: 'Koordinator Sentra',
-        coordinatorEmail: 'koordinator@sentraumkm.id',
-        coordinatorPhone: '',
-        turnoverFeePercent: 2.5,
-        status: 'active' as const,
-        createdAt: new Date().toISOString(),
-      }
-    );
+    const found = communities.find((c) => c.id === selectedCommunityId);
+    if (found) return found;
+    return communities[0] || null;
   }, [communities, selectedCommunityId, isSubAdmin, targetCommunityId]);
 
   // Stores associated with active community
@@ -176,6 +164,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
   // Calculate turnover metrics
   const turnoverStats = useMemo(() => {
+    if (!activeCommunity?.id) return { totalTurnover: 0, completedOrdersCount: 0, activeStoresCount: 0 };
     return communityService.calculateCommunityTurnover(activeCommunity.id, communityStores, orders);
   }, [activeCommunity.id, communityStores, orders]);
 
@@ -412,7 +401,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
-                {isSubAdmin ? `Portal Koordinator Lapak — ${activeCommunity.name}` : 'Kelola Komunitas & Organisasi Sub-Admin'}
+                {isSubAdmin ? `Portal Koordinator Lapak — ${activeCommunity?.name || ''}` : 'Kelola Komunitas & Organisasi Sub-Admin'}
               </h1>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[11px] border border-emerald-200">
                 {isSubAdmin ? 'Delegasi Sub-Admin' : 'Multi-Tenant Komunitas'}
@@ -420,7 +409,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             </div>
             <p className="text-xs text-gray-500 mt-1 max-w-2xl leading-relaxed">
               {isSubAdmin
-                ? `Pusat koordinasi toko-toko binaan ${activeCommunity.name}. Pantau transaksi katalog anggota dan kelola tagihan layanan platform.`
+                ? (activeCommunity ? `Pusat koordinasi toko-toko binaan ${activeCommunity.name}. Pantau transaksi katalog anggota dan kelola tagihan layanan platform.` : 'Pusat koordinasi toko-toko binaan organisasi Anda.')
                 : 'Pendelegasian manajemen lapak merchant ke koordinator organisasi mitra (paguyuban, yayasan, sentra bisnis). Organisasi mengatur lapak anggota secara terisolasi dengan skema bagi hasil omset.'}
             </p>
           </div>
@@ -458,7 +447,31 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         )}
       </div>
 
-      {/* 2. Stat Cards Grid */}
+      {!activeCommunity ? (
+        <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center shadow-2xs space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-gray-200 text-gray-400 flex items-center justify-center mx-auto">
+            <Building2 className="w-8 h-8 text-[#66000E]" />
+          </div>
+          <div className="max-w-md mx-auto space-y-1.5">
+            <h3 className="text-base font-bold text-gray-900">Belum Ada Organisasi &amp; Sub-Admin</h3>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Belum ada organisasi mitra atau komunitas yang terdaftar di sistem. Daftarkan organisasi baru untuk memberikan akses Sub-Admin dalam mengelola toko binaan mereka.
+            </p>
+          </div>
+          {!isSubAdmin && (
+            <button
+              type="button"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>Daftarkan Sub-Admin Organisasi</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* 2. Stat Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Lapak / Merchant */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
@@ -912,6 +925,8 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           )}
         </div>
       )}
+    </>
+  )}
 
       {/* ========================================================================= */}
       {/* MODAL 1: DAFTARKAN SUB-ADMIN ORGANISASI                                   */}

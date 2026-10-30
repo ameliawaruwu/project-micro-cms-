@@ -6,44 +6,31 @@ import { hashPassword, authService } from './authService';
 const COMMUNITIES_KEY = 'microcms_communities_v1';
 const INVOICES_KEY = 'microcms_community_invoices_v1';
 
-export const DEFAULT_COMMUNITIES: Community[] = [
-  {
-    id: 'comm_sentra_umkm',
-    name: 'Sentra UMKM Nusantara',
-    slug: 'sentra-umkm',
-    description:
-      'Paguyuban wirausaha dan sentra lapak binaan terpadu dengan pembinaan digital & kurasi produk.',
-    coordinatorName: 'Koordinator Sentra',
-    coordinatorEmail: 'koordinator@sentraumkm.id',
-    coordinatorPhone: '081298765432',
-    turnoverFeePercent: 2.5,
-    logoUrl: 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=200&auto=format&fit=crop&q=80',
-    status: 'active',
-    createdAt: '2026-01-01T00:00:00.000Z',
-  },
-];
+export const DEFAULT_COMMUNITIES: Community[] = [];
 
 class CommunityService {
   public getCommunities(): Community[] {
     const raw = localStorage.getItem(COMMUNITIES_KEY);
     if (!raw) {
-      localStorage.setItem(COMMUNITIES_KEY, JSON.stringify(DEFAULT_COMMUNITIES));
-      return DEFAULT_COMMUNITIES;
+      return [];
     }
     try {
       const parsed: Community[] = JSON.parse(raw);
-      // Hapus data GMPS lama sesuai permintaan user
-      const filtered = parsed.filter((c) => c.id !== 'comm_gmps' && c.slug !== 'gmps');
-      if (filtered.length === 0) {
-        localStorage.setItem(COMMUNITIES_KEY, JSON.stringify(DEFAULT_COMMUNITIES));
-        return DEFAULT_COMMUNITIES;
-      }
+      // Bersihkan data dummy lama (Sentra UMKM, GMPS lama, dsb.)
+      const filtered = parsed.filter(
+        (c) =>
+          c.id !== 'comm_sentra_umkm' &&
+          c.id !== 'comm_default' &&
+          c.slug !== 'sentra-umkm' &&
+          c.id !== 'comm_gmps' &&
+          c.slug !== 'gmps-dummy'
+      );
       if (filtered.length !== parsed.length) {
         localStorage.setItem(COMMUNITIES_KEY, JSON.stringify(filtered));
       }
       return filtered;
     } catch {
-      return DEFAULT_COMMUNITIES;
+      return [];
     }
   }
 
@@ -54,9 +41,14 @@ class CommunityService {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         const mapped: Community[] = data
-          .filter((r) => r.id !== 'comm_gmps' && r.slug !== 'gmps')
+          .filter(
+            (r) =>
+              r.id !== 'comm_sentra_umkm' &&
+              r.id !== 'comm_default' &&
+              r.slug !== 'sentra-umkm'
+          )
           .map((r) => ({
             id: r.id,
             name: r.name,
@@ -71,10 +63,8 @@ class CommunityService {
             createdAt: r.created_at || new Date().toISOString(),
           }));
 
-        if (mapped.length > 0) {
-          this.saveCommunities(mapped);
-          return mapped;
-        }
+        this.saveCommunities(mapped);
+        return mapped;
       }
     } catch (e) {
       console.warn('[communityService] Error fetching communities from database:', e);
