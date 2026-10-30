@@ -59,7 +59,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [orders, setOrders] = useState<Order[]>([]);
   const loggedInUser = currentUser || authService.getCurrentUser().user;
   const isSubAdmin = loggedInUser?.role === 'sub_admin' || loggedInUser?.role === 'community_admin';
-  const [activeTab, setActiveTab] = useState<AdminTab>(() => (isSubAdmin ? 'communities' : 'overview'));
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const activeAdminName = loggedInUser?.name || (isSubAdmin ? (loggedInUser?.communityName ? `Koordinator ${loggedInUser.communityName}` : 'Koordinator Organisasi') : 'Super Admin Kroomify');
   const activeAdminEmail = loggedInUser?.email || (isSubAdmin ? 'koordinator@kroomify.id' : 'admin@kroomify.id');
@@ -342,7 +342,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     showToast('Pengaturan sistem berhasil disimpan ke database');
   };
 
-  // Isolasi Multi-Tenant: Sub-Admin hanya mengakses toko & pesanan anggotanya
+  // Isolasi Multi-Tenant: Sub-Admin hanya mengakses toko, pesanan, dan pencairan dana anggotanya
   const subAdminStores = React.useMemo(() => {
     if (!isSubAdmin || !loggedInUser?.communityId) return stores;
     return stores.filter((s) => s.communityId === loggedInUser.communityId);
@@ -355,8 +355,19 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     return orders.filter((o) => subAdminStoreIds.has(o.storeId));
   }, [orders, isSubAdmin, subAdminStoreIds]);
 
+  const subAdminWithdrawals = React.useMemo(() => {
+    if (!isSubAdmin || !loggedInUser?.communityId) return withdrawals;
+    return withdrawals.filter((w) => subAdminStoreIds.has(w.storeId));
+  }, [withdrawals, isSubAdmin, subAdminStoreIds]);
+
   const activeStoresForAdmin = isSubAdmin ? subAdminStores : stores;
   const activeOrdersForAdmin = isSubAdmin ? subAdminOrders : orders;
+  const activeWithdrawalsForAdmin = isSubAdmin ? subAdminWithdrawals : withdrawals;
+
+  const activeStatsForAdmin = React.useMemo(() => {
+    if (!isSubAdmin) return stats;
+    return adminService.getPlatformStats(activeStoresForAdmin, activeWithdrawalsForAdmin, activeOrdersForAdmin);
+  }, [isSubAdmin, stats, activeStoresForAdmin, activeWithdrawalsForAdmin, activeOrdersForAdmin]);
 
   const filteredStores = activeStoresForAdmin.filter((s) => {
     const matchSearch =
@@ -369,6 +380,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   });
 
   const pendingWithdrawals = withdrawals.filter((w) => w.status === 'pending');
+  const pendingSubAdminWithdrawals = subAdminWithdrawals.filter((w) => w.status === 'pending');
+  const activePendingWithdrawals = isSubAdmin ? pendingSubAdminWithdrawals : pendingWithdrawals;
   const pendingDomainRequests = domainRequests.filter((d) => d.status === 'pending');
 
   // Orders & Shipping filtering and metrics
@@ -414,21 +427,37 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const navItems: AdminNavItem[] = isSubAdmin
     ? [
         {
-          id: 'communities',
-          label: language === 'en' ? 'Organization Portal' : (loggedInUser?.communityName ? `Portal ${loggedInUser.communityName}` : 'Portal Organisasi & Tagihan'),
-          icon: Users,
+          id: 'overview',
+          label: language === 'en' ? 'Overview' : 'Ringkasan Binaan',
+          icon: LayoutDashboard,
         },
         {
           id: 'stores',
-          label: language === 'en' ? 'Member Stores' : 'Lapak Anggota',
+          label: language === 'en' ? 'Member Stores' : 'Kelola Toko Binaan',
           icon: StoreIcon,
           count: subAdminStores.length,
         },
         {
           id: 'orders-shipping',
-          label: language === 'en' ? 'Member Orders' : 'Pesanan Lapak Anggota',
+          label: language === 'en' ? 'Orders & Shipping' : 'Pesanan & Pengiriman',
           icon: Truck,
           badge: processingOrdersCount > 0 ? processingOrdersCount : undefined,
+        },
+        {
+          id: 'communities',
+          label: language === 'en' ? 'Community Portal' : (loggedInUser?.communityName ? `Organisasi & Lapak (${loggedInUser.communityName})` : 'Organisasi & Lapak Binaan'),
+          icon: Users,
+        },
+        {
+          id: 'withdrawals',
+          label: language === 'en' ? 'Member Payouts' : 'Pencairan Dana Binaan',
+          icon: Wallet,
+          badge: activePendingWithdrawals.length > 0 ? activePendingWithdrawals.length : undefined,
+        },
+        {
+          id: 'transactions',
+          label: language === 'en' ? 'Transaction Logs' : 'Log Transaksi Binaan',
+          icon: Receipt,
         },
       ]
     : [
@@ -497,13 +526,15 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 w-full">
           {activeTab === 'overview' && (
             <AdminOverviewTab
-              stats={stats}
+              stats={isSubAdmin ? activeStatsForAdmin : stats}
               platformSettings={platformSettings}
-              withdrawals={withdrawals}
-              stores={stores}
-              pendingDomainRequestsCount={pendingDomainRequests.length}
+              withdrawals={activeWithdrawalsForAdmin}
+              stores={activeStoresForAdmin}
+              pendingDomainRequestsCount={isSubAdmin ? 0 : pendingDomainRequests.length}
               setActiveTab={setActiveTab}
               language={language}
+              isSubAdmin={isSubAdmin}
+              communityName={loggedInUser?.communityName}
             />
           )}
 
@@ -529,6 +560,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               language={language}
               isEn={isEn}
               onNavigateOverview={() => setActiveTab('overview')}
+              isSubAdmin={isSubAdmin}
+              communityName={loggedInUser?.communityName}
             />
           )}
 
@@ -543,7 +576,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
           {activeTab === 'withdrawals' && (
             <AdminWithdrawalsTab
-              withdrawals={withdrawals}
+              withdrawals={activeWithdrawalsForAdmin}
               withdrawalTab={withdrawalTab}
               setWithdrawalTab={setWithdrawalTab}
               withdrawalPage={withdrawalPage}
@@ -596,7 +629,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               orderFilterStore={orderFilterStore}
               setOrderFilterStore={setOrderFilterStore}
               filteredAdminOrders={filteredAdminOrders}
-              stores={stores}
+              stores={activeStoresForAdmin}
               handleCopyResi={handleCopyResi}
               setSelectedAdminOrder={setSelectedAdminOrder}
               onNavigateOverview={() => setActiveTab('overview')}
@@ -605,7 +638,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
           {activeTab === 'transactions' && (
             <AdminTransactionsTab
-              orders={orders}
+              orders={activeOrdersForAdmin}
               isEn={isEn}
               onNavigateOverview={() => setActiveTab('overview')}
             />
@@ -629,7 +662,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       <AdminOrderDetailModal
         selectedAdminOrder={selectedAdminOrder}
         onClose={() => setSelectedAdminOrder(null)}
-        stores={stores}
+        stores={activeStoresForAdmin}
         handleCopyResi={handleCopyResi}
         getShippingStatusBadgeStyle={getShippingStatusBadgeStyle}
         getShippingStatusLabel={(s) => getShippingStatusLabel(s, isEn)}

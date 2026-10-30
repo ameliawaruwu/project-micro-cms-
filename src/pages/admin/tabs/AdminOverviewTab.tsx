@@ -19,6 +19,8 @@ interface AdminOverviewTabProps {
   pendingDomainRequestsCount?: number;
   setActiveTab: (tab: AdminTab) => void;
   language: string;
+  isSubAdmin?: boolean;
+  communityName?: string;
 }
 
 export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
@@ -29,6 +31,8 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
   pendingDomainRequestsCount = 0,
   setActiveTab,
   language,
+  isSubAdmin = false,
+  communityName,
 }) => {
   const isEn = language === 'en';
 
@@ -39,7 +43,11 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
         <div>
           <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
             <LayoutDashboard className="w-5 h-5 text-[#66000E]" />
-            <span>{isEn ? 'Platform Overview' : 'Ringkasan Platform'}</span>
+            <span>
+              {isSubAdmin
+                ? (communityName ? `Ringkasan Lapak — ${communityName}` : (isEn ? 'Member Stores Overview' : 'Ringkasan Lapak Binaan'))
+                : (isEn ? 'Platform Overview' : 'Ringkasan Platform')}
+            </span>
           </h1>
         </div>
       </div>
@@ -196,12 +204,14 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
             <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
               {language === 'en' ? 'Subscription Distribution' : 'Distribusi Paket Langganan'}
             </h3>
-            <button
-              onClick={() => setActiveTab('plans')}
-              className="text-xs font-medium text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
-            >
-              {language === 'en' ? 'Manage Plans' : 'Atur Kuota'} <ChevronRight className="w-3 h-3" />
-            </button>
+            {!isSubAdmin && (
+              <button
+                onClick={() => setActiveTab('plans')}
+                className="text-xs font-medium text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
+              >
+                {language === 'en' ? 'Manage Plans' : 'Atur Kuota'} <ChevronRight className="w-3 h-3" />
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-center pt-1">

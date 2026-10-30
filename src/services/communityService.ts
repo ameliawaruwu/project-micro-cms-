@@ -16,7 +16,7 @@ export const DEFAULT_COMMUNITIES: Community[] = [
     coordinatorName: 'Koordinator Sentra',
     coordinatorEmail: 'koordinator@sentraumkm.id',
     coordinatorPhone: '081298765432',
-    turnoverFeePercent: 2.0,
+    turnoverFeePercent: 2.5,
     logoUrl: 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=200&auto=format&fit=crop&q=80',
     status: 'active',
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -47,6 +47,41 @@ class CommunityService {
     }
   }
 
+  public async fetchCommunitiesFromDatabase(): Promise<Community[]> {
+    try {
+      const { data, error } = await supabase
+        .from('communities')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        const mapped: Community[] = data
+          .filter((r) => r.id !== 'comm_gmps' && r.slug !== 'gmps')
+          .map((r) => ({
+            id: r.id,
+            name: r.name,
+            slug: r.slug || r.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            description: r.description || '',
+            coordinatorName: r.coordinator_name || '',
+            coordinatorEmail: r.coordinator_email,
+            coordinatorPhone: r.coordinator_phone || '',
+            turnoverFeePercent: Number(r.turnover_fee_percent || 2.5),
+            logoUrl: r.logo_url || 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=200&auto=format&fit=crop',
+            status: (r.status as 'active' | 'pending' | 'inactive') || 'active',
+            createdAt: r.created_at || new Date().toISOString(),
+          }));
+
+        if (mapped.length > 0) {
+          this.saveCommunities(mapped);
+          return mapped;
+        }
+      }
+    } catch (e) {
+      console.warn('[communityService] Error fetching communities from database:', e);
+    }
+    return this.getCommunities();
+  }
+
   public saveCommunities(list: Community[]): void {
     localStorage.setItem(COMMUNITIES_KEY, JSON.stringify(list));
   }
@@ -60,20 +95,19 @@ class CommunityService {
    */
   public async createOrganizationWithSubAdmin(data: {
     name: string;
-    slug?: string;
     description?: string;
     coordinatorName: string;
     coordinatorEmail: string;
     coordinatorPhone?: string;
     password?: string;
-    turnoverFeePercent?: number;
     logoUrl?: string;
   }): Promise<{ community: Community; user: User }> {
     const cleanEmail = data.coordinatorEmail.toLowerCase().trim();
     const commId = `comm_${Date.now()}`;
-    const slug = (data.slug?.trim() || data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')) || `org-${Date.now().toString().slice(-4)}`;
+    const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `org-${Date.now().toString().slice(-4)}`;
     const plainPassword = data.password || 'subadmin123';
     const hashedPassword = await hashPassword(plainPassword);
+    const turnoverFeePercent = 2.5; // Fee ditagihkan di akhir saat penerbitan invoice omset
 
     // 1. Simpan Komunitas ke Local & Service State
     const newComm: Community = {
@@ -84,7 +118,7 @@ class CommunityService {
       coordinatorName: data.coordinatorName.trim(),
       coordinatorEmail: cleanEmail,
       coordinatorPhone: data.coordinatorPhone?.trim() || '',
-      turnoverFeePercent: data.turnoverFeePercent !== undefined ? Number(data.turnoverFeePercent) : 2.5,
+      turnoverFeePercent,
       logoUrl: data.logoUrl || 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=200&auto=format&fit=crop',
       status: 'active',
       createdAt: new Date().toISOString(),
@@ -94,7 +128,28 @@ class CommunityService {
     communities.unshift(newComm);
     this.saveCommunities(communities);
 
-    // 2. Buat / Daftarkan User Sub-Admin ke Database Supabase
+    // 2. Simpan Komunitas ke Database Supabase (tabel public.communities)
+    try {
+      await supabase.from('communities').upsert({
+        id: commId,
+        name: newComm.name,
+        slug: newComm.slug,
+        description: newComm.description,
+        coordinator_name: newComm.coordinatorName,
+        coordinator_email: newComm.coordinatorEmail,
+        coordinator_phone: newComm.coordinatorPhone,
+        turnover_fee_percent: newComm.turnoverFeePercent,
+        logo_url: newComm.logoUrl,
+        status: newComm.status,
+        created_at: newComm.createdAt,
+        updated_at: new Date().toISOString(),
+      });
+      console.log(`[communityService] Organisasi ${newComm.name} (${commId}) tersimpan di Supabase.`);
+    } catch (e) {
+      console.warn('[communityService] Error saving community to Supabase:', e);
+    }
+
+    // 3. Buat / Daftarkan User Sub-Admin ke Database Supabase (tabel public.users)
     let userId = `USR_SUB_${Date.now().toString().slice(-6)}`;
     try {
       const { data: insertedUser, error: insertErr } = await supabase
@@ -114,9 +169,14 @@ class CommunityService {
 
       if (!insertErr && insertedUser) {
         userId = insertedUser.id;
+        console.log(`[communityService] Akun Sub-Admin ${cleanEmail} (${userId}) berhasil dibuat di Supabase!`);
       } else if (insertErr) {
-        // Jika email sudah terdaftar (misal merchant lama dipromosikan jadi sub-admin organisasi)
-        if (insertErr.code === '23505' || insertErr.message?.includes('duplicate key') || insertErr.message?.includes('users_email_key')) {
+        // Jika email sudah terdaftar (misal user lama dipromosikan jadi sub-admin organisasi)
+        if (
+          insertErr.code === '23505' ||
+          insertErr.message?.includes('duplicate key') ||
+          insertErr.message?.includes('users_email_key')
+        ) {
           const { data: updatedUser } = await supabase
             .from('users')
             .update({
@@ -131,6 +191,7 @@ class CommunityService {
             .single();
 
           if (updatedUser) userId = updatedUser.id;
+          console.log(`[communityService] Akun ${cleanEmail} berhasil dipromosikan menjadi Sub-Admin organisasi.`);
         } else {
           console.warn('[communityService] Warning insert sub_admin ke Supabase:', insertErr.message);
         }
@@ -150,7 +211,7 @@ class CommunityService {
       createdAt: new Date().toISOString(),
     };
 
-    // 3. Sinkronkan ke cache lokal agar bisa login instan
+    // 4. Sinkronkan ke cache lokal agar bisa login instan
     try {
       const accountsKey = 'microcms_accounts_v1';
       const rawAccounts = localStorage.getItem(accountsKey);
@@ -189,12 +250,34 @@ class CommunityService {
       updatedAt: new Date().toISOString(),
     };
     this.saveCommunities(communities);
+
+    // Sync to Supabase
+    supabase.from('communities').update({
+      name: communities[idx].name,
+      slug: communities[idx].slug,
+      description: communities[idx].description,
+      coordinator_name: communities[idx].coordinatorName,
+      coordinator_email: communities[idx].coordinatorEmail,
+      coordinator_phone: communities[idx].coordinatorPhone,
+      turnover_fee_percent: communities[idx].turnoverFeePercent,
+      logo_url: communities[idx].logoUrl,
+      status: communities[idx].status,
+      updated_at: new Date().toISOString(),
+    }).eq('id', id).then();
+
     return communities[idx];
   }
 
   public async deleteCommunity(id: string): Promise<void> {
     const communities = this.getCommunities().filter((c) => c.id !== id);
     this.saveCommunities(communities);
+
+    // Hapus dari Supabase communities table
+    try {
+      await supabase.from('communities').delete().eq('id', id);
+    } catch (e) {
+      console.warn('Gagal delete community di DB:', e);
+    }
 
     // Lepas seluruh toko yang terikat dengan komunitas ini
     try {

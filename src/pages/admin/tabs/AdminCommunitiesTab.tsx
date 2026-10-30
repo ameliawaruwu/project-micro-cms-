@@ -68,23 +68,29 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const [selectedStoreToAssign, setSelectedStoreToAssign] = useState('');
   const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
 
-  // Modal: Tambah Organisasi / Sub-Admin Baru
+  // Modal: Daftarkan Sub-Admin Baru
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: '',
-    slug: '',
     description: '',
     coordinatorName: '',
     coordinatorEmail: '',
     coordinatorPhone: '',
     password: '',
-    turnoverFeePercent: 2.5,
   });
 
-  // Load stores & orders
+  // Load communities, stores & orders
   useEffect(() => {
     let isMounted = true;
+    communityService.fetchCommunitiesFromDatabase().then((dbComms) => {
+      if (isMounted && dbComms && dbComms.length > 0) {
+        setCommunities(dbComms);
+        if (!selectedCommunityId || !dbComms.some((c) => c.id === selectedCommunityId)) {
+          setSelectedCommunityId(dbComms[0].id);
+        }
+      }
+    });
     storeService.getStores().then((allStores) => {
       if (isMounted) setStores(allStores);
     });
@@ -228,35 +234,31 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     try {
       const res = await communityService.createOrganizationWithSubAdmin({
         name: createForm.name.trim(),
-        slug: createForm.slug.trim(),
         description: createForm.description.trim(),
         coordinatorName: createForm.coordinatorName.trim() || `Koordinator ${createForm.name.trim()}`,
         coordinatorEmail: createForm.coordinatorEmail.trim(),
         coordinatorPhone: createForm.coordinatorPhone.trim(),
         password: createForm.password.trim() || 'subadmin123',
-        turnoverFeePercent: Number(createForm.turnoverFeePercent) || 2.5,
       });
 
-      const updatedCommunities = communityService.getCommunities();
+      const updatedCommunities = await communityService.fetchCommunitiesFromDatabase();
       setCommunities(updatedCommunities);
       setSelectedCommunityId(res.community.id);
       setIsCreateModalOpen(false);
       setCreateForm({
         name: '',
-        slug: '',
         description: '',
         coordinatorName: '',
         coordinatorEmail: '',
         coordinatorPhone: '',
         password: '',
-        turnoverFeePercent: 2.5,
       });
 
       if (onShowToast) {
-        onShowToast(`Organisasi "${res.community.name}" & akun Sub-Admin berhasil didaftarkan!`);
+        onShowToast(`Sub-Admin & organisasi "${res.community.name}" berhasil didaftarkan ke database!`);
       }
     } catch (err: any) {
-      alert('Gagal membuat organisasi: ' + (err?.message || ''));
+      alert('Gagal mendaftarkan Sub-Admin: ' + (err?.message || ''));
     } finally {
       setIsSubmittingCreate(false);
     }
@@ -332,8 +334,8 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               onClick={() => setIsCreateModalOpen(true)}
               className="px-3.5 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              <span>Tambah Organisasi &amp; Sub-Admin</span>
+              <UserCheck className="w-4 h-4" />
+              <span>Daftarkan Sub-Admin</span>
             </button>
           </div>
         )}
@@ -784,27 +786,34 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 1: TAMBAH ORGANISASI & SUB-ADMIN BARU                                */}
+      {/* MODAL 1: DAFTARKAN SUB-ADMIN ORGANISASI                                   */}
       {/* ========================================================================= */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-200 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-[#66000E]" />
-                <h3 className="text-base font-bold text-gray-900">Tambah Organisasi &amp; Sub-Admin</h3>
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Daftarkan Sub-Admin Organisasi</h3>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    Akun koordinator untuk mengelola lapak-lapak binaan. Fee omset platform ditagihkan di akhir periode.
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-gray-400 hover:text-gray-700 text-xs font-bold"
+                className="text-gray-400 hover:text-gray-700 text-xs font-bold cursor-pointer"
               >
                 Tutup
               </button>
             </div>
 
             <form onSubmit={handleCreateOrganization} className="space-y-4 text-xs">
-              {/* Bagian 1: Profil Organisasi */}
+              {/* Bagian 1: Detail Organisasi */}
               <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
                 <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
                   <Building2 className="w-4 h-4 text-gray-600" />
@@ -818,47 +827,16 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     required
                     placeholder="Contoh: Paguyuban Pengrajin Kulit Garut"
                     value={createForm.name}
-                    onChange={(e) => {
-                      const name = e.target.value;
-                      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                      setCreateForm((prev) => ({ ...prev, name, slug: prev.slug ? prev.slug : slug }));
-                    }}
+                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
                   />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Slug Identifikasi</label>
-                    <input
-                      type="text"
-                      placeholder="pengrajin-kulit-garut"
-                      value={createForm.slug}
-                      onChange={(e) => setCreateForm({ ...createForm, slug: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Fee Omset Platform (%) *</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="50"
-                      required
-                      value={createForm.turnoverFeePercent}
-                      onChange={(e) => setCreateForm({ ...createForm, turnoverFeePercent: Number(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                    />
-                  </div>
                 </div>
 
                 <div>
                   <label className="block font-semibold text-gray-700 mb-1">Deskripsi Singkat</label>
                   <textarea
                     rows={2}
-                    placeholder="Wadah paguyuban dan pembinaan UMKM..."
+                    placeholder="Wadah paguyuban dan pembinaan lapak UMKM..."
                     value={createForm.description}
                     onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
@@ -873,7 +851,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   <span>2. Akun Koordinator (Sub-Admin)</span>
                 </h4>
                 <p className="text-[11px] text-blue-800">
-                  Akun ini akan otomatis didaftarkan ke Supabase dengan role <strong>Sub-Admin</strong> dan terhubung langsung ke organisasi ini.
+                  Akun ini akan otomatis didaftarkan ke Supabase dengan role <strong>Sub-Admin</strong> dan mengelola seluruh lapak di bawah naungannya.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -942,7 +920,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <UserCheck className="w-4 h-4" />
-                  <span>{isSubmittingCreate ? 'Mendaftarkan...' : 'Daftarkan Organisasi & Sub-Admin'}</span>
+                  <span>{isSubmittingCreate ? 'Mendaftarkan...' : 'Daftarkan Sub-Admin'}</span>
                 </button>
               </div>
             </form>

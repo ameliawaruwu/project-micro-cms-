@@ -254,7 +254,7 @@ class AuthService {
       try {
         const { data, error } = await supabase
           .from('users')
-          .select('id, name, email, phone, role, created_at')
+          .select('id, name, email, phone, role, community_id, community_name, password_hash, created_at')
           .eq('email', cleanEmail)
           .maybeSingle();
 

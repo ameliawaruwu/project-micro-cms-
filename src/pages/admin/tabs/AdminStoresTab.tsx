@@ -31,6 +31,8 @@ interface AdminStoresTabProps {
   language: string;
   isEn: boolean;
   onNavigateOverview?: () => void;
+  isSubAdmin?: boolean;
+  communityName?: string;
 }
 
 export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
@@ -46,6 +48,8 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
   language,
   isEn,
   onNavigateOverview,
+  isSubAdmin = false,
+  communityName,
 }) => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [copied, setCopied] = useState(false);
@@ -85,7 +89,11 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
         <div>
           <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
             <StoreIcon className="w-5 h-5 text-[#66000E]" />
-            <span>{isEn ? 'Manage Stores' : 'Kelola Toko'}</span>
+            <span>
+              {isSubAdmin
+                ? (communityName ? `Kelola Lapak Binaan — ${communityName}` : (isEn ? 'Manage Member Stores' : 'Kelola Toko Binaan'))
+                : (isEn ? 'Manage Stores' : 'Kelola Toko')}
+            </span>
           </h1>
         </div>
         <span className="text-xs font-medium text-gray-600 px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 self-start sm:self-auto">
