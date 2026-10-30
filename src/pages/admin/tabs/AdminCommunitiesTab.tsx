@@ -591,133 +591,118 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* SUB-TAB 1: PROFIL & DELEGASI SUB-ADMIN                                     */}
+      {/* SUB-TAB 1: PROFIL ORGANISASI & SUB-ADMIN                                   */}
       {/* ========================================================================= */}
       {activeSubTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* Left: Detail Organisasi */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 shadow-2xs space-y-5">
-            <div className="flex items-start justify-between gap-4 pb-4 border-b border-gray-100">
-              <div className="flex items-center gap-3.5">
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 shadow-2xs space-y-5">
+          {/* Header Profil Organisasi */}
+          <div className="flex items-start justify-between gap-4 pb-4 border-b border-gray-100 flex-wrap">
+            <div className="flex items-center gap-3.5">
+              {activeCommunity.logoUrl && !activeCommunity.logoUrl.includes('unsplash.com') ? (
                 <img
-                  src={activeCommunity.logoUrl || 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=200&auto=format&fit=crop'}
+                  src={activeCommunity.logoUrl}
                   alt={activeCommunity.name}
                   className="w-14 h-14 rounded-2xl object-cover border border-gray-200 shadow-2xs bg-gray-50"
                 />
-                <div>
-                  <h3 className="text-base font-bold text-gray-900">{activeCommunity.name}</h3>
-                  <p className="text-xs text-gray-500 font-mono mt-0.5">ID: {activeCommunity.id} • Slug: /{activeCommunity.slug}</p>
+              ) : (
+                <div className="w-14 h-14 rounded-2xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-extrabold text-lg border border-[#E5E0DD] shadow-2xs shrink-0">
+                  {activeCommunity.name.substring(0, 2).toUpperCase()}
                 </div>
+              )}
+              <div>
+                <h3 className="text-base font-bold text-gray-900">{activeCommunity.name}</h3>
+                <p className="text-xs text-gray-500 font-mono mt-0.5">ID: {activeCommunity.id} • Slug: /{activeCommunity.slug}</p>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200">
-                Organisasi Aktif
-              </span>
             </div>
+            <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200 self-start">
+              {activeCommunity.status === 'inactive' ? 'Organisasi Nonaktif' : 'Organisasi Aktif'}
+            </span>
+          </div>
 
+          {activeCommunity.description && (
             <p className="text-xs text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
               {activeCommunity.description}
             </p>
+          )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="p-3.5 rounded-xl border border-gray-200 space-y-1">
-                <span className="text-gray-500 font-medium">Koordinator / Sub-Admin Delegasi:</span>
-                <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-blue-600" />
-                  <span>{activeCommunity.coordinatorName}</span>
-                </p>
+          {/* Grid Informasi Organisasi & Koordinator */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div className="p-4 rounded-xl border border-gray-200 space-y-2 bg-gray-50/50">
+              <span className="text-gray-500 font-semibold block">Koordinator / Sub-Admin:</span>
+              <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                <UserCheck className="w-4 h-4 text-blue-600" />
+                <span>{activeCommunity.coordinatorName}</span>
+              </p>
+              <p className="text-gray-600 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-gray-400" />
+                <span>{activeCommunity.coordinatorEmail}</span>
+              </p>
+              {activeCommunity.coordinatorPhone && (
                 <p className="text-gray-600 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-gray-400" />
-                  <span>{activeCommunity.coordinatorEmail}</span>
+                  <Phone className="w-3.5 h-3.5 text-gray-400" />
+                  <span>{activeCommunity.coordinatorPhone}</span>
                 </p>
-                {activeCommunity.coordinatorPhone && (
-                  <p className="text-gray-600 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{activeCommunity.coordinatorPhone}</span>
-                  </p>
-                )}
-              </div>
-
-              <div className="p-3.5 rounded-xl border border-gray-200 space-y-1 bg-amber-50/40">
-                <span className="text-amber-800 font-medium">Model Bisnis Komisi Omset:</span>
-                <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-                  <Percent className="w-4 h-4 text-amber-600" />
-                  <span>Tarif {activeCommunity.turnoverFeePercent}% dari Total Omset</span>
-                </p>
-                <p className="text-gray-600 text-[11px] leading-relaxed">
-                  Lapak UMKM tidak dibebani biaya sewa hosting flat di muka. Tagihan hanya muncul proporsional dengan
-                  penjualan riil merchant binaan.
-                </p>
-              </div>
+              )}
             </div>
 
-            {/* Action buttons for Super Admin */}
-            {!isSubAdmin && (
-              <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2.5 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => setIsAssignModalOpen(true)}
-                    className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Tautkan Toko</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleOpenEditModal}
-                    className="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  >
-                    <Edit3 className="w-4 h-4 text-gray-600" />
-                    <span>Edit Organisasi</span>
-                  </button>
+            <div className="p-4 rounded-xl border border-gray-200 space-y-2 bg-gray-50/50">
+              <span className="text-gray-500 font-semibold block">Status &amp; Keanggotaan:</span>
+              <div className="space-y-1.5 pt-0.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600">Total Lapak Binaan:</span>
+                  <span className="font-bold text-gray-900">{communityStores.length} Toko</span>
                 </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600">Lapak Aktif Tayang:</span>
+                  <span className="font-bold text-emerald-700">{communityStores.filter((s) => s.isPublished).length} Toko</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600">Terdaftar Sejak:</span>
+                  <span className="font-medium text-gray-700">
+                    {new Date(activeCommunity.createdAt).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action buttons for Super Admin */}
+          {!isSubAdmin && (
+            <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2.5 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsAssignModalOpen(true)}
+                  className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Tautkan Toko</span>
+                </button>
 
                 <button
                   type="button"
-                  onClick={() => promptDeleteCommunity(activeCommunity.id, activeCommunity.name)}
-                  className="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-rose-200"
+                  onClick={handleOpenEditModal}
+                  className="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Hapus Organisasi</span>
+                  <Edit3 className="w-4 h-4 text-gray-600" />
+                  <span>Edit Organisasi</span>
                 </button>
               </div>
-            )}
-          </div>
 
-          {/* Right: Sub-Admin Privileges Card */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-2xs space-y-4">
-            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-emerald-600" />
-              <span>Wewenang Sub-Admin Organisasi</span>
-            </h3>
-
-            <div className="space-y-3 text-xs text-gray-600">
-              <div className="flex items-start gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Melihat dan memantau katalog lapak anggota organisasinya secara terpusat.</span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Membantu onboarding merchant baru ke naungan paguyuban/organisasi.</span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Menerima rekap omset dan faktur invoice bagi hasil per periode.</span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Terisolasi dari data toko di luar organisasinya demi keamanan tenant.</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => promptDeleteCommunity(activeCommunity.id, activeCommunity.name)}
+                className="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-rose-200"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Hapus Organisasi</span>
+              </button>
             </div>
-
-            <div className="pt-3 border-t border-gray-100 text-[11px] text-gray-500">
-              <p>
-                Akun koordinator Sub-Admin terdaftar dengan email{' '}
-                <strong className="text-gray-800 font-mono">{activeCommunity.coordinatorEmail}</strong>.
-              </p>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
