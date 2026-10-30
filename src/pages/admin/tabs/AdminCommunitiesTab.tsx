@@ -525,7 +525,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             </span>
           </div>
           <p className="text-[11px] text-gray-500 mt-1">
-            Bukan biaya sewa flat, adil bagi UMKM
+            Ditagihkan di akhir periode omset
           </p>
         </div>
 
@@ -776,11 +776,17 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     <tr key={st.id} className="hover:bg-gray-50/70 transition">
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={st.logoUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop'}
-                            alt={st.name}
-                            className="w-9 h-9 rounded-xl object-cover border border-gray-200 bg-gray-50 shrink-0"
-                          />
+                          {st.logoUrl && !st.logoUrl.includes('unsplash.com') ? (
+                            <img
+                              src={st.logoUrl}
+                              alt={st.name}
+                              className="w-9 h-9 rounded-xl object-cover border border-gray-200 bg-gray-50 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center font-bold text-xs text-gray-600 shrink-0">
+                              <StoreIcon className="w-4 h-4 text-gray-500" />
+                            </div>
+                          )}
                           <div>
                             <span className="font-bold text-gray-900 block">{st.name}</span>
                             <span className="text-[11px] text-gray-500">{st.category || 'UMKM Retail'}</span>

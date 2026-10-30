@@ -58,7 +58,7 @@ class CommunityService {
             coordinatorEmail: r.coordinator_email,
             coordinatorPhone: r.coordinator_phone || '',
             turnoverFeePercent: Number(r.turnover_fee_percent || 2.5),
-            logoUrl: r.logo_url || 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=200&auto=format&fit=crop',
+            logoUrl: r.logo_url || undefined,
             status: (r.status as 'active' | 'pending' | 'inactive') || 'active',
             createdAt: r.created_at || new Date().toISOString(),
           }));
@@ -109,7 +109,7 @@ class CommunityService {
       coordinatorEmail: cleanEmail,
       coordinatorPhone: data.coordinatorPhone?.trim() || '',
       turnoverFeePercent,
-      logoUrl: data.logoUrl || 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=200&auto=format&fit=crop',
+      logoUrl: data.logoUrl || undefined,
       status: 'active',
       createdAt: new Date().toISOString(),
     };
