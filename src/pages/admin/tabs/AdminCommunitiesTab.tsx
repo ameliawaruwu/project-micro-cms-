@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Users,
+  Edit3,
+  AlertTriangle,
   Building2,
   Store as StoreIcon,
   Receipt,
@@ -67,6 +69,36 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedStoreToAssign, setSelectedStoreToAssign] = useState('');
   const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
+
+  // Modal: Edit Detail Organisasi (Update CRUD)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    coordinatorName: '',
+    coordinatorPhone: '',
+    turnoverFeePercent: 2.5,
+    status: 'active' as 'active' | 'pending' | 'inactive',
+  });
+
+  // Alert Dialog: Custom in-app confirmation modal (No native localhost alert)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    isDanger?: boolean;
+    onConfirm: () => Promise<void>;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    confirmText: 'Ya, Hapus',
+    isDanger: true,
+    onConfirm: async () => {},
+  });
+  const [isConfirmLoading, setIsConfirmLoading] = useState(false);
 
   // Modal: Daftarkan Sub-Admin Baru
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -170,26 +202,42 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         onShowToast(`Toko berhasil ditambahkan ke naungan ${activeCommunity.name}!`);
       }
     } catch (err: any) {
-      alert('Gagal mengaitkan toko: ' + (err?.message || ''));
+      if (onShowToast) {
+        onShowToast('❌ Gagal mengaitkan toko: ' + (err?.message || ''));
+      }
     }
   };
 
-  // Handle unassigning a store
-  const handleRemoveStoreFromCommunity = async (storeId: string) => {
-    if (!confirm('Apakah Anda yakin ingin melepas toko ini dari keanggotaan organisasi?')) return;
-    try {
-      await storeService.updateStore(storeId, {
-        communityId: undefined,
-        communityName: undefined,
-      });
-      const refreshedStores = await storeService.getStores();
-      setStores(refreshedStores);
-      if (onShowToast) {
-        onShowToast('Toko dilepas dari organisasi.');
-      }
-    } catch (err: any) {
-      alert('Gagal melepas toko: ' + (err?.message || ''));
-    }
+  // Trigger Alert Dialog untuk melepas toko dari naungan
+  const promptRemoveStore = (storeId: string, storeName: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: `Lepas Toko "${storeName}"?`,
+      description: `Toko ini akan dikeluarkan dari naungan ${activeCommunity.name} dan beralih menjadi toko mandiri reguler.`,
+      confirmText: 'Ya, Lepas Toko',
+      isDanger: true,
+      onConfirm: async () => {
+        setIsConfirmLoading(true);
+        try {
+          await storeService.updateStore(storeId, {
+            communityId: undefined,
+            communityName: undefined,
+          });
+          const refreshedStores = await storeService.getStores();
+          setStores(refreshedStores);
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+          if (onShowToast) {
+            onShowToast(`Toko "${storeName}" berhasil dilepas dari organisasi.`);
+          }
+        } catch (err: any) {
+          if (onShowToast) {
+            onShowToast('❌ Gagal melepas toko: ' + (err?.message || ''));
+          }
+        } finally {
+          setIsConfirmLoading(false);
+        }
+      },
+    });
   };
 
   // Generate Turnover Invoice
@@ -208,7 +256,9 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         onShowToast(`Invoice tagihan omset periode ${currentMonth} berhasil diterbitkan!`);
       }
     } catch (err: any) {
-      alert('Gagal menerbitkan invoice: ' + (err?.message || ''));
+      if (onShowToast) {
+        onShowToast('❌ Gagal menerbitkan invoice: ' + (err?.message || ''));
+      }
     } finally {
       setIsGeneratingInvoice(false);
     }
@@ -227,7 +277,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const handleCreateOrganization = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.name.trim() || !createForm.coordinatorEmail.trim()) {
-      alert('Nama organisasi dan email koordinator wajib diisi.');
+      if (onShowToast) onShowToast('⚠️ Nama organisasi dan email koordinator wajib diisi.');
       return;
     }
     setIsSubmittingCreate(true);
@@ -258,30 +308,97 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         onShowToast(`Sub-Admin & organisasi "${res.community.name}" berhasil didaftarkan ke database!`);
       }
     } catch (err: any) {
-      alert('Gagal mendaftarkan Sub-Admin: ' + (err?.message || ''));
+      if (onShowToast) {
+        onShowToast('❌ Gagal mendaftarkan Sub-Admin: ' + (err?.message || ''));
+      }
     } finally {
       setIsSubmittingCreate(false);
     }
   };
 
-  // Handle delete community
-  const handleDeleteCommunity = async (commId: string, commName: string) => {
-    if (!confirm(`Hapus organisasi "${commName}"? Seluruh lapak binaan di bawahnya akan dilepas menjadi toko mandiri.`)) return;
+  // Buka Modal Edit Organisasi
+  const handleOpenEditModal = () => {
+    setEditForm({
+      name: activeCommunity.name || '',
+      description: activeCommunity.description || '',
+      coordinatorName: activeCommunity.coordinatorName || '',
+      coordinatorPhone: activeCommunity.coordinatorPhone || '',
+      turnoverFeePercent: activeCommunity.turnoverFeePercent || 2.5,
+      status: activeCommunity.status || 'active',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  // Handle Save Edit Organisasi (Update CRUD)
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editForm.name.trim()) {
+      if (onShowToast) onShowToast('⚠️ Nama organisasi tidak boleh kosong.');
+      return;
+    }
+    setIsSubmittingEdit(true);
     try {
-      await communityService.deleteCommunity(commId);
-      const updatedCommunities = communityService.getCommunities();
-      setCommunities(updatedCommunities);
-      if (updatedCommunities.length > 0) {
-        setSelectedCommunityId(updatedCommunities[0].id);
-      }
+      await communityService.updateCommunity(activeCommunity.id, {
+        name: editForm.name.trim(),
+        description: editForm.description.trim(),
+        coordinatorName: editForm.coordinatorName.trim(),
+        coordinatorPhone: editForm.coordinatorPhone.trim(),
+        turnoverFeePercent: Number(editForm.turnoverFeePercent) || 2.5,
+        status: editForm.status,
+      });
+
+      const refreshedComms = await communityService.fetchCommunitiesFromDatabase();
+      setCommunities(refreshedComms);
       const refreshedStores = await storeService.getStores();
       setStores(refreshedStores);
+      setIsEditModalOpen(false);
+
       if (onShowToast) {
-        onShowToast(`Organisasi "${commName}" berhasil dihapus.`);
+        onShowToast(`Organisasi "${editForm.name}" berhasil diperbarui di database!`);
       }
-    } catch (e: any) {
-      alert('Gagal menghapus organisasi: ' + (e?.message || ''));
+    } catch (err: any) {
+      if (onShowToast) {
+        onShowToast('❌ Gagal memperbarui organisasi: ' + (err?.message || ''));
+      }
+    } finally {
+      setIsSubmittingEdit(false);
     }
+  };
+
+  // Trigger Alert Dialog untuk menghapus organisasi secara permanen (Delete CRUD)
+  const promptDeleteCommunity = (commId: string, commName: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: `Hapus Organisasi "${commName}"?`,
+      description: `Tindakan ini akan menghapus organisasi secara permanen dari database Supabase. Seluruh lapak binaan (${communityStores.length} toko) akan dilepas menjadi toko mandiri, dan akun Sub-Admin koordinator (${activeCommunity.coordinatorEmail}) akan dihapus.`,
+      confirmText: 'Ya, Hapus Organisasi',
+      isDanger: true,
+      onConfirm: async () => {
+        setIsConfirmLoading(true);
+        try {
+          await communityService.deleteCommunity(commId);
+          const refreshedComms = await communityService.fetchCommunitiesFromDatabase();
+          setCommunities(refreshedComms);
+          if (refreshedComms.length > 0) {
+            setSelectedCommunityId(refreshedComms[0].id);
+          } else {
+            setSelectedCommunityId('');
+          }
+          const refreshedStores = await storeService.getStores();
+          setStores(refreshedStores);
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+          if (onShowToast) {
+            onShowToast(`Organisasi "${commName}" berhasil dihapus dari database.`);
+          }
+        } catch (e: any) {
+          if (onShowToast) {
+            onShowToast('❌ Gagal menghapus organisasi: ' + (e?.message || ''));
+          }
+        } finally {
+          setIsConfirmLoading(false);
+        }
+      },
+    });
   };
 
   return (
@@ -522,20 +639,31 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
             {/* Action buttons for Super Admin */}
             {!isSubAdmin && (
-              <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsAssignModalOpen(true)}
-                  className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Tautkan Toko ke Organisasi Ini</span>
-                </button>
+              <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2.5 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setIsAssignModalOpen(true)}
+                    className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Tautkan Toko</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenEditModal}
+                    className="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <Edit3 className="w-4 h-4 text-gray-600" />
+                    <span>Edit Organisasi</span>
+                  </button>
+                </div>
 
                 <button
                   type="button"
-                  onClick={() => handleDeleteCommunity(activeCommunity.id, activeCommunity.name)}
-                  className="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  onClick={() => promptDeleteCommunity(activeCommunity.id, activeCommunity.name)}
+                  className="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-rose-200"
                 >
                   <Trash2 className="w-4 h-4" />
                   <span>Hapus Organisasi</span>
@@ -679,7 +807,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
                           <button
                             type="button"
-                            onClick={() => handleRemoveStoreFromCommunity(st.id)}
+                            onClick={() => promptRemoveStore(st.id, st.name)}
                             title="Lepas dari Organisasi"
                             className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition cursor-pointer"
                           >
@@ -985,6 +1113,177 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 Simpan &amp; Tautkan
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* ========================================================================= */}
+      {/* ALERT DIALOG: KONFIRMASI HAPUS / LEPAS DENGAN TAMPILAN MODERN             */}
+      {/* ========================================================================= */}
+      {confirmDialog.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-gray-200 animate-in zoom-in-95 duration-150">
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 border border-rose-200 shadow-2xs">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-base font-bold text-gray-900">{confirmDialog.title}</h3>
+                <p className="text-xs text-gray-600 leading-relaxed">{confirmDialog.description}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                disabled={isConfirmLoading}
+                onClick={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition cursor-pointer disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isConfirmLoading}
+                onClick={confirmDialog.onConfirm}
+                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{isConfirmLoading ? 'Memproses...' : confirmDialog.confirmText}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 3: EDIT DETAIL ORGANISASI & KOORDINATOR (UPDATE CRUD)               */}
+      {/* ========================================================================= */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-200 my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Edit Detail Organisasi</h3>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    Perbarui profil organisasi mitra dan kontak koordinator Sub-Admin.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-700 text-xs font-bold cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+                <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-gray-600" />
+                  <span>Detail Organisasi</span>
+                </h4>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Nama Organisasi / Komunitas *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Deskripsi Singkat</label>
+                  <textarea
+                    rows={2}
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Status Organisasi</label>
+                    <select
+                      value={editForm.status}
+                      onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                    >
+                      <option value="active">Aktif</option>
+                      <option value="inactive">Nonaktif</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Fee Omset (%)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="50"
+                      value={editForm.turnoverFeePercent}
+                      onChange={(e) => setEditForm({ ...editForm, turnoverFeePercent: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-200 space-y-3">
+                <h4 className="font-bold text-blue-950 flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-blue-700" />
+                  <span>Kontak Koordinator Sub-Admin</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Nama Koordinator *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editForm.coordinatorName}
+                      onChange={(e) => setEditForm({ ...editForm, coordinatorName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp</label>
+                    <input
+                      type="text"
+                      value={editForm.coordinatorPhone}
+                      onChange={(e) => setEditForm({ ...editForm, coordinatorPhone: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingEdit}
+                  className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSubmittingEdit ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

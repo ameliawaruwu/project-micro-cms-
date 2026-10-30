@@ -1,7 +1,7 @@
 import { Community, CommunityTurnoverInvoice, Store, Order, User } from '../types';
 import { storeService } from './storeService';
 import { supabase } from './supabaseClient';
-import { hashPassword } from './authService';
+import { hashPassword, authService } from './authService';
 
 const COMMUNITIES_KEY = 'microcms_communities_v1';
 const INVOICES_KEY = 'microcms_community_invoices_v1';
@@ -239,7 +239,7 @@ class CommunityService {
     return { community: newComm, user: createdUser };
   }
 
-  public updateCommunity(id: string, updates: Partial<Community>): Community {
+  public async updateCommunity(id: string, updates: Partial<Community>): Promise<Community> {
     const communities = this.getCommunities();
     const idx = communities.findIndex((c) => c.id === id);
     if (idx === -1) throw new Error('Komunitas tidak ditemukan');
@@ -251,35 +251,76 @@ class CommunityService {
     };
     this.saveCommunities(communities);
 
-    // Sync to Supabase
-    supabase.from('communities').update({
-      name: communities[idx].name,
-      slug: communities[idx].slug,
-      description: communities[idx].description,
-      coordinator_name: communities[idx].coordinatorName,
-      coordinator_email: communities[idx].coordinatorEmail,
-      coordinator_phone: communities[idx].coordinatorPhone,
-      turnover_fee_percent: communities[idx].turnoverFeePercent,
-      logo_url: communities[idx].logoUrl,
-      status: communities[idx].status,
-      updated_at: new Date().toISOString(),
-    }).eq('id', id).then();
+    // Sync to Supabase communities table
+    try {
+      const dbUpdates: any = {
+        updated_at: new Date().toISOString(),
+      };
+      if (updates.name !== undefined) dbUpdates.name = updates.name.trim();
+      if (updates.slug !== undefined) dbUpdates.slug = updates.slug.trim();
+      if (updates.description !== undefined) dbUpdates.description = updates.description.trim();
+      if (updates.coordinatorName !== undefined) dbUpdates.coordinator_name = updates.coordinatorName.trim();
+      if (updates.coordinatorEmail !== undefined) dbUpdates.coordinator_email = updates.coordinatorEmail.trim();
+      if (updates.coordinatorPhone !== undefined) dbUpdates.coordinator_phone = updates.coordinatorPhone.trim();
+      if (updates.turnoverFeePercent !== undefined) dbUpdates.turnover_fee_percent = Number(updates.turnoverFeePercent);
+      if (updates.logoUrl !== undefined) dbUpdates.logo_url = updates.logoUrl;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+
+      await supabase.from('communities').update(dbUpdates).eq('id', id);
+
+      // Sinkronkan nama koordinator / phone / nama organisasi ke tabel users
+      if (updates.coordinatorName || updates.coordinatorPhone !== undefined || updates.name) {
+        const userUpdates: any = { updated_at: new Date().toISOString() };
+        if (updates.coordinatorName) userUpdates.name = updates.coordinatorName.trim();
+        if (updates.coordinatorPhone !== undefined) userUpdates.phone = updates.coordinatorPhone.trim();
+        if (updates.name) userUpdates.community_name = updates.name.trim();
+        await supabase.from('users').update(userUpdates).eq('community_id', id);
+      }
+
+      // Sinkronkan nama organisasi ke toko-toko yang terikat jika nama berubah
+      if (updates.name) {
+        await supabase.from('stores').update({ community_name: updates.name.trim() }).eq('community_id', id);
+      }
+    } catch (e) {
+      console.warn('[communityService] Error updating community in Supabase:', e);
+    }
 
     return communities[idx];
   }
 
   public async deleteCommunity(id: string): Promise<void> {
-    const communities = this.getCommunities().filter((c) => c.id !== id);
-    this.saveCommunities(communities);
-
-    // Hapus dari Supabase communities table
+    // 1. Hapus dari Supabase communities table
     try {
-      await supabase.from('communities').delete().eq('id', id);
-    } catch (e) {
-      console.warn('Gagal delete community di DB:', e);
+      const { error: delErr } = await supabase.from('communities').delete().eq('id', id);
+      if (delErr) {
+        console.error('[communityService] Error deleting community from Supabase:', delErr);
+        throw new Error(delErr.message || 'Gagal menghapus organisasi dari database.');
+      }
+      console.log(`[communityService] Komunitas ${id} berhasil dihapus dari database Supabase.`);
+    } catch (e: any) {
+      console.error('[communityService] Exception saat delete community di Supabase:', e);
+      throw e;
     }
 
-    // Lepas seluruh toko yang terikat dengan komunitas ini
+    // 2. Hapus akun user Sub-Admin yang terikat dengan komunitas ini
+    try {
+      const { data: subAdminUsers } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('community_id', id);
+
+      if (subAdminUsers && subAdminUsers.length > 0) {
+        for (const u of subAdminUsers) {
+          authService.purgeLocalAccount(u.email);
+        }
+        await supabase.from('users').delete().eq('community_id', id);
+        console.log(`[communityService] Akun Sub-Admin terkait organisasi ${id} berhasil dihapus.`);
+      }
+    } catch (e) {
+      console.warn('[communityService] Warning cleaning up sub_admin user in Supabase:', e);
+    }
+
+    // 3. Lepas seluruh toko yang terikat dengan komunitas ini
     try {
       const allStores = await storeService.getStores();
       const linkedStores = allStores.filter((s) => s.communityId === id);
@@ -289,9 +330,15 @@ class CommunityService {
           communityName: undefined,
         });
       }
+      await supabase.from('stores').update({ community_id: null, community_name: null }).eq('community_id', id);
+      console.log(`[communityService] Lapak anggota dari organisasi ${id} berhasil dilepas menjadi toko mandiri.`);
     } catch (e) {
-      console.warn('Gagal unlink toko saat hapus komunitas:', e);
+      console.warn('[communityService] Warning unlinking stores on delete community:', e);
     }
+
+    // 4. Update cache lokal communities
+    const communities = this.getCommunities().filter((c) => c.id !== id);
+    this.saveCommunities(communities);
   }
 
   /**
