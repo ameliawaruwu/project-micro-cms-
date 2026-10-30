@@ -1495,7 +1495,7 @@ export default function App() {
             setAuthView(null);
             if (targetMode === 'admin') {
               if (currentUser?.role === 'sub_admin' || currentUser?.role === 'community_admin') {
-                addToast('Selamat datang di Portal Koordinator GMPS!');
+                addToast(currentUser?.communityName ? `Selamat datang di Portal ${currentUser.communityName}!` : 'Selamat datang di Portal Koordinator Organisasi!');
               } else {
                 addToast('Selamat datang di Super Admin Panel!');
               }

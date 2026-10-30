@@ -61,8 +61,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const isSubAdmin = loggedInUser?.role === 'sub_admin' || loggedInUser?.role === 'community_admin';
   const [activeTab, setActiveTab] = useState<AdminTab>(() => (isSubAdmin ? 'communities' : 'overview'));
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const activeAdminName = loggedInUser?.name || (isSubAdmin ? 'Koordinator Komunitas GMPS' : 'Super Admin Kroomify');
-  const activeAdminEmail = loggedInUser?.email || (isSubAdmin ? 'gmps@kroomify.id' : 'admin@kroomify.id');
+  const activeAdminName = loggedInUser?.name || (isSubAdmin ? (loggedInUser?.communityName ? `Koordinator ${loggedInUser.communityName}` : 'Koordinator Organisasi') : 'Super Admin Kroomify');
+  const activeAdminEmail = loggedInUser?.email || (isSubAdmin ? 'koordinator@kroomify.id' : 'admin@kroomify.id');
   const activeAdminAvatar = loggedInUser?.avatarUrl;
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
@@ -342,7 +342,23 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     showToast('Pengaturan sistem berhasil disimpan ke database');
   };
 
-  const filteredStores = stores.filter((s) => {
+  // Isolasi Multi-Tenant: Sub-Admin hanya mengakses toko & pesanan anggotanya
+  const subAdminStores = React.useMemo(() => {
+    if (!isSubAdmin || !loggedInUser?.communityId) return stores;
+    return stores.filter((s) => s.communityId === loggedInUser.communityId);
+  }, [stores, isSubAdmin, loggedInUser?.communityId]);
+
+  const subAdminStoreIds = React.useMemo(() => new Set(subAdminStores.map((s) => s.id)), [subAdminStores]);
+
+  const subAdminOrders = React.useMemo(() => {
+    if (!isSubAdmin || !loggedInUser?.communityId) return orders;
+    return orders.filter((o) => subAdminStoreIds.has(o.storeId));
+  }, [orders, isSubAdmin, subAdminStoreIds]);
+
+  const activeStoresForAdmin = isSubAdmin ? subAdminStores : stores;
+  const activeOrdersForAdmin = isSubAdmin ? subAdminOrders : orders;
+
+  const filteredStores = activeStoresForAdmin.filter((s) => {
     const matchSearch =
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -356,16 +372,16 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const pendingDomainRequests = domainRequests.filter((d) => d.status === 'pending');
 
   // Orders & Shipping filtering and metrics
-  const totalOrdersCount = orders.length;
-  const processingOrdersCount = orders.filter(
+  const totalOrdersCount = activeOrdersForAdmin.length;
+  const processingOrdersCount = activeOrdersForAdmin.filter(
     (o) => o.shippingStatus === 'Diproses' || o.shippingStatus === 'ready_to_ship' || o.shippingStatus === 'Baru'
   ).length;
-  const shippedOrdersCount = orders.filter((o) => o.shippingStatus === 'Dikirim').length;
-  const completedOrdersCount = orders.filter((o) => o.shippingStatus === 'Selesai').length;
-  const totalShippingFeePlatform = orders.reduce((acc, o) => acc + (o.shippingCost || 0), 0);
+  const shippedOrdersCount = activeOrdersForAdmin.filter((o) => o.shippingStatus === 'Dikirim').length;
+  const completedOrdersCount = activeOrdersForAdmin.filter((o) => o.shippingStatus === 'Selesai').length;
+  const totalShippingFeePlatform = activeOrdersForAdmin.reduce((acc, o) => acc + (o.shippingCost || 0), 0);
 
-  const filteredAdminOrders = orders.filter((ord) => {
-    const store = stores.find((s) => s.id === ord.storeId);
+  const filteredAdminOrders = activeOrdersForAdmin.filter((ord) => {
+    const store = activeStoresForAdmin.find((s) => s.id === ord.storeId);
     const storeName = store ? store.name.toLowerCase() : '';
     const q = orderSearchQuery.toLowerCase().trim();
 
@@ -397,11 +413,20 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   const navItems: AdminNavItem[] = isSubAdmin
     ? [
-        { id: 'communities', label: language === 'en' ? 'GMPS Portal & Billing' : 'Komunitas GMPS & Tagihan', icon: Users },
-        { id: 'stores', label: language === 'en' ? 'GMPS Merchants' : 'Lapak Anggota GMPS', icon: StoreIcon, count: stores.length },
+        {
+          id: 'communities',
+          label: language === 'en' ? 'Organization Portal' : (loggedInUser?.communityName ? `Portal ${loggedInUser.communityName}` : 'Portal Organisasi & Tagihan'),
+          icon: Users,
+        },
+        {
+          id: 'stores',
+          label: language === 'en' ? 'Member Stores' : 'Lapak Anggota',
+          icon: StoreIcon,
+          count: subAdminStores.length,
+        },
         {
           id: 'orders-shipping',
-          label: language === 'en' ? 'GMPS Orders' : 'Pesanan Lapak GMPS',
+          label: language === 'en' ? 'Member Orders' : 'Pesanan Lapak Anggota',
           icon: Truck,
           badge: processingOrdersCount > 0 ? processingOrdersCount : undefined,
         },

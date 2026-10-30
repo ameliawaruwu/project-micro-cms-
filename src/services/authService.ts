@@ -76,30 +76,6 @@ const defaultAccounts: StoredAccount[] = [
     },
     storeId: '',
   },
-  {
-    id: 'USR036',
-    email: 'gmps@kroomify.id',
-    password: 'gmps123',
-    user: {
-      id: 'USR036',
-      name: 'Koordinator Komunitas GMPS',
-      email: 'gmps@kroomify.id',
-      phoneWhatsApp: '081234567890',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-      role: 'sub_admin',
-      communityId: 'comm_gmps',
-      communityName: 'Komunitas GMPS',
-      createdAt: '2026-01-01T00:00:00Z',
-    },
-    merchant: {
-      id: 'merch-gmps',
-      userId: 'USR036',
-      storeId: '',
-      plan: 'premium',
-      isVerified: true,
-    },
-    storeId: '',
-  },
 ];
 
 class AuthService {
@@ -113,7 +89,7 @@ class AuthService {
       const parsed: StoredAccount[] = JSON.parse(raw);
       // Filter out legacy dummy account USR000
       const filtered = parsed.filter(
-        (a) => a.id !== 'USR000' && a.email.toLowerCase() !== 'andhika@gmail.com'
+        (a) => a.id !== 'USR000' && a.email.toLowerCase() !== 'andhika@gmail.com' && a.email.toLowerCase() !== 'gmps@kroomify.id'
       );
       // Merge and sync with defaultAccounts
       let changed = filtered.length !== parsed.length;
@@ -144,7 +120,7 @@ class AuthService {
 
   purgeLocalAccount(email: string): void {
     const cleanEmail = email.toLowerCase().trim();
-    if (cleanEmail === 'admin@kroomify.id' || cleanEmail === 'gmps@kroomify.id') return;
+    if (cleanEmail === 'admin@kroomify.id') return;
     try {
       const accounts = this.getStoredAccounts().filter((a) => a.email.toLowerCase() !== cleanEmail);
       this.saveAccounts(accounts);
@@ -306,7 +282,7 @@ class AuthService {
         throw new Error('Akun belum terdaftar. Silakan lakukan registrasi terlebih dahulu.');
       }
       // Khusus mode offline darurat untuk akun demo
-      if (account.id === 'usr-admin-1' || account.id === 'usr-andhika-01' || account.id === 'USR_SUB_GMPS' || account.id === 'USR036' || account.id === 'USR013') {
+      if (account.id === 'usr-admin-1' || account.id === 'usr-andhika-01' || account.id === 'USR013') {
         dbUser = {
           id: account.id,
           name: account.user.name,
@@ -343,7 +319,7 @@ class AuthService {
     const userName = dbUser.name || cleanEmail.split('@')[0];
     const defaultAcc = defaultAccounts.find((d) => d.email.toLowerCase() === cleanEmail);
     const userRole = (dbUser.role as User['role']) || defaultAcc?.user.role || 'merchant';
-    const isSubAdmin = userRole === 'sub_admin' || userRole === 'community_admin' || cleanEmail === 'gmps@kroomify.id';
+    const isSubAdmin = userRole === 'sub_admin' || userRole === 'community_admin';
 
     const user: User = {
       id: userId,
@@ -352,8 +328,8 @@ class AuthService {
       phoneWhatsApp: dbUser.phone || '',
       avatarUrl: defaultAcc?.user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1F4072&color=FFD358&bold=true`,
       role: userRole,
-      communityId: defaultAcc?.user.communityId || (isSubAdmin ? 'comm_gmps' : undefined),
-      communityName: defaultAcc?.user.communityName || (isSubAdmin ? 'Komunitas GMPS' : undefined),
+      communityId: dbUser.community_id || defaultAcc?.user.communityId || undefined,
+      communityName: dbUser.community_name || defaultAcc?.user.communityName || undefined,
       createdAt: dbUser.created_at || new Date().toISOString(),
     };
 

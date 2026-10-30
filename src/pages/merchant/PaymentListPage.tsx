@@ -611,7 +611,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                     setManualBankAccountHolder(e.target.value);
                     markDirty();
                   }}
-                  placeholder="Contoh: Budi Santoso / Toko GMPS"
+                  placeholder="Contoh: Budi Santoso / Toko Komunitas"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
                 />
               </div>

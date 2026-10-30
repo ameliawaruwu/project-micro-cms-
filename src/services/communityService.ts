@@ -1,38 +1,25 @@
-import { Community, CommunityTurnoverInvoice, Store, Order } from '../types';
+import { Community, CommunityTurnoverInvoice, Store, Order, User } from '../types';
 import { storeService } from './storeService';
 import { supabase } from './supabaseClient';
+import { hashPassword } from './authService';
 
 const COMMUNITIES_KEY = 'microcms_communities_v1';
 const INVOICES_KEY = 'microcms_community_invoices_v1';
 
 export const DEFAULT_COMMUNITIES: Community[] = [
   {
-    id: 'comm_gmps',
-    name: 'Komunitas GMPS (Gerakan Masyarakat Peduli Sejahtera)',
-    slug: 'gmps',
+    id: 'comm_sentra_umkm',
+    name: 'Sentra UMKM Nusantara',
+    slug: 'sentra-umkm',
     description:
-      'Paguyuban UMKM & Lapak Komunitas Binaan GMPS. Mengelola lapak anggota secara terpusat dengan skema tagihan berbasis persentase omset.',
-    coordinatorName: 'Koordinator GMPS',
-    coordinatorEmail: 'gmps@kroomify.id',
-    coordinatorPhone: '081234567890',
-    turnoverFeePercent: 2.5,
+      'Paguyuban wirausaha dan sentra lapak binaan terpadu dengan pembinaan digital & kurasi produk.',
+    coordinatorName: 'Koordinator Sentra',
+    coordinatorEmail: 'koordinator@sentraumkm.id',
+    coordinatorPhone: '081298765432',
+    turnoverFeePercent: 2.0,
     logoUrl: 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=200&auto=format&fit=crop&q=80',
     status: 'active',
     createdAt: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'comm_kampus',
-    name: 'Sentra UMKM & Wirausaha Mahasiswa',
-    slug: 'umkm-kampus',
-    description:
-      'Wadah lapak wirausaha kreatif mahasiswa & tenant inkubator bisnis kampus.',
-    coordinatorName: 'Admin Sentra Bisnis',
-    coordinatorEmail: 'wirausaha@kampus.ac.id',
-    coordinatorPhone: '081399887766',
-    turnoverFeePercent: 2.0,
-    logoUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=200&auto=format&fit=crop&q=80',
-    status: 'active',
-    createdAt: '2026-02-01T00:00:00.000Z',
   },
 ];
 
@@ -45,11 +32,16 @@ class CommunityService {
     }
     try {
       const parsed: Community[] = JSON.parse(raw);
-      if (parsed.length === 0) {
+      // Hapus data GMPS lama sesuai permintaan user
+      const filtered = parsed.filter((c) => c.id !== 'comm_gmps' && c.slug !== 'gmps');
+      if (filtered.length === 0) {
         localStorage.setItem(COMMUNITIES_KEY, JSON.stringify(DEFAULT_COMMUNITIES));
         return DEFAULT_COMMUNITIES;
       }
-      return parsed;
+      if (filtered.length !== parsed.length) {
+        localStorage.setItem(COMMUNITIES_KEY, JSON.stringify(filtered));
+      }
+      return filtered;
     } catch {
       return DEFAULT_COMMUNITIES;
     }
@@ -63,16 +55,127 @@ class CommunityService {
     return this.getCommunities().find((c) => c.id === id || c.slug === id);
   }
 
-  public createCommunity(data: Omit<Community, 'id' | 'createdAt'>): Community {
-    const communities = this.getCommunities();
+  /**
+   * Mendaftarkan Organisasi/Komunitas baru beserta pembuatan akun Sub-Admin koordinatornya langsung ke Supabase
+   */
+  public async createOrganizationWithSubAdmin(data: {
+    name: string;
+    slug?: string;
+    description?: string;
+    coordinatorName: string;
+    coordinatorEmail: string;
+    coordinatorPhone?: string;
+    password?: string;
+    turnoverFeePercent?: number;
+    logoUrl?: string;
+  }): Promise<{ community: Community; user: User }> {
+    const cleanEmail = data.coordinatorEmail.toLowerCase().trim();
+    const commId = `comm_${Date.now()}`;
+    const slug = (data.slug?.trim() || data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')) || `org-${Date.now().toString().slice(-4)}`;
+    const plainPassword = data.password || 'subadmin123';
+    const hashedPassword = await hashPassword(plainPassword);
+
+    // 1. Simpan Komunitas ke Local & Service State
     const newComm: Community = {
-      ...data,
-      id: `comm_${Date.now()}`,
+      id: commId,
+      name: data.name.trim(),
+      slug,
+      description: data.description?.trim() || `Organisasi & Lapak Binaan ${data.name.trim()}`,
+      coordinatorName: data.coordinatorName.trim(),
+      coordinatorEmail: cleanEmail,
+      coordinatorPhone: data.coordinatorPhone?.trim() || '',
+      turnoverFeePercent: data.turnoverFeePercent !== undefined ? Number(data.turnoverFeePercent) : 2.5,
+      logoUrl: data.logoUrl || 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=200&auto=format&fit=crop',
+      status: 'active',
       createdAt: new Date().toISOString(),
     };
+
+    const communities = this.getCommunities().filter((c) => c.slug !== slug && c.id !== commId);
     communities.unshift(newComm);
     this.saveCommunities(communities);
-    return newComm;
+
+    // 2. Buat / Daftarkan User Sub-Admin ke Database Supabase
+    let userId = `USR_SUB_${Date.now().toString().slice(-6)}`;
+    try {
+      const { data: insertedUser, error: insertErr } = await supabase
+        .from('users')
+        .insert({
+          email: cleanEmail,
+          password_hash: hashedPassword,
+          name: data.coordinatorName.trim(),
+          phone: data.coordinatorPhone?.trim() || '',
+          role: 'sub_admin',
+          community_id: commId,
+          community_name: newComm.name,
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (!insertErr && insertedUser) {
+        userId = insertedUser.id;
+      } else if (insertErr) {
+        // Jika email sudah terdaftar (misal merchant lama dipromosikan jadi sub-admin organisasi)
+        if (insertErr.code === '23505' || insertErr.message?.includes('duplicate key') || insertErr.message?.includes('users_email_key')) {
+          const { data: updatedUser } = await supabase
+            .from('users')
+            .update({
+              role: 'sub_admin',
+              community_id: commId,
+              community_name: newComm.name,
+              password_hash: hashedPassword,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('email', cleanEmail)
+            .select()
+            .single();
+
+          if (updatedUser) userId = updatedUser.id;
+        } else {
+          console.warn('[communityService] Warning insert sub_admin ke Supabase:', insertErr.message);
+        }
+      }
+    } catch (e) {
+      console.warn('[communityService] Exception saat insert sub_admin ke DB:', e);
+    }
+
+    const createdUser: User = {
+      id: userId,
+      name: data.coordinatorName.trim(),
+      email: cleanEmail,
+      phoneWhatsApp: data.coordinatorPhone?.trim() || '',
+      role: 'sub_admin',
+      communityId: commId,
+      communityName: newComm.name,
+      createdAt: new Date().toISOString(),
+    };
+
+    // 3. Sinkronkan ke cache lokal agar bisa login instan
+    try {
+      const accountsKey = 'microcms_accounts_v1';
+      const rawAccounts = localStorage.getItem(accountsKey);
+      let accounts: any[] = rawAccounts ? JSON.parse(rawAccounts) : [];
+      accounts = accounts.filter((a) => a.email.toLowerCase() !== cleanEmail);
+      accounts.push({
+        id: userId,
+        email: cleanEmail,
+        password: hashedPassword,
+        user: createdUser,
+        merchant: {
+          id: `merch-${userId}`,
+          userId: userId,
+          storeId: '',
+          plan: 'premium',
+          isVerified: true,
+        },
+        storeId: '',
+      });
+      localStorage.setItem(accountsKey, JSON.stringify(accounts));
+    } catch (e) {
+      console.warn('[communityService] Gagal update cache akun lokal:', e);
+    }
+
+    return { community: newComm, user: createdUser };
   }
 
   public updateCommunity(id: string, updates: Partial<Community>): Community {
@@ -89,21 +192,35 @@ class CommunityService {
     return communities[idx];
   }
 
-  public deleteCommunity(id: string): void {
+  public async deleteCommunity(id: string): Promise<void> {
     const communities = this.getCommunities().filter((c) => c.id !== id);
     this.saveCommunities(communities);
+
+    // Lepas seluruh toko yang terikat dengan komunitas ini
+    try {
+      const allStores = await storeService.getStores();
+      const linkedStores = allStores.filter((s) => s.communityId === id);
+      for (const st of linkedStores) {
+        await storeService.updateStore(st.id, {
+          communityId: undefined,
+          communityName: undefined,
+        });
+      }
+    } catch (e) {
+      console.warn('Gagal unlink toko saat hapus komunitas:', e);
+    }
   }
 
   /**
-   * Mengambil daftar toko/lapak yang bernaung di bawah suatu komunitas (misal GMPS)
+   * Mengambil daftar toko/lapak yang bernaung di bawah suatu komunitas tertentu
    */
   public async getCommunityStores(communityId: string): Promise<Store[]> {
     const allStores = await storeService.getStores();
-    return allStores.filter((s) => s.communityId === communityId || (communityId === 'comm_gmps' && (!s.communityId || s.communityId === 'comm_gmps')));
+    return allStores.filter((s) => s.communityId === communityId);
   }
 
   /**
-   * Menetapkan toko merchant ke dalam komunitas tertentu (misal GMPS)
+   * Menetapkan toko merchant ke dalam komunitas tertentu
    */
   public async assignStoreToCommunity(
     storeId: string,
@@ -145,7 +262,7 @@ class CommunityService {
   }
 
   /**
-   * Mendapatkan daftar invoice tagihan omset berkala untuk komunitas (GMPS)
+   * Mendapatkan daftar invoice tagihan omset berkala untuk komunitas
    */
   public getCommunityInvoices(communityId?: string): CommunityTurnoverInvoice[] {
     const raw = localStorage.getItem(INVOICES_KEY);
@@ -153,44 +270,11 @@ class CommunityService {
     if (raw) {
       try {
         invoices = JSON.parse(raw);
+        // Hapus invoice GMPS lama
+        invoices = invoices.filter((i) => i.communityId !== 'comm_gmps');
       } catch {
         invoices = [];
       }
-    }
-
-    if (invoices.length === 0) {
-      // Buat default billing contoh untuk GMPS
-      const sampleInvoices: CommunityTurnoverInvoice[] = [
-        {
-          id: 'inv_comm_101',
-          communityId: 'comm_gmps',
-          communityName: 'Komunitas GMPS',
-          invoiceNumber: 'INV-GMPS-202610',
-          period: 'Oktober 2026',
-          totalTurnover: 12500000,
-          feePercent: 2.5,
-          totalBilled: 312500, // 12.500.000 * 2.5%
-          status: 'paid',
-          dueDate: '2026-11-05T00:00:00Z',
-          paidAt: '2026-10-28T14:20:00Z',
-          createdAt: '2026-10-01T00:00:00Z',
-        },
-        {
-          id: 'inv_comm_102',
-          communityId: 'comm_gmps',
-          communityName: 'Komunitas GMPS',
-          invoiceNumber: 'INV-GMPS-202611',
-          period: 'November 2026 (Berjalan)',
-          totalTurnover: 4850000,
-          feePercent: 2.5,
-          totalBilled: 121250, // 4.850.000 * 2.5%
-          status: 'unpaid',
-          dueDate: '2026-12-05T00:00:00Z',
-          createdAt: '2026-11-01T00:00:00Z',
-        },
-      ];
-      localStorage.setItem(INVOICES_KEY, JSON.stringify(sampleInvoices));
-      invoices = sampleInvoices;
     }
 
     if (communityId) {
@@ -223,7 +307,7 @@ class CommunityService {
       id: `inv_comm_${Date.now()}`,
       communityId,
       communityName: comm?.name || 'Komunitas',
-      invoiceNumber: `INV-${comm?.slug?.toUpperCase() || 'COMM'}-${Date.now().toString().slice(-6)}`,
+      invoiceNumber: `INV-${comm?.slug?.toUpperCase() || 'ORG'}-${Date.now().toString().slice(-6)}`,
       period,
       totalTurnover,
       feePercent,
@@ -240,4 +324,3 @@ class CommunityService {
 }
 
 export const communityService = new CommunityService();
-

@@ -21,6 +21,10 @@ import {
   Trash2,
   Check,
   UserCheck,
+  KeyRound,
+  Mail,
+  Phone,
+  Lock,
 } from 'lucide-react';
 import { Community, CommunityTurnoverInvoice, Store, Order, User } from '../../../types';
 import { communityService } from '../../../services/communityService';
@@ -43,22 +47,40 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const isEn = language === 'en';
 
   const isSubAdmin = currentUser?.role === 'sub_admin' || currentUser?.role === 'community_admin';
-  const targetCommunityId = currentUser?.communityId || 'comm_gmps';
+  const targetCommunityId = currentUser?.communityId || '';
 
   // Data states
   const [communities, setCommunities] = useState<Community[]>(() => communityService.getCommunities());
-  const [selectedCommunityId, setSelectedCommunityId] = useState<string>(targetCommunityId);
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string>(() => {
+    if (isSubAdmin && targetCommunityId) return targetCommunityId;
+    const comms = communityService.getCommunities();
+    return comms[0]?.id || '';
+  });
   const [stores, setStores] = useState<Store[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [invoices, setInvoices] = useState<CommunityTurnoverInvoice[]>(() =>
-    communityService.getCommunityInvoices(isSubAdmin ? targetCommunityId : undefined)
+    communityService.getCommunityInvoices(isSubAdmin && targetCommunityId ? targetCommunityId : undefined)
   );
 
-  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'merchants' | 'invoices' | 'settings'>('overview');
+  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'merchants' | 'invoices'>('overview');
   const [searchMerchant, setSearchMerchant] = useState('');
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedStoreToAssign, setSelectedStoreToAssign] = useState('');
   const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
+
+  // Modal: Tambah Organisasi / Sub-Admin Baru
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    coordinatorName: '',
+    coordinatorEmail: '',
+    coordinatorPhone: '',
+    password: '',
+    turnoverFeePercent: 2.5,
+  });
 
   // Load stores & orders
   useEffect(() => {
@@ -75,30 +97,32 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   }, []);
 
   const activeCommunity = useMemo(() => {
+    if (isSubAdmin && targetCommunityId) {
+      const found = communities.find((c) => c.id === targetCommunityId);
+      if (found) return found;
+    }
     return (
       communities.find((c) => c.id === selectedCommunityId) ||
       communities[0] || {
-        id: 'comm_gmps',
-        name: 'Komunitas GMPS',
-        slug: 'gmps',
-        coordinatorName: 'Koordinator GMPS',
-        coordinatorEmail: 'gmps@kroomify.id',
-        coordinatorPhone: '081234567890',
+        id: 'comm_default',
+        name: 'Sentra UMKM Nusantara',
+        slug: 'sentra-umkm',
+        description: 'Organisasi & Lapak Binaan Terpadu',
+        coordinatorName: 'Koordinator Sentra',
+        coordinatorEmail: 'koordinator@sentraumkm.id',
+        coordinatorPhone: '',
         turnoverFeePercent: 2.5,
         status: 'active' as const,
         createdAt: new Date().toISOString(),
       }
     );
-  }, [communities, selectedCommunityId]);
+  }, [communities, selectedCommunityId, isSubAdmin, targetCommunityId]);
 
   // Stores associated with active community
   const communityStores = useMemo(() => {
-    return stores.filter(
-      (s) =>
-        s.communityId === activeCommunity.id ||
-        (activeCommunity.id === 'comm_gmps' && (!s.communityId || s.communityId === 'comm_gmps'))
-    );
-  }, [stores, activeCommunity.id]);
+    if (!activeCommunity?.id) return [];
+    return stores.filter((s) => s.communityId === activeCommunity.id);
+  }, [stores, activeCommunity?.id]);
 
   // Filtered stores based on search
   const filteredCommunityStores = useMemo(() => {
@@ -146,7 +170,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
   // Handle unassigning a store
   const handleRemoveStoreFromCommunity = async (storeId: string) => {
-    if (!confirm('Apakah Anda yakin ingin melepas toko ini dari keanggotaan komunitas?')) return;
+    if (!confirm('Apakah Anda yakin ingin melepas toko ini dari keanggotaan organisasi?')) return;
     try {
       await storeService.updateStore(storeId, {
         communityId: undefined,
@@ -155,7 +179,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       const refreshedStores = await storeService.getStores();
       setStores(refreshedStores);
       if (onShowToast) {
-        onShowToast('Toko dilepas dari komunitas.');
+        onShowToast('Toko dilepas dari organisasi.');
       }
     } catch (err: any) {
       alert('Gagal melepas toko: ' + (err?.message || ''));
@@ -167,7 +191,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     setIsGeneratingInvoice(true);
     try {
       const currentMonth = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(new Date());
-      const newInv = communityService.createTurnoverInvoice(
+      communityService.createTurnoverInvoice(
         activeCommunity.id,
         currentMonth,
         turnoverStats.totalTurnover,
@@ -193,6 +217,71 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     }
   };
 
+  // Handle submit create organization & sub-admin
+  const handleCreateOrganization = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.name.trim() || !createForm.coordinatorEmail.trim()) {
+      alert('Nama organisasi dan email koordinator wajib diisi.');
+      return;
+    }
+    setIsSubmittingCreate(true);
+    try {
+      const res = await communityService.createOrganizationWithSubAdmin({
+        name: createForm.name.trim(),
+        slug: createForm.slug.trim(),
+        description: createForm.description.trim(),
+        coordinatorName: createForm.coordinatorName.trim() || `Koordinator ${createForm.name.trim()}`,
+        coordinatorEmail: createForm.coordinatorEmail.trim(),
+        coordinatorPhone: createForm.coordinatorPhone.trim(),
+        password: createForm.password.trim() || 'subadmin123',
+        turnoverFeePercent: Number(createForm.turnoverFeePercent) || 2.5,
+      });
+
+      const updatedCommunities = communityService.getCommunities();
+      setCommunities(updatedCommunities);
+      setSelectedCommunityId(res.community.id);
+      setIsCreateModalOpen(false);
+      setCreateForm({
+        name: '',
+        slug: '',
+        description: '',
+        coordinatorName: '',
+        coordinatorEmail: '',
+        coordinatorPhone: '',
+        password: '',
+        turnoverFeePercent: 2.5,
+      });
+
+      if (onShowToast) {
+        onShowToast(`Organisasi "${res.community.name}" & akun Sub-Admin berhasil didaftarkan!`);
+      }
+    } catch (err: any) {
+      alert('Gagal membuat organisasi: ' + (err?.message || ''));
+    } finally {
+      setIsSubmittingCreate(false);
+    }
+  };
+
+  // Handle delete community
+  const handleDeleteCommunity = async (commId: string, commName: string) => {
+    if (!confirm(`Hapus organisasi "${commName}"? Seluruh lapak binaan di bawahnya akan dilepas menjadi toko mandiri.`)) return;
+    try {
+      await communityService.deleteCommunity(commId);
+      const updatedCommunities = communityService.getCommunities();
+      setCommunities(updatedCommunities);
+      if (updatedCommunities.length > 0) {
+        setSelectedCommunityId(updatedCommunities[0].id);
+      }
+      const refreshedStores = await storeService.getStores();
+      setStores(refreshedStores);
+      if (onShowToast) {
+        onShowToast(`Organisasi "${commName}" berhasil dihapus.`);
+      }
+    } catch (e: any) {
+      alert('Gagal menghapus organisasi: ' + (e?.message || ''));
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200 font-sans pb-16 text-left">
       {/* 1. Header Bar */}
@@ -204,34 +293,48 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
-                {isSubAdmin ? `Portal Koordinator Lapak — ${activeCommunity.name}` : 'Kelola Komunitas & Sub-Admin (GMPS)'}
+                {isSubAdmin ? `Portal Koordinator Lapak — ${activeCommunity.name}` : 'Kelola Komunitas & Organisasi Sub-Admin'}
               </h1>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[11px] border border-emerald-200">
                 {isSubAdmin ? 'Delegasi Sub-Admin' : 'Multi-Tenant Komunitas'}
               </span>
             </div>
             <p className="text-xs text-gray-500 mt-1 max-w-2xl leading-relaxed">
-              Pendelegasian manajemen lapak merchant ke komunitas mitra (<strong>GMPS</strong>). Komunitas mengatur lapak
-              anggota secara mandiri dan ditagihkan biaya layanan berbasis <strong>persentase omset penjualan</strong>.
+              {isSubAdmin
+                ? `Pusat koordinasi toko-toko binaan ${activeCommunity.name}. Pantau transaksi katalog anggota dan kelola tagihan layanan platform.`
+                : 'Pendelegasian manajemen lapak merchant ke koordinator organisasi mitra (paguyuban, yayasan, sentra bisnis). Organisasi mengatur lapak anggota secara terisolasi dengan skema bagi hasil omset.'}
             </p>
           </div>
         </div>
 
-        {/* Community Selector (if Super Admin has multiple communities) */}
-        {!isSubAdmin && communities.length > 1 && (
-          <div className="shrink-0 flex items-center gap-2">
-            <span className="text-xs font-semibold text-gray-600">Pilih Komunitas:</span>
-            <select
-              value={selectedCommunityId}
-              onChange={(e) => setSelectedCommunityId(e.target.value)}
-              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-[#66000E] cursor-pointer"
+        {/* Actions for Super Admin */}
+        {!isSubAdmin && (
+          <div className="shrink-0 flex items-center gap-2.5 flex-wrap">
+            {communities.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-600">Pilih Organisasi:</span>
+                <select
+                  value={selectedCommunityId}
+                  onChange={(e) => setSelectedCommunityId(e.target.value)}
+                  className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-[#66000E] cursor-pointer"
+                >
+                  {communities.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-3.5 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              {communities.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              <Plus className="w-4 h-4" />
+              <span>Tambah Organisasi &amp; Sub-Admin</span>
+            </button>
           </div>
         )}
       </div>
@@ -248,55 +351,64 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-gray-900">{communityStores.length}</span>
-            <span className="text-xs font-semibold text-emerald-600">
-              ({turnoverStats.activeStoresCount} Aktif Tayang)
-            </span>
+            <span className="text-xs font-medium text-gray-500">toko binaan</span>
           </div>
-          <p className="text-[11px] text-gray-500 mt-1">Lapak UMKM terdaftar di {activeCommunity.slug.toUpperCase()}</p>
+          <p className="text-[11px] text-gray-500 mt-1">
+            {communityStores.filter((s) => s.isPublished).length} toko aktif tayang
+          </p>
         </div>
 
-        {/* Card 2: Total Omset Komunitas (GMV) */}
+        {/* Card 2: Total Omset Penjualan */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
           <div className="flex items-center justify-between text-gray-500 mb-2">
-            <span className="text-xs font-semibold">Total Omset Komunitas</span>
+            <span className="text-xs font-semibold">Total Omset Anggota</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-gray-900 truncate">
-            Rp {turnoverStats.totalTurnover.toLocaleString('id-ID')}
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-extrabold text-gray-900">
+              Rp {(turnoverStats.totalTurnover || 0).toLocaleString('id-ID')}
+            </span>
           </div>
           <p className="text-[11px] text-gray-500 mt-1">
-            Dari {turnoverStats.completedOrdersCount} pesanan selesai
+            Dari {turnoverStats.completedOrdersCount} transaksi berhasil
           </p>
         </div>
 
-        {/* Card 3: Skema Komisi Omset */}
+        {/* Card 3: Skema Komisi / Tagihan Omset */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
           <div className="flex items-center justify-between text-gray-500 mb-2">
-            <span className="text-xs font-semibold">Tarif Biaya Omset</span>
+            <span className="text-xs font-semibold">Skema Tagihan Platform</span>
             <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
               <Percent className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-gray-900">
-            {activeCommunity.turnoverFeePercent}%
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-extrabold text-gray-900">
+              {activeCommunity.turnoverFeePercent}%
+            </span>
+            <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md font-bold">
+              Bagi Hasil Omset
+            </span>
           </div>
-          <p className="text-[11px] text-amber-800 font-medium mt-1">
-            Ditagihkan sesuai omset penjualan
+          <p className="text-[11px] text-gray-500 mt-1">
+            Bukan biaya sewa flat, adil bagi UMKM
           </p>
         </div>
 
-        {/* Card 4: Estimasi Tagihan Layanan */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs bg-gradient-to-br from-white via-white to-[#F5E8EA]/30">
+        {/* Card 4: Estimasi Tagihan Berjalan */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
           <div className="flex items-center justify-between text-gray-500 mb-2">
-            <span className="text-xs font-semibold">Estimasi Tagihan Komisi</span>
-            <div className="w-8 h-8 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center">
+            <span className="text-xs font-semibold">Estimasi Tagihan Berjalan</span>
+            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
               <Receipt className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-[#66000E] truncate">
-            Rp {Math.round(turnoverStats.totalTurnover * (activeCommunity.turnoverFeePercent / 100)).toLocaleString('id-ID')}
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-extrabold text-purple-900">
+              Rp {Math.round(turnoverStats.totalTurnover * (activeCommunity.turnoverFeePercent / 100)).toLocaleString('id-ID')}
+            </span>
           </div>
           <p className="text-[11px] text-gray-500 mt-1">
             {turnoverStats.totalTurnover > 0 ? 'Siap diterbitkan invoice' : 'Belum ada transaksi'}
@@ -316,7 +428,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>Profil Komunitas &amp; Sub-Admin</span>
+          <span>Profil Organisasi &amp; Sub-Admin</span>
         </button>
 
         <button
@@ -347,18 +459,18 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* SUB-TAB 1: PROFIL & DELEGASI SUB-ADMIN GMPS                               */}
+      {/* SUB-TAB 1: PROFIL & DELEGASI SUB-ADMIN                                     */}
       {/* ========================================================================= */}
       {activeSubTab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* Left: Detail Komunitas */}
+          {/* Left: Detail Organisasi */}
           <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 shadow-2xs space-y-5">
             <div className="flex items-start justify-between gap-4 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3.5">
                 <img
                   src={activeCommunity.logoUrl || 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=200&auto=format&fit=crop'}
                   alt={activeCommunity.name}
-                  className="w-14 h-14 rounded-2xl object-cover border border-gray-200 shadow-2xs"
+                  className="w-14 h-14 rounded-2xl object-cover border border-gray-200 shadow-2xs bg-gray-50"
                 />
                 <div>
                   <h3 className="text-base font-bold text-gray-900">{activeCommunity.name}</h3>
@@ -366,7 +478,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 </div>
               </div>
               <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200">
-                Komunitas Aktif
+                Organisasi Aktif
               </span>
             </div>
 
@@ -381,8 +493,16 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   <UserCheck className="w-4 h-4 text-blue-600" />
                   <span>{activeCommunity.coordinatorName}</span>
                 </p>
-                <p className="text-gray-600">{activeCommunity.coordinatorEmail}</p>
-                <p className="text-gray-600">{activeCommunity.coordinatorPhone}</p>
+                <p className="text-gray-600 flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-gray-400" />
+                  <span>{activeCommunity.coordinatorEmail}</span>
+                </p>
+                {activeCommunity.coordinatorPhone && (
+                  <p className="text-gray-600 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-gray-400" />
+                    <span>{activeCommunity.coordinatorPhone}</span>
+                  </p>
+                )}
               </div>
 
               <div className="p-3.5 rounded-xl border border-gray-200 space-y-1 bg-amber-50/40">
@@ -393,43 +513,65 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 </p>
                 <p className="text-gray-600 text-[11px] leading-relaxed">
                   Lapak UMKM tidak dibebani biaya sewa hosting flat di muka. Tagihan hanya muncul proporsional dengan
-                  penjualan riil merchant.
+                  penjualan riil merchant binaan.
                 </p>
               </div>
             </div>
+
+            {/* Action buttons for Super Admin */}
+            {!isSubAdmin && (
+              <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAssignModalOpen(true)}
+                  className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Tautkan Toko ke Organisasi Ini</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDeleteCommunity(activeCommunity.id, activeCommunity.name)}
+                  className="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Hapus Organisasi</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Right: Sub-Admin Privileges Card */}
           <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-2xs space-y-4">
             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
               <Shield className="w-4 h-4 text-emerald-600" />
-              <span>Wewenang Sub-Admin Komunitas</span>
+              <span>Wewenang Sub-Admin Organisasi</span>
             </h3>
 
             <div className="space-y-3 text-xs text-gray-600">
               <div className="flex items-start gap-2.5">
                 <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Melihat dan memantau katalog lapak anggota GMPS secara terpusat.</span>
+                <span>Melihat dan memantau katalog lapak anggota organisasinya secara terpusat.</span>
               </div>
               <div className="flex items-start gap-2.5">
                 <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Membantu onboarding merchant baru ke naungan paguyuban GMPS.</span>
+                <span>Membantu onboarding merchant baru ke naungan paguyuban/organisasi.</span>
               </div>
               <div className="flex items-start gap-2.5">
                 <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Menerima rekap omset dan tagihan invoice bagi hasil per periode.</span>
+                <span>Menerima rekap omset dan faktur invoice bagi hasil per periode.</span>
               </div>
               <div className="flex items-start gap-2.5">
                 <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Terisolasi dari data toko di luar komunitas GMPS demi keamanan tenant.</span>
+                <span>Terisolasi dari data toko di luar organisasinya demi keamanan tenant.</span>
               </div>
             </div>
 
             <div className="pt-3 border-t border-gray-100 text-[11px] text-gray-500">
               <p>
-                Akun koordinator Sub-Admin dapat login menggunakan email{' '}
-                <strong className="text-gray-800 font-mono">gmps@kroomify.id</strong> (password:{' '}
-                <strong className="text-gray-800 font-mono">gmps123</strong>).
+                Akun koordinator Sub-Admin terdaftar dengan email{' '}
+                <strong className="text-gray-800 font-mono">{activeCommunity.coordinatorEmail}</strong>.
               </p>
             </div>
           </div>
@@ -437,7 +579,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* SUB-TAB 2: DAFTAR LAPAK BINAAN GMPS                                       */}
+      {/* SUB-TAB 2: DAFTAR LAPAK BINAAN                                            */}
       {/* ========================================================================= */}
       {activeSubTab === 'merchants' && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-2xs overflow-hidden">
@@ -460,7 +602,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               className="px-4 py-2 bg-[#66000E] hover:bg-[#55000C] text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-xs shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>Afiliasikan Toko ke {activeCommunity.slug.toUpperCase()}</span>
+              <span>Tautkan Toko ke {activeCommunity.name}</span>
             </button>
           </div>
 
@@ -470,7 +612,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               <StoreIcon className="w-10 h-10 text-gray-300 mx-auto mb-2" />
               <p className="text-sm font-bold text-gray-800">Belum Ada Lapak Anggota</p>
               <p className="text-xs mt-1">
-                Gunakan tombol &quot;Afiliasikan Toko&quot; di atas untuk memasukkan merchant binaan ke dalam komunitas ini.
+                Gunakan tombol &quot;Tautkan Toko&quot; di atas untuk memasukkan merchant binaan ke dalam organisasi ini.
               </p>
             </div>
           ) : (
@@ -481,7 +623,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     <th className="py-3 px-4">Nama Toko &amp; Lapak</th>
                     <th className="py-3 px-4">Subdomain / URL</th>
                     <th className="py-3 px-4">Kontak WhatsApp</th>
-                    <th className="py-3 px-4">Paket / Status</th>
+                    <th className="py-3 px-4">Status Tayang</th>
                     <th className="py-3 px-4 text-right">Saldo / Omset</th>
                     <th className="py-3 px-4 text-center">Aksi</th>
                   </tr>
@@ -536,7 +678,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                           <button
                             type="button"
                             onClick={() => handleRemoveStoreFromCommunity(st.id)}
-                            title="Lepas dari Komunitas"
+                            title="Lepas dari Organisasi"
                             className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -572,7 +714,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               type="button"
               disabled={isGeneratingInvoice}
               onClick={handleGenerateInvoice}
-              className="px-4 py-2 bg-gradient-to-r from-[#66000E] to-[#990014] text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-xs shrink-0 disabled:opacity-50"
+              className="px-4 py-2 bg-linear-to-r from-[#66000E] to-[#990014] text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-xs shrink-0 disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
               <span>Terbitkan Invoice Periode Ini</span>
@@ -599,31 +741,27 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                         Periode: {inv.period}
                       </span>
                       <span
-                        className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
                           inv.status === 'paid'
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                            : 'bg-amber-100 text-amber-800 border-amber-200'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-rose-50 text-rose-800 border-rose-200'
                         }`}
                       >
-                        {inv.status === 'paid' ? 'LUNAS (Terbayar)' : 'MENUNGGU PEMBAYARAN'}
+                        {inv.status === 'paid' ? 'LUNAS (PAID)' : 'MENUNGGU PEMBAYARAN'}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>
-                        Total Omset Penjualan: <strong>Rp {inv.totalTurnover.toLocaleString('id-ID')}</strong>
-                      </span>
-                      <span>•</span>
-                      <span>
-                        Tarif Layanan: <strong>{inv.feePercent}%</strong>
-                      </span>
+                    <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
+                      <span>Total Omset Toko: <strong>Rp {inv.totalTurnover.toLocaleString('id-ID')}</strong></span>
+                      <span>Tarif Komisi: <strong>{inv.feePercent}%</strong></span>
+                      {inv.dueDate && <span>Jatuh Tempo: {new Date(inv.dueDate).toLocaleDateString('id-ID')}</span>}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 shrink-0">
+                  <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
                       <span className="text-[11px] text-gray-500 block">Total Ditagihkan</span>
-                      <span className="text-base sm:text-lg font-extrabold text-[#66000E]">
+                      <span className="text-base font-extrabold text-[#66000E]">
                         Rp {inv.totalBilled.toLocaleString('id-ID')}
                       </span>
                     </div>
@@ -646,13 +784,180 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: AFILIASIKAN TOKO KE KOMUNITAS                                      */}
+      {/* MODAL 1: TAMBAH ORGANISASI & SUB-ADMIN BARU                                */}
+      {/* ========================================================================= */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-200 my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-[#66000E]" />
+                <h3 className="text-base font-bold text-gray-900">Tambah Organisasi &amp; Sub-Admin</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(false)}
+                className="text-gray-400 hover:text-gray-700 text-xs font-bold"
+              >
+                Tutup
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateOrganization} className="space-y-4 text-xs">
+              {/* Bagian 1: Profil Organisasi */}
+              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+                <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-gray-600" />
+                  <span>1. Detail Organisasi / Komunitas Mitra</span>
+                </h4>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Nama Organisasi / Komunitas *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Paguyuban Pengrajin Kulit Garut"
+                    value={createForm.name}
+                    onChange={(e) => {
+                      const name = e.target.value;
+                      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                      setCreateForm((prev) => ({ ...prev, name, slug: prev.slug ? prev.slug : slug }));
+                    }}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Slug Identifikasi</label>
+                    <input
+                      type="text"
+                      placeholder="pengrajin-kulit-garut"
+                      value={createForm.slug}
+                      onChange={(e) => setCreateForm({ ...createForm, slug: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Fee Omset Platform (%) *</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="50"
+                      required
+                      value={createForm.turnoverFeePercent}
+                      onChange={(e) => setCreateForm({ ...createForm, turnoverFeePercent: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Deskripsi Singkat</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Wadah paguyuban dan pembinaan UMKM..."
+                    value={createForm.description}
+                    onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                  />
+                </div>
+              </div>
+
+              {/* Bagian 2: Kredensial Sub-Admin */}
+              <div className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-200 space-y-3">
+                <h4 className="font-bold text-blue-950 flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-blue-700" />
+                  <span>2. Akun Koordinator (Sub-Admin)</span>
+                </h4>
+                <p className="text-[11px] text-blue-800">
+                  Akun ini akan otomatis didaftarkan ke Supabase dengan role <strong>Sub-Admin</strong> dan terhubung langsung ke organisasi ini.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Nama Koordinator *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Budi Santoso"
+                      value={createForm.coordinatorName}
+                      onChange={(e) => setCreateForm({ ...createForm, coordinatorName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp</label>
+                    <input
+                      type="text"
+                      placeholder="081234567890"
+                      value={createForm.coordinatorPhone}
+                      onChange={(e) => setCreateForm({ ...createForm, coordinatorPhone: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Email Login Sub-Admin *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="koordinator@garut.id"
+                      value={createForm.coordinatorEmail}
+                      onChange={(e) => setCreateForm({ ...createForm, coordinatorEmail: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Kata Sandi Awal *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="subadmin123"
+                      value={createForm.password}
+                      onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingCreate}
+                  className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>{isSubmittingCreate ? 'Mendaftarkan...' : 'Daftarkan Organisasi & Sub-Admin'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 2: TAUTKAN TOKO KE ORGANISASI                                       */}
       {/* ========================================================================= */}
       {isAssignModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 border border-gray-200">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <h3 className="text-sm font-bold text-gray-900">Afiliasikan Lapak ke {activeCommunity.name}</h3>
+              <h3 className="text-sm font-bold text-gray-900">Tautkan Lapak ke {activeCommunity.name}</h3>
               <button
                 type="button"
                 onClick={() => setIsAssignModalOpen(false)}
@@ -663,7 +968,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             </div>
 
             <p className="text-xs text-gray-600">
-              Pilih salah satu toko yang sudah terdaftar di platform untuk dimasukkan ke dalam naungan komunitas{' '}
+              Pilih salah satu toko yang sudah terdaftar di platform untuk dimasukkan ke dalam naungan organisasi{' '}
               <strong>{activeCommunity.name}</strong>.
             </p>
 
@@ -679,7 +984,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   .filter((s) => s.communityId !== activeCommunity.id)
                   .map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.slug}.kroombox.com)
+                      {s.name} ({s.slug}.kroombox.com) {s.communityName ? `[Pindah dari: ${s.communityName}]` : '[Toko Mandiri]'}
                     </option>
                   ))}
               </select>
@@ -699,7 +1004,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 onClick={handleAssignStore}
                 className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#55000C] text-white text-xs font-bold transition cursor-pointer disabled:opacity-50"
               >
-                Simpan &amp; Afiliasikan
+                Simpan &amp; Tautkan
               </button>
             </div>
           </div>

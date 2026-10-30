@@ -98,6 +98,8 @@ class StoreService {
           category: row.category || 'General',
           currency: row.currency || 'IDR',
           balance: Number(row.balance || 0),
+          communityId: row.community_id || row.theme_settings?.communityId || undefined,
+          communityName: row.community_name || row.theme_settings?.communityName || undefined,
           isPublished: row.is_published !== false,
           layoutSettings: row.theme_settings || row.layout_settings,
           paymentConfig: row.theme_settings?.paymentConfig || row.layout_settings?.paymentConfig || {
@@ -181,6 +183,8 @@ class StoreService {
             plan: row.plan || 'free',
             planExpiresAt: row.plan_expires_at || row.theme_settings?.planExpiresAt || undefined,
             planSubscribedAt: row.plan_subscribed_at || row.theme_settings?.planSubscribedAt || undefined,
+            communityId: row.community_id || row.theme_settings?.communityId || undefined,
+            communityName: row.community_name || row.theme_settings?.communityName || undefined,
             isPublished: row.is_published !== undefined && row.is_published !== null
               ? Boolean(row.is_published)
               : ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id),
@@ -309,6 +313,8 @@ class StoreService {
           plan: data.plan || 'free',
           planExpiresAt: data.theme_settings?.planExpiresAt,
           planSubscribedAt: data.theme_settings?.planSubscribedAt,
+          communityId: data.community_id || data.theme_settings?.communityId || undefined,
+          communityName: data.community_name || data.theme_settings?.communityName || undefined,
           isPublished: isPub,
           layoutSettings: data.theme_settings,
           paymentConfig: data.theme_settings?.paymentConfig || {
@@ -414,6 +420,8 @@ class StoreService {
           category: row.category || 'Bisnis UMKM',
           currency: 'IDR',
           balance: Number(row.balance || 0),
+          communityId: row.community_id || row.theme_settings?.communityId || undefined,
+          communityName: row.community_name || row.theme_settings?.communityName || undefined,
           plan: row.plan || 'free',
           isPublished: isPub,
           layoutSettings: row.theme_settings,
@@ -559,6 +567,8 @@ class StoreService {
       if (updates.balance !== undefined) dbUpdates.balance = updates.balance;
       if (updates.customDomain !== undefined) dbUpdates.custom_domain = updates.customDomain;
       if (updates.isPublished !== undefined) dbUpdates.is_published = updates.isPublished;
+      if (updates.communityId !== undefined) dbUpdates.community_id = updates.communityId || null;
+      if (updates.communityName !== undefined) dbUpdates.community_name = updates.communityName || null;
 
       // Only include theme_settings when layout is explicitly being changed
       // (avoids oversized payload on publish-only or metadata-only updates)
