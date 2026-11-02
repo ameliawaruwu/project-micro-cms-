@@ -1,13 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Settings as SettingsIcon,
   Check,
-  Key,
   CreditCard,
   Truck,
+  Copy,
 } from 'lucide-react';
 import { PlatformSettings } from '../../../types';
-
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
 
 interface AdminSettingsTabProps {
@@ -17,7 +16,6 @@ interface AdminSettingsTabProps {
   handleSaveSettings: (e: React.FormEvent) => void;
   handleTestApi: (service: 'midtrans' | 'duitku' | 'biteship' | 'wa') => void;
   testingService: string | null;
-
   onNavigateOverview?: () => void;
 }
 
@@ -30,6 +28,16 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
   testingService,
   onNavigateOverview,
 }) => {
+  const [copiedCallback, setCopiedCallback] = useState(false);
+
+  const handleCopyCallback = () => {
+    navigator.clipboard.writeText('https://kroomify.kroombox.com/api/payment/callback');
+    setCopiedCallback(true);
+    setTimeout(() => setCopiedCallback(false), 2000);
+  };
+
+  const isGatewayActive = platformSettings.paymentGatewayEnabled ?? true;
+
   return (
     <div className="space-y-4 w-full">
       {/* Breadcrumb Navigation */}
@@ -40,332 +48,360 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
         ]}
       />
 
-      {/* Header Judul Halaman di Bawah Topbar */}
-      <div className="pb-3 border-b border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-            <SettingsIcon className="w-5 h-5 text-[#66000E]" />
-            <span>{isEn ? 'System Settings' : 'Pengaturan Sistem'}</span>
-          </h1>
-        </div>
+      {/* Header Halaman */}
+      <div className="pb-3 border-b border-[#E5E0DD] flex items-center justify-between gap-3">
+        <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2">
+          <SettingsIcon className="w-5 h-5 text-[#66000E]" />
+          <span>{isEn ? 'System Settings' : 'Pengaturan Sistem'}</span>
+        </h1>
         <button
           onClick={handleSaveSettings}
-          className="px-3.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-medium text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
+          className="px-3.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-medium text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5"
         >
           <Check className="w-3.5 h-3.5" />
           <span>{isEn ? 'Save Changes' : 'Simpan Perubahan'}</span>
         </button>
       </div>
 
-      {/* 1. STATUS INTEGRASI API & GATEWAY (.ENV) */}
-      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs space-y-3">
-        <div className="pb-2 border-b border-gray-100 flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-xs text-gray-900 flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5 text-gray-500" />
-              <span>{isEn ? 'Master API Key Integration Status (.env)' : 'Status Integrasi Kunci API Master (.env)'}</span>
-            </h3>
-            <p className="text-[11px] text-gray-500">
-              {isEn ? 'According to security standards, all Secret API Keys are configured via backend environment (.env) files so they are not exposed to the browser.' : 'Sesuai standar keamanan, seluruh Secret API Key dikonfigurasi melalui file environment backend (.env) agar tidak terekspos di browser.'}
-            </p>
-          </div>
-        </div>
-
-        {/* SAKELAR MASTER PAYMENT GATEWAY */}
-        <div className={`p-3.5 rounded-xl border transition-all ${
-          (platformSettings.paymentGatewayEnabled ?? true)
+      {/* SAKELAR MASTER PAYMENT GATEWAY */}
+      <div
+        className={`p-3.5 rounded-xl border transition-all ${
+          isGatewayActive
             ? 'bg-emerald-50/70 border-emerald-200'
-            : 'bg-amber-50/80 border-amber-300'
-        }`}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-xs ${
-                (platformSettings.paymentGatewayEnabled ?? true)
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-amber-500 text-white'
-              }`}>
-                <CreditCard className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="font-bold text-xs text-gray-900">
-                    {isEn ? 'Master Payment Gateway Switch' : 'Sakelar Utama Payment Gateway'}
-                  </h4>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${
-                    (platformSettings.paymentGatewayEnabled ?? true)
+            : 'bg-amber-50/70 border-amber-200'
+        }`}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-xs ${
+                isGatewayActive ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
+              }`}
+            >
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-xs text-gray-900">
+                  {isEn ? 'Payment Gateway' : 'Payment Gateway'}
+                </h3>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${
+                    isGatewayActive
                       ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                       : 'bg-amber-100 text-amber-900 border-amber-300'
-                  }`}>
-                    {(platformSettings.paymentGatewayEnabled ?? true)
-                      ? (isEn ? 'Active (Gateway Visible)' : 'Aktif (Payment Gateway Muncul)')
-                      : (isEn ? 'Disabled (Direct QRIS & COD Only)' : 'Nonaktif (Hanya QRIS Pribadi & COD)')}
-                  </span>
-                </div>
-                <p className="text-[11px] text-gray-600 mt-0.5">
-                  {(platformSettings.paymentGatewayEnabled ?? true)
-                    ? (isEn
-                        ? 'Payment gateway is ACTIVE. Automated Virtual Account, QRIS real-time, and e-wallets appear on merchant settings and storefront checkout.'
-                        : 'Payment gateway AKTIF. Jalur Virtual Account, QRIS real-time, dan e-wallet otomatis akan muncul pada pengaturan merchant dan halaman checkout toko.')
-                    : (isEn
-                        ? 'Payment gateway is DISABLED. Automated gateway is hidden. Merchants and customers only use merchant direct QRIS, manual bank transfer, and COD.'
-                        : 'Payment gateway DINONAKTIFKAN. Jalur gateway otomatis disembunyikan. Seluruh merchant dan pembeli dialihkan ke QRIS Pribadi milik toko, transfer manual, dan COD (Bayar di Tempat).')}
-                </p>
-              </div>
-            </div>
-
-            <label className="relative inline-flex items-center cursor-pointer shrink-0 self-start sm:self-auto">
-              <input
-                type="checkbox"
-                checked={platformSettings.paymentGatewayEnabled ?? true}
-                onChange={(e) =>
-                  setPlatformSettings({
-                    ...platformSettings,
-                    paymentGatewayEnabled: e.target.checked,
-                  })
-                }
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-            </label>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Duitku Status (Active Gateway) */}
-          <div className="p-3 rounded-lg bg-sky-50/80 border border-sky-200 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-md bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
-                <CreditCard className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="font-semibold text-xs text-sky-950 block">Duitku Gateway (Aktif)</span>
-                <span className="text-[10px] text-sky-700 font-medium flex items-center gap-1">
-                  Mode: <strong className="uppercase text-sky-900">{platformSettings.duitkuEnvironment || 'sandbox'}</strong>
+                  }`}
+                >
+                  {isGatewayActive
+                    ? isEn
+                      ? 'Active'
+                      : 'Aktif'
+                    : isEn
+                    ? 'Disabled'
+                    : 'Nonaktif'}
                 </span>
               </div>
+              <p className="text-[11px] text-gray-600 mt-0.5">
+                {isGatewayActive
+                  ? isEn
+                    ? 'Automated VA, QRIS, and e-wallets active at checkout.'
+                    : 'Saluran otomatis (VA, QRIS, e-Wallet) aktif di checkout toko.'
+                  : isEn
+                  ? 'Gateway disabled. Stores accept manual QRIS & COD.'
+                  : 'Gateway nonaktif. Toko hanya menggunakan QRIS manual & COD.'}
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={() => handleTestApi('duitku')}
-              disabled={testingService === 'duitku'}
-              className="px-2.5 py-1 rounded border border-sky-300 bg-white text-sky-800 hover:bg-sky-50 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 shadow-xs flex items-center gap-1"
-            >
-              {testingService === 'duitku' ? (isEn ? 'Testing...' : 'Menguji...') : (isEn ? 'Test Connection' : 'Uji Koneksi')}
-            </button>
           </div>
 
-          {/* Biteship Status */}
-          <div className="p-3 rounded-lg bg-gray-50/80 border border-gray-200 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <Truck className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="font-semibold text-xs text-gray-900 block">{isEn ? 'Biteship Shipping' : 'Biteship Ekspedisi'}</span>
-                <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {isEn ? 'Active & Integrated' : 'Aktif & Terintegrasi'}
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleTestApi('biteship')}
-              disabled={testingService === 'biteship'}
-              className="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 shadow-xs"
-            >
-              {testingService === 'biteship' ? (isEn ? 'Testing...' : 'Menguji...') : (isEn ? 'Ping Test' : 'Tes Ping')}
-            </button>
-          </div>
-
-          {/* Midtrans Status (Secondary / Legacy) */}
-          <div className="p-3 rounded-lg bg-gray-50/80 border border-gray-200 flex items-center justify-between opacity-80">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-md bg-gray-100 text-gray-600 flex items-center justify-center shrink-0">
-                <CreditCard className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="font-semibold text-xs text-gray-700 block">Midtrans (Cadangan)</span>
-                <span className="text-[10px] text-gray-500 font-medium flex items-center gap-1">
-                  Mode: <strong className="uppercase">{platformSettings.midtransEnvironment || 'sandbox'}</strong>
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleTestApi('midtrans')}
-              disabled={testingService === 'midtrans'}
-              className="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 shadow-xs flex items-center gap-1"
-            >
-              {testingService === 'midtrans' ? (isEn ? 'Testing...' : 'Menguji...') : (isEn ? 'Ping' : 'Tes')}
-            </button>
-          </div>
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={isGatewayActive}
+              onChange={(e) =>
+                setPlatformSettings({
+                  ...platformSettings,
+                  paymentGatewayEnabled: e.target.checked,
+                })
+              }
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+          </label>
         </div>
-
-        {/* DUITKU CREDENTIALS FORM */}
-        <div className="pt-2 border-t border-gray-100 space-y-2.5 text-xs">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-sky-900 flex items-center gap-1.5">
-              <CreditCard className="w-3.5 h-3.5 text-sky-600" />
-              {isEn ? 'Duitku Gateway Credentials (Active)' : 'Kredensial Duitku Gateway (Aktif)'}
-            </span>
-            <span className="text-[10px] text-gray-400">
-              {isEn ? 'Saved to database & synched with backend' : 'Tersimpan di database & disinkronkan ke server backend'}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <div>
-              <label className="font-medium text-gray-700 block mb-1">Environment Duitku</label>
-              <select
-                value={platformSettings.duitkuEnvironment || 'sandbox'}
-                onChange={(e) =>
-                  setPlatformSettings({
-                    ...platformSettings,
-                    duitkuEnvironment: e.target.value as 'sandbox' | 'production',
-                  })
-                }
-                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-medium text-xs focus:outline-none focus:border-sky-500"
-              >
-                <option value="sandbox">Sandbox (Pengujian / Test)</option>
-                <option value="production">Production (Live Resmi)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="font-medium text-gray-700 block mb-1">Merchant Code Duitku</label>
-              <input
-                type="text"
-                placeholder="D12345"
-                value={platformSettings.duitkuMerchantCode || ''}
-                onChange={(e) =>
-                  setPlatformSettings({
-                    ...platformSettings,
-                    duitkuMerchantCode: e.target.value,
-                  })
-                }
-                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-sky-500"
-              />
-            </div>
-
-            <div>
-              <label className="font-medium text-gray-700 block mb-1">API Key Duitku</label>
-              <input
-                type="text"
-                placeholder="Masukkan API Key dari Duitku Merchant Portal"
-                value={platformSettings.duitkuApiKey || ''}
-                onChange={(e) =>
-                  setPlatformSettings({
-                    ...platformSettings,
-                    duitkuApiKey: e.target.value,
-                  })
-                }
-                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-sky-500"
-              />
-            </div>
-          </div>
-          <p className="text-[11px] text-gray-500">
-            💡 Dapatkan <strong>Merchant Code</strong> dan <strong>API Key</strong> dari dashboard <strong>Duitku Merchant Portal (My Project)</strong>. URL Callback proyek: <code className="bg-gray-100 px-1 py-0.5 rounded text-sky-700 font-mono">https://kroomify.kroombox.com/api/payment/callback</code>
-          </p>
-        </div>
-
-        {/* MIDTRANS CREDENTIALS FORM */}
-        <div className="pt-2 border-t border-gray-100 space-y-2.5 text-xs opacity-75">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-gray-800">
-              {isEn ? 'Midtrans Credentials (Legacy / Backup)' : 'Kredensial Midtrans (Cadangan)'}
-            </span>
-            <span className="text-[10px] text-gray-400">
-              {isEn ? 'Saved to database & synched with backend' : 'Tersimpan di database'}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-            <div>
-              <label className="font-medium text-gray-700 block mb-1">Environment</label>
-              <select
-                value={platformSettings.midtransEnvironment || 'sandbox'}
-                onChange={(e) =>
-                  setPlatformSettings({
-                    ...platformSettings,
-                    midtransEnvironment: e.target.value as 'sandbox' | 'production',
-                  })
-                }
-                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-medium text-xs focus:outline-none focus:border-red-500"
-              >
-                <option value="sandbox">Sandbox (Pengujian / Test)</option>
-                <option value="production">Production (Live Resmi)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="font-medium text-gray-700 block mb-1">Merchant ID</label>
-              <input
-                type="text"
-                placeholder="G477630600"
-                value={platformSettings.midtransMerchantId || ''}
-                onChange={(e) =>
-                  setPlatformSettings({
-                    ...platformSettings,
-                    midtransMerchantId: e.target.value,
-                  })
-                }
-                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-red-500"
-              />
-            </div>
-
-            <div>
-              <label className="font-medium text-gray-700 block mb-1">Client Key</label>
-              <input
-                type="text"
-                placeholder="SB-Mid-client-..."
-                value={platformSettings.midtransClientKey || ''}
-                onChange={(e) =>
-                  setPlatformSettings({
-                    ...platformSettings,
-                    midtransClientKey: e.target.value,
-                  })
-                }
-                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-red-500"
-              />
-            </div>
-
-            <div>
-              <label className="font-medium text-gray-700 block mb-1">Server Key</label>
-              <input
-                type="text"
-                placeholder="SB-Mid-server-..."
-                value={platformSettings.midtransServerKey || ''}
-                onChange={(e) =>
-                  setPlatformSettings({
-                    ...platformSettings,
-                    midtransServerKey: e.target.value,
-                  })
-                }
-                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-red-500"
-              />
-            </div>
-          </div>
-          <p className="text-[11px] text-gray-500">
-            💡 Dapatkan Server Key dan Client Key resmi dari <strong>Midtrans Dashboard &gt; Settings &gt; Access Keys</strong>.
-          </p>
-        </div>
-
       </div>
 
-      {/* 2. FORM KEBIJAKAN OPERASIONAL PLATFORM */}
+      {/* STATUS & UJI KONEKSI LAYANAN */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Duitku Gateway */}
+        <div className="p-3 rounded-lg bg-sky-50/70 border border-sky-200 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-md bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-semibold text-xs text-sky-950 block">Duitku Gateway</span>
+              <span className="text-[10px] text-sky-700 font-medium">
+                Mode: <strong className="uppercase">{platformSettings.duitkuEnvironment || 'sandbox'}</strong>
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleTestApi('duitku')}
+            disabled={testingService === 'duitku'}
+            className="px-2.5 py-1 rounded border border-sky-300 bg-white text-sky-800 hover:bg-sky-50 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 shadow-xs"
+          >
+            {testingService === 'duitku'
+              ? isEn
+                ? 'Testing...'
+                : 'Menguji...'
+              : isEn
+              ? 'Test'
+              : 'Uji Koneksi'}
+          </button>
+        </div>
+
+        {/* Biteship Ekspedisi */}
+        <div className="p-3 rounded-lg bg-gray-50/80 border border-gray-200 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Truck className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-semibold text-xs text-gray-900 block">
+                {isEn ? 'Biteship Shipping' : 'Biteship Ongkir'}
+              </span>
+              <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {isEn ? 'Integrated' : 'Terintegrasi'}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleTestApi('biteship')}
+            disabled={testingService === 'biteship'}
+            className="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 shadow-xs"
+          >
+            {testingService === 'biteship'
+              ? isEn
+                ? 'Testing...'
+                : 'Menguji...'
+              : isEn
+              ? 'Ping'
+              : 'Tes Ping'}
+          </button>
+        </div>
+
+        {/* Midtrans (Cadangan) */}
+        <div className="p-3 rounded-lg bg-gray-50/80 border border-gray-200 flex items-center justify-between opacity-80">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-md bg-gray-100 text-gray-600 flex items-center justify-center shrink-0">
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-semibold text-xs text-gray-700 block">
+                {isEn ? 'Midtrans (Backup)' : 'Midtrans (Cadangan)'}
+              </span>
+              <span className="text-[10px] text-gray-500 font-medium">
+                Mode: <strong className="uppercase">{platformSettings.midtransEnvironment || 'sandbox'}</strong>
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleTestApi('midtrans')}
+            disabled={testingService === 'midtrans'}
+            className="px-2.5 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 shadow-xs"
+          >
+            {testingService === 'midtrans'
+              ? isEn
+                ? 'Testing...'
+                : 'Menguji...'
+              : isEn
+              ? 'Ping'
+              : 'Tes'}
+          </button>
+        </div>
+      </div>
+
+      {/* KREDENSIAL DUITKU (UTAMA) */}
+      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-xs text-gray-900 flex items-center gap-1.5">
+            <CreditCard className="w-3.5 h-3.5 text-sky-600" />
+            <span>{isEn ? 'Duitku Gateway Credentials' : 'Kredensial Duitku Gateway'}</span>
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div>
+            <label className="font-medium text-gray-700 block mb-1">Environment</label>
+            <select
+              value={platformSettings.duitkuEnvironment || 'sandbox'}
+              onChange={(e) =>
+                setPlatformSettings({
+                  ...platformSettings,
+                  duitkuEnvironment: e.target.value as 'sandbox' | 'production',
+                })
+              }
+              className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-medium text-xs focus:outline-none focus:border-sky-500"
+            >
+              <option value="sandbox">Sandbox (Test)</option>
+              <option value="production">Production (Live)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="font-medium text-gray-700 block mb-1">Merchant Code</label>
+            <input
+              type="text"
+              placeholder="Contoh: DS35983"
+              value={platformSettings.duitkuMerchantCode || ''}
+              onChange={(e) =>
+                setPlatformSettings({
+                  ...platformSettings,
+                  duitkuMerchantCode: e.target.value,
+                })
+              }
+              className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-sky-500"
+            />
+          </div>
+
+          <div>
+            <label className="font-medium text-gray-700 block mb-1">API Key</label>
+            <input
+              type="text"
+              placeholder="API Key Duitku"
+              value={platformSettings.duitkuApiKey || ''}
+              onChange={(e) =>
+                setPlatformSettings({
+                  ...platformSettings,
+                  duitkuApiKey: e.target.value,
+                })
+              }
+              className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-sky-500"
+            />
+          </div>
+        </div>
+
+        {/* Callback URL Single-line Info with Copy */}
+        <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="font-medium text-gray-700">Callback URL:</span>
+            <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sky-800 font-mono text-[10px] select-all">
+              https://kroomify.kroombox.com/api/payment/callback
+            </code>
+          </div>
+          <button
+            type="button"
+            onClick={handleCopyCallback}
+            className="text-[10px] font-medium text-sky-700 hover:text-sky-900 flex items-center gap-1 cursor-pointer shrink-0 ml-2"
+          >
+            {copiedCallback ? (
+              <>
+                <Check className="w-3 h-3 text-emerald-600" />
+                <span className="text-emerald-600">{isEn ? 'Copied' : 'Tersalin'}</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3 h-3" />
+                <span>{isEn ? 'Copy' : 'Salin'}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* KREDENSIAL MIDTRANS (CADANGAN) */}
+      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs space-y-3 opacity-80">
+        <h3 className="font-semibold text-xs text-gray-700 flex items-center gap-1.5">
+          <CreditCard className="w-3.5 h-3.5 text-gray-500" />
+          <span>{isEn ? 'Midtrans Credentials (Backup)' : 'Kredensial Midtrans (Cadangan)'}</span>
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div>
+            <label className="font-medium text-gray-700 block mb-1">Environment</label>
+            <select
+              value={platformSettings.midtransEnvironment || 'sandbox'}
+              onChange={(e) =>
+                setPlatformSettings({
+                  ...platformSettings,
+                  midtransEnvironment: e.target.value as 'sandbox' | 'production',
+                })
+              }
+              className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-medium text-xs focus:outline-none focus:border-red-500"
+            >
+              <option value="sandbox">Sandbox (Test)</option>
+              <option value="production">Production (Live)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="font-medium text-gray-700 block mb-1">Merchant ID</label>
+            <input
+              type="text"
+              placeholder="Merchant ID"
+              value={platformSettings.midtransMerchantId || ''}
+              onChange={(e) =>
+                setPlatformSettings({
+                  ...platformSettings,
+                  midtransMerchantId: e.target.value,
+                })
+              }
+              className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-red-500"
+            />
+          </div>
+
+          <div>
+            <label className="font-medium text-gray-700 block mb-1">Client Key</label>
+            <input
+              type="text"
+              placeholder="Client Key"
+              value={platformSettings.midtransClientKey || ''}
+              onChange={(e) =>
+                setPlatformSettings({
+                  ...platformSettings,
+                  midtransClientKey: e.target.value,
+                })
+              }
+              className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-red-500"
+            />
+          </div>
+
+          <div>
+            <label className="font-medium text-gray-700 block mb-1">Server Key</label>
+            <input
+              type="text"
+              placeholder="Server Key"
+              value={platformSettings.midtransServerKey || ''}
+              onChange={(e) =>
+                setPlatformSettings({
+                  ...platformSettings,
+                  midtransServerKey: e.target.value,
+                })
+              }
+              className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-mono text-xs focus:outline-none focus:border-red-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* KEBIJAKAN OPERASIONAL & PEMELIHARAAN */}
       <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs space-y-3">
           <div className="pb-2 border-b border-gray-100">
-            <h3 className="font-semibold text-xs text-gray-900">{isEn ? 'Platform Commission & Payout Policy' : 'Komisi Platform & Kebijakan Payout'}</h3>
-            <p className="text-[11px] text-gray-500">
-              {isEn ? 'Fee rate parameters and merchant store withdrawal terms.' : 'Parameter tarif potongan dan ketentuan penarikan saldo toko merchant.'}
-            </p>
+            <h3 className="font-semibold text-xs text-gray-900">
+              {isEn ? 'Platform Commission & Payout Policy' : 'Kebijakan Komisi & Penarikan'}
+            </h3>
           </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="font-medium text-gray-700 block mb-1">{isEn ? 'Transaction Fee (%)' : 'Biaya Transaksi (%)'}</label>
+              <label className="font-medium text-gray-700 block mb-1">
+                {isEn ? 'Transaction Fee (%)' : 'Biaya Transaksi (%)'}
+              </label>
               <input
                 type="number"
                 step="0.1"
@@ -378,12 +414,14 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
                     platformFeePercent: parseFloat(e.target.value) || 0,
                   })
                 }
-                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-medium text-xs focus:outline-none focus:border-red-500"
+                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-medium text-xs focus:outline-none focus:border-[#66000E]"
               />
             </div>
 
             <div>
-              <label className="font-medium text-gray-700 block mb-1">{isEn ? 'Min. Payout (Rp)' : 'Min. Tarik Saldo (Rp)'}</label>
+              <label className="font-medium text-gray-700 block mb-1">
+                {isEn ? 'Min. Payout (Rp)' : 'Min. Tarik Saldo (Rp)'}
+              </label>
               <input
                 type="number"
                 step="10000"
@@ -395,12 +433,14 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
                     payoutMinAmount: parseInt(e.target.value) || 0,
                   })
                 }
-                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-medium text-xs focus:outline-none focus:border-red-500"
+                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-medium text-xs focus:outline-none focus:border-[#66000E]"
               />
             </div>
 
             <div>
-              <label className="font-medium text-gray-700 block mb-1">{isEn ? 'Bank Fee (Rp)' : 'Biaya Bank (Rp)'}</label>
+              <label className="font-medium text-gray-700 block mb-1">
+                {isEn ? 'Bank Fee (Rp)' : 'Biaya Bank (Rp)'}
+              </label>
               <input
                 type="number"
                 step="500"
@@ -412,7 +452,7 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
                     payoutBankFee: parseInt(e.target.value) || 0,
                   })
                 }
-                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-medium text-xs focus:outline-none focus:border-red-500"
+                className="w-full px-2.5 py-1.5 rounded bg-gray-50 border border-gray-200 font-medium text-xs focus:outline-none focus:border-[#66000E]"
               />
             </div>
           </div>
@@ -420,8 +460,14 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
           {/* Maintenance Switch */}
           <div className="flex items-center justify-between p-2.5 rounded bg-gray-50 border border-gray-200 mt-2">
             <div>
-              <span className="font-medium text-gray-800 block">{isEn ? 'System Maintenance Mode' : 'Mode Pemeliharaan (Maintenance Mode)'}</span>
-              <span className="text-[11px] text-gray-500">{isEn ? 'When active, visitors and merchants will see a system maintenance screen.' : 'Jika aktif, pengunjung dan merchant akan melihat layar pemeliharaan sistem.'}</span>
+              <span className="font-medium text-gray-800 block text-xs">
+                {isEn ? 'System Maintenance Mode' : 'Mode Pemeliharaan Sistem'}
+              </span>
+              <span className="text-[11px] text-gray-500">
+                {isEn
+                  ? 'Display maintenance notice to visitors and merchants.'
+                  : 'Tampilkan halaman pemeliharaan kepada pengunjung dan merchant.'}
+              </span>
             </div>
             <input
               type="checkbox"
@@ -429,7 +475,7 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
               onChange={(e) =>
                 setPlatformSettings({ ...platformSettings, maintenanceMode: e.target.checked })
               }
-              className="w-4 h-4 accent-red-600 cursor-pointer shrink-0"
+              className="w-4 h-4 accent-[#66000E] cursor-pointer shrink-0"
             />
           </div>
         </div>
@@ -437,9 +483,10 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
         <div className="pt-1 flex justify-end">
           <button
             type="submit"
-            className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white font-medium text-xs shadow-xs transition cursor-pointer"
+            className="px-4 py-2 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-medium text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5"
           >
-            {isEn ? 'Save Changes' : 'Simpan Perubahan'}
+            <Check className="w-3.5 h-3.5" />
+            <span>{isEn ? 'Save Changes' : 'Simpan Perubahan'}</span>
           </button>
         </div>
       </form>
