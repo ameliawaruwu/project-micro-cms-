@@ -29,7 +29,8 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'pembayaran' | 'pengiriman'>('pembayaran');
 
-  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial' || store.plan === 'starter';
+  // Langganan di muka dinonaktifkan: Seluruh integrasi terbuka
+  const isFreePlan = false;
 
   const paymentIntegrations = integrations.filter((i) => i.type === 'payment');
   const shippingIntegrations = integrations.filter((i) => i.type === 'shipping');

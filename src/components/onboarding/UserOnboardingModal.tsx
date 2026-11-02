@@ -475,7 +475,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
                   isEn ? 'Basic product catalog management' : 'Pengelolaan katalog dan produk toko',
                   isEn ? 'Full access to Kroomify CMS Dashboard' : 'Akses penuh ke Dashboard CMS Kroomify',
                   isEn ? 'Direct order and operational management' : 'Manajemen pesanan dan operasional toko',
-                  isEn ? 'Upgradeable to Pro plans anytime' : 'Dapat di-upgrade ke paket berbayar kapan saja',
+                  isEn ? 'Turnover-based revenue share (no upfront fees)' : 'Skema bagi hasil omset (tanpa biaya langganan di muka)',
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-start gap-2 text-xs text-slate-700">
                     <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
@@ -493,7 +493,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
               <span>
                 {isEn
                   ? 'Your account automatically receives Free Plan privileges without any subscription charges.'
-                  : 'Akun Anda otomatis menikmati fitur paket Free tanpa biaya berlangganan.'}
+                  : 'Akun Anda aktif tanpa biaya langganan di muka. Biaya platform hanya dihitung proporsional dari omset penjualan riil.'}
               </span>
             </div>
 

@@ -62,7 +62,8 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
   const { t, language } = useLanguage();
   const isEn = language === 'en';
 
-  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial' || store.plan === 'starter';
+  // Fitur langganan di muka dinonaktifkan: seluruh merchant bebas menggunakan payment gateway otomatis tanpa biaya di muka
+  const isFreePlan = false;
 
   // Load store's saved payment configuration with resilient defaults
   const currentConfig: StorePaymentConfig = useMemo(() => {

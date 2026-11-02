@@ -98,7 +98,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     { id: 'pembayaran' as MerchantTab, label: t('nav_payment', 'Pembayaran'), icon: CreditCard },
     { id: 'pengiriman' as MerchantTab, label: t('nav_shipping', 'Pengiriman'), icon: Truck },
-    { id: 'billing' as MerchantTab, label: t('nav_billing', 'Billing Plan'), icon: Crown },
     { id: 'pengaturan' as MerchantTab, label: t('nav_settings', 'Pengaturan'), icon: Settings },
   ];
 

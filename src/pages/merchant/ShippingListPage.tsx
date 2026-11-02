@@ -28,7 +28,8 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
   const { t } = useLanguage();
   const [activeSubTab, setActiveSubTab] = useState<'branches' | 'couriers'>('branches');
 
-  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial' || store.plan === 'starter';
+  // Fitur langganan di muka dinonaktifkan: seluruh kurir ekspedisi aktif dan dapat digunakan tanpa biaya langganan
+  const isFreePlan = false;
 
   const shippingIntegrations = integrations.filter((i) => i.type === 'shipping');
   const activeCount = isFreePlan ? 0 : shippingIntegrations.filter((i) => i.isConnected).length;

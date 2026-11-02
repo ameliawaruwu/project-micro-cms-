@@ -76,7 +76,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [isCopiedVa, setIsCopiedVa] = useState(false);
   const [isCopiedOrderNumber, setIsCopiedOrderNumber] = useState(false);
-  const isFreePlan = !store?.plan || store.plan === 'free' || store.plan === 'free_trial';
+  // Langganan di muka dinonaktifkan: Seluruh gateway pembayaran aktif
+  const isFreePlan = false;
 
   // Dynamic Midtrans Channels from merchant configuration
   const [activeChannels, setActiveChannels] = useState<PaymentChannel[]>(() => {

@@ -64,7 +64,8 @@ export const DomainPage: React.FC<DomainPageProps> = ({
   }, [store?.id]);
 
   const effectivePlan = subInfo?.hasActivePaidPlan ? subInfo.planSlug : resolvePlanSlug(store?.plan);
-  const isFreePlan = effectivePlan === 'free';
+  // Fitur langganan di muka dinonaktifkan: merchant dapat mengajukan domain tanpa terkunci paket
+  const isFreePlan = false;
   const [domainType, setDomainType] = useState<'random' | 'custom'>(
     store.domainType || (store.customDomain ? 'custom' : 'random')
   );

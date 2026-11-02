@@ -1187,6 +1187,33 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         </div>
       )}
 
+      {/* Informational Banner: Turnover-Based Platform Fee (Biaya Berbasis Omset) */}
+      <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50/90 via-white to-blue-50/40 p-4 shadow-2xs text-left mb-2">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+            <Zap className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                Skema Bagi Hasil Omset Aktif
+              </span>
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                Tanpa Biaya Langganan Di Muka
+              </span>
+            </div>
+            <h3 className="font-bold text-sm text-gray-900">
+              {isEn ? 'Zero Upfront Subscription Fee' : 'Bebas Biaya Langganan Bulanan / Tahunan Di Muka'}
+            </h3>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              {isEn
+                ? 'All CMS features, payment gateways, couriers, and store publishing are fully unlocked. Platform fees are only charged proportionally based on your completed sales turnover.'
+                : 'Seluruh fitur CMS, gateway pembayaran online, kurir pengiriman, dan publikasi toko dapat langsung digunakan secara penuh. Biaya platform hanya akan ditagihkan secara proporsional sesuai perolehan omset penjualan riil toko Anda.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* 2. Pricing Cards Grid (Compact, Balanced SaaS Design) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 items-stretch pt-1">
         {plans.map((plan) => {

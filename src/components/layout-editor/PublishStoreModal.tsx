@@ -144,12 +144,8 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   // Handle Auto Deploy Execution
   const startAutoDeploySimulation = async () => {
-    const planLower = (store.plan || '').toLowerCase();
-    const isPaidPlan = ['personal', 'community', 'corporate', 'startup', 'premium'].includes(planLower);
-    if (!isPaidPlan) {
-      setDeployError('Toko pada Paket Free tidak dapat dipublikasikan ke publik (hanya mode pratinjau/lihat-lihat saja). Silakan upgrade ke paket berbayar.');
-      return;
-    }
+    // Langganan di muka dinonaktifkan: Publikasi toko terbuka penuh untuk semua merchant
+    const isPaidPlan = true;
 
     setDeployError(null);
     setStep('auto_deploy');
@@ -288,9 +284,9 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   if (!isOpen) return null;
 
-  const planLower = (store.plan || '').toLowerCase();
-  const isPaidPlan = ['personal', 'community', 'corporate', 'startup', 'premium'].includes(planLower);
-  const isFreePlan = !isPaidPlan;
+  // Langganan di muka dinonaktifkan: Publikasi toko terbuka penuh
+  const isPaidPlan = true;
+  const isFreePlan = false;
   const hasActiveCustomDomain = !!(
     (store.customDomain && store.domainStatus === 'connected') ||
     domainRequest?.status === 'active' ||
