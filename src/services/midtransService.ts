@@ -48,7 +48,7 @@ class MidtransService {
   private isScriptLoaded = false;
 
   private getClientKey(): string {
-    return import.meta.env.VITE_MIDTRANS_CLIENT_KEY || 'SB-Mid-client-6qHzXwHC6yMvkJ9J';
+    return import.meta.env.VITE_MIDTRANS_CLIENT_KEY || '';
   }
 
   private getEnvironment(): 'sandbox' | 'production' {

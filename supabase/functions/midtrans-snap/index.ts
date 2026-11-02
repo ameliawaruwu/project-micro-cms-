@@ -38,7 +38,7 @@ async function getMidtransConfig() {
   }
 
   if (!serverKey) {
-    serverKey = 'SB-Mid-server-n197M_KyR7is6x0Ag4cZEIAj';
+    serverKey = '';
   }
 
   return { serverKey, env };

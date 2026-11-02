@@ -357,12 +357,12 @@ class AdminService {
       midtransEnvironment: ((import.meta as any).env?.VITE_MIDTRANS_ENV as any) || 'sandbox',
       midtransMerchantId: (import.meta as any).env?.VITE_MIDTRANS_MERCHANT_ID || '',
       midtransClientKey: (import.meta as any).env?.VITE_MIDTRANS_CLIENT_KEY || '',
-      midtransServerKey: (import.meta as any).env?.MIDTRANS_SERVER_KEY || '',
+      midtransServerKey: '',
       duitkuEnvironment: ((import.meta as any).env?.VITE_DUITKU_ENV as any) || 'sandbox',
       duitkuMerchantCode: (import.meta as any).env?.VITE_DUITKU_MERCHANT_CODE || (import.meta as any).env?.DUITKU_MERCHANT_CODE || '',
-      duitkuApiKey: (import.meta as any).env?.DUITKU_API_KEY || '',
+      duitkuApiKey: '',
       biteshipEnabled: true,
-      biteshipApiKey: (import.meta as any).env?.VITE_BITESHIP_API_KEY || (import.meta as any).env?.BITESHIP_API_KEY || '',
+      biteshipApiKey: '',
       biteshipOriginCity: 'Jakarta Selatan',
       waGatewayEnabled: false,
       waGatewayApiKey: (import.meta as any).env?.VITE_FONNTE_TOKEN || '',
@@ -428,7 +428,8 @@ class AdminService {
   }
 
   async savePlatformSettings(settings: PlatformSettings): Promise<void> {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    const sanitized = { ...settings, midtransServerKey: '', duitkuApiKey: '', biteshipApiKey: '' };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(sanitized));
 
     try {
       const updatePayload: any = {
