@@ -21,11 +21,8 @@ import { Breadcrumb } from '../../../components/common/Breadcrumb';
 interface AdminStoresTabProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  filterPlan: string;
-  setFilterPlan: (plan: string) => void;
   filteredStores: Store[];
   suspendedIds: string[];
-  handleChangePlan: (storeId: string, plan: 'free' | 'starter' | 'premium') => void;
   handleToggleSuspend: (storeId: string, storeName: string) => void;
   onOpenStorefront?: (slug: string) => void;
   language: string;
@@ -38,11 +35,8 @@ interface AdminStoresTabProps {
 export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
   searchQuery,
   setSearchQuery,
-  filterPlan,
-  setFilterPlan,
   filteredStores,
   suspendedIds,
-  handleChangePlan,
   handleToggleSuspend,
   onOpenStorefront,
   language,
@@ -101,9 +95,9 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
         </span>
       </div>
 
-      {/* Search & Filter Bar */}
+      {/* Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="relative flex-1 w-full max-w-sm">
+        <div className="relative flex-1 w-full max-w-md">
           <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -112,26 +106,6 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-8 pr-3 py-1.5 rounded-md bg-white border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-red-500"
           />
-        </div>
-
-        <div className="flex items-center gap-1">
-          {['all', 'free', 'premium'].map((p) => (
-            <button
-              key={p}
-              onClick={() => setFilterPlan(p)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium capitalize transition cursor-pointer ${
-                filterPlan === p
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              {p === 'all'
-                ? (language === 'en' ? 'All' : 'Semua')
-                : p === 'premium'
-                ? 'Pro'
-                : (language === 'en' ? 'Free' : 'Gratis')}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -142,7 +116,6 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
             <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-600 font-semibold">
               <tr>
                 <th className="py-2.5 px-3.5">{language === 'en' ? 'Store' : 'Toko'}</th>
-                <th className="py-2.5 px-3.5">{language === 'en' ? 'Plan' : 'Paket'}</th>
                 <th className="py-2.5 px-3.5">{language === 'en' ? 'Wallet Balance' : 'Saldo Dompet'}</th>
                 <th className="py-2.5 px-3.5">Status</th>
                 <th className="py-2.5 px-3.5 text-right">{language === 'en' ? 'Action' : 'Aksi'}</th>
@@ -151,7 +124,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
             <tbody className="divide-y divide-gray-100">
               {filteredStores.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-gray-400">
+                  <td colSpan={4} className="py-12 text-center text-gray-400">
                     <StoreIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                     <p className="font-semibold text-gray-700">{isEn ? 'No stores found' : 'Belum ada data toko'}</p>
                     <p className="text-[11px] text-gray-400 mt-0.5">
@@ -177,19 +150,6 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                           <span className="text-[11px] text-gray-400">/{store.slug} • {store.city}</span>
                         </div>
                       </div>
-                    </td>
-
-                    {/* Plan Selector */}
-                    <td className="py-2.5 px-3.5">
-                      <select
-                        value={store.plan || 'free'}
-                        onChange={(e) => handleChangePlan(store.id, e.target.value as any)}
-                        className="bg-gray-50 border border-gray-200 rounded px-2 py-0.5 text-[11px] font-medium text-gray-800 focus:outline-none focus:border-red-500 cursor-pointer"
-                      >
-                        <option value="free">FREE</option>
-                        <option value="starter">STARTER</option>
-                        <option value="premium">PRO</option>
-                      </select>
                     </td>
 
                     {/* Balance */}
@@ -264,11 +224,8 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                   className="w-11 h-11 rounded-xl object-cover border-2 border-white/40 bg-white"
                 />
                 <div>
-                  <h3 className="font-bold text-base text-white tracking-tight flex items-center gap-2">
-                    <span>{selectedStore.name}</span>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-white/20 text-white">
-                      {selectedStore.plan || 'FREE'}
-                    </span>
+                  <h3 className="font-bold text-base text-white tracking-tight">
+                    {selectedStore.name}
                   </h3>
                   <p className="text-xs text-white/80">
                     /{selectedStore.slug} • Merchant ID: {selectedStore.merchantId || '-'}

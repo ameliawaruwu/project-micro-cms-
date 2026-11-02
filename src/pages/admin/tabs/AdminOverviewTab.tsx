@@ -198,41 +198,41 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
           </div>
         </div>
 
-        {/* Plan Breakdown */}
+        {/* Store Status Breakdown */}
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              {language === 'en' ? 'Subscription Distribution' : 'Distribusi Paket Langganan'}
+              {language === 'en' ? 'Store Status' : 'Status Operasional Toko'}
             </h3>
-            {!isSubAdmin && (
-              <button
-                onClick={() => setActiveTab('plans')}
-                className="text-xs font-medium text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
-              >
-                {language === 'en' ? 'Manage Plans' : 'Atur Kuota'} <ChevronRight className="w-3 h-3" />
-              </button>
-            )}
+            <button
+              onClick={() => setActiveTab('stores')}
+              className="text-xs font-medium text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
+            >
+              {language === 'en' ? 'Manage Stores' : 'Kelola Toko'} <ChevronRight className="w-3 h-3" />
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-center pt-1">
-            <div className="p-3 rounded-md bg-gray-50 border border-gray-200">
-              <span className="text-[10px] font-semibold text-gray-500 uppercase block">
-                {language === 'en' ? 'Free' : 'Gratis'}
+            <div className="p-3 rounded-md bg-emerald-50/60 border border-emerald-100">
+              <span className="text-[10px] font-semibold text-emerald-700 uppercase block">
+                {language === 'en' ? 'Active' : 'Aktif Tayang'}
               </span>
-              <span className="text-lg font-bold text-gray-900">
-                {stores.filter((s) => !s.plan || s.plan === 'free').length}
+              <span className="text-lg font-bold text-emerald-700">
+                {stores.filter((s) => !s.isSuspended).length}
               </span>
-              <span className="text-[10px] text-gray-400 block">
+              <span className="text-[10px] text-emerald-600/80 block">
                 {language === 'en' ? 'Stores' : 'Toko'}
               </span>
             </div>
 
-            <div className="p-3 rounded-md bg-red-50/60 border border-red-100">
-              <span className="text-[10px] font-semibold text-red-700 uppercase block">Pro</span>
-              <span className="text-lg font-bold text-red-600">
-                {stores.filter((s) => s.plan === 'premium' || s.plan === 'starter').length}
+            <div className="p-3 rounded-md bg-gray-50 border border-gray-200">
+              <span className="text-[10px] font-semibold text-gray-500 uppercase block">
+                {language === 'en' ? 'Suspended' : 'Disuspend'}
               </span>
-              <span className="text-[10px] text-red-500 block">
+              <span className="text-lg font-bold text-gray-900">
+                {stores.filter((s) => s.isSuspended).length}
+              </span>
+              <span className="text-[10px] text-gray-400 block">
                 {language === 'en' ? 'Stores' : 'Toko'}
               </span>
             </div>

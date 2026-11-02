@@ -65,7 +65,6 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const activeAdminEmail = loggedInUser?.email || (isSubAdmin ? 'koordinator@kroomify.id' : 'admin@kroomify.id');
   const activeAdminAvatar = loggedInUser?.avatarUrl;
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterPlan, setFilterPlan] = useState<string>('all');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // System Settings state
@@ -377,13 +376,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   }, [isSubAdmin, stats, activeStoresForAdmin, activeWithdrawalsForAdmin, activeOrdersForAdmin]);
 
   const filteredStores = activeStoresForAdmin.filter((s) => {
-    const matchSearch =
+    return (
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.city.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (filterPlan === 'all') return matchSearch;
-    return matchSearch && s.plan === filterPlan;
+      s.city.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   });
 
   const pendingWithdrawals = withdrawals.filter((w) => w.status === 'pending');
@@ -483,7 +480,6 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           icon: Wallet,
           badge: pendingWithdrawals.length > 0 ? pendingWithdrawals.length : undefined,
         },
-        { id: 'plans', label: language === 'en' ? 'Billing Plans' : 'Paket Langganan', icon: Crown },
         {
           id: 'orders-shipping',
           label: language === 'en' ? 'Orders & Shipping' : 'Pesanan & Pengiriman',
@@ -557,11 +553,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <AdminStoresTab
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
-              filterPlan={filterPlan}
-              setFilterPlan={setFilterPlan}
               filteredStores={filteredStores}
               suspendedIds={suspendedIds}
-              handleChangePlan={handleChangePlan}
               handleToggleSuspend={handleToggleSuspend}
               onOpenStorefront={onOpenStorefront}
               language={language}

@@ -63,9 +63,6 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
   const { t, language } = useLanguage();
   const isEn = language === 'en';
 
-  // Fitur langganan di muka dinonaktifkan: seluruh merchant bebas menggunakan payment gateway otomatis tanpa biaya di muka
-  const isFreePlan = false;
-
   // Status Master Payment Gateway dari Pengaturan Admin
   const [isGatewayEnabledOnPlatform, setIsGatewayEnabledOnPlatform] = useState<boolean>(() => {
     return adminService.getPlatformSettings().paymentGatewayEnabled ?? true;
@@ -97,10 +94,10 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
         manualBankAccountHolder: '',
         manualQrisImageUrl: '',
         manualInstructions: 'Scan QRIS atau transfer ke rekening di atas, lalu konfirmasi pesanan ke WhatsApp toko.',
-        enablePaymentGateway: !isFreePlan,
+        enablePaymentGateway: true,
       }
     );
-  }, [store?.paymentConfig, isFreePlan]);
+  }, [store?.paymentConfig]);
 
   // Form states
   const [enableCod, setEnableCod] = useState<boolean>(currentConfig.enableCod ?? true);
@@ -124,14 +121,14 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
   );
 
   const [enablePaymentGateway, setEnablePaymentGateway] = useState<boolean>(
-    currentConfig.enablePaymentGateway ?? !isFreePlan
+    currentConfig.enablePaymentGateway ?? true
   );
 
   // Gateway channels & search filter
   const [channels, setChannels] = useState<PaymentChannel[]>(() => paymentChannelService.getChannels());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | string>('all');
-  const [isMasterActive, setIsMasterActive] = useState(!isFreePlan && (currentConfig.enablePaymentGateway ?? true));
+  const [isMasterActive, setIsMasterActive] = useState(currentConfig.enablePaymentGateway ?? true);
 
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -168,23 +165,11 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
   }, [channels, searchQuery, selectedCategory, language]);
 
   const activeGatewayCount = useMemo(() => {
-    if (isFreePlan || !enablePaymentGateway || !isGatewayEnabledOnPlatform) return 0;
+    if (!enablePaymentGateway || !isGatewayEnabledOnPlatform) return 0;
     return channels.filter((c) => c.isEnabled).length;
-  }, [channels, isFreePlan, enablePaymentGateway, isGatewayEnabledOnPlatform]);
+  }, [channels, enablePaymentGateway, isGatewayEnabledOnPlatform]);
 
   const handleToggleChannel = (id: string) => {
-    if (isFreePlan) {
-      if (onShowNotification) {
-        onShowNotification(
-          isEn
-            ? 'Midtrans / Duitku gateway is locked on Free Plan. Upgrade to a paid plan to activate automated checking.'
-            : 'Gateway Midtrans / Duitku terkunci pada Paket Free. Silakan upgrade ke paket hosting berbayar.',
-          'info'
-        );
-      }
-      if (onNavigateBilling) onNavigateBilling();
-      return;
-    }
     const { channels: updated, updatedItem } = paymentChannelService.toggleChannel(id);
     setChannels(updated);
     markDirty();
@@ -200,18 +185,6 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
   };
 
   const handleToggleMaster = () => {
-    if (isFreePlan) {
-      if (onShowNotification) {
-        onShowNotification(
-          isEn
-            ? 'Midtrans / Duitku gateway is locked on Free Plan. Please upgrade to a paid hosting plan.'
-            : 'Gateway Midtrans / Duitku terkunci pada Paket Free. Silakan upgrade ke paket hosting berbayar.',
-          'info'
-        );
-      }
-      if (onNavigateBilling) onNavigateBilling();
-      return;
-    }
     const nextState = !isMasterActive;
     setIsMasterActive(nextState);
     setEnablePaymentGateway(nextState);
@@ -233,7 +206,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
         manualBankAccountHolder,
         manualQrisImageUrl,
         manualInstructions,
-        enablePaymentGateway: isFreePlan ? false : enablePaymentGateway,
+        enablePaymentGateway,
       };
 
       const updatedStore: Store = {
@@ -760,16 +733,12 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               type="button"
               onClick={handleToggleMaster}
               role="switch"
-              aria-checked={!isFreePlan && isMasterActive && activeGatewayCount > 0}
+              aria-checked={isMasterActive && activeGatewayCount > 0}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                !isFreePlan && isMasterActive && activeGatewayCount > 0 ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
-              } ${isFreePlan ? 'opacity-80' : ''}`}
+                isMasterActive && activeGatewayCount > 0 ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
+              }`}
               title={
-                isFreePlan
-                  ? isEn
-                    ? 'Locked (Free Plan)'
-                    : 'Terkunci (Paket Free)'
-                  : isMasterActive
+                isMasterActive
                   ? isEn
                     ? 'Disable Gateway'
                     : 'Nonaktifkan Gateway'
@@ -780,43 +749,12 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
             >
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                  !isFreePlan && isMasterActive && activeGatewayCount > 0 ? 'translate-x-5' : 'translate-x-0'
+                  isMasterActive && activeGatewayCount > 0 ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>
           </div>
         </div>
-
-        {/* Alert jika toko di Paket Free */}
-        {isFreePlan && (
-          <div className="p-4 sm:p-5 bg-gradient-to-br from-[#FFFBEB] via-[#FEF3C7]/30 to-white border-t border-[#F59E0B]/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#FEF3C7] text-[#B45309] flex items-center justify-center shrink-0">
-                <Lock className="w-4 h-4 text-[#B45309]" />
-              </div>
-              <div className="text-xs text-[#78350F] leading-relaxed">
-                <p className="font-bold text-[#92400E]">
-                  Gateway Otomatis Tersedia pada Paket Hosting Berbayar
-                </p>
-                <p className="mt-0.5">
-                  Untuk cek lunas otomatis 24 jam tanpa perlu melihat mutasi bank, Anda dapat upgrade ke paket hosting
-                  (Personal Rp 350.000/thn atau Community UMKM). Toko Anda tetap dapat menggunakan <strong>COD</strong>{' '}
-                  dan <strong>QRIS Manual</strong> secara gratis tanpa batas.
-                </p>
-              </div>
-            </div>
-            {onNavigateBilling && (
-              <button
-                type="button"
-                onClick={onNavigateBilling}
-                className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#66000E] to-[#990014] text-white text-xs font-bold shadow-xs hover:opacity-95 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Lihat Paket Hosting</span>
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Daftar Channel Gateway */}
         <div className="border-t border-[#E5E0DD] bg-[#FAF7F7] p-4 sm:p-5 space-y-4">
@@ -865,7 +803,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               {filteredChannels.map((channel) => {
                 const displayName = getLocalizedChannelName(channel.id, channel.name, language);
                 const displayDesc = getLocalizedChannelDescription(channel.id, channel.description, language);
-                const isChannelActive = !isFreePlan && enablePaymentGateway && channel.isEnabled;
+                const isChannelActive = enablePaymentGateway && channel.isEnabled;
 
                 return (
                   <div
@@ -887,28 +825,21 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      {isFreePlan ? (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
-                          <Lock className="w-3 h-3 text-amber-600" />
-                          <span>Terkunci</span>
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleChannel(channel.id)}
-                          role="switch"
-                          aria-checked={isChannelActive}
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                            isChannelActive ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
-                          }`}
-                        >
+                      <button
+                        type="button"
+                        onClick={() => handleToggleChannel(channel.id)}
+                        role="switch"
+                        aria-checked={isChannelActive}
+                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          isChannelActive ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
+                        }`}
+                      >
                           <span
                             className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                               isChannelActive ? 'translate-x-4' : 'translate-x-0'
                             }`}
                           />
                         </button>
-                      )}
                     </div>
                   </div>
                 );
