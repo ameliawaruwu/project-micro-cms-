@@ -433,33 +433,34 @@ class AdminService {
 
     try {
       const updatePayload: any = {
-        midtrans_environment: settings.midtransEnvironment,
-        midtrans_merchant_id: settings.midtransMerchantId,
-        midtrans_client_key: settings.midtransClientKey,
-        midtrans_server_key: settings.midtransServerKey,
-        duitku_environment: settings.duitkuEnvironment,
-        duitku_merchant_code: settings.duitkuMerchantCode,
-        duitku_api_key: settings.duitkuApiKey,
-        biteship_enabled: settings.biteshipEnabled,
-        biteship_origin_city: settings.biteshipOriginCity,
-        wa_gateway_enabled: settings.waGatewayEnabled,
-        wa_sender_phone: settings.waSenderPhone,
+        payment_gateway_enabled: settings.paymentGatewayEnabled ?? true,
         platform_fee_percent: settings.platformFeePercent,
         payout_min_amount: settings.payoutMinAmount,
         payout_bank_fee: settings.payoutBankFee,
         auto_approve_payout_under: settings.autoApprovePayoutUnder,
         maintenance_mode: settings.maintenanceMode,
-        payment_gateway_enabled: settings.paymentGatewayEnabled ?? true,
+        biteship_enabled: settings.biteshipEnabled,
+        biteship_origin_city: settings.biteshipOriginCity,
+        wa_gateway_enabled: settings.waGatewayEnabled,
+        wa_sender_phone: settings.waSenderPhone,
+        midtrans_environment: settings.midtransEnvironment,
+        midtrans_merchant_id: settings.midtransMerchantId,
+        midtrans_client_key: settings.midtransClientKey,
         updated_at: new Date().toISOString(),
       };
-      await supabase
+      const { error } = await supabase
         .from('platform_settings')
         .update(updatePayload)
         .eq('id', 'SET001');
+
+      if (error) {
+        console.error('Failed to sync platform settings to Supabase:', error);
+        throw error;
+      }
     } catch (err) {
       console.warn('Failed to sync platform settings to Supabase:', err);
+      throw err;
     }
-
   }
 
   getPlatformStats(stores?: Store[], withdrawals?: WithdrawalRequest[], orders?: Order[]): AdminPlatformStats {

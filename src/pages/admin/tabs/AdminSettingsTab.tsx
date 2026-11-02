@@ -6,6 +6,7 @@ import {
   Truck,
   Copy,
   ShieldCheck,
+  Loader2,
 } from 'lucide-react';
 import { PlatformSettings } from '../../../types';
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
@@ -14,10 +15,11 @@ interface AdminSettingsTabProps {
   isEn: boolean;
   platformSettings: PlatformSettings;
   setPlatformSettings: React.Dispatch<React.SetStateAction<PlatformSettings>>;
-  handleSaveSettings: (e: React.FormEvent) => void;
+  handleSaveSettings: (e?: React.FormEvent) => void;
   handleTestApi: (service: 'midtrans' | 'duitku' | 'biteship' | 'wa') => void;
   testingService: string | null;
   onNavigateOverview?: () => void;
+  isSaving?: boolean;
 }
 
 export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
@@ -28,6 +30,7 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
   handleTestApi,
   testingService,
   onNavigateOverview,
+  isSaving = false,
 }) => {
   const [copiedCallback, setCopiedCallback] = useState(false);
 
@@ -57,10 +60,20 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
         </h1>
         <button
           type="submit"
-          className="px-3.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-medium text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5 shrink-0"
+          disabled={isSaving}
+          className="px-3.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-medium text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5 shrink-0 disabled:opacity-50"
         >
-          <Check className="w-3.5 h-3.5" />
-          <span>{isEn ? 'Save Changes' : 'Simpan Perubahan'}</span>
+          {isSaving ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>{isEn ? 'Saving...' : 'Menyimpan...'}</span>
+            </>
+          ) : (
+            <>
+              <Check className="w-3.5 h-3.5" />
+              <span>{isEn ? 'Save Changes' : 'Simpan Perubahan'}</span>
+            </>
+          )}
         </button>
       </div>
 

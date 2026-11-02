@@ -69,6 +69,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   // System Settings state
   const [platformSettings, setPlatformSettings] = useState(adminService.getPlatformSettings());
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [testingService, setTestingService] = useState<string | null>(null);
 
   // Billing Plans CRUD state
@@ -334,11 +335,19 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     }
   };
 
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await adminService.savePlatformSettings(platformSettings);
-    await loadData();
-    showToast('Pengaturan sistem berhasil disimpan ke database');
+  const handleSaveSettings = async (e?: React.FormEvent) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setIsSavingSettings(true);
+    try {
+      await adminService.savePlatformSettings(platformSettings);
+      await loadData();
+      showToast(isEn ? 'System settings saved to database successfully' : 'Pengaturan sistem berhasil disimpan ke database');
+    } catch (err: any) {
+      console.error('Error saving platform settings:', err);
+      showToast(isEn ? `Failed to save: ${err?.message || err}` : `Gagal menyimpan: ${err?.message || err}`);
+    } finally {
+      setIsSavingSettings(false);
+    }
   };
 
   // Isolasi Multi-Tenant: Sub-Admin hanya mengakses toko, pesanan, dan pencairan dana anggotanya
@@ -653,6 +662,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               handleTestApi={handleTestApi}
               testingService={testingService}
               onNavigateOverview={() => setActiveTab('overview')}
+              isSaving={isSavingSettings}
             />
           )}
         </main>
