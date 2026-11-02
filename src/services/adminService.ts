@@ -104,6 +104,8 @@ class AdminService {
         currency: 'IDR',
         balance: Number(s.balance || 0),
         plan: s.plan || 'free',
+        communityId: s.community_id || s.theme_settings?.communityId || undefined,
+        communityName: s.community_name || s.theme_settings?.communityName || undefined,
         isPublished: s.is_published ?? true,
         isSuspended: Boolean(s.is_suspended),
         onboarding: {

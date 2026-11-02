@@ -148,8 +148,14 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   // Stores associated with active community
   const communityStores = useMemo(() => {
     if (!activeCommunity?.id) return [];
-    return stores.filter((s) => s.communityId === activeCommunity.id);
-  }, [stores, activeCommunity?.id]);
+    const cId = activeCommunity.id;
+    const cName = (activeCommunity.name || '').trim().toLowerCase();
+    return stores.filter((s) => {
+      if (s.communityId === cId) return true;
+      if (cName && s.communityName && s.communityName.trim().toLowerCase() === cName) return true;
+      return false;
+    });
+  }, [stores, activeCommunity?.id, activeCommunity?.name]);
 
   // Filtered stores based on search
   const filteredCommunityStores = useMemo(() => {

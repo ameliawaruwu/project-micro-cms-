@@ -564,6 +564,8 @@ class AuthService {
           name: params.fullName.trim(),
           phone: (params.phoneWhatsApp || '').trim() || null,
           role: 'merchant',
+          community_id: matchedCommunity?.id || null,
+          community_name: matchedCommunity?.name || null,
           created_at: nowWib,
           updated_at: nowWib,
         }).select('id');
@@ -577,6 +579,16 @@ class AuthService {
     } catch (err: any) {
       console.warn('⚠️ Supabase users connection notice:', err?.message || err);
     }
+    if (matchedCommunity?.id) {
+      try {
+        await supabase.from('users').update({
+          community_id: matchedCommunity.id,
+          community_name: matchedCommunity.name,
+        }).eq('id', userId);
+      } catch (commSyncErr) {
+        console.warn('Community sync to user notice:', commSyncErr);
+      }
+    }
 
     // 2. Sync newStore to Supabase stores table (clean with all details empty)
     if (newStore) {
@@ -586,6 +598,8 @@ class AuthService {
           user_id: newStore.merchantId,
           name: newStore.name,
           slug: newStore.slug,
+          community_id: newStore.communityId || null,
+          community_name: newStore.communityName || null,
           tagline: '',
           description: '',
           logo_url: '',
@@ -603,6 +617,8 @@ class AuthService {
           plan: 'free',
           balance: 0,
           theme_settings: {
+            communityId: newStore.communityId || null,
+            communityName: newStore.communityName || null,
             onboarding: {
               storeNameSet: true,
               productUploaded: false,
@@ -795,6 +811,8 @@ class AuthService {
           plan: 'free',
           balance: 0,
           theme_settings: {
+            communityId: userStore.communityId || null,
+            communityName: userStore.communityName || null,
             onboarding: {
               storeNameSet: true,
               productUploaded: false,

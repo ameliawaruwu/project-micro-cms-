@@ -344,9 +344,16 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   // Isolasi Multi-Tenant: Sub-Admin hanya mengakses toko, pesanan, dan pencairan dana anggotanya
   const subAdminStores = React.useMemo(() => {
-    if (!isSubAdmin || !loggedInUser?.communityId) return stores;
-    return stores.filter((s) => s.communityId === loggedInUser.communityId);
-  }, [stores, isSubAdmin, loggedInUser?.communityId]);
+    if (!isSubAdmin) return stores;
+    const targetId = loggedInUser?.communityId;
+    const targetName = (loggedInUser?.communityName || '').trim().toLowerCase();
+    if (!targetId && !targetName) return stores;
+    return stores.filter((s) => {
+      if (targetId && s.communityId === targetId) return true;
+      if (targetName && s.communityName && s.communityName.trim().toLowerCase() === targetName) return true;
+      return false;
+    });
+  }, [stores, isSubAdmin, loggedInUser?.communityId, loggedInUser?.communityName]);
 
   const subAdminStoreIds = React.useMemo(() => new Set(subAdminStores.map((s) => s.id)), [subAdminStores]);
 
