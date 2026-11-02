@@ -471,15 +471,15 @@ class AuthService {
     };
 
     const cleanStoreName = (params.storeName || '').trim();
-    const cleanStoreSlug = cleanStoreName
-      ? cleanStoreName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-      : '';
+    const defaultStoreName = cleanStoreName || `Toko ${params.fullName || 'Saya'}`;
+    const cleanStoreSlug = defaultStoreName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
     const storeId = await idService.generateNextId('stores');
 
-    // JANGAN membuat nama toko default dengan "Toko [NamaUser]" jika params.storeName kosong.
-    // Nama toko harus dibiarkan kosong agar merchant mengisinya sendiri pada modal onboarding.
-    const finalStoreName = cleanStoreName || '';
-    const finalStoreSlug = cleanStoreSlug || '';
+    const finalStoreName = defaultStoreName;
+    const finalStoreSlug = cleanStoreSlug;
 
     const newStore: Store = {
       id: storeId,
@@ -504,24 +504,24 @@ class AuthService {
       category: '',
       currency: 'IDR',
       balance: 0,
-      plan: '',
+      plan: 'free',
       isPublished: false,
       onboarding: {
-        storeNameSet: Boolean(cleanStoreName),
+        storeNameSet: true,
         productUploaded: false,
-        paymentConnected: false,
+        paymentConnected: true,
       },
       createdAt: new Date().toISOString(),
     };
-    localStorage.setItem('kroomify_first_login_after_register', 'true');
-    localStorage.setItem(`kroomify_first_login_after_register_${userId}`, 'true');
-    localStorage.setItem('kroomify_onboarding_pending', 'true');
-    localStorage.setItem(`kroomify_onboarding_pending_${userId}`, 'true');
-    localStorage.setItem('kroomify_onboarding_step', 'store_info');
-    sessionStorage.removeItem('kroomify_store_info_dismissed');
-    localStorage.removeItem(`kroomify_store_info_dismissed_${userId}`);
-    localStorage.removeItem(`kroomify_onboarding_completed_${userId}`);
-    localStorage.removeItem('kroomify_onboarding_completed');
+    // Langsung tandai onboarding selesai karena nama toko dan kode referral sudah ditangani saat pendaftaran
+    localStorage.setItem('kroomify_onboarding_completed', 'true');
+    localStorage.setItem(`kroomify_onboarding_completed_${userId}`, 'true');
+    localStorage.setItem(`kroomify_store_info_dismissed_${userId}`, 'true');
+    localStorage.removeItem('kroomify_first_login_after_register');
+    localStorage.removeItem(`kroomify_first_login_after_register_${userId}`);
+    localStorage.removeItem('kroomify_onboarding_pending');
+    localStorage.removeItem(`kroomify_onboarding_pending_${userId}`);
+    localStorage.removeItem('kroomify_onboarding_step');
 
     const merchant: Merchant = {
       id: `merch-${userId}`,
@@ -600,13 +600,13 @@ class AuthService {
           postal_code: '',
           address: '',
           category: '',
-          plan: null,
+          plan: 'free',
           balance: 0,
           theme_settings: {
             onboarding: {
-              storeNameSet: Boolean(params.storeName?.trim()),
+              storeNameSet: true,
               productUploaded: false,
-              paymentConnected: false,
+              paymentConnected: true,
             },
           },
           is_published: false,
@@ -754,12 +754,12 @@ class AuthService {
         category: '',
         currency: 'IDR',
         balance: 0,
-        plan: '', // Unclaimed! Will be claimed during mandatory onboarding step 2
+        plan: 'free',
         isPublished: false,
         onboarding: {
-          storeNameSet: false,
+          storeNameSet: true,
           productUploaded: false,
-          paymentConnected: false,
+          paymentConnected: true,
         },
         createdAt: new Date().toISOString(),
       };
@@ -768,6 +768,14 @@ class AuthService {
       storedStores.push(userStore);
       localStorage.setItem('microcms_stores', JSON.stringify(storedStores));
       localStorage.setItem(ACTIVE_STORE_ID_KEY, userStore.id);
+      localStorage.setItem('kroomify_onboarding_completed', 'true');
+      localStorage.setItem(`kroomify_onboarding_completed_${userId}`, 'true');
+      localStorage.setItem(`kroomify_store_info_dismissed_${userId}`, 'true');
+      localStorage.removeItem('kroomify_first_login_after_register');
+      localStorage.removeItem(`kroomify_first_login_after_register_${userId}`);
+      localStorage.removeItem('kroomify_onboarding_pending');
+      localStorage.removeItem(`kroomify_onboarding_pending_${userId}`);
+      localStorage.removeItem('kroomify_onboarding_step');
 
       try {
         const nowWib = getWibIsoString();
@@ -784,13 +792,13 @@ class AuthService {
           city: '',
           address: '',
           category: '',
-          plan: null,
+          plan: 'free',
           balance: 0,
           theme_settings: {
             onboarding: {
-              storeNameSet: false,
+              storeNameSet: true,
               productUploaded: false,
-              paymentConnected: false,
+              paymentConnected: true,
             },
           },
           is_published: false,

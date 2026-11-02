@@ -93,7 +93,6 @@ import { ReceiptModal } from './components/orders/ReceiptModal';
 import { OrderDetailModal } from './components/orders/OrderDetailModal';
 import { MerchantWalletModal } from './components/wallet/MerchantWalletModal';
 import { UpgradePlanModal } from './components/billing/UpgradePlanModal';
-import { UserOnboardingModal } from './components/onboarding/UserOnboardingModal';
 import { KroomifyLogo } from './components/common/KroomifyLogo';
 
 // Storefront Components
@@ -130,10 +129,7 @@ export default function App() {
       setViewMode(targetMode);
       setAuthView(null);
       loadData();
-      if (isNewUser) {
-        setIsOnboardingModalOpen(true);
-      }
-      addToast(isNewUser ? 'Akun Google berhasil dibuat! Lengkapi informasi toko Anda.' : 'Berhasil masuk dengan akun Google!');
+      addToast(isNewUser ? 'Akun Google berhasil dibuat!' : 'Berhasil masuk dengan akun Google!');
     };
 
     const handleSessionInvalidated = () => {
@@ -328,7 +324,6 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [isUpgradePlanModalOpen, setIsUpgradePlanModalOpen] = useState(false);
-  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('500000');
   const [bankAccount, setBankAccount] = useState('BCA - 8920192811');
 
@@ -353,8 +348,6 @@ export default function App() {
       addToast(message, type);
     };
     window.addEventListener('toast_notification', handleToastNotification);
-    const handleOpenOnboarding = () => setIsOnboardingModalOpen(true);
-    window.addEventListener('open_store_onboarding', handleOpenOnboarding);
 
     const handleStoreCreated = (e: any) => {
       if (e.detail) {
@@ -369,7 +362,6 @@ export default function App() {
 
     return () => {
       window.removeEventListener('toast_notification', handleToastNotification);
-      window.removeEventListener('open_store_onboarding', handleOpenOnboarding);
       window.removeEventListener('microcms_store_created', handleStoreCreated);
       window.removeEventListener('open_cart', handleOpenCart);
     };
@@ -574,16 +566,7 @@ export default function App() {
           finalStore.plan.trim() !== ''
         );
 
-        const isUserCompleted =
-          Boolean(user?.id && localStorage.getItem(`kroomify_onboarding_completed_${user.id}`) === 'true') ||
-          (user?.id ? localStorage.getItem(`kroomify_store_info_dismissed_${user.id}`) === 'true' : false);
-
-        if (isStoreSetupDone || isUserCompleted) {
-          setIsOnboardingModalOpen(false);
-        } else if (user?.role === 'merchant') {
-          // Merchant belum menyelesaikan onboarding: pastikan modal onboarding tetap terbuka
-          setIsOnboardingModalOpen(true);
-        }
+        // Onboarding modal dinonaktifkan: merchant langsung dapat mengakses dashboard
       }
     } catch (err) {
       console.error('Error loading store data:', err);
@@ -1502,19 +1485,7 @@ export default function App() {
             } else {
               loadData();
               addToast('Berhasil masuk ke Dashboard Toko!');
-              // Onboarding popup HANYA muncul ketika login pertama kali setelah register
-              const isFirstLogin =
-                Boolean(currentUser?.id && localStorage.getItem(`kroomify_first_login_after_register_${currentUser.id}`) === 'true') ||
-                localStorage.getItem('kroomify_first_login_after_register') === 'true';
-              const isAlreadyDone =
-                Boolean(currentUser?.id && localStorage.getItem(`kroomify_onboarding_completed_${currentUser.id}`) === 'true') ||
-                localStorage.getItem('kroomify_onboarding_completed') === 'true';
-
-              if (isFirstLogin && !isAlreadyDone) {
-                setIsOnboardingModalOpen(true);
-              } else {
-                setIsOnboardingModalOpen(false);
-              }
+              // Merchant langsung diarahkan ke Dashboard tanpa popup onboarding modal
             }
           }}
           onNavigateRegister={() => setAuthView('register')}
@@ -2217,29 +2188,6 @@ export default function App() {
         }}
       />
 
-      {/* 11. User Store Information Popup */}
-      <UserOnboardingModal
-        isOpen={isOnboardingModalOpen && !isAuthLoading && !!user}
-        user={user}
-        store={currentStore}
-        onComplete={async (updatedStore) => {
-          if (user?.id) {
-            localStorage.setItem(`kroomify_onboarding_completed_${user.id}`, 'true');
-            localStorage.setItem(`kroomify_store_info_dismissed_${user.id}`, 'true');
-            localStorage.removeItem(`kroomify_first_login_after_register_${user.id}`);
-            localStorage.removeItem(`kroomify_onboarding_pending_${user.id}`);
-          }
-          localStorage.setItem('kroomify_onboarding_completed', 'true');
-          localStorage.removeItem('kroomify_first_login_after_register');
-          localStorage.removeItem('kroomify_onboarding_pending');
-          localStorage.removeItem('kroomify_onboarding_step');
-          setActiveStore(updatedStore);
-          setStores((prev) => [updatedStore, ...prev.filter((s) => s.id !== updatedStore.id)]);
-          setIsOnboardingModalOpen(false);
-          addToast('🎉 Informasi toko Anda berhasil disimpan!');
-          await loadData(updatedStore.id);
-        }}
-      />
 
       {/* Global Toast Notification Container */}
       <Toast toasts={toasts} onDismiss={removeToast} />

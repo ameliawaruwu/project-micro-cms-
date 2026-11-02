@@ -102,8 +102,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setUser(authData.user);
               setMerchant(authData.merchant);
               setStore(authData.store);
-              localStorage.setItem('kroomify_onboarding_pending', 'true');
-              localStorage.setItem('kroomify_onboarding_step', 'store_info');
+              localStorage.setItem('kroomify_onboarding_completed', 'true');
+              localStorage.removeItem('kroomify_onboarding_pending');
+              localStorage.removeItem('kroomify_onboarding_step');
               window.dispatchEvent(
                 new CustomEvent('auth_google_success', {
                   detail: { ...authData, isNewUser: true },
