@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Store as StoreIcon,
+  Building2,
   Phone,
   ArrowRight,
   ShieldCheck,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Store, User } from '../../types';
 import { storeService } from '../../services/storeService';
+import { communityService } from '../../services/communityService';
 import { billingPlanService } from '../../services/billingPlanService';
 import { UMKM_CATEGORIES } from '../../pages/merchant/SettingsPage';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -44,6 +46,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
   const [category, setCategory] = useState('');
   const [phoneWhatsApp, setPhoneWhatsApp] = useState('');
   const [tagline, setTagline] = useState('');
+  const [communityCode, setCommunityCode] = useState(user?.communityName || '');
 
   // Loading states
   const [isSavingStore, setIsSavingStore] = useState(false);

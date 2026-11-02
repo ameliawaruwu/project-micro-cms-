@@ -381,6 +381,7 @@ class AuthService {
     storeSlug?: string;
     businessCategory?: string;
     password: string;
+    communityCode?: string;
     autoLogin?: boolean;
   }): Promise<{ user: User; merchant: Merchant; store: Store | null }> {
     await new Promise((res) => setTimeout(res, 450));
@@ -439,6 +440,24 @@ class AuthService {
 
     const userId = await idService.generateNextId('users');
 
+    // Resolusi kode komunitas jika diisi calon merchant
+    let matchedCommunity: any = undefined;
+    if (params.communityCode && params.communityCode.trim()) {
+      const cleanCode = params.communityCode.trim().toLowerCase();
+      try {
+        const { data } = await supabase
+          .from('communities')
+          .select('id, name, slug')
+          .or(`slug.ilike.${cleanCode},name.ilike.${cleanCode},id.ilike.${cleanCode}`)
+          .maybeSingle();
+        if (data) {
+          matchedCommunity = { id: data.id, name: data.name };
+        }
+      } catch (e) {
+        console.warn('Error resolving community in authService:', e);
+      }
+    }
+
     const user: User = {
       id: userId,
       name: params.fullName.trim(),
@@ -446,6 +465,8 @@ class AuthService {
       phoneWhatsApp: (params.phoneWhatsApp || '').trim(),
       avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(params.fullName)}&background=1F4072&color=FFD358&bold=true`,
       role: 'merchant',
+      communityId: matchedCommunity?.id,
+      communityName: matchedCommunity?.name,
       createdAt: new Date().toISOString(),
     };
 
@@ -465,6 +486,8 @@ class AuthService {
       merchantId: userId,
       name: finalStoreName,
       slug: finalStoreSlug,
+      communityId: matchedCommunity?.id,
+      communityName: matchedCommunity?.name,
       tagline: '',
       description: '',
       logoUrl: '',
