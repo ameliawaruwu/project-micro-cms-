@@ -81,6 +81,51 @@ class CommunityService {
   }
 
   /**
+   * Mencari komunitas berdasarkan kode referral (slug / nama / id)
+   */
+  public async findCommunityByCode(code: string): Promise<Community | undefined> {
+    if (!code || !code.trim()) return undefined;
+    const clean = code.trim().toLowerCase();
+
+    // 1. Cek dari cache lokal
+    const local = this.getCommunities().find(
+      (c) =>
+        c.slug?.toLowerCase() === clean ||
+        c.name.toLowerCase() === clean ||
+        c.id.toLowerCase() === clean
+    );
+    if (local) return local;
+
+    // 2. Cek langsung ke database Supabase
+    try {
+      const { data } = await supabase
+        .from('communities')
+        .select('*')
+        .or(`slug.ilike.${clean},name.ilike.${clean},id.ilike.${clean}`)
+        .maybeSingle();
+
+      if (data) {
+        return {
+          id: data.id,
+          name: data.name,
+          slug: data.slug,
+          description: data.description || '',
+          coordinatorName: data.coordinator_name || '',
+          coordinatorEmail: data.coordinator_email,
+          coordinatorPhone: data.coordinator_phone || '',
+          turnoverFeePercent: Number(data.turnover_fee_percent || 2.5),
+          logoUrl: data.logo_url || undefined,
+          status: data.status || 'active',
+          createdAt: data.created_at || new Date().toISOString(),
+        };
+      }
+    } catch (e) {
+      console.warn('[communityService] Error querying community by code:', e);
+    }
+    return undefined;
+  }
+
+  /**
    * Mendaftarkan Organisasi/Komunitas baru beserta pembuatan akun Sub-Admin koordinatornya langsung ke Supabase
    */
   public async createOrganizationWithSubAdmin(data: {
