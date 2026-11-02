@@ -614,6 +614,7 @@ export interface AdminPlatformStats {
 }
 
 export interface PlatformSettings {
+  paymentGatewayEnabled?: boolean;
   // Midtrans Payment Gateway (Legacy)
   midtransEnvironment: 'sandbox' | 'production';
   midtransMerchantId: string;

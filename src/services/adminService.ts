@@ -372,6 +372,7 @@ class AdminService {
       payoutBankFee: 2500,
       autoApprovePayoutUnder: 500000,
       maintenanceMode: false,
+      paymentGatewayEnabled: true,
     };
 
     const raw = localStorage.getItem(SETTINGS_KEY);
@@ -415,6 +416,7 @@ class AdminService {
         payoutBankFee: Number(data.payout_bank_fee || current.payoutBankFee),
         autoApprovePayoutUnder: Number(data.auto_approve_payout_under || current.autoApprovePayoutUnder),
         maintenanceMode: Boolean(data.maintenance_mode),
+        paymentGatewayEnabled: data.payment_gateway_enabled !== undefined ? Boolean(data.payment_gateway_enabled) : (current.paymentGatewayEnabled ?? true),
       };
 
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(mapped));
@@ -446,6 +448,7 @@ class AdminService {
         payout_bank_fee: settings.payoutBankFee,
         auto_approve_payout_under: settings.autoApprovePayoutUnder,
         maintenance_mode: settings.maintenanceMode,
+        payment_gateway_enabled: settings.paymentGatewayEnabled ?? true,
         updated_at: new Date().toISOString(),
       };
       await supabase

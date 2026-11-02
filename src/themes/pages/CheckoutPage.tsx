@@ -31,6 +31,7 @@ import { duitkuService } from '../../services/duitkuService';
 import { storeService } from '../../services/storeService';
 import { shippingService, INDONESIAN_CITIES } from '../../services/shippingService';
 import { integrationService } from '../../services/integrationService';
+import { adminService } from '../../services/adminService';
 import {
   paymentChannelService,
   PaymentChannel,
@@ -122,6 +123,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   // 4. Merchant Active Integrations & Channels state
   const [activeCouriers, setActiveCouriers] = useState<string[]>([]);
   const [activePaymentChannels, setActivePaymentChannels] = useState<PaymentChannel[]>([]);
+  const [isGatewayEnabledOnPlatform, setIsGatewayEnabledOnPlatform] = useState<boolean>(() => {
+    return adminService.getPlatformSettings().paymentGatewayEnabled ?? true;
+  });
 
   // 5. Payment state
   const [selectedPaymentId, setSelectedPaymentId] = useState<string>('qris');
@@ -222,6 +226,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       setActivePaymentChannels(channels.filter((c) => c.isEnabled));
     } catch (err) {
       console.warn('Failed to load merchant payment channels:', err);
+    }
+    try {
+      const settings = await adminService.fetchPlatformSettingsFromDatabase();
+      setIsGatewayEnabledOnPlatform(settings.paymentGatewayEnabled ?? true);
+    } catch {
+      setIsGatewayEnabledOnPlatform(adminService.getPlatformSettings().paymentGatewayEnabled ?? true);
     }
   };
 
@@ -373,7 +383,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
 
     // 3. Automated Gateway Channels (Duitku / Midtrans)
-    if (paymentConfig.enablePaymentGateway) {
+    if (isGatewayEnabledOnPlatform && paymentConfig.enablePaymentGateway) {
       const channelsToRender =
         activePaymentChannels.filter((c) => c.isEnabled).length > 0
           ? activePaymentChannels.filter((c) => c.isEnabled)
@@ -439,7 +449,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
 
     return options;
-  }, [paymentConfig, activePaymentChannels, language, isEn, store?.name]);
+  }, [paymentConfig, activePaymentChannels, language, isEn, store?.name, isGatewayEnabledOnPlatform]);
 
   // Sync selectedPaymentId with available options
   useEffect(() => {

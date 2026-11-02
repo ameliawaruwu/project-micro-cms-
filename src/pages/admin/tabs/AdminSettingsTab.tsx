@@ -71,6 +71,65 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
           </div>
         </div>
 
+        {/* SAKELAR MASTER PAYMENT GATEWAY */}
+        <div className={`p-3.5 rounded-xl border transition-all ${
+          (platformSettings.paymentGatewayEnabled ?? true)
+            ? 'bg-emerald-50/70 border-emerald-200'
+            : 'bg-amber-50/80 border-amber-300'
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-xs ${
+                (platformSettings.paymentGatewayEnabled ?? true)
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-amber-500 text-white'
+              }`}>
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="font-bold text-xs text-gray-900">
+                    {isEn ? 'Master Payment Gateway Switch' : 'Sakelar Utama Payment Gateway'}
+                  </h4>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${
+                    (platformSettings.paymentGatewayEnabled ?? true)
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      : 'bg-amber-100 text-amber-900 border-amber-300'
+                  }`}>
+                    {(platformSettings.paymentGatewayEnabled ?? true)
+                      ? (isEn ? 'Active (Gateway Visible)' : 'Aktif (Payment Gateway Muncul)')
+                      : (isEn ? 'Disabled (Direct QRIS & COD Only)' : 'Nonaktif (Hanya QRIS Pribadi & COD)')}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-600 mt-0.5">
+                  {(platformSettings.paymentGatewayEnabled ?? true)
+                    ? (isEn
+                        ? 'Payment gateway is ACTIVE. Automated Virtual Account, QRIS real-time, and e-wallets appear on merchant settings and storefront checkout.'
+                        : 'Payment gateway AKTIF. Jalur Virtual Account, QRIS real-time, dan e-wallet otomatis akan muncul pada pengaturan merchant dan halaman checkout toko.')
+                    : (isEn
+                        ? 'Payment gateway is DISABLED. Automated gateway is hidden. Merchants and customers only use merchant direct QRIS, manual bank transfer, and COD.'
+                        : 'Payment gateway DINONAKTIFKAN. Jalur gateway otomatis disembunyikan. Seluruh merchant dan pembeli dialihkan ke QRIS Pribadi milik toko, transfer manual, dan COD (Bayar di Tempat).')}
+                </p>
+              </div>
+            </div>
+
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 self-start sm:self-auto">
+              <input
+                type="checkbox"
+                checked={platformSettings.paymentGatewayEnabled ?? true}
+                onChange={(e) =>
+                  setPlatformSettings({
+                    ...platformSettings,
+                    paymentGatewayEnabled: e.target.checked,
+                  })
+                }
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Duitku Status (Active Gateway) */}
           <div className="p-3 rounded-lg bg-sky-50/80 border border-sky-200 flex items-center justify-between">
@@ -304,7 +363,7 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="font-medium text-gray-700 block mb-1">{isEn ? 'Transaction Fee (%)' : 'Biaya Transaksi (%)'}</label>
               <input

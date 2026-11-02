@@ -24,6 +24,7 @@ import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Store, StorePaymentConfig } from '../../types';
 import { storeService } from '../../services/storeService';
+import { adminService } from '../../services/adminService';
 
 interface PaymentListPageProps {
   store?: Store;
@@ -64,6 +65,25 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
 
   // Fitur langganan di muka dinonaktifkan: seluruh merchant bebas menggunakan payment gateway otomatis tanpa biaya di muka
   const isFreePlan = false;
+
+  // Status Master Payment Gateway dari Pengaturan Admin
+  const [isGatewayEnabledOnPlatform, setIsGatewayEnabledOnPlatform] = useState<boolean>(() => {
+    return adminService.getPlatformSettings().paymentGatewayEnabled ?? true;
+  });
+
+  React.useEffect(() => {
+    adminService.fetchPlatformSettingsFromDatabase().then((settings) => {
+      setIsGatewayEnabledOnPlatform(settings.paymentGatewayEnabled ?? true);
+    });
+
+    const handleSettingsUpdated = () => {
+      setIsGatewayEnabledOnPlatform(adminService.getPlatformSettings().paymentGatewayEnabled ?? true);
+    };
+    window.addEventListener('storage', handleSettingsUpdated);
+    return () => {
+      window.removeEventListener('storage', handleSettingsUpdated);
+    };
+  }, []);
 
   // Load store's saved payment configuration with resilient defaults
   const currentConfig: StorePaymentConfig = useMemo(() => {
@@ -148,9 +168,9 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
   }, [channels, searchQuery, selectedCategory, language]);
 
   const activeGatewayCount = useMemo(() => {
-    if (isFreePlan || !enablePaymentGateway) return 0;
+    if (isFreePlan || !enablePaymentGateway || !isGatewayEnabledOnPlatform) return 0;
     return channels.filter((c) => c.isEnabled).length;
-  }, [channels, isFreePlan, enablePaymentGateway]);
+  }, [channels, isFreePlan, enablePaymentGateway, isGatewayEnabledOnPlatform]);
 
   const handleToggleChannel = (id: string) => {
     if (isFreePlan) {
@@ -687,6 +707,31 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
       {/* ========================================================================= */}
       {/* KARTU 3: PAYMENT GATEWAY OTOMATIS (MIDTRANS & DUITKU)                     */}
       {/* ========================================================================= */}
+      {!isGatewayEnabledOnPlatform ? (
+        <div className="bg-amber-50/75 border border-amber-300 rounded-2xl p-5 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-start gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 border border-amber-300/80 shadow-2xs">
+              <CreditCard className="w-5 h-5 text-amber-800" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold text-sm text-amber-950">
+                  Payment Gateway Otomatis Dinonaktifkan oleh Admin
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-200/90 text-amber-900 font-bold text-[10px] border border-amber-300">
+                  Mode QRIS Toko & COD Aktif
+                </span>
+              </div>
+              <p className="text-xs text-amber-800 mt-1 leading-relaxed max-w-2xl">
+                Super Admin sedang menonaktifkan jalur payment gateway otomatis (Virtual Account & E-Wallet). Seluruh transaksi toko Anda saat ini diarahkan ke <strong>QRIS Pribadi & Transfer Bank Toko</strong> (Kartu 2) serta <strong>Bayar di Tempat (COD)</strong> (Kartu 1).
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-semibold text-amber-900 bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-300 shrink-0">
+            0% Biaya Gateway
+          </span>
+        </div>
+      ) : (
       <div className="bg-white rounded-2xl border border-[#E5E0DD] shadow-2xs overflow-hidden transition">
         {/* Top Header Card */}
         <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -872,6 +917,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };
