@@ -917,13 +917,36 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     </div>
 
                     {inv.status !== 'paid' && (
-                      <button
-                        type="button"
-                        onClick={() => handleMarkPaid(inv.id)}
-                        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
-                      >
-                        Tandai Lunas
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {activeCommunity.coordinatorPhone && (
+                          <a
+                            href={`https://wa.me/${activeCommunity.coordinatorPhone.replace(/^0/, '62')}?text=${encodeURIComponent(
+                              `Halo ${activeCommunity.coordinatorName},\n\nBerikut rincian tagihan fee omset platform Kroomify untuk organisasi ${activeCommunity.name}:\n\n` +
+                              `• Nomor Invoice: ${inv.invoiceNumber}\n` +
+                              `• Periode: ${inv.period}\n` +
+                              `• Total Omset Toko Binaan: Rp ${inv.totalTurnover.toLocaleString('id-ID')}\n` +
+                              `• Tarif Fee Platform: ${inv.feePercent}%\n` +
+                              `• Total Tagihan: Rp ${inv.totalBilled.toLocaleString('id-ID')}\n` +
+                              `• Jatuh Tempo: ${inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('id-ID') : '-'}\n\n` +
+                              `Mohon lakukan transfer ke rekening operasional platform dan konfirmasi pada pesan ini. Terima kasih!`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                          >
+                            <Phone className="w-3.5 h-3.5 text-emerald-700" />
+                            <span>Kirim ke WhatsApp</span>
+                          </a>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleMarkPaid(inv.id)}
+                          className="px-3 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
+                        >
+                          Tandai Lunas
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
