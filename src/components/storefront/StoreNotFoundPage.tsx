@@ -129,7 +129,7 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
                 <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 leading-relaxed text-left">
                   <div className="flex items-center gap-1.5 font-bold text-amber-950 mb-1">
                     <Shield className="w-4 h-4 text-amber-700" />
-                    <span>Mode Administrator Super</span>
+                    <span>Mode Pengelola / Administrator</span>
                   </div>
                   Toko <strong className="text-amber-950">"{storeName}"</strong> saat ini berstatus <strong>Draf / Belum Publish</strong>. Halaman publik storefront belum dapat diakses oleh pembeli hingga pemilik toko mempublikasikannya.
                 </div>

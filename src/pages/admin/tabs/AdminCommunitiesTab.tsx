@@ -865,14 +865,16 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <div className="inline-flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => onOpenStorefront && onOpenStorefront(st.slug)}
-                            title="Buka Toko Online"
-                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition cursor-pointer"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </button>
+                          {st.isPublished && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenStorefront && onOpenStorefront(st.slug)}
+                              title="Buka Toko Online"
+                              className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </button>
+                          )}
 
                           <button
                             type="button"

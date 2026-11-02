@@ -1508,17 +1508,18 @@ export default function App() {
 
   // Render Public Storefront Content (Using New Dynamic Theme Engine)
   const renderStorefrontContent = () => {
-    const isPreview = 
-      viewMode === 'storefront' ||
-      viewMode === 'storefront-phone' ||
-      new URLSearchParams(window.location.search).get('preview') === 'true' ||
-      Boolean(new URLSearchParams(window.location.search).get('previewTheme'));
+    const isOwner = Boolean(user && activeStore && activeStore.id === currentStore?.id && user.role !== 'admin' && user.role !== 'sub_admin' && user.role !== 'community_admin');
+    const isOwnerDesigning = Boolean(
+      isOwner && (
+        new URLSearchParams(window.location.search).get('preview') === 'true' ||
+        Boolean(new URLSearchParams(window.location.search).get('previewTheme'))
+      )
+    );
     const isPublished = Boolean(currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published);
 
-    // Jika toko belum dipublikasikan atau toko belum ada dan bukan di mode preview
-    if ((!currentStore || !currentStore.id || !isPublished) && !isPreview) {
-      const isOwner = user && activeStore && activeStore.id === currentStore?.id;
-      const isAdmin = user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin');
+    // Jika toko belum dipublikasikan atau toko belum ada (dan bukan pemilik toko yang sedang menguji draf tema di editor)
+    if (!currentStore || !currentStore.id || (!isPublished && !isOwnerDesigning)) {
+      const isAdmin = Boolean(user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin'));
       return (
         <StoreNotFoundPage
           store={currentStore}

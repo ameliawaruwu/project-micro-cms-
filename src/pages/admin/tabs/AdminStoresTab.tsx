@@ -182,7 +182,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                           <span>{isEn ? 'Detail' : 'Detail'}</span>
                         </button>
 
-                        {onOpenStorefront && (
+                        {onOpenStorefront && store.isPublished && (
                           <button
                             onClick={() => onOpenStorefront(store.slug)}
                             className="p-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-600 transition cursor-pointer"
@@ -444,7 +444,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
             {/* Footer Modal */}
             <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-              {onOpenStorefront ? (
+              {onOpenStorefront && selectedStore.isPublished ? (
                 <button
                   onClick={() => {
                     onOpenStorefront(selectedStore.slug);
