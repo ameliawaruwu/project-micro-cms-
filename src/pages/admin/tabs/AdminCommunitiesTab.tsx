@@ -166,12 +166,13 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const turnoverStats = useMemo(() => {
     if (!activeCommunity?.id) return { totalTurnover: 0, completedOrdersCount: 0, activeStoresCount: 0 };
     return communityService.calculateCommunityTurnover(activeCommunity.id, communityStores, orders);
-  }, [activeCommunity.id, communityStores, orders]);
+  }, [activeCommunity?.id, communityStores, orders]);
 
   // Community invoices
   const filteredInvoices = useMemo(() => {
+    if (!activeCommunity?.id) return [];
     return invoices.filter((inv) => inv.communityId === activeCommunity.id);
-  }, [invoices, activeCommunity.id]);
+  }, [invoices, activeCommunity?.id]);
 
   // Handle assigning a store to community
   const handleAssignStore = async () => {
@@ -202,7 +203,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     setConfirmDialog({
       isOpen: true,
       title: `Lepas Toko "${storeName}"?`,
-      description: `Toko ini akan dikeluarkan dari naungan ${activeCommunity.name} dan beralih menjadi toko mandiri reguler.`,
+      description: `Toko ini akan dikeluarkan dari naungan ${activeCommunity?.name || ''} dan beralih menjadi toko mandiri reguler.`,
       confirmText: 'Ya, Lepas Toko',
       isDanger: true,
       onConfirm: async () => {
@@ -359,7 +360,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     setConfirmDialog({
       isOpen: true,
       title: `Hapus Organisasi "${commName}"?`,
-      description: `Tindakan ini akan menghapus organisasi secara permanen dari database Supabase. Seluruh lapak binaan (${communityStores.length} toko) akan dilepas menjadi toko mandiri, dan akun Sub-Admin koordinator (${activeCommunity.coordinatorEmail}) akan dihapus.`,
+      description: `Tindakan ini akan menghapus organisasi secara permanen dari database Supabase. Seluruh lapak binaan (${communityStores.length} toko) akan dilepas menjadi toko mandiri, dan akun Sub-Admin koordinator (${activeCommunity?.coordinatorEmail || ''}) akan dihapus.`,
       confirmText: 'Ya, Hapus Organisasi',
       isDanger: true,
       onConfirm: async () => {
@@ -1065,7 +1066,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       {/* ========================================================================= */}
       {/* MODAL 2: TAUTKAN TOKO KE ORGANISASI                                       */}
       {/* ========================================================================= */}
-      {isAssignModalOpen && (
+      {isAssignModalOpen && activeCommunity && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 border border-gray-200">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
@@ -1164,7 +1165,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       {/* ========================================================================= */}
       {/* MODAL 3: EDIT DETAIL ORGANISASI & KOORDINATOR (UPDATE CRUD)               */}
       {/* ========================================================================= */}
-      {isEditModalOpen && (
+      {isEditModalOpen && activeCommunity && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-200 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
