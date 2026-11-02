@@ -118,77 +118,90 @@ class CommunityService {
     communities.unshift(newComm);
     this.saveCommunities(communities);
 
-    // 2. Simpan Komunitas ke Database Supabase (tabel public.communities)
-    try {
-      await supabase.from('communities').upsert({
-        id: commId,
-        name: newComm.name,
-        slug: newComm.slug,
-        description: newComm.description,
-        coordinator_name: newComm.coordinatorName,
-        coordinator_email: newComm.coordinatorEmail,
-        coordinator_phone: newComm.coordinatorPhone,
-        turnover_fee_percent: newComm.turnoverFeePercent,
-        logo_url: newComm.logoUrl,
-        status: newComm.status,
-        created_at: newComm.createdAt,
-        updated_at: new Date().toISOString(),
-      });
-      console.log(`[communityService] Organisasi ${newComm.name} (${commId}) tersimpan di Supabase.`);
-    } catch (e) {
-      console.warn('[communityService] Error saving community to Supabase:', e);
-    }
-
-    // 3. Buat / Daftarkan User Sub-Admin ke Database Supabase (tabel public.users)
+    // 2. Simpan Komunitas & Akun Sub-Admin ke Supabase secara Paralel dengan Proteksi Timeout
     let userId = `USR_SUB_${Date.now().toString().slice(-6)}`;
-    try {
-      const { data: insertedUser, error: insertErr } = await supabase
-        .from('users')
-        .insert({
-          email: cleanEmail,
-          password_hash: hashedPassword,
-          name: data.coordinatorName.trim(),
-          phone: data.coordinatorPhone?.trim() || '',
-          role: 'sub_admin',
-          community_id: commId,
-          community_name: newComm.name,
+    const saveCommunityPromise = (async () => {
+      try {
+        const { error } = await supabase.from('communities').upsert({
+          id: commId,
+          name: newComm.name,
+          slug: newComm.slug,
+          description: newComm.description,
+          coordinator_name: newComm.coordinatorName,
+          coordinator_email: newComm.coordinatorEmail,
+          coordinator_phone: newComm.coordinatorPhone,
+          turnover_fee_percent: newComm.turnoverFeePercent,
+          logo_url: newComm.logoUrl,
+          status: newComm.status,
+          created_at: newComm.createdAt,
           updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      if (!insertErr && insertedUser) {
-        userId = insertedUser.id;
-        console.log(`[communityService] Akun Sub-Admin ${cleanEmail} (${userId}) berhasil dibuat di Supabase!`);
-      } else if (insertErr) {
-        // Jika email sudah terdaftar (misal user lama dipromosikan jadi sub-admin organisasi)
-        if (
-          insertErr.code === '23505' ||
-          insertErr.message?.includes('duplicate key') ||
-          insertErr.message?.includes('users_email_key')
-        ) {
-          const { data: updatedUser } = await supabase
-            .from('users')
-            .update({
-              role: 'sub_admin',
-              community_id: commId,
-              community_name: newComm.name,
-              password_hash: hashedPassword,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('email', cleanEmail)
-            .select()
-            .single();
-
-          if (updatedUser) userId = updatedUser.id;
-          console.log(`[communityService] Akun ${cleanEmail} berhasil dipromosikan menjadi Sub-Admin organisasi.`);
+        });
+        if (error) {
+          console.warn('[communityService] Error upsert community ke Supabase:', error.message);
         } else {
-          console.warn('[communityService] Warning insert sub_admin ke Supabase:', insertErr.message);
+          console.log(`[communityService] Organisasi ${newComm.name} (${commId}) tersimpan di Supabase.`);
         }
+      } catch (e) {
+        console.warn('[communityService] Exception saving community to Supabase:', e);
       }
-    } catch (e) {
-      console.warn('[communityService] Exception saat insert sub_admin ke DB:', e);
-    }
+    })();
+
+    const saveUserPromise = (async () => {
+      try {
+        const { data: insertedUser, error: insertErr } = await supabase
+          .from('users')
+          .insert({
+            email: cleanEmail,
+            password_hash: hashedPassword,
+            name: data.coordinatorName.trim(),
+            phone: data.coordinatorPhone?.trim() || '',
+            role: 'sub_admin',
+            community_id: commId,
+            community_name: newComm.name,
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (!insertErr && insertedUser) {
+          userId = insertedUser.id;
+          console.log(`[communityService] Akun Sub-Admin ${cleanEmail} (${userId}) berhasil dibuat di Supabase!`);
+        } else if (insertErr) {
+          // Jika email sudah terdaftar (misal user lama dipromosikan jadi sub-admin organisasi)
+          if (
+            insertErr.code === '23505' ||
+            insertErr.message?.includes('duplicate key') ||
+            insertErr.message?.includes('users_email_key')
+          ) {
+            const { data: updatedUser } = await supabase
+              .from('users')
+              .update({
+                role: 'sub_admin',
+                community_id: commId,
+                community_name: newComm.name,
+                password_hash: hashedPassword,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('email', cleanEmail)
+              .select()
+              .single();
+
+            if (updatedUser) userId = updatedUser.id;
+            console.log(`[communityService] Akun ${cleanEmail} berhasil dipromosikan menjadi Sub-Admin organisasi.`);
+          } else {
+            console.warn('[communityService] Warning insert sub_admin ke Supabase:', insertErr.message);
+          }
+        }
+      } catch (e) {
+        console.warn('[communityService] Exception saat insert sub_admin ke DB:', e);
+      }
+    })();
+
+    // Eksekusi paralel dengan batas waktu timeout maks 5 detik agar modal tidak menggantung
+    await Promise.race([
+      Promise.allSettled([saveCommunityPromise, saveUserPromise]),
+      new Promise((resolve) => setTimeout(resolve, 5000)),
+    ]);
 
     const createdUser: User = {
       id: userId,

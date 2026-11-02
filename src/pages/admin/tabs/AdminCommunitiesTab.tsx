@@ -270,6 +270,14 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       if (onShowToast) onShowToast('⚠️ Nama organisasi dan email koordinator wajib diisi.');
       return;
     }
+
+    // Validasi nomor WhatsApp (hanya angka)
+    const cleanPhone = createForm.coordinatorPhone.replace(/\D/g, '');
+    if (createForm.coordinatorPhone && cleanPhone.length < 8) {
+      if (onShowToast) onShowToast('⚠️ Nomor WhatsApp harus berupa angka dan minimal 8 digit.');
+      return;
+    }
+
     setIsSubmittingCreate(true);
     try {
       const res = await communityService.createOrganizationWithSubAdmin({
@@ -277,12 +285,12 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         description: createForm.description.trim(),
         coordinatorName: createForm.coordinatorName.trim() || `Koordinator ${createForm.name.trim()}`,
         coordinatorEmail: createForm.coordinatorEmail.trim(),
-        coordinatorPhone: createForm.coordinatorPhone.trim(),
+        coordinatorPhone: cleanPhone,
         password: createForm.password.trim() || 'subadmin123',
       });
 
-      const updatedCommunities = await communityService.fetchCommunitiesFromDatabase();
-      setCommunities(updatedCommunities);
+      // Optimistic update: Langsung tutup modal dan perbarui state antarmuka tanpa lag
+      setCommunities((prev) => [res.community, ...prev.filter((c) => c.id !== res.community.id)]);
       setSelectedCommunityId(res.community.id);
       setIsCreateModalOpen(false);
       setCreateForm({
@@ -295,8 +303,15 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       });
 
       if (onShowToast) {
-        onShowToast(`Sub-Admin & organisasi "${res.community.name}" berhasil didaftarkan ke database!`);
+        onShowToast(`Sub-Admin & organisasi "${res.community.name}" berhasil didaftarkan!`);
       }
+
+      // Sinkronisasi data dari Supabase di latar belakang
+      communityService.fetchCommunitiesFromDatabase().then((dbComms) => {
+        if (dbComms && dbComms.length > 0) {
+          setCommunities(dbComms);
+        }
+      });
     } catch (err: any) {
       if (onShowToast) {
         onShowToast('❌ Gagal mendaftarkan Sub-Admin: ' + (err?.message || ''));
@@ -1003,12 +1018,17 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp</label>
+                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp (Angka saja)</label>
                     <input
-                      type="text"
-                      placeholder="081234567890"
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="Contoh: 081234567890"
                       value={createForm.coordinatorPhone}
-                      onChange={(e) => setCreateForm({ ...createForm, coordinatorPhone: e.target.value })}
+                      onChange={(e) => {
+                        const numericOnly = e.target.value.replace(/\D/g, '');
+                        setCreateForm({ ...createForm, coordinatorPhone: numericOnly });
+                      }}
                       className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
                     />
                   </div>
@@ -1262,11 +1282,14 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp</label>
+                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp (Angka saja)</label>
                     <input
-                      type="text"
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="081234567890"
                       value={editForm.coordinatorPhone}
-                      onChange={(e) => setEditForm({ ...editForm, coordinatorPhone: e.target.value })}
+                      onChange={(e) => setEditForm({ ...editForm, coordinatorPhone: e.target.value.replace(/\D/g, '') })}
                       className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
                     />
                   </div>
