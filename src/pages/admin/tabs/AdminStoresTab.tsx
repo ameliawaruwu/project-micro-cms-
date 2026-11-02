@@ -140,11 +140,17 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                     {/* Store details */}
                     <td className="py-2.5 px-3.5">
                       <div className="flex items-center gap-2.5">
-                        <img
-                          src={store.logoUrl || 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=100'}
-                          alt={store.name}
-                          className="w-7 h-7 rounded object-cover border border-gray-200"
-                        />
+                        {store.logoUrl && !store.logoUrl.includes('unsplash.com') ? (
+                          <img
+                            src={store.logoUrl}
+                            alt={store.name}
+                            className="w-7 h-7 rounded object-cover border border-gray-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-7 h-7 rounded bg-[#F5E8EA] border border-[#E8DDDE] flex items-center justify-center text-[#66000E] shrink-0 font-bold text-[10px]">
+                            <StoreIcon className="w-3.5 h-3.5" />
+                          </div>
+                        )}
                         <div>
                           <p className="font-semibold text-gray-900 leading-tight">{store.name}</p>
                           <span className="text-[11px] text-gray-400">/{store.slug} • {store.city}</span>
@@ -218,11 +224,17 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
             {/* Header Modal */}
             <div className="px-6 py-4 bg-gradient-to-r from-[#66000E] to-[#9B1C1C] text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img
-                  src={selectedStore.logoUrl || 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=100'}
-                  alt={selectedStore.name}
-                  className="w-11 h-11 rounded-xl object-cover border-2 border-white/40 bg-white"
-                />
+                {selectedStore.logoUrl && !selectedStore.logoUrl.includes('unsplash.com') ? (
+                  <img
+                    src={selectedStore.logoUrl}
+                    alt={selectedStore.name}
+                    className="w-11 h-11 rounded-xl object-cover border-2 border-white/40 bg-white shrink-0"
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-xl bg-white/20 border-2 border-white/40 flex items-center justify-center text-white shrink-0 shadow-xs">
+                    <StoreIcon className="w-6 h-6 text-white" />
+                  </div>
+                )}
                 <div>
                   <h3 className="font-bold text-base text-white tracking-tight">
                     {selectedStore.name}

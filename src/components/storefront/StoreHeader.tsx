@@ -9,6 +9,7 @@ import {
   X,
   ChevronRight,
   ExternalLink,
+  Store as StoreIcon,
 } from 'lucide-react';
 import { Store as StoreType, StoreSectionOptions, NavMenuItem } from '../../types';
 import { generateWhatsAppLink } from '../../utils/formatters';
@@ -117,7 +118,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3 sm:gap-4">
         {/* Brand / Logo & Name */}
         <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 mr-4 lg:mr-8">
-          {showLogo && (
+          {showLogo && store.logoUrl && !store.logoUrl.includes('unsplash.com') ? (
             <div
               className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl overflow-hidden shadow-2xs shrink-0 border ${
                 isBrandStyle ? 'border-white/30 bg-white/10' : 'border-[#EAEAEA] bg-[#F7F7F7]'
@@ -130,7 +131,15 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
                 referrerPolicy="no-referrer"
               />
             </div>
-          )}
+          ) : showLogo ? (
+            <div
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl overflow-hidden shadow-2xs shrink-0 border flex items-center justify-center font-bold text-xs ${
+                isBrandStyle ? 'border-white/30 bg-white/10 text-white' : 'border-[#EAEAEA] bg-[#F7F7F7] text-[#66000E]'
+              }`}
+            >
+              <StoreIcon className="w-5 h-5" />
+            </div>
+          ) : null}
           <div className="min-w-0">
             <a
               href="#beranda"
