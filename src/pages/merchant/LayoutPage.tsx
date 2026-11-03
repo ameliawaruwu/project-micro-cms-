@@ -1081,6 +1081,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     key: string,
     newOptions: Partial<StoreSectionOptions>
   ) => {
+    const targetSection = sections.find((sec, idx) => (sec.key || `${sec.id}-${idx}`) === key);
     const updated = sections.map((sec, idx) => {
       const currentKey = sec.key || `${sec.id}-${idx}`;
       if (currentKey === key) {
@@ -1096,20 +1097,23 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     });
     setSections(updated);
 
-    // If updating heading or storeName, sync to storeInfo & currentStore so all theme templates react immediately
-    if (newOptions.heading || (newOptions as any).storeName) {
-      const newName = newOptions.heading || (newOptions as any).storeName;
-      useCmsStore.getState().updateStoreInfo({ name: newName });
-      setCurrentStore((prev) => ({ ...prev, name: newName }));
-    }
+    // HANYA section Header yang boleh mensinkronkan judul/deskripsinya ke nama & tagline toko secara global.
+    // Section lain (Hero Banner, Testimonials, Newsletter, dll) juga memakai field `heading`/`description`
+    // untuk kontennya sendiri — mensinkronkannya secara global akan menimpa identitas toko secara tidak sengaja.
+    if (targetSection?.id === 'header') {
+      if (newOptions.heading || (newOptions as any).storeName) {
+        const newName = newOptions.heading || (newOptions as any).storeName;
+        useCmsStore.getState().updateStoreInfo({ name: newName });
+        setCurrentStore((prev) => ({ ...prev, name: newName }));
+      }
 
-    // If updating description / subheading / subtitle, sync to storeInfo & currentStore
-    const newDesc = newOptions.description !== undefined 
-      ? newOptions.description 
-      : (newOptions.subheading !== undefined ? newOptions.subheading : (newOptions as any).subtitle);
-    if (newDesc !== undefined) {
-      useCmsStore.getState().updateStoreInfo({ description: newDesc });
-      setCurrentStore((prev) => ({ ...prev, description: newDesc, tagline: newDesc }));
+      const newDesc = newOptions.description !== undefined
+        ? newOptions.description
+        : (newOptions.subheading !== undefined ? newOptions.subheading : (newOptions as any).subtitle);
+      if (newDesc !== undefined) {
+        useCmsStore.getState().updateStoreInfo({ description: newDesc });
+        setCurrentStore((prev) => ({ ...prev, description: newDesc, tagline: newDesc }));
+      }
     }
 
     pushToHistory(updated);

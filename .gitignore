@@ -9,3 +9,4 @@ releases/
 current
 .env*
 !.env.example
+_backup*.json
