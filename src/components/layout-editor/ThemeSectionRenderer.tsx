@@ -8,6 +8,7 @@ interface ThemeSectionRendererProps {
   onUpdateSectionOptions?: (key: string, newOptions: Partial<any>) => void;
   deviceMode?: 'desktop' | 'tablet' | 'mobile';
   readonly?: boolean;
+  accentColor?: string;
 }
 
 export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({ 
@@ -15,7 +16,8 @@ export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({
   section, 
   onUpdateSectionOptions, 
   deviceMode = 'desktop',
-  readonly = false 
+  readonly = false,
+  accentColor,
 }) => {
   const normalizedId = normalizeThemeId(themeId);
   const themeComponents = ThemeRegistry[normalizedId] || ThemeRegistry[themeId as ThemeId];
@@ -54,6 +56,7 @@ export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({
         isMobile={deviceMode === 'mobile'}
         isTablet={deviceMode === 'tablet'}
         readonly={readonly}
+        accentColor={accentColor}
       />
     );
   }

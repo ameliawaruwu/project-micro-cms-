@@ -820,9 +820,6 @@ const TemplateCard: React.FC<{
           <h3 className="font-bold text-[16px] text-[#1F1F1F] leading-tight">
             {template.name}
           </h3>
-          <p className="text-[13px] text-[#706866] mt-1">
-            {isEn ? 'by MicroCMS' : 'oleh MicroCMS'}
-          </p>
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); onUse(); }}

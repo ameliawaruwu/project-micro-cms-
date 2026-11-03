@@ -599,6 +599,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                       onUpdateSectionOptions={onUpdateSectionOptions}
                       deviceMode={deviceMode}
                       readonly={readonly}
+                      accentColor={primaryAccent}
                     />
                   </div>
                 ) : (
@@ -1810,6 +1811,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                           onUpdateSectionOptions={onUpdateSectionOptions}
                           deviceMode={deviceMode}
                           readonly={readonly}
+                          accentColor={primaryAccent}
                         />
                       </div>
                     ) : (

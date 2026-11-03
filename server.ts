@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import dns from 'dns';
 import { deployRouter } from './backend/deployController';
+import { publicApiRouter } from './backend/publicApiController';
 
 dotenv.config();
 
@@ -876,6 +877,9 @@ app.use('/deploy', deployRouter);
 app.use('/api/deploy', deployRouter);
 app.use('/', deployRouter); // Kompatibilitas rute domainService.ts (/cloudflare/*)
 app.use('/api', deployRouter);
+
+// 6. Public API v1 — Account & Product (proteksi via header X-API-Key)
+app.use('/api/v1', publicApiRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running securely on http://localhost:${PORT}`);

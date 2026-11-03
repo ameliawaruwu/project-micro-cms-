@@ -49,9 +49,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initAuth = async () => {
       try {
-        let isPurgedAccount = false;
+        // 1. Prioritaskan sesi OAuth Google (sumber kebenaran terbaru) — jangan
+        //    pernah digate oleh status sesi lokal lama, karena keduanya independen.
+        //    Jika user baru saja redirect dari login Google, sesi ini harus diproses
+        //    meski localStorage masih menyimpan sisa akun lama yang sudah dihapus.
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user && session.user.email) {
+          const googleUser = session.user;
+          const userMeta = googleUser.user_metadata || {};
+          const googleEmail = googleUser.email.toLowerCase().trim();
+          const fullName = userMeta.full_name || userMeta.name || googleEmail.split('@')[0];
+          const avatarUrl = userMeta.avatar_url || userMeta.picture;
 
-        // 1. Check local session & validate with Supabase database
+          localStorage.removeItem('kroomify_oauth_intent');
+          sessionStorage.removeItem('oauth_pending_store_name');
+          sessionStorage.removeItem('oauth_intent');
+
+          const exists = await authService.checkAccountExists(googleEmail);
+
+          if (!exists) {
+            // Akun Google belum ada di sistem (baru atau sudah dihapus sebelumnya):
+            // buat akun baru secara otomatis tanpa alur registrasi terpisah
+            const authData = await authService.registerWithGoogle({
+              googleEmail,
+              fullName,
+              avatarUrl,
+            });
+            setUser(authData.user);
+            setMerchant(authData.merchant);
+            setStore(authData.store);
+            localStorage.setItem('kroomify_onboarding_completed', 'true');
+            localStorage.removeItem('kroomify_onboarding_pending');
+            localStorage.removeItem('kroomify_onboarding_step');
+            window.dispatchEvent(
+              new CustomEvent('auth_google_success', {
+                detail: { ...authData, isNewUser: true },
+              })
+            );
+          } else {
+            // Existing user: log in directly
+            const authData = await authService.login(googleEmail, 'google-auth');
+            setUser(authData.user);
+            setMerchant(authData.merchant);
+            setStore(authData.store);
+            window.dispatchEvent(
+              new CustomEvent('auth_google_success', {
+                detail: { ...authData, isNewUser: false },
+              })
+            );
+          }
+          return;
+        }
+
+        // 2. Tidak ada sesi Google aktif: cek sesi lokal & validasi dengan database
         const current = authService.getCurrentUser();
         if (current.user) {
           const isValid = await authService.validateSessionWithDatabase(current.user.id, current.user.email);
@@ -61,7 +111,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setStore(current.store);
           } else {
             console.warn('[AuthContext] Sesi dibatalkan karena akun telah dihapus dari database Supabase.');
-            isPurgedAccount = true;
             setUser(null);
             setMerchant(null);
             setStore(null);
@@ -69,59 +118,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               await supabase.auth.signOut();
             } catch (e) {}
             window.dispatchEvent(new CustomEvent('auth_session_invalidated'));
-          }
-        }
-
-        // 2. Check Supabase OAuth session (if redirected from Google)
-        if (!isPurgedAccount) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session && session.user && session.user.email) {
-            const googleUser = session.user;
-            const userMeta = googleUser.user_metadata || {};
-            const googleEmail = googleUser.email.toLowerCase().trim();
-            const fullName = userMeta.full_name || userMeta.name || googleEmail.split('@')[0];
-            const avatarUrl = userMeta.avatar_url || userMeta.picture;
-
-            const oauthIntent =
-              localStorage.getItem('kroomify_oauth_intent') ||
-              sessionStorage.getItem('oauth_intent');
-
-            localStorage.removeItem('kroomify_oauth_intent');
-            sessionStorage.removeItem('oauth_pending_store_name');
-            sessionStorage.removeItem('oauth_intent');
-
-            const exists = await authService.checkAccountExists(googleEmail);
-
-            if (!exists) {
-              // Akun Google belum ada di sistem: buat akun baru secara otomatis tanpa alur registrasi terpisah
-              const authData = await authService.registerWithGoogle({
-                googleEmail,
-                fullName,
-                avatarUrl,
-              });
-              setUser(authData.user);
-              setMerchant(authData.merchant);
-              setStore(authData.store);
-              localStorage.setItem('kroomify_onboarding_completed', 'true');
-              localStorage.removeItem('kroomify_onboarding_pending');
-              localStorage.removeItem('kroomify_onboarding_step');
-              window.dispatchEvent(
-                new CustomEvent('auth_google_success', {
-                  detail: { ...authData, isNewUser: true },
-                })
-              );
-            } else {
-              // Existing user: log in directly
-              const authData = await authService.login(googleEmail, 'google-auth');
-              setUser(authData.user);
-              setMerchant(authData.merchant);
-              setStore(authData.store);
-              window.dispatchEvent(
-                new CustomEvent('auth_google_success', {
-                  detail: { ...authData, isNewUser: false },
-                })
-              );
-            }
           }
         }
       } catch (e) {

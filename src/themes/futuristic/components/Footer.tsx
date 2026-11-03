@@ -2,43 +2,43 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Cpu, ShieldCheck, Truck, CreditCard, Headphones, Send, Phone, Mail, MapPin, Instagram, Youtube, Clock } from 'lucide-react';
 
-export const FuturisticFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#8B5CF6' }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
 
   return (
-    <footer className="w-full bg-[#070A14] text-gray-300 pt-16 pb-8 px-6 md:px-12 font-['Space_Grotesk',sans-serif] border-t border-purple-900/30 relative overflow-hidden">
+    <footer className="w-full bg-[#070A14] text-gray-300 pt-16 pb-8 px-6 md:px-12 font-['Space_Grotesk',sans-serif] border-t relative overflow-hidden" style={{ borderColor: `${accentColor}4D` }}>
       {/* Background Cyber Grid Lines */}
       <div className="absolute inset-0 bg-[radial-gradient(#1e1b4b_1px,transparent_1px)] [background-size:24px_24px] opacity-30 pointer-events-none"></div>
-      <div className="absolute -top-32 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute -top-32 left-1/4 w-96 h-96 rounded-full blur-[120px] pointer-events-none" style={{ backgroundColor: `${accentColor}1A` }}></div>
 
       <div className="max-w-7xl mx-auto relative z-10">
         
         {/* Top Feature Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-12 mb-12 border-b border-gray-800/80">
-          <div className="flex items-center gap-3 bg-purple-950/20 p-3.5 rounded-xl border border-purple-900/30">
-            <Truck className="w-6 h-6 text-purple-400 shrink-0" />
+          <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ backgroundColor: `${accentColor}14`, border: `1px solid ${accentColor}26` }}>
+            <Truck className="w-6 h-6 shrink-0" style={{ color: accentColor }} />
             <div>
               <h5 className="text-xs font-bold text-white uppercase tracking-wider">Pengiriman Cepat</h5>
               <p className="text-[11px] text-gray-400">Gratis Ongkir & Instant Courier</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-purple-950/20 p-3.5 rounded-xl border border-purple-900/30">
+          <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ backgroundColor: `${accentColor}14`, border: `1px solid ${accentColor}26` }}>
             <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
             <div>
               <h5 className="text-xs font-bold text-white uppercase tracking-wider">Garansi Resmi</h5>
               <p className="text-[11px] text-gray-400">100% Produk Original & BNIB</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-purple-950/20 p-3.5 rounded-xl border border-purple-900/30">
+          <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ backgroundColor: `${accentColor}14`, border: `1px solid ${accentColor}26` }}>
             <CreditCard className="w-6 h-6 text-cyan-400 shrink-0" />
             <div>
               <h5 className="text-xs font-bold text-white uppercase tracking-wider">Pembayaran Aman</h5>
               <p className="text-[11px] text-gray-400">QRIS, Transfer Bank, Cicilan 0%</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-purple-950/20 p-3.5 rounded-xl border border-purple-900/30">
+          <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ backgroundColor: `${accentColor}14`, border: `1px solid ${accentColor}26` }}>
             <Headphones className="w-6 h-6 text-pink-400 shrink-0" />
             <div>
               <h5 className="text-xs font-bold text-white uppercase tracking-wider">Layanan CS 24/7</h5>
@@ -53,7 +53,7 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOp
           {/* Column 1: Store Brand Info (col-span-4) */}
           <div className="lg:col-span-4 space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accentColor}33`, border: `1px solid ${accentColor}66`, color: accentColor }}>
                 <Cpu className="w-5 h-5" />
               </div>
               <h3 className="text-2xl font-extrabold tracking-wider uppercase text-white">
@@ -64,25 +64,25 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOp
               {storeDesc || "Pusat Hardware, Component PC High-End, Gaming Gear & Watercooling System Terpercaya di Indonesia."}
             </p>
             <div className="space-y-2 text-xs text-gray-400 pt-2 font-mono">
-              <p className="flex items-center gap-2.5"><MapPin className="w-3.5 h-3.5 text-purple-400 shrink-0" /> {storeInfo.address || "Neo Cyber District, Jakarta"}</p>
-              <p className="flex items-center gap-2.5"><Phone className="w-3.5 h-3.5 text-purple-400 shrink-0" /> {storeInfo.phone || "+62 812-3456-7890"}</p>
-              <p className="flex items-center gap-2.5"><Mail className="w-3.5 h-3.5 text-purple-400 shrink-0" /> {storeInfo.email || "support@kroomhardware.id"}</p>
-              <p className="flex items-center gap-2.5"><Clock className="w-3.5 h-3.5 text-purple-400 shrink-0" /> Senin - Sabtu: 09.00 - 21.00 WIB</p>
+              <p className="flex items-center gap-2.5"><MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> {storeInfo.address || "Neo Cyber District, Jakarta"}</p>
+              <p className="flex items-center gap-2.5"><Phone className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> {storeInfo.phone || "+62 812-3456-7890"}</p>
+              <p className="flex items-center gap-2.5"><Mail className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> {storeInfo.email || "support@kroomhardware.id"}</p>
+              <p className="flex items-center gap-2.5"><Clock className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> Senin - Sabtu: 09.00 - 21.00 WIB</p>
             </div>
           </div>
 
           {/* Column 2: Product Categories (col-span-2) */}
           <div className="lg:col-span-2">
             <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Kategori Hardware
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accentColor }}></span> Kategori Hardware
             </h4>
             <ul className="space-y-2.5 text-xs text-gray-400">
-              <li><a href="/katalog" className="hover:text-purple-400 transition-colors">VGA Card RTX / RX</a></li>
-              <li><a href="/katalog" className="hover:text-purple-400 transition-colors">Processor & Mobo</a></li>
-              <li><a href="/katalog" className="hover:text-purple-400 transition-colors">RAM & NVMe SSD</a></li>
-              <li><a href="/katalog" className="hover:text-purple-400 transition-colors">Gaming Keyboard & Mouse</a></li>
-              <li><a href="/katalog" className="hover:text-purple-400 transition-colors">Cooling & PC Case</a></li>
-              <li><a href="/katalog" className="hover:text-purple-400 transition-colors">Monitor High Refresh</a></li>
+              <li><a href="/katalog" className="hover:text-white transition-colors">VGA Card RTX / RX</a></li>
+              <li><a href="/katalog" className="hover:text-white transition-colors">Processor & Mobo</a></li>
+              <li><a href="/katalog" className="hover:text-white transition-colors">RAM & NVMe SSD</a></li>
+              <li><a href="/katalog" className="hover:text-white transition-colors">Gaming Keyboard & Mouse</a></li>
+              <li><a href="/katalog" className="hover:text-white transition-colors">Cooling & PC Case</a></li>
+              <li><a href="/katalog" className="hover:text-white transition-colors">Monitor High Refresh</a></li>
             </ul>
           </div>
 
@@ -112,11 +112,15 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOp
                 <input
                   type="email"
                   placeholder="Email anda..."
-                  className="w-full bg-gray-900/90 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                  className="w-full bg-gray-900/90 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none"
+                  style={{ borderColor: undefined }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = accentColor; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = ''; }}
                 />
                 <button
                   type="submit"
-                  className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors shrink-0 flex items-center gap-1"
+                  className="text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors shrink-0 flex items-center gap-1"
+                  style={{ backgroundColor: accentColor }}
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
@@ -158,7 +162,7 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOp
           <p>© {new Date().getFullYear()} {storeInfo.name || "Kroombox Store"}. All rights reserved.</p>
           <div className="flex items-center gap-4 text-gray-400">
             <span>Official Socials:</span>
-            <a href="#" className="hover:text-purple-400 transition-colors"><Instagram className="w-4 h-4" /></a>
+            <a href="#" className="transition-colors" style={{ color: undefined }} onMouseEnter={(e) => { e.currentTarget.style.color = accentColor; }} onMouseLeave={(e) => { e.currentTarget.style.color = ''; }}><Instagram className="w-4 h-4" /></a>
             <a href="#" className="hover:text-red-400 transition-colors"><Youtube className="w-4 h-4" /></a>
           </div>
         </div>
@@ -167,4 +171,5 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOp
     </footer>
   );
 };
+
 

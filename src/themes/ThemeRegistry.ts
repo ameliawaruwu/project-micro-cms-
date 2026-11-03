@@ -1,5 +1,6 @@
 import { MinimalistNavbar, MinimalistHero, MinimalistFeaturedProducts, MinimalistFooter, MinimalistBrandPhilosophy, MinimalistCollectionGrid } from './minimalist';
 import { FuturisticNavbar, FuturisticHero, FuturisticFeaturedProducts, FuturisticFooter, FuturisticTechFeatures, FuturisticProductComparison, FuturisticFloatingShowcase, FuturisticInnovationCta } from './futuristic';
+import { ModernNavbar, ModernHero, ModernFeaturedProducts, ModernFooter, ModernPromoBanner } from './modern';
 import { EditorialNavbar, EditorialHero, EditorialLookbook, EditorialCampaign, EditorialAsymmetricShowcase, EditorialBrandStory, EditorialJournal, EditorialFooter, EditorialProductGrid } from './editorial';
 import { NatureNavbar, NatureHero, NatureIngredientStory, NatureSustainability, NatureFooter, NatureFeaturedProducts, NatureProductCard } from './nature';
 import { LuxuryNavbar, LuxuryHero, LuxurySignatureCollection, LuxuryCraftsmanship, LuxuryPrivateCollection, LuxuryFooter } from './luxury';
@@ -88,12 +89,12 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
   cute: { Navbar: CuteNavbar, Hero: CuteHero, Footer: CuteFooter, FeaturedProducts: CuteFeaturedProducts, ProductGrid: CuteFeaturedProducts },
   elegant: { Navbar: ElegantNavbar, Hero: ElegantHero, Footer: ElegantFooter, FeaturedProducts: ElegantFeaturedProducts, ProductGrid: ElegantFeaturedProducts },
   modern: { 
-    Navbar: FuturisticNavbar, 
-    Hero: FuturisticHero, 
-    Footer: FuturisticFooter,
-    FeaturedProducts: FuturisticFeaturedProducts,
-    ProductGrid: FuturisticFeaturedProducts,
-    PromoBanner: FuturisticInnovationCta
+    Navbar: ModernNavbar, 
+    Hero: ModernHero, 
+    Footer: ModernFooter,
+    FeaturedProducts: ModernFeaturedProducts,
+    ProductGrid: ModernFeaturedProducts,
+    PromoBanner: ModernPromoBanner
   },
   creative: { 
     Navbar: CreativeNavbar, 

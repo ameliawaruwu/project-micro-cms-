@@ -185,7 +185,7 @@ export const TemplateCard: React.FC<{
             {template.name}
           </h3>
           <p className="text-xs text-[#777777] mt-0.5 truncate">
-            oleh MicroCMS • {template.sectionCount} Seksi
+            {template.sectionCount} Seksi
           </p>
         </div>
         <button
