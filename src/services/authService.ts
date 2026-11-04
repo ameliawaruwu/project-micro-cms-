@@ -58,7 +58,7 @@ const defaultAccounts: StoredAccount[] = [
   {
     id: 'USR001',
     email: 'admin@lapakq.com',
-    password: 'admin123',
+    password: 'bantuumkm2344@',
     user: {
       id: 'USR001',
       name: 'Super Admin LapakQ',
@@ -79,7 +79,7 @@ const defaultAccounts: StoredAccount[] = [
   {
     id: 'USR001_LEGACY',
     email: 'admin@kroomify.id',
-    password: 'admin123',
+    password: 'bantuumkm2344@',
     user: {
       id: 'USR001',
       name: 'Super Admin LapakQ',
