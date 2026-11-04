@@ -92,11 +92,49 @@ publicApiRouter.post('/accounts', async (req: Request, res: Response) => {
       [storeId, userId, finalStoreName, storeSlug, (phoneWhatsApp || '').trim() || '']
     );
 
+    // Generate kode referral unik untuk user baru
+    let cleanRefName = String(fullName).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!cleanRefName || cleanRefName.length < 2) cleanRefName = 'KRM';
+    else cleanRefName = cleanRefName.slice(0, 5);
+
+    const safeChars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let generatedRefCode = '';
+    for (let i = 0; i < 3; i++) {
+      generatedRefCode += safeChars.charAt(Math.floor(Math.random() * safeChars.length));
+    }
+    generatedRefCode = `${cleanRefName}${generatedRefCode}`;
+
+    await client.query(
+      'INSERT INTO user_referral_codes (user_id, referral_code) VALUES ($1, $2) ON CONFLICT (user_id) DO NOTHING',
+      [userId, generatedRefCode]
+    );
+
+    // Jika ada kode referral yang dimasukkan saat pendaftaran, proses rujukan
+    const inputRefCode = req.body.referralCode ? String(req.body.referralCode).trim().toUpperCase() : '';
+    if (inputRefCode) {
+      const refCheck = await client.query(
+        'SELECT user_id, referral_code FROM user_referral_codes WHERE LOWER(referral_code) = LOWER($1)',
+        [inputRefCode]
+      );
+      if (refCheck.rows.length > 0 && refCheck.rows[0].user_id !== userId) {
+        await client.query(
+          'INSERT INTO referral_redemptions (referrer_user_id, referee_user_id, referral_code) VALUES ($1, $2, $3) ON CONFLICT (referee_user_id) DO NOTHING',
+          [refCheck.rows[0].user_id, userId, refCheck.rows[0].referral_code]
+        );
+      }
+    }
+
     await client.query('COMMIT');
 
     return res.status(201).json({
       success: true,
-      user: { id: userId, email: cleanEmail, name: String(fullName).trim(), role: 'merchant' },
+      user: {
+        id: userId,
+        email: cleanEmail,
+        name: String(fullName).trim(),
+        role: 'merchant',
+        referralCode: generatedRefCode,
+      },
       store: { id: storeId, name: finalStoreName, slug: storeSlug, plan: 'free' },
     });
   } catch (err: any) {
@@ -126,7 +164,23 @@ publicApiRouter.get('/accounts/:id', async (req: Request, res: Response) => {
       'SELECT id, name, slug, plan, is_published FROM stores WHERE user_id = $1',
       [id]
     );
-    return res.status(200).json({ success: true, user: userRes.rows[0], stores: storesRes.rows });
+
+    const refRes = await pool.query(
+      'SELECT referral_code FROM user_referral_codes WHERE user_id = $1',
+      [id]
+    );
+    const totalReferredRes = await pool.query(
+      'SELECT COUNT(*)::int as count FROM referral_redemptions WHERE referrer_user_id = $1',
+      [id]
+    );
+
+    const userData = {
+      ...userRes.rows[0],
+      referralCode: refRes.rows[0]?.referral_code || null,
+      totalReferred: totalReferredRes.rows[0]?.count || 0,
+    };
+
+    return res.status(200).json({ success: true, user: userData, stores: storesRes.rows });
   } catch (err: any) {
     console.error('[API /accounts/:id] Error:', err);
     return res.status(500).json({ success: false, message: err?.message || 'Gagal mengambil data akun.' });

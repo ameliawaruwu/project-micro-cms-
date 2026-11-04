@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
 export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -84,17 +85,30 @@ export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions
   );
 };
 
-export const FashionFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const FashionFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-4',
+    fallback: 'grid-cols-1 md:grid-cols-4',
+  });
+  const bottomFlexClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const colSpan2Class = isMobile || isTablet ? '' : 'md:col-span-2';
 
   return (
     <footer className="w-full bg-[#18181B] text-white pt-24 pb-12 border-t border-white/10">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
-          <div className="col-span-1 md:col-span-2">
+        <div className={`grid ${gridColsClass} gap-12 mb-20`}>
+          <div className={`col-span-1 ${colSpan2Class}`}>
             <h2 className="text-3xl font-serif italic mb-6">{storeTitle}</h2>
             <p className="text-sm text-gray-400 leading-loose max-w-md mb-8">
               {storeDesc || "Defining the modern silhouette with a blend of chic urban aesthetics and timeless elegance. Designed for the bold and the beautiful."}
@@ -133,7 +147,7 @@ export const FashionFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
           </div>
         </div>
         
-        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500 uppercase tracking-widest">
+        <div className={`pt-8 border-t border-white/10 flex ${bottomFlexClass} justify-between items-center gap-4 text-xs text-gray-500 uppercase tracking-widest`}>
           <p>{copyrightText}</p>
           <div className="flex gap-6">
             <a href="#" className="hover:text-white transition-colors">Privacy</a>

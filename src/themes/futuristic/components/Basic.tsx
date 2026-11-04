@@ -1,13 +1,21 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#A855F7' }) => {
+export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
   
   const showLogo = sectionOptions.showLogo ?? true;
   const showNavMenu = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+
+  const showDesktopNav = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
 
   return (
     <nav className="w-full px-6 md:px-12 py-5 flex justify-between items-center bg-[#050505]/80 border-b backdrop-blur-md sticky top-0 z-50" style={{ borderColor: `${accentColor}4D` }}>
@@ -22,7 +30,7 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
         )}
       </div>
       {showNavMenu && (
-        <div className="hidden md:flex gap-8">
+        <div className={`${showDesktopNav} gap-8`}>
           {navigation.map(nav => (
             <a
               key={nav.id}
@@ -90,18 +98,31 @@ export const FuturisticHero: React.FC<{ sectionOptions?: any; accentColor?: stri
   );
 };
 
-export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#A855F7' }) => {
+export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
   const allProducts = useCmsStore(state => state.products);
   const title = sectionOptions.featuredTitle || "Featured Hardware";
-  const gridColumns = sectionOptions.gridColumns || 3;
+  const desiredCols = [2, 3, 4].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 3;
   const products = allProducts.filter(p => p.isFeatured).slice(0, 3); // match gridColumns default usually
+
+  const desktopColsMap: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' };
+  const fallbackColsMap: Record<number, string> = {
+    2: 'grid-cols-1 sm:grid-cols-2',
+    3: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3',
+    4: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4',
+  };
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: desktopColsMap[desiredCols],
+    fallback: fallbackColsMap[desiredCols],
+  });
 
   return (
     <section className="py-32 px-6 md:px-12 bg-[#050505] text-white border-t" style={{ borderColor: `${accentColor}33` }}>
       <h2 className="text-3xl font-black uppercase tracking-widest mb-16 text-center text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(to right, ${accentColor}, #60A5FA)` }}>
         {title}
       </h2>
-      <div className={`grid grid-cols-1 md:grid-cols-${gridColumns} gap-8 max-w-7xl mx-auto`}>
+      <div className={`grid ${gridColsClass} gap-8 max-w-7xl mx-auto`}>
         {products.map((product, i) => (
           <div
             key={product.id}

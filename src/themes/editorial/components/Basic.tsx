@@ -1,10 +1,31 @@
 import React, { useState } from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, MessageCircle, Menu, X } from 'lucide-react';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean }> = ({ sectionOptions = {} }) => {
+export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isDesktopPreview = !isMobile && !isTablet;
+  const showDesktopTagline = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
+  const showHamburger = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex',
+    tablet: 'flex',
+    desktop: 'hidden',
+    fallback: 'md:hidden flex',
+  });
+  const showDesktopNavRow = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
+  const showMobileDrawer = !isDesktopPreview;
 
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
@@ -35,14 +56,14 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
       {/* Top Tier: Editorial Masthead */}
       <div className="w-full px-5 sm:px-8 md:px-12 py-5 sm:py-6 flex items-center justify-between gap-4">
         {/* Left: Magazine / Editorial Tagline */}
-        <div className="w-1/4 hidden md:flex items-center justify-start min-w-0">
+        <div className={`w-1/4 ${showDesktopTagline} items-center justify-start min-w-0`}>
           <span className="text-[10px] lg:text-[11px] font-sans font-medium tracking-[0.25em] uppercase text-gray-500 truncate" title={leftSubtitle}>
             {leftSubtitle}
           </span>
         </div>
 
         {/* Mobile Hamburger */}
-        <div className="md:hidden flex items-center">
+        <div className={`${showHamburger} items-center`}>
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -115,7 +136,7 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
       {/* Bottom Tier: Centered Navigation Links (Desktop) */}
       {showNav && navItems.length > 0 && (
-        <div className="hidden md:flex w-full border-t border-gray-200/60 px-6 py-3 items-center justify-center gap-6 lg:gap-10 overflow-x-auto no-scrollbar font-sans">
+        <div className={`${showDesktopNavRow} w-full border-t border-gray-200/60 px-6 py-3 items-center justify-center gap-6 lg:gap-10 overflow-x-auto no-scrollbar font-sans`}>
           {navItems.map((nav: any) => (
             <a
               key={nav.id}
@@ -130,8 +151,8 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
       )}
 
       {/* Mobile Drawer Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 bg-[#FAFAFA] px-6 py-5 space-y-4 font-sans animate-in slide-in-from-top-2 duration-200">
+      {mobileMenuOpen && showMobileDrawer && (
+        <div className="border-t border-gray-200 bg-[#FAFAFA] px-6 py-5 space-y-4 font-sans animate-in slide-in-from-top-2 duration-200">
           <div className="text-[10px] tracking-[0.2em] uppercase text-gray-400 font-semibold border-b border-gray-200 pb-2">
             {leftSubtitle}
           </div>
@@ -188,13 +209,19 @@ export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
   );
 };
 
-export const EditorialFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
   const rawTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeTitle = (!rawTitle || rawTitle === 'Green Market Indonesia') ? 'LOOKSEE' : rawTitle;
   const address = (storeInfo?.address && !storeInfo.address.includes('Lembang')) ? storeInfo.address : 'Grand Indonesia West Mall Lt. 1, Jakarta';
   const email = (storeInfo?.email && !storeInfo.email.includes('greenmarket')) ? storeInfo.email : 'contact@looksee.id';
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
+  const footerFlexClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
 
   return (
     <footer className="w-full px-6 md:px-12 py-24 bg-gray-900 text-white flex flex-col items-center">
@@ -204,7 +231,7 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOpt
           {sectionOptions.description || storeInfo?.description}
         </p>
       )}
-      <div className="flex flex-col md:flex-row gap-8 md:gap-16 text-center mb-16">
+      <div className={`flex ${footerFlexClass} gap-8 md:gap-16 text-center mb-16`}>
         <div>
           <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-4">Headquarters</p>
           <p className="text-xs uppercase tracking-widest text-gray-300 max-w-xs">{address}</p>

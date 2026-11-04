@@ -1,12 +1,19 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const CreativeNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeSubtitle = sectionOptions.headerSubtitle ?? sectionOptions.subheading ?? sectionOptions.tagline ?? sectionOptions.subtitle ?? '';
+  const showDesktopNav = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
 
   return (
     <nav className="w-full px-8 py-6 flex justify-between items-center bg-[#E11D48] text-white sticky top-0 z-50">
@@ -26,7 +33,7 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
       </div>
       
       {showNav && (
-        <div className="hidden md:flex gap-8 flex-1 justify-center items-center">
+        <div className={`${showDesktopNav} gap-8 flex-1 justify-center items-center`}>
           {navigation.map(nav => (
             <a key={nav.id} href={nav.route} className="text-sm font-bold uppercase tracking-widest hover:text-yellow-300 hover:scale-110 transition-transform">
               {nav.label}
@@ -44,14 +51,23 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   );
 };
 
-export const CreativeHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const CreativeHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "Where Art Meets Commerce";
   const subheading = sectionOptions.heroSubtitle ?? sectionOptions.description ?? sectionOptions.subheading ?? sectionOptions.content ?? "Explore unique handcrafted art supplies, pigments, canvases, and creative tools crafted for visionary artists.";
   const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1600&q=80";
+  const flexDirClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const halfWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-1/2';
+  const halfHeightClass = isMobile || isTablet ? 'h-1/2' : 'h-1/2 md:h-full';
+  const imgPositionClass = isMobile || isTablet ? 'absolute' : 'absolute md:relative';
 
   return (
-    <section className="relative w-full h-[85vh] bg-[#E11D48] flex flex-col md:flex-row items-center overflow-hidden">
-      <div className="w-full md:w-1/2 h-1/2 md:h-full relative z-10 flex flex-col justify-center px-12 md:px-24">
+    <section className={`relative w-full h-[85vh] bg-[#E11D48] flex ${flexDirClass} items-center overflow-hidden`}>
+      <div className={`${halfWidthClass} ${halfHeightClass} relative z-10 flex flex-col justify-center px-12 md:px-24`}>
         <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.9] mb-6 mix-blend-difference z-20 transform -rotate-2">
           {heading}
         </h1>
@@ -67,7 +83,7 @@ export const CreativeHero: React.FC<{ sectionOptions?: any }> = ({ sectionOption
         </div>
       </div>
       
-      <div className="w-full md:w-1/2 h-1/2 md:h-full absolute md:relative bottom-0 right-0 z-0">
+      <div className={`${halfWidthClass} ${halfHeightClass} ${imgPositionClass} bottom-0 right-0 z-0`}>
         <div className="absolute inset-0 bg-blue-600 mix-blend-color z-10 opacity-30"></div>
         <img 
           src={bgImage} 

@@ -1,19 +1,28 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Heart } from 'lucide-react';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const CuteFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-3',
+    fallback: 'grid-cols-1 md:grid-cols-3',
+  });
+  const itemsAlignClass = isMobile || isTablet ? 'items-center' : 'items-center md:items-start';
+  const textAlignClass = isMobile || isTablet ? 'text-center' : 'text-center md:text-left';
 
   return (
     <footer className="w-full bg-[#FFF5F7] pt-20 pb-10 px-6 mt-12 rounded-t-[3rem] font-['Outfit',sans-serif] border-t-8 border-[#FFD1DC]">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 mb-12 text-center md:text-left">
+      <div className={`max-w-5xl mx-auto grid ${gridColsClass} gap-12 mb-12 ${textAlignClass}`}>
 
         {/* Brand */}
-        <div className="flex flex-col items-center md:items-start">
+        <div className={`flex flex-col ${itemsAlignClass}`}>
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 border-4 border-[#FFD1DC]">
             <Heart className="w-8 h-8 text-[#FF85A1] fill-[#FF85A1]" />
           </div>
@@ -38,7 +47,7 @@ export const CuteFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
         </div>
 
         {/* Links */}
-        <div className="flex flex-col items-center md:items-start">
+        <div className={`flex flex-col ${itemsAlignClass}`}>
           <h4 className="text-lg font-black text-gray-800 mb-6 bg-white px-4 py-1 rounded-full border-2 border-[#FFD1DC] inline-block">
             Jalan Pintas 🌈
           </h4>
@@ -54,7 +63,7 @@ export const CuteFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
         </div>
 
         {/* Contact */}
-        <div className="flex flex-col items-center md:items-start">
+        <div className={`flex flex-col ${itemsAlignClass}`}>
           <h4 className="text-lg font-black text-gray-800 mb-6 bg-white px-4 py-1 rounded-full border-2 border-[#FFD1DC] inline-block">
             Sapa Kami! 💌
           </h4>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
 export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { products } = useCmsStore();
@@ -45,39 +46,54 @@ export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   );
 };
 
-export const BoldCategoryTiles: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => (
-  <section className="bg-zinc-950 py-16 px-6 border-b border-zinc-900">
-    <div className="max-w-6xl mx-auto">
-      <div className="text-center mb-10">
-        <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-2">COLLECTIONS</h2>
-        <p className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">Shop By Category</p>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-        {['Tops', 'Bottoms', 'Outerwear', 'Accessories'].map((cat, i) => (
-          <div key={i} className="h-44 md:h-60 rounded-2xl border border-zinc-800/80 bg-zinc-900/60 hover:bg-zinc-900 text-white flex flex-col items-center justify-center p-6 cursor-pointer group hover:border-red-500/50 transition-all duration-300 shadow-xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight group-hover:scale-110 transition-transform relative z-10 text-white">
-              {cat}
-            </h3>
-            <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mt-2 relative z-10 group-hover:text-red-400 transition-colors">
-              Explore →
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-);
+export const BoldCategoryTiles: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-4',
+    fallback: 'grid-cols-2 md:grid-cols-4',
+  });
 
-export const BoldLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  return (
+    <section className="bg-zinc-950 py-16 px-6 border-b border-zinc-900">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-10">
+          <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-2">COLLECTIONS</h2>
+          <p className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">Shop By Category</p>
+        </div>
+        <div className={`grid ${gridColsClass} gap-5`}>
+          {['Tops', 'Bottoms', 'Outerwear', 'Accessories'].map((cat, i) => (
+            <div key={i} className="h-44 md:h-60 rounded-2xl border border-zinc-800/80 bg-zinc-900/60 hover:bg-zinc-900 text-white flex flex-col items-center justify-center p-6 cursor-pointer group hover:border-red-500/50 transition-all duration-300 shadow-xl relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight group-hover:scale-110 transition-transform relative z-10 text-white">
+                {cat}
+              </h3>
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mt-2 relative z-10 group-hover:text-red-400 transition-colors">
+                Explore →
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "LOOKBOOK 2026";
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-3',
+    fallback: 'grid-cols-1 sm:grid-cols-3',
+  });
   return (
     <section className="py-24 px-6 bg-zinc-950 text-white border-b border-zinc-900">
       <div className="max-w-6xl mx-auto text-center">
         <h2 className="text-4xl sm:text-5xl font-black uppercase tracking-tight mb-12 text-white">
           {heading}
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+        <div className={`grid ${gridColsClass} gap-8`}>
           {[1, 2, 3].map(i => (
             <div key={i} className="relative group overflow-hidden bg-zinc-900 rounded-2xl border border-zinc-800 shadow-xl hover:-translate-y-1.5 transition-transform duration-300">
               <img 
@@ -132,15 +148,21 @@ export const BoldLimitedRelease: React.FC<{ sectionOptions?: any }> = ({ section
   );
 };
 
-export const BoldCommunityBoard: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const BoldCommunityBoard: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "#BOLDMARKET";
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-4',
+    fallback: 'grid-cols-2 sm:grid-cols-4',
+  });
   return (
     <section className="py-20 px-6 bg-zinc-950 text-white border-b border-zinc-900">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-center mb-10 text-white">
           {heading}
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className={`grid ${gridColsClass} gap-4`}>
           {[...Array(4)].map((_, i) => (
             <div key={i} className="aspect-square bg-zinc-900 rounded-2xl border border-zinc-800/80 overflow-hidden relative group cursor-pointer shadow-lg">
               <img src={`https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=600&q=80&random=${i}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Community" />

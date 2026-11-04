@@ -66,6 +66,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
         phoneWhatsApp: phone.trim(),
         storeName: storeName.trim() || undefined,
         communityCode: communityCode.trim().toUpperCase() || undefined,
+        referralCode: communityCode.trim().toUpperCase() || undefined,
         password: password.trim(),
         autoLogin: false,
       });
@@ -320,7 +321,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   htmlFor="reg-community-code"
                   className="block text-xs sm:text-sm font-medium text-[#1A1110]"
                 >
-                  Kode Referal Komunitas <span className="text-slate-400 font-normal">(Opsional)</span>
+                  Kode Referal / Komunitas <span className="text-slate-400 font-normal">(Opsional)</span>
                 </label>
                 <span className="text-[10px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-bold border border-emerald-200">
                   Lapak Binaan
@@ -332,12 +333,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   type="text"
                   value={communityCode}
                   onChange={(e) => setCommunityCode(e.target.value.toUpperCase())}
-                  placeholder="Masukkan kode referal"
+                  placeholder="Masukkan kode referal teman atau komunitas"
                   className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7] placeholder:normal-case uppercase font-normal"
                 />
               </div>
               <p className="text-[11px] text-[#7E7E88] pl-2 leading-tight">
-                Masukkan kode jika Anda anggota binaan organisasi mitra. Kosongkan jika toko mandiri.
+                Masukkan kode jika diajak sesama merchant atau anggota binaan mitra. Kosongkan jika mandiri.
               </p>
             </div>
 

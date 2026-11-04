@@ -1,15 +1,25 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { products } = useCmsStore();
   const product = products[0]; // Just showing first product for showcase
+  const flexDirClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const halfWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-1/2';
+  const prClass = isMobile || isTablet ? '' : 'md:pr-12';
+  const mtClass = isMobile || isTablet ? 'mt-20' : 'mt-20 md:mt-0';
   if (!product) return null;
 
   return (
     <section className="py-32 px-6 md:px-12 bg-[#050505] text-white overflow-hidden relative border-t border-gray-900">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center">
-        <div className="w-full md:w-1/2 relative z-20 md:pr-12">
+      <div className={`max-w-6xl mx-auto flex ${flexDirClass} items-center`}>
+        <div className={`${halfWidthClass} relative z-20 ${prClass}`}>
           <div className="inline-block px-3 py-1 bg-purple-900/40 border border-purple-500/50 text-purple-400 text-xs font-mono mb-6 uppercase tracking-widest backdrop-blur-sm">
             {sectionOptions.badgeText || "New Arrival"}
           </div>
@@ -19,7 +29,7 @@ export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any }> = ({
             Analyze Spec
           </button>
         </div>
-        <div className="w-full md:w-1/2 relative mt-20 md:mt-0">
+        <div className={`${halfWidthClass} relative ${mtClass}`}>
           <div className="absolute w-[400px] h-[400px] bg-purple-600/20 rounded-full blur-[100px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
           <img src={product.image} alt={product.name} className="w-full h-[500px] object-contain relative z-20 mix-blend-screen drop-shadow-[0_0_40px_rgba(168,85,247,0.4)] animate-[float_6s_ease-in-out_infinite]" />
         </div>
@@ -28,11 +38,18 @@ export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any }> = ({
   );
 };
 
-export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => (
+export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-3',
+    fallback: 'grid-cols-1 md:grid-cols-3',
+  });
+  return (
   <section className="py-24 px-6 md:px-12 bg-[#080808] text-white border-y border-gray-900 relative">
     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/10 via-[#080808] to-[#080808]"></div>
     <div className="max-w-6xl mx-auto relative z-10">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+      <div className={`grid ${gridColsClass} gap-16`}>
         {[
           { title: "Quantum Processing", desc: "Unparalleled speed for real-time rendering." },
           { title: "Neural Cooling", desc: "AI-driven temperature management system." },
@@ -47,7 +64,8 @@ export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any }> = ({ sec
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export const FuturisticProductComparison: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => (
   <section className="py-24 px-6 md:px-12 bg-[#050505] text-white text-center">

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { cartService } from '../../../services/cartService';
 import { Search, ShoppingBag, Menu, X } from 'lucide-react';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean }> = ({ sectionOptions = {} }) => {
+export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const navigation = useCmsStore((state) => state.navigation);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -47,12 +48,45 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
       }))
     : navigation.filter(n => n.isActive);
 
+  // Pada preview editor (device dipaksa), nav desktop & hamburger harus mengikuti
+  // device yang DIPILIH, bukan lebar window browser sesungguhnya.
+  const showHamburger = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex',
+    tablet: 'flex',
+    desktop: 'hidden',
+    fallback: 'md:hidden flex',
+  });
+  const showDesktopNav = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
+  const brandAlign = getDeviceClass(isMobile, isTablet, {
+    mobile: 'text-center',
+    tablet: 'text-center',
+    desktop: 'text-left',
+    fallback: 'text-center md:text-left',
+  });
+  const brandFlex = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-1',
+    tablet: 'flex-1',
+    desktop: 'flex-initial',
+    fallback: 'flex-1 md:flex-initial',
+  });
+  const brandMarginClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'mx-auto',
+    tablet: 'mx-auto',
+    desktop: 'mx-0',
+    fallback: 'mx-auto md:mx-0',
+  });
+
   return (
     <header className="w-full max-w-full bg-white/95 backdrop-blur-md sticky top-0 z-50 font-sans border-b border-gray-100/90 box-border overflow-x-hidden transition-all">
       <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between py-3 sm:py-4 px-3 sm:px-5 md:px-10 gap-2 sm:gap-4 box-border">
         
         {/* Mobile / Tablet Hamburger Button */}
-        <div className="md:hidden flex items-center shrink-0">
+        <div className={`${showHamburger} items-center shrink-0`}>
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -64,18 +98,18 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
         </div>
 
         {/* Brand Logo / Name (Auto-fits mobile screen without overlapping) */}
-        <div className="flex-1 md:flex-initial text-center md:text-left min-w-0 px-1">
+        <div className={`${brandFlex} ${brandAlign} min-w-0 px-1`}>
           {showLogo && (
             <a 
               href="/" 
-              className="text-base sm:text-lg md:text-2xl font-light tracking-tighter text-gray-900 uppercase whitespace-nowrap block hover:opacity-75 transition-opacity truncate max-w-[160px] sm:max-w-[240px] md:max-w-none mx-auto md:mx-0"
+              className={`text-base sm:text-lg md:text-2xl font-light tracking-tighter text-gray-900 uppercase whitespace-nowrap block hover:opacity-75 transition-opacity truncate max-w-[160px] sm:max-w-[240px] md:max-w-none ${brandMarginClass}`}
               title={storeTitle}
             >
               {storeTitle}
             </a>
           )}
           {storeSubtitle && (
-            <span className="text-[10px] text-gray-500 tracking-wider block truncate max-w-[240px] mx-auto md:mx-0 font-normal mt-0.5">
+            <span className={`text-[10px] text-gray-500 tracking-wider block truncate max-w-[240px] ${brandMarginClass} font-normal mt-0.5`}>
               {storeSubtitle}
             </span>
           )}
@@ -83,7 +117,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
 
         {/* Desktop Navigation Links (Strictly hidden on mobile viewport & simulator) */}
         {showNav && (
-          <nav className="hidden md:flex items-center justify-center flex-1 gap-6 lg:gap-10 px-4">
+          <nav className={`${showDesktopNav} items-center justify-center flex-1 gap-6 lg:gap-10 px-4`}>
             {navItems.map((nav: any) => (
               <a
                 key={nav.id}

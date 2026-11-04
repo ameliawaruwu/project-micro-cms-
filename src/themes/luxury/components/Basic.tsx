@@ -1,20 +1,27 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const LuxuryNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
   const { isEn } = useLanguage();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const showDesktopNav = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
 
   return (
     <nav className="w-full px-8 md:px-16 py-6 md:py-8 flex justify-between items-center bg-white/95 backdrop-blur-md border-b border-[#F0EBE1] sticky top-0 z-50 transition-all duration-300">
       <div className="w-1/3 flex justify-start">
         {showNav && (
-          <div className="hidden md:flex gap-10">
+          <div className={`${showDesktopNav} gap-10`}>
             {navigation.map(nav => (
               <a key={nav.id} href={nav.route} className="text-[10px] uppercase tracking-[0.25em] text-[#7D6E63] hover:text-[#8C531B] transition-colors duration-300">
                 {nav.label}

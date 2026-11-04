@@ -5,16 +5,26 @@ import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
 import { Phone, Mail, MapPin, Send } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
+import { getDeviceClass } from '../../utils/responsivePreview';
 
 interface ContactPageProps {
   themeData?: ThemeSchema;
   themeId?: string;
   store?: any;
   onNavigate?: (pageId: string) => void;
+  deviceMode?: 'desktop' | 'tablet' | 'mobile';
 }
 
-export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: propThemeId, store, onNavigate }) => {
+export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: propThemeId, store, onNavigate, deviceMode }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
+  const isMobile = deviceMode === 'mobile';
+  const isTablet = deviceMode === 'tablet';
+  const gridCols2Class = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-2',
+    fallback: 'grid-cols-1 md:grid-cols-2',
+  });
   const liveStoreInfo = useCmsStore((state) => state.storeInfo);
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',
@@ -105,7 +115,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: pr
               <h1 className="text-3xl font-bold text-gray-900">Hubungi Kami</h1>
               <p className="text-sm text-gray-500">Ada pertanyaan? Tim kami siap membantu Anda kapan saja.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className={`grid ${gridCols2Class} gap-8`}>
               <div className="space-y-4">
                 <input type="text" placeholder="Nama Anda" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
                 <input type="email" placeholder="Email Anda" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black" />

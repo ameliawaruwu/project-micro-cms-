@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Order } from '../../types';
 import { orderService } from '../../services/orderService';
+import { getDeviceClass } from '../../utils/responsivePreview';
 
 interface OrdersPageProps {
   themeData?: ThemeSchema;
@@ -25,6 +26,7 @@ interface OrdersPageProps {
   store?: any;
   isDetailView?: boolean;
   onNavigate?: (pageId: string) => void;
+  deviceMode?: 'desktop' | 'tablet' | 'mobile';
 }
 
 export const OrdersPage: React.FC<OrdersPageProps> = ({
@@ -33,8 +35,29 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
   store,
   isDetailView,
   onNavigate,
+  deviceMode,
 }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
+  const isMobile = deviceMode === 'mobile';
+  const isTablet = deviceMode === 'tablet';
+  const flexRowHeaderClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const gridCols2Class = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-2',
+    fallback: 'grid-cols-1 md:grid-cols-2',
+  });
+  const gridCols2SmClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-2',
+    fallback: 'grid-cols-1 sm:grid-cols-2',
+  });
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',
     textColor: '#1A1A1A',
@@ -116,7 +139,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                     key={ord.id}
                     className="bg-yellow-300 p-8 border-8 border-black shadow-[12px_12px_0px_rgba(0,0,0,1)] space-y-6"
                   >
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-4 border-black pb-4">
+                    <div className={`flex ${flexRowHeaderClass} justify-between items-start md:items-center gap-4 border-b-4 border-black pb-4`}>
                       <div>
                         <div className="flex gap-2 items-center mb-2">
                           <span className="px-3 py-1 bg-black text-white font-black text-xs uppercase">
@@ -137,7 +160,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-black uppercase">
+                    <div className={`grid ${gridCols2Class} gap-4 text-xs font-black uppercase`}>
                       <div className="bg-white p-4 border-4 border-black space-y-1">
                         <p className="text-gray-600">PENERIMA:</p>
                         <p className="text-sm">{ord.customerName} ({ord.customerPhone})</p>
@@ -229,7 +252,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-300">
+                    <div className={`grid ${gridCols2SmClass} gap-3 text-xs text-slate-300`}>
                       <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
                         <p className="text-slate-500">RECIPIENT:</p>
                         <p className="font-bold text-white mt-0.5">{ord.customerName} ({ord.customerPhone})</p>
@@ -382,7 +405,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
                     </div>
 
                     {/* Delivery & Items Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div className={`grid ${gridCols2Class} gap-4 text-xs`}>
                       <div className="p-4 rounded-2xl border border-gray-100 bg-white space-y-1.5">
                         <div className="flex items-center gap-1.5 font-bold text-gray-900">
                           <MapPin className="w-3.5 h-3.5 text-gray-700" />

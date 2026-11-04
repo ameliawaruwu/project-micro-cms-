@@ -1,8 +1,18 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const FashionLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "The Lookbook";
+  const stackCols = isMobile || isTablet;
+  const mainGridClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-12',
+    fallback: 'grid-cols-1 md:grid-cols-12',
+  });
+  const col7Class = stackCols ? '' : 'md:col-span-7';
+  const col5Class = stackCols ? '' : 'md:col-span-5';
   
   return (
     <section className="py-24 md:py-32 bg-white text-[#18181B]">
@@ -12,8 +22,8 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOpt
           <h2 className="text-4xl md:text-5xl font-serif italic">{heading}</h2>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
-          <div className="md:col-span-7">
+        <div className={`grid ${mainGridClass} gap-4 md:gap-8`}>
+          <div className={col7Class}>
             <div className="relative group overflow-hidden h-[60vh] md:h-[80vh]">
               <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&q=80"} alt="Lookbook 1" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500"></div>
@@ -23,7 +33,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOpt
               </div>
             </div>
           </div>
-          <div className="md:col-span-5 flex flex-col gap-4 md:gap-8">
+          <div className={`${col5Class} flex flex-col gap-4 md:gap-8`}>
             <div className="relative group overflow-hidden h-[30vh] md:h-[40vh]">
               <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&q=80" alt="Lookbook 2" className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-1000" />
               <div className="absolute bottom-8 left-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -47,9 +57,16 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOpt
   );
 };
 
-export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { products } = useCmsStore();
   const heading = sectionOptions.heading || "Trending Now";
+
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-4',
+    fallback: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+  });
 
   return (
     <section className="py-24 md:py-32 bg-[#F9F9F9] text-[#18181B]">
@@ -61,7 +78,7 @@ export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any }> = ({ se
           </a>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 md:gap-x-8 md:gap-y-16">
+        <div className={`grid ${gridColsClass} gap-6 sm:gap-8 md:gap-x-8 md:gap-y-16`}>
           {products.slice(0, 4).map((p, i) => (
             <div key={p.id} className={`group cursor-pointer ${i % 2 !== 0 ? 'md:mt-12 lg:mt-16' : ''}`}>
               <div className="relative overflow-hidden mb-4 sm:mb-6 aspect-[3/4] min-h-[220px] sm:min-h-[260px]">

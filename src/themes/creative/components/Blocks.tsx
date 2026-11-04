@@ -1,9 +1,16 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const CreativeLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { products } = useCmsStore();
   const heading = sectionOptions.heading || "Visual Diary";
+  const columnsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'columns-1',
+    tablet: 'columns-2',
+    desktop: 'columns-3',
+    fallback: 'columns-1 md:columns-3',
+  });
   
   return (
     <section className="py-32 px-6 md:px-12 bg-white relative">
@@ -14,7 +21,7 @@ export const CreativeLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOp
           <div className="h-2 flex-1 bg-black rounded-full"></div>
         </div>
         
-        <div className="columns-1 md:columns-3 gap-8 space-y-8">
+        <div className={`${columnsClass} gap-8 space-y-8`}>
           {products.map((p, i) => (
             <div key={p.id} className="break-inside-avoid group cursor-pointer">
               <div className="relative overflow-hidden rounded-3xl mb-4">
@@ -37,8 +44,14 @@ export const CreativeLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOp
   );
 };
 
-export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "Interactive Showcase";
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-2',
+    fallback: 'grid-cols-1 md:grid-cols-2',
+  });
   
   return (
     <section className="py-32 bg-blue-600 text-white overflow-hidden relative">
@@ -50,7 +63,7 @@ export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any }> = ({ s
       <div className="relative z-10 max-w-5xl mx-auto px-6 text-center mt-20">
         <h2 className="text-4xl md:text-6xl font-black mb-12">{heading}</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div className={`grid ${gridColsClass} gap-12 items-center`}>
           <div className="h-[400px] bg-white rounded-[40px] transform -rotate-3 hover:rotate-0 transition-transform duration-500 p-2 shadow-2xl relative">
             <div className="absolute -top-6 -right-6 w-16 h-16 bg-yellow-300 rounded-full z-20 animate-bounce"></div>
             <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1549490349-8643362247b5?w=800&q=80"} className="w-full h-full object-cover rounded-[32px]" alt="Showcase" />

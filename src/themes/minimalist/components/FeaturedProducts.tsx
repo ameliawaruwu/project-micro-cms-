@@ -2,8 +2,9 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { MinimalistProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey }) => {
+export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, isMobile, isTablet }) => {
   const allProducts = useCmsStore(state => state.products);
   
   let filteredProducts = [...allProducts];
@@ -31,11 +32,19 @@ export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpda
   const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || "A selection of our finest pieces, crafted with purpose.";
   const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || "Explore All";
 
-  const gridColsClass = 
-    sectionOptions.gridColumns === 2 ? 'grid-cols-1 sm:grid-cols-2' :
-    sectionOptions.gridColumns === 3 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' :
-    sectionOptions.gridColumns === 4 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4' :
-    'grid-cols-1 sm:grid-cols-2';
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop:
+      sectionOptions.gridColumns === 2 ? 'grid-cols-2' :
+      sectionOptions.gridColumns === 4 ? 'grid-cols-4' :
+      'grid-cols-3',
+    fallback:
+      sectionOptions.gridColumns === 2 ? 'grid-cols-1 sm:grid-cols-2' :
+      sectionOptions.gridColumns === 3 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' :
+      sectionOptions.gridColumns === 4 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4' :
+      'grid-cols-1 sm:grid-cols-2',
+  });
 
   if (products.length === 0) return null;
 

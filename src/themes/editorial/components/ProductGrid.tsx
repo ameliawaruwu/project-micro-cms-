@@ -84,11 +84,14 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
   const displayList = filtered.slice(0, productCount);
 
   const isMobile = deviceMode === 'mobile';
+  const isTablet = deviceMode === 'tablet';
 
   const gridColsClass = isMobile
     ? sectionOptions.mobileColumns === 1
       ? 'grid-cols-1 gap-6'
       : 'grid-cols-2 gap-4'
+    : isTablet
+    ? (gridColumns === 2 ? 'grid-cols-2 gap-6' : 'grid-cols-2 gap-6 md:gap-8')
     : gridColumns === 2
     ? 'grid-cols-1 sm:grid-cols-2 gap-6 md:gap-10'
     : gridColumns === 4
@@ -127,7 +130,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
 
         {/* Filter & Search Bar */}
         {(showCategoryTabs || showSearchBar) && (
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12 md:mb-16 border-b border-t border-[#241A1A]/10 py-5">
+          <div className={`flex ${isMobile || isTablet ? 'flex-col' : 'flex-col md:flex-row'} justify-between items-center gap-6 mb-12 md:mb-16 border-b border-t border-[#241A1A]/10 py-5`}>
             {showCategoryTabs && (
               <div className="flex flex-wrap justify-center gap-4 md:gap-6">
                 {categories.map((cat) => (

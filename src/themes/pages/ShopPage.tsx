@@ -4,6 +4,7 @@ import { Product } from '../../types';
 import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
+import { getDeviceClass } from '../../utils/responsivePreview';
 import { 
   Search, 
   ShoppingBag, 
@@ -30,6 +31,7 @@ interface ShopPageProps {
   products?: Product[];
   isWishlist?: boolean;
   onNavigate?: (pageId: string) => void;
+  deviceMode?: 'desktop' | 'tablet' | 'mobile';
 }
 
 export const ShopPage: React.FC<ShopPageProps> = ({ 
@@ -38,8 +40,17 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   store, 
   products = [], 
   isWishlist, 
-  onNavigate 
+  onNavigate,
+  deviceMode,
 }) => {
+  const isMobile = deviceMode === 'mobile';
+  const isTablet = deviceMode === 'tablet';
+  const shopGridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-4',
+    fallback: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+  });
   const activeThemeId = (propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist').toLowerCase();
   const { isEn } = useLanguage();
 
@@ -254,7 +265,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className={`grid ${shopGridColsClass} gap-6`}>
               {displayedProducts.map((p) => (
                 <div 
                   key={p.id} 
@@ -438,7 +449,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 sm:gap-10">
+            <div className={`grid ${shopGridColsClass} gap-8 sm:gap-10"`}>
               {displayedProducts.map((p) => (
                 <div 
                   key={p.id} 
@@ -604,7 +615,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+            <div className={`grid ${shopGridColsClass} gap-5 sm:gap-6"`}>
               {displayedProducts.map((p) => (
                 <div 
                   key={p.id} 
@@ -776,7 +787,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             </div>
 
             {/* Products Grid — B2B Corporate Card Style */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <div className={`grid ${shopGridColsClass} gap-5"`}>
               {displayedProducts.map((p) => (
                 <div
                   key={p.id}
@@ -926,7 +937,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
           </div>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className={`grid ${shopGridColsClass} gap-6`}>
             {displayedProducts.map((p) => (
               <div
                 key={p.id}
@@ -1041,7 +1052,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   return (
     <div className="flex flex-col w-full min-h-screen relative">
       {CustomNavbar ? (
-        <CustomNavbar sectionOptions={navbarOptions} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+        <CustomNavbar sectionOptions={navbarOptions} searchQuery={searchQuery} onSearchChange={setSearchQuery} isMobile={isMobile} isTablet={isTablet} />
       ) : headerSection && (
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
@@ -1049,7 +1060,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
       <div className="flex-1">{renderThemeContent()}</div>
 
       {CustomFooter ? (
-        <CustomFooter sectionOptions={footerOptions} />
+        <CustomFooter sectionOptions={footerOptions} isMobile={isMobile} isTablet={isTablet} />
       ) : footerSection && (
         <FooterSection settings={footerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}

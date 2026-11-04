@@ -1,10 +1,18 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { ElegantProductCard } from './ProductCard';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const ElegantFeaturedProducts: React.FC = () => {
+export const ElegantFeaturedProducts: React.FC<{ isMobile?: boolean; isTablet?: boolean }> = ({ isMobile, isTablet }) => {
   const allProducts = useCmsStore(state => state.products);
   const products = allProducts.filter(p => p.isFeatured).slice(0, 3);
+
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-3',
+    fallback: 'grid-cols-1 md:grid-cols-3',
+  });
 
   if (products.length === 0) return null;
 
@@ -21,7 +29,7 @@ export const ElegantFeaturedProducts: React.FC = () => {
           <div className="w-px h-16 bg-[#2C2A29]/30"></div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
+        <div className={`grid ${gridColsClass} gap-12 md:gap-8`}>
           {products.map(product => (
             <ElegantProductCard key={product.id} product={product} />
           ))}

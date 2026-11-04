@@ -1,18 +1,26 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const ElegantFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+  const flexDirClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const maxWClass = isMobile || isTablet ? '' : 'md:max-w-sm';
 
   return (
     <footer className="w-full bg-[#1A1918] text-[#FAF9F6] pt-24 pb-12 px-8 md:px-16 font-['Cormorant_Garamond',serif]">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-16 mb-24">
+      <div className={`max-w-7xl mx-auto flex ${flexDirClass} justify-between gap-16 mb-24`}>
         
         {/* Brand */}
-        <div className="flex-1 md:max-w-sm">
+        <div className={`flex-1 ${maxWClass}`}>
           <h3 className="text-3xl font-normal tracking-widest uppercase mb-8">
             {storeTitle}
           </h3>
@@ -22,7 +30,7 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
         </div>
 
         {/* Links */}
-        <div className="flex-1 flex flex-col md:flex-row gap-16 justify-end">
+        <div className={`flex-1 flex ${flexDirClass} gap-16 justify-end`}>
           <div>
             <h4 className="font-sans text-[10px] tracking-[0.3em] uppercase text-[#A39D98] mb-8">Navigation</h4>
             <ul className="space-y-4">
@@ -56,7 +64,7 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
 
       </div>
 
-      <div className="max-w-7xl mx-auto pt-8 border-t border-[#A39D98]/20 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className={`max-w-7xl mx-auto pt-8 border-t border-[#A39D98]/20 flex ${flexDirClass} justify-between items-center gap-4`}>
         <p className="font-sans text-[10px] tracking-[0.2em] uppercase text-[#A39D98]">
           &copy; {new Date().getFullYear()} {storeInfo.name}.
         </p>

@@ -1,12 +1,19 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const ProfessionalNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const showDesktopNav = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
 
   return (
     <nav className="w-full bg-[#1E40AF] text-white shadow-md sticky top-0 z-50">
@@ -40,7 +47,7 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any }> = ({ section
             </div>
           )}
           {showNav && (
-            <div className="hidden md:flex gap-8">
+            <div className={`${showDesktopNav} gap-8`}>
               {navigation.map(nav => (
                 <a key={nav.id} href={nav.route} className="text-sm font-semibold text-blue-50 hover:text-white transition-colors">
                   {nav.label}
@@ -62,17 +69,25 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any }> = ({ section
   );
 };
 
-export const ProfessionalHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const ProfessionalHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "Professional B2B Solutions";
   const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || storeInfo?.description || "Streamline your procurement process with our enterprise-grade supplies and dedicated account management.";
   const buttonLabel = sectionOptions.buttonLabel || "Request a Quote";
   const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1600&q=80";
+  const flexDirClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const halfWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-1/2';
+  const ptClass = isMobile || isTablet ? 'pt-12' : 'pt-12 md:pt-0';
 
   return (
     <section className="relative w-full min-h-[75vh] flex items-center bg-gray-50 border-b border-gray-200">
-      <div className="w-full max-w-7xl mx-auto px-6 md:px-16 flex flex-col md:flex-row items-center gap-12">
-        <div className="w-full md:w-1/2 pt-12 md:pt-0 z-10">
+      <div className={`w-full max-w-7xl mx-auto px-6 md:px-16 flex ${flexDirClass} items-center gap-12`}>
+        <div className={`${halfWidthClass} ${ptClass} z-10`}>
           <div className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider rounded-full mb-6">
             Enterprise Ready
           </div>
@@ -91,7 +106,7 @@ export const ProfessionalHero: React.FC<{ sectionOptions?: any }> = ({ sectionOp
             </button>
           </div>
         </div>
-        <div className="w-full md:w-1/2 relative">
+        <div className={`${halfWidthClass} relative`}>
           <div className="absolute inset-0 bg-blue-600 rounded-2xl transform translate-x-4 translate-y-4 opacity-10"></div>
           <img 
             src={bgImage} 
@@ -115,17 +130,29 @@ export const ProfessionalHero: React.FC<{ sectionOptions?: any }> = ({ sectionOp
   );
 };
 
-export const ProfessionalFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const ProfessionalFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. All rights reserved.`;
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-4',
+    fallback: 'grid-cols-1 md:grid-cols-4',
+  });
+  const bottomFlexClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
 
   return (
     <footer className="w-full bg-gray-900 text-gray-300 pt-20 pb-10 border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-6 md:px-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-          <div className="col-span-1 md:col-span-1">
+        <div className={`grid ${gridColsClass} gap-12 mb-16`}>
+          <div className="col-span-1">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center">
                 <span className="text-white font-bold text-xl leading-none">
@@ -174,7 +201,7 @@ export const ProfessionalFooter: React.FC<{ sectionOptions?: any }> = ({ section
           </div>
         </div>
         
-        <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className={`pt-8 border-t border-gray-800 flex ${bottomFlexClass} justify-between items-center gap-4`}>
           <p className="text-sm text-gray-500">{copyrightText}</p>
           <div className="flex gap-6 text-sm text-gray-500">
             <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>

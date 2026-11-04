@@ -1,11 +1,36 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, Menu } from 'lucide-react';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const ElegantNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const navigation = useCmsStore((state) => state.navigation);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const showHamburger = getDeviceClass(isMobile, isTablet, {
+    mobile: 'inline-block',
+    tablet: 'inline-block',
+    desktop: 'hidden',
+    fallback: 'md:hidden inline-block',
+  });
+  const showDesktopSearch = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
+  const showDesktopNav = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
+  const showCartLabel = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'inline',
+    fallback: 'hidden md:inline',
+  });
 
   return (
     <header className="w-full bg-[#FAF9F6]/90 backdrop-blur-sm border-b border-[#E8E6E1] py-5 px-8 md:px-16 sticky top-0 z-50 font-['Cormorant_Garamond',serif]">
@@ -13,10 +38,10 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
         
         {/* Left: Mobile Menu & Search */}
         <div className="flex-1 flex items-center gap-6">
-          <button className="md:hidden text-[#2C2A29]">
+          <button className={`${showHamburger} text-[#2C2A29]`}>
             <Menu className="w-5 h-5" />
           </button>
-          <button className="hidden md:flex items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors">
+          <button className={`${showDesktopSearch} items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors`}>
             <Search className="w-4 h-4" />
             <span className="text-xs tracking-[0.15em] uppercase font-sans">Search</span>
           </button>
@@ -37,7 +62,7 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
         {/* Right: Actions */}
         <div className="flex-1 flex items-center justify-end gap-6">
           <button className="text-[#6B6865] hover:text-[#2C2A29] transition-colors flex items-center gap-2">
-            <span className="text-xs tracking-[0.15em] uppercase hidden md:inline font-sans">Cart</span>
+            <span className={`text-xs tracking-[0.15em] uppercase ${showCartLabel} font-sans`}>Cart</span>
             <div className="relative">
               <ShoppingBag className="w-4 h-4" />
               <span className="absolute -bottom-2 -right-2 text-[#2C2A29] text-[9px] font-sans">0</span>
@@ -48,7 +73,7 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
       </div>
 
       {/* Second row: Desktop Navigation */}
-      <nav className="hidden md:flex items-center justify-center gap-12 mt-6">
+      <nav className={`${showDesktopNav} items-center justify-center gap-12 mt-6`}>
         {navigation.filter(n => n.isActive).map((nav) => (
           <a
             key={nav.id}

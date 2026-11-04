@@ -1,8 +1,9 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const LuxurySignatureCollection: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const LuxurySignatureCollection: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { products } = useCmsStore();
   const { isEn } = useLanguage();
 
@@ -32,6 +33,13 @@ export const LuxurySignatureCollection: React.FC<{ sectionOptions?: any }> = ({ 
   const buttonLabel = isDefaultButton ? defaultButton : sectionOptions.buttonLabel;
   const buttonLink = sectionOptions.buttonLink || "#all";
 
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-3',
+    fallback: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3',
+  });
+
   return (
     <section className={`py-24 md:py-32 px-8 md:px-16 ${bgColor} transition-colors duration-500`}>
       <div className={`flex ${headerLayout} mb-14 gap-8`}>
@@ -47,7 +55,7 @@ export const LuxurySignatureCollection: React.FC<{ sectionOptions?: any }> = ({ 
           {buttonLabel}
         </a>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
+      <div className={`grid ${gridColsClass} gap-6 sm:gap-8`}>
         {products.slice(0, sectionOptions.limit || 6).map((product) => (
           <div key={product.id} className="group cursor-pointer flex flex-col items-center bg-[#FAF7F2] p-4 sm:p-6 rounded-2xl border border-[#EADBCE] shadow-2xs hover:shadow-md transition-all duration-300">
             <div className="w-full aspect-[3/4] min-h-[220px] sm:min-h-[260px] overflow-hidden mb-4 sm:mb-6 bg-white rounded-xl relative">
@@ -63,7 +71,7 @@ export const LuxurySignatureCollection: React.FC<{ sectionOptions?: any }> = ({ 
   );
 };
 
-export const LuxuryCraftsmanship: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const LuxuryCraftsmanship: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { isEn } = useLanguage();
 
   const defaultHeading = isEn ? "Meticulous Craftsmanship" : "Keahlian Adiluhung";
@@ -110,15 +118,24 @@ export const LuxuryCraftsmanship: React.FC<{ sectionOptions?: any }> = ({ sectio
   const textAlignmentClass = align === 'center' ? 'text-center items-center' 
                            : align === 'right' ? 'text-right items-end'
                            : 'text-left items-start';
+  const flexDirClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const halfWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-1/2';
+  const orderImgClass = isMobile || isTablet ? '' : 'order-2 md:order-1';
+  const orderTextClass = isMobile || isTablet ? '' : 'order-1 md:order-2';
 
   return (
-    <section className={`py-24 md:py-32 px-8 md:px-16 ${bgColor} flex flex-col md:flex-row items-center gap-14 md:gap-20 transition-colors duration-500 border-y border-[#F0EBE1]`}>
-      <div className="w-full md:w-1/2 flex justify-center order-2 md:order-1">
+    <section className={`py-24 md:py-32 px-8 md:px-16 ${bgColor} flex ${flexDirClass} items-center gap-14 md:gap-20 transition-colors duration-500 border-y border-[#F0EBE1]`}>
+      <div className={`${halfWidthClass} flex justify-center ${orderImgClass}`}>
         <div className="relative w-full max-w-lg aspect-[4/5] overflow-hidden rounded-2xl group border border-[#EADBCE] shadow-xs">
           <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=800&q=80"} alt="Craftsmanship" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[15s] ease-out" />
         </div>
       </div>
-      <div className="w-full md:w-1/2 order-1 md:order-2">
+      <div className={`${halfWidthClass} ${orderTextClass}`}>
         <div className={`max-w-lg mx-auto flex flex-col ${textAlignmentClass}`}>
           <p className={`text-[10px] uppercase tracking-[0.4em] ${subColor} mb-5 font-mono font-medium`}>{eyebrow}</p>
           <h2 className={`text-4xl md:text-5xl font-serif ${headingColor} mb-6 leading-[1.15] font-normal`}>{heading}</h2>

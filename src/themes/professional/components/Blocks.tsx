@@ -1,7 +1,8 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "Why Partner With Us";
   
   const benefits = sectionOptions.features || [
@@ -11,6 +12,13 @@ export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any }> = ({ 
     { title: "Net-30 Terms", desc: "Flexible payment options for qualified business accounts." }
   ];
 
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-4',
+    fallback: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+  });
+
   return (
     <section className="py-24 bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-6 md:px-16">
@@ -19,7 +27,7 @@ export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any }> = ({ 
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">We provide the infrastructure and support necessary to scale your operations efficiently.</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className={`grid ${gridColsClass} gap-8`}>
           {benefits.map((benefit: any, i: number) => (
             <div key={i} className="p-6 bg-gray-50 rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-6">
@@ -35,9 +43,16 @@ export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any }> = ({ 
   );
 };
 
-export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { products } = useCmsStore();
   const heading = sectionOptions.heading || "Product Catalog";
+
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-3',
+    fallback: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+  });
 
   return (
     <section className="py-24 bg-gray-50 border-b border-gray-200">
@@ -53,7 +68,7 @@ export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any }> = ({ se
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className={`grid ${gridColsClass} gap-4 sm:gap-6`}>
           {products.map(product => (
             <div key={product.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow group flex flex-col justify-between">
               <div>
@@ -80,15 +95,21 @@ export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any }> = ({ se
   );
 };
 
-export const ProfessionalTestimonials: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const ProfessionalTestimonials: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "Trusted by Industry Leaders";
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-3',
+    fallback: 'grid-cols-1 md:grid-cols-3',
+  });
   
   return (
     <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-6 md:px-16 text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-16">{heading}</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className={`grid ${gridColsClass} gap-8`}>
           {[1, 2, 3].map((i) => (
             <div key={i} className="p-8 bg-gray-50 rounded-2xl border border-gray-100 text-left">
               <div className="flex gap-1 text-yellow-400 mb-6">

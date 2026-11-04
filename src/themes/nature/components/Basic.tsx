@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
 export const NatureNavbar: React.FC<{ 
   sectionOptions?: any; 
@@ -45,9 +46,20 @@ export const NatureNavbar: React.FC<{
     { id: 'nn3', label: 'Edukasi Organik', route: '/berita' },
   ];
 
+  const navFlexClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const flex1Class = isMobile || isTablet ? 'w-full' : 'w-full md:flex-1';
+  const navJustifyStartClass = isMobile || isTablet ? 'justify-center' : 'justify-center md:justify-start';
+  const navJustifyEndClass = isMobile || isTablet ? 'justify-center' : 'justify-center md:justify-end';
+  const navGapClass = isMobile || isTablet ? 'gap-4' : 'gap-4 md:gap-0';
+
   return (
-    <nav className="w-full px-4 sm:px-6 md:px-10 lg:px-12 py-5 flex flex-col md:flex-row justify-between items-center bg-[#F9F6F0] border-b border-[#E8E4DB] sticky top-0 z-50 font-serif gap-4 md:gap-0">
-      <div className="w-full md:flex-1 flex justify-center md:justify-start">
+    <nav className={`w-full px-4 sm:px-6 md:px-10 lg:px-12 py-5 flex ${navFlexClass} justify-between items-center bg-[#F9F6F0] border-b border-[#E8E4DB] sticky top-0 z-50 font-serif ${navGapClass}`}>
+      <div className={`${flex1Class} flex ${navJustifyStartClass}`}>
         {showNav && (
           <div className="flex flex-wrap justify-center md:justify-start gap-4 sm:gap-6 lg:gap-8 items-center">
             {navList.map(nav => (
@@ -75,7 +87,7 @@ export const NatureNavbar: React.FC<{
         )}
       </div>
 
-      <div className="w-full md:flex-1 flex flex-wrap justify-center md:justify-end items-center gap-3 sm:gap-5">
+      <div className={`${flex1Class} flex flex-wrap ${navJustifyEndClass} items-center gap-3 sm:gap-5`}>
         {/* Search Bar in Header Right */}
         <div className="relative w-44 sm:w-52 md:w-44 lg:w-60">
           <svg className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5C6B5D]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

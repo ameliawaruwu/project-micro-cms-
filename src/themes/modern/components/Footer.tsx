@@ -1,19 +1,36 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#2563EB' }) => {
+export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+  const isDesktopPreview = !isMobile && !isTablet;
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-12',
+    fallback: 'grid-cols-1 md:grid-cols-12',
+  });
+  const colSpan5Class = isDesktopPreview ? 'md:col-span-5' : '';
+  const colSpan3Class = isDesktopPreview ? 'md:col-span-3' : '';
+  const colSpan4Class = isDesktopPreview ? 'md:col-span-4' : '';
+  const bottomFlexClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
 
   return (
     <footer className="w-full px-4 md:px-8 py-6 font-['Outfit',sans-serif] bg-white">
       <div className="max-w-7xl mx-auto rounded-[2rem] p-8 md:p-14" style={{ backgroundColor: `${accentColor}0D` }}>
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 mb-10">
+        <div className={`grid ${gridColsClass} gap-10 mb-10`}>
 
-          <div className="md:col-span-5">
+          <div className={colSpan5Class}>
             <h3 className="text-xl font-extrabold text-gray-900 mb-3">{storeTitle}</h3>
             <p className="text-sm text-gray-500 leading-relaxed max-w-sm mb-5">{storeDesc}</p>
             <div className="flex items-center gap-3">
@@ -26,7 +43,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
             </div>
           </div>
 
-          <div className="md:col-span-3">
+          <div className={colSpan3Class}>
             <h4 className="text-xs font-bold uppercase tracking-wide text-gray-900 mb-4">Navigasi</h4>
             <ul className="space-y-2.5 text-sm text-gray-600">
               {navigation.filter(n => n.isActive).map(nav => (
@@ -35,7 +52,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
             </ul>
           </div>
 
-          <div className="md:col-span-4">
+          <div className={colSpan4Class}>
             <h4 className="text-xs font-bold uppercase tracking-wide text-gray-900 mb-4">Kontak</h4>
             <ul className="space-y-2.5 text-sm text-gray-600">
               <li className="flex items-center gap-2"><MapPin className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {storeInfo.address}</li>
@@ -46,7 +63,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
 
         </div>
 
-        <div className="pt-6 border-t border-black/5 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+        <div className={`pt-6 border-t border-black/5 flex ${bottomFlexClass} items-center justify-between gap-3 text-xs text-gray-500`}>
           <p>© {new Date().getFullYear()} {storeInfo.name}. All rights reserved.</p>
           <div className="flex gap-5">
             <a href="#" className="hover:text-gray-900 transition-colors">Kebijakan Privasi</a>
@@ -57,3 +74,4 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
     </footer>
   );
 };
+

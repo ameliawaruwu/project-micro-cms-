@@ -28,6 +28,7 @@ import {
 import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
 import { duitkuService } from '../../services/duitkuService';
+import { getDeviceClass } from '../../utils/responsivePreview';
 import { storeService } from '../../services/storeService';
 import { shippingService, INDONESIAN_CITIES } from '../../services/shippingService';
 import { integrationService } from '../../services/integrationService';
@@ -61,6 +62,7 @@ interface CheckoutPageProps {
   store?: any;
   products?: Product[];
   onNavigate?: (pageId: string) => void;
+  deviceMode?: 'desktop' | 'tablet' | 'mobile';
 }
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({
@@ -69,10 +71,19 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   store,
   products = [],
   onNavigate,
+  deviceMode,
 }) => {
   const { language } = useLanguage();
   const isEn = language === 'en';
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
+  const isMobile = deviceMode === 'mobile';
+  const isTablet = deviceMode === 'tablet';
+  const formGridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-2',
+    fallback: 'grid-cols-1 sm:grid-cols-2',
+  });
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',
     textColor: '#1A1A1A',
@@ -1054,7 +1065,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className={`grid ${formGridColsClass} gap-3.5`}>
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1.5">Nama Lengkap *</label>
                     <input
@@ -1108,7 +1119,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <div className="space-y-3.5">
                   {/* Level 1 & 2: Provinsi & Kota/Kabupaten */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className={`grid ${formGridColsClass} gap-3.5`}>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
                         <span>1. Provinsi *</span>
@@ -1166,7 +1177,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </div>
 
                   {/* Level 3 & 4: Kecamatan & Kelurahan/Desa */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className={`grid ${formGridColsClass} gap-3.5`}>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
                         <span>3. Kecamatan *</span>

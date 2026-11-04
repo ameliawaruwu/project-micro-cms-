@@ -1,11 +1,34 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Cpu, ShieldCheck, Truck, CreditCard, Headphones, Send, Phone, Mail, MapPin, Instagram, Youtube, Clock } from 'lucide-react';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#8B5CF6' }) => {
+export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#8B5CF6', isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+  const featureGridClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-4',
+    fallback: 'grid-cols-2 md:grid-cols-4',
+  });
+  const mainGridClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-12',
+    fallback: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-12',
+  });
+  const isDesktopPreview = !isMobile && !isTablet;
+  const colSpan4Class = isDesktopPreview ? 'lg:col-span-4' : '';
+  const colSpan2Class = isDesktopPreview ? 'lg:col-span-2' : '';
+  const colSpan3Class = isDesktopPreview ? 'lg:col-span-3' : '';
+  const bottomFlexClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
 
   return (
     <footer className="w-full bg-[#070A14] text-gray-300 pt-16 pb-8 px-6 md:px-12 font-['Space_Grotesk',sans-serif] border-t relative overflow-hidden" style={{ borderColor: `${accentColor}4D` }}>
@@ -16,7 +39,7 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
       <div className="max-w-7xl mx-auto relative z-10">
         
         {/* Top Feature Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-12 mb-12 border-b border-gray-800/80">
+        <div className={`grid ${featureGridClass} gap-6 pb-12 mb-12 border-b border-gray-800/80`}>
           <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ backgroundColor: `${accentColor}14`, border: `1px solid ${accentColor}26` }}>
             <Truck className="w-6 h-6 shrink-0" style={{ color: accentColor }} />
             <div>
@@ -48,10 +71,10 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
         </div>
 
         {/* Multi-Column Main Footer */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 mb-12">
+        <div className={`grid ${mainGridClass} gap-10 mb-12`}>
           
           {/* Column 1: Store Brand Info (col-span-4) */}
-          <div className="lg:col-span-4 space-y-4">
+          <div className={`${colSpan4Class} space-y-4`}>
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accentColor}33`, border: `1px solid ${accentColor}66`, color: accentColor }}>
                 <Cpu className="w-5 h-5" />
@@ -72,7 +95,7 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
           </div>
 
           {/* Column 2: Product Categories (col-span-2) */}
-          <div className="lg:col-span-2">
+          <div className={`${colSpan2Class}`}>
             <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accentColor }}></span> Kategori Hardware
             </h4>
@@ -87,7 +110,7 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
           </div>
 
           {/* Column 3: Customer Service & Help (col-span-3) */}
-          <div className="lg:col-span-3">
+          <div className={`${colSpan3Class}`}>
             <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span> Layanan & Bantuan
             </h4>
@@ -102,7 +125,7 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
           </div>
 
           {/* Column 4: Newsletter & Payment/Shipping Badges (col-span-3) */}
-          <div className="lg:col-span-3 space-y-5">
+          <div className={`${colSpan3Class} space-y-5`}>
             <div>
               <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-3 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-pink-500"></span> Promo & Flash Sale
@@ -158,7 +181,7 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
         </div>
 
         {/* Bottom Bar: Copyright & Social Links */}
-        <div className="pt-6 border-t border-gray-800/80 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-500 font-mono">
+        <div className={`pt-6 border-t border-gray-800/80 flex ${bottomFlexClass} items-center justify-between gap-4 text-xs text-gray-500 font-mono`}>
           <p>© {new Date().getFullYear()} {storeInfo.name || "Kroombox Store"}. All rights reserved.</p>
           <div className="flex items-center gap-4 text-gray-400">
             <span>Official Socials:</span>

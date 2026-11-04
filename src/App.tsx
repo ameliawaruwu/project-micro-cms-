@@ -1902,6 +1902,8 @@ export default function App() {
               {/* TAB 1: BERANDA / DASHBOARD */}
               {activeTab === 'beranda' && (
                 <DashboardPage
+                  currentUser={user}
+                  onShowNotification={addToast}
                   store={currentStore}
                   orders={orders}
                   products={products}

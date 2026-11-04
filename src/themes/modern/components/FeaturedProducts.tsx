@@ -2,8 +2,9 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { ModernProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; accentColor?: string }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, accentColor = '#2563EB' }) => {
+export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, accentColor = '#2563EB', isMobile, isTablet }) => {
   const allProducts = useCmsStore(state => state.products);
 
   let filteredProducts = [...allProducts];
@@ -31,12 +32,29 @@ export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSe
   const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || "Terlaris minggu ini";
   const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || "Lihat Semua";
 
-  const gridColsClass =
-    sectionOptions.gridColumns === 2 ? 'grid-cols-2' :
-    sectionOptions.gridColumns === 3 ? 'grid-cols-2 md:grid-cols-3' :
-    sectionOptions.gridColumns === 5 ? 'grid-cols-2 md:grid-cols-5' :
-    sectionOptions.gridColumns === 6 ? 'grid-cols-2 md:grid-cols-6' :
-    'grid-cols-2 md:grid-cols-4';
+  const desiredCols = sectionOptions.gridColumns && [2, 3, 4, 5, 6].includes(sectionOptions.gridColumns)
+    ? sectionOptions.gridColumns
+    : 4;
+
+  const desktopColsMap: Record<number, string> = {
+    2: 'grid-cols-2',
+    3: 'grid-cols-3',
+    4: 'grid-cols-4',
+    5: 'grid-cols-4',
+    6: 'grid-cols-4',
+  };
+
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: desktopColsMap[desiredCols],
+    fallback:
+      desiredCols === 2 ? 'grid-cols-2' :
+      desiredCols === 3 ? 'grid-cols-2 md:grid-cols-3' :
+      desiredCols === 5 ? 'grid-cols-2 md:grid-cols-5' :
+      desiredCols === 6 ? 'grid-cols-2 md:grid-cols-6' :
+      'grid-cols-2 md:grid-cols-4',
+  });
 
   if (products.length === 0) return null;
 

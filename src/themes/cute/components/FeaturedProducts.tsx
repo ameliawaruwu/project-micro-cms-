@@ -2,8 +2,9 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { CuteProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey }) => {
+export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, isMobile, isTablet }) => {
   const allProducts = useCmsStore(state => state.products);
   // Dynamic product filtering and sorting
   let filteredProducts = [...allProducts];
@@ -31,12 +32,19 @@ export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSect
   const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || "Paling Disukai 💖";
   const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || "Lihat Lebih Banyak 🌸";
 
-  const gridColsClass = 
-    sectionOptions.gridColumns === 2 ? 'grid-cols-1 sm:grid-cols-2' :
-    sectionOptions.gridColumns === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
-    sectionOptions.gridColumns === 5 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' :
-    sectionOptions.gridColumns === 6 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6' :
-    'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+  const desiredCols = [2, 3, 4, 5, 6].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 4;
+  const desktopColsMap: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-4', 6: 'grid-cols-4' };
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: desktopColsMap[desiredCols],
+    fallback:
+      desiredCols === 2 ? 'grid-cols-1 sm:grid-cols-2' :
+      desiredCols === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
+      desiredCols === 5 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' :
+      desiredCols === 6 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6' :
+      'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+  });
 
   if (products.length === 0) return null;
 

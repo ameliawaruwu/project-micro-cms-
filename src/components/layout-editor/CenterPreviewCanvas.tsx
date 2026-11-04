@@ -347,15 +347,16 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     if (pageId === 'homepage') return null;
 
     if (pageId === 'catalog' || pageId === 'katalog') {
-      return (
-        <ShopPage 
-          themeId={activeThemeId}
-          store={store}
-          products={products}
-          onNavigate={(p) => onPageChange && onPageChange(p)}
-        />
-      );
-    }
+          return (
+            <ShopPage 
+              themeId={activeThemeId}
+              store={store}
+              products={products}
+              onNavigate={(p) => onPageChange && onPageChange(p)}
+              deviceMode={deviceMode}
+            />
+          );
+        }
 
     if (pageId === 'product') {
       return (
@@ -365,6 +366,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           products={products}
           productId={selectedProductId || undefined}
           onNavigate={(p) => onPageChange && onPageChange(p)}
+          deviceMode={deviceMode}
         />
       );
     }
@@ -386,6 +388,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           themeId={activeThemeId}
           store={store}
           onNavigate={(p) => onPageChange && onPageChange(p)}
+          deviceMode={deviceMode}
         />
       );
     }
@@ -397,6 +400,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           store={store}
           products={products}
           onNavigate={(p) => onPageChange && onPageChange(p)}
+          deviceMode={deviceMode}
         />
       );
     }
@@ -407,6 +411,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           themeId={activeThemeId}
           store={store}
           onNavigate={(p) => onPageChange && onPageChange(p)}
+          deviceMode={deviceMode}
         />
       );
     }
@@ -443,15 +448,16 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     }
 
     if (pageId === 'promo') {
-      return (
-        <ShopPage 
-          themeId={activeThemeId}
-          store={store}
-          products={products}
-          onNavigate={(p) => onPageChange && onPageChange(p)}
-        />
-      );
-    }
+          return (
+            <ShopPage 
+              themeId={activeThemeId}
+              store={store}
+              products={products}
+              onNavigate={(p) => onPageChange && onPageChange(p)}
+              deviceMode={deviceMode}
+            />
+          );
+        }
 
     if (pageId === 'contact') {
       return (
@@ -459,6 +465,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           themeId={activeThemeId}
           store={store}
           onNavigate={(p) => onPageChange && onPageChange(p)}
+          deviceMode={deviceMode}
         />
       );
     }
@@ -481,20 +488,22 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           store={store}
           isDetailView={true}
           onNavigate={(p) => onPageChange && onPageChange(p)}
+          deviceMode={deviceMode}
         />
       );
     }
 
     if (pageId === 'category') {
-      return (
-        <ShopPage 
-          themeId={activeThemeId}
-          store={store}
-          products={products}
-          onNavigate={(p) => onPageChange && onPageChange(p)}
-        />
-      );
-    }
+          return (
+            <ShopPage 
+              themeId={activeThemeId}
+              store={store}
+              products={products}
+              onNavigate={(p) => onPageChange && onPageChange(p)}
+              deviceMode={deviceMode}
+            />
+          );
+        }
 
     if (pageId === 'address') {
       return (
@@ -508,16 +517,17 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     }
 
     if (pageId === 'wishlist') {
-      return (
-        <ShopPage 
-          themeId={activeThemeId}
-          store={store}
-          products={products}
-          isWishlist={true}
-          onNavigate={(p) => onPageChange && onPageChange(p)}
-        />
-      );
-    }
+          return (
+            <ShopPage 
+              themeId={activeThemeId}
+              store={store}
+              products={products}
+              isWishlist={true}
+              onNavigate={(p) => onPageChange && onPageChange(p)}
+              deviceMode={deviceMode}
+            />
+          );
+        }
 
     return null;
   };
@@ -1588,7 +1598,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
             ) : activePage === 'katalog' ? (
                <div className="flex flex-col min-h-full pb-0">
                  <div>
-                   {ThemeRegistry[activeThemeId!]?.Navbar && React.createElement(ThemeRegistry[activeThemeId!].Navbar)}
+                   {ThemeRegistry[activeThemeId!]?.Navbar && React.createElement(ThemeRegistry[activeThemeId!].Navbar, { isMobile, isTablet })}
                  </div>
                  
                  <div className="flex-1 py-16 px-6">
@@ -1625,7 +1635,9 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                        </div>
                      </div>
     
-                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+                     <div className={`grid ${
+                       isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-2' : 'grid-cols-4'
+                     } gap-4 sm:gap-6 md:gap-8`}>
                        {filteredProducts.map(p => {
                          // Normalize product to handle both Product and CmsProduct structures
                          const normalizedProduct = {
@@ -1658,7 +1670,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                  </div>
 
                  <div className="mt-auto">
-                   {ThemeRegistry[activeThemeId!]?.Footer && React.createElement(ThemeRegistry[activeThemeId!].Footer)}
+                   {ThemeRegistry[activeThemeId!]?.Footer && React.createElement(ThemeRegistry[activeThemeId!].Footer, { isMobile, isTablet })}
                  </div>
                </div>
             ) : visibleSections.length === 0 ? (

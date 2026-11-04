@@ -5,16 +5,32 @@ import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
 import { Award, ShieldCheck, Heart, Sparkles, Compass } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
+import { getDeviceClass } from '../../utils/responsivePreview';
 
 interface AboutPageProps {
   themeData?: ThemeSchema;
   themeId?: string;
   store?: any;
   onNavigate?: (pageId: string) => void;
+  deviceMode?: 'desktop' | 'tablet' | 'mobile';
 }
 
-export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propThemeId, store, onNavigate }) => {
+export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propThemeId, store, onNavigate, deviceMode }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
+  const isMobile = deviceMode === 'mobile';
+  const isTablet = deviceMode === 'tablet';
+  const gridCols3Class = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-3',
+    fallback: 'grid-cols-1 md:grid-cols-3',
+  });
+  const gridCols2Class = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-2',
+    fallback: 'grid-cols-1 md:grid-cols-2',
+  });
   const liveStoreInfo = useCmsStore((state) => state.storeInfo);
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',
@@ -68,7 +84,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className={`grid ${gridCols3Class} gap-8`}>
               {[
                 { title: 'KUALITAS UNGGUL', text: 'Produk dijamin menggunakan bahan terbaik tanpa kompromi.' },
                 { title: 'DESAIN ORISINIL', text: 'Karakter desain kuat dan penuh percaya diri.' },
@@ -96,7 +112,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
             <p className="text-xl md:text-2xl font-serif italic leading-relaxed text-[#706866] mb-16">
               "{storeDesc}"
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left border-t border-[#241A1A]/10 pt-16">
+            <div className={`grid ${gridCols2Class} gap-12 text-left border-t border-[#241A1A]/10 pt-16`}>
               <div>
                 <h3 className="font-serif text-2xl mb-4">Filosofi Desain</h3>
                 <p className="font-serif text-sm leading-loose text-[#706866]">

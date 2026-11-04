@@ -1,17 +1,29 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string }> = ({ sectionOptions = {} }) => {
+export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo.name || 'RAWSTATE';
   const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const navFlexClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const logoWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-1/3';
+  const logoJustifyClass = isMobile || isTablet ? 'justify-center' : 'justify-center md:justify-start';
+  const navWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-2/3';
+  const navJustifyClass = isMobile || isTablet ? 'justify-center' : 'justify-center md:justify-end';
+  const navMarginClass = isMobile || isTablet ? 'mt-3' : 'mt-3 md:mt-0';
 
   return (
-    <nav className="w-full px-6 md:px-12 py-4 flex flex-col md:flex-row justify-between items-center bg-zinc-950/90 backdrop-blur-md text-white border-b border-zinc-800/80 sticky top-0 z-50 transition-all">
-      <div className="w-full md:w-1/3 flex justify-center md:justify-start items-center">
+    <nav className={`w-full px-6 md:px-12 py-4 flex ${navFlexClass} justify-between items-center bg-zinc-950/90 backdrop-blur-md text-white border-b border-zinc-800/80 sticky top-0 z-50 transition-all`}>
+      <div className={`${logoWidthClass} flex ${logoJustifyClass} items-center`}>
         {showLogo && (
           <div className="flex flex-col">
             <a href="/" className="flex items-center gap-3 font-black tracking-tighter uppercase text-2xl md:text-3xl text-white hover:text-red-500 transition-colors group">
@@ -28,7 +40,7 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
       </div>
       
       {showNav && (
-        <div className="w-full md:w-2/3 flex flex-wrap justify-center md:justify-end items-center gap-8 font-bold uppercase tracking-wider text-xs md:text-sm mt-3 md:mt-0">
+        <div className={`${navWidthClass} flex flex-wrap ${navJustifyClass} items-center gap-8 font-bold uppercase tracking-wider text-xs md:text-sm ${navMarginClass}`}>
           {navigation.map(nav => (
             <a key={nav.id} href={nav.route} className="text-zinc-400 hover:text-white transition-colors relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-red-500 hover:after:w-full after:transition-all">
               {nav.label}

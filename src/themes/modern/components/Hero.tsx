@@ -1,8 +1,9 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const ModernHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; accentColor?: string }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, accentColor = '#2563EB' }) => {
+export const ModernHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const bgImage = sectionOptions?.imageUrl || sectionOptions?.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1200&q=80";
 
@@ -11,9 +12,16 @@ export const ModernHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
   const description = sectionOptions.description || storeInfo.description;
   const buttonText = sectionOptions.buttonText || sectionOptions.buttonLabel || "Belanja Sekarang";
 
+  const flexDirClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+
   return (
     <section className="w-full px-4 md:px-8 py-6 md:py-10 font-['Outfit',sans-serif] bg-white">
-      <div className="max-w-7xl mx-auto rounded-[2rem] bg-gray-50 overflow-hidden flex flex-col md:flex-row items-stretch">
+      <div className={`max-w-7xl mx-auto rounded-[2rem] bg-gray-50 overflow-hidden flex ${flexDirClass} items-stretch`}>
         
         {/* Left: Content */}
         <div className="flex-1 p-8 md:p-16 flex flex-col justify-center">

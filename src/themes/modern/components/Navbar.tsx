@@ -1,11 +1,25 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, Menu } from 'lucide-react';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#2563EB' }) => {
+export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const navigation = useCmsStore((state) => state.navigation);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+
+  const showDesktopNav = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden lg:flex',
+  });
+  const showMobileMenuBtn = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex',
+    tablet: 'flex',
+    desktop: 'hidden',
+    fallback: 'lg:hidden',
+  });
 
   return (
     <header className="w-full bg-white py-4 px-4 md:px-8 sticky top-0 z-50 font-['Outfit',sans-serif]">
@@ -17,7 +31,7 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
         </a>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-7">
+        <nav className={`${showDesktopNav} items-center gap-7`}>
           {navigation.filter(n => n.isActive).map((nav) => (
             <a
               key={nav.id}
@@ -40,7 +54,7 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
               0
             </span>
           </button>
-          <button className="lg:hidden w-9 h-9 rounded-full hover:bg-gray-50 flex items-center justify-center text-gray-500">
+          <button className={`${showMobileMenuBtn} w-9 h-9 rounded-full hover:bg-gray-50 items-center justify-center text-gray-500`}>
             <Menu className="w-4 h-4" />
           </button>
         </div>

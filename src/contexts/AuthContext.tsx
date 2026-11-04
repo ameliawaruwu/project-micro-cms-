@@ -26,6 +26,7 @@ import { supabase, signInWithGoogleOAuth } from '../services/supabaseClient';
     storeSlug?: string;
     businessCategory?: string;
     communityCode?: string;
+    referralCode?: string;
     password: string;
     autoLogin?: boolean;
   }) => Promise<{ user: User; merchant: Merchant; store: Store | null }>;
@@ -185,6 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     storeSlug?: string;
     businessCategory?: string;
     communityCode?: string;
+    referralCode?: string;
     password: string;
     autoLogin?: boolean;
   }) => {

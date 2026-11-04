@@ -9,6 +9,7 @@ import { ShoppingCart, Heart, ShieldCheck, Truck, Star, ArrowRight, Sparkles } f
 
 import { useCmsStore } from '../../cms/useCmsStore';
 import { cartService } from '../../services/cartService';
+import { getDeviceClass } from '../../utils/responsivePreview';
 
 interface ProductDetailPageProps {
   themeData?: ThemeSchema;
@@ -17,6 +18,7 @@ interface ProductDetailPageProps {
   products?: Product[];
   productId?: string;
   onNavigate?: (pageId: string) => void;
+  deviceMode?: 'desktop' | 'tablet' | 'mobile';
 }
 
 export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ 
@@ -25,13 +27,37 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   store, 
   products = [], 
   productId: propProductId,
-  onNavigate 
+  onNavigate,
+  deviceMode,
 }) => {
   const cmsProducts = useCmsStore(state => state.products);
   const { id: paramId } = useParams<{ id: string }>();
   const id = propProductId || paramId;
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
-  
+  const isMobile = deviceMode === 'mobile';
+  const isTablet = deviceMode === 'tablet';
+  const isDesktopPreview = !isMobile && !isTablet;
+  const splitGridClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-2',
+    fallback: 'grid-cols-1 md:grid-cols-2',
+  });
+  // Pola "md:flex" (block di mobile, flex row di desktop) — dipakai tema bold & default.
+  const plainFlexClass = deviceMode ? (isDesktopPreview ? 'flex' : '') : 'md:flex';
+  // Pola "flex flex-col md:flex-row" — dipakai tema editorial.
+  const flexRowClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const halfWidthClass = deviceMode ? (isDesktopPreview ? 'w-1/2' : 'w-full') : 'w-full md:w-1/2';
+  const width5of12Class = deviceMode ? (isDesktopPreview ? 'w-5/12' : 'w-full') : 'w-full md:w-5/12';
+  const width7of12Class = deviceMode ? (isDesktopPreview ? 'w-7/12' : 'w-full') : 'w-full md:w-7/12';
+  const orderFirstClass = deviceMode ? '' : 'order-2 md:order-1';
+  const orderSecondClass = deviceMode ? '' : 'order-1 md:order-2';
+
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',
     textColor: '#1A1A1A',
@@ -108,11 +134,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     if (activeThemeId === 'bold') {
       return (
         <div className="pt-24 pb-24 bg-white text-black border-b-8 border-black">
-          <div className="max-w-7xl mx-auto px-6 md:flex items-center gap-16">
-            <div className="w-full md:w-1/2 border-8 border-black p-4 shadow-[16px_16px_0px_rgba(0,0,0,1)] bg-white">
+          <div className={`max-w-7xl mx-auto px-6 ${plainFlexClass} items-center gap-16`}>
+            <div className={`${halfWidthClass} border-8 border-black p-4 shadow-[16px_16px_0px_rgba(0,0,0,1)] bg-white`}>
               <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-auto object-cover border-4 border-black" />
             </div>
-            <div className="w-full md:w-1/2 mt-12 md:mt-0">
+            <div className={`${halfWidthClass} mt-12 md:mt-0`}>
               <span className="px-4 py-2 bg-[#FF0000] text-white font-black text-sm uppercase tracking-widest border-2 border-black inline-block mb-4 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
                 HOT DROP 🔥
               </span>
@@ -143,8 +169,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     if (activeThemeId === 'editorial') {
       return (
         <div className="pt-32 pb-32 bg-[#FAF7F7] text-[#241A1A]">
-          <div className="max-w-6xl mx-auto px-6 lg:px-12 flex flex-col md:flex-row gap-16 items-center">
-            <div className="w-full md:w-5/12 order-2 md:order-1">
+          <div className={`max-w-6xl mx-auto px-6 lg:px-12 flex ${flexRowClass} gap-16 items-center`}>
+            <div className={`${width5of12Class} ${orderFirstClass}`}>
               <span className="text-xs uppercase tracking-[0.3em] text-[#706866] block mb-3 font-serif italic">Edition N°01</span>
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal font-serif mb-4 sm:mb-6 leading-tight storefront-heading-hero">
                 {product.name}
@@ -162,7 +188,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 Add to Cart
               </button>
             </div>
-            <div className="w-full md:w-7/12 order-1 md:order-2">
+            <div className={`${width7of12Class} ${orderSecondClass}`}>
               <div className="p-4 bg-white shadow-xl border border-[#241A1A]/10">
                 <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-auto object-cover" />
               </div>
@@ -176,7 +202,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     if (activeThemeId === 'futuristic' || activeThemeId === 'modern') {
       return (
         <div className="pt-28 pb-24 bg-[#0B0F19] text-white min-h-screen font-mono relative overflow-hidden">
-          <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className={`max-w-6xl mx-auto px-6 grid ${splitGridClass} gap-12 items-center`}>
             <div className="bg-slate-900/60 border border-cyan-500/30 rounded-3xl p-6 backdrop-blur-md relative">
               <div className="aspect-square rounded-2xl overflow-hidden bg-slate-950">
                 <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-full object-cover" />
@@ -212,7 +238,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     if (activeThemeId === 'nature') {
       return (
         <div className="pt-28 pb-24 bg-[#F4F7F4] text-[#1B3B2B] min-h-screen">
-          <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className={`max-w-6xl mx-auto px-6 grid ${splitGridClass} gap-12 items-center`}>
             <div className="bg-white rounded-3xl p-6 shadow-md border border-[#2D5A27]/10">
               <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-auto object-cover rounded-2xl" />
             </div>
@@ -239,7 +265,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     if (activeThemeId === 'luxury') {
       return (
         <div className="pt-32 pb-32 bg-[#F7F2EB] text-[#36281D] min-h-screen font-serif">
-          <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+          <div className={`max-w-6xl mx-auto px-6 grid ${splitGridClass} gap-16 items-center`}>
             <div className="border border-[#EADBCE] p-4 rounded-2xl bg-[#FFFDF9] shadow-[0_16px_36px_rgba(90,65,40,0.08)]">
               <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-auto object-cover rounded-xl" />
             </div>
@@ -265,7 +291,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     if (activeThemeId === 'cute') {
       return (
         <div className="pt-28 pb-24 bg-[#FFF5F8] text-[#4A154B]">
-          <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className={`max-w-6xl mx-auto px-6 grid ${splitGridClass} gap-12 items-center`}>
             <div className="bg-white rounded-3xl p-6 shadow-xl shadow-pink-100 border border-pink-100">
               <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-auto object-cover rounded-2xl" />
             </div>
@@ -291,13 +317,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     // 7. DEFAULT / MINIMALIST / CREATIVE / PROFESSIONAL / ELEGANT / FASHION
     return (
       <div className="pt-32 pb-24 bg-white text-[#1A1A1A]">
-        <div className="max-w-5xl mx-auto px-6 md:flex gap-16 items-center">
-          <div className="w-full md:w-1/2">
+        <div className={`max-w-5xl mx-auto px-6 ${plainFlexClass} gap-16 items-center`}>
+          <div className={halfWidthClass}>
             <div className="aspect-[4/5] bg-gray-50 overflow-hidden rounded-xl">
               <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-full object-cover" />
             </div>
           </div>
-          <div className="w-full md:w-1/2 flex flex-col justify-center mt-8 md:mt-0 space-y-4 sm:space-y-6">
+          <div className={`${halfWidthClass} flex flex-col justify-center mt-8 md:mt-0 space-y-4 sm:space-y-6`}>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight storefront-heading-hero">{product.name}</h1>
             <p className="text-lg sm:text-xl md:text-2xl text-gray-900 font-bold storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
             <div className="w-12 h-px bg-gray-300"></div>

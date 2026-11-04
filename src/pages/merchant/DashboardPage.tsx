@@ -1,6 +1,7 @@
 import React from 'react';
 import { Wallet, ArrowUpRight, RefreshCw, LayoutDashboard, ExternalLink, Store as StoreIcon, Plus } from 'lucide-react';
-import { Store as StoreType, Order, Product, MerchantTab } from '../../types';
+import { Store as StoreType, Order, Product, MerchantTab, User } from '../../types';
+import { ReferralCard } from '../../components/merchant/ReferralCard';
 import { MetricCard } from '../../components/dashboard/MetricCard';
 import { SalesAnalyticsSection } from '../../components/dashboard/SalesAnalyticsSection';
 import { StockAlertCard } from '../../components/dashboard/StockAlertCard';
@@ -10,6 +11,8 @@ import { formatRupiah } from '../../utils/formatters';
 import { useDashboardData } from '../../hooks/useDashboardData';
 
 interface DashboardPageProps {
+  currentUser?: User | null;
+  onShowNotification?: (msg: string, type?: 'success' | 'error' | 'info') => void;
   store: StoreType;
   orders: Order[];
   products: Product[];
@@ -24,6 +27,8 @@ interface DashboardPageProps {
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
+  currentUser,
+  onShowNotification,
   store,
   orders,
   products,
@@ -167,6 +172,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           )}
         </div>
       </div>
+
+      {/* Referral Card for UMKM */}
+      <ReferralCard
+        userId={currentUser?.id || store.merchantId}
+        userName={currentUser?.name || store.name}
+        storeName={store.name}
+        onShowNotification={onShowNotification}
+      />
 
       {/* 3. 4 Core Metric Cards (Unified Live Single Source of Truth) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

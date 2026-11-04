@@ -1,15 +1,32 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
 
-export const EditorialLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { products } = useCmsStore();
   const heading = sectionOptions.heading || "Lookbook";
   const desc = sectionOptions.description || "Discover the latest silhouettes designed for the modern metropolitan. A blend of classic tailoring and avant-garde details.";
-  
+  const mainGridClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-12',
+    fallback: 'grid-cols-1 md:grid-cols-12',
+  });
+  const colSpanTextClass = isMobile || isTablet ? '' : 'md:col-span-4';
+  const colSpanImgClass = isMobile || isTablet ? '' : 'md:col-span-8';
+  const orderTextClass = isMobile || isTablet ? '' : 'order-2 md:order-1';
+  const orderImgClass = isMobile || isTablet ? '' : 'order-1 md:order-2';
+  const imgPairGridClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-2',
+    fallback: 'grid-cols-2',
+  });
+
   return (
     <section className="py-32 px-6 md:px-12 max-w-[1400px] mx-auto bg-[#fafafa]">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-24 items-center">
-        <div className="md:col-span-4 order-2 md:order-1">
+      <div className={`grid ${mainGridClass} gap-12 md:gap-24 items-center`}>
+        <div className={`${colSpanTextClass} ${orderTextClass}`}>
           <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-6">Volume I</p>
           <h2 className="text-5xl md:text-6xl font-serif italic mb-8 text-gray-900">{heading}</h2>
           <p className="text-gray-600 leading-loose mb-12 font-light text-sm md:text-base">{desc}</p>
@@ -17,8 +34,8 @@ export const EditorialLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionO
             View Gallery
           </button>
         </div>
-        <div className="md:col-span-8 order-1 md:order-2">
-          <div className="grid grid-cols-2 gap-4 md:gap-8">
+        <div className={`${colSpanImgClass} ${orderImgClass}`}>
+          <div className={`grid ${imgPairGridClass} gap-4 md:gap-8`}>
             {products.slice(0, 2).map((p, i) => (
               <div key={p.id} className={`overflow-hidden ${i === 1 ? 'mt-16 md:mt-24' : ''}`}>
                 <img 
@@ -54,18 +71,26 @@ export const EditorialCampaign: React.FC<{ sectionOptions?: any }> = ({ sectionO
   );
 };
 
-export const EditorialAsymmetricShowcase: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const EditorialAsymmetricShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { products } = useCmsStore();
   const product = products[2] || products[0];
+  const flexDirClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const imgWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-7/12';
+  const textWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-5/12';
   if (!product) return null;
   
   return (
-    <section className="py-24 md:py-40 px-6 md:px-12 max-w-[1400px] mx-auto flex flex-col md:flex-row items-end gap-16 md:gap-24">
-      <div className="w-full md:w-7/12 relative overflow-hidden group">
+    <section className={`py-24 md:py-40 px-6 md:px-12 max-w-[1400px] mx-auto flex ${flexDirClass} items-end gap-16 md:gap-24`}>
+      <div className={`${imgWidthClass} relative overflow-hidden group`}>
         <div className="absolute inset-0 bg-gray-900/5 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
         <img src={product.image} alt={product.name} className="w-full aspect-[4/5] object-cover mix-blend-multiply" />
       </div>
-      <div className="w-full md:w-5/12 pb-12 md:pb-24 pr-4 md:pr-12">
+      <div className={`${textWidthClass} pb-12 md:pb-24 pr-4 md:pr-12`}>
         <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-8 font-medium">Featured Piece</p>
         <h3 className="text-4xl md:text-5xl font-serif mb-8 text-gray-900 leading-tight">{product.name}</h3>
         <p className="text-sm text-gray-600 leading-loose mb-12 font-light">{product.description}</p>
@@ -93,13 +118,19 @@ export const EditorialBrandStory: React.FC<{ sectionOptions?: any }> = ({ sectio
   );
 };
 
-export const EditorialJournal: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const EditorialJournal: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "The Journal";
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-2',
+    desktop: 'grid-cols-3',
+    fallback: 'grid-cols-1 md:grid-cols-3',
+  });
   
   return (
     <section className="py-32 bg-white px-6 md:px-12 border-t border-gray-100">
       <h2 className="text-center text-4xl md:text-5xl font-serif italic mb-20 text-gray-900">{heading}</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-[1400px] mx-auto">
+      <div className={`grid ${gridColsClass} gap-8 md:gap-12 max-w-[1400px] mx-auto`}>
         {[1, 2, 3].map(i => (
           <article key={i} className="cursor-pointer group">
             <div className="w-full aspect-[4/5] bg-gray-100 mb-8 overflow-hidden relative">

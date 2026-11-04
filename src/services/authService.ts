@@ -3,6 +3,7 @@ import { storeService } from './storeService';
 import { productService } from './productService';
 import { supabase } from './supabaseClient';
 import { idService } from './idService';
+import { referralService } from './referralService';
 
 const AUTH_USER_KEY = 'microcms_auth_user';
 const AUTH_MERCHANT_KEY = 'microcms_auth_merchant';
@@ -382,6 +383,7 @@ class AuthService {
     businessCategory?: string;
     password: string;
     communityCode?: string;
+    referralCode?: string;
     autoLogin?: boolean;
   }): Promise<{ user: User; merchant: Merchant; store: Store | null }> {
     await new Promise((res) => setTimeout(res, 450));
@@ -642,6 +644,18 @@ class AuthService {
       } catch (e) {}
     }
 
+    // 3. Generate & simpan kode referral unik untuk user baru, serta catat jika menggunakan referral orang lain
+    try {
+      await referralService.assignUserReferralCode(userId, params.fullName);
+
+      const refCode = (params.referralCode || params.communityCode || '').trim();
+      if (refCode) {
+        await referralService.redeemReferral(refCode, userId);
+      }
+    } catch (refErr) {
+      console.warn('[authService] Referral setup notice:', refErr);
+    }
+
     // Save account into local accounts repository with hashed password
     const accounts = this.getStoredAccounts();
     const existingIndex = accounts.findIndex((a) => a.id === userId || a.email.toLowerCase() === cleanEmail);
@@ -849,6 +863,9 @@ class AuthService {
         created_at: nowWib,
         updated_at: nowWib,
       }).select('id');
+
+      // Generate & assign referral code for Google sign-up
+      await referralService.assignUserReferralCode(userId, finalName);
     } catch (e) {
       console.warn('Supabase Google auth insert warning:', e);
     }
