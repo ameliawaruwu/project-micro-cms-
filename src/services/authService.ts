@@ -168,8 +168,14 @@ class AuthService {
       const storedStore = localStorage.getItem(AUTH_STORE_KEY);
 
       if (storedUser && storedMerchant) {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser && typeof parsedUser.name === 'string' && parsedUser.name.includes('Kroomify')) {
+          parsedUser.name = parsedUser.name.replace(/Kroomify/g, 'LapakQ');
+          if (parsedUser.email === 'admin@kroomify.id') parsedUser.email = 'admin@lapakq.com';
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(parsedUser));
+        }
         return {
-          user: JSON.parse(storedUser),
+          user: parsedUser,
           merchant: JSON.parse(storedMerchant),
           store: storedStore ? JSON.parse(storedStore) : null,
         };

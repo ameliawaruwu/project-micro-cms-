@@ -22,7 +22,7 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
   const { language } = useLanguage();
   const isEn = language === 'en';
 
-  const [name, setName] = useState(currentUser?.name || 'Super Admin LapakQ');
+  const [name, setName] = useState(currentUser?.name?.replace(/Kroomify/g, 'LapakQ') || 'Super Admin LapakQ');
   const [phone, setPhone] = useState(currentUser?.phoneWhatsApp || '');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(currentUser?.avatarUrl || null);
   const [newPassword, setNewPassword] = useState('');
@@ -235,7 +235,7 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
             <div className="relative">
               <input
                 type="email"
-                value={currentUser?.email || 'admin@lapakq.com'}
+                value={currentUser?.email?.replace('kroomify.id', 'lapakq.com') || 'admin@lapakq.com'}
                 disabled
                 className="w-full h-10 px-3 pl-9 rounded-xl border border-gray-200 bg-gray-100 text-xs text-gray-500 cursor-not-allowed outline-none"
               />

@@ -47,7 +47,7 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
         title="LapakQ"
       >
         <img
-          src="/Logo-Icon.png"
+          src="/Logo-Icon.png?v=20261104"
           alt="LapakQ"
           className="w-full h-full object-contain pointer-events-none select-none drop-shadow-2xs"
           loading="eager"
@@ -59,7 +59,7 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
   if (imgOnly) {
     return (
       <img
-        src="/Logo.png"
+        src="/Logo.png?v=20261104"
         alt="LapakQ"
         className={`${currentFull.h} w-auto max-w-full object-contain shrink-0 ${className}`}
         loading="eager"
@@ -67,11 +67,11 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
     );
   }
 
-  // Full Logo display: Red Logo contains the red store awning K and official red Kroomify wordmark
+  // Full Logo display: Red Logo contains the red store awning L and official red LapakQ wordmark
   return (
     <div className={`inline-flex items-center gap-2 sm:gap-2.5 select-none shrink-0 ${className}`}>
       <img
-        src="/Logo.png"
+        src="/Logo.png?v=20261104"
         alt="LapakQ"
         className={`${currentFull.h} w-auto max-w-full object-contain shrink-0 drop-shadow-2xs`}
         loading="eager"
