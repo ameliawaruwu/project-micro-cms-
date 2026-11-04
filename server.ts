@@ -31,6 +31,16 @@ app.use((req, _res, next) => {
   next();
 });
 
+// Health check endpoint
+app.get(['/health', '/api/health'], (_req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'lapakq-api',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // In-memory rate limiting untuk email (maks 10 per menit per IP)
 const emailRateLimit = new Map<string, { count: number; resetAt: number }>();
 
