@@ -620,7 +620,7 @@ function duitkuDevPlugin(): Plugin {
             const stringToSign = `${merchantCode}${merchantOrderId}${paymentAmount}${apiKey}`;
             const signature = nodeCrypto.createHash('md5').update(stringToSign).digest('hex');
 
-            const appUrl = (process.env.APP_URL || 'https://kroomify.kroombox.com').replace(/\/$/, '');
+            const appUrl = (process.env.APP_URL || 'https://lapakq.com').replace(/\/$/, '');
             const callbackUrl = `${appUrl}/api/payment/callback`;
             const returnUrl = merchantOrderId.startsWith('BILL-')
               ? `${appUrl}/?billing_return=true&merchantOrderId=${encodeURIComponent(merchantOrderId)}`
@@ -1149,7 +1149,7 @@ function emailDevPlugin(): Plugin {
             });
 
             const info = await transporter.sendMail({
-              from: `"Kroomify" <${smtpEmail}>`,
+              from: `"LapakQ" <${smtpEmail}>`,
               to: String(to).trim(),
               subject: String(subject).trim(),
               html: String(html),

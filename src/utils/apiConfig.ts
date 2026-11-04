@@ -1,7 +1,7 @@
 /**
  * Utility to resolve the correct API base URL or endpoint.
  * Ensures storefront subdomains (e.g. mistrore.kroombox.com, flowerss.kroombox.com, custom domains)
- * can communicate directly with the live Express daemon hosted at https://kroomify.kroombox.com/api/...
+ * can communicate directly with the live Express daemon hosted at https://lapakq.com/api/...
  */
 export function getApiEndpoint(path: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
@@ -16,13 +16,18 @@ export function getApiEndpoint(path: string): string {
     ) {
       return cleanPath;
     }
-    // Main CMS domain: keep relative
-    if (host === 'kroomify.kroombox.com') {
+    // Main CMS domains: keep relative
+    if (
+      host === 'lapakq.com' ||
+      host === 'www.lapakq.com' ||
+      host === 'kroomify.kroombox.com' ||
+      host === 'www.kroomify.kroombox.com'
+    ) {
       return cleanPath;
     }
-    // Any storefront subdomain (*.kroombox.com) or custom domain:
+    // Any storefront subdomain or custom domain:
     // Proxy directly to canonical backend domain with full CORS support
-    return `https://kroomify.kroombox.com${cleanPath}`;
+    return `https://lapakq.com${cleanPath}`;
   }
   return cleanPath;
 }

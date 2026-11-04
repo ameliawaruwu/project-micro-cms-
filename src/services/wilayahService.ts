@@ -337,7 +337,7 @@ export const wilayahService = {
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
         {
           headers: {
-            'User-Agent': 'KroomifyApp/1.0 (contact@kroombox.com)',
+            'User-Agent': 'LapakQApp/1.0 (contact@lapakq.com)',
             'Accept-Language': 'id',
           },
         }
@@ -439,7 +439,7 @@ export const wilayahService = {
         )}&countrycodes=id&limit=5`,
         {
           headers: {
-            'User-Agent': 'KroomifyApp/1.0 (contact@kroombox.com)',
+            'User-Agent': 'LapakQApp/1.0 (contact@lapakq.com)',
             'Accept-Language': 'id',
           },
         }

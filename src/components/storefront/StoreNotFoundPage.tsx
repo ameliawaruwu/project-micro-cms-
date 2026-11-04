@@ -44,10 +44,10 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
       <div className="absolute -top-32 -left-32 w-96 h-96 bg-rose-100/40 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-50/50 rounded-full blur-3xl pointer-events-none" />
 
-      {/* ═══════════ HEADER: KROOMIFY BRAND ═══════════ */}
+      {/* ═══════════ HEADER: LAPAKQ BRAND ═══════════ */}
       <header className="w-full max-w-4xl flex items-center justify-between py-2 shrink-0 z-10">
         <a
-          href="https://kroomify.kroombox.com"
+          href="https://lapakq.com"
           className="inline-flex items-center gap-2.5 text-left group transition cursor-pointer"
         >
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#66000E] to-[#990014] text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
@@ -55,7 +55,7 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
           </div>
           <div>
             <span className="font-extrabold text-base tracking-tight text-[#241A1A] block font-poppins">
-              Kroomify<span className="text-[#66000E]">.</span>
+              LapakQ<span className="text-[#66000E]">.</span>
             </span>
             <span className="text-[10px] text-[#706866] block -mt-1 font-medium">
               E-Commerce Platform
@@ -191,11 +191,11 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
                 )}
 
                 <a
-                  href="https://kroomify.kroombox.com"
+                  href="https://lapakq.com"
                   className="w-full px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-amber-200" />
-                  <span>Bikin Toko Online Sendiri di Kroomify</span>
+                  <span>Bikin Toko Online Sendiri di LapakQ</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </a>
               </div>
@@ -207,7 +207,7 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
       {/* ═══════════ FOOTER ═══════════ */}
       <footer className="w-full max-w-4xl py-3 text-center text-xs text-[#706866] shrink-0 z-10 space-y-1">
         <p className="text-[11px]">
-          Didukung oleh <strong className="text-[#241A1A]">Kroomify</strong> &bull; Platform Toko Online &amp; Katalog Cepat untuk UMKM
+          Didukung oleh <strong className="text-[#241A1A]">LapakQ</strong> &bull; Platform Toko Online &amp; Katalog Cepat untuk UMKM
         </p>
         <p className="text-[10px] text-gray-400">
           Hak Cipta &copy; {new Date().getFullYear()} Kroombox Network. Seluruh hak dilindungi.

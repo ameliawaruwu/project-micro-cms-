@@ -167,7 +167,7 @@ export default function App() {
   const [activeStore, setActiveStore] = useState<Store | null>(() => {
     if (typeof window !== 'undefined') {
       // 0. Cek Injected Store dari SitePackager (Production Live Storefront)
-      const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
+      const injectedStore = ((window as any).__LAPAKQ_INITIAL_STORE__ || (window as any).__KROOMIFY_INITIAL_STORE__);
       if (injectedStore && (injectedStore.id || injectedStore.slug)) {
         if (injectedStore.layoutSettings?.activeThemeId) {
           const normalizedTheme = normalizeThemeId(injectedStore.layoutSettings.activeThemeId);
@@ -212,8 +212,8 @@ export default function App() {
   // Inisialisasi viewMode langsung dari session tersimpan untuk mencegah flicker Landing Page saat reload
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== 'undefined') {
-      const injectedSlug = (window as any).__KROOMIFY_STORE_SLUG__;
-      const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
+      const injectedSlug = ((window as any).__LAPAKQ_STORE_SLUG__ || (window as any).__KROOMIFY_STORE_SLUG__);
+      const injectedStore = ((window as any).__LAPAKQ_INITIAL_STORE__ || (window as any).__KROOMIFY_INITIAL_STORE__);
       if (injectedSlug || injectedStore) {
         return 'storefront-live';
       }
@@ -267,7 +267,7 @@ export default function App() {
   // State: Core Data
   const [products, setProducts] = useState<Product[]>(() => {
     if (typeof window !== 'undefined') {
-      const injectedProds = (window as any).__KROOMIFY_INITIAL_PRODUCTS__;
+      const injectedProds = ((window as any).__LAPAKQ_INITIAL_PRODUCTS__ || (window as any).__KROOMIFY_INITIAL_PRODUCTS__);
       if (Array.isArray(injectedProds) && injectedProds.length > 0) {
         useCmsStore.getState().setProductsFromMerchant(injectedProds as any);
         return injectedProds;
@@ -396,8 +396,8 @@ export default function App() {
     }
     try {
       // 0. Cek jika ada preloaded store dari site packager (Hanya untuk storefront publik tanpa login)
-      const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
-      const injectedProducts = (window as any).__KROOMIFY_INITIAL_PRODUCTS__;
+      const injectedStore = ((window as any).__LAPAKQ_INITIAL_STORE__ || (window as any).__KROOMIFY_INITIAL_STORE__);
+      const injectedProducts = ((window as any).__LAPAKQ_INITIAL_PRODUCTS__ || (window as any).__KROOMIFY_INITIAL_PRODUCTS__);
       if (!user && injectedStore && (injectedStore.id || injectedStore.slug)) {
         const hydratedStore: Store = {
           ...injectedStore,
@@ -433,7 +433,7 @@ export default function App() {
           tokoParam = getStoreSlugFromHost(window.location.hostname) || undefined;
         }
 
-        // JIKA HOST ADALAH PLATFORM UTAMA (kroomify.kroombox.com / localhost) DAN TANPA PARAMETER TOKO:
+        // JIKA HOST ADALAH PLATFORM UTAMA (lapakq.com / kroomify.kroombox.com / localhost) DAN TANPA PARAMETER TOKO:
         // Tetap di landing page, JANGAN muat allStores[0] sebagai activeStore!
         if (!tokoParam && (viewMode === 'landing' || isPlatformHost(window.location.hostname))) {
           setActiveStore(EMPTY_STORE);
@@ -598,7 +598,7 @@ export default function App() {
     ];
 
     const hostStoreSlug = getStoreSlugFromHost(window.location.hostname);
-    let tokoParam = params.get('toko') || params.get('store') || hostStoreSlug || (window as any).__KROOMIFY_STORE_SLUG__;
+    let tokoParam = params.get('toko') || params.get('store') || hostStoreSlug || ((window as any).__LAPAKQ_STORE_SLUG__ || (window as any).__KROOMIFY_STORE_SLUG__);
     const storeSlugFromPath = (pathSlug && !KNOWN_PAGE_ROUTES.includes(pathSlug.toLowerCase())) ? pathSlug : null;
     if (!tokoParam && storeSlugFromPath && !isPlatformHost(window.location.hostname)) {
       tokoParam = storeSlugFromPath;
@@ -736,7 +736,7 @@ export default function App() {
 
       if (tokoParam) {
         // Cek dulu apakah data store yang diinjeksi sudah cocok untuk slug ini
-        const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
+        const injectedStore = ((window as any).__LAPAKQ_INITIAL_STORE__ || (window as any).__KROOMIFY_INITIAL_STORE__);
         if (injectedStore && (injectedStore.slug?.toLowerCase() === tokoParam.toLowerCase() || injectedStore.id === tokoParam)) {
           const hydratedStore: Store = {
             ...injectedStore,
@@ -769,7 +769,7 @@ export default function App() {
             setIsStoreLoading(false);
           } else {
             // Jika fetch gagal atau offline, cek apakah injectedStore tersedia sebelum menandai not found
-            const inj = (window as any).__KROOMIFY_INITIAL_STORE__;
+            const inj = ((window as any).__LAPAKQ_INITIAL_STORE__ || (window as any).__KROOMIFY_INITIAL_STORE__);
             if (inj && (inj.slug?.toLowerCase() === tokoParam.toLowerCase() || inj.id === tokoParam)) {
               setActiveStore({
                 ...inj,
@@ -1728,7 +1728,7 @@ export default function App() {
                   const isAnyAdmin = user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin');
                   setViewMode(user ? (isAnyAdmin ? 'admin' : 'merchant-desktop') : 'landing');
                 } else {
-                  window.location.href = 'https://kroomify.kroombox.com';
+                  window.location.href = 'https://lapakq.com';
                 }
               }}
               onGoToAdmin={() => setViewMode('admin')}

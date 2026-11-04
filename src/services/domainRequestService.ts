@@ -92,7 +92,7 @@ class DomainRequestService {
     return {
       id: d.id,
       storeId: d.store_id,
-      storeName: d.store_name || 'Toko Kroomify',
+      storeName: d.store_name || 'Toko LapakQ',
       domainName,
       tld,
       fullDomain,

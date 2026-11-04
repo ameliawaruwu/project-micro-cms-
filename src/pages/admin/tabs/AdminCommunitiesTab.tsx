@@ -978,7 +978,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                         {activeCommunity.coordinatorPhone && (
                           <a
                             href={`https://wa.me/${activeCommunity.coordinatorPhone.replace(/^0/, '62')}?text=${encodeURIComponent(
-                              `Halo ${activeCommunity.coordinatorName},\n\nBerikut rincian tagihan fee omset platform Kroomify untuk organisasi ${activeCommunity.name}:\n\n` +
+                              `Halo ${activeCommunity.coordinatorName},\n\nBerikut rincian tagihan fee omset platform LapakQ untuk organisasi ${activeCommunity.name}:\n\n` +
                               `• Nomor Invoice: ${inv.invoiceNumber}\n` +
                               `• Periode: ${inv.period}\n` +
                               `• Total Omset Toko Binaan: Rp ${inv.totalTurnover.toLocaleString('id-ID')}\n` +

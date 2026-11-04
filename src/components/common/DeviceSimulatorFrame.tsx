@@ -10,7 +10,7 @@ interface DeviceSimulatorFrameProps {
 
 export const DeviceSimulatorFrame: React.FC<DeviceSimulatorFrameProps> = ({
   title = 'Mobile Preview',
-  urlPath = 'kroomify.id/toko-batik',
+  urlPath = 'lapakq.com/toko-batik',
   onClose,
   children,
 }) => {

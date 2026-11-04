@@ -41,7 +41,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     if (onStatusChange) onStatusChange(id, status);
   };
 
-  const publicUrl = `https://kroomify.id/${storeSlug}/product/${product.slug || product.id}`;
+  const publicUrl = `https://lapakq.com/${storeSlug}/product/${product.slug || product.id}`;
 
   const copyProductLink = () => {
     navigator.clipboard?.writeText(publicUrl);

@@ -109,8 +109,11 @@ export class SitePackager {
       const safeProductsJson = JSON.stringify(products).replace(/</g, '\\u003c');
 
       const injectedScript = `
-    <!-- Kroomify Preloaded Store Data & Hydration Guard -->
+    <!-- LapakQ Preloaded Store Data & Hydration Guard -->
     <script>
+      window.__LAPAKQ_STORE_SLUG__ = "${cleanSlug}";
+      window.__LAPAKQ_INITIAL_STORE__ = ${safeStoreJson};
+      window.__LAPAKQ_INITIAL_PRODUCTS__ = ${safeProductsJson};
       window.__KROOMIFY_STORE_SLUG__ = "${cleanSlug}";
       window.__KROOMIFY_INITIAL_STORE__ = ${safeStoreJson};
       window.__KROOMIFY_INITIAL_PRODUCTS__ = ${safeProductsJson};

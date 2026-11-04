@@ -191,13 +191,13 @@ const PLAN_BADGE_MAP: Record<string, string> = {
 
 const PLAN_FEATURE_MAP: Record<string, string> = {
   // Plan Free
-  'Subdomain gratis [slug].kroomify.com': 'Free subdomain [slug].kroomify.com',
+  'Subdomain gratis [slug].lapakq.com': 'Free subdomain [slug].lapakq.com',
   'Subdomain pratinjau: namatoko.kroombox.com': 'Preview subdomain: yourstore.kroombox.com',
   'Katalog produk hingga 15 item': 'Product catalog up to 15 items',
   'Katalog produk dasar (maksimal 10 produk)': 'Basic product catalog (maximum 10 products)',
   'Checkout katalog & order WhatsApp': 'Catalog checkout & WhatsApp ordering',
-  'Watermark Kroomify di footer toko': 'Kroomify watermark in store footer',
-  'Watermark resmi Kroomify di footer': 'Official Kroomify watermark in store footer',
+  'Watermark LapakQ di footer toko': 'LapakQ watermark in store footer',
+  'Watermark resmi LapakQ di footer': 'Official LapakQ watermark in store footer',
   'Manual shipping & payment': 'Manual shipping & payment',
   'Tanpa Checkout Otomatis Duitku (Manual/WA saja)': 'No automated Duitku checkout (Manual/WA only)',
   'Tanpa Ekspedisi Kurir Otomatis Biteship': 'No automated Biteship couriers',
@@ -215,7 +215,7 @@ const PLAN_FEATURE_MAP: Record<string, string> = {
   'Checkout otomatis Duitku (QRIS & VA Bank)': 'Automated Duitku checkout (QRIS & VA Bank)',
   'Integrasi Ekspedisi Logistik (JNE, J&T via Biteship)': 'Logistics courier integration (JNE, J&T via Biteship)',
   'Cek ongkir & pengiriman otomatis Biteship': 'Automated shipping calculation & booking via Biteship',
-  'Kapasitas Hosting Cloud Kroomify cepat': 'Fast Kroomify Cloud Hosting capacity',
+  'Kapasitas Hosting Cloud LapakQ cepat': 'Fast LapakQ Cloud Hosting capacity',
   'Laporan penjualan & pesanan harian': 'Daily sales & order reporting',
   'White-label tanpa watermark': 'White-label without watermark',
 
@@ -911,7 +911,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
           invoiceNumber,
           planName: selectedPlanForUpgrade.name,
           amount: price,
-          qrString: `00020101021226670016ID.CO.DUITKU.WWW01189360099900000000000215${orderId}51440014ID.LINKAJA.WWW01189360099900000000000215${orderId}520459995303360540${price}5802ID5912KROOMIFY CMS6007JAKARTA6304`,
+          qrString: `00020101021226670016ID.CO.DUITKU.WWW01189360099900000000000215${orderId}51440014ID.LINKAJA.WWW01189360099900000000000215${orderId}520459995303360540${price}5802ID5912LAPAKQ CMS6007JAKARTA6304`,
           channelName: currentChannel.name,
           subscription: recordedPending,
         });

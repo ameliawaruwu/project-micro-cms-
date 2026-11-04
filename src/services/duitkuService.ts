@@ -153,7 +153,7 @@ class DuitkuService {
   }> {
     let lastErrorMsg = 'Gagal membuat invoice Duitku';
     const primaryEndpoint = getApiEndpoint('/api/duitku/create-invoice');
-    const fallbackEndpoint = 'https://kroomify.kroombox.com/api/duitku/create-invoice';
+    const fallbackEndpoint = 'https://lapakq.com/api/duitku/create-invoice';
     const endpointsToTry = [primaryEndpoint];
     if (primaryEndpoint !== fallbackEndpoint) {
       endpointsToTry.push(fallbackEndpoint);

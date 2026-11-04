@@ -35,7 +35,7 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
   const [copiedCallback, setCopiedCallback] = useState(false);
 
   const handleCopyCallback = () => {
-    navigator.clipboard.writeText('https://kroomify.kroombox.com/api/payment/callback');
+    navigator.clipboard.writeText('https://lapakq.com/api/payment/callback');
     setCopiedCallback(true);
     setTimeout(() => setCopiedCallback(false), 2000);
   };
@@ -258,7 +258,7 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
           <div className="flex items-center gap-1.5 truncate">
             <span className="font-medium text-gray-700">Duitku Callback URL:</span>
             <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sky-800 font-mono text-[10px] select-all">
-              https://kroomify.kroombox.com/api/payment/callback
+              https://lapakq.com/api/payment/callback
             </code>
           </div>
           <button

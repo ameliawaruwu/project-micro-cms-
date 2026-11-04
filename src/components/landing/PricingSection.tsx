@@ -82,7 +82,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                   <span className="line-through">Tanpa Deploy / Custom Domain</span>
                 </div>
                 <div className="flex items-center gap-2 text-[#706866] text-[11px] pt-1">
-                  <span>* Watermark resmi Kroomify di footer</span>
+                  <span>* Watermark resmi LapakQ di footer</span>
                 </div>
               </div>
             </div>

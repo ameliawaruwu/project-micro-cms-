@@ -126,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           type="button"
           onClick={() => handleItemClick('beranda')}
           className="flex items-center gap-2 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none"
-          title="Kroomify"
+          title="LapakQ"
         >
           <KroomifyLogo
             size="sm"

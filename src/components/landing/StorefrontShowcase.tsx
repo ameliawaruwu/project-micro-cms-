@@ -31,7 +31,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleCopyLink = () => {
-    navigator.clipboard?.writeText?.('https://kroomify.id/toko-batik');
+    navigator.clipboard?.writeText?.('https://lapakq.com/toko-batik');
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -122,7 +122,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <div className="px-3 py-1 rounded-lg bg-white/10 text-white font-mono text-xs flex items-center gap-1.5 flex-1 sm:flex-initial">
                 <Store className="w-3.5 h-3.5 text-[#F5E8EA]" />
-                <span className="font-normal">kroomify.id/toko-batik</span>
+                <span className="font-normal">lapakq.com/toko-batik</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-medium border border-emerald-500/30">
                 ● Live 3D Chain

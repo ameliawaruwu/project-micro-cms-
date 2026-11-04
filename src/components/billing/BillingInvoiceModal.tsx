@@ -160,7 +160,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
           id="invoice-printable-area"
           className="p-4 sm:p-5 bg-white text-gray-900 space-y-3.5 overflow-y-auto"
         >
-          {/* Header: Kroomify Brand Logo on Left, INVOICE title on Right */}
+          {/* Header: LapakQ Brand Logo on Left, INVOICE title on Right */}
           <div className="flex items-start justify-between gap-3">
             {/* Brand Logo & Tagline */}
             <div className="space-y-0.5">
@@ -193,7 +193,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
                   <tr>
                     <td className="font-medium text-gray-500 pr-2 py-0.5">{isEn ? 'Seller' : 'Penjual'}</td>
                     <td className="font-medium text-gray-500 pr-1 py-0.5">:</td>
-                    <td className="font-bold text-gray-900 py-0.5">Kroomify</td>
+                    <td className="font-bold text-gray-900 py-0.5">LapakQ</td>
                   </tr>
                 </tbody>
               </table>
@@ -248,7 +248,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
                         : `Langganan Platform — ${invoice.plan} (${invoice.cycle})`}
                     </p>
                     <p className="text-[10px] text-gray-500 mt-0.5">
-                      {store.slug ? `${store.slug}.kroombox.com` : 'kroomify.kroombox.com'}
+                      {store.slug ? `${store.slug}.kroombox.com` : 'lapakq.com'}
                     </p>
                   </td>
                   <td className="py-2.5 px-1.5 text-center font-semibold text-gray-800 align-top">

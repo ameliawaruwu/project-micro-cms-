@@ -109,7 +109,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
   return (
     <>
       <header
-        id="kroomify-landing-header"
+        id="lapakq-landing-header"
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 bg-white/95 backdrop-blur-md border-b ${
           isScrolled
             ? 'border-[#E5E0DD] shadow-[0_2px_12px_rgba(36,26,26,0.06)] h-[64px] sm:h-[68px]'
@@ -129,8 +129,8 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
                 if (onNavigateHome) onNavigateHome();
               }}
               className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer text-left bg-transparent border-0 p-0 focus:outline-none shrink-0"
-              title="Kroomify"
-              aria-label="Kroomify"
+              title="LapakQ"
+              aria-label="LapakQ"
             >
               <KroomifyLogo size="md" />
             </button>

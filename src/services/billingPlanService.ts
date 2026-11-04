@@ -68,7 +68,7 @@ export const DEFAULT_BILLING_PLANS: BillingPlan[] = [
       '❌ Tanpa Checkout Otomatis Midtrans (Manual/WA saja)',
       '❌ Tanpa Ekspedisi Kurir Otomatis Biteship',
       '❌ Tanpa Publikasi/Deploy Toko Online & Domain',
-      'Watermark resmi Kroomify di footer',
+      'Watermark resmi LapakQ di footer',
     ],
     isActive: true,
     sortOrder: 1,

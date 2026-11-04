@@ -76,7 +76,7 @@ export function isPlatformHost(hostname?: string): boolean {
  */
 export function getStoreSlugFromHost(hostname?: string): string | null {
   if (typeof window !== 'undefined') {
-    const injectedSlug = (window as any).__KROOMIFY_STORE_SLUG__;
+    const injectedSlug = ((window as any).__LAPAKQ_STORE_SLUG__ || (window as any).__KROOMIFY_STORE_SLUG__);
     if (injectedSlug && typeof injectedSlug === 'string' && injectedSlug.trim()) {
       return injectedSlug.trim().toLowerCase();
     }

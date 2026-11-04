@@ -362,7 +362,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({
               </div>
               <div>
                 <h3 className="font-bold text-[#241A1A]">{t('domain_type_random', 'Random Subdomain')}</h3>
-                <p className="text-xs text-[#706866]">{t('domain_type_random_desc', 'Gratis selamanya dari sistem Kroomify')}</p>
+                <p className="text-xs text-[#706866]">{t('domain_type_random_desc', 'Gratis selamanya dari sistem LapakQ')}</p>
               </div>
             </div>
             <div
@@ -589,7 +589,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                   {activeRequest.status === 'active' && (
                     <div className="pt-2 border-t border-emerald-200 flex justify-between items-center">
                       <span className="text-emerald-800 font-semibold text-[11px]">
-                        {isEn ? 'Connected to Kroomify Cloudflare Tunnel' : 'Terhubung ke Cloudflare Tunnel Kroomify'}
+                        {isEn ? 'Connected to LapakQ Cloudflare Tunnel' : 'Terhubung ke Cloudflare Tunnel LapakQ'}
                       </span>
                       <button
                         type="button"

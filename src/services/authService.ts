@@ -57,12 +57,33 @@ interface StoredAccount {
 const defaultAccounts: StoredAccount[] = [
   {
     id: 'USR001',
+    email: 'admin@lapakq.com',
+    password: 'admin123',
+    user: {
+      id: 'USR001',
+      name: 'Super Admin LapakQ',
+      email: 'admin@lapakq.com',
+      phoneWhatsApp: '081289201928',
+      role: 'admin',
+      createdAt: '2026-01-01T00:00:00Z',
+    },
+    merchant: {
+      id: 'merch-USR001',
+      userId: 'USR001',
+      storeId: '',
+      plan: 'premium',
+      isVerified: true,
+    },
+    storeId: '',
+  },
+  {
+    id: 'USR001_LEGACY',
     email: 'admin@kroomify.id',
     password: 'admin123',
     user: {
       id: 'USR001',
-      name: 'Super Admin Kroomify',
-      email: 'admin@kroomify.id',
+      name: 'Super Admin LapakQ',
+      email: 'admin@lapakq.com',
       phoneWhatsApp: '081289201928',
       role: 'admin',
       createdAt: '2026-01-01T00:00:00Z',
@@ -120,7 +141,7 @@ class AuthService {
 
   purgeLocalAccount(email: string): void {
     const cleanEmail = email.toLowerCase().trim();
-    if (cleanEmail === 'admin@kroomify.id') return;
+    if (cleanEmail === 'admin@lapakq.com' || cleanEmail === 'admin@kroomify.id') return;
     try {
       const accounts = this.getStoredAccounts().filter((a) => a.email.toLowerCase() !== cleanEmail);
       this.saveAccounts(accounts);
@@ -950,18 +971,18 @@ class AuthService {
         },
         body: JSON.stringify({
           to: cleanEmail,
-          subject: 'Kroomify - Token Reset Password Anda',
+          subject: 'LapakQ - Token Reset Password Anda',
           html: `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
               <h2 style="color: #66000E;">Permintaan Reset Kata Sandi</h2>
               <p>Halo,</p>
-              <p>Kami menerima permintaan untuk mengatur ulang kata sandi akun Kroomify Anda. Gunakan token 6 digit di bawah ini untuk melanjutkan:</p>
+              <p>Kami menerima permintaan untuk mengatur ulang kata sandi akun LapakQ Anda. Gunakan token 6 digit di bawah ini untuk melanjutkan:</p>
               <div style="background-color: #F9EDEF; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
                 <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #66000E;">${token}</span>
               </div>
               <p>Token ini hanya berlaku selama sesi ini. Jika Anda tidak meminta reset kata sandi, abaikan email ini.</p>
               <br/>
-              <p style="font-size: 12px; color: #666;">Tim Kroomify</p>
+              <p style="font-size: 12px; color: #666;">Tim LapakQ</p>
             </div>
           `
         }),

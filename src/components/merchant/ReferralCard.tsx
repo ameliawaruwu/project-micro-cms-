@@ -68,8 +68,8 @@ export const ReferralCard: React.FC<ReferralCardProps> = ({
     if (!stats.referralCode) return;
     const inviter = storeName || userName || 'Saya';
     const text = isEn
-      ? `Hi! Start your free online store on Kroomify using my referral code: *${stats.referralCode}*. Register here: https://kroomify.kroombox.com/auth`
-      : `Halo! Yuk buka toko online UMKM gratis di Kroomify menggunakan kode referal saya: *${stats.referralCode}*. Daftar sekarang di: https://kroomify.kroombox.com/auth`;
+      ? `Hi! Start your free online store on LapakQ using my referral code: *${stats.referralCode}*. Register here: https://lapakq.com/auth`
+      : `Halo! Yuk buka toko online UMKM gratis di LapakQ menggunakan kode referal saya: *${stats.referralCode}*. Daftar sekarang di: https://lapakq.com/auth`;
 
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -98,8 +98,8 @@ export const ReferralCard: React.FC<ReferralCardProps> = ({
             </div>
             <p className="text-xs text-[#706866] mt-0.5 max-w-lg">
               {isEn
-                ? 'Invite fellow merchants or friends to open a store on Kroomify using your referral code.'
-                : 'Ajak sesama rekan UMKM atau teman membuka toko online di Kroomify menggunakan kode referal Anda.'}
+                ? 'Invite fellow merchants or friends to open a store on LapakQ using your referral code.'
+                : 'Ajak sesama rekan UMKM atau teman membuka toko online di LapakQ menggunakan kode referal Anda.'}
             </p>
 
             {/* Referral Code Display */}

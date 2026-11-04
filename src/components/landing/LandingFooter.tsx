@@ -41,7 +41,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
               }}
               className="flex items-center gap-2.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none"
               title="Kembali ke Halaman Utama"
-              aria-label="Kembali ke Halaman Utama Kroomify"
+              aria-label="Kembali ke Halaman Utama LapakQ"
             >
               <KroomifyLogo size="lg" />
             </button>
@@ -151,7 +151,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
                 </li>
                 <li>
                   <a
-                    href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroomify,%20saya%20butuh%20bantuan"
+                    href="https://wa.me/6281234567890?text=Halo%20Admin%20LapakQ,%20saya%20butuh%20bantuan"
                     target="_blank"
                     rel="noreferrer"
                     className="hover:text-[#801010] transition-colors inline-flex items-center gap-1.5 text-[#66000E] font-bold"
@@ -300,7 +300,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
                     {t('footer_link_help_center', 'Pusat Bantuan')}
                   </a>
                   <a
-                    href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroomify,%20saya%20butuh%20bantuan"
+                    href="https://wa.me/6281234567890?text=Halo%20Admin%20LapakQ,%20saya%20butuh%20bantuan"
                     target="_blank"
                     rel="noreferrer"
                     className="block py-1 text-[#66000E] font-bold"
@@ -337,13 +337,13 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
 
         {/* BOTTOM COPYRIGHT & DISCLAIMER ROW */}
         <div className="pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] sm:text-xs text-[#6B6260] text-center sm:text-left">
-          <p>{t('footer_copyright', '© 2026 Kroomify. Dibuat untuk UMKM Indonesia.')}</p>
+          <p>{t('footer_copyright', '© 2026 LapakQ. Dibuat untuk UMKM Indonesia.')}</p>
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[#6B6260]">
             <span>{t('footer_privacy_secure', 'Privasi Terjaga')}</span>
             <span>•</span>
             <span>{t('footer_server_fast_safe', 'Server Cepat & Aman')}</span>
             <span>•</span>
-            <span className="text-[#66000E] font-bold">Kroomify v2.4</span>
+            <span className="text-[#66000E] font-bold">LapakQ v2.4</span>
           </div>
         </div>
 

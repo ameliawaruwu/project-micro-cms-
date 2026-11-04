@@ -44,11 +44,11 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
     return (
       <div
         className={`${currentIcon.box} overflow-hidden rounded-lg shrink-0 flex items-center justify-center select-none ${className}`}
-        title="Kroomify"
+        title="LapakQ"
       >
         <img
           src="/Logo-Icon.png"
-          alt="Kroomify"
+          alt="LapakQ"
           className="w-full h-full object-contain pointer-events-none select-none drop-shadow-2xs"
           loading="eager"
         />
@@ -60,7 +60,7 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
     return (
       <img
         src="/Logo.png"
-        alt="Kroomify"
+        alt="LapakQ"
         className={`${currentFull.h} w-auto max-w-full object-contain shrink-0 ${className}`}
         loading="eager"
       />
@@ -72,7 +72,7 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
     <div className={`inline-flex items-center gap-2 sm:gap-2.5 select-none shrink-0 ${className}`}>
       <img
         src="/Logo.png"
-        alt="Kroomify"
+        alt="LapakQ"
         className={`${currentFull.h} w-auto max-w-full object-contain shrink-0 drop-shadow-2xs`}
         loading="eager"
       />
@@ -86,3 +86,5 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
     </div>
   );
 };
+
+export const LapakQLogo = KroomifyLogo;

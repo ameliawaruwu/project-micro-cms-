@@ -158,7 +158,7 @@ export const InvoiceA4View: React.FC<InvoiceA4ViewProps> = ({
 
       {/* Invoice Footer */}
       <div className="pt-6 border-t border-dashed border-gray-300 text-center text-xs text-gray-500">
-        Terima kasih atas pesanan Anda di <strong>{store.name}</strong> • Powered by Kroomify
+        Terima kasih atas pesanan Anda di <strong>{store.name}</strong> • Powered by LapakQ
       </div>
     </div>
   );

@@ -217,7 +217,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
               <Crown className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-bold text-sm text-gray-900">Pilihan Paket Berlangganan Kroomify</h2>
+              <h2 className="font-bold text-sm text-gray-900">Pilihan Paket Berlangganan LapakQ</h2>
               <p className="text-[11px] text-gray-500">Toko: <span className="font-semibold text-gray-800">{store.name}</span></p>
             </div>
           </div>

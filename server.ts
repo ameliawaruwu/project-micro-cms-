@@ -110,7 +110,7 @@ app.post('/api/send-email', async (req, res) => {
     });
 
     const info = await transporter.sendMail({
-      from: `"Kroomify" <${smtpEmail}>`,
+      from: `"LapakQ" <${smtpEmail}>`,
       to: String(to).trim(),
       subject: String(subject).trim(),
       html: String(html),
@@ -572,7 +572,7 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
     const hashText = `${merchantCode}${merchantOrderId}${paymentAmount}${apiKey}`;
     const signature = crypto.createHash('md5').update(hashText).digest('hex');
 
-    const appUrl = (process.env.APP_URL || 'https://kroomify.kroombox.com').replace(/\/$/, '');
+    const appUrl = (process.env.APP_URL || 'https://lapakq.com').replace(/\/$/, '');
     const callbackUrl = `${appUrl}/api/payment/callback`;
     const returnUrl = merchantOrderId.startsWith('BILL-')
       ? `${appUrl}/?billing_return=true&merchantOrderId=${encodeURIComponent(merchantOrderId)}`

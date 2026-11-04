@@ -231,7 +231,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                 </label>
                 <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 overflow-hidden text-xs">
                   <span className="px-3 py-2.5 text-gray-500 bg-gray-100/80 border-r border-gray-200 font-mono font-medium select-none">
-                    kroomify.id/
+                    lapakq.com/
                   </span>
                   <input
                     type="text"

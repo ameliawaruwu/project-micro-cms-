@@ -31,7 +31,7 @@ interface StoreLocationPickerMapProps {
 
 const createCustomPin = () => {
   return L.divIcon({
-    className: 'kroomify-pin-wrapper',
+    className: 'lapakq-pin-wrapper',
     html: `
       <div style="position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -100%);">
         <div style="width: 34px; height: 34px; background: #66000E; border: 2.5px solid #FFFFFF; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 6px 16px rgba(102,0,14,0.45); display: flex; align-items: center; justify-content: center;">
