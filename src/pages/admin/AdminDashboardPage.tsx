@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Globe,
   Users,
+  Package,
 } from 'lucide-react';
 import { Store, WithdrawalRequest, AdminPlatformStats, Order, BillingPlan, BillingSubscription, User } from '../../types';
 import { adminService } from '../../services/adminService';
@@ -31,6 +32,7 @@ import { AdminOrdersShippingTab } from './tabs/AdminOrdersShippingTab';
 import { AdminTransactionsTab } from './tabs/AdminTransactionsTab';
 import { AdminSettingsTab } from './tabs/AdminSettingsTab';
 import { AdminCommunitiesTab } from './tabs/AdminCommunitiesTab';
+import { AdminProductsTab } from './tabs/AdminProductsTab';
 import {
   getShippingStatusBadgeStyle,
   getShippingStatusLabel,
@@ -60,11 +62,18 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [orders, setOrders] = useState<Order[]>([]);
   const [adminUser, setAdminUser] = useState<User | null>(() => currentUser || authService.getCurrentUser().user || null);
   const loggedInUser = adminUser || currentUser || authService.getCurrentUser().user;
-  const isSubAdmin = loggedInUser?.role === 'sub_admin' || loggedInUser?.role === 'community_admin';
-  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const isSubAdmin = loggedInUser?.role === 'sub_admin' || loggedInUser?.role === 'sub_admin_umum' || loggedInUser?.role === 'community_admin';
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => (isSubAdmin ? 'products' : 'overview'));
+
+  // Hak akses ketat Sub Admin Umum: hanya boleh akses Produk & Komunitas
+  useEffect(() => {
+    if (isSubAdmin && activeTab !== 'products' && activeTab !== 'communities') {
+      setActiveTab('products');
+    }
+  }, [isSubAdmin, activeTab]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const activeAdminName = loggedInUser?.name?.replace(/Kroomify/g, 'LapakQ') || (isSubAdmin ? (loggedInUser?.communityName ? `Koordinator ${loggedInUser.communityName}` : 'Koordinator Organisasi') : 'Super Admin LapakQ');
+  const activeAdminName = loggedInUser?.name?.replace(/Kroomify/g, 'LapakQ') || (isSubAdmin ? 'Sub Admin Umum' : 'Super Admin LapakQ');
   const activeAdminEmail = loggedInUser?.email?.replace('kroomify.id', 'lapakq.com') || (isSubAdmin ? 'koordinator@lapakq.com' : 'admin@lapakq.com');
   const activeAdminAvatar = loggedInUser?.avatarUrl;
   const [searchQuery, setSearchQuery] = useState('');
@@ -443,43 +452,21 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const navItems: AdminNavItem[] = isSubAdmin
     ? [
         {
-          id: 'overview',
-          label: language === 'en' ? 'Overview' : 'Ringkasan Binaan',
-          icon: LayoutDashboard,
-        },
-        {
-          id: 'stores',
-          label: language === 'en' ? 'Member Stores' : 'Kelola Toko Binaan',
-          icon: StoreIcon,
-          count: subAdminStores.length,
-        },
-        {
-          id: 'orders-shipping',
-          label: language === 'en' ? 'Orders & Shipping' : 'Pesanan & Pengiriman',
-          icon: Truck,
-          badge: processingOrdersCount > 0 ? processingOrdersCount : undefined,
+          id: 'products',
+          label: language === 'en' ? 'Products' : 'Produk',
+          icon: Package,
         },
         {
           id: 'communities',
-          label: language === 'en' ? 'Community Portal' : (loggedInUser?.communityName ? `Organisasi & Lapak (${loggedInUser.communityName})` : 'Organisasi & Lapak Binaan'),
+          label: language === 'en' ? 'Communities' : 'Komunitas',
           icon: Users,
-        },
-        {
-          id: 'withdrawals',
-          label: language === 'en' ? 'Member Payouts' : 'Pencairan Dana Binaan',
-          icon: Wallet,
-          badge: activePendingWithdrawals.length > 0 ? activePendingWithdrawals.length : undefined,
-        },
-        {
-          id: 'transactions',
-          label: language === 'en' ? 'Transaction Logs' : 'Log Transaksi Binaan',
-          icon: Receipt,
         },
       ]
     : [
         { id: 'overview', label: language === 'en' ? 'Overview' : 'Ringkasan', icon: LayoutDashboard },
         { id: 'stores', label: language === 'en' ? 'Manage Stores' : 'Kelola Toko', icon: StoreIcon, count: stores.length },
-        { id: 'communities', label: language === 'en' ? 'Communities & Sub-Admin' : 'Komunitas & Sub-Admin', icon: Users },
+        { id: 'products', label: language === 'en' ? 'Products' : 'Produk', icon: Package },
+        { id: 'communities', label: language === 'en' ? 'Communities' : 'Komunitas', icon: Users },
         {
           id: 'domain-requests',
           label: language === 'en' ? 'Domain Requests' : 'Permintaan Domain',
@@ -551,6 +538,15 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               language={language}
               isSubAdmin={isSubAdmin}
               communityName={loggedInUser?.communityName}
+            />
+          )}
+
+          {activeTab === 'products' && (
+            <AdminProductsTab
+              currentUser={loggedInUser}
+              onShowToast={showToast}
+              language={language}
+              isSubAdmin={isSubAdmin}
             />
           )}
 

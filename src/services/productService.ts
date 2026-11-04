@@ -481,6 +481,46 @@ class ProductService {
 
     return { success: true, count: syncedCount };
   }
+
+  /**
+   * Mengambil semua produk lintas toko untuk Admin dan Sub Admin Umum.
+   */
+  async getAllProducts(): Promise<Product[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        return data.map(mapSupabaseRowToProduct);
+      }
+    } catch (err: any) {
+      console.warn('[productService] Error fetching all products from Supabase:', err);
+    }
+
+    // Fallback: pindai seluruh partisi produk di localStorage
+    const allProducts: Product[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(PRODUCTS_KEY_PREFIX)) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const parsed: Product[] = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                allProducts.push(...parsed.filter((p) => p && p.id));
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[productService] Error parsing local products:', e);
+      }
+    }
+    return allProducts;
+  }
 }
 
 export const productService = new ProductService();

@@ -50,7 +50,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const { language } = useLanguage();
   const isEn = language === 'en';
 
-  const isSubAdmin = currentUser?.role === 'sub_admin' || currentUser?.role === 'community_admin';
+  const isSubAdmin = currentUser?.role === 'sub_admin' || currentUser?.role === 'sub_admin_umum' || currentUser?.role === 'community_admin';
   const targetCommunityId = currentUser?.communityId || '';
 
   // Data states
@@ -444,8 +444,8 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           </div>
         </div>
 
-        {/* Actions for Super Admin */}
-        {!isSubAdmin && (
+        {/* Actions for Super Admin & Sub Admin Umum */}
+        {Boolean(true) && (
           <div className="shrink-0 flex items-center gap-2.5 flex-wrap">
             {communities.length > 0 && (
               <div className="flex items-center gap-2">
@@ -470,7 +470,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               className="px-3.5 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <UserCheck className="w-4 h-4" />
-              <span>Daftarkan Sub-Admin</span>
+              <span>Tambah Komunitas</span>
             </button>
           </div>
         )}
@@ -487,14 +487,14 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               Belum ada organisasi mitra atau komunitas yang terdaftar di sistem. Daftarkan organisasi baru untuk memberikan akses Sub-Admin dalam mengelola toko binaan mereka.
             </p>
           </div>
-          {!isSubAdmin && (
+          {Boolean(true) && (
             <button
               type="button"
               onClick={() => setIsCreateModalOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
             >
               <UserCheck className="w-4 h-4" />
-              <span>Daftarkan Sub-Admin Organisasi</span>
+              <span>Tambah Komunitas</span>
             </button>
           )}
         </div>
@@ -742,7 +742,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           </div>
 
           {/* Action buttons for Super Admin */}
-          {!isSubAdmin && (
+          {Boolean(true) && (
             <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2.5 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
                 <button

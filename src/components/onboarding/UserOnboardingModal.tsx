@@ -40,7 +40,6 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
   const [category, setCategory] = useState('');
   const [phoneWhatsApp, setPhoneWhatsApp] = useState('');
   const [tagline, setTagline] = useState('');
-  const [communityCode, setCommunityCode] = useState(user?.communityName || '');
   const [isSavingStore, setIsSavingStore] = useState(false);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +51,6 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       setCategory(store?.category || '');
       setPhoneWhatsApp(store?.phoneWhatsApp || user?.phoneWhatsApp || '');
       setTagline(store?.tagline || '');
-      setCommunityCode(store?.communityName || user?.communityName || '');
       setTimeout(() => nameInputRef.current?.focus(), 150);
     }
   }, [isOpen, store?.name, store?.slug, store?.category, store?.phoneWhatsApp, store?.tagline, store?.communityName, user?.phoneWhatsApp, user?.communityName]);
@@ -82,20 +80,8 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
       const finalSlug = storeSlug.trim() || finalName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const cleanPhone = phoneWhatsApp.trim();
 
-      // Resolusi kode komunitas jika diisi
-      let resolvedCommunityId = store?.communityId || user?.communityId;
-      let resolvedCommunityName = store?.communityName || user?.communityName;
-      if (communityCode && communityCode.trim()) {
-        try {
-          const found = await communityService.findCommunityByCode(communityCode.trim());
-          if (found) {
-            resolvedCommunityId = found.id;
-            resolvedCommunityName = found.name;
-          }
-        } catch (e) {
-          console.warn('Error resolving community code:', e);
-        }
-      }
+      const resolvedCommunityId = store?.communityId || user?.communityId;
+      const resolvedCommunityName = store?.communityName || user?.communityName;
 
       let updatedStore: Store;
       if (store?.id) {
@@ -290,33 +276,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
             />
           </div>
 
-          {/* Kode Referal Komunitas / Afiliasi (Opsional / Boleh Null) */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold text-slate-700">
-                {isEn ? 'Community Referral Code (Optional)' : 'Kode Referal Komunitas (Opsional)'}
-              </label>
-              <span className="text-[10px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-bold border border-emerald-200">
-                Lapak Binaan
-              </span>
-            </div>
-            <div className="relative">
-              <Building2 className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                autoComplete="off"
-                value={communityCode}
-                onChange={(e) => setCommunityCode(e.target.value.toUpperCase())}
-                placeholder="Contoh: BIMA atau GMPS"
-                className="w-full pl-8 pr-2.5 py-2 text-xs font-mono font-bold tracking-wider uppercase bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10 transition-all"
-              />
-            </div>
-            <p className="text-[10px] text-slate-400 mt-1 leading-snug">
-              Punya kode dari paguyuban/organisasi pembina? Masukkan kode di sini agar toko otomatis terhubung (contoh: <strong>BIMA</strong>). Boleh dikosongkan jika toko mandiri.
-            </p>
-          </div>
-
-          {/* Tombol Simpan & Selesai Buka Dashboard */}
+{/* Tombol Simpan & Selesai Buka Dashboard */}
           <div className="pt-2">
             <button
               type="submit"

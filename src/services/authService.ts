@@ -670,17 +670,6 @@ class AuthService {
       } catch (e) {}
     }
 
-    // 3. Generate & simpan kode referral unik untuk user baru, serta catat jika menggunakan referral orang lain
-    try {
-      await referralService.assignUserReferralCode(userId, params.fullName);
-
-      const refCode = (params.referralCode || params.communityCode || '').trim();
-      if (refCode) {
-        await referralService.redeemReferral(refCode, userId);
-      }
-    } catch (refErr) {
-      console.warn('[authService] Referral setup notice:', refErr);
-    }
 
     // Save account into local accounts repository with hashed password
     const accounts = this.getStoredAccounts();
@@ -890,8 +879,6 @@ class AuthService {
         updated_at: nowWib,
       }).select('id');
 
-      // Generate & assign referral code for Google sign-up
-      await referralService.assignUserReferralCode(userId, finalName);
     } catch (e) {
       console.warn('Supabase Google auth insert warning:', e);
     }

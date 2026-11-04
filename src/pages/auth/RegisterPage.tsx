@@ -32,7 +32,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [storeName, setStoreName] = useState('');
-  const [communityCode, setCommunityCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
@@ -65,8 +64,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
         email: email.trim().toLowerCase(),
         phoneWhatsApp: phone.trim(),
         storeName: storeName.trim() || undefined,
-        communityCode: communityCode.trim().toUpperCase() || undefined,
-        referralCode: communityCode.trim().toUpperCase() || undefined,
         password: password.trim(),
         autoLogin: false,
       });
@@ -313,35 +310,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                 />
               </div>
             </div>
-
-            {/* Input 7: Kode Referal Komunitas (Opsional / Boleh Null) */}
-            <div className="space-y-1.5 text-left">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="reg-community-code"
-                  className="block text-xs sm:text-sm font-medium text-[#1A1110]"
-                >
-                  Kode Referal / Komunitas <span className="text-slate-400 font-normal">(Opsional)</span>
-                </label>
-                <span className="text-[10px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-bold border border-emerald-200">
-                  Lapak Binaan
-                </span>
-              </div>
-              <div className="relative">
-                <input
-                  id="reg-community-code"
-                  type="text"
-                  value={communityCode}
-                  onChange={(e) => setCommunityCode(e.target.value.toUpperCase())}
-                  placeholder="Masukkan kode referal teman atau komunitas"
-                  className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7] placeholder:normal-case uppercase font-normal"
-                />
-              </div>
-              <p className="text-[11px] text-[#7E7E88] pl-2 leading-tight">
-                Masukkan kode jika diajak sesama merchant atau anggota binaan mitra. Kosongkan jika mandiri.
-              </p>
-            </div>
-
 
             {/* PRIMARY REGISTER BUTTON */}
             <div className="pt-2">
