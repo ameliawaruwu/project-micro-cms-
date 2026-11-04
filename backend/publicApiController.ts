@@ -117,10 +117,28 @@ publicApiRouter.post('/accounts', async (req: Request, res: Response) => {
         [inputRefCode]
       );
       if (refCheck.rows.length > 0 && refCheck.rows[0].user_id !== userId) {
+        const referrerId = refCheck.rows[0].user_id;
         await client.query(
           'INSERT INTO referral_redemptions (referrer_user_id, referee_user_id, referral_code) VALUES ($1, $2, $3) ON CONFLICT (referee_user_id) DO NOTHING',
-          [refCheck.rows[0].user_id, userId, refCheck.rows[0].referral_code]
+          [referrerId, userId, refCheck.rows[0].referral_code]
         );
+
+        // Jika Sub-Admin / pengajak terhubung dengan komunitas, otomatis delegasikan akun & toko ini ke komunitas binaan Sub-Admin!
+        const referrerUserRes = await client.query(
+          'SELECT community_id, community_name FROM users WHERE id = $1',
+          [referrerId]
+        );
+        if (referrerUserRes.rows.length > 0 && referrerUserRes.rows[0].community_id) {
+          const { community_id, community_name } = referrerUserRes.rows[0];
+          await client.query(
+            'UPDATE users SET community_id = $1, community_name = $2 WHERE id = $3',
+            [community_id, community_name, userId]
+          );
+          await client.query(
+            'UPDATE stores SET community_id = $1, community_name = $2 WHERE id = $3',
+            [community_id, community_name, storeId]
+          );
+        }
       }
     }
 

@@ -107,7 +107,7 @@ class ReferralService {
    */
   public async findReferrerByCode(
     code: string
-  ): Promise<{ userId: string; referralCode: string; name?: string } | null> {
+  ): Promise<{ userId: string; referralCode: string; name?: string; communityId?: string; communityName?: string } | null> {
     if (!code || !code.trim()) return null;
     const cleanCode = code.trim().toUpperCase();
 
@@ -120,17 +120,19 @@ class ReferralService {
 
       if (error || !data) return null;
 
-      // Ambil nama user pemilik
+      // Ambil nama user pemilik dan komunitasnya jika sub-admin
       const { data: userData } = await supabase
         .from('users')
-        .select('name')
+        .select('name, community_id, community_name')
         .eq('id', data.user_id)
         .maybeSingle();
 
       return {
         userId: data.user_id,
         referralCode: data.referral_code,
-        name: userData?.name || 'Merchant Kroomify',
+        name: userData?.name || 'Koordinator / Sub-Admin',
+        communityId: userData?.community_id,
+        communityName: userData?.community_name,
       };
     } catch (err) {
       console.warn('[referralService] Error validating referral code:', err);
@@ -140,6 +142,7 @@ class ReferralService {
 
   /**
    * Mencatat pemakaian kode referral saat pendaftaran akun baru
+   * dan otomatis menautkan akun merchant ke komunitas binaan Sub-Admin terkait
    */
   public async redeemReferral(
     code: string,
@@ -171,7 +174,7 @@ class ReferralService {
         return { success: false, message: 'Akun ini sudah pernah mengklaim referral' };
       }
 
-      // Catat ke tabel referral_redemptions
+      // 1. Catat ke tabel referral_redemptions
       const { error: insertErr } = await supabase
         .from('referral_redemptions')
         .insert({
@@ -185,9 +188,32 @@ class ReferralService {
         return { success: false, message: insertErr.message };
       }
 
+      // 2. Jika Sub-Admin / Referrer terhubung dengan komunitas binaan, otomatis tautkan akun & toko merchant!
+      if (referrer.communityId) {
+        try {
+          await supabase
+            .from('users')
+            .update({
+              community_id: referrer.communityId,
+              community_name: referrer.communityName,
+            })
+            .eq('id', refereeUserId);
+
+          await supabase
+            .from('stores')
+            .update({
+              community_id: referrer.communityId,
+              community_name: referrer.communityName,
+            })
+            .eq('user_id', refereeUserId);
+        } catch (linkErr) {
+          console.warn('[referralService] Gagal menautkan komunitas ke toko binaan:', linkErr);
+        }
+      }
+
       return {
         success: true,
-        message: `Berhasil terhubung dengan rujukan dari ${referrer.name}`,
+        message: `Berhasil terhubung ke binaan ${referrer.name}${referrer.communityName ? ` (${referrer.communityName})` : ''}`,
         referrerUserId: referrer.userId,
         referrerName: referrer.name,
       };
