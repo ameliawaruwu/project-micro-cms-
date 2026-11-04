@@ -137,6 +137,7 @@ class CommunityService {
     coordinatorPhone?: string;
     password?: string;
     logoUrl?: string;
+    baseDomain?: string;
   }): Promise<{ community: Community; user: User }> {
     const cleanEmail = data.coordinatorEmail.toLowerCase().trim();
     const commId = `comm_${Date.now()}`;
@@ -156,6 +157,7 @@ class CommunityService {
       coordinatorPhone: data.coordinatorPhone?.trim() || '',
       turnoverFeePercent,
       logoUrl: data.logoUrl || undefined,
+      baseDomain: data.baseDomain ? data.baseDomain.toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '').trim() : undefined,
       status: 'active',
       createdAt: new Date().toISOString(),
     };
@@ -178,6 +180,7 @@ class CommunityService {
           coordinator_phone: newComm.coordinatorPhone,
           turnover_fee_percent: newComm.turnoverFeePercent,
           logo_url: newComm.logoUrl,
+          base_domain: newComm.baseDomain || null,
           status: newComm.status,
           created_at: newComm.createdAt,
           updated_at: new Date().toISOString(),
@@ -314,6 +317,7 @@ class CommunityService {
       if (updates.turnoverFeePercent !== undefined) dbUpdates.turnover_fee_percent = Number(updates.turnoverFeePercent);
       if (updates.logoUrl !== undefined) dbUpdates.logo_url = updates.logoUrl;
       if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.baseDomain !== undefined) dbUpdates.base_domain = updates.baseDomain ? updates.baseDomain.toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '').trim() : null;
 
       await supabase.from('communities').update(dbUpdates).eq('id', id);
 

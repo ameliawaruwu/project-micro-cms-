@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
+  Globe,
   Users,
   Edit3,
   AlertTriangle,
@@ -81,6 +82,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     coordinatorPhone: '',
     turnoverFeePercent: 2.5,
     status: 'active' as 'active' | 'pending' | 'inactive',
+    baseDomain: '',
   });
 
   // Alert Dialog: Custom in-app confirmation modal (No native localhost alert)
@@ -111,6 +113,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     coordinatorEmail: '',
     coordinatorPhone: '',
     password: '',
+    baseDomain: '',
   });
 
   // Load communities, stores & orders
@@ -294,6 +297,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         coordinatorEmail: createForm.coordinatorEmail.trim(),
         coordinatorPhone: cleanPhone,
         password: createForm.password.trim() || 'subadmin123',
+        baseDomain: createForm.baseDomain.trim() || undefined,
       });
 
       // Optimistic update: Langsung tutup modal dan perbarui state antarmuka tanpa lag
@@ -307,6 +311,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         coordinatorEmail: '',
         coordinatorPhone: '',
         password: '',
+        baseDomain: '',
       });
 
       if (onShowToast) {
@@ -337,6 +342,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       coordinatorPhone: activeCommunity.coordinatorPhone || '',
       turnoverFeePercent: activeCommunity.turnoverFeePercent || 2.5,
       status: activeCommunity.status || 'active',
+      baseDomain: activeCommunity.baseDomain || '',
     });
     setIsEditModalOpen(true);
   };
@@ -1066,6 +1072,23 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
                   />
                 </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Domain Induk Organisasi (Base Domain - Opsional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: gmpsbandung.org"
+                    value={createForm.baseDomain}
+                    onChange={(e) => setCreateForm({ ...createForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                  />
+                  <p className="text-[10.5px] text-gray-500 mt-1">
+                    Jika diisi, toko anggota binaan komunitas ini otomatis mendapatkan subdomain di bawah domain ini (contoh: <code>toko.gmpsbandung.org</code>).
+                  </p>
+                </div>
               </div>
 
               {/* Bagian 2: Kredensial Sub-Admin */}
@@ -1309,6 +1332,23 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
                   />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Domain Induk Organisasi (Base Domain)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: gmpsbandung.org"
+                    value={editForm.baseDomain}
+                    onChange={(e) => setEditForm({ ...editForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                  />
+                  <p className="text-[10.5px] text-gray-500 mt-1">
+                    Toko merchant binaan organisasi ini akan otomatis ter-hosting di bawah subdomain domain ini (contoh: <code>toko.{editForm.baseDomain || 'gmpsbandung.org'}</code>).
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

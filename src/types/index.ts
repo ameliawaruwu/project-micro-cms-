@@ -675,6 +675,7 @@ export interface Community {
   coordinatorPhone: string;
   turnoverFeePercent: number; // Persentase tagihan omset (contoh: 2.5%)
   logoUrl?: string;
+  baseDomain?: string;
   status: 'active' | 'pending' | 'inactive';
   merchantCount?: number;
   totalTurnover?: number;
