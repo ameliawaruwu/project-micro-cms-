@@ -5,6 +5,8 @@
  */
 
 const PLATFORM_DOMAINS = new Set([
+  'lapakq.com',
+  'www.lapakq.com',
   'kroomify.kroombox.com',
   'www.kroomify.kroombox.com',
   'kroombox.com',
