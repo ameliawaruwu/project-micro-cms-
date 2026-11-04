@@ -7,6 +7,7 @@ export interface User {
   role: 'merchant' | 'admin' | 'sub_admin' | 'community_admin' | 'buyer';
   communityId?: string;
   communityName?: string;
+  baseDomain?: string;
   createdAt: string;
 }
 
@@ -321,6 +322,7 @@ export interface Store {
   merchantId?: string;
   communityId?: string;
   communityName?: string;
+  baseDomain?: string;
   paymentConfig?: StorePaymentConfig;
 
   name: string;

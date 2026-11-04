@@ -69,7 +69,8 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   // Subdomain selection & regeneration states
   const [randomSubdomain, setRandomSubdomain] = useState('');
-  const [selectedBaseDomain, setSelectedBaseDomain] = useState('kroombox.com');
+  const communityBaseDomain = store.baseDomain || (store.communityId === 'comm_gmps' || store.communityName === 'GMPS' ? 'gmpsbandung.org' : null);
+  const [selectedBaseDomain, setSelectedBaseDomain] = useState(communityBaseDomain || 'kroombox.com');
   const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Auto Deploy states

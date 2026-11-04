@@ -59,6 +59,7 @@ class CommunityService {
             coordinatorPhone: r.coordinator_phone || '',
             turnoverFeePercent: Number(r.turnover_fee_percent || 2.5),
             logoUrl: r.logo_url || undefined,
+            baseDomain: r.base_domain || undefined,
             status: (r.status as 'active' | 'pending' | 'inactive') || 'active',
             createdAt: r.created_at || new Date().toISOString(),
           }));
