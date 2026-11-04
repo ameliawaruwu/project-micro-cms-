@@ -20,6 +20,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { AdminTab, AdminNavItem, PlanFormState } from './types';
 import { AdminSidebar } from './components/AdminSidebar';
 import { AdminHeader } from './components/AdminHeader';
+import { AdminProfileModal } from './components/AdminProfileModal';
 import { AdminOrderDetailModal } from './components/AdminOrderDetailModal';
 import { AdminOverviewTab } from './tabs/AdminOverviewTab';
 import { AdminStoresTab } from './tabs/AdminStoresTab';
@@ -57,10 +58,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [domainRequests, setDomainRequests] = useState<DomainRequest[]>([]);
   const [suspendedIds, setSuspendedIds] = useState<string[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const loggedInUser = currentUser || authService.getCurrentUser().user;
+  const [adminUser, setAdminUser] = useState<User | null>(() => currentUser || authService.getCurrentUser().user || null);
+  const loggedInUser = adminUser || currentUser || authService.getCurrentUser().user;
   const isSubAdmin = loggedInUser?.role === 'sub_admin' || loggedInUser?.role === 'community_admin';
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const activeAdminName = loggedInUser?.name || (isSubAdmin ? (loggedInUser?.communityName ? `Koordinator ${loggedInUser.communityName}` : 'Koordinator Organisasi') : 'Super Admin Kroomify');
   const activeAdminEmail = loggedInUser?.email || (isSubAdmin ? 'koordinator@kroomify.id' : 'admin@kroomify.id');
   const activeAdminAvatar = loggedInUser?.avatarUrl;
@@ -532,6 +535,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           activeAdminName={activeAdminName}
           activeAdminEmail={activeAdminEmail}
           activeAdminAvatar={activeAdminAvatar}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
         />
 
         {/* Dynamic Content (Scrollable) */}
@@ -667,6 +671,15 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           )}
         </main>
       </div>
+
+      {/* MODAL PENGATURAN PROFIL ADMIN */}
+      <AdminProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        currentUser={loggedInUser}
+        onProfileUpdated={(updated) => setAdminUser(updated)}
+        onShowToast={(msg) => setToastMessage(msg)}
+      />
 
       {/* MODAL DETAIL PESANAN & PENGIRIMAN (SUPER ADMIN) */}
       <AdminOrderDetailModal

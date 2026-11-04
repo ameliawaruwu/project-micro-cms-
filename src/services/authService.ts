@@ -56,21 +56,20 @@ interface StoredAccount {
 
 const defaultAccounts: StoredAccount[] = [
   {
-    id: 'USR013',
+    id: 'USR001',
     email: 'admin@kroomify.id',
     password: 'admin123',
     user: {
-      id: 'USR013',
+      id: 'USR001',
       name: 'Super Admin Kroomify',
       email: 'admin@kroomify.id',
       phoneWhatsApp: '081289201928',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
       role: 'admin',
       createdAt: '2026-01-01T00:00:00Z',
     },
     merchant: {
-      id: 'merch-USR013',
-      userId: 'USR013',
+      id: 'merch-USR001',
+      userId: 'USR001',
       storeId: '',
       plan: 'premium',
       isVerified: true,
@@ -1201,6 +1200,61 @@ class AuthService {
   updateActiveStore(store: Store): void {
     localStorage.setItem(AUTH_STORE_KEY, JSON.stringify(store));
     localStorage.setItem(ACTIVE_STORE_ID_KEY, store.id);
+  }
+
+  /**
+   * Memperbarui profil user (nama, telepon, avatarUrl, dan password opsional)
+   * baik di Supabase maupun di local session
+   */
+  async updateProfile(userId: string, data: { name?: string; phoneWhatsApp?: string; avatarUrl?: string | null; newPassword?: string }): Promise<User> {
+    const accounts = this.getStoredAccounts();
+    const idx = accounts.findIndex(a => a.id === userId);
+    
+    let updatedUser: User;
+    if (idx >= 0) {
+      const acc = accounts[idx];
+      updatedUser = {
+        ...acc.user,
+        name: data.name !== undefined ? data.name : acc.user.name,
+        phoneWhatsApp: data.phoneWhatsApp !== undefined ? data.phoneWhatsApp : acc.user.phoneWhatsApp,
+        avatarUrl: data.avatarUrl !== undefined ? (data.avatarUrl || undefined) : acc.user.avatarUrl,
+      };
+      acc.user = updatedUser;
+      if (data.newPassword) {
+        acc.password = data.newPassword;
+      }
+      accounts[idx] = acc;
+      this.saveAccounts(accounts);
+    } else {
+      const currentUser = this.getCurrentUser().user;
+      updatedUser = {
+        ...currentUser!,
+        name: data.name !== undefined ? data.name : currentUser!.name,
+        phoneWhatsApp: data.phoneWhatsApp !== undefined ? data.phoneWhatsApp : currentUser!.phoneWhatsApp,
+        avatarUrl: data.avatarUrl !== undefined ? (data.avatarUrl || undefined) : currentUser!.avatarUrl,
+      };
+    }
+
+    // Update active session in localStorage
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedUser));
+
+    // Update in Supabase
+    try {
+      const updatePayload: any = {};
+      if (data.name !== undefined) updatePayload.name = data.name;
+      if (data.phoneWhatsApp !== undefined) updatePayload.phone = data.phoneWhatsApp;
+      if (data.avatarUrl !== undefined) updatePayload.avatar_url = data.avatarUrl;
+      if (data.newPassword) {
+        updatePayload.password_hash = await hashPassword(data.newPassword);
+      }
+      updatePayload.updated_at = getWibIsoString();
+
+      await supabase.from('users').update(updatePayload).eq('id', userId);
+    } catch (e) {
+      console.warn('[authService] Error updating profile in Supabase:', e);
+    }
+
+    return updatedUser;
   }
 }
 
