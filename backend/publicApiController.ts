@@ -187,6 +187,111 @@ publicApiRouter.get('/accounts/:id', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/v1/accounts/:id/referrals
+ * Ambil daftar lengkap seluruh merchant yang mendaftar menggunakan kode referral akun ini.
+ */
+publicApiRouter.get('/accounts/:id/referrals', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const refCodeRes = await pool.query(
+      'SELECT referral_code FROM user_referral_codes WHERE user_id = $1',
+      [id]
+    );
+
+    if (refCodeRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Akun tidak ditemukan atau belum memiliki kode referral.' });
+    }
+
+    const referralCode = refCodeRes.rows[0].referral_code;
+
+    const refereesRes = await pool.query(
+      `SELECT 
+        r.referee_user_id,
+        r.referral_code,
+        r.redeemed_at,
+        u.name as referee_name,
+        u.email as referee_email,
+        s.name as store_name,
+        s.slug as store_slug
+       FROM referral_redemptions r
+       JOIN users u ON u.id = r.referee_user_id
+       LEFT JOIN stores s ON s.user_id = r.referee_user_id
+       WHERE r.referrer_user_id = $1
+       ORDER BY r.redeemed_at DESC`,
+      [id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      referralCode,
+      totalReferred: refereesRes.rows.length,
+      referees: refereesRes.rows.map((row) => ({
+        refereeUserId: row.referee_user_id,
+        refereeName: row.referee_name,
+        refereeEmail: row.referee_email,
+        storeName: row.store_name || null,
+        storeSlug: row.store_slug || null,
+        redeemedAt: row.redeemed_at,
+      })),
+    });
+  } catch (err: any) {
+    console.error('[API /accounts/:id/referrals] Error:', err);
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal mengambil data referral.' });
+  }
+});
+
+/**
+ * GET /api/v1/referrals/validate/:code
+ * Cek validitas kode referral sebelum digunakan oleh pendaftar / aplikasi mitra.
+ */
+publicApiRouter.get('/referrals/validate/:code', async (req: Request, res: Response) => {
+  try {
+    const { code } = req.params;
+    if (!code || !code.trim()) {
+      return res.status(400).json({ success: false, valid: false, message: 'Kode referral wajib diisi.' });
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+    const queryRes = await pool.query(
+      `SELECT 
+        urc.user_id, 
+        urc.referral_code, 
+        u.name as owner_name, 
+        s.name as store_name,
+        s.slug as store_slug
+       FROM user_referral_codes urc
+       JOIN users u ON u.id = urc.user_id
+       LEFT JOIN stores s ON s.user_id = urc.user_id
+       WHERE UPPER(urc.referral_code) = $1`,
+      [cleanCode]
+    );
+
+    if (queryRes.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        valid: false,
+        message: 'Kode referral tidak ditemukan atau tidak valid.',
+      });
+    }
+
+    const row = queryRes.rows[0];
+    return res.status(200).json({
+      success: true,
+      valid: true,
+      referralCode: row.referral_code,
+      referrerUserId: row.user_id,
+      ownerName: row.owner_name,
+      storeName: row.store_name || null,
+      storeSlug: row.store_slug || null,
+    });
+  } catch (err: any) {
+    console.error('[API /referrals/validate/:code] Error:', err);
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memvalidasi kode referral.' });
+  }
+});
+
 // ============================================================
 // 2. PRODUCT API — CRUD Produk per Toko
 // ============================================================

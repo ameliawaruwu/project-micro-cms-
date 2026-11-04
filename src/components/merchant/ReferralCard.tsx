@@ -196,3 +196,4 @@ export const ReferralCard: React.FC<ReferralCardProps> = ({
     </div>
   );
 };
+
