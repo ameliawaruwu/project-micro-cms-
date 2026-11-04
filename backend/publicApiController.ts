@@ -77,7 +77,7 @@ async function requireApiKey(req: Request, res: Response, next: NextFunction) {
     }
 
     // 2. Fallback: Cek Master API Key (Super Admin)
-    const masterKey = (process.env.KROOMIFY_API_PUBLIC_KEY || '').trim();
+    const masterKey = (process.env.LAPAKQ_API_PUBLIC_KEY || process.env.KROOMIFY_API_PUBLIC_KEY || '').trim();
     if (masterKey && provided === masterKey) {
       req.partner = {
         partnerName: 'Master Admin',

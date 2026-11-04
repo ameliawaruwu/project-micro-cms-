@@ -1,6 +1,6 @@
 /**
  * Utility functions for domain detection and storefront routing.
- * Differentiates between Kroomify platform hosts (Landing page / CMS Dashboard)
+ * Differentiates between LapakQ platform hosts (Landing page / CMS Dashboard)
  * and dedicated merchant storefronts (<slug>.kroombox.com or custom domains).
  */
 
@@ -26,6 +26,7 @@ const PLATFORM_DOMAINS = new Set([
 ]);
 
 const RESERVED_SUBDOMAINS = new Set([
+  'lapakq',
   'kroomify',
   'panel',
   'api',
@@ -41,7 +42,7 @@ const RESERVED_SUBDOMAINS = new Set([
 ]);
 
 /**
- * Checks whether the current host is a primary Kroomify CMS platform host.
+ * Checks whether the current host is a primary LapakQ CMS platform host.
  * On platform hosts, the default view is Landing Page (guest) or Merchant Dashboard (logged in).
  */
 export function isPlatformHost(hostname?: string): boolean {
