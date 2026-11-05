@@ -62,6 +62,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const fullName = userMeta.full_name || userMeta.name || googleEmail.split('@')[0];
           const avatarUrl = userMeta.avatar_url || userMeta.picture;
 
+          const hasOAuthHash = typeof window !== 'undefined' && (
+            (window.location.hash && window.location.hash.includes('access_token')) ||
+            (window.location.search && window.location.search.includes('code='))
+          );
+          const hadOAuthIntent = typeof window !== 'undefined' && (
+            Boolean(localStorage.getItem('kroomify_oauth_intent')) ||
+            Boolean(sessionStorage.getItem('oauth_intent'))
+          );
+          const isFreshOAuthCallback = Boolean(hasOAuthHash || hadOAuthIntent);
+
           localStorage.removeItem('kroomify_oauth_intent');
           sessionStorage.removeItem('oauth_pending_store_name');
           sessionStorage.removeItem('oauth_intent');
@@ -82,22 +92,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.setItem('kroomify_onboarding_completed', 'true');
             localStorage.removeItem('kroomify_onboarding_pending');
             localStorage.removeItem('kroomify_onboarding_step');
-            window.dispatchEvent(
-              new CustomEvent('auth_google_success', {
-                detail: { ...authData, isNewUser: true },
-              })
-            );
+            if (isFreshOAuthCallback) {
+              window.dispatchEvent(
+                new CustomEvent('auth_google_success', {
+                  detail: { ...authData, isNewUser: true },
+                })
+              );
+            }
           } else {
             // Existing user: log in directly
             const authData = await authService.login(googleEmail, 'google-auth');
             setUser(authData.user);
             setMerchant(authData.merchant);
             setStore(authData.store);
-            window.dispatchEvent(
-              new CustomEvent('auth_google_success', {
-                detail: { ...authData, isNewUser: false },
-              })
-            );
+            if (isFreshOAuthCallback) {
+              window.dispatchEvent(
+                new CustomEvent('auth_google_success', {
+                  detail: { ...authData, isNewUser: false },
+                })
+              );
+            }
           }
           return;
         }

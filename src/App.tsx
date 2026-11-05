@@ -129,14 +129,25 @@ export default function App() {
       }
     };
     const handleGoogleSuccess = (e: any) => {
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const isStorefrontOrPreview = params && (
+        params.get('preview') === 'true' ||
+        Boolean(params.get('previewTheme')) ||
+        Boolean(params.get('toko')) ||
+        Boolean(params.get('store'))
+      );
+
       const gUser = e.detail?.user;
       const isNewUser = e.detail?.isNewUser;
       const isGoogleAdmin = isAnyAdminRole(gUser?.role);
       const targetMode = isGoogleAdmin ? 'admin' : 'merchant-desktop';
-      setViewMode(targetMode);
-      setAuthView(null);
+
+      if (!isStorefrontOrPreview) {
+        setViewMode(targetMode);
+        setAuthView(null);
+        addToast(isNewUser ? 'Akun Google berhasil dibuat!' : 'Berhasil masuk dengan akun Google!');
+      }
       loadData();
-      addToast(isNewUser ? 'Akun Google berhasil dibuat!' : 'Berhasil masuk dengan akun Google!');
     };
 
     const handleSessionInvalidated = () => {
@@ -190,7 +201,6 @@ export default function App() {
           if (draftStr) {
             const draft = JSON.parse(draftStr);
             if (!draft.id) draft.id = 'preview-store-id';
-            draft.isPublished = true;
             if (draft.layoutSettings?.activeThemeId) {
               const normalizedTheme = normalizeThemeId(draft.layoutSettings.activeThemeId);
               useCmsStore.getState().loadThemeData(normalizedTheme);
@@ -700,7 +710,6 @@ export default function App() {
           if (draftStr) {
             const draftStore = JSON.parse(draftStr);
             draftStore.id = draftStore.id || 'preview-store-id';
-            draftStore.isPublished = true;
             setActiveStore(draftStore);
             setStoreNotFound(false);
 
@@ -837,7 +846,6 @@ export default function App() {
           lastDraftStrRef.current = draftStr;
           const draftStore = JSON.parse(draftStr);
           draftStore.id = draftStore.id || 'preview-store-id';
-          draftStore.isPublished = true;
           setActiveStore(draftStore);
           setStoreNotFound(false);
 

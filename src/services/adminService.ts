@@ -106,7 +106,7 @@ class AdminService {
         plan: s.plan || 'free',
         communityId: s.community_id || s.theme_settings?.communityId || undefined,
         communityName: s.community_name || s.theme_settings?.communityName || undefined,
-        isPublished: s.is_published ?? true,
+        isPublished: Boolean(s.is_published),
         isSuspended: Boolean(s.is_suspended),
         onboarding: {
           storeNameSet: Boolean(s.name),

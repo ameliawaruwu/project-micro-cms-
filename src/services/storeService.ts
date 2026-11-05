@@ -100,7 +100,7 @@ class StoreService {
           balance: Number(row.balance || 0),
           communityId: row.community_id || row.theme_settings?.communityId || undefined,
           communityName: row.community_name || row.theme_settings?.communityName || undefined,
-          isPublished: row.is_published !== false,
+          isPublished: Boolean(row.is_published),
           layoutSettings: row.theme_settings || row.layout_settings,
           paymentConfig: row.theme_settings?.paymentConfig || row.layout_settings?.paymentConfig || {
             enableCod: true,

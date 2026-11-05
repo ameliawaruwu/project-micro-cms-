@@ -479,7 +479,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       ...currentStore,
       id: currentStore.id || 'preview-store-id',
       slug: previewSlug,
-      isPublished: true,
+      isPublished: Boolean(currentStore.isPublished),
       layoutSettings: {
         ...currentStore.layoutSettings,
         sections: updatedMap['homepage'] || sections,
