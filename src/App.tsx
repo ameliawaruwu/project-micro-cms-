@@ -189,6 +189,8 @@ export default function App() {
           const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
           if (draftStr) {
             const draft = JSON.parse(draftStr);
+            if (!draft.id) draft.id = 'preview-store-id';
+            draft.isPublished = true;
             if (draft.layoutSettings?.activeThemeId) {
               const normalizedTheme = normalizeThemeId(draft.layoutSettings.activeThemeId);
               useCmsStore.getState().loadThemeData(normalizedTheme);
@@ -697,6 +699,8 @@ export default function App() {
           const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
           if (draftStr) {
             const draftStore = JSON.parse(draftStr);
+            draftStore.id = draftStore.id || 'preview-store-id';
+            draftStore.isPublished = true;
             setActiveStore(draftStore);
             setStoreNotFound(false);
 
@@ -832,7 +836,10 @@ export default function App() {
         if (draftStr && draftStr !== lastDraftStrRef.current) {
           lastDraftStrRef.current = draftStr;
           const draftStore = JSON.parse(draftStr);
+          draftStore.id = draftStore.id || 'preview-store-id';
+          draftStore.isPublished = true;
           setActiveStore(draftStore);
+          setStoreNotFound(false);
 
           const savedProds = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
           let parsedProds: any[] = [];
@@ -1517,17 +1524,17 @@ export default function App() {
 
   // Render Public Storefront Content (Using New Dynamic Theme Engine)
   const renderStorefrontContent = () => {
-    const isOwner = Boolean(user && activeStore && activeStore.id === currentStore?.id && !isAnyAdminRole(user.role));
-    const isOwnerDesigning = Boolean(
-      isOwner && (
-        new URLSearchParams(window.location.search).get('preview') === 'true' ||
-        Boolean(new URLSearchParams(window.location.search).get('previewTheme'))
-      )
+    const isPreview = Boolean(
+      new URLSearchParams(window.location.search).get('preview') === 'true' ||
+      Boolean(new URLSearchParams(window.location.search).get('previewTheme'))
     );
-    const isPublished = Boolean(currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published);
+    const isOwner = Boolean(user && activeStore && activeStore.id === currentStore?.id && !isAnyAdminRole(user.role));
+    const isPublished = Boolean(
+      isPreview || (currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published)
+    );
 
-    // Jika toko belum dipublikasikan atau toko belum ada (dan bukan pemilik toko yang sedang menguji draf tema di editor)
-    if (!currentStore || !currentStore.id || (!isPublished && !isOwnerDesigning)) {
+    // Jika toko belum dipublikasikan atau toko belum ada (dan BUKAN di mode pratinjau)
+    if (!currentStore || !currentStore.id || (!isPublished && !isPreview)) {
       const isAdmin = Boolean(user && isAnyAdminRole(user.role));
       return (
         <StoreNotFoundPage
@@ -1708,10 +1715,28 @@ export default function App() {
         const isPreview = 
           new URLSearchParams(window.location.search).get('preview') === 'true' ||
           Boolean(new URLSearchParams(window.location.search).get('previewTheme'));
-        const isPublished = Boolean(currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published);
+        const isPublished = Boolean(isPreview || (currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published));
 
         // Jika store belum terbaca dan masih dalam status loading
         if (!currentStore?.id && isStoreLoading && !storeNotFound) {
+          if (isPreview) {
+            try {
+              const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
+              if (draftStr) {
+                const draft = JSON.parse(draftStr);
+                const draftHydrated = {
+                  ...draft,
+                  id: draft.id || 'preview-store-id',
+                  isPublished: true,
+                };
+                return (
+                  <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative flex flex-col">
+                    <ThemeRenderer store={draftHydrated} products={products.length > 0 ? products : draftHydrated.products || []} />
+                  </div>
+                );
+              }
+            } catch (e) {}
+          }
           return (
             <div className="flex items-center justify-center min-h-screen bg-white">
               <div className="flex flex-col items-center gap-3 text-gray-400">
@@ -1724,6 +1749,24 @@ export default function App() {
 
         // Jika store tidak ditemukan atau gagal dimuat (mencegah loading terus menerus)
         if (!currentStore?.id || storeNotFound) {
+          if (isPreview) {
+            try {
+              const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
+              if (draftStr) {
+                const draft = JSON.parse(draftStr);
+                const draftHydrated = {
+                  ...draft,
+                  id: draft.id || 'preview-store-id',
+                  isPublished: true,
+                };
+                return (
+                  <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative flex flex-col">
+                    <ThemeRenderer store={draftHydrated} products={products.length > 0 ? products : draftHydrated.products || []} />
+                  </div>
+                );
+              }
+            } catch (e) {}
+          }
           const hostSlug = getStoreSlugFromHost(window.location.hostname);
           const currentUrlSlug = new URLSearchParams(window.location.search).get('toko') || hostSlug || 'toko';
           return (
