@@ -1087,17 +1087,18 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       {/* MODAL 1: DAFTARKAN KOMUNITAS & SUB-ADMIN                                  */}
       {/* ========================================================================= */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-4 border border-gray-200 my-8">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
-                  <Building2 className="w-5 h-5 text-[#66000E]" />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-gray-200 flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Header Modal - Fixed */}
+            <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
+                  <Building2 className="w-4 h-4 text-[#66000E]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">Daftarkan Sub-Admin Organisasi</h3>
-                  <p className="text-xs text-gray-500">
-                    Akun koordinator untuk mengelola lapak-lapak binaan. Fee omset platform ditagihkan di akhir periode.
+                  <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">Daftarkan Sub-Admin Organisasi</h3>
+                  <p className="text-[11px] text-gray-500">
+                    Kelola komunitas mitra dan akun sub-admin penanggung jawab.
                   </p>
                 </div>
               </div>
@@ -1111,221 +1112,218 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleCreateOrganization} className="space-y-4 text-xs">
-              {/* Bagian 1: Detail Komunitas */}
-              <div className="p-4 bg-gray-50/80 rounded-xl border border-gray-200/80 space-y-3">
-                <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
-                  <Building2 className="w-4 h-4 text-[#66000E]" />
-                  <span>1. Detail Organisasi / Komunitas Mitra</span>
-                </h4>
+            {/* Form & Scrollable Body */}
+            <form onSubmit={handleCreateOrganization} className="flex flex-col flex-1 overflow-hidden">
+              <div className="overflow-y-auto px-5 py-4 space-y-3.5 flex-1 text-xs">
+                {/* Bagian 1: Detail Komunitas */}
+                <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200/80 space-y-2.5">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
+                    <Building2 className="w-3.5 h-3.5 text-[#66000E]" />
+                    <span>1. Detail Komunitas Mitra</span>
+                  </h4>
 
-                <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Nama Organisasi / Komunitas *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Paguyuban Pengrajin Kulit Garut"
-                    value={createForm.name}
-                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Komunitas *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Contoh: Paguyuban Kulit Garut"
+                        value={createForm.name}
+                        onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px] flex items-center gap-1">
+                        <Globe className="w-3 h-3 text-blue-600" />
+                        <span>Domain Induk (Opsional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Contoh: gmpsbandung.org"
+                        value={createForm.baseDomain}
+                        onChange={(e) => setCreateForm({ ...createForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Deskripsi Singkat (Opsional)</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Wadah paguyuban dan pembinaan lapak UMKM..."
+                      value={createForm.description}
+                      onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Deskripsi Singkat</label>
-                  <textarea
-                    rows={2}
-                    placeholder="Wadah paguyuban dan pembinaan lapak UMKM..."
-                    value={createForm.description}
-                    onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                  />
+                {/* Bagian 2: Akun Sub-Admin Umum (Halaman & Produk) */}
+                <div className="p-3 bg-purple-50/40 rounded-xl border border-purple-200/80 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
+                      <Shield className="w-3.5 h-3.5 text-purple-600" />
+                      <span>2. Akun Sub-Admin Umum</span>
+                    </h4>
+                    <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
+                      Halaman &amp; Produk
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Lengkap *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Contoh: Andi Pratama"
+                        value={createForm.subAdminName}
+                        onChange={(e) => setCreateForm({ ...createForm, subAdminName: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">No. WhatsApp</label>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="081234567890"
+                        value={createForm.subAdminPhone}
+                        onChange={(e) => {
+                          const numericOnly = e.target.value.replace(/\D/g, '');
+                          setCreateForm({ ...createForm, subAdminPhone: numericOnly });
+                        }}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login *</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="subadmin@garut.id"
+                        value={createForm.subAdminEmail}
+                        onChange={(e) => setCreateForm({ ...createForm, subAdminEmail: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Kata Sandi *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="subadmin123"
+                        value={createForm.subAdminPassword}
+                        onChange={(e) => setCreateForm({ ...createForm, subAdminPassword: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-purple-600"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-1">
-                    <Globe className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Domain Induk Organisasi (Base Domain - Opsional)</span>
+                {/* Bagian 3: Akun Koordinator Toko (Lapak Binaan) */}
+                <div className="p-3 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
+                      <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                      <span>3. Akun Koordinator Toko</span>
+                    </h4>
+                    <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">
+                      Lapak Binaan
+                    </span>
+                  </div>
+
+                  {/* Checkbox Samakan Akun */}
+                  <label className="flex items-center gap-2 p-2 bg-white rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-50/50 transition">
+                    <input
+                      type="checkbox"
+                      checked={createForm.sameAsSubAdmin}
+                      onChange={(e) => setCreateForm({ ...createForm, sameAsSubAdmin: e.target.checked })}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-semibold text-gray-800">
+                      Gunakan akun yang sama dengan Sub-Admin Umum
+                    </span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: gmpsbandung.org"
-                    value={createForm.baseDomain}
-                    onChange={(e) => setCreateForm({ ...createForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
-                  />
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    Jika diisi, toko anggota binaan komunitas ini otomatis mendapatkan subdomain di bawah domain ini (contoh: toko.gmpsbandung.org).
-                  </p>
-                </div>
-              </div>
 
-              {/* Bagian 2: Akun Sub-Admin Umum (Halaman & Produk) */}
-              <div className="p-4 bg-purple-50/40 rounded-xl border border-purple-200/80 space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-1">
-                  <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
-                    <Shield className="w-4 h-4 text-purple-600" />
-                    <span>2. Akun Sub-Admin Umum (Halaman &amp; Produk)</span>
-                  </h4>
-                  <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
-                    Akses Halaman &amp; Produk
-                  </span>
-                </div>
-                <p className="text-[11px] text-purple-900/80 leading-relaxed">
-                  Akun ini akan otomatis didaftarkan ke Supabase dengan hak akses khusus untuk mengelola profil halaman komunitas dan memantau produk seluruh lapak binaannya.
-                </p>
+                  {!createForm.sameAsSubAdmin && (
+                    <div className="space-y-2.5 pt-1 animate-in fade-in duration-150">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Koordinator *</label>
+                          <input
+                            type="text"
+                            required={!createForm.sameAsSubAdmin}
+                            placeholder="Budi Santoso"
+                            value={createForm.coordinatorName}
+                            onChange={(e) => setCreateForm({ ...createForm, coordinatorName: e.target.value })}
+                            className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
+                          />
+                        </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Nama Sub-Admin Umum *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Andi Pratama"
-                      value={createForm.subAdminName}
-                      onChange={(e) => setCreateForm({ ...createForm, subAdminName: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp (Angka saja)</label>
-                    <input
-                      type="tel"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      placeholder="Contoh: 081234567890"
-                      value={createForm.subAdminPhone}
-                      onChange={(e) => {
-                        const numericOnly = e.target.value.replace(/\D/g, '');
-                        setCreateForm({ ...createForm, subAdminPhone: numericOnly });
-                      }}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Email Login Sub-Admin *</label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="subadmin@garut.id"
-                      value={createForm.subAdminEmail}
-                      onChange={(e) => setCreateForm({ ...createForm, subAdminEmail: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Kata Sandi Awal *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="subadmin123"
-                      value={createForm.subAdminPassword}
-                      onChange={(e) => setCreateForm({ ...createForm, subAdminPassword: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-purple-600"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Bagian 3: Akun Koordinator Toko (Lapak Binaan) */}
-              <div className="p-4 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-1">
-                  <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
-                    <UserCheck className="w-4 h-4 text-blue-600" />
-                    <span>3. Akun Koordinator Toko (Lapak Binaan)</span>
-                  </h4>
-                  <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">
-                    Akses Pendampingan Lapak
-                  </span>
-                </div>
-                <p className="text-[11px] text-blue-900/80 leading-relaxed">
-                  Akun ini bertugas mendampingi &amp; menaungi toko-toko anggota binaan di bawah organisasi ini.
-                </p>
-
-                {/* Checkbox Samakan Akun */}
-                <label className="flex items-center gap-2 p-2 bg-white rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-50/50 transition">
-                  <input
-                    type="checkbox"
-                    checked={createForm.sameAsSubAdmin}
-                    onChange={(e) => setCreateForm({ ...createForm, sameAsSubAdmin: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
-                  />
-                  <span className="text-xs font-semibold text-gray-800">
-                    Samakan dengan data Sub-Admin Umum di atas (1 akun merangkap 2 tugas)
-                  </span>
-                </label>
-
-                {!createForm.sameAsSubAdmin && (
-                  <div className="space-y-3 pt-1 animate-in fade-in duration-150">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block font-semibold text-gray-700 mb-1">Nama Koordinator *</label>
-                        <input
-                          type="text"
-                          required={!createForm.sameAsSubAdmin}
-                          placeholder="Budi Santoso"
-                          value={createForm.coordinatorName}
-                          onChange={(e) => setCreateForm({ ...createForm, coordinatorName: e.target.value })}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
-                        />
+                        <div>
+                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">No. WhatsApp</label>
+                          <input
+                            type="tel"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            placeholder="081234567890"
+                            value={createForm.coordinatorPhone}
+                            onChange={(e) => {
+                              const numericOnly = e.target.value.replace(/\D/g, '');
+                              setCreateForm({ ...createForm, coordinatorPhone: numericOnly });
+                            }}
+                            className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
+                          />
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp (Angka saja)</label>
-                        <input
-                          type="tel"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="Contoh: 081234567890"
-                          value={createForm.coordinatorPhone}
-                          onChange={(e) => {
-                            const numericOnly = e.target.value.replace(/\D/g, '');
-                            setCreateForm({ ...createForm, coordinatorPhone: numericOnly });
-                          }}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login *</label>
+                          <input
+                            type="email"
+                            required={!createForm.sameAsSubAdmin}
+                            placeholder="koordinator@garut.id"
+                            value={createForm.coordinatorEmail}
+                            onChange={(e) => setCreateForm({ ...createForm, coordinatorEmail: e.target.value })}
+                            className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Kata Sandi *</label>
+                          <input
+                            type="text"
+                            required={!createForm.sameAsSubAdmin}
+                            placeholder="subadmin123"
+                            value={createForm.coordinatorPassword}
+                            onChange={(e) => setCreateForm({ ...createForm, coordinatorPassword: e.target.value })}
+                            className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-blue-600"
+                          />
+                        </div>
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block font-semibold text-gray-700 mb-1">Email Login Koordinator *</label>
-                        <input
-                          type="email"
-                          required={!createForm.sameAsSubAdmin}
-                          placeholder="koordinator@garut.id"
-                          value={createForm.coordinatorEmail}
-                          onChange={(e) => setCreateForm({ ...createForm, coordinatorEmail: e.target.value })}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-semibold text-gray-700 mb-1">Kata Sandi Awal *</label>
-                        <input
-                          type="text"
-                          required={!createForm.sameAsSubAdmin}
-                          placeholder="subadmin123"
-                          value={createForm.coordinatorPassword}
-                          onChange={(e) => setCreateForm({ ...createForm, coordinatorPassword: e.target.value })}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-blue-600"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+              {/* Modal Footer - Fixed */}
+              <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-end gap-2 shrink-0 bg-gray-50/50">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-100 cursor-pointer transition"
                 >
                   Batal
                 </button>
@@ -1450,17 +1448,18 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       {/* MODAL 3: EDIT DETAIL ORGANISASI & KOORDINATOR (UPDATE CRUD)               */}
       {/* ========================================================================= */}
       {isEditModalOpen && activeCommunity && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-200 my-8">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
-                  <Edit3 className="w-5 h-5 text-[#66000E]" />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-gray-200 flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Header Modal - Fixed */}
+            <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
+                  <Edit3 className="w-4 h-4 text-[#66000E]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">Edit Komunitas</h3>
-                  <p className="text-xs text-gray-500">
-                    Perbarui profil komunitas &amp; kontak koordinator
+                  <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">Edit Komunitas</h3>
+                  <p className="text-[11px] text-gray-500">
+                    Perbarui profil komunitas &amp; kontak penanggung jawab.
                   </p>
                 </div>
               </div>
@@ -1474,176 +1473,180 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
-              <div className="p-3.5 bg-gray-50/80 rounded-xl border border-gray-200/80 space-y-3">
-                <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
-                  <Building2 className="w-4 h-4 text-[#66000E]" />
-                  <span>Detail Komunitas</span>
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Nama Komunitas *</label>
-                    <input
-                      type="text"
-                      required
-                      value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Domain Induk (Opsional)</label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: gmpsbandung.org"
-                      value={editForm.baseDomain}
-                      onChange={(e) => setEditForm({ ...editForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Deskripsi (Opsional)</label>
-                  <textarea
-                    rows={2}
-                    placeholder="Deskripsi singkat komunitas..."
-                    value={editForm.description}
-                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Status Komunitas</label>
-                    <select
-                      value={editForm.status}
-                      onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                    >
-                      <option value="active">Aktif</option>
-                      <option value="inactive">Nonaktif</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Fee Omset (%)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="50"
-                      value={editForm.turnoverFeePercent}
-                      onChange={(e) => setEditForm({ ...editForm, turnoverFeePercent: Number(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Section Sub-Admin Umum */}
-              <div className="p-3.5 bg-purple-50/40 rounded-xl border border-purple-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
-                    <Shield className="w-4 h-4 text-purple-600" />
-                    <span>Kontak Sub-Admin Umum (Halaman &amp; Produk)</span>
+            <form onSubmit={handleSaveEdit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="overflow-y-auto px-5 py-4 space-y-3.5 flex-1 text-xs">
+                {/* Detail Komunitas */}
+                <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200/80 space-y-2.5">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
+                    <Building2 className="w-3.5 h-3.5 text-[#66000E]" />
+                    <span>Detail Komunitas</span>
                   </h4>
-                  <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
-                    Halaman &amp; Produk
-                  </span>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Komunitas *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Domain Induk (Opsional)</label>
+                      <input
+                        type="text"
+                        placeholder="Contoh: gmpsbandung.org"
+                        value={editForm.baseDomain}
+                        onChange={(e) => setEditForm({ ...editForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Nama Sub-Admin Umum</label>
-                    <input
-                      type="text"
-                      value={editForm.subAdminName}
-                      onChange={(e) => setEditForm({ ...editForm, subAdminName: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
+                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Deskripsi (Opsional)</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Deskripsi singkat komunitas..."
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
                     />
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Status Komunitas</label>
+                      <select
+                        value={editForm.status}
+                        onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                      >
+                        <option value="active">Aktif</option>
+                        <option value="inactive">Nonaktif</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Fee Omset (%)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="50"
+                        value={editForm.turnoverFeePercent}
+                        onChange={(e) => setEditForm({ ...editForm, turnoverFeePercent: Number(e.target.value) })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section Sub-Admin Umum */}
+                <div className="p-3 bg-purple-50/40 rounded-xl border border-purple-200/80 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
+                      <Shield className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Kontak Sub-Admin Umum</span>
+                    </h4>
+                    <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
+                      Halaman &amp; Produk
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Sub-Admin</label>
+                      <input
+                        type="text"
+                        value={editForm.subAdminName}
+                        onChange={(e) => setEditForm({ ...editForm, subAdminName: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">No. WhatsApp Sub-Admin</label>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="081234567890"
+                        value={editForm.subAdminPhone}
+                        onChange={(e) => setEditForm({ ...editForm, subAdminPhone: e.target.value.replace(/\D/g, '') })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp Sub-Admin</label>
+                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login Sub-Admin</label>
                     <input
-                      type="tel"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      placeholder="081234567890"
-                      value={editForm.subAdminPhone}
-                      onChange={(e) => setEditForm({ ...editForm, subAdminPhone: e.target.value.replace(/\D/g, '') })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
+                      type="email"
+                      value={editForm.subAdminEmail}
+                      onChange={(e) => setEditForm({ ...editForm, subAdminEmail: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Email Login Sub-Admin</label>
-                  <input
-                    type="email"
-                    value={editForm.subAdminEmail}
-                    onChange={(e) => setEditForm({ ...editForm, subAdminEmail: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
-                  />
-                </div>
-              </div>
+                {/* Section Koordinator Toko */}
+                <div className="p-3 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
+                      <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Kontak Koordinator Toko</span>
+                    </h4>
+                    <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">
+                      Lapak Binaan
+                    </span>
+                  </div>
 
-              {/* Section Koordinator Toko */}
-              <div className="p-3.5 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
-                    <UserCheck className="w-4 h-4 text-blue-600" />
-                    <span>Kontak Koordinator Toko (Lapak Binaan)</span>
-                  </h4>
-                  <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">
-                    Lapak Binaan
-                  </span>
-                </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Koordinator *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editForm.coordinatorName}
+                        onChange={(e) => setEditForm({ ...editForm, coordinatorName: e.target.value })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">No. WhatsApp Koordinator</label>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="081234567890"
+                        value={editForm.coordinatorPhone}
+                        onChange={(e) => setEditForm({ ...editForm, coordinatorPhone: e.target.value.replace(/\D/g, '') })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
+                      />
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Nama Koordinator *</label>
+                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login Koordinator *</label>
                     <input
-                      type="text"
+                      type="email"
                       required
-                      value={editForm.coordinatorName}
-                      onChange={(e) => setEditForm({ ...editForm, coordinatorName: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
+                      value={editForm.coordinatorEmail}
+                      onChange={(e) => setEditForm({ ...editForm, coordinatorEmail: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
                     />
                   </div>
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp Koordinator</label>
-                    <input
-                      type="tel"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      placeholder="081234567890"
-                      value={editForm.coordinatorPhone}
-                      onChange={(e) => setEditForm({ ...editForm, coordinatorPhone: e.target.value.replace(/\D/g, '') })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Email Login Koordinator *</label>
-                  <input
-                    type="email"
-                    required
-                    value={editForm.coordinatorEmail}
-                    onChange={(e) => setEditForm({ ...editForm, coordinatorEmail: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
-                  />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+              {/* Modal Footer - Fixed */}
+              <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-end gap-2 shrink-0 bg-gray-50/50">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-100 cursor-pointer transition"
                 >
                   Batal
                 </button>
