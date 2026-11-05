@@ -19,6 +19,18 @@ const supabaseClient = createClient(
 
 const SAFE_IDENTIFIER_REGEX = /^[A-Za-z0-9_-]{1,100}$/;
 
+/**
+ * Status produk dari aplikasi LapakQ: 'Tersedia' | 'Hampir Habis' | 'Habis' (calculateProductStatus),
+ * plus nilai lama 'active' / 'available' / 'out_of_stock' / 'inactive'. Filter API mengikuti sanitizeProduct:
+ * tersedia = stok > 0 dan tidak berstatus habis/nonaktif.
+ */
+const SOLD_OUT_STATUSES = ['out_of_stock', 'Habis'];
+const HIDDEN_STATUSES = [...SOLD_OUT_STATUSES, 'inactive', 'Nonaktif'];
+const sqlList = (vals: string[]) => vals.map((v) => `'${v}'`).join(', ');
+const sqlAvailable = (col: string) => `${col}stock > 0 AND COALESCE(${col}status, '') NOT IN (${sqlList(HIDDEN_STATUSES)})`;
+const sqlSoldOut = (col: string) => `(${col}stock <= 0 OR ${col}status IN (${sqlList(SOLD_OUT_STATUSES)}))`;
+const pgrstNotIn = (vals: string[]) => `(${vals.map((v) => `"${v}"`).join(',')})`;
+
 /** Nilai yang aman disisipkan ke filter PostgREST `.or()`; selain itu null. */
 const safeIdentifier = (v: string): string | null => (SAFE_IDENTIFIER_REGEX.test(v) ? v : null);
 
@@ -767,9 +779,9 @@ publicApiRouter.get('/communities/:id/products', requireApiKey, enforceRateLimit
         pIdx++;
       }
       if (status === 'out_of_stock') {
-        query += ` AND (p.stock <= 0 OR p.status = 'out_of_stock')`;
+        query += ` AND ${sqlSoldOut('p.')}`;
       } else if (status === 'available') {
-        query += ` AND p.stock > 0 AND (p.status = 'active' OR p.status IS NULL)`;
+        query += ` AND ${sqlAvailable('p.')}`;
       }
 
       const countRes = await pool.query(`SELECT COUNT(*)::int as total FROM (${query}) q`, params);
@@ -803,8 +815,8 @@ publicApiRouter.get('/communities/:id/products', requireApiKey, enforceRateLimit
       if (storeId) sQuery = sQuery.eq('store_id', storeId);
       if (category) sQuery = sQuery.ilike('category', category);
       if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,sku.ilike.%${safeSearchTerm(search)}%`);
-      if (status === 'out_of_stock') sQuery = sQuery.lte('stock', 0);
-      else if (status === 'available') sQuery = sQuery.gt('stock', 0);
+      if (status === 'out_of_stock') sQuery = sQuery.or(`stock.lte.0,status.in.${pgrstNotIn(SOLD_OUT_STATUSES)}`);
+      else if (status === 'available') sQuery = sQuery.gt('stock', 0).not('status', 'in', pgrstNotIn(HIDDEN_STATUSES));
 
       const { data, count, error } = await sQuery
         .order('created_at', { ascending: false })
@@ -1044,11 +1056,11 @@ publicApiRouter.get('/stores/:storeId/products', requireApiKey, enforceRateLimit
 
       if (statusFilter && statusFilter !== 'all') {
         if (statusFilter === 'available') {
-          countQuery += ` AND stock > 0 AND (status = 'active' OR status = 'available' OR status IS NULL)`;
-          dataQuery += ` AND stock > 0 AND (status = 'active' OR status = 'available' OR status IS NULL)`;
+          countQuery += ` AND ${sqlAvailable('')}`;
+          dataQuery += ` AND ${sqlAvailable('')}`;
         } else if (statusFilter === 'out_of_stock') {
-          countQuery += ` AND (stock <= 0 OR status = 'out_of_stock')`;
-          dataQuery += ` AND (stock <= 0 OR status = 'out_of_stock')`;
+          countQuery += ` AND ${sqlSoldOut('')}`;
+          dataQuery += ` AND ${sqlSoldOut('')}`;
         }
       }
 
@@ -1065,9 +1077,9 @@ publicApiRouter.get('/stores/:storeId/products', requireApiKey, enforceRateLimit
       let q = supabaseClient.from('products').select('*', { count: 'exact' }).eq('store_id', storeId);
       if (statusFilter && statusFilter !== 'all') {
         if (statusFilter === 'available') {
-          q = q.gt('stock', 0).neq('status', 'out_of_stock');
+          q = q.gt('stock', 0).not('status', 'in', pgrstNotIn(HIDDEN_STATUSES));
         } else if (statusFilter === 'out_of_stock') {
-          q = q.or('stock.lte.0,status.eq.out_of_stock');
+          q = q.or(`stock.lte.0,status.in.${pgrstNotIn(SOLD_OUT_STATUSES)}`);
         }
       }
       const { data, count, error } = await q.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
@@ -1160,9 +1172,9 @@ publicApiRouter.get('/products', requireApiKey, enforceRateLimit, async (req: Re
         pIdx++;
       }
       if (status === 'out_of_stock') {
-        query += ` AND (p.stock <= 0 OR p.status = 'out_of_stock')`;
+        query += ` AND ${sqlSoldOut('p.')}`;
       } else if (status === 'available') {
-        query += ` AND p.stock > 0 AND (p.status = 'active' OR p.status IS NULL)`;
+        query += ` AND ${sqlAvailable('p.')}`;
       }
       if (minPrice !== null && !isNaN(minPrice)) {
         query += ` AND p.price >= $${pIdx++}`;
@@ -1186,8 +1198,8 @@ publicApiRouter.get('/products', requireApiKey, enforceRateLimit, async (req: Re
       if (storeId) sQuery = sQuery.eq('store_id', storeId);
       if (category) sQuery = sQuery.ilike('category', category);
       if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,sku.ilike.%${safeSearchTerm(search)}%`);
-      if (status === 'out_of_stock') sQuery = sQuery.lte('stock', 0);
-      else if (status === 'available') sQuery = sQuery.gt('stock', 0);
+      if (status === 'out_of_stock') sQuery = sQuery.or(`stock.lte.0,status.in.${pgrstNotIn(SOLD_OUT_STATUSES)}`);
+      else if (status === 'available') sQuery = sQuery.gt('stock', 0).not('status', 'in', pgrstNotIn(HIDDEN_STATUSES));
       if (minPrice !== null && !isNaN(minPrice)) sQuery = sQuery.gte('price', minPrice);
       if (maxPrice !== null && !isNaN(maxPrice)) sQuery = sQuery.lte('price', maxPrice);
 
