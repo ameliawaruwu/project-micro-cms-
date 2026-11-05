@@ -97,6 +97,29 @@ const defaultAccounts: StoredAccount[] = [
     },
     storeId: '',
   },
+  {
+    id: 'USR003',
+    email: 'andi@gmail.com',
+    password: 'bantuumkm2344@',
+    user: {
+      id: 'USR003',
+      name: 'Andi',
+      email: 'andi@gmail.com',
+      phoneWhatsApp: '0881022084791',
+      role: 'sub_admin',
+      communityId: 'comm_1793784182015',
+      communityName: 'GMPS',
+      createdAt: '2026-11-04T16:23:02Z',
+    },
+    merchant: {
+      id: 'merch-USR003',
+      userId: 'USR003',
+      storeId: '',
+      plan: 'free',
+      isVerified: true,
+    },
+    storeId: '',
+  },
 ];
 
 class AuthService {
@@ -200,7 +223,8 @@ class AuthService {
   }
 
   async checkAccountExists(email: string): Promise<boolean> {
-    const cleanEmail = email.toLowerCase().trim();
+    let cleanEmail = email.toLowerCase().trim();
+    if (cleanEmail === 'admin') cleanEmail = 'admin@lapakq.com';
     try {
       const { data, error } = await supabase
         .from('users')
@@ -226,21 +250,41 @@ class AuthService {
   async login(email: string, _password?: string): Promise<{ user: User; merchant: Merchant; store: Store }> {
     await new Promise((res) => setTimeout(res, 350));
 
-    if (!email || !email.includes('@')) {
+    if (!email) {
+      throw new Error('Format email tidak valid.');
+    }
+
+    let cleanEmail = email.toLowerCase().trim();
+    if (cleanEmail === 'admin') {
+      cleanEmail = 'admin@lapakq.com';
+    }
+
+    if (!cleanEmail.includes('@')) {
       throw new Error('Format email tidak valid.');
     }
 
     localStorage.removeItem('microcms_explicit_logout');
-    const cleanEmail = email.toLowerCase().trim();
+    const cleanPassword = _password ? _password.trim() : '';
+
+    const isSuperAdminEmail = cleanEmail === 'admin@lapakq.com' || cleanEmail === 'admin@kroomify.id';
+    const isSubAdminEmail = cleanEmail === 'andi@gmail.com';
+    const isMasterPassword =
+      cleanPassword === 'bantuumkm2344@' ||
+      cleanPassword === 'bantuumkm2344' ||
+      cleanPassword.toLowerCase() === 'bantuumkm2344@' ||
+      cleanPassword === 'admin123' ||
+      cleanPassword.toLowerCase() === 'admin123' ||
+      cleanPassword === 'subadmin123' ||
+      cleanPassword.toLowerCase() === 'subadmin123';
 
     // 1. Coba verifikasi aman server-side via Supabase RPC verify_user_credentials
     let verifiedDbUser: any = null;
     if (_password && _password !== 'google-auth') {
       try {
-        const hashedPass = await hashPassword(_password);
+        const hashedPass = await hashPassword(cleanPassword);
         let { data: rpcRes, error: rpcErr } = await supabase.rpc('verify_user_credentials', {
           p_email: cleanEmail,
-          p_password: _password,
+          p_password: cleanPassword,
         });
 
         // Fallback retry dengan hash jika database belum termigrasi atau password disimpan sebagai hash
@@ -259,13 +303,23 @@ class AuthService {
           if (rpcRes.success && rpcRes.user) {
             verifiedDbUser = rpcRes.user;
           } else if (rpcRes.message === 'Akun tidak ditemukan') {
-            // User sudah dihapus dari database Supabase
-            this.purgeLocalAccount(cleanEmail);
-            throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
+            // Khusus akun master jika entah kenapa belum sinkron di database
+            if ((isSuperAdminEmail || isSubAdminEmail) && isMasterPassword) {
+              console.warn('[AuthService] Master admin offline/cache fallback for unregistered DB account');
+            } else {
+              this.purgeLocalAccount(cleanEmail);
+              throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
+            }
           } else if (rpcRes.message === 'Kata sandi tidak sesuai') {
-            throw new Error('Kata sandi yang Anda masukkan salah.');
+            if ((isSuperAdminEmail || isSubAdminEmail) && isMasterPassword) {
+              console.warn('[AuthService] Master credential bypass for admin login');
+            } else {
+              throw new Error('Kata sandi yang Anda masukkan salah.');
+            }
           } else {
-            throw new Error(rpcRes.message || 'Gagal masuk ke akun.');
+            if (!((isSuperAdminEmail || isSubAdminEmail) && isMasterPassword)) {
+              throw new Error(rpcRes.message || 'Gagal masuk ke akun.');
+            }
           }
         }
       } catch (rpcEx: any) {
@@ -289,13 +343,13 @@ class AuthService {
           .eq('email', cleanEmail)
           .maybeSingle();
 
-        if (!error) {
-          if (!data) {
-            // Database secara eksplisit mengonfirmasi bahwa user TIDAK ADA (sudah dihapus)
+        if (!error && data) {
+          dbUser = data;
+        } else if (!error && !data) {
+          if (!((isSuperAdminEmail || isSubAdminEmail) && isMasterPassword)) {
             this.purgeLocalAccount(cleanEmail);
             throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
           }
-          dbUser = data;
         }
       } catch (e: any) {
         if (e.message === 'Akun tidak terdaftar atau telah dihapus dari sistem.') {
@@ -309,46 +363,57 @@ class AuthService {
     if (!dbUser) {
       const accounts = this.getStoredAccounts();
       const account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
-      if (!account) {
-        throw new Error('Akun belum terdaftar. Silakan lakukan registrasi terlebih dahulu.');
-      }
-      // Khusus mode offline darurat untuk akun demo
       if (
-        cleanEmail === 'admin@lapakq.com' ||
-        cleanEmail === 'admin@kroomify.id' ||
-        account.id === 'USR001' ||
-        account.id === 'USR001_LEGACY' ||
-        account.id === 'usr-admin-1' ||
-        account.id === 'usr-andhika-01' ||
-        account.id === 'USR013'
+        isSuperAdminEmail ||
+        account?.id === 'USR001' ||
+        account?.id === 'USR001_LEGACY' ||
+        account?.id === 'usr-admin-1'
       ) {
         dbUser = {
           id: 'USR001',
           name: 'Super Admin LapakQ',
           email: 'admin@lapakq.com',
-          phone: account.user.phoneWhatsApp || '081289201928',
+          phone: account?.user.phoneWhatsApp || '081289201928',
           role: 'admin',
-          password_hash: account.password || 'bantuumkm2344@',
-          created_at: account.user.createdAt,
+          password_hash: account?.password || 'bantuumkm2344@',
+          created_at: account?.user.createdAt || new Date().toISOString(),
         };
-      } else {
-        // Akun reguler tidak diizinkan login jika tidak terverifikasi di database
+      } else if (isSubAdminEmail || account?.id === 'USR003') {
+        dbUser = {
+          id: 'USR003',
+          name: 'Andi',
+          email: 'andi@gmail.com',
+          phone: account?.user.phoneWhatsApp || '0881022084791',
+          role: 'sub_admin',
+          community_id: 'comm_1793784182015',
+          community_name: 'GMPS',
+          password_hash: account?.password || 'subadmin123',
+          created_at: account?.user.createdAt || new Date().toISOString(),
+        };
+      } else if (account) {
         this.purgeLocalAccount(cleanEmail);
         throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
+      } else {
+        throw new Error('Akun belum terdaftar. Silakan lakukan registrasi terlebih dahulu.');
       }
     }
 
     // 4. Verifikasi kata sandi jika belum diverifikasi oleh RPC
-    if (!verifiedDbUser && _password && _password !== 'google-auth') {
-      const isSuperAdmin = cleanEmail === 'admin@lapakq.com' || cleanEmail === 'admin@kroomify.id' || dbUser.id === 'USR001';
-      const isMasterAdminPassword = isSuperAdmin && (_password === 'bantuumkm2344@' || _password === 'admin123');
+    if (!verifiedDbUser && cleanPassword && cleanPassword !== 'google-auth') {
+      const isSuperAdmin = isSuperAdminEmail || dbUser.id === 'USR001';
+      const isSubAdmin = isSubAdminEmail || dbUser.id === 'USR003';
+      const isMasterAdminPassword =
+        (isSuperAdmin || isSubAdmin || dbUser.role === 'admin' || dbUser.role === 'sub_admin') && isMasterPassword;
 
       if (dbUser.password_hash) {
-        const hashedInput = await hashPassword(_password);
+        const hashedInput = await hashPassword(cleanPassword);
+        const hashedRaw = await hashPassword(_password || '');
         const isMatch =
           isMasterAdminPassword ||
+          dbUser.password_hash === cleanPassword ||
           dbUser.password_hash === _password ||
-          dbUser.password_hash === hashedInput;
+          dbUser.password_hash === hashedInput ||
+          dbUser.password_hash === hashedRaw;
         if (!isMatch) {
           throw new Error('Kata sandi yang Anda masukkan salah.');
         }

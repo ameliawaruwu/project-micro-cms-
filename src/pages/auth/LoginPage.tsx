@@ -73,19 +73,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     e.preventDefault();
     setError(null);
 
-    if (!email.trim() || !password.trim()) {
+    const cleanInputEmail = email.trim();
+    const cleanInputPassword = password.trim();
+
+    if (!cleanInputEmail || !cleanInputPassword) {
       setError('Silakan masukkan email dan kata sandi Anda.');
       return;
     }
 
-    if (!email.includes('@')) {
+    if (!cleanInputEmail.includes('@') && cleanInputEmail.toLowerCase() !== 'admin') {
       setError('Silakan masukkan alamat email yang valid.');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      await login(email, password);
+      await login(cleanInputEmail, cleanInputPassword);
       setIsSuccess(true);
       setTimeout(() => {
         if (onSuccess) onSuccess();
@@ -217,12 +220,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               <div className="relative">
                 <input
                   id="login-email"
-                  type="email"
+                  type="text"
+                  inputMode="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nama@email.com"
                   required
-                  autoComplete="email"
+                  autoComplete="username email"
                   className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
                 />
               </div>
