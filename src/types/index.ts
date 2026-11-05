@@ -670,6 +670,9 @@ export interface Community {
   name: string;
   slug: string;
   description?: string;
+  subAdminName?: string;
+  subAdminEmail?: string;
+  subAdminPhone?: string;
   coordinatorName: string;
   coordinatorEmail: string;
   coordinatorPhone: string;

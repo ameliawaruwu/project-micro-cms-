@@ -78,7 +78,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
+    subAdminName: '',
+    subAdminEmail: '',
+    subAdminPhone: '',
     coordinatorName: '',
+    coordinatorEmail: '',
     coordinatorPhone: '',
     turnoverFeePercent: 2.5,
     status: 'active' as 'active' | 'pending' | 'inactive',
@@ -103,17 +107,24 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   });
   const [isConfirmLoading, setIsConfirmLoading] = useState(false);
 
-  // Modal: Daftarkan Sub-Admin Baru
+  // Modal: Daftarkan Komunitas & Sub-Admin Baru
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: '',
     description: '',
+    baseDomain: '',
+    // Akun 1: Sub Admin Umum (Halaman & Produk)
+    subAdminName: '',
+    subAdminEmail: '',
+    subAdminPhone: '',
+    subAdminPassword: '',
+    // Akun 2: Koordinator Toko (Lapak Binaan)
+    sameAsSubAdmin: false,
     coordinatorName: '',
     coordinatorEmail: '',
     coordinatorPhone: '',
-    password: '',
-    baseDomain: '',
+    coordinatorPassword: '',
   });
 
   // Load communities, stores & orders
@@ -276,28 +287,42 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   // Handle submit create organization & sub-admin
   const handleCreateOrganization = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createForm.name.trim() || !createForm.coordinatorEmail.trim()) {
-      if (onShowToast) onShowToast('⚠️ Nama organisasi dan email koordinator wajib diisi.');
+    if (!createForm.name.trim() || !createForm.subAdminEmail.trim()) {
+      if (onShowToast) onShowToast('⚠️ Nama komunitas dan email login Sub-Admin Umum wajib diisi.');
+      return;
+    }
+
+    const finalCoordEmail = createForm.sameAsSubAdmin ? createForm.subAdminEmail : createForm.coordinatorEmail;
+    if (!createForm.sameAsSubAdmin && !finalCoordEmail.trim()) {
+      if (onShowToast) onShowToast('⚠️ Email login Koordinator Toko wajib diisi.');
       return;
     }
 
     // Validasi nomor WhatsApp (hanya angka)
-    const cleanPhone = createForm.coordinatorPhone.replace(/\D/g, '');
-    if (createForm.coordinatorPhone && cleanPhone.length < 8) {
-      if (onShowToast) onShowToast('⚠️ Nomor WhatsApp harus berupa angka dan minimal 8 digit.');
-      return;
-    }
+    const cleanSubAdminPhone = createForm.subAdminPhone.replace(/\D/g, '');
+    const rawCoordPhone = createForm.sameAsSubAdmin ? createForm.subAdminPhone : createForm.coordinatorPhone;
+    const cleanCoordPhone = rawCoordPhone.replace(/\D/g, '');
 
     setIsSubmittingCreate(true);
     try {
       const res = await communityService.createOrganizationWithSubAdmin({
         name: createForm.name.trim(),
         description: createForm.description.trim(),
-        coordinatorName: createForm.coordinatorName.trim() || `Koordinator ${createForm.name.trim()}`,
-        coordinatorEmail: createForm.coordinatorEmail.trim(),
-        coordinatorPhone: cleanPhone,
-        password: createForm.password.trim() || 'subadmin123',
         baseDomain: createForm.baseDomain.trim() || undefined,
+        // Akun 1: Sub Admin Umum (Halaman & Produk)
+        subAdminName: createForm.subAdminName.trim() || `Sub Admin ${createForm.name.trim()}`,
+        subAdminEmail: createForm.subAdminEmail.trim(),
+        subAdminPhone: cleanSubAdminPhone,
+        subAdminPassword: createForm.subAdminPassword.trim() || 'subadmin123',
+        // Akun 2: Koordinator Toko (Lapak Binaan)
+        coordinatorName: createForm.sameAsSubAdmin
+          ? (createForm.subAdminName.trim() || `Koordinator ${createForm.name.trim()}`)
+          : (createForm.coordinatorName.trim() || `Koordinator ${createForm.name.trim()}`),
+        coordinatorEmail: finalCoordEmail.trim(),
+        coordinatorPhone: cleanCoordPhone,
+        password: createForm.sameAsSubAdmin
+          ? (createForm.subAdminPassword.trim() || 'subadmin123')
+          : (createForm.coordinatorPassword.trim() || 'subadmin123'),
       });
 
       // Optimistic update: Langsung tutup modal dan perbarui state antarmuka tanpa lag
@@ -307,15 +332,20 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       setCreateForm({
         name: '',
         description: '',
+        baseDomain: '',
+        subAdminName: '',
+        subAdminEmail: '',
+        subAdminPhone: '',
+        subAdminPassword: '',
+        sameAsSubAdmin: false,
         coordinatorName: '',
         coordinatorEmail: '',
         coordinatorPhone: '',
-        password: '',
-        baseDomain: '',
+        coordinatorPassword: '',
       });
 
       if (onShowToast) {
-        onShowToast(`Sub-Admin & organisasi "${res.community.name}" berhasil didaftarkan!`);
+        onShowToast(`Komunitas "${res.community.name}" beserta akun Sub-Admin berhasil didaftarkan!`);
       }
 
       // Sinkronisasi data dari Supabase di latar belakang
@@ -326,7 +356,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       });
     } catch (err: any) {
       if (onShowToast) {
-        onShowToast('❌ Gagal mendaftarkan Sub-Admin: ' + (err?.message || ''));
+        onShowToast('❌ Gagal mendaftarkan komunitas: ' + (err?.message || ''));
       }
     } finally {
       setIsSubmittingCreate(false);
@@ -338,7 +368,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     setEditForm({
       name: activeCommunity.name || '',
       description: activeCommunity.description || '',
+      subAdminName: activeCommunity.subAdminName || '',
+      subAdminEmail: activeCommunity.subAdminEmail || '',
+      subAdminPhone: activeCommunity.subAdminPhone || '',
       coordinatorName: activeCommunity.coordinatorName || '',
+      coordinatorEmail: activeCommunity.coordinatorEmail || '',
       coordinatorPhone: activeCommunity.coordinatorPhone || '',
       turnoverFeePercent: activeCommunity.turnoverFeePercent || 2.5,
       status: activeCommunity.status || 'active',
@@ -351,7 +385,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editForm.name.trim()) {
-      if (onShowToast) onShowToast('⚠️ Nama organisasi tidak boleh kosong.');
+      if (onShowToast) onShowToast('⚠️ Nama komunitas tidak boleh kosong.');
       return;
     }
     setIsSubmittingEdit(true);
@@ -359,10 +393,15 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       await communityService.updateCommunity(activeCommunity.id, {
         name: editForm.name.trim(),
         description: editForm.description.trim(),
+        subAdminName: editForm.subAdminName.trim(),
+        subAdminEmail: editForm.subAdminEmail.trim(),
+        subAdminPhone: editForm.subAdminPhone.trim(),
         coordinatorName: editForm.coordinatorName.trim(),
+        coordinatorEmail: editForm.coordinatorEmail.trim(),
         coordinatorPhone: editForm.coordinatorPhone.trim(),
         turnoverFeePercent: Number(editForm.turnoverFeePercent) || 2.5,
         status: editForm.status,
+        baseDomain: editForm.baseDomain.trim() || undefined,
       });
 
       const refreshedComms = await communityService.fetchCommunitiesFromDatabase();
@@ -372,11 +411,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       setIsEditModalOpen(false);
 
       if (onShowToast) {
-        onShowToast(`Organisasi "${editForm.name}" berhasil diperbarui di database!`);
+        onShowToast(`Komunitas "${editForm.name}" berhasil diperbarui di database!`);
       }
     } catch (err: any) {
       if (onShowToast) {
-        onShowToast('❌ Gagal memperbarui organisasi: ' + (err?.message || ''));
+        onShowToast('❌ Gagal memperbarui komunitas: ' + (err?.message || ''));
       }
     } finally {
       setIsSubmittingEdit(false);
@@ -673,47 +712,96 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             </p>
           )}
 
-          {/* Grid Informasi Organisasi & Koordinator */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div className="p-4 rounded-xl border border-gray-200 space-y-2 bg-gray-50/50">
-              <span className="text-gray-500 font-semibold block">Admin Penanggung Jawab Toko (Koordinator):</span>
-              <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-                <UserCheck className="w-4 h-4 text-blue-600" />
-                <span>{activeCommunity.coordinatorName}</span>
-              </p>
-              <p className="text-gray-600 flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-gray-400" />
-                <span>{activeCommunity.coordinatorEmail}</span>
-              </p>
-              {activeCommunity.coordinatorPhone && (
-                <p className="text-gray-600 flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-gray-400" />
-                  <span>{activeCommunity.coordinatorPhone}</span>
-                </p>
-              )}
-            </div>
-
-            <div className="p-4 rounded-xl border border-gray-200 space-y-2 bg-gray-50/50">
-              <span className="text-gray-500 font-semibold block">Status &amp; Keanggotaan:</span>
-              <div className="space-y-1.5 pt-0.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Total Lapak Binaan:</span>
-                  <span className="font-bold text-gray-900">{communityStores.length} Toko</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Lapak Aktif Tayang:</span>
-                  <span className="font-bold text-emerald-700">{communityStores.filter((s) => s.isPublished).length} Toko</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Terdaftar Sejak:</span>
-                  <span className="font-medium text-gray-700">
-                    {new Date(activeCommunity.createdAt).toLocaleDateString('id-ID', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
+          {/* Grid Informasi Admin Komunitas & Status */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            {/* Card 1: Sub Admin Umum (Halaman & Produk) */}
+            <div className="p-4 rounded-xl border border-purple-200/80 space-y-2 bg-purple-50/30 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 font-semibold block">Sub-Admin Umum:</span>
+                  <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold">
+                    Halaman &amp; Produk
                   </span>
                 </div>
+                <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                  <Shield className="w-4 h-4 text-purple-600 shrink-0" />
+                  <span>{activeCommunity.subAdminName || activeCommunity.coordinatorName}</span>
+                </p>
+                <p className="text-gray-600 flex items-center gap-1.5 break-all">
+                  <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <span>{activeCommunity.subAdminEmail || activeCommunity.coordinatorEmail}</span>
+                </p>
+                {(activeCommunity.subAdminPhone || activeCommunity.coordinatorPhone) && (
+                  <p className="text-gray-600 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span>{activeCommunity.subAdminPhone || activeCommunity.coordinatorPhone}</span>
+                  </p>
+                )}
+              </div>
+              <p className="text-[11px] text-purple-700/80 bg-purple-100/50 p-2 rounded-lg mt-2">
+                Mengatur halaman komunitas &amp; katalog produk binaan.
+              </p>
+            </div>
+
+            {/* Card 2: Admin Koordinator Toko (Lapak Binaan) */}
+            <div className="p-4 rounded-xl border border-blue-200/80 space-y-2 bg-blue-50/30 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 font-semibold block">Koordinator Toko:</span>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
+                    Lapak Binaan
+                  </span>
+                </div>
+                <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span>{activeCommunity.coordinatorName}</span>
+                </p>
+                <p className="text-gray-600 flex items-center gap-1.5 break-all">
+                  <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <span>{activeCommunity.coordinatorEmail}</span>
+                </p>
+                {activeCommunity.coordinatorPhone && (
+                  <p className="text-gray-600 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span>{activeCommunity.coordinatorPhone}</span>
+                  </p>
+                )}
+              </div>
+              <p className="text-[11px] text-blue-700/80 bg-blue-100/50 p-2 rounded-lg mt-2">
+                Menaungi &amp; mendampingi toko-toko anggota binaan.
+              </p>
+            </div>
+
+            {/* Card 3: Status & Keanggotaan */}
+            <div className="p-4 rounded-xl border border-gray-200 space-y-2 bg-gray-50/50 flex flex-col justify-between">
+              <div>
+                <span className="text-gray-500 font-semibold block mb-2">Status &amp; Keanggotaan:</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-600">Total Lapak Binaan:</span>
+                    <span className="font-bold text-gray-900">{communityStores.length} Toko</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-600">Lapak Aktif Tayang:</span>
+                    <span className="font-bold text-emerald-700">{communityStores.filter((s) => s.isPublished).length} Toko</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-600">Terdaftar Sejak:</span>
+                    <span className="font-medium text-gray-700">
+                      {new Date(activeCommunity.createdAt).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-2 border-t border-gray-200/60 flex items-center justify-between text-[11px] text-gray-500">
+                <span>Skema Bagi Hasil:</span>
+                <span className="font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                  {activeCommunity.turnoverFeePercent}% Omset
+                </span>
               </div>
             </div>
           </div>
@@ -996,20 +1084,20 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   )}
 
       {/* ========================================================================= */}
-      {/* MODAL 1: DAFTARKAN SUB-ADMIN ORGANISASI                                   */}
+      {/* MODAL 1: DAFTARKAN KOMUNITAS & SUB-ADMIN                                  */}
       {/* ========================================================================= */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-200 my-8">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-4 border border-gray-200 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
                   <Building2 className="w-5 h-5 text-[#66000E]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">Tambah Komunitas</h3>
+                  <h3 className="text-base font-bold text-gray-900">Daftarkan Sub-Admin Organisasi</h3>
                   <p className="text-xs text-gray-500">
-                    Daftarkan komunitas mitra &amp; akun koordinator sub-admin
+                    Akun koordinator untuk mengelola lapak-lapak binaan. Fee omset platform ditagihkan di akhir periode.
                   </p>
                 </div>
               </div>
@@ -1025,111 +1113,212 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
             <form onSubmit={handleCreateOrganization} className="space-y-4 text-xs">
               {/* Bagian 1: Detail Komunitas */}
-              <div className="p-3.5 bg-gray-50/80 rounded-xl border border-gray-200/80 space-y-3">
+              <div className="p-4 bg-gray-50/80 rounded-xl border border-gray-200/80 space-y-3">
                 <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
                   <Building2 className="w-4 h-4 text-[#66000E]" />
-                  <span>Detail Komunitas</span>
+                  <span>1. Detail Organisasi / Komunitas Mitra</span>
                 </h4>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Nama Komunitas *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Paguyuban Kulit Garut"
-                      value={createForm.name}
-                      onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Domain Induk (Opsional)</label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: gmpsbandung.org"
-                      value={createForm.baseDomain}
-                      onChange={(e) => setCreateForm({ ...createForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
-                    />
-                  </div>
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Nama Organisasi / Komunitas *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Paguyuban Pengrajin Kulit Garut"
+                    value={createForm.name}
+                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                  />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Deskripsi (Opsional)</label>
+                  <label className="block font-semibold text-gray-700 mb-1">Deskripsi Singkat</label>
                   <textarea
                     rows={2}
-                    placeholder="Deskripsi singkat komunitas..."
+                    placeholder="Wadah paguyuban dan pembinaan lapak UMKM..."
                     value={createForm.description}
                     onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
                   />
                 </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                    <Globe className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Domain Induk Organisasi (Base Domain - Opsional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: gmpsbandung.org"
+                    value={createForm.baseDomain}
+                    onChange={(e) => setCreateForm({ ...createForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                  />
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Jika diisi, toko anggota binaan komunitas ini otomatis mendapatkan subdomain di bawah domain ini (contoh: toko.gmpsbandung.org).
+                  </p>
+                </div>
               </div>
 
-              {/* Bagian 2: Kredensial Sub-Admin */}
-              <div className="p-3.5 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-3">
-                <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-blue-600" />
-                  <span>Akun Koordinator (Sub-Admin)</span>
-                </h4>
+              {/* Bagian 2: Akun Sub-Admin Umum (Halaman & Produk) */}
+              <div className="p-4 bg-purple-50/40 rounded-xl border border-purple-200/80 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
+                    <Shield className="w-4 h-4 text-purple-600" />
+                    <span>2. Akun Sub-Admin Umum (Halaman &amp; Produk)</span>
+                  </h4>
+                  <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
+                    Akses Halaman &amp; Produk
+                  </span>
+                </div>
+                <p className="text-[11px] text-purple-900/80 leading-relaxed">
+                  Akun ini akan otomatis didaftarkan ke Supabase dengan hak akses khusus untuk mengelola profil halaman komunitas dan memantau produk seluruh lapak binaannya.
+                </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Nama Koordinator *</label>
+                    <label className="block font-semibold text-gray-700 mb-1">Nama Sub-Admin Umum *</label>
                     <input
                       type="text"
                       required
-                      placeholder="Budi Santoso"
-                      value={createForm.coordinatorName}
-                      onChange={(e) => setCreateForm({ ...createForm, coordinatorName: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                      placeholder="Contoh: Andi Pratama"
+                      value={createForm.subAdminName}
+                      onChange={(e) => setCreateForm({ ...createForm, subAdminName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp</label>
+                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp (Angka saja)</label>
                     <input
                       type="tel"
                       inputMode="numeric"
                       pattern="[0-9]*"
-                      placeholder="081234567890"
-                      value={createForm.coordinatorPhone}
+                      placeholder="Contoh: 081234567890"
+                      value={createForm.subAdminPhone}
                       onChange={(e) => {
                         const numericOnly = e.target.value.replace(/\D/g, '');
-                        setCreateForm({ ...createForm, coordinatorPhone: numericOnly });
+                        setCreateForm({ ...createForm, subAdminPhone: numericOnly });
                       }}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Email Login *</label>
+                    <label className="block font-semibold text-gray-700 mb-1">Email Login Sub-Admin *</label>
                     <input
                       type="email"
                       required
-                      placeholder="koordinator@garut.id"
-                      value={createForm.coordinatorEmail}
-                      onChange={(e) => setCreateForm({ ...createForm, coordinatorEmail: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                      placeholder="subadmin@garut.id"
+                      value={createForm.subAdminEmail}
+                      onChange={(e) => setCreateForm({ ...createForm, subAdminEmail: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Kata Sandi *</label>
+                    <label className="block font-semibold text-gray-700 mb-1">Kata Sandi Awal *</label>
                     <input
                       type="text"
                       required
                       placeholder="subadmin123"
-                      value={createForm.password}
-                      onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                      value={createForm.subAdminPassword}
+                      onChange={(e) => setCreateForm({ ...createForm, subAdminPassword: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-purple-600"
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Bagian 3: Akun Koordinator Toko (Lapak Binaan) */}
+              <div className="p-4 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-blue-600" />
+                    <span>3. Akun Koordinator Toko (Lapak Binaan)</span>
+                  </h4>
+                  <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">
+                    Akses Pendampingan Lapak
+                  </span>
+                </div>
+                <p className="text-[11px] text-blue-900/80 leading-relaxed">
+                  Akun ini bertugas mendampingi &amp; menaungi toko-toko anggota binaan di bawah organisasi ini.
+                </p>
+
+                {/* Checkbox Samakan Akun */}
+                <label className="flex items-center gap-2 p-2 bg-white rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-50/50 transition">
+                  <input
+                    type="checkbox"
+                    checked={createForm.sameAsSubAdmin}
+                    onChange={(e) => setCreateForm({ ...createForm, sameAsSubAdmin: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span className="text-xs font-semibold text-gray-800">
+                    Samakan dengan data Sub-Admin Umum di atas (1 akun merangkap 2 tugas)
+                  </span>
+                </label>
+
+                {!createForm.sameAsSubAdmin && (
+                  <div className="space-y-3 pt-1 animate-in fade-in duration-150">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-gray-700 mb-1">Nama Koordinator *</label>
+                        <input
+                          type="text"
+                          required={!createForm.sameAsSubAdmin}
+                          placeholder="Budi Santoso"
+                          value={createForm.coordinatorName}
+                          onChange={(e) => setCreateForm({ ...createForm, coordinatorName: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp (Angka saja)</label>
+                        <input
+                          type="tel"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          placeholder="Contoh: 081234567890"
+                          value={createForm.coordinatorPhone}
+                          onChange={(e) => {
+                            const numericOnly = e.target.value.replace(/\D/g, '');
+                            setCreateForm({ ...createForm, coordinatorPhone: numericOnly });
+                          }}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-gray-700 mb-1">Email Login Koordinator *</label>
+                        <input
+                          type="email"
+                          required={!createForm.sameAsSubAdmin}
+                          placeholder="koordinator@garut.id"
+                          value={createForm.coordinatorEmail}
+                          onChange={(e) => setCreateForm({ ...createForm, coordinatorEmail: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-gray-700 mb-1">Kata Sandi Awal *</label>
+                        <input
+                          type="text"
+                          required={!createForm.sameAsSubAdmin}
+                          placeholder="subadmin123"
+                          value={createForm.coordinatorPassword}
+                          onChange={(e) => setCreateForm({ ...createForm, coordinatorPassword: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-blue-600"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
@@ -1354,11 +1543,64 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 </div>
               </div>
 
+              {/* Section Sub-Admin Umum */}
+              <div className="p-3.5 bg-purple-50/40 rounded-xl border border-purple-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
+                    <Shield className="w-4 h-4 text-purple-600" />
+                    <span>Kontak Sub-Admin Umum (Halaman &amp; Produk)</span>
+                  </h4>
+                  <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
+                    Halaman &amp; Produk
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Nama Sub-Admin Umum</label>
+                    <input
+                      type="text"
+                      value={editForm.subAdminName}
+                      onChange={(e) => setEditForm({ ...editForm, subAdminName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp Sub-Admin</label>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      placeholder="081234567890"
+                      value={editForm.subAdminPhone}
+                      onChange={(e) => setEditForm({ ...editForm, subAdminPhone: e.target.value.replace(/\D/g, '') })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Email Login Sub-Admin</label>
+                  <input
+                    type="email"
+                    value={editForm.subAdminEmail}
+                    onChange={(e) => setEditForm({ ...editForm, subAdminEmail: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
+                  />
+                </div>
+              </div>
+
+              {/* Section Koordinator Toko */}
               <div className="p-3.5 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-3">
-                <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-blue-600" />
-                  <span>Kontak Koordinator (Sub-Admin)</span>
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-blue-600" />
+                    <span>Kontak Koordinator Toko (Lapak Binaan)</span>
+                  </h4>
+                  <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">
+                    Lapak Binaan
+                  </span>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -1368,11 +1610,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       required
                       value={editForm.coordinatorName}
                       onChange={(e) => setEditForm({ ...editForm, coordinatorName: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp</label>
+                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp Koordinator</label>
                     <input
                       type="tel"
                       inputMode="numeric"
@@ -1380,9 +1622,20 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       placeholder="081234567890"
                       value={editForm.coordinatorPhone}
                       onChange={(e) => setEditForm({ ...editForm, coordinatorPhone: e.target.value.replace(/\D/g, '') })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Email Login Koordinator *</label>
+                  <input
+                    type="email"
+                    required
+                    value={editForm.coordinatorEmail}
+                    onChange={(e) => setEditForm({ ...editForm, coordinatorEmail: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
+                  />
                 </div>
               </div>
 

@@ -54,6 +54,9 @@ class CommunityService {
             name: r.name,
             slug: r.slug || r.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
             description: r.description || '',
+            subAdminName: r.sub_admin_name || undefined,
+            subAdminEmail: r.sub_admin_email || undefined,
+            subAdminPhone: r.sub_admin_phone || undefined,
             coordinatorName: r.coordinator_name || '',
             coordinatorEmail: r.coordinator_email,
             coordinatorPhone: r.coordinator_phone || '',
@@ -111,6 +114,9 @@ class CommunityService {
           name: data.name,
           slug: data.slug,
           description: data.description || '',
+          subAdminName: data.sub_admin_name || undefined,
+          subAdminEmail: data.sub_admin_email || undefined,
+          subAdminPhone: data.sub_admin_phone || undefined,
           coordinatorName: data.coordinator_name || '',
           coordinatorEmail: data.coordinator_email,
           coordinatorPhone: data.coordinator_phone || '',
@@ -127,24 +133,39 @@ class CommunityService {
   }
 
   /**
-   * Mendaftarkan Organisasi/Komunitas baru beserta pembuatan akun Sub-Admin koordinatornya langsung ke Supabase
+   * Mendaftarkan Organisasi/Komunitas baru beserta pembuatan akun Sub-Admin Umum & Koordinator Toko ke Supabase
    */
   public async createOrganizationWithSubAdmin(data: {
     name: string;
     description?: string;
+    baseDomain?: string;
+    logoUrl?: string;
+    // Akun 1: Sub Admin Umum (Halaman & Produk)
+    subAdminName?: string;
+    subAdminEmail?: string;
+    subAdminPhone?: string;
+    subAdminPassword?: string;
+    // Akun 2: Koordinator Toko (Lapak Binaan)
     coordinatorName: string;
     coordinatorEmail: string;
     coordinatorPhone?: string;
     password?: string;
-    logoUrl?: string;
-    baseDomain?: string;
-  }): Promise<{ community: Community; user: User }> {
-    const cleanEmail = data.coordinatorEmail.toLowerCase().trim();
+  }): Promise<{ community: Community; user: User; coordinatorUser?: User }> {
     const commId = `comm_${Date.now()}`;
     const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `org-${Date.now().toString().slice(-4)}`;
-    const plainPassword = data.password || 'subadmin123';
-    const hashedPassword = await hashPassword(plainPassword);
     const turnoverFeePercent = 2.5; // Fee ditagihkan di akhir saat penerbitan invoice omset
+
+    const subAdminName = (data.subAdminName || data.coordinatorName).trim();
+    const cleanSubAdminEmail = (data.subAdminEmail || data.coordinatorEmail).toLowerCase().trim();
+    const subAdminPhone = (data.subAdminPhone || data.coordinatorPhone || '').trim();
+    const plainSubAdminPassword = data.subAdminPassword || data.password || 'subadmin123';
+    const hashedSubAdminPassword = await hashPassword(plainSubAdminPassword);
+
+    const coordName = data.coordinatorName.trim();
+    const cleanCoordEmail = data.coordinatorEmail.toLowerCase().trim();
+    const coordPhone = (data.coordinatorPhone || '').trim();
+    const plainCoordPassword = data.password || 'subadmin123';
+    const hashedCoordPassword = await hashPassword(plainCoordPassword);
 
     // 1. Simpan Komunitas ke Local & Service State
     const newComm: Community = {
@@ -152,9 +173,12 @@ class CommunityService {
       name: data.name.trim(),
       slug,
       description: data.description?.trim() || `Organisasi & Lapak Binaan ${data.name.trim()}`,
-      coordinatorName: data.coordinatorName.trim(),
-      coordinatorEmail: cleanEmail,
-      coordinatorPhone: data.coordinatorPhone?.trim() || '',
+      subAdminName,
+      subAdminEmail: cleanSubAdminEmail,
+      subAdminPhone,
+      coordinatorName: coordName,
+      coordinatorEmail: cleanCoordEmail,
+      coordinatorPhone: coordPhone,
       turnoverFeePercent,
       logoUrl: data.logoUrl || undefined,
       baseDomain: data.baseDomain ? data.baseDomain.toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '').trim() : undefined,
@@ -166,8 +190,7 @@ class CommunityService {
     communities.unshift(newComm);
     this.saveCommunities(communities);
 
-    // 2. Simpan Komunitas & Akun Sub-Admin ke Supabase secara Paralel dengan Proteksi Timeout
-    let userId = `USR_SUB_${Date.now().toString().slice(-6)}`;
+    // 2. Simpan Komunitas ke Supabase
     const saveCommunityPromise = (async () => {
       try {
         const { error } = await supabase.from('communities').upsert({
@@ -175,6 +198,9 @@ class CommunityService {
           name: newComm.name,
           slug: newComm.slug,
           description: newComm.description,
+          sub_admin_name: newComm.subAdminName,
+          sub_admin_email: newComm.subAdminEmail,
+          sub_admin_phone: newComm.subAdminPhone,
           coordinator_name: newComm.coordinatorName,
           coordinator_email: newComm.coordinatorEmail,
           coordinator_phone: newComm.coordinatorPhone,
@@ -188,22 +214,24 @@ class CommunityService {
         if (error) {
           console.warn('[communityService] Error upsert community ke Supabase:', error.message);
         } else {
-          console.log(`[communityService] Organisasi ${newComm.name} (${commId}) tersimpan di Supabase.`);
+          console.log(`[communityService] Komunitas ${newComm.name} (${commId}) tersimpan di Supabase.`);
         }
       } catch (e) {
         console.warn('[communityService] Exception saving community to Supabase:', e);
       }
     })();
 
-    const saveUserPromise = (async () => {
+    // 3. Simpan Akun Sub Admin Umum (Halaman & Produk)
+    let subAdminUserId = `USR_SUB_${Date.now().toString().slice(-6)}`;
+    const saveSubAdminPromise = (async () => {
       try {
         const { data: insertedUser, error: insertErr } = await supabase
           .from('users')
           .insert({
-            email: cleanEmail,
-            password_hash: hashedPassword,
-            name: data.coordinatorName.trim(),
-            phone: data.coordinatorPhone?.trim() || '',
+            email: cleanSubAdminEmail,
+            password_hash: hashedSubAdminPassword,
+            name: subAdminName,
+            phone: subAdminPhone,
             role: 'sub_admin',
             community_id: commId,
             community_name: newComm.name,
@@ -213,10 +241,9 @@ class CommunityService {
           .single();
 
         if (!insertErr && insertedUser) {
-          userId = insertedUser.id;
-          console.log(`[communityService] Akun Sub-Admin ${cleanEmail} (${userId}) berhasil dibuat di Supabase!`);
+          subAdminUserId = insertedUser.id;
+          console.log(`[communityService] Akun Sub-Admin Umum ${cleanSubAdminEmail} (${subAdminUserId}) berhasil dibuat di Supabase!`);
         } else if (insertErr) {
-          // Jika email sudah terdaftar (misal user lama dipromosikan jadi sub-admin organisasi)
           if (
             insertErr.code === '23505' ||
             insertErr.message?.includes('duplicate key') ||
@@ -228,67 +255,154 @@ class CommunityService {
                 role: 'sub_admin',
                 community_id: commId,
                 community_name: newComm.name,
-                password_hash: hashedPassword,
+                password_hash: hashedSubAdminPassword,
                 updated_at: new Date().toISOString(),
               })
-              .eq('email', cleanEmail)
+              .eq('email', cleanSubAdminEmail)
               .select()
               .single();
 
-            if (updatedUser) userId = updatedUser.id;
-            console.log(`[communityService] Akun ${cleanEmail} berhasil dipromosikan menjadi Sub-Admin organisasi.`);
+            if (updatedUser) subAdminUserId = updatedUser.id;
+            console.log(`[communityService] Akun ${cleanSubAdminEmail} berhasil diperbarui sebagai Sub-Admin Umum.`);
           } else {
             console.warn('[communityService] Warning insert sub_admin ke Supabase:', insertErr.message);
           }
         }
       } catch (e) {
-        console.warn('[communityService] Exception saat insert sub_admin ke DB:', e);
+        console.warn('[communityService] Exception saat simpan sub_admin ke DB:', e);
       }
     })();
 
+    // 4. Simpan Akun Koordinator Toko jika emailnya berbeda
+    let coordUserId = `USR_COORD_${Date.now().toString().slice(-6)}`;
+    const isSameAccount = cleanCoordEmail === cleanSubAdminEmail;
+    const saveCoordPromise = isSameAccount
+      ? Promise.resolve()
+      : (async () => {
+          try {
+            const { data: insertedUser, error: insertErr } = await supabase
+              .from('users')
+              .insert({
+                email: cleanCoordEmail,
+                password_hash: hashedCoordPassword,
+                name: coordName,
+                phone: coordPhone,
+                role: 'community_admin',
+                community_id: commId,
+                community_name: newComm.name,
+                updated_at: new Date().toISOString(),
+              })
+              .select()
+              .single();
+
+            if (!insertErr && insertedUser) {
+              coordUserId = insertedUser.id;
+              console.log(`[communityService] Akun Koordinator Toko ${cleanCoordEmail} (${coordUserId}) berhasil dibuat di Supabase!`);
+            } else if (insertErr) {
+              if (
+                insertErr.code === '23505' ||
+                insertErr.message?.includes('duplicate key') ||
+                insertErr.message?.includes('users_email_key')
+              ) {
+                const { data: updatedUser } = await supabase
+                  .from('users')
+                  .update({
+                    role: 'community_admin',
+                    community_id: commId,
+                    community_name: newComm.name,
+                    password_hash: hashedCoordPassword,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('email', cleanCoordEmail)
+                  .select()
+                  .single();
+
+                if (updatedUser) coordUserId = updatedUser.id;
+                console.log(`[communityService] Akun ${cleanCoordEmail} berhasil diperbarui sebagai Koordinator Toko.`);
+              } else {
+                console.warn('[communityService] Warning insert koordinator ke Supabase:', insertErr.message);
+              }
+            }
+          } catch (e) {
+            console.warn('[communityService] Exception saat simpan koordinator ke DB:', e);
+          }
+        })();
+
     // Eksekusi paralel dengan batas waktu timeout maks 5 detik agar modal tidak menggantung
     await Promise.race([
-      Promise.allSettled([saveCommunityPromise, saveUserPromise]),
+      Promise.allSettled([saveCommunityPromise, saveSubAdminPromise, saveCoordPromise]),
       new Promise((resolve) => setTimeout(resolve, 5000)),
     ]);
 
-    const createdUser: User = {
-      id: userId,
-      name: data.coordinatorName.trim(),
-      email: cleanEmail,
-      phoneWhatsApp: data.coordinatorPhone?.trim() || '',
+    const createdSubAdminUser: User = {
+      id: subAdminUserId,
+      name: subAdminName,
+      email: cleanSubAdminEmail,
+      phoneWhatsApp: subAdminPhone,
       role: 'sub_admin',
       communityId: commId,
       communityName: newComm.name,
       createdAt: new Date().toISOString(),
     };
 
-    // 4. Sinkronkan ke cache lokal agar bisa login instan
+    let createdCoordUser: User | undefined = undefined;
+    if (!isSameAccount) {
+      createdCoordUser = {
+        id: coordUserId,
+        name: coordName,
+        email: cleanCoordEmail,
+        phoneWhatsApp: coordPhone,
+        role: 'community_admin',
+        communityId: commId,
+        communityName: newComm.name,
+        createdAt: new Date().toISOString(),
+      };
+    }
+
+    // 5. Sinkronkan ke cache lokal agar bisa login instan
     try {
       const accountsKey = 'microcms_accounts_v1';
       const rawAccounts = localStorage.getItem(accountsKey);
       let accounts: any[] = rawAccounts ? JSON.parse(rawAccounts) : [];
-      accounts = accounts.filter((a) => a.email.toLowerCase() !== cleanEmail);
+      accounts = accounts.filter(
+        (a) => a.email.toLowerCase() !== cleanSubAdminEmail && a.email.toLowerCase() !== cleanCoordEmail
+      );
       accounts.push({
-        id: userId,
-        email: cleanEmail,
-        password: hashedPassword,
-        user: createdUser,
+        id: subAdminUserId,
+        email: cleanSubAdminEmail,
+        password: hashedSubAdminPassword,
+        user: createdSubAdminUser,
         merchant: {
-          id: `merch-${userId}`,
-          userId: userId,
+          id: `merch-${subAdminUserId}`,
+          userId: subAdminUserId,
           storeId: '',
           plan: 'premium',
           isVerified: true,
         },
         storeId: '',
       });
+      if (!isSameAccount && createdCoordUser) {
+        accounts.push({
+          id: coordUserId,
+          email: cleanCoordEmail,
+          password: hashedCoordPassword,
+          user: createdCoordUser,
+          merchant: {
+            id: `merch-${coordUserId}`,
+            userId: coordUserId,
+            storeId: '',
+            plan: 'premium',
+            isVerified: true,
+          },
+          storeId: '',
+        });
+      }
       localStorage.setItem(accountsKey, JSON.stringify(accounts));
     } catch (e) {
       console.warn('[communityService] Gagal update cache akun lokal:', e);
     }
 
-    return { community: newComm, user: createdUser };
+    return { community: newComm, user: createdSubAdminUser, coordinatorUser: createdCoordUser };
   }
 
   public async updateCommunity(id: string, updates: Partial<Community>): Promise<Community> {
@@ -311,6 +425,9 @@ class CommunityService {
       if (updates.name !== undefined) dbUpdates.name = updates.name.trim();
       if (updates.slug !== undefined) dbUpdates.slug = updates.slug.trim();
       if (updates.description !== undefined) dbUpdates.description = updates.description.trim();
+      if (updates.subAdminName !== undefined) dbUpdates.sub_admin_name = updates.subAdminName.trim();
+      if (updates.subAdminEmail !== undefined) dbUpdates.sub_admin_email = updates.subAdminEmail.trim();
+      if (updates.subAdminPhone !== undefined) dbUpdates.sub_admin_phone = updates.subAdminPhone.trim();
       if (updates.coordinatorName !== undefined) dbUpdates.coordinator_name = updates.coordinatorName.trim();
       if (updates.coordinatorEmail !== undefined) dbUpdates.coordinator_email = updates.coordinatorEmail.trim();
       if (updates.coordinatorPhone !== undefined) dbUpdates.coordinator_phone = updates.coordinatorPhone.trim();
@@ -321,17 +438,23 @@ class CommunityService {
 
       await supabase.from('communities').update(dbUpdates).eq('id', id);
 
-      // Sinkronkan nama koordinator / phone / nama organisasi ke tabel users
-      if (updates.coordinatorName || updates.coordinatorPhone !== undefined || updates.name) {
-        const userUpdates: any = { updated_at: new Date().toISOString() };
-        if (updates.coordinatorName) userUpdates.name = updates.coordinatorName.trim();
-        if (updates.coordinatorPhone !== undefined) userUpdates.phone = updates.coordinatorPhone.trim();
-        if (updates.name) userUpdates.community_name = updates.name.trim();
-        await supabase.from('users').update(userUpdates).eq('community_id', id);
+      // Sinkronkan nama sub admin / koordinator / phone / nama organisasi ke tabel users
+      if (updates.subAdminEmail && (updates.subAdminName || updates.subAdminPhone !== undefined)) {
+        const subUpdates: any = { updated_at: new Date().toISOString() };
+        if (updates.subAdminName) subUpdates.name = updates.subAdminName.trim();
+        if (updates.subAdminPhone !== undefined) subUpdates.phone = updates.subAdminPhone.trim();
+        await supabase.from('users').update(subUpdates).eq('email', updates.subAdminEmail.toLowerCase().trim());
       }
 
-      // Sinkronkan nama organisasi ke toko-toko yang terikat jika nama berubah
+      if (updates.coordinatorEmail && (updates.coordinatorName || updates.coordinatorPhone !== undefined)) {
+        const coordUpdates: any = { updated_at: new Date().toISOString() };
+        if (updates.coordinatorName) coordUpdates.name = updates.coordinatorName.trim();
+        if (updates.coordinatorPhone !== undefined) coordUpdates.phone = updates.coordinatorPhone.trim();
+        await supabase.from('users').update(coordUpdates).eq('email', updates.coordinatorEmail.toLowerCase().trim());
+      }
+
       if (updates.name) {
+        await supabase.from('users').update({ community_name: updates.name.trim() }).eq('community_id', id);
         await supabase.from('stores').update({ community_name: updates.name.trim() }).eq('community_id', id);
       }
     } catch (e) {
