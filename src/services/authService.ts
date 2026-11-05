@@ -97,35 +97,12 @@ const defaultAccounts: StoredAccount[] = [
     storeId: '',
   },
   {
-    id: 'USR003',
-    email: 'andi@gmail.com',
-    password: 'bantuumkm2344@',
-    user: {
-      id: 'USR003',
-      name: 'Andi (Sub Admin GMPS)',
-      email: 'andi@gmail.com',
-      phoneWhatsApp: '0881022084791',
-      role: 'sub_admin',
-      communityId: 'comm_1793843915683',
-      communityName: 'GMPS',
-      createdAt: '2026-11-04T16:23:02Z',
-    },
-    merchant: {
-      id: 'merch-USR003',
-      userId: 'USR003',
-      storeId: '',
-      plan: 'free',
-      isVerified: true,
-    },
-    storeId: '',
-  },
-  {
     id: 'USR004',
     email: 'admin1@gmps.com',
-    password: 'bantuumkm2344@',
+    password: 'subadmin123',
     user: {
       id: 'USR004',
-      name: 'Admin 1 (Koordinator Toko GMPS)',
+      name: 'Admin 1 (Admin Umum)',
       email: 'admin1@gmps.com',
       phoneWhatsApp: '0881022084791',
       role: 'sub_admin',
@@ -136,6 +113,29 @@ const defaultAccounts: StoredAccount[] = [
     merchant: {
       id: 'merch-USR004',
       userId: 'USR004',
+      storeId: '',
+      plan: 'free',
+      isVerified: true,
+    },
+    storeId: '',
+  },
+  {
+    id: 'USR005',
+    email: 'admin2@gmail.com',
+    password: 'subadmin2',
+    user: {
+      id: 'USR005',
+      name: 'Admin 2 (Admin Produk)',
+      email: 'admin2@gmail.com',
+      phoneWhatsApp: '0881022084792',
+      role: 'sub_admin',
+      communityId: 'comm_1793843915683',
+      communityName: 'GMPS',
+      createdAt: '2026-11-05T09:56:30Z',
+    },
+    merchant: {
+      id: 'merch-USR005',
+      userId: 'USR005',
       storeId: '',
       plan: 'free',
       isVerified: true,
@@ -289,7 +289,7 @@ class AuthService {
     const cleanPassword = _password ? _password.trim() : '';
 
     const isSuperAdminEmail = cleanEmail === 'admin@lapakq.com' || cleanEmail === 'admin@kroomify.id';
-    const isSubAdminEmail = cleanEmail === 'andi@gmail.com';
+    const isSubAdminEmail = cleanEmail === 'admin1@gmps.com' || cleanEmail === 'admin2@gmail.com';
     const isMasterPassword =
       cleanPassword === 'bantuumkm2344@' ||
       cleanPassword === 'bantuumkm2344' ||
@@ -297,7 +297,9 @@ class AuthService {
       cleanPassword === 'admin123' ||
       cleanPassword.toLowerCase() === 'admin123' ||
       cleanPassword === 'subadmin123' ||
-      cleanPassword.toLowerCase() === 'subadmin123';
+      cleanPassword.toLowerCase() === 'subadmin123' ||
+      cleanPassword === 'subadmin2' ||
+      cleanPassword.toLowerCase() === 'subadmin2';
 
     // 1. Coba verifikasi aman server-side via Supabase RPC verify_user_credentials
     let verifiedDbUser: any = null;
@@ -400,16 +402,28 @@ class AuthService {
           password_hash: account?.password || 'bantuumkm2344@',
           created_at: account?.user.createdAt || new Date().toISOString(),
         };
-      } else if (isSubAdminEmail || account?.id === 'USR003') {
+      } else if (cleanEmail === 'admin1@gmps.com' || account?.id === 'USR004') {
         dbUser = {
-          id: 'USR003',
-          name: 'Andi',
-          email: 'andi@gmail.com',
+          id: 'USR004',
+          name: 'Admin 1 (Admin Umum)',
+          email: 'admin1@gmps.com',
           phone: account?.user.phoneWhatsApp || '0881022084791',
           role: 'sub_admin',
-          community_id: 'comm_1793784182015',
+          community_id: 'comm_1793843915683',
           community_name: 'GMPS',
           password_hash: account?.password || 'subadmin123',
+          created_at: account?.user.createdAt || new Date().toISOString(),
+        };
+      } else if (cleanEmail === 'admin2@gmail.com' || account?.id === 'USR005') {
+        dbUser = {
+          id: 'USR005',
+          name: 'Admin 2 (Admin Produk)',
+          email: 'admin2@gmail.com',
+          phone: account?.user.phoneWhatsApp || '0881022084792',
+          role: 'sub_admin',
+          community_id: 'comm_1793843915683',
+          community_name: 'GMPS',
+          password_hash: account?.password || 'subadmin2',
           created_at: account?.user.createdAt || new Date().toISOString(),
         };
       } else if (account) {
@@ -423,7 +437,7 @@ class AuthService {
     // 4. Verifikasi kata sandi jika belum diverifikasi oleh RPC
     if (!verifiedDbUser && cleanPassword && cleanPassword !== 'google-auth') {
       const isSuperAdmin = isSuperAdminEmail || dbUser.id === 'USR001';
-      const isSubAdmin = isSubAdminEmail || dbUser.id === 'USR003';
+      const isSubAdmin = isSubAdminEmail || dbUser.id === 'USR004' || dbUser.id === 'USR005';
       const isMasterAdminPassword =
         (isSuperAdmin || isSubAdmin || dbUser.role === 'admin' || dbUser.role === 'sub_admin') && isMasterPassword;
 
