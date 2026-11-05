@@ -78,28 +78,23 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   const isSubAdmin = isSubAdminUmum || isSubAdminProduk || loggedInUser?.role === 'sub_admin';
 
-  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
-    if (isSubAdminUmum) return 'communities';
-    if (isSubAdminProduk) return 'stores';
-    if (isSubAdmin) return 'communities';
-    return 'overview';
-  });
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
 
   // Hak akses ketat berdasarkan peran sub-admin:
-  // - Admin Umum: khusus mengelola tampilan/profil halaman komunitas ('communities')
-  // - Sub Admin Produk: khusus mengelola toko binaan ('stores') dan produk ('products')
+  // - Admin Umum: Dashboard ('overview') & Halaman Komunitas ('communities')
+  // - Sub Admin Produk: Dashboard ('overview'), Toko Binaan ('stores'), dan Produk ('products')
   useEffect(() => {
     if (isSubAdminUmum) {
-      if (activeTab !== 'communities') {
-        setActiveTab('communities');
+      if (activeTab !== 'overview' && activeTab !== 'communities') {
+        setActiveTab('overview');
       }
     } else if (isSubAdminProduk) {
-      if (activeTab !== 'stores' && activeTab !== 'products') {
-        setActiveTab('stores');
+      if (activeTab !== 'overview' && activeTab !== 'stores' && activeTab !== 'products') {
+        setActiveTab('overview');
       }
     } else if (isSubAdmin) {
-      if (activeTab !== 'communities' && activeTab !== 'stores' && activeTab !== 'products') {
-        setActiveTab('communities');
+      if (activeTab !== 'overview' && activeTab !== 'communities' && activeTab !== 'stores' && activeTab !== 'products') {
+        setActiveTab('overview');
       }
     }
   }, [isSubAdminUmum, isSubAdminProduk, isSubAdmin, activeTab]);
@@ -501,6 +496,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const navItems: AdminNavItem[] = isSubAdminUmum
     ? [
         {
+          id: 'overview',
+          label: language === 'en' ? 'Dashboard' : 'Dashboard',
+          icon: LayoutDashboard,
+        },
+        {
           id: 'communities',
           label: language === 'en' ? 'Community Page' : 'Halaman Komunitas',
           icon: Users,
@@ -508,6 +508,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       ]
     : isSubAdminProduk
     ? [
+        {
+          id: 'overview',
+          label: language === 'en' ? 'Dashboard' : 'Dashboard',
+          icon: LayoutDashboard,
+        },
         {
           id: 'stores',
           label: language === 'en' ? 'Managed Stores' : 'Kelola Toko Binaan',
@@ -522,6 +527,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       ]
     : isSubAdmin
     ? [
+        {
+          id: 'overview',
+          label: language === 'en' ? 'Dashboard' : 'Dashboard',
+          icon: LayoutDashboard,
+        },
         {
           id: 'stores',
           label: language === 'en' ? 'Managed Stores' : 'Kelola Toko Binaan',
@@ -540,7 +550,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         },
       ]
     : [
-        { id: 'overview', label: language === 'en' ? 'Overview' : 'Ringkasan', icon: LayoutDashboard },
+        { id: 'overview', label: language === 'en' ? 'Dashboard' : 'Dashboard', icon: LayoutDashboard },
         { id: 'stores', label: language === 'en' ? 'Manage Stores' : 'Kelola Toko', icon: StoreIcon, count: stores.length },
         { id: 'products', label: language === 'en' ? 'Products' : 'Produk', icon: Package },
         { id: 'communities', label: language === 'en' ? 'Communities' : 'Komunitas', icon: Users },
@@ -615,6 +625,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               setActiveTab={setActiveTab}
               language={language}
               isSubAdmin={isSubAdmin}
+              isSubAdminUmum={isSubAdminUmum}
+              isSubAdminProduk={isSubAdminProduk}
               communityName={loggedInUser?.communityName}
             />
           )}

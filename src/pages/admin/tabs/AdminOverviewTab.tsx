@@ -20,6 +20,8 @@ interface AdminOverviewTabProps {
   setActiveTab: (tab: AdminTab) => void;
   language: string;
   isSubAdmin?: boolean;
+  isSubAdminUmum?: boolean;
+  isSubAdminProduk?: boolean;
   communityName?: string;
 }
 
@@ -32,6 +34,8 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
   setActiveTab,
   language,
   isSubAdmin = false,
+  isSubAdminUmum = false,
+  isSubAdminProduk = false,
   communityName,
 }) => {
   const isEn = language === 'en';
@@ -45,10 +49,21 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
             <LayoutDashboard className="w-5 h-5 text-[#66000E]" />
             <span>
               {isSubAdmin
-                ? (communityName ? `Ringkasan Lapak — ${communityName}` : (isEn ? 'Member Stores Overview' : 'Ringkasan Lapak Binaan'))
-                : (isEn ? 'Platform Overview' : 'Ringkasan Platform')}
+                ? (isSubAdminUmum
+                    ? (communityName ? `Dashboard Admin Umum — ${communityName}` : 'Dashboard Admin Umum')
+                    : isSubAdminProduk
+                    ? (communityName ? `Dashboard Toko & Produk — ${communityName}` : 'Dashboard Toko & Produk')
+                    : (communityName ? `Dashboard — ${communityName}` : 'Dashboard Komunitas'))
+                : (isEn ? 'Platform Dashboard' : 'Dashboard Ringkasan Platform')}
             </span>
           </h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {isSubAdmin
+              ? (isSubAdminUmum
+                  ? 'Ringkasan performa dan keanggotaan toko binaan naungan komunitas Anda.'
+                  : 'Ringkasan operasional toko binaan, pesanan GMV, dan katalog produk.')
+              : (isEn ? 'High-level platform metrics, stores, GMV, and payouts.' : 'Ringkasan metrik platform, toko, transaksi GMV, dan pencairan dana.')}
+          </p>
         </div>
       </div>
 
@@ -146,12 +161,14 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
             <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
               {language === 'en' ? 'Recent Payout Requests' : 'Permintaan Pencairan Terbaru'}
             </h3>
-            <button
-              onClick={() => setActiveTab('withdrawals')}
-              className="text-xs font-medium text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
-            >
-              {language === 'en' ? 'View All' : 'Lihat Semua'} <ChevronRight className="w-3 h-3" />
-            </button>
+            {!isSubAdmin && (
+              <button
+                onClick={() => setActiveTab('withdrawals')}
+                className="text-xs font-medium text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
+              >
+                {language === 'en' ? 'View All' : 'Lihat Semua'} <ChevronRight className="w-3 h-3" />
+              </button>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -205,10 +222,13 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
               {language === 'en' ? 'Store Status' : 'Status Operasional Toko'}
             </h3>
             <button
-              onClick={() => setActiveTab('stores')}
+              onClick={() => setActiveTab(isSubAdminUmum ? 'communities' : 'stores')}
               className="text-xs font-medium text-red-600 hover:underline flex items-center gap-0.5 cursor-pointer"
             >
-              {language === 'en' ? 'Manage Stores' : 'Kelola Toko'} <ChevronRight className="w-3 h-3" />
+              {isSubAdminUmum
+                ? (language === 'en' ? 'Community Page' : 'Halaman Komunitas')
+                : (language === 'en' ? 'Manage Stores' : 'Kelola Toko')}{' '}
+              <ChevronRight className="w-3 h-3" />
             </button>
           </div>
 
