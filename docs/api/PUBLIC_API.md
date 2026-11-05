@@ -23,7 +23,7 @@ Dokumentasi resmi integrasi antarmuka pemrograman aplikasi (**RESTful API**) Lap
 
 | Lingkungan | Base URL | Keterangan |
 |---|---|---|
-| **Production (Live Server)** | `https://lapakq.com` atau `https://kroomify.kroombox.com` | Base URL resmi server produksi |
+| **Production (Live Server)** | `https://lapakq.com` | Base URL resmi server produksi LapakQ |
 | **Development (Lokal)** | `http://localhost:5055` | Base URL server Express lokal |
 
 Semua endpoint API v1 berada di bawah prefix: **`/api/v1`**.
@@ -257,7 +257,7 @@ curl -X GET "https://lapakq.com/api/v1/stores?communitySlug=gmps&isPublished=tru
       "communityName": "GMPS",
       "isPublished": true,
       "customDomain": null,
-      "storeUrl": "https://kopi-robusta-garut.kroombox.com",
+      "storeUrl": "https://kopi-robusta-garut.lapakq.com",
       "createdAt": "2026-10-01T08:00:00.000Z"
     }
   ],

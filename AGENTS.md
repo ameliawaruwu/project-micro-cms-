@@ -1,7 +1,9 @@
-# AGENTS.md — Micro CMS Kroomify (Windows Dev & Kroombox Panel MCP Guide)
+# AGENTS.md — LapakQ (Windows Dev, LapakQ Platform & Panel Guide)
 
 > **PANDUAN OPERASIONAL & ATURAN PENGEMBANGAN AI AGENT**  
-> Berkas ini adalah **single source of truth** bagi AI Agent (Cursor, Claude Code, Cline, Antigravity CLI `agy`, dll.) yang mendampingi developer yang bekerja di lingkungan **Windows**, mengelola **Micro CMS Kroomify**, dan berinteraksi dengan server Synology NAS melalui **`kroomboxpanel-mcp`**.
+> Berkas ini adalah **single source of truth** bagi AI Agent (Cursor, Claude Code, Cline, Antigravity CLI `agy`, dll.) yang mendampingi developer yang bekerja di lingkungan **Windows**, mengelola platform **LapakQ** (`lapakq.com`), dan berinteraksi dengan server Synology NAS melalui **`kroomboxpanel-mcp`**.  
+>  
+> ⚠️ **CATATAN MIGRASI RESMI:** Seluruh pembaruan dan rilis telah dialihkan sepenuhnya ke **LapakQ** (`lapakq.com`). Jangan lagi mengarahkan rilis publik ke domain Kroomify lama. Repositori kode utama adalah `origin` (`project-pkm-micro-e-commerce`).
 
 ---
 
@@ -44,8 +46,8 @@
 | **KolabPanel Site ID** | **`s_1789953949220_1ee44e`** | **Wajib dipakai pada seluruh parameter `site_id` tool MCP** |
 | **User Pemilik Situs** | `akun@kroombox.com` (`u_1789869733181`) | Akun tenant di KolabPanel |
 | **Direktori Proyek di NAS** | `/volume1/web/www/KOLABPANEL_USERS/akun@kroombox.com/Micro_CMS_Kromify` | Root working directory aplikasi |
-| **Domain Utama CMS** | `https://kroomify.kroombox.com` | Dashboard admin & merchant login |
-| **Subdomain Toko Merchant** | `https://<slug>.kroombox.com` | Storefront publik langsung tanpa login CMS |
+| **Domain Utama CMS** | `https://lapakq.com` | Dashboard admin & merchant login (Produksi) |
+| **Subdomain Toko Merchant** | `https://<slug>.lapakq.com` | Storefront publik langsung tanpa login CMS |
 | **Backend Express Daemon** | PM2 Process: `kroomify-api` (Port `5055`) | Runtime Node.js untuk API dan deploy controller |
 | **Gateway Reverse Proxy** | Nginx DSM (Port `8080`) | Meneruskan traffic publik ke static webroot atau port 5055 |
 | **Cloudflare Anycast Tunnel**| Tunnel ID: `19956650-74b4-4479-9c22-79da749256da` | Ingress edge routing publik ke `http://localhost:8080` |

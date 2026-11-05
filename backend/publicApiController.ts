@@ -208,7 +208,7 @@ function sanitizeStore(row: any) {
     communityName: row.community_name || null,
     isPublished: Boolean(row.is_published),
     customDomain: row.custom_domain || null,
-    storeUrl: row.custom_domain ? `https://${row.custom_domain}` : `https://${row.slug}.kroombox.com`,
+    storeUrl: row.custom_domain ? `https://${row.custom_domain}` : `https://${row.slug}.lapakq.com`,
     createdAt: row.created_at,
   };
 }

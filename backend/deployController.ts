@@ -21,7 +21,7 @@ function sanitizeError(msg: any): string {
  */
 deployRouter.post('/publish', async (req: Request, res: Response) => {
   try {
-    const { storeId, slug, baseDomain = 'kroombox.com', customDomain, store, products = [] } = req.body;
+    const { storeId, slug, baseDomain = 'lapakq.com', customDomain, store, products = [] } = req.body;
 
     const plan = ((store && store.plan) || '').toLowerCase();
     const isPaidPlan = ['personal', 'community', 'corporate', 'startup', 'premium'].includes(plan);
@@ -41,7 +41,7 @@ deployRouter.post('/publish', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Slug toko tidak valid' });
     }
 
-    const cleanBaseDomain = (baseDomain || 'kroombox.com').toLowerCase().trim();
+    const cleanBaseDomain = (baseDomain || 'lapakq.com').toLowerCase().trim();
     const primaryDomain = `${cleanSlug}.${cleanBaseDomain}`;
 
     const serverNames: string[] = [primaryDomain];
@@ -144,7 +144,7 @@ deployRouter.post('/publish', async (req: Request, res: Response) => {
  */
 deployRouter.post('/unpublish', async (req: Request, res: Response) => {
   try {
-    const { slug, baseDomain = 'kroombox.com', customDomain } = req.body;
+    const { slug, baseDomain = 'lapakq.com', customDomain } = req.body;
     if (!slug) return res.status(400).json({ error: 'Slug toko wajib diisi' });
 
     const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '');
@@ -178,7 +178,7 @@ deployRouter.post('/unpublish', async (req: Request, res: Response) => {
 deployRouter.get('/status/:slug', async (req: Request, res: Response) => {
   const { slug } = req.params;
   const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '');
-  const baseDomain = (req.query.baseDomain as string) || 'kroombox.com';
+  const baseDomain = (req.query.baseDomain as string) || 'lapakq.com';
   const primaryDomain = `${cleanSlug}.${baseDomain}`;
 
   const routes = await cloudflareDeployer.getTunnelRoutes();
