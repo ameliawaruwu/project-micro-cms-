@@ -419,10 +419,10 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         name: editForm.name.trim(),
         description: editForm.description.trim(),
         subAdminName: editForm.subAdminName.trim(),
-        subAdminEmail: editForm.subAdminEmail.trim(),
+        subAdminEmail: (activeCommunity.subAdminEmail || editForm.subAdminEmail).trim(),
         subAdminPhone: editForm.subAdminPhone.trim(),
         coordinatorName: editForm.coordinatorName.trim(),
-        coordinatorEmail: editForm.coordinatorEmail.trim(),
+        coordinatorEmail: (activeCommunity.coordinatorEmail || editForm.coordinatorEmail).trim(),
         coordinatorPhone: editForm.coordinatorPhone.trim(),
         turnoverFeePercent: Number(editForm.turnoverFeePercent) || 2.5,
         status: editForm.status,
@@ -1612,12 +1612,19 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login Sub-Admin Umum</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-semibold text-gray-700 text-[11px]">Email Login Sub-Admin Umum</label>
+                      <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
+                        <Lock className="w-2.5 h-2.5" />
+                        Permanen (Tidak dapat diubah)
+                      </span>
+                    </div>
                     <input
                       type="email"
+                      readOnly
+                      disabled
                       value={editForm.subAdminEmail}
-                      onChange={(e) => setEditForm({ ...editForm, subAdminEmail: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
+                      className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-500 text-xs font-mono cursor-not-allowed select-all"
                     />
                   </div>
                 </div>
@@ -1660,13 +1667,19 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login Sub-Admin Produk *</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-semibold text-gray-700 text-[11px]">Email Login Sub-Admin Produk</label>
+                      <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
+                        <Lock className="w-2.5 h-2.5" />
+                        Permanen (Tidak dapat diubah)
+                      </span>
+                    </div>
                     <input
                       type="email"
-                      required
+                      readOnly
+                      disabled
                       value={editForm.coordinatorEmail}
-                      onChange={(e) => setEditForm({ ...editForm, coordinatorEmail: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
+                      className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-500 text-xs font-mono cursor-not-allowed select-all"
                     />
                   </div>
                 </div>
