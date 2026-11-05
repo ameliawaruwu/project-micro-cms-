@@ -24,7 +24,6 @@ import {
   Trash2,
   Check,
   UserCheck,
-  KeyRound,
   Copy,
   Mail,
   Phone,
@@ -645,11 +644,15 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   <span>ID: {activeCommunity.id}</span>
                   <span>•</span>
                   <span>Slug: /{activeCommunity.slug}</span>
-                  <span>•</span>
-                  <span className="font-sans font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
-                    <KeyRound className="w-3 h-3 text-emerald-600" />
-                    Kode Registrasi: <strong>{activeCommunity.slug?.toUpperCase() || activeCommunity.name.toUpperCase()}</strong>
-                  </span>
+                  {activeCommunity.baseDomain && (
+                    <>
+                      <span>•</span>
+                      <span className="text-blue-600 font-sans font-medium flex items-center gap-1">
+                        <Globe className="w-3 h-3" />
+                        {activeCommunity.baseDomain}
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -664,43 +667,10 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             </p>
           )}
 
-          {/* Banner Kode Registrasi Anggota Organisasi */}
-          <div className="p-4 rounded-xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-white to-emerald-50/50 shadow-xs space-y-2">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <span className="text-emerald-900 font-bold text-xs flex items-center gap-1.5">
-                  <KeyRound className="w-4 h-4 text-emerald-700" />
-                  <span>Kode Undangan / Registrasi Lapak Anggota:</span>
-                </span>
-                <p className="text-[11.5px] text-gray-600 leading-relaxed">
-                  Bagikan kode ini ke anggota komunitas Anda. Saat anggota mendaftar di form registrasi dan memasukkan kode ini, toko mereka otomatis masuk ke naungan <strong>{activeCommunity.name}</strong> tanpa perlu ditautkan manual oleh admin.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="px-3.5 py-2 rounded-xl bg-emerald-100 border-2 border-emerald-400 font-mono font-black text-base text-emerald-950 tracking-wider select-all shadow-xs">
-                  {activeCommunity.slug?.toUpperCase() || activeCommunity.name.toUpperCase()}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const code = activeCommunity.slug?.toUpperCase() || activeCommunity.name.toUpperCase();
-                    navigator.clipboard.writeText(code);
-                    if (onShowToast) onShowToast(`Kode "${code}" berhasil disalin!`);
-                  }}
-                  className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Salin Kode</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Grid Informasi Organisasi & Koordinator */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div className="p-4 rounded-xl border border-gray-200 space-y-2 bg-gray-50/50">
-              <span className="text-gray-500 font-semibold block">Koordinator / Sub-Admin:</span>
+              <span className="text-gray-500 font-semibold block">Admin Penanggung Jawab Toko (Koordinator):</span>
               <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
                 <UserCheck className="w-4 h-4 text-blue-600" />
                 <span>{activeCommunity.coordinatorName}</span>

@@ -3,7 +3,6 @@ import { storeService } from './storeService';
 import { productService } from './productService';
 import { supabase } from './supabaseClient';
 import { idService } from './idService';
-import { referralService } from './referralService';
 
 const AUTH_USER_KEY = 'microcms_auth_user';
 const AUTH_MERCHANT_KEY = 'microcms_auth_merchant';
