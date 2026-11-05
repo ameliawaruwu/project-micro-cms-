@@ -424,8 +424,10 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         coordinatorName: editForm.coordinatorName.trim(),
         coordinatorEmail: (activeCommunity.coordinatorEmail || editForm.coordinatorEmail).trim(),
         coordinatorPhone: editForm.coordinatorPhone.trim(),
-        turnoverFeePercent: Number(editForm.turnoverFeePercent) || 2.5,
-        status: editForm.status,
+        turnoverFeePercent: isSubAdmin
+          ? (activeCommunity.turnoverFeePercent ?? 2.5)
+          : (Number(editForm.turnoverFeePercent) || 2.5),
+        status: isSubAdmin ? activeCommunity.status : editForm.status,
         baseDomain: editForm.baseDomain.trim() || undefined,
       });
 
@@ -1550,27 +1552,62 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Status Komunitas</label>
-                      <select
-                        value={editForm.status}
-                        onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
-                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                      >
-                        <option value="active">Aktif</option>
-                        <option value="inactive">Nonaktif</option>
-                      </select>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-semibold text-gray-700 text-[11px]">Status Komunitas</label>
+                        {isSubAdmin && (
+                          <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
+                            <Lock className="w-2.5 h-2.5" />
+                            Khusus Super Admin
+                          </span>
+                        )}
+                      </div>
+                      {isSubAdmin ? (
+                        <div className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-600 text-xs flex items-center justify-between cursor-not-allowed">
+                          <span className="font-semibold">{editForm.status === 'active' ? 'Aktif' : 'Nonaktif'}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${editForm.status === 'active' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
+                            {editForm.status === 'active' ? 'Organisasi Aktif' : 'Organisasi Nonaktif'}
+                          </span>
+                        </div>
+                      ) : (
+                        <select
+                          value={editForm.status}
+                          onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                        >
+                          <option value="active">Aktif</option>
+                          <option value="inactive">Nonaktif</option>
+                        </select>
+                      )}
                     </div>
+
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Fee Omset (%)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="50"
-                        value={editForm.turnoverFeePercent}
-                        onChange={(e) => setEditForm({ ...editForm, turnoverFeePercent: Number(e.target.value) })}
-                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                      />
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-semibold text-gray-700 text-[11px]">Fee Omset (%)</label>
+                        {isSubAdmin && (
+                          <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
+                            <Lock className="w-2.5 h-2.5" />
+                            Khusus Super Admin
+                          </span>
+                        )}
+                      </div>
+                      {isSubAdmin ? (
+                        <div className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-600 text-xs flex items-center justify-between cursor-not-allowed">
+                          <span className="font-semibold">{editForm.turnoverFeePercent}% Omset</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                            Ditetapkan Platform
+                          </span>
+                        </div>
+                      ) : (
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="50"
+                          value={editForm.turnoverFeePercent}
+                          onChange={(e) => setEditForm({ ...editForm, turnoverFeePercent: Number(e.target.value) })}
+                          className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
