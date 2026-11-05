@@ -280,14 +280,89 @@ curl -X GET "https://lapakq.com/api/v1/stores?communitySlug=gmps&isPublished=tru
 curl -X GET "https://lapakq.com/api/v1/stores/kopi-robusta-garut"
 ```
 
+* **Response Contoh (HTTP 200):**
+```json
+{
+  "success": true,
+  "code": "STORE_FETCHED",
+  "message": "Detail toko berhasil diambil.",
+  "data": {
+    "id": "STR001",
+    "name": "Kopi Robusta Garut",
+    "slug": "kopi-robusta-garut",
+    "description": "Produsen kopi robusta pilihan dari perkebunan Garut.",
+    "category": "Kuliner & Kopi",
+    "tagline": "Aroma Asli Nusantara",
+    "logoUrl": "https://.../logo.png",
+    "bannerUrl": "https://.../banner.png",
+    "phoneWhatsApp": "6281234567890",
+    "city": "Garut",
+    "province": "Jawa Barat",
+    "communityId": "comm_1793843915683",
+    "communityName": "GMPS",
+    "communityMemberRef": "GMPS-2026-0001",
+    "isPublished": true,
+    "customDomain": null,
+    "storeUrl": "https://kopi-robusta-garut.lapakq.com",
+    "createdAt": "2026-10-01T08:00:00.000Z",
+    "updatedAt": "2026-11-05T07:30:00.000Z"
+  }
+}
+```
+
 ---
 
 ### 4.9. TOKO: Mengambil Katalog Produk Milik Satu Toko
 * **Method:** `GET`
 * **Path:** `/api/v1/stores/:storeIdOrSlug/products`
+* **Query Parameters:**
+  | Parameter | Tipe | Default | Keterangan |
+  |---|---|---|---|
+  | `status` | string | `"available"` | Filter status: `available`, `out_of_stock`, atau `all` |
+  | `page` | number | `1` | Nomor halaman |
+  | `limit` | number | `20` | Jumlah produk per halaman (maks 100) |
+
 * **Contoh Request:**
 ```bash
-curl -X GET "https://lapakq.com/api/v1/stores/kopi-robusta-garut/products"
+curl -X GET "https://lapakq.com/api/v1/stores/kopi-robusta-garut/products?status=available&page=1&limit=20"
+```
+
+* **Response Contoh (HTTP 200):**
+```json
+{
+  "success": true,
+  "code": "STORE_PRODUCTS_FETCHED",
+  "message": "Berhasil mengambil 1 produk untuk toko Kopi Robusta Garut.",
+  "data": [
+    {
+      "id": "PRD001",
+      "storeId": "STR001",
+      "name": "Kopi Robusta Garut Medium Roast 250g",
+      "slug": "kopi-robusta-garut-medium-roast-250g-prd001",
+      "category": "Kuliner",
+      "price": 45000,
+      "originalPrice": 55000,
+      "stock": 35,
+      "sku": "KPG-250",
+      "weightGrams": 250,
+      "imageUrl": "https://.../kopi.jpg",
+      "images": [
+        "https://.../kopi.jpg",
+        "https://.../kopi-kemasan.jpg"
+      ],
+      "status": "available",
+      "description": "Biji kopi petik merah diproses secara natural roast medium.",
+      "createdAt": "2026-10-02T09:30:00.000Z",
+      "updatedAt": "2026-11-05T07:30:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}
 ```
 
 ---
@@ -362,6 +437,36 @@ curl -X GET "https://lapakq.com/api/v1/products?communitySlug=gmps&status=availa
 * **Contoh Request:**
 ```bash
 curl -X GET "https://lapakq.com/api/v1/products/PRD001"
+```
+
+* **Response Contoh (HTTP 200):**
+```json
+{
+  "success": true,
+  "code": "PRODUCT_FETCHED",
+  "message": "Detail produk berhasil diambil.",
+  "data": {
+    "id": "PRD001",
+    "storeId": "STR001",
+    "name": "Kopi Robusta Garut Medium Roast 250g",
+    "slug": "kopi-robusta-garut-medium-roast-250g-prd001",
+    "category": "Kuliner",
+    "price": 45000,
+    "originalPrice": 55000,
+    "stock": 35,
+    "sku": "KPG-250",
+    "weightGrams": 250,
+    "imageUrl": "https://.../kopi.jpg",
+    "images": [
+      "https://.../kopi.jpg",
+      "https://.../kopi-kemasan.jpg"
+    ],
+    "status": "available",
+    "description": "Biji kopi petik merah diproses secara natural roast medium.",
+    "createdAt": "2026-10-02T09:30:00.000Z",
+    "updatedAt": "2026-11-05T07:30:00.000Z"
+  }
+}
 ```
 
 ---

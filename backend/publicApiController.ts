@@ -9,10 +9,22 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-// Supabase fallback client
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://kaveesimezonkgvhcbln.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_jMkylJ63HYD0eOus9ADuJg_6y-33Up_';
-const supabaseClient = createClient(supabaseUrl, supabaseKey);
+// Supabase fallback client (strictly from environment variables without hardcoded secrets)
+const supabaseUrl = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
+const supabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
+const supabaseClient = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseKey || 'placeholder_key'
+);
+
+const SAFE_IDENTIFIER_REGEX = /^[A-Za-z0-9_-]{1,100}$/;
+
+// In-memory rate limiting store (Poin 2.4)
+interface RateLimitBucket {
+  count: number;
+  resetAt: number;
+}
+const apiRateLimitMap = new Map<string, RateLimitBucket>();
 
 export interface ApiAuthContext {
   keyName: string;
@@ -156,6 +168,45 @@ async function requireApiKey(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+// Middleware Rate Limiting per IP (Anonim: 60 req/min) & per API Key (Partner: 300 req/min)
+function enforceRateLimit(req: Request, res: Response, next: NextFunction) {
+  const isPrivileged = Boolean(req.apiAuth?.communityId || req.apiAuth?.isMaster);
+  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown')
+    .split(',')[0]
+    .trim();
+  const apiKey = String(req.header('X-API-Key') || req.query.apiKey || req.query.api_key || '').trim();
+  const bucketKey = apiKey ? `key:${apiKey}` : `ip:${ip}`;
+
+  const maxRequests = isPrivileged ? 300 : 60;
+  const now = Date.now();
+  const windowMs = 60 * 1000;
+
+  let bucket = apiRateLimitMap.get(bucketKey);
+  if (!bucket || now > bucket.resetAt) {
+    bucket = { count: 1, resetAt: now + windowMs };
+    apiRateLimitMap.set(bucketKey, bucket);
+  } else {
+    bucket.count++;
+  }
+
+  const remaining = Math.max(0, maxRequests - bucket.count);
+  res.setHeader('X-RateLimit-Limit', maxRequests);
+  res.setHeader('X-RateLimit-Remaining', remaining);
+  res.setHeader('X-RateLimit-Reset', Math.ceil(bucket.resetAt / 1000));
+
+  if (bucket.count > maxRequests) {
+    const retryAfter = Math.ceil((bucket.resetAt - now) / 1000);
+    res.setHeader('Retry-After', retryAfter);
+    return sendError(
+      res,
+      429,
+      'RATE_LIMITED',
+      `Batas kuota request tercapai (${maxRequests} per menit). Silakan coba kembali dalam ${retryAfter} detik.`
+    );
+  }
+  next();
+}
+
 // =========================================================================
 // DATA SANITIZATION HELPERS
 // =========================================================================
@@ -206,10 +257,12 @@ function sanitizeStore(row: any) {
     province: row.province || null,
     communityId: row.community_id || null,
     communityName: row.community_name || null,
+    communityMemberRef: row.community_member_ref || null,
     isPublished: Boolean(row.is_published),
     customDomain: row.custom_domain || null,
     storeUrl: row.custom_domain ? `https://${row.custom_domain}` : `https://${row.slug}.lapakq.com`,
     createdAt: row.created_at,
+    updatedAt: row.updated_at || row.created_at,
   };
 }
 
@@ -270,6 +323,7 @@ function sanitizeProduct(row: any) {
     status: statusEnum,
     description: cleanDescription,
     createdAt: row.created_at,
+    updatedAt: row.updated_at || row.created_at,
   };
 }
 
@@ -433,7 +487,7 @@ publicApiRouter.get('/health', (_req: Request, res: Response) => {
 // =========================================================================
 // 4. ENDPOINT KOMUNITAS (GET /api/v1/communities)
 // =========================================================================
-publicApiRouter.get('/communities', requireApiKey, async (req: Request, res: Response) => {
+publicApiRouter.get('/communities', requireApiKey, enforceRateLimit, async (req: Request, res: Response) => {
   try {
     const search = String(req.query.search || '').trim().toLowerCase();
     const status = String(req.query.status || 'active').trim().toLowerCase();
@@ -525,7 +579,7 @@ publicApiRouter.get('/communities', requireApiKey, async (req: Request, res: Res
 // =========================================================================
 // 5. ENDPOINT DETAIL SATU KOMUNITAS (GET /api/v1/communities/:idOrSlug)
 // =========================================================================
-publicApiRouter.get('/communities/:id', requireApiKey, async (req: Request, res: Response) => {
+publicApiRouter.get('/communities/:id', requireApiKey, enforceRateLimit, async (req: Request, res: Response) => {
   try {
     const idOrSlug = String(req.params.id || '').trim();
     if (!idOrSlug) {
@@ -574,7 +628,7 @@ publicApiRouter.get('/communities/:id', requireApiKey, async (req: Request, res:
 // =========================================================================
 // 6. ENDPOINT TOKO DARI SATU KOMUNITAS (GET /api/v1/communities/:idOrSlug/stores)
 // =========================================================================
-publicApiRouter.get('/communities/:id/stores', requireApiKey, async (req: Request, res: Response) => {
+publicApiRouter.get('/communities/:id/stores', requireApiKey, enforceRateLimit, async (req: Request, res: Response) => {
   try {
     const idOrSlug = String(req.params.id || '').trim();
     const realCommunityId = await resolveCommunityId(idOrSlug);
@@ -658,7 +712,7 @@ publicApiRouter.get('/communities/:id/stores', requireApiKey, async (req: Reques
 // =========================================================================
 // 7. ENDPOINT PRODUK DARI SATU KOMUNITAS (GET /api/v1/communities/:idOrSlug/products)
 // =========================================================================
-publicApiRouter.get('/communities/:id/products', requireApiKey, async (req: Request, res: Response) => {
+publicApiRouter.get('/communities/:id/products', requireApiKey, enforceRateLimit, async (req: Request, res: Response) => {
   try {
     const idOrSlug = String(req.params.id || '').trim();
     const realCommunityId = await resolveCommunityId(idOrSlug);
@@ -775,7 +829,7 @@ publicApiRouter.get('/communities/:id/products', requireApiKey, async (req: Requ
 // =========================================================================
 // 8. ENDPOINT DAFTAR TOKO (GET /api/v1/stores)
 // =========================================================================
-publicApiRouter.get('/stores', requireApiKey, async (req: Request, res: Response) => {
+publicApiRouter.get('/stores', requireApiKey, enforceRateLimit, async (req: Request, res: Response) => {
   try {
     const search = String(req.query.search || '').trim().toLowerCase();
     const category = String(req.query.category || '').trim();
@@ -804,13 +858,20 @@ publicApiRouter.get('/stores', requireApiKey, async (req: Request, res: Response
       let pIdx = 1;
 
       if (effectiveCommunityId) {
-        query += ` AND (community_id = $${pIdx} OR community_id IN (SELECT id FROM communities WHERE slug = $${pIdx}))`;
+        query += ` AND (community_id = ${pIdx} OR community_id IN (SELECT id FROM communities WHERE slug = ${pIdx}))`;
         params.push(effectiveCommunityId);
         pIdx++;
       }
-      if (isPublishedParam !== undefined) {
-        query += ` AND is_published = $${pIdx++}`;
-        params.push(isPublishedParam === 'true');
+
+      // Publik anonim HANYA melihat toko terbit. Partner key bisa melihat draf toko komunitasnya
+      const isPrivileged = Boolean(req.apiAuth?.communityId || req.apiAuth?.isMaster);
+      const filterPublished = !isPrivileged
+        ? true
+        : (isPublishedParam !== undefined ? isPublishedParam === 'true' : undefined);
+
+      if (filterPublished !== undefined) {
+        query += ` AND is_published = ${pIdx++}`;
+        params.push(filterPublished);
       }
       if (category) {
         query += ` AND LOWER(category) = LOWER($${pIdx++})`;
@@ -833,7 +894,7 @@ publicApiRouter.get('/stores', requireApiKey, async (req: Request, res: Response
     } catch {
       let sQuery = supabaseClient.from('stores').select('*', { count: 'exact' });
       if (effectiveCommunityId) sQuery = sQuery.eq('community_id', effectiveCommunityId);
-      if (isPublishedParam !== undefined) sQuery = sQuery.eq('is_published', isPublishedParam === 'true');
+      if (filterPublished !== undefined) sQuery = sQuery.eq('is_published', filterPublished);
       if (category) sQuery = sQuery.ilike('category', category);
       if (search) sQuery = sQuery.or(`name.ilike.%${search}%,slug.ilike.%${search}%`);
 
@@ -865,11 +926,11 @@ publicApiRouter.get('/stores', requireApiKey, async (req: Request, res: Response
 // =========================================================================
 // 9. ENDPOINT DETAIL SATU TOKO (GET /api/v1/stores/:idOrSlug)
 // =========================================================================
-publicApiRouter.get('/stores/:id', requireApiKey, async (req: Request, res: Response) => {
+publicApiRouter.get('/stores/:id', requireApiKey, enforceRateLimit, async (req: Request, res: Response) => {
   try {
     const storeIdOrSlug = String(req.params.id || '').trim();
-    if (!storeIdOrSlug) {
-      return sendError(res, 400, 'VALIDATION_ERROR', 'ID atau slug toko wajib diisi.');
+    if (!storeIdOrSlug || !SAFE_IDENTIFIER_REGEX.test(storeIdOrSlug)) {
+      return sendError(res, 400, 'VALIDATION_ERROR', 'Format ID atau slug toko tidak valid.');
     }
 
     let row: any = null;
@@ -892,9 +953,18 @@ publicApiRouter.get('/stores/:id', requireApiKey, async (req: Request, res: Resp
       return sendError(res, 404, 'NOT_FOUND', `Toko dengan identifier "${storeIdOrSlug}" tidak ditemukan.`);
     }
 
-    // Community scoping check
+    // Community scoping check (Poin 1.4):
     if (req.apiAuth?.communityId && row.community_id !== req.apiAuth.communityId) {
-      return sendError(res, 404, 'NOT_FOUND', 'Toko tidak ditemukan.');
+      return sendError(res, 404, 'NOT_FOUND', 'Toko tidak ditemukan di komunitas Anda.');
+    }
+
+    // Publication check (Poin 1.3):
+    // Akses tanpa key (publik anonim): HANYA toko yang sudah dipublikasikan (is_published = true)
+    // Key partner: boleh melihat toko komunitasnya yang belum terbit
+    const isPartnerAccess = Boolean(req.apiAuth?.communityId && row.community_id === req.apiAuth.communityId);
+    const isMasterAccess = Boolean(req.apiAuth?.isMaster);
+    if (!row.is_published && !isPartnerAccess && !isMasterAccess) {
+      return sendError(res, 404, 'NOT_FOUND', 'Toko belum dipublikasikan.');
     }
 
     const sanitized = sanitizeStore(row);
@@ -908,64 +978,121 @@ publicApiRouter.get('/stores/:id', requireApiKey, async (req: Request, res: Resp
 // =========================================================================
 // 10. ENDPOINT PRODUK DARI SATU TOKO (GET /api/v1/stores/:storeId/products)
 // =========================================================================
-publicApiRouter.get('/stores/:storeId/products', requireApiKey, async (req: Request, res: Response) => {
+publicApiRouter.get('/stores/:storeId/products', requireApiKey, enforceRateLimit, async (req: Request, res: Response) => {
   try {
     const storeIdOrSlug = String(req.params.storeId || '').trim();
-    if (!storeIdOrSlug) {
-      return sendError(res, 400, 'VALIDATION_ERROR', 'Parameter storeId atau slug wajib disertakan.');
+    if (!storeIdOrSlug || !SAFE_IDENTIFIER_REGEX.test(storeIdOrSlug)) {
+      return sendError(res, 400, 'VALIDATION_ERROR', 'Parameter storeId atau slug tidak valid.');
     }
 
-    // Cari ID toko jika yang dimasukkan adalah slug
-    let storeId = storeIdOrSlug;
+    // 1. Ambil info toko untuk verifikasi hak akses komunitas & status publikasi
+    let storeRow: any = null;
     try {
-      const stRes = await pool.query('SELECT id FROM stores WHERE id = $1 OR slug = $1 LIMIT 1', [storeIdOrSlug]);
-      if (stRes.rows.length > 0) storeId = stRes.rows[0].id;
+      const stRes = await pool.query('SELECT * FROM stores WHERE id = $1 OR slug = $1 LIMIT 1', [storeIdOrSlug]);
+      if (stRes.rows.length > 0) storeRow = stRes.rows[0];
     } catch {
       const { data } = await supabaseClient
         .from('stores')
-        .select('id')
+        .select('*')
         .or(`id.eq.${storeIdOrSlug},slug.eq.${storeIdOrSlug}`)
         .maybeSingle();
-      if (data?.id) storeId = data.id;
+      storeRow = data;
     }
 
-    let rows: any[] = [];
-    try {
-      const result = await pool.query(
-        'SELECT * FROM products WHERE store_id = $1 ORDER BY created_at DESC',
-        [storeId]
-      );
-      rows = result.rows;
-    } catch {
-      const { data, error } = await supabaseClient
-        .from('products')
-        .select('*')
-        .eq('store_id', storeId)
-        .order('created_at', { ascending: false });
+    if (!storeRow) {
+      return sendError(res, 404, 'NOT_FOUND', `Toko "${storeIdOrSlug}" tidak ditemukan.`);
+    }
 
+    // Community scoping check (Poin 1.4):
+    if (req.apiAuth?.communityId && storeRow.community_id !== req.apiAuth.communityId) {
+      return sendError(res, 404, 'NOT_FOUND', 'Toko tidak ditemukan di komunitas Anda.');
+    }
+
+    // Publication check (Poin 1.3):
+    const isPartnerAccess = Boolean(req.apiAuth?.communityId && storeRow.community_id === req.apiAuth.communityId);
+    const isMasterAccess = Boolean(req.apiAuth?.isMaster);
+    if (!storeRow.is_published && !isPartnerAccess && !isMasterAccess) {
+      return sendError(res, 404, 'NOT_FOUND', 'Toko belum dipublikasikan.');
+    }
+
+    // 2. Pagination query parameters (Poin 2.2)
+    const page = Math.max(1, parseInt(String(req.query.page || '1'), 10));
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit || '20'), 10)));
+    const offset = (page - 1) * limit;
+    const statusFilter = String(req.query.status || 'available').trim().toLowerCase();
+
+    const storeId = storeRow.id;
+    let rows: any[] = [];
+    let totalCount = 0;
+
+    try {
+      let countQuery = 'SELECT COUNT(*)::int AS count FROM products WHERE store_id = $1';
+      let dataQuery = 'SELECT * FROM products WHERE store_id = $1';
+      const params: any[] = [storeId];
+      let pIdx = 2;
+
+      if (statusFilter && statusFilter !== 'all') {
+        if (statusFilter === 'available') {
+          countQuery += ` AND stock > 0 AND (status = 'active' OR status = 'available' OR status IS NULL)`;
+          dataQuery += ` AND stock > 0 AND (status = 'active' OR status = 'available' OR status IS NULL)`;
+        } else if (statusFilter === 'out_of_stock') {
+          countQuery += ` AND (stock <= 0 OR status = 'out_of_stock')`;
+          dataQuery += ` AND (stock <= 0 OR status = 'out_of_stock')`;
+        }
+      }
+
+      dataQuery += ` ORDER BY created_at DESC LIMIT ${pIdx++} OFFSET ${pIdx++}`;
+      params.push(limit, offset);
+
+      const [countRes, dataRes] = await Promise.all([
+        pool.query(countQuery, [storeId]),
+        pool.query(dataQuery, params),
+      ]);
+      totalCount = countRes.rows[0]?.count || 0;
+      rows = dataRes.rows;
+    } catch {
+      let q = supabaseClient.from('products').select('*', { count: 'exact' }).eq('store_id', storeId);
+      if (statusFilter && statusFilter !== 'all') {
+        if (statusFilter === 'available') {
+          q = q.gt('stock', 0).neq('status', 'out_of_stock');
+        } else if (statusFilter === 'out_of_stock') {
+          q = q.or('stock.lte.0,status.eq.out_of_stock');
+        }
+      }
+      const { data, count, error } = await q.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
       if (error) throw error;
       rows = data || [];
+      totalCount = count || rows.length;
     }
 
     const sanitized = rows.map(sanitizeProduct);
+    const totalPages = Math.ceil(totalCount / limit) || 1;
+
     return sendSuccess(
       res,
       200,
       'STORE_PRODUCTS_FETCHED',
-      `Berhasil mengambil ${sanitized.length} produk untuk toko ${storeIdOrSlug}.`,
+      `Berhasil mengambil ${sanitized.length} produk untuk toko ${storeRow.name}.`,
       sanitized,
-      { count: sanitized.length }
+      {
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages,
+        },
+      }
     );
   } catch (err: any) {
     console.error('[API GET /stores/:storeId/products] Error:', err);
-    return sendError(res, 500, 'INTERNAL_SERVER_ERROR', err?.message || 'Gagal mengambil katalog produk toko.');
+    return sendError(res, 500, 'INTERNAL_SERVER_ERROR', err?.message || 'Gagal mengambil produk toko.');
   }
 });
 
 // =========================================================================
 // 11. ENDPOINT DAFTAR PRODUK (GET /api/v1/products)
 // =========================================================================
-publicApiRouter.get('/products', requireApiKey, async (req: Request, res: Response) => {
+publicApiRouter.get('/products', requireApiKey, enforceRateLimit, async (req: Request, res: Response) => {
   try {
     const storeId = String(req.query.storeId || '').trim();
     const storeSlug = String(req.query.storeSlug || '').trim();
@@ -1081,11 +1208,11 @@ publicApiRouter.get('/products', requireApiKey, async (req: Request, res: Respon
 // =========================================================================
 // 12. ENDPOINT DETAIL SATU PRODUK (GET /api/v1/products/:id)
 // =========================================================================
-publicApiRouter.get('/products/:id', requireApiKey, async (req: Request, res: Response) => {
+publicApiRouter.get('/products/:id', requireApiKey, enforceRateLimit, async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id || '').trim();
-    if (!id) {
-      return sendError(res, 400, 'VALIDATION_ERROR', 'ID produk wajib diisi.');
+    if (!id || !SAFE_IDENTIFIER_REGEX.test(id)) {
+      return sendError(res, 400, 'VALIDATION_ERROR', 'Format ID produk tidak valid.');
     }
 
     let row: any = null;
@@ -1103,6 +1230,30 @@ publicApiRouter.get('/products/:id', requireApiKey, async (req: Request, res: Re
 
     if (!row) {
       return sendError(res, 404, 'NOT_FOUND', `Produk dengan ID "${id}" tidak ditemukan.`);
+    }
+
+    // Community scoping & publication check
+    let storeRow: any = null;
+    try {
+      const stRes = await pool.query('SELECT community_id, is_published FROM stores WHERE id = $1 LIMIT 1', [row.store_id]);
+      if (stRes.rows.length > 0) storeRow = stRes.rows[0];
+    } catch {
+      const { data } = await supabaseClient
+        .from('stores')
+        .select('community_id, is_published')
+        .eq('id', row.store_id)
+        .maybeSingle();
+      storeRow = data;
+    }
+
+    if (storeRow) {
+      if (req.apiAuth?.communityId && storeRow.community_id !== req.apiAuth.communityId) {
+        return sendError(res, 404, 'NOT_FOUND', 'Produk tidak ditemukan di komunitas Anda.');
+      }
+      const isPrivileged = Boolean(req.apiAuth?.communityId || req.apiAuth?.isMaster);
+      if (!storeRow.is_published && !isPrivileged) {
+        return sendError(res, 404, 'NOT_FOUND', 'Produk tidak ditemukan (toko belum dipublikasikan).');
+      }
     }
 
     const sanitized = sanitizeProduct(row);
