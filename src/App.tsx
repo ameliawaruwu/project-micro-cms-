@@ -1542,7 +1542,12 @@ export default function App() {
           slug={currentStore?.slug}
           isOwner={Boolean(isOwner)}
           isAdmin={Boolean(isAdmin)}
-          onGoToDashboard={() => setViewMode('merchant-desktop')}
+          onGoToDashboard={() => {
+            if (typeof window !== 'undefined') {
+              window.history.replaceState({}, '', window.location.pathname);
+            }
+            setViewMode('merchant-desktop');
+          }}
           onGoToAdmin={() => setViewMode('admin')}
           onPublishStore={() => currentStore?.id && handlePublishStore(currentStore.id)}
         />
@@ -1776,6 +1781,9 @@ export default function App() {
               isOwner={false}
               isAdmin={false}
               onGoToDashboard={() => {
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState({}, '', window.location.pathname);
+                }
                 if (isPlatformHost(window.location.hostname)) {
                   const isAnyAdmin = user && isAnyAdminRole(user.role);
                   setViewMode(user ? (isAnyAdmin ? 'admin' : 'merchant-desktop') : 'landing');
@@ -1799,7 +1807,12 @@ export default function App() {
               slug={currentStore.slug}
               isOwner={Boolean(isOwner)}
               isAdmin={Boolean(isAdmin)}
-              onGoToDashboard={() => setViewMode('merchant-desktop')}
+              onGoToDashboard={() => {
+            if (typeof window !== 'undefined') {
+              window.history.replaceState({}, '', window.location.pathname);
+            }
+            setViewMode('merchant-desktop');
+          }}
               onGoToAdmin={() => setViewMode('admin')}
               onPublishStore={() => handlePublishStore(currentStore.id)}
             />
@@ -1826,6 +1839,9 @@ export default function App() {
                       if (window.opener) {
                         window.close();
                       } else {
+                        if (typeof window !== 'undefined') {
+                          window.history.replaceState({}, '', window.location.pathname);
+                        }
                         setViewMode('merchant-desktop');
                         setActiveTab('layout');
                       }
