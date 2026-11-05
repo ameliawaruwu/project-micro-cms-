@@ -29,6 +29,7 @@ import {
   Mail,
   Phone,
   Lock,
+  X,
 } from 'lucide-react';
 import { Community, CommunityTurnoverInvoice, Store, Order, User } from '../../../types';
 import { communityService } from '../../../services/communityService';
@@ -438,8 +439,8 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             </div>
             <p className="text-xs text-gray-500 mt-1 max-w-2xl leading-relaxed">
               {isSubAdmin
-                ? (activeCommunity ? `Pusat koordinasi toko-toko binaan ${activeCommunity.name}. Pantau transaksi katalog anggota dan kelola tagihan layanan platform.` : 'Pusat koordinasi toko-toko binaan organisasi Anda.')
-                : 'Pendelegasian manajemen lapak merchant ke koordinator organisasi mitra (paguyuban, yayasan, sentra bisnis). Organisasi mengatur lapak anggota secara terisolasi dengan skema bagi hasil omset.'}
+                ? (activeCommunity ? `Pusat koordinasi toko binaan ${activeCommunity.name}.` : 'Pusat koordinasi toko binaan organisasi Anda.')
+                : 'Kelola data komunitas mitra dan akun koordinator Sub-Admin.'}
             </p>
           </div>
         </div>
@@ -1019,87 +1020,81 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       {/* MODAL 1: DAFTARKAN SUB-ADMIN ORGANISASI                                   */}
       {/* ========================================================================= */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-200 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
-                  <UserCheck className="w-5 h-5" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
+                  <Building2 className="w-5 h-5 text-[#66000E]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">Daftarkan Sub-Admin Organisasi</h3>
-                  <p className="text-[11px] text-gray-500 mt-0.5">
-                    Akun koordinator untuk mengelola lapak-lapak binaan. Fee omset platform ditagihkan di akhir periode.
+                  <h3 className="text-base font-bold text-gray-900">Tambah Komunitas</h3>
+                  <p className="text-xs text-gray-500">
+                    Daftarkan komunitas mitra &amp; akun koordinator sub-admin
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-gray-400 hover:text-gray-700 text-xs font-bold cursor-pointer"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                title="Tutup"
               >
-                Tutup
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleCreateOrganization} className="space-y-4 text-xs">
-              {/* Bagian 1: Detail Organisasi */}
-              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+              {/* Bagian 1: Detail Komunitas */}
+              <div className="p-3.5 bg-gray-50/80 rounded-xl border border-gray-200/80 space-y-3">
                 <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
-                  <Building2 className="w-4 h-4 text-gray-600" />
-                  <span>1. Detail Organisasi / Komunitas Mitra</span>
+                  <Building2 className="w-4 h-4 text-[#66000E]" />
+                  <span>Detail Komunitas</span>
                 </h4>
 
-                <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Nama Organisasi / Komunitas *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Paguyuban Pengrajin Kulit Garut"
-                    value={createForm.name}
-                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Nama Komunitas *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: Paguyuban Kulit Garut"
+                      value={createForm.name}
+                      onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Domain Induk (Opsional)</label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: gmpsbandung.org"
+                      value={createForm.baseDomain}
+                      onChange={(e) => setCreateForm({ ...createForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Deskripsi Singkat</label>
+                  <label className="block font-semibold text-gray-700 mb-1">Deskripsi (Opsional)</label>
                   <textarea
                     rows={2}
-                    placeholder="Wadah paguyuban dan pembinaan lapak UMKM..."
+                    placeholder="Deskripsi singkat komunitas..."
                     value={createForm.description}
                     onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
                   />
                 </div>
-
-                <div>
-                  <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Domain Induk Organisasi (Base Domain - Opsional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: gmpsbandung.org"
-                    value={createForm.baseDomain}
-                    onChange={(e) => setCreateForm({ ...createForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
-                  />
-                  <p className="text-[10.5px] text-gray-500 mt-1">
-                    Jika diisi, toko anggota binaan komunitas ini otomatis mendapatkan subdomain di bawah domain ini (contoh: <code>toko.gmpsbandung.org</code>).
-                  </p>
-                </div>
               </div>
 
               {/* Bagian 2: Kredensial Sub-Admin */}
-              <div className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-200 space-y-3">
-                <h4 className="font-bold text-blue-950 flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-blue-700" />
-                  <span>2. Akun Koordinator (Sub-Admin)</span>
+              <div className="p-3.5 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-3">
+                <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-blue-600" />
+                  <span>Akun Koordinator (Sub-Admin)</span>
                 </h4>
-                <p className="text-[11px] text-blue-800">
-                  Akun ini akan otomatis didaftarkan ke Supabase dengan role <strong>Sub-Admin</strong> dan mengelola seluruh lapak di bawah naungannya.
-                </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -1115,12 +1110,12 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp (Angka saja)</label>
+                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp</label>
                     <input
                       type="tel"
                       inputMode="numeric"
                       pattern="[0-9]*"
-                      placeholder="Contoh: 081234567890"
+                      placeholder="081234567890"
                       value={createForm.coordinatorPhone}
                       onChange={(e) => {
                         const numericOnly = e.target.value.replace(/\D/g, '');
@@ -1133,7 +1128,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Email Login Sub-Admin *</label>
+                    <label className="block font-semibold text-gray-700 mb-1">Email Login *</label>
                     <input
                       type="email"
                       required
@@ -1145,7 +1140,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Kata Sandi Awal *</label>
+                    <label className="block font-semibold text-gray-700 mb-1">Kata Sandi *</label>
                     <input
                       type="text"
                       required
@@ -1172,7 +1167,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <UserCheck className="w-4 h-4" />
-                  <span>{isSubmittingCreate ? 'Mendaftarkan...' : 'Daftarkan Sub-Admin'}</span>
+                  <span>{isSubmittingCreate ? 'Menyimpan...' : 'Daftarkan Sub-Admin'}</span>
                 </button>
               </div>
             </form>
@@ -1184,30 +1179,34 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       {/* MODAL 2: TAUTKAN TOKO KE ORGANISASI                                       */}
       {/* ========================================================================= */}
       {isAssignModalOpen && activeCommunity && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 border border-gray-200">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <h3 className="text-sm font-bold text-gray-900">Tautkan Lapak ke {activeCommunity.name}</h3>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
+                  <StoreIcon className="w-4 h-4 text-[#66000E]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900">Tautkan Lapak</h3>
+                  <p className="text-[11px] text-gray-500">Naungan: {activeCommunity.name}</p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsAssignModalOpen(false)}
-                className="text-gray-400 hover:text-gray-700 text-xs font-bold"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                title="Tutup"
               >
-                Tutup
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-gray-600">
-              Pilih salah satu toko yang sudah terdaftar di platform untuk dimasukkan ke dalam naungan organisasi{' '}
-              <strong>{activeCommunity.name}</strong>.
-            </p>
-
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Pilih Toko / Lapak *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Pilih Toko / Lapak *</label>
               <select
                 value={selectedStoreToAssign}
                 onChange={(e) => setSelectedStoreToAssign(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-medium text-gray-900 focus:outline-none focus:border-[#66000E] cursor-pointer"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-xs font-medium text-gray-900 focus:outline-none focus:border-[#66000E] cursor-pointer"
               >
                 <option value="">-- Pilih Toko --</option>
                 {stores
@@ -1234,7 +1233,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 onClick={handleAssignStore}
                 className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#55000C] text-white text-xs font-bold transition cursor-pointer disabled:opacity-50"
               >
-                Simpan &amp; Tautkan
+                Tautkan Toko
               </button>
             </div>
           </div>
@@ -1283,77 +1282,75 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       {/* MODAL 3: EDIT DETAIL ORGANISASI & KOORDINATOR (UPDATE CRUD)               */}
       {/* ========================================================================= */}
       {isEditModalOpen && activeCommunity && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-gray-200 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
-                  <Edit3 className="w-5 h-5" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 border border-[#E5E0DD]">
+                  <Edit3 className="w-5 h-5 text-[#66000E]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900">Edit Detail Organisasi</h3>
-                  <p className="text-[11px] text-gray-500 mt-0.5">
-                    Perbarui profil organisasi mitra dan kontak koordinator Sub-Admin.
+                  <h3 className="text-base font-bold text-gray-900">Edit Komunitas</h3>
+                  <p className="text-xs text-gray-500">
+                    Perbarui profil komunitas &amp; kontak koordinator
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-gray-400 hover:text-gray-700 text-xs font-bold cursor-pointer"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                title="Tutup"
               >
-                Tutup
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
-              <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+              <div className="p-3.5 bg-gray-50/80 rounded-xl border border-gray-200/80 space-y-3">
                 <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
-                  <Building2 className="w-4 h-4 text-gray-600" />
-                  <span>Detail Organisasi</span>
+                  <Building2 className="w-4 h-4 text-[#66000E]" />
+                  <span>Detail Komunitas</span>
                 </h4>
 
-                <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Nama Organisasi / Komunitas *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Nama Komunitas *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Domain Induk (Opsional)</label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: gmpsbandung.org"
+                      value={editForm.baseDomain}
+                      onChange={(e) => setEditForm({ ...editForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-gray-700 mb-1">Deskripsi Singkat</label>
+                  <label className="block font-semibold text-gray-700 mb-1">Deskripsi (Opsional)</label>
                   <textarea
                     rows={2}
+                    placeholder="Deskripsi singkat komunitas..."
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
                   />
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Domain Induk Organisasi (Base Domain)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: gmpsbandung.org"
-                    value={editForm.baseDomain}
-                    onChange={(e) => setEditForm({ ...editForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
-                  />
-                  <p className="text-[10.5px] text-gray-500 mt-1">
-                    Toko merchant binaan organisasi ini akan otomatis ter-hosting di bawah subdomain domain ini (contoh: <code>toko.{editForm.baseDomain || 'gmpsbandung.org'}</code>).
-                  </p>
-                </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">Status Organisasi</label>
+                    <label className="block font-semibold text-gray-700 mb-1">Status Komunitas</label>
                     <select
                       value={editForm.status}
                       onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
@@ -1378,10 +1375,10 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 </div>
               </div>
 
-              <div className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-200 space-y-3">
-                <h4 className="font-bold text-blue-950 flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-blue-700" />
-                  <span>Kontak Koordinator Sub-Admin</span>
+              <div className="p-3.5 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-3">
+                <h4 className="font-bold text-gray-900 flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-blue-600" />
+                  <span>Kontak Koordinator (Sub-Admin)</span>
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1396,7 +1393,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp (Angka saja)</label>
+                    <label className="block font-semibold text-gray-700 mb-1">No. WhatsApp</label>
                     <input
                       type="tel"
                       inputMode="numeric"
