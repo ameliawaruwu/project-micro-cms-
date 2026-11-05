@@ -164,7 +164,7 @@ export const NatureHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
 
 export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo, navigation } = useCmsStore();
-  const rawStoreName = sectionOptions.heading || sectionOptions.storeName || storeInfo?.name;
+  const rawStoreName = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo?.name;
   const storeName = (!rawStoreName || rawStoreName === 'NEON//CORE Electronics') ? 'Green Market' : rawStoreName;
 
   const rawDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;

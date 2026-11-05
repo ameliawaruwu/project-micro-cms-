@@ -87,9 +87,9 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
               {storeDesc || "Pusat Hardware, Component PC High-End, Gaming Gear & Watercooling System Terpercaya di Indonesia."}
             </p>
             <div className="space-y-2 text-xs text-gray-400 pt-2 font-mono">
-              <p className="flex items-center gap-2.5"><MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> {storeInfo.address || "Neo Cyber District, Jakarta"}</p>
-              <p className="flex items-center gap-2.5"><Phone className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> {storeInfo.phone || "+62 812-3456-7890"}</p>
-              <p className="flex items-center gap-2.5"><Mail className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> {storeInfo.email || "support@kroomhardware.id"}</p>
+              <p className="flex items-center gap-2.5"><MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> {sectionOptions.address !== undefined ? sectionOptions.address : (storeInfo.address || "Neo Cyber District, Jakarta")}</p>
+              <p className="flex items-center gap-2.5"><Phone className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> {sectionOptions.phone !== undefined ? sectionOptions.phone : (storeInfo.phone || "+62 812-3456-7890")}</p>
+              <p className="flex items-center gap-2.5"><Mail className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> {sectionOptions.email !== undefined ? sectionOptions.email : (storeInfo.email || "support@kroomhardware.id")}</p>
               <p className="flex items-center gap-2.5"><Clock className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> Senin - Sabtu: 09.00 - 21.00 WIB</p>
             </div>
           </div>

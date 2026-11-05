@@ -6,8 +6,14 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
-  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+
+  const storeName = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo.name;
+  const storeDesc = sectionOptions.description !== undefined ? sectionOptions.description : storeInfo.description;
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address;
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
+  const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
+  const copyrightText = sectionOptions.copyrightText || `Dibuat dengan 💖 oleh ${storeName} © ${new Date().getFullYear()}`;
+
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-1',
@@ -27,7 +33,7 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
             <Heart className="w-8 h-8 text-[#FF85A1] fill-[#FF85A1]" />
           </div>
           <h3 className="text-2xl font-black tracking-tight text-[#FF85A1] mb-4">
-            {storeTitle}
+            {storeName}
           </h3>
           <p className="text-gray-600 font-medium text-sm leading-relaxed mb-6">
             {storeDesc}
@@ -68,9 +74,9 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
             Sapa Kami! 💌
           </h4>
           <ul className="space-y-4 font-bold text-gray-600">
-            <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full">{storeInfo.address}</li>
-            <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full">{storeInfo.email}</li>
-            <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full">{storeInfo.phone}</li>
+            {address && <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full">{address}</li>}
+            {email && <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full">{email}</li>}
+            {phone && <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full">{phone}</li>}
           </ul>
         </div>
 
@@ -78,7 +84,7 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
 
       <div className="max-w-5xl mx-auto pt-8 border-t-4 border-white text-center flex flex-col items-center gap-2">
         <p className="text-sm font-bold text-[#FF85A1]">
-          Dibuat dengan 💖 oleh {storeInfo.name} &copy; {new Date().getFullYear()}
+          {copyrightText}
         </p>
       </div>
     </footer>

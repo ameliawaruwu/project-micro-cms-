@@ -5,8 +5,14 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
-  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+
+  const storeName = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo.name;
+  const storeDesc = sectionOptions.description !== undefined ? sectionOptions.description : storeInfo.description;
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address;
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
+  const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}.`;
+
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -22,7 +28,7 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
         {/* Brand */}
         <div className={`flex-1 ${maxWClass}`}>
           <h3 className="text-3xl font-normal tracking-widest uppercase mb-8">
-            {storeTitle}
+            {storeName}
           </h3>
           <p className="text-[#A39D98] text-lg italic leading-relaxed mb-8">
             {storeDesc}
@@ -47,9 +53,9 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
           <div>
             <h4 className="font-sans text-[10px] tracking-[0.3em] uppercase text-[#A39D98] mb-8">Contact</h4>
             <ul className="space-y-4 font-sans text-xs tracking-wider text-[#FAF9F6]">
-              <li>{storeInfo.address}</li>
-              <li>{storeInfo.email}</li>
-              <li>{storeInfo.phone}</li>
+              {address && <li>{address}</li>}
+              {email && <li>{email}</li>}
+              {phone && <li>{phone}</li>}
             </ul>
             <div className="mt-8 flex gap-6">
               {storeInfo.socials.instagram && (
@@ -66,7 +72,7 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
 
       <div className={`max-w-7xl mx-auto pt-8 border-t border-[#A39D98]/20 flex ${flexDirClass} justify-between items-center gap-4`}>
         <p className="font-sans text-[10px] tracking-[0.2em] uppercase text-[#A39D98]">
-          &copy; {new Date().getFullYear()} {storeInfo.name}.
+          {copyrightText}
         </p>
         <p className="font-sans text-[10px] tracking-[0.2em] uppercase text-[#A39D98]">
           Elegance is an attitude.

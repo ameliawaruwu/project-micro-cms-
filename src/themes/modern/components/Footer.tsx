@@ -6,8 +6,14 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
-  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+
+  const storeName = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo.name;
+  const storeDesc = sectionOptions.description !== undefined ? sectionOptions.description : (sectionOptions.tagline || storeInfo.description);
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address;
+  const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
+
   const isDesktopPreview = !isMobile && !isTablet;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
@@ -31,7 +37,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
         <div className={`grid ${gridColsClass} gap-10 mb-10`}>
 
           <div className={colSpan5Class}>
-            <h3 className="text-xl font-extrabold text-gray-900 mb-3">{storeTitle}</h3>
+            <h3 className="text-xl font-extrabold text-gray-900 mb-3">{storeName}</h3>
             <p className="text-sm text-gray-500 leading-relaxed max-w-sm mb-5">{storeDesc}</p>
             <div className="flex items-center gap-3">
               <a href="#" className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-gray-600 shadow-sm hover:text-white transition-colors" style={{ ['--hover-bg' as any]: accentColor }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; }}>
@@ -55,16 +61,16 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
           <div className={colSpan4Class}>
             <h4 className="text-xs font-bold uppercase tracking-wide text-gray-900 mb-4">Kontak</h4>
             <ul className="space-y-2.5 text-sm text-gray-600">
-              <li className="flex items-center gap-2"><MapPin className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {storeInfo.address}</li>
-              <li className="flex items-center gap-2"><Phone className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {storeInfo.phone}</li>
-              <li className="flex items-center gap-2"><Mail className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {storeInfo.email}</li>
+              {address && <li className="flex items-center gap-2"><MapPin className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {address}</li>}
+              {phone && <li className="flex items-center gap-2"><Phone className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {phone}</li>}
+              {email && <li className="flex items-center gap-2"><Mail className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {email}</li>}
             </ul>
           </div>
 
         </div>
 
         <div className={`pt-6 border-t border-black/5 flex ${bottomFlexClass} items-center justify-between gap-3 text-xs text-gray-500`}>
-          <p>© {new Date().getFullYear()} {storeInfo.name}. All rights reserved.</p>
+          <p>{copyrightText}</p>
           <div className="flex gap-5">
             <a href="#" className="hover:text-gray-900 transition-colors">Kebijakan Privasi</a>
             <a href="#" className="hover:text-gray-900 transition-colors">Syarat & Ketentuan</a>

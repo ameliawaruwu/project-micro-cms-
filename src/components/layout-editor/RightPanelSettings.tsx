@@ -1,5 +1,9 @@
 import React, { useState, useRef } from 'react';
 import {
+  Store as StoreIcon,
+  MapPin,
+  Share2,
+  Shield,
   Sliders,
   Type,
   Image as ImageIcon,
@@ -396,7 +400,196 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
               </div>
             )}
 
-            {/* ── TEXT CONTENT ── */}
+            {/* ── FOOTER DEDICATED FULL SETTINGS ── */}
+            {selectedSection.id === 'footer' ? (
+              <div className="space-y-4 pt-1">
+                {/* 1. Identitas Brand Footer */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
+                    <StoreIcon className="w-3.5 h-3.5 text-[#2C6ECB]" />
+                    <span className="text-[12px] font-bold text-[#202223]">Identitas Brand Footer</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-700">Nama Toko / Judul Footer</label>
+                    <input
+                      type="text"
+                      value={opts.storeName || opts.heading || opts.title || store.name || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleOptionChange({ storeName: val, heading: val, title: val });
+                        useCmsStore.getState().updateStoreInfo({ name: val });
+                        if (onUpdateStore) onUpdateStore({ name: val });
+                      }}
+                      placeholder="Nama Toko di Footer..."
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-700">Deskripsi / Tagline Footer</label>
+                    <textarea
+                      rows={3}
+                      value={opts.description !== undefined ? opts.description : (store.description || '')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleOptionChange({ description: val, tagline: val, subheading: val });
+                        useCmsStore.getState().updateStoreInfo({ description: val });
+                        if (onUpdateStore) onUpdateStore({ description: val });
+                      }}
+                      placeholder="Tuliskan deskripsi singkat atau slogan toko..."
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Informasi Kontak & Alamat Fisik */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
+                    <MapPin className="w-3.5 h-3.5 text-[#2C6ECB]" />
+                    <span className="text-[12px] font-bold text-[#202223]">Kontak & Alamat Fisik</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-700">Alamat Toko</label>
+                    <textarea
+                      rows={2}
+                      value={opts.address !== undefined ? opts.address : (store.address || '')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleOptionChange({ address: val });
+                        useCmsStore.getState().updateStoreInfo({ address: val });
+                        if (onUpdateStore) onUpdateStore({ address: val });
+                      }}
+                      placeholder="Alamat jalan, kota, provinsi..."
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-700">Email Kontak</label>
+                      <input
+                        type="email"
+                        value={opts.email !== undefined ? opts.email : ((store as any).email || '')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleOptionChange({ email: val });
+                          useCmsStore.getState().updateStoreInfo({ email: val });
+                          if (onUpdateStore) onUpdateStore({ email: val } as any);
+                        }}
+                        placeholder="kontak@toko.com"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-700">No. WhatsApp</label>
+                      <input
+                        type="text"
+                        value={opts.phone !== undefined ? opts.phone : (store.phoneWhatsApp || '')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleOptionChange({ phone: val, phoneWhatsApp: val });
+                          useCmsStore.getState().updateStoreInfo({ phone: val });
+                          if (onUpdateStore) onUpdateStore({ phoneWhatsApp: val });
+                        }}
+                        placeholder="081234567890"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Tautan Media Sosial */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
+                    <Share2 className="w-3.5 h-3.5 text-[#2C6ECB]" />
+                    <span className="text-[12px] font-bold text-[#202223]">Tautan Media Sosial</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-700">Instagram</label>
+                      <input
+                        type="text"
+                        value={opts.instagram !== undefined ? opts.instagram : (opts.socials?.instagram || '')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleOptionChange({ 
+                            instagram: val, 
+                            socials: { ...(opts.socials || {}), instagram: val } 
+                          });
+                          const currentSocials = useCmsStore.getState().storeInfo.socials || {};
+                          useCmsStore.getState().updateStoreInfo({ socials: { ...currentSocials, instagram: val } });
+                        }}
+                        placeholder="@username"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-700">TikTok</label>
+                      <input
+                        type="text"
+                        value={opts.tiktok !== undefined ? opts.tiktok : (opts.socials?.tiktok || '')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleOptionChange({ 
+                            tiktok: val, 
+                            socials: { ...(opts.socials || {}), tiktok: val } 
+                          });
+                          const currentSocials = useCmsStore.getState().storeInfo.socials || {};
+                          useCmsStore.getState().updateStoreInfo({ socials: { ...currentSocials, tiktok: val } });
+                        }}
+                        placeholder="@username"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Hak Cipta & Kebijakan */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
+                    <Shield className="w-3.5 h-3.5 text-[#2C6ECB]" />
+                    <span className="text-[12px] font-bold text-[#202223]">Hak Cipta & Legalitas</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-700">Teks Hak Cipta (Copyright)</label>
+                    <input
+                      type="text"
+                      value={opts.copyrightText !== undefined ? opts.copyrightText : `© ${new Date().getFullYear()} ${opts.storeName || store.name || 'Toko'}. All rights reserved.`}
+                      onChange={(e) => handleOptionChange({ copyrightText: e.target.value })}
+                      placeholder="© 2026 Nama Toko..."
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-700">Kebijakan Privasi</label>
+                      <input
+                        type="text"
+                        value={opts.privacyPolicyText !== undefined ? opts.privacyPolicyText : 'Privacy Policy'}
+                        onChange={(e) => handleOptionChange({ privacyPolicyText: e.target.value })}
+                        placeholder="Privacy Policy"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-700">Syarat & Ketentuan</label>
+                      <input
+                        type="text"
+                        value={opts.termsOfServiceText !== undefined ? opts.termsOfServiceText : 'Terms of Service'}
+                        onChange={(e) => handleOptionChange({ termsOfServiceText: e.target.value })}
+                        placeholder="Terms of Service"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
             <div className="space-y-3">
               <div className="space-y-1">
                 <label className="text-[12px] font-bold text-[#202223]">Teks Judul</label>
@@ -423,18 +616,14 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
               {selectedSection.id !== 'announcement' && selectedSection.id !== 'search_category' && (
                 <div className="space-y-1">
                   <label className="text-[12px] font-bold text-[#202223]">
-                    {selectedSection.id === 'footer'
-                      ? 'Teks Footer / Hak Cipta'
-                      : selectedSection.id === 'brand_philosophy'
+                    {selectedSection.id === 'brand_philosophy'
                       ? 'Isi Teks Filosofi'
                       : 'Deskripsi / Subjudul'}
                   </label>
                   <textarea
                     rows={selectedSection.id === 'brand_philosophy' ? 4 : 3}
                     value={
-                      selectedSection.id === 'footer'
-                        ? opts.copyrightText || ''
-                        : selectedSection.id === 'header'
+                      selectedSection.id === 'header'
                         ? ((opts as any).headerSubtitle ?? opts.subheading ?? opts.subtitle ?? '')
                         : selectedSection.id === 'hero_banner'
                         ? ((opts as any).heroSubtitle ?? opts.description ?? opts.subheading ?? '')
@@ -443,7 +632,6 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     onChange={(e) => {
                       if (selectedSection.id === 'featured_products') handleOptionChange({ featuredSubtitle: e.target.value, subheading: e.target.value, description: e.target.value });
                       else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterSubtitle: e.target.value, description: e.target.value });
-                      else if (selectedSection.id === 'footer') handleOptionChange({ copyrightText: e.target.value, description: e.target.value });
                       else if (selectedSection.id === 'header') {
                         handleOptionChange({ headerSubtitle: e.target.value, subheading: e.target.value, subtitle: e.target.value });
                       }
@@ -475,6 +663,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 </div>
               )}
             </div>
+            )}
 
             {/* ── COLLECTION GRID SPECIFIC SETTINGS ── */}
             {selectedSection.id === 'collection_grid' && (

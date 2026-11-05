@@ -211,10 +211,11 @@ export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
 
 export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
-  const rawTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const rawTitle = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo?.name;
   const storeTitle = (!rawTitle || rawTitle === 'Green Market Indonesia') ? 'LOOKSEE' : rawTitle;
-  const address = (storeInfo?.address && !storeInfo.address.includes('Lembang')) ? storeInfo.address : 'Grand Indonesia West Mall Lt. 1, Jakarta';
-  const email = (storeInfo?.email && !storeInfo.email.includes('greenmarket')) ? storeInfo.email : 'contact@looksee.id';
+  const storeDesc = sectionOptions.description !== undefined ? sectionOptions.description : (sectionOptions.tagline || storeInfo?.description);
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : ((storeInfo?.address && !storeInfo.address.includes('Lembang')) ? storeInfo.address : 'Grand Indonesia West Mall Lt. 1, Jakarta');
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : ((storeInfo?.email && !storeInfo.email.includes('greenmarket')) ? storeInfo.email : 'contact@looksee.id');
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
   const footerFlexClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',

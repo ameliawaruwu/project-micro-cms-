@@ -2754,14 +2754,24 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
 
                     {/* 12. FOOTER (RESPONSIVE) */}
                     {section.id === 'footer' && (
-                      <footer className={`bg-[#1F1918] text-white text-center space-y-1.5 ${isMobile ? 'p-3.5 py-4' : 'p-4 sm:p-6'}`}>
-                        <div className="font-bold text-xs tracking-tight">{store.name}</div>
+                      <footer className={`bg-[#1F1918] text-white text-center space-y-2 ${isMobile ? 'p-3.5 py-6' : 'p-6 sm:p-8'}`}>
+                        <div className="font-bold text-sm tracking-tight">{opts.storeName || opts.heading || opts.title || store.name}</div>
+                        {(opts.description || store.description) && (
+                          <p className="text-xs text-[#A8A09E] max-w-md mx-auto">{opts.description || store.description}</p>
+                        )}
+                        {(opts.address || opts.email || opts.phone || store.address || store.phoneWhatsApp) && (
+                          <div className="text-[11px] text-[#A8A09E] space-y-0.5 pt-1">
+                            {(opts.address || store.address) && <p>{opts.address || store.address}</p>}
+                            {(opts.email || (store as any).email) && <p>{opts.email || (store as any).email}</p>}
+                            {(opts.phone || store.phoneWhatsApp) && <p>{opts.phone || store.phoneWhatsApp}</p>}
+                          </div>
+                        )}
                         <InlineEditableText
                           tagName="p"
-                          value={opts.copyrightText || 'Hak Cipta Dilindungi Undang-Undang • Katalog Resmi UMKM Indonesia'}
+                          value={opts.copyrightText || `© ${new Date().getFullYear()} ${opts.storeName || opts.heading || store.name}. All rights reserved.`}
                           placeholder="Teks Hak Cipta Footer..."
                           onSave={(newCopy) => handleUpdateOption(sectionKey, { copyrightText: newCopy })}
-                          className={`text-[#A8A09E] block max-w-xl mx-auto ${isMobile ? 'text-[9px]' : 'text-[10px]'}`}
+                          className={`text-[#A8A09E] block max-w-xl mx-auto pt-2 text-[10px]`}
                           isSelected={isSelected}
                         />
                       </footer>
