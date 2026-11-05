@@ -55,7 +55,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <KroomifyLogo
                 size="sm"
                 showText={isSidebarOpen}
-                badge={isSubAdmin ? 'SUB-ADMIN UMUM' : 'ADMIN'}
+                badge={isSubAdmin ? 'SUB-ADMIN' : 'SUPER ADMIN'}
               />
             </div>
 

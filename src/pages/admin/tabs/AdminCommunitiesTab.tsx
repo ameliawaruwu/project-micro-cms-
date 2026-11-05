@@ -444,8 +444,8 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           </div>
         </div>
 
-        {/* Actions for Super Admin & Sub Admin Umum */}
-        {Boolean(true) && (
+        {/* Actions: Khusus Super Admin vs Sub Admin Komunitas */}
+        {!isSubAdmin ? (
           <div className="shrink-0 flex items-center gap-2.5 flex-wrap">
             {communities.length > 0 && (
               <div className="flex items-center gap-2">
@@ -472,6 +472,12 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               <UserCheck className="w-4 h-4" />
               <span>Tambah Komunitas</span>
             </button>
+          </div>
+        ) : (
+          <div className="shrink-0 flex items-center gap-2">
+            <span className="px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700">
+              Komunitas Naungan: <strong className="text-gray-900">{activeCommunity?.name}</strong>
+            </span>
           </div>
         )}
       </div>
@@ -735,14 +741,17 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => promptDeleteCommunity(activeCommunity.id, activeCommunity.name)}
-                className="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-rose-200"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Hapus Organisasi</span>
-              </button>
+              {/* Hapus Organisasi khusus Super Admin */}
+              {!isSubAdmin && (
+                <button
+                  type="button"
+                  onClick={() => promptDeleteCommunity(activeCommunity.id, activeCommunity.name)}
+                  className="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-rose-200"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Hapus Organisasi</span>
+                </button>
+              )}
             </div>
           )}
         </div>
