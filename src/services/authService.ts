@@ -125,7 +125,7 @@ const defaultAccounts: StoredAccount[] = [
     password: 'subadmin2',
     user: {
       id: 'USR005',
-      name: 'Admin 2 (Admin Produk)',
+      name: 'Admin 2 (Admin Produk GMPS)',
       email: 'admin2@gmail.com',
       phoneWhatsApp: '0881022084792',
       role: 'sub_admin',
@@ -136,6 +136,52 @@ const defaultAccounts: StoredAccount[] = [
     merchant: {
       id: 'merch-USR005',
       userId: 'USR005',
+      storeId: '',
+      plan: 'free',
+      isVerified: true,
+    },
+    storeId: '',
+  },
+  {
+    id: 'USR005_GMPS',
+    email: 'admin2@gmps.com',
+    password: 'subadmin2',
+    user: {
+      id: 'USR005_GMPS',
+      name: 'Admin 2 (Admin Produk GMPS)',
+      email: 'admin2@gmps.com',
+      phoneWhatsApp: '0881022084792',
+      role: 'sub_admin',
+      communityId: 'comm_1793843915683',
+      communityName: 'GMPS',
+      createdAt: '2026-11-05T09:56:30Z',
+    },
+    merchant: {
+      id: 'merch-USR005_GMPS',
+      userId: 'USR005_GMPS',
+      storeId: '',
+      plan: 'free',
+      isVerified: true,
+    },
+    storeId: '',
+  },
+  {
+    id: 'USR005_SUB',
+    email: 'subadmin2@gmail.com',
+    password: 'subadmin2',
+    user: {
+      id: 'USR005_SUB',
+      name: 'Sub Admin 2 (GMPS)',
+      email: 'subadmin2@gmail.com',
+      phoneWhatsApp: '0881022084792',
+      role: 'sub_admin',
+      communityId: 'comm_1793843915683',
+      communityName: 'GMPS',
+      createdAt: '2026-11-05T09:56:30Z',
+    },
+    merchant: {
+      id: 'merch-USR005_SUB',
+      userId: 'USR005_SUB',
       storeId: '',
       plan: 'free',
       isVerified: true,
@@ -153,9 +199,13 @@ class AuthService {
     }
     try {
       const parsed: StoredAccount[] = JSON.parse(raw);
-      // Filter out legacy dummy account USR000
+      // Filter out legacy dummy account USR000 and andi
       const filtered = parsed.filter(
-        (a) => a.id !== 'USR000' && a.email.toLowerCase() !== 'andhika@gmail.com' && a.email.toLowerCase() !== 'gmps@kroomify.id'
+        (a) =>
+          a.id !== 'USR000' &&
+          a.email.toLowerCase() !== 'andhika@gmail.com' &&
+          a.email.toLowerCase() !== 'gmps@kroomify.id' &&
+          a.email.toLowerCase() !== 'andi@gmail.com'
       );
       // Merge and sync with defaultAccounts
       let changed = filtered.length !== parsed.length;
@@ -277,8 +327,12 @@ class AuthService {
     }
 
     let cleanEmail = email.toLowerCase().trim();
-    if (cleanEmail === 'admin') {
+    if (cleanEmail === 'admin' || cleanEmail === 'superadmin') {
       cleanEmail = 'admin@lapakq.com';
+    } else if (cleanEmail === 'admin1' || cleanEmail === 'subadmin1') {
+      cleanEmail = 'admin1@gmps.com';
+    } else if (cleanEmail === 'admin2' || cleanEmail === 'subadmin2' || cleanEmail === 'sub admin 2') {
+      cleanEmail = 'admin2@gmail.com';
     }
 
     if (!cleanEmail.includes('@')) {
@@ -289,7 +343,13 @@ class AuthService {
     const cleanPassword = _password ? _password.trim() : '';
 
     const isSuperAdminEmail = cleanEmail === 'admin@lapakq.com' || cleanEmail === 'admin@kroomify.id';
-    const isSubAdminEmail = cleanEmail === 'admin1@gmps.com' || cleanEmail === 'admin2@gmail.com';
+    const isSubAdminEmail =
+      cleanEmail === 'admin1@gmps.com' ||
+      cleanEmail === 'admin1@gmail.com' ||
+      cleanEmail === 'admin2@gmail.com' ||
+      cleanEmail === 'admin2@gmps.com' ||
+      cleanEmail === 'subadmin2@gmail.com' ||
+      cleanEmail === 'subadmin2@gmps.com';
     const isMasterPassword =
       cleanPassword === 'bantuumkm2344@' ||
       cleanPassword === 'bantuumkm2344' ||
@@ -402,11 +462,16 @@ class AuthService {
           password_hash: account?.password || 'bantuumkm2344@',
           created_at: account?.user.createdAt || new Date().toISOString(),
         };
-      } else if (cleanEmail === 'admin1@gmps.com' || account?.id === 'USR004') {
+      } else if (
+        cleanEmail === 'admin1@gmps.com' ||
+        cleanEmail === 'admin1@gmail.com' ||
+        account?.id === 'USR004' ||
+        account?.id === 'USR004_GMAIL'
+      ) {
         dbUser = {
           id: 'USR004',
           name: 'Admin 1 (Admin Umum)',
-          email: 'admin1@gmps.com',
+          email: cleanEmail,
           phone: account?.user.phoneWhatsApp || '0881022084791',
           role: 'sub_admin',
           community_id: 'comm_1793843915683',
@@ -414,11 +479,20 @@ class AuthService {
           password_hash: account?.password || 'subadmin123',
           created_at: account?.user.createdAt || new Date().toISOString(),
         };
-      } else if (cleanEmail === 'admin2@gmail.com' || account?.id === 'USR005') {
+      } else if (
+        cleanEmail === 'admin2@gmail.com' ||
+        cleanEmail === 'admin2@gmps.com' ||
+        cleanEmail === 'subadmin2@gmail.com' ||
+        cleanEmail === 'subadmin2@gmps.com' ||
+        account?.id === 'USR005' ||
+        account?.id === 'USR005_GMPS' ||
+        account?.id === 'USR005_SUB' ||
+        account?.id === 'USR005_SUB_GMPS'
+      ) {
         dbUser = {
           id: 'USR005',
           name: 'Admin 2 (Admin Produk)',
-          email: 'admin2@gmail.com',
+          email: cleanEmail,
           phone: account?.user.phoneWhatsApp || '0881022084792',
           role: 'sub_admin',
           community_id: 'comm_1793843915683',
