@@ -62,18 +62,67 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [orders, setOrders] = useState<Order[]>([]);
   const [adminUser, setAdminUser] = useState<User | null>(() => currentUser || authService.getCurrentUser().user || null);
   const loggedInUser = adminUser || currentUser || authService.getCurrentUser().user;
-  const isSubAdmin = loggedInUser?.role === 'sub_admin' || loggedInUser?.role === 'sub_admin_umum' || loggedInUser?.role === 'community_admin';
-  const [activeTab, setActiveTab] = useState<AdminTab>(() => (isSubAdmin ? 'products' : 'overview'));
+  
+  const isSubAdminUmum =
+    loggedInUser?.role === 'sub_admin_umum' ||
+    loggedInUser?.email === 'admin1@gmps.com' ||
+    loggedInUser?.email === 'admin1@gmail.com';
 
-  // Hak akses ketat Sub Admin Umum: hanya boleh akses Produk & Komunitas
+  const isSubAdminProduk =
+    loggedInUser?.role === 'community_admin' ||
+    loggedInUser?.role === 'sub_admin_produk' ||
+    loggedInUser?.email === 'admin2@gmail.com' ||
+    loggedInUser?.email === 'admin2@gmps.com' ||
+    loggedInUser?.email === 'subadmin2@gmail.com' ||
+    loggedInUser?.email === 'subadmin2@gmps.com';
+
+  const isSubAdmin = isSubAdminUmum || isSubAdminProduk || loggedInUser?.role === 'sub_admin';
+
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
+    if (isSubAdminUmum) return 'communities';
+    if (isSubAdminProduk) return 'stores';
+    if (isSubAdmin) return 'communities';
+    return 'overview';
+  });
+
+  // Hak akses ketat berdasarkan peran sub-admin:
+  // - Admin Umum: khusus mengelola tampilan/profil halaman komunitas ('communities')
+  // - Sub Admin Produk: khusus mengelola toko binaan ('stores') dan produk ('products')
   useEffect(() => {
-    if (isSubAdmin && activeTab !== 'products' && activeTab !== 'communities') {
-      setActiveTab('products');
+    if (isSubAdminUmum) {
+      if (activeTab !== 'communities') {
+        setActiveTab('communities');
+      }
+    } else if (isSubAdminProduk) {
+      if (activeTab !== 'stores' && activeTab !== 'products') {
+        setActiveTab('stores');
+      }
+    } else if (isSubAdmin) {
+      if (activeTab !== 'communities' && activeTab !== 'stores' && activeTab !== 'products') {
+        setActiveTab('communities');
+      }
     }
-  }, [isSubAdmin, activeTab]);
+  }, [isSubAdminUmum, isSubAdminProduk, isSubAdmin, activeTab]);
+
+  const subAdminTitle = isSubAdminUmum
+    ? 'ADMIN UMUM'
+    : isSubAdminProduk
+    ? 'ADMIN PRODUK'
+    : isSubAdmin
+    ? 'SUB-ADMIN'
+    : 'SUPER ADMIN';
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const activeAdminName = loggedInUser?.name?.replace(/Kroomify/g, 'LapakQ') || (isSubAdmin ? 'Sub Admin Umum' : 'Super Admin LapakQ');
+  const activeAdminName =
+    loggedInUser?.name?.replace(/Kroomify/g, 'LapakQ') ||
+    (isSubAdminUmum
+      ? 'Admin Umum Komunitas'
+      : isSubAdminProduk
+      ? 'Admin Produk Komunitas'
+      : isSubAdmin
+      ? 'Sub Admin'
+      : 'Super Admin LapakQ');
   const activeAdminEmail = loggedInUser?.email?.replace('kroomify.id', 'lapakq.com') || (isSubAdmin ? 'koordinator@lapakq.com' : 'admin@lapakq.com');
   const activeAdminAvatar = loggedInUser?.avatarUrl;
   const [searchQuery, setSearchQuery] = useState('');
@@ -449,11 +498,39 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     return matchesSearch && matchesStatus && matchesCourier && matchesStore;
   });
 
-  const navItems: AdminNavItem[] = isSubAdmin
+  const navItems: AdminNavItem[] = isSubAdminUmum
     ? [
         {
+          id: 'communities',
+          label: language === 'en' ? 'Community Page' : 'Halaman Komunitas',
+          icon: Users,
+        },
+      ]
+    : isSubAdminProduk
+    ? [
+        {
+          id: 'stores',
+          label: language === 'en' ? 'Managed Stores' : 'Kelola Toko Binaan',
+          icon: StoreIcon,
+          count: subAdminStores.length,
+        },
+        {
           id: 'products',
-          label: language === 'en' ? 'Products' : 'Produk',
+          label: language === 'en' ? 'Store Products' : 'Produk Toko Binaan',
+          icon: Package,
+        },
+      ]
+    : isSubAdmin
+    ? [
+        {
+          id: 'stores',
+          label: language === 'en' ? 'Managed Stores' : 'Kelola Toko Binaan',
+          icon: StoreIcon,
+          count: subAdminStores.length,
+        },
+        {
+          id: 'products',
+          label: language === 'en' ? 'Store Products' : 'Produk Toko Binaan',
           icon: Package,
         },
         {
@@ -510,6 +587,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         onLogout={onLogout}
         language={language}
         isSubAdmin={isSubAdmin}
+        subAdminTitle={subAdminTitle}
       />
 
       {/* MAIN CONTENT WRAPPER */}
@@ -568,7 +646,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               onOpenStorefront={onOpenStorefront}
               language={language}
               isEn={isEn}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
               isSubAdmin={isSubAdmin}
               communityName={loggedInUser?.communityName}
             />
@@ -579,7 +657,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               language={language}
               onShowToast={(msg) => setToastMessage(msg)}
               onRequestUpdated={loadData}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -593,7 +671,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               handleApproveWithdrawal={handleApproveWithdrawal}
               handleRejectWithdrawal={handleRejectWithdrawal}
               isEn={isEn}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -615,7 +693,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               planForm={planForm}
               setPlanForm={setPlanForm}
               handleSavePlan={handleSavePlan}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -641,7 +719,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               stores={activeStoresForAdmin}
               handleCopyResi={handleCopyResi}
               setSelectedAdminOrder={setSelectedAdminOrder}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -649,7 +727,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <AdminTransactionsTab
               orders={activeOrdersForAdmin}
               isEn={isEn}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -661,7 +739,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               handleSaveSettings={handleSaveSettings}
               handleTestApi={handleTestApi}
               testingService={testingService}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
               isSaving={isSavingSettings}
             />
           )}

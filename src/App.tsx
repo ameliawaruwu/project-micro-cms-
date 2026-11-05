@@ -106,6 +106,13 @@ import { normalizeThemeId } from './themes/ThemeRegistry';
 import { THEME_DATA_MAP } from './themes/themeData';
 import { useCmsStore } from './cms/useCmsStore';
 
+const isAnyAdminRole = (role?: string) =>
+  role === 'admin' ||
+  role === 'sub_admin' ||
+  role === 'sub_admin_umum' ||
+  role === 'community_admin' ||
+  role === 'sub_admin_produk';
+
 export default function App() {
   // Auth Context Hook
   const { user, store: authStore, isAuthenticated, isLoading: isAuthLoading, logout } = useAuth();
@@ -124,7 +131,7 @@ export default function App() {
     const handleGoogleSuccess = (e: any) => {
       const gUser = e.detail?.user;
       const isNewUser = e.detail?.isNewUser;
-      const isGoogleAdmin = gUser?.role === 'admin' || gUser?.role === 'sub_admin' || gUser?.role === 'community_admin';
+      const isGoogleAdmin = isAnyAdminRole(gUser?.role);
       const targetMode = isGoogleAdmin ? 'admin' : 'merchant-desktop';
       setViewMode(targetMode);
       setAuthView(null);
@@ -254,7 +261,7 @@ export default function App() {
 
     const cachedUser = authService.getCurrentUser().user;
     if (cachedUser) {
-      const isAnyAdmin = cachedUser.role === 'admin' || cachedUser.role === 'sub_admin' || cachedUser.role === 'community_admin';
+      const isAnyAdmin = isAnyAdminRole(cachedUser.role);
       return isAnyAdmin ? 'admin' : 'merchant-desktop';
     }
     return 'landing';
@@ -496,7 +503,7 @@ export default function App() {
         return;
       }
 
-      const isAnyAdmin = user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin';
+      const isAnyAdmin = isAnyAdminRole(user.role);
       if (isAnyAdmin) {
         setActiveStore(EMPTY_STORE);
         setStores([]);
@@ -951,7 +958,7 @@ export default function App() {
 
     if (!isAuthLoading) {
       if (user && viewMode === 'landing') {
-        if (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin') {
+        if (isAnyAdminRole(user.role)) {
           setViewMode('admin');
         } else {
           setViewMode('merchant-desktop');
@@ -1403,7 +1410,7 @@ export default function App() {
   // LANDING PAGE VIEW (Hanya untuk user yang belum terotentikasi)
   if (viewMode === 'landing' && authView === null) {
     if (isAuthenticated && user) {
-      const isAnyAdmin = user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin';
+      const isAnyAdmin = isAnyAdminRole(user.role);
       setViewMode(isAnyAdmin ? 'admin' : 'merchant-desktop');
       return null;
     }
@@ -1418,7 +1425,7 @@ export default function App() {
           }}
           onNavigateDashboard={() => {
             if (user) {
-              const isAnyAdmin = user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin';
+              const isAnyAdmin = isAnyAdminRole(user.role);
               setViewMode(isAnyAdmin ? 'admin' : 'merchant-desktop');
             } else {
               setAuthView('login');
@@ -1463,13 +1470,15 @@ export default function App() {
           initialEmail={registeredEmailForLogin}
           onSuccess={() => {
             const currentUser = authService.getCurrentUser().user || user;
-            const isAnyAdmin = currentUser?.role === 'admin' || currentUser?.role === 'sub_admin' || currentUser?.role === 'community_admin';
+            const isAnyAdmin = isAnyAdminRole(currentUser?.role);
             const targetMode = isAnyAdmin ? 'admin' : 'merchant-desktop';
             setViewMode(targetMode);
             setAuthView(null);
             if (targetMode === 'admin') {
-              if (currentUser?.role === 'sub_admin' || currentUser?.role === 'community_admin') {
-                addToast(currentUser?.communityName ? `Selamat datang di Portal ${currentUser.communityName}!` : 'Selamat datang di Portal Koordinator Organisasi!');
+              if (currentUser?.role === 'sub_admin_umum') {
+                addToast(currentUser?.communityName ? `Selamat datang di Halaman Komunitas ${currentUser.communityName}!` : 'Selamat datang Admin Umum Komunitas!');
+              } else if (currentUser?.role === 'community_admin' || currentUser?.role === 'sub_admin_produk' || currentUser?.role === 'sub_admin') {
+                addToast(currentUser?.communityName ? `Selamat datang di Portal Toko & Produk ${currentUser.communityName}!` : 'Selamat datang Admin Produk Komunitas!');
               } else {
                 addToast('Selamat datang di Super Admin Panel!');
               }
@@ -1508,7 +1517,7 @@ export default function App() {
 
   // Render Public Storefront Content (Using New Dynamic Theme Engine)
   const renderStorefrontContent = () => {
-    const isOwner = Boolean(user && activeStore && activeStore.id === currentStore?.id && user.role !== 'admin' && user.role !== 'sub_admin' && user.role !== 'community_admin');
+    const isOwner = Boolean(user && activeStore && activeStore.id === currentStore?.id && !isAnyAdminRole(user.role));
     const isOwnerDesigning = Boolean(
       isOwner && (
         new URLSearchParams(window.location.search).get('preview') === 'true' ||
@@ -1519,7 +1528,7 @@ export default function App() {
 
     // Jika toko belum dipublikasikan atau toko belum ada (dan bukan pemilik toko yang sedang menguji draf tema di editor)
     if (!currentStore || !currentStore.id || (!isPublished && !isOwnerDesigning)) {
-      const isAdmin = Boolean(user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin'));
+      const isAdmin = Boolean(user && isAnyAdminRole(user.role));
       return (
         <StoreNotFoundPage
           store={currentStore}
@@ -1624,7 +1633,7 @@ export default function App() {
 
               <button
                 onClick={() => {
-                  if (user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') {
+                  if (isAnyAdminRole(user?.role)) {
                     setViewMode('admin');
                   } else {
                     setViewMode('merchant-desktop');
@@ -1633,7 +1642,7 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg bg-[#FFD358] hover:bg-[#FFB915] text-[#002A45] font-extrabold flex items-center gap-1 shadow-xs cursor-pointer text-xs"
               >
                 <Monitor className="w-3.5 h-3.5" />
-                <span>{(user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') ? 'Ke Admin' : 'Kembali'}</span>
+                <span>{isAnyAdminRole(user?.role) ? 'Ke Admin' : 'Kembali'}</span>
               </button>
             </div>
           </div>
@@ -1725,7 +1734,7 @@ export default function App() {
               isAdmin={false}
               onGoToDashboard={() => {
                 if (isPlatformHost(window.location.hostname)) {
-                  const isAnyAdmin = user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin');
+                  const isAnyAdmin = user && isAnyAdminRole(user.role);
                   setViewMode(user ? (isAnyAdmin ? 'admin' : 'merchant-desktop') : 'landing');
                 } else {
                   window.location.href = 'https://lapakq.com';
@@ -1740,7 +1749,7 @@ export default function App() {
         // Jika toko belum dipublikasikan atau sedang di-unpublish dan pengunjung bukan di mode preview
         if (!isPublished && !isPreview) {
           const isOwner = user && activeStore && activeStore.id === currentStore.id;
-          const isAdmin = user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin');
+          const isAdmin = user && isAnyAdminRole(user.role);
           return (
             <StoreNotFoundPage
               store={currentStore}
@@ -1787,22 +1796,22 @@ export default function App() {
             )}
             {/* Subtle Floating Switcher back to Dashboard (TIDAK DITAMPILKAN jika toko sudah di-deploy atau diakses oleh pembeli) */}
             {(!isPlatformHost(window.location.hostname) || Boolean(getStoreSlugFromHost(window.location.hostname))) ? null : (
-              Boolean(user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin' || (activeStore && activeStore.id === currentStore.id))) &&
+              Boolean(user && (isAnyAdminRole(user.role) || (activeStore && activeStore.id === currentStore.id))) &&
               new URLSearchParams(window.location.search).get('preview') !== 'true' && (
                 <div className="fixed bottom-4 left-4 z-50">
                   <button
                     onClick={() => {
-                      if (user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') {
+                      if (isAnyAdminRole(user?.role)) {
                         setViewMode('admin');
                       } else {
                         setViewMode('merchant-desktop');
                       }
                     }}
                     className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
-                    title={(user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') ? 'Kembali ke Admin Panel' : 'Kembali ke Dashboard Merchant'}
+                    title={isAnyAdminRole(user?.role) ? 'Kembali ke Admin Panel' : 'Kembali ke Dashboard Merchant'}
                   >
                     <Monitor className="w-3.5 h-3.5" />
-                    <span>{(user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') ? 'Admin Panel' : 'Dashboard'}</span>
+                    <span>{isAnyAdminRole(user?.role) ? 'Admin Panel' : 'Dashboard'}</span>
                   </button>
                 </div>
               )
@@ -1817,14 +1826,14 @@ export default function App() {
         <DeviceSimulatorFrame
           title={`Toko Online ${currentStore.name}`}
           urlPath={`microcms.id/${currentStore.slug}`}
-          onClose={() => setViewMode((user?.role === 'admin' || user?.role === 'sub_admin' || user?.role === 'community_admin') ? 'admin' : 'merchant-desktop')}
+          onClose={() => setViewMode(isAnyAdminRole(user?.role) ? 'admin' : 'merchant-desktop')}
         >
           {renderStorefrontContent()}
         </DeviceSimulatorFrame>
       )}
 
       {/* 4. SUPER ADMIN DASHBOARD VIEW */}
-      {viewMode === 'admin' && Boolean(user && (user.role === 'admin' || user.role === 'sub_admin' || user.role === 'community_admin')) && (
+      {viewMode === 'admin' && Boolean(user && isAnyAdminRole(user.role)) && (
         <AdminDashboardPage
           currentUser={user}
           onOpenStorefront={async (slug) => {

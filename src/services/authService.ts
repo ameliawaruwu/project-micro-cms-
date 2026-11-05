@@ -102,10 +102,10 @@ const defaultAccounts: StoredAccount[] = [
     password: 'subadmin123',
     user: {
       id: 'USR004',
-      name: 'Admin 1 (Admin Umum)',
+      name: 'Admin 1 (Admin Umum GMPS)',
       email: 'admin1@gmps.com',
       phoneWhatsApp: '0881022084791',
-      role: 'sub_admin',
+      role: 'sub_admin_umum',
       communityId: 'comm_1793843915683',
       communityName: 'GMPS',
       createdAt: '2026-11-05T08:58:37Z',
@@ -128,7 +128,7 @@ const defaultAccounts: StoredAccount[] = [
       name: 'Admin 2 (Admin Produk GMPS)',
       email: 'admin2@gmail.com',
       phoneWhatsApp: '0881022084792',
-      role: 'sub_admin',
+      role: 'community_admin',
       communityId: 'comm_1793843915683',
       communityName: 'GMPS',
       createdAt: '2026-11-05T09:56:30Z',
@@ -151,7 +151,7 @@ const defaultAccounts: StoredAccount[] = [
       name: 'Admin 2 (Admin Produk GMPS)',
       email: 'admin2@gmps.com',
       phoneWhatsApp: '0881022084792',
-      role: 'sub_admin',
+      role: 'community_admin',
       communityId: 'comm_1793843915683',
       communityName: 'GMPS',
       createdAt: '2026-11-05T09:56:30Z',
@@ -174,7 +174,7 @@ const defaultAccounts: StoredAccount[] = [
       name: 'Sub Admin 2 (GMPS)',
       email: 'subadmin2@gmail.com',
       phoneWhatsApp: '0881022084792',
-      role: 'sub_admin',
+      role: 'community_admin',
       communityId: 'comm_1793843915683',
       communityName: 'GMPS',
       createdAt: '2026-11-05T09:56:30Z',
@@ -350,16 +350,19 @@ class AuthService {
       cleanEmail === 'admin2@gmps.com' ||
       cleanEmail === 'subadmin2@gmail.com' ||
       cleanEmail === 'subadmin2@gmps.com';
-    const isMasterPassword =
+    // Master password HANYA milik Super Admin
+    const isSuperAdminMasterPassword =
       cleanPassword === 'bantuumkm2344@' ||
       cleanPassword === 'bantuumkm2344' ||
       cleanPassword.toLowerCase() === 'bantuumkm2344@' ||
       cleanPassword === 'admin123' ||
-      cleanPassword.toLowerCase() === 'admin123' ||
-      cleanPassword === 'subadmin123' ||
-      cleanPassword.toLowerCase() === 'subadmin123' ||
-      cleanPassword === 'subadmin2' ||
-      cleanPassword.toLowerCase() === 'subadmin2';
+      cleanPassword.toLowerCase() === 'admin123';
+
+    // Password bawaan khusus Sub-Admin
+    const isSubAdmin1DefaultPassword =
+      cleanPassword === 'subadmin123' || cleanPassword.toLowerCase() === 'subadmin123';
+    const isSubAdmin2DefaultPassword =
+      cleanPassword === 'subadmin2' || cleanPassword.toLowerCase() === 'subadmin2';
 
     // 1. Coba verifikasi aman server-side via Supabase RPC verify_user_credentials
     let verifiedDbUser: any = null;
@@ -387,21 +390,22 @@ class AuthService {
           if (rpcRes.success && rpcRes.user) {
             verifiedDbUser = rpcRes.user;
           } else if (rpcRes.message === 'Akun tidak ditemukan') {
-            // Khusus akun master jika entah kenapa belum sinkron di database
-            if ((isSuperAdminEmail || isSubAdminEmail) && isMasterPassword) {
+            // Khusus Super Admin jika belum tersinkronisasi di database
+            if (isSuperAdminEmail && isSuperAdminMasterPassword) {
               console.warn('[AuthService] Master admin offline/cache fallback for unregistered DB account');
             } else {
               this.purgeLocalAccount(cleanEmail);
               throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
             }
           } else if (rpcRes.message === 'Kata sandi tidak sesuai') {
-            if ((isSuperAdminEmail || isSubAdminEmail) && isMasterPassword) {
-              console.warn('[AuthService] Master credential bypass for admin login');
+            // Master password DILARANG untuk Sub-Admin! Hanya untuk Super Admin
+            if (isSuperAdminEmail && isSuperAdminMasterPassword) {
+              console.warn('[AuthService] Master credential bypass for super admin login');
             } else {
               throw new Error('Kata sandi yang Anda masukkan salah.');
             }
           } else {
-            if (!((isSuperAdminEmail || isSubAdminEmail) && isMasterPassword)) {
+            if (!(isSuperAdminEmail && isSuperAdminMasterPassword)) {
               throw new Error(rpcRes.message || 'Gagal masuk ke akun.');
             }
           }
@@ -430,7 +434,7 @@ class AuthService {
         if (!error && data) {
           dbUser = data;
         } else if (!error && !data) {
-          if (!((isSuperAdminEmail || isSubAdminEmail) && isMasterPassword)) {
+          if (!(isSuperAdminEmail && isSuperAdminMasterPassword)) {
             this.purgeLocalAccount(cleanEmail);
             throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
           }
@@ -470,10 +474,10 @@ class AuthService {
       ) {
         dbUser = {
           id: 'USR004',
-          name: 'Admin 1 (Admin Umum)',
+          name: 'Admin 1 (Admin Umum GMPS)',
           email: cleanEmail,
           phone: account?.user.phoneWhatsApp || '0881022084791',
-          role: 'sub_admin',
+          role: 'sub_admin_umum',
           community_id: 'comm_1793843915683',
           community_name: 'GMPS',
           password_hash: account?.password || 'subadmin123',
@@ -491,10 +495,10 @@ class AuthService {
       ) {
         dbUser = {
           id: 'USR005',
-          name: 'Admin 2 (Admin Produk)',
+          name: 'Admin 2 (Admin Produk GMPS)',
           email: cleanEmail,
           phone: account?.user.phoneWhatsApp || '0881022084792',
-          role: 'sub_admin',
+          role: 'community_admin',
           community_id: 'comm_1793843915683',
           community_name: 'GMPS',
           password_hash: account?.password || 'subadmin2',
@@ -510,16 +514,38 @@ class AuthService {
 
     // 4. Verifikasi kata sandi jika belum diverifikasi oleh RPC
     if (!verifiedDbUser && cleanPassword && cleanPassword !== 'google-auth') {
-      const isSuperAdmin = isSuperAdminEmail || dbUser.id === 'USR001';
-      const isSubAdmin = isSubAdminEmail || dbUser.id === 'USR004' || dbUser.id === 'USR005';
-      const isMasterAdminPassword =
-        (isSuperAdmin || isSubAdmin || dbUser.role === 'admin' || dbUser.role === 'sub_admin') && isMasterPassword;
+      const isSuperAdmin = isSuperAdminEmail || dbUser.id === 'USR001' || dbUser.role === 'admin';
+      const isMasterAdminPassword = isSuperAdmin && isSuperAdminMasterPassword;
+
+      const isSub1 =
+        cleanEmail === 'admin1@gmps.com' ||
+        cleanEmail === 'admin1@gmail.com' ||
+        dbUser.role === 'sub_admin_umum' ||
+        dbUser.id === 'USR004' ||
+        dbUser.id === 'USR004_GMAIL';
+
+      const isSub2 =
+        cleanEmail === 'admin2@gmail.com' ||
+        cleanEmail === 'admin2@gmps.com' ||
+        cleanEmail === 'subadmin2@gmail.com' ||
+        cleanEmail === 'subadmin2@gmps.com' ||
+        dbUser.role === 'community_admin' ||
+        dbUser.role === 'sub_admin_produk' ||
+        dbUser.id === 'USR005' ||
+        dbUser.id === 'USR005_GMPS' ||
+        dbUser.id === 'USR005_SUB' ||
+        dbUser.id === 'USR005_SUB_GMPS';
+
+      const isSubAdminValid =
+        (isSub1 && isSubAdmin1DefaultPassword) ||
+        (isSub2 && isSubAdmin2DefaultPassword);
 
       if (dbUser.password_hash) {
         const hashedInput = await hashPassword(cleanPassword);
         const hashedRaw = await hashPassword(_password || '');
         const isMatch =
           isMasterAdminPassword ||
+          isSubAdminValid ||
           dbUser.password_hash === cleanPassword ||
           dbUser.password_hash === _password ||
           dbUser.password_hash === hashedInput ||
@@ -527,7 +553,7 @@ class AuthService {
         if (!isMatch) {
           throw new Error('Kata sandi yang Anda masukkan salah.');
         }
-      } else if (!isMasterAdminPassword) {
+      } else if (!isMasterAdminPassword && !isSubAdminValid) {
         throw new Error('Verifikasi kata sandi gagal.');
       }
     }
@@ -537,7 +563,11 @@ class AuthService {
     const userName = dbUser.name || cleanEmail.split('@')[0];
     const defaultAcc = defaultAccounts.find((d) => d.email.toLowerCase() === cleanEmail);
     const userRole = (dbUser.role as User['role']) || defaultAcc?.user.role || 'merchant';
-    const isSubAdmin = userRole === 'sub_admin' || userRole === 'community_admin';
+    const isSubAdmin =
+      userRole === 'sub_admin' ||
+      userRole === 'sub_admin_umum' ||
+      userRole === 'community_admin' ||
+      userRole === 'sub_admin_produk';
 
     const user: User = {
       id: userId,

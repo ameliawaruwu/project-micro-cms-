@@ -4,7 +4,7 @@ export interface User {
   email: string;
   phoneWhatsApp: string;
   avatarUrl?: string;
-  role: 'merchant' | 'admin' | 'sub_admin' | 'sub_admin_umum' | 'community_admin' | 'buyer';
+  role: 'merchant' | 'admin' | 'sub_admin' | 'sub_admin_umum' | 'community_admin' | 'sub_admin_produk' | 'buyer';
   communityId?: string;
   communityName?: string;
   baseDomain?: string;

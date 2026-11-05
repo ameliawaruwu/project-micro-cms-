@@ -50,8 +50,33 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const { language } = useLanguage();
   const isEn = language === 'en';
 
-  const isSubAdmin = currentUser?.role === 'sub_admin' || currentUser?.role === 'sub_admin_umum' || currentUser?.role === 'community_admin';
-  const targetCommunityId = currentUser?.communityId || '';
+  const isSubAdminUmum =
+    currentUser?.role === 'sub_admin_umum' ||
+    currentUser?.email === 'admin1@gmps.com' ||
+    currentUser?.email === 'admin1@gmail.com';
+  const isSubAdminProduk =
+    currentUser?.role === 'community_admin' ||
+    currentUser?.role === 'sub_admin_produk' ||
+    currentUser?.email === 'admin2@gmail.com' ||
+    currentUser?.email === 'admin2@gmps.com' ||
+    currentUser?.email === 'subadmin2@gmail.com';
+  const isSubAdmin = isSubAdminUmum || isSubAdminProduk || currentUser?.role === 'sub_admin';
+
+  // Fallback targetCommunityId dari email jika belum tersimpan di currentUser.communityId
+  const targetCommunityId = useMemo(() => {
+    if (currentUser?.communityId) return currentUser.communityId;
+    if (currentUser?.email) {
+      const email = currentUser.email.toLowerCase();
+      const comms = communityService.getCommunities();
+      const found = comms.find(
+        (c) =>
+          c.subAdminEmail?.toLowerCase() === email ||
+          c.coordinatorEmail?.toLowerCase() === email
+      );
+      if (found) return found.id;
+    }
+    return '';
+  }, [currentUser]);
 
   // Data states
   const [communities, setCommunities] = useState<Community[]>(() => communityService.getCommunities());
@@ -714,13 +739,13 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
           {/* Grid Informasi Admin Komunitas & Status */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            {/* Card 1: Sub Admin Umum (Halaman & Produk) */}
+            {/* Card 1: Sub Admin Umum (Halaman Komunitas) */}
             <div className="p-4 rounded-xl border border-purple-200/80 space-y-2 bg-purple-50/30 flex flex-col justify-between">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-500 font-semibold block">Sub-Admin Umum:</span>
                   <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold">
-                    Halaman &amp; Produk
+                    Halaman Komunitas
                   </span>
                 </div>
                 <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
@@ -739,17 +764,17 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 )}
               </div>
               <p className="text-[11px] text-purple-700/80 bg-purple-100/50 p-2 rounded-lg mt-2">
-                Mengatur halaman komunitas &amp; katalog produk binaan.
+                Mengatur profil, identitas &amp; tampilan halaman komunitas.
               </p>
             </div>
 
-            {/* Card 2: Admin Koordinator Toko (Lapak Binaan) */}
+            {/* Card 2: Sub-Admin Produk (Kelola Toko & Produk) */}
             <div className="p-4 rounded-xl border border-blue-200/80 space-y-2 bg-blue-50/30 flex flex-col justify-between">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 font-semibold block">Koordinator Toko:</span>
+                  <span className="text-gray-500 font-semibold block">Sub-Admin Produk:</span>
                   <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
-                    Lapak Binaan
+                    Toko &amp; Produk
                   </span>
                 </div>
                 <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
@@ -768,7 +793,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 )}
               </div>
               <p className="text-[11px] text-blue-700/80 bg-blue-100/50 p-2 rounded-lg mt-2">
-                Menaungi &amp; mendampingi toko-toko anggota binaan.
+                Menaungi toko anggota binaan &amp; katalog produk binaan.
               </p>
             </div>
 
@@ -1162,7 +1187,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
                 </div>
 
-                {/* Bagian 2: Akun Sub-Admin Umum (Halaman & Produk) */}
+                {/* Bagian 2: Akun Sub-Admin Umum (Halaman Komunitas) */}
                 <div className="p-3 bg-purple-50/40 rounded-xl border border-purple-200/80 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
@@ -1170,9 +1195,12 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       <span>2. Akun Sub-Admin Umum</span>
                     </h4>
                     <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
-                      Halaman &amp; Produk
+                      Akses Halaman Komunitas
                     </span>
                   </div>
+                  <p className="text-[11px] text-gray-500 -mt-1">
+                    Khusus untuk mengelola informasi profil dan tampilan halaman komunitas.
+                  </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
@@ -1180,7 +1208,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       <input
                         type="text"
                         required
-                        placeholder="Contoh: Andi Pratama"
+                        placeholder="Contoh: Admin 1"
                         value={createForm.subAdminName}
                         onChange={(e) => setCreateForm({ ...createForm, subAdminName: e.target.value })}
                         className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
@@ -1210,7 +1238,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       <input
                         type="email"
                         required
-                        placeholder="subadmin@garut.id"
+                        placeholder="admin1@gmps.com"
                         value={createForm.subAdminEmail}
                         onChange={(e) => setCreateForm({ ...createForm, subAdminEmail: e.target.value })}
                         className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
@@ -1231,17 +1259,20 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
                 </div>
 
-                {/* Bagian 3: Akun Koordinator Toko (Lapak Binaan) */}
+                {/* Bagian 3: Akun Sub-Admin Produk (Kelola Toko & Produk) */}
                 <div className="p-3 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
                       <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                      <span>3. Akun Koordinator Toko</span>
+                      <span>3. Akun Sub-Admin Produk (Koordinator Toko)</span>
                     </h4>
                     <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">
-                      Lapak Binaan
+                      Akses Toko &amp; Produk
                     </span>
                   </div>
+                  <p className="text-[11px] text-gray-500 -mt-1">
+                    Khusus untuk menaungi toko binaan dan mengelola katalog produk binaannya.
+                  </p>
 
                   {/* Checkbox Samakan Akun */}
                   <label className="flex items-center gap-2 p-2 bg-white rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-50/50 transition">
@@ -1252,7 +1283,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                     />
                     <span className="text-xs font-semibold text-gray-800">
-                      Gunakan akun yang sama dengan Sub-Admin Umum
+                      Samakan dengan akun Sub-Admin Umum (merangkap tugas)
                     </span>
                   </label>
 
@@ -1260,11 +1291,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     <div className="space-y-2.5 pt-1 animate-in fade-in duration-150">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div>
-                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Koordinator *</label>
+                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Sub-Admin Produk *</label>
                           <input
                             type="text"
                             required={!createForm.sameAsSubAdmin}
-                            placeholder="Budi Santoso"
+                            placeholder="Contoh: Admin 2"
                             value={createForm.coordinatorName}
                             onChange={(e) => setCreateForm({ ...createForm, coordinatorName: e.target.value })}
                             className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
@@ -1294,7 +1325,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                           <input
                             type="email"
                             required={!createForm.sameAsSubAdmin}
-                            placeholder="koordinator@garut.id"
+                            placeholder="admin2@gmail.com"
                             value={createForm.coordinatorEmail}
                             onChange={(e) => setCreateForm({ ...createForm, coordinatorEmail: e.target.value })}
                             className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
@@ -1306,7 +1337,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                           <input
                             type="text"
                             required={!createForm.sameAsSubAdmin}
-                            placeholder="subadmin123"
+                            placeholder="subadmin2"
                             value={createForm.coordinatorPassword}
                             onChange={(e) => setCreateForm({ ...createForm, coordinatorPassword: e.target.value })}
                             className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-blue-600"
@@ -1552,13 +1583,13 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       <span>Kontak Sub-Admin Umum</span>
                     </h4>
                     <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
-                      Halaman &amp; Produk
+                      Akses Halaman Komunitas
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Sub-Admin</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Sub-Admin Umum</label>
                       <input
                         type="text"
                         value={editForm.subAdminName}
@@ -1581,7 +1612,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login Sub-Admin</label>
+                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login Sub-Admin Umum</label>
                     <input
                       type="email"
                       value={editForm.subAdminEmail}
@@ -1591,21 +1622,21 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
                 </div>
 
-                {/* Section Koordinator Toko */}
+                {/* Section Sub-Admin Produk */}
                 <div className="p-3 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
                       <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Kontak Koordinator Toko</span>
+                      <span>Kontak Sub-Admin Produk (Koordinator Toko)</span>
                     </h4>
                     <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">
-                      Lapak Binaan
+                      Akses Toko &amp; Produk
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Koordinator *</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Sub-Admin Produk *</label>
                       <input
                         type="text"
                         required
@@ -1615,7 +1646,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">No. WhatsApp Koordinator</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">No. WhatsApp Sub-Admin Produk</label>
                       <input
                         type="tel"
                         inputMode="numeric"
@@ -1629,7 +1660,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login Koordinator *</label>
+                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login Sub-Admin Produk *</label>
                     <input
                       type="email"
                       required
