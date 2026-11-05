@@ -27,11 +27,26 @@ export const partnerApiRouter = Router();
 
 const EMAIL_REGEX = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 
-function requirePartnerKey(req: Request, res: Response, next: NextFunction) {
-  if (!req.apiAuth?.communityId || req.apiAuth.isMaster) {
-    return sendError(res, 403, 'FORBIDDEN', 'Endpoint ini hanya untuk API key partner yang terikat ke komunitas.');
+async function requirePartnerKey(req: Request, res: Response, next: NextFunction) {
+  if (req.apiAuth?.communityId && !req.apiAuth.isMaster) return next();
+  // Key partner bisa bernilai sama dengan master key env (requireApiKey mengutamakan master).
+  // Di router partner, keterikatan komunitas di partner_api_keys yang berlaku.
+  const provided = String(req.header('X-API-Key') || '').trim();
+  if (provided) {
+    try {
+      const r = await pool.query(
+        'SELECT partner_name, community_id FROM partner_api_keys WHERE api_key = $1 AND is_active = true AND community_id IS NOT NULL LIMIT 1',
+        [provided]
+      );
+      if (r.rows.length > 0) {
+        req.apiAuth = { keyName: r.rows[0].partner_name, isReadOnly: false, communityId: r.rows[0].community_id, isMaster: false };
+        return next();
+      }
+    } catch (err: any) {
+      console.error('[Partner API] Gagal memeriksa partner key:', err?.message);
+    }
   }
-  next();
+  return sendError(res, 403, 'FORBIDDEN', 'Endpoint ini hanya untuk API key partner yang terikat ke komunitas.');
 }
 
 partnerApiRouter.use(requireApiKey, enforceRateLimit, requirePartnerKey);
