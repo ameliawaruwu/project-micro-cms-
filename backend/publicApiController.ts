@@ -19,6 +19,15 @@ const supabaseClient = createClient(
 
 const SAFE_IDENTIFIER_REGEX = /^[A-Za-z0-9_-]{1,100}$/;
 
+/** Nilai yang aman disisipkan ke filter PostgREST `.or()`; selain itu null. */
+const safeIdentifier = (v: string): string | null => (SAFE_IDENTIFIER_REGEX.test(v) ? v : null);
+
+/**
+ * Kata kunci pencarian untuk filter `ilike` di `.or()`. Karakter yang punya arti di sintaks
+ * PostgREST (koma, titik, kurung, titik dua, kutip, wildcard, backslash) dibuang.
+ */
+const safeSearchTerm = (v: string): string => v.replace(/[,.():"'*%\\]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
+
 // In-memory rate limiting store (Poin 2.4)
 interface RateLimitBucket {
   count: number;
@@ -337,6 +346,7 @@ async function resolveCommunityId(idOrSlug: string): Promise<string | null> {
     );
     if (res.rows.length > 0) return res.rows[0].id;
   } catch {
+    if (!safeIdentifier(idOrSlug)) return null;
     const { data } = await supabaseClient
       .from('communities')
       .select('id')
@@ -542,13 +552,14 @@ publicApiRouter.get('/communities', requireApiKey, enforceRateLimit, async (req:
       // Supabase fallback query
       let sQuery = supabaseClient.from('communities').select('*', { count: 'exact' });
       if (effectiveCommunityId) {
+        if (!safeIdentifier(effectiveCommunityId)) throw new Error('ID komunitas tidak valid.');
         sQuery = sQuery.or(`id.eq.${effectiveCommunityId},slug.eq.${effectiveCommunityId}`);
       }
       if (status && status !== 'all') {
         sQuery = sQuery.eq('status', status);
       }
       if (search) {
-        sQuery = sQuery.or(`name.ilike.%${search}%,slug.ilike.%${search}%,description.ilike.%${search}%`);
+        sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,slug.ilike.%${safeSearchTerm(search)}%,description.ilike.%${safeSearchTerm(search)}%`);
       }
 
       const { data, count, error } = await sQuery
@@ -582,8 +593,8 @@ publicApiRouter.get('/communities', requireApiKey, enforceRateLimit, async (req:
 publicApiRouter.get('/communities/:id', requireApiKey, enforceRateLimit, async (req: Request, res: Response) => {
   try {
     const idOrSlug = String(req.params.id || '').trim();
-    if (!idOrSlug) {
-      return sendError(res, 400, 'VALIDATION_ERROR', 'ID atau slug komunitas wajib diisi.');
+    if (!idOrSlug || !safeIdentifier(idOrSlug)) {
+      return sendError(res, 400, 'VALIDATION_ERROR', 'ID atau slug komunitas tidak valid.');
     }
 
     let row: any = null;
@@ -676,7 +687,7 @@ publicApiRouter.get('/communities/:id/stores', requireApiKey, enforceRateLimit, 
         .eq('community_id', realCommunityId);
 
       if (category) sQuery = sQuery.ilike('category', category);
-      if (search) sQuery = sQuery.or(`name.ilike.%${search}%,slug.ilike.%${search}%`);
+      if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,slug.ilike.%${safeSearchTerm(search)}%`);
 
       const { data, count, error } = await sQuery
         .order('created_at', { ascending: false })
@@ -791,7 +802,7 @@ publicApiRouter.get('/communities/:id/products', requireApiKey, enforceRateLimit
 
       if (storeId) sQuery = sQuery.eq('store_id', storeId);
       if (category) sQuery = sQuery.ilike('category', category);
-      if (search) sQuery = sQuery.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
+      if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,sku.ilike.%${safeSearchTerm(search)}%`);
       if (status === 'out_of_stock') sQuery = sQuery.lte('stock', 0);
       else if (status === 'available') sQuery = sQuery.gt('stock', 0);
 
@@ -849,6 +860,12 @@ publicApiRouter.get('/stores', requireApiKey, enforceRateLimit, async (req: Requ
     // Filter by community jika API key terisolasi ke komunitas tertentu
     const effectiveCommunityId = req.apiAuth?.communityId || communityId;
 
+    // Publik anonim HANYA melihat toko terbit. Partner key bisa melihat draf toko komunitasnya
+    const isPrivileged = Boolean(req.apiAuth?.communityId || req.apiAuth?.isMaster);
+    const filterPublished = !isPrivileged
+      ? true
+      : (isPublishedParam !== undefined ? isPublishedParam === 'true' : undefined);
+
     let rows: any[] = [];
     let totalCount = 0;
 
@@ -858,19 +875,13 @@ publicApiRouter.get('/stores', requireApiKey, enforceRateLimit, async (req: Requ
       let pIdx = 1;
 
       if (effectiveCommunityId) {
-        query += ` AND (community_id = ${pIdx} OR community_id IN (SELECT id FROM communities WHERE slug = ${pIdx}))`;
+        query += ` AND (community_id = $${pIdx} OR community_id IN (SELECT id FROM communities WHERE slug = $${pIdx}))`;
         params.push(effectiveCommunityId);
         pIdx++;
       }
 
-      // Publik anonim HANYA melihat toko terbit. Partner key bisa melihat draf toko komunitasnya
-      const isPrivileged = Boolean(req.apiAuth?.communityId || req.apiAuth?.isMaster);
-      const filterPublished = !isPrivileged
-        ? true
-        : (isPublishedParam !== undefined ? isPublishedParam === 'true' : undefined);
-
       if (filterPublished !== undefined) {
-        query += ` AND is_published = ${pIdx++}`;
+        query += ` AND is_published = $${pIdx++}`;
         params.push(filterPublished);
       }
       if (category) {
@@ -896,7 +907,7 @@ publicApiRouter.get('/stores', requireApiKey, enforceRateLimit, async (req: Requ
       if (effectiveCommunityId) sQuery = sQuery.eq('community_id', effectiveCommunityId);
       if (filterPublished !== undefined) sQuery = sQuery.eq('is_published', filterPublished);
       if (category) sQuery = sQuery.ilike('category', category);
-      if (search) sQuery = sQuery.or(`name.ilike.%${search}%,slug.ilike.%${search}%`);
+      if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,slug.ilike.%${safeSearchTerm(search)}%`);
 
       const { data, count, error } = await sQuery
         .order('created_at', { ascending: false })
@@ -1041,7 +1052,7 @@ publicApiRouter.get('/stores/:storeId/products', requireApiKey, enforceRateLimit
         }
       }
 
-      dataQuery += ` ORDER BY created_at DESC LIMIT ${pIdx++} OFFSET ${pIdx++}`;
+      dataQuery += ` ORDER BY created_at DESC LIMIT $${pIdx++} OFFSET $${pIdx++}`;
       params.push(limit, offset);
 
       const [countRes, dataRes] = await Promise.all([
@@ -1174,7 +1185,7 @@ publicApiRouter.get('/products', requireApiKey, enforceRateLimit, async (req: Re
       let sQuery = supabaseClient.from('products').select('*', { count: 'exact' });
       if (storeId) sQuery = sQuery.eq('store_id', storeId);
       if (category) sQuery = sQuery.ilike('category', category);
-      if (search) sQuery = sQuery.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
+      if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,sku.ilike.%${safeSearchTerm(search)}%`);
       if (status === 'out_of_stock') sQuery = sQuery.lte('stock', 0);
       else if (status === 'available') sQuery = sQuery.gt('stock', 0);
       if (minPrice !== null && !isNaN(minPrice)) sQuery = sQuery.gte('price', minPrice);
