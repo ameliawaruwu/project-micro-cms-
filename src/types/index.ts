@@ -320,8 +320,11 @@ export interface StorePaymentConfig {
 export interface Store {
   id: string;
   merchantId?: string;
+  /** Komunitas utama (stores.community_id). */
   communityId?: string;
   communityName?: string;
+  /** Komunitas tambahan (tabel store_communities), di luar komunitas utama. */
+  extraCommunityIds?: string[];
   baseDomain?: string;
   paymentConfig?: StorePaymentConfig;
 

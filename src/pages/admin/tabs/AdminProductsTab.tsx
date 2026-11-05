@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { storeInCommunity } from '../../../utils/communityMembership';
 import {
   Package,
   Search,
@@ -98,9 +99,7 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
       if (isSubAdmin && currentUser?.communityId) {
         const cId = currentUser.communityId;
         const cName = (currentUser.communityName || '').trim().toLowerCase();
-        scopedStores = scopedStores.filter(
-          (s) => s.communityId === cId || (cName && s.communityName && s.communityName.trim().toLowerCase() === cName)
-        );
+        scopedStores = scopedStores.filter((s) => storeInCommunity(s, cId, cName));
         const scopedStoreIds = new Set(scopedStores.map((s) => s.id));
         scopedProducts = scopedProducts.filter((p) => scopedStoreIds.has(p.storeId));
       }

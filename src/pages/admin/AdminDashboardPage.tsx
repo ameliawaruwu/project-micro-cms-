@@ -32,6 +32,7 @@ import { AdminOrdersShippingTab } from './tabs/AdminOrdersShippingTab';
 import { AdminTransactionsTab } from './tabs/AdminTransactionsTab';
 import { AdminSettingsTab } from './tabs/AdminSettingsTab';
 import { AdminCommunitiesTab } from './tabs/AdminCommunitiesTab';
+import { storeInCommunity } from '../../utils/communityMembership';
 import { AdminProductsTab } from './tabs/AdminProductsTab';
 import {
   getShippingStatusBadgeStyle,
@@ -412,11 +413,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     const targetId = loggedInUser?.communityId;
     const targetName = (loggedInUser?.communityName || '').trim().toLowerCase();
     if (!targetId && !targetName) return stores;
-    return stores.filter((s) => {
-      if (targetId && s.communityId === targetId) return true;
-      if (targetName && s.communityName && s.communityName.trim().toLowerCase() === targetName) return true;
-      return false;
-    });
+    return stores.filter((s) => storeInCommunity(s, targetId, targetName));
   }, [stores, isSubAdmin, loggedInUser?.communityId, loggedInUser?.communityName]);
 
   const subAdminStoreIds = React.useMemo(() => new Set(subAdminStores.map((s) => s.id)), [subAdminStores]);

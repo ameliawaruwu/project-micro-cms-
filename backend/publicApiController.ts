@@ -5,14 +5,14 @@ import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
-const pool = new Pool({
+export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
 // Supabase fallback client (strictly from environment variables without hardcoded secrets)
 const supabaseUrl = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
 const supabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
-const supabaseClient = createClient(
+export const supabaseClient = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseKey || 'placeholder_key'
 );
@@ -32,13 +32,13 @@ const sqlSoldOut = (col: string) => `(${col}stock <= 0 OR ${col}status IN (${sql
 const pgrstNotIn = (vals: string[]) => `(${vals.map((v) => `"${v}"`).join(',')})`;
 
 /** Nilai yang aman disisipkan ke filter PostgREST `.or()`; selain itu null. */
-const safeIdentifier = (v: string): string | null => (SAFE_IDENTIFIER_REGEX.test(v) ? v : null);
+export const safeIdentifier = (v: string): string | null => (SAFE_IDENTIFIER_REGEX.test(v) ? v : null);
 
 /**
  * Kata kunci pencarian untuk filter `ilike` di `.or()`. Karakter yang punya arti di sintaks
  * PostgREST (koma, titik, kurung, titik dua, kutip, wildcard, backslash) dibuang.
  */
-const safeSearchTerm = (v: string): string => v.replace(/[,.():"'*%\\]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
+export const safeSearchTerm = (v: string): string => v.replace(/[,.():"'*%\\]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
 
 // In-memory rate limiting store (Poin 2.4)
 interface RateLimitBucket {
@@ -65,7 +65,7 @@ declare global {
 /**
  * Standard JSON Response Helpers
  */
-function sendError(res: Response, statusCode: number, code: string, message: string) {
+export function sendError(res: Response, statusCode: number, code: string, message: string) {
   return res.status(statusCode).json({
     success: false,
     code,
@@ -73,7 +73,7 @@ function sendError(res: Response, statusCode: number, code: string, message: str
   });
 }
 
-function sendSuccess(
+export function sendSuccess(
   res: Response,
   statusCode: number,
   code: string,
@@ -111,7 +111,7 @@ publicApiRouter.use((req: Request, res: Response, next: NextFunction) => {
 // =========================================================================
 // 2. MIDDLEWARE AUTENTIKASI API KEY (HEADER X-API-Key / QUERY PARAM apiKey)
 // =========================================================================
-async function requireApiKey(req: Request, res: Response, next: NextFunction) {
+export async function requireApiKey(req: Request, res: Response, next: NextFunction) {
   try {
     const provided = String(
       req.header('X-API-Key') ||
@@ -190,7 +190,7 @@ async function requireApiKey(req: Request, res: Response, next: NextFunction) {
 }
 
 // Middleware Rate Limiting per IP (Anonim: 60 req/min) & per API Key (Partner: 300 req/min)
-function enforceRateLimit(req: Request, res: Response, next: NextFunction) {
+export function enforceRateLimit(req: Request, res: Response, next: NextFunction) {
   const isPrivileged = Boolean(req.apiAuth?.communityId || req.apiAuth?.isMaster);
   const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown')
     .split(',')[0]
@@ -263,7 +263,7 @@ function sanitizeCommunity(row: any, stats?: { totalStores?: number; totalProduc
 /**
  * Sanitasi Data Toko (Menghapus data sensitif seperti nomor rekening, saldo, credential)
  */
-function sanitizeStore(row: any) {
+export function sanitizeStore(row: any) {
   return {
     id: row.id,
     name: row.name,
@@ -349,7 +349,7 @@ function sanitizeProduct(row: any) {
 }
 
 // Helper untuk query ID komunitas berdasarkan slug atau ID
-async function resolveCommunityId(idOrSlug: string): Promise<string | null> {
+export async function resolveCommunityId(idOrSlug: string): Promise<string | null> {
   if (!idOrSlug) return null;
   try {
     const res = await pool.query(
@@ -367,6 +367,44 @@ async function resolveCommunityId(idOrSlug: string): Promise<string | null> {
     if (data?.id) return data.id;
   }
   return null;
+}
+
+// =========================================================================
+// KEANGGOTAAN KOMUNITAS (komunitas utama stores.community_id + tabel store_communities)
+// =========================================================================
+
+/**
+ * Predikat SQL: toko dengan alias `alias` (mis. 's.' atau 'stores.') termasuk komunitas `ph`
+ * (placeholder seperti '$1' atau kolom seperti 'c.id'), sebagai komunitas utama atau tambahan.
+ */
+export const sqlInCommunity = (alias: string, ph: string) =>
+  `(${alias}community_id = ${ph} OR EXISTS (SELECT 1 FROM store_communities sc WHERE sc.store_id = ${alias}id AND sc.community_id = ${ph}))`;
+
+/** Apakah toko termasuk komunitas (utama atau tambahan). */
+export async function storeInCommunity(storeId: string, primaryCommunityId: string | null | undefined, communityId: string): Promise<boolean> {
+  if (!communityId || !storeId) return false;
+  if (primaryCommunityId === communityId) return true;
+  try {
+    const r = await pool.query('SELECT 1 FROM store_communities WHERE store_id = $1 AND community_id = $2 LIMIT 1', [storeId, communityId]);
+    return r.rows.length > 0;
+  } catch {
+    const { data } = await supabaseClient
+      .from('store_communities')
+      .select('store_id')
+      .eq('store_id', storeId)
+      .eq('community_id', communityId)
+      .maybeSingle();
+    return Boolean(data);
+  }
+}
+
+/** ID seluruh toko komunitas, untuk jalur fallback Supabase. */
+async function communityStoreIdsFallback(communityId: string): Promise<string[]> {
+  const [primary, extra] = await Promise.all([
+    supabaseClient.from('stores').select('id').eq('community_id', communityId),
+    supabaseClient.from('store_communities').select('store_id').eq('community_id', communityId),
+  ]);
+  return [...new Set([...(primary.data || []).map((r: any) => r.id), ...(extra.data || []).map((r: any) => r.store_id)])];
 }
 
 // =========================================================================
@@ -527,8 +565,8 @@ publicApiRouter.get('/communities', requireApiKey, enforceRateLimit, async (req:
       let query = `
         SELECT 
           c.*,
-          COALESCE((SELECT COUNT(*)::int FROM stores s WHERE s.community_id = c.id), 0) AS total_stores,
-          COALESCE((SELECT COUNT(*)::int FROM products p JOIN stores s ON p.store_id = s.id WHERE s.community_id = c.id), 0) AS total_products
+          COALESCE((SELECT COUNT(*)::int FROM stores s WHERE ${sqlInCommunity('s.', 'c.id')}), 0) AS total_stores,
+          COALESCE((SELECT COUNT(*)::int FROM products p JOIN stores s ON p.store_id = s.id WHERE ${sqlInCommunity('s.', 'c.id')}), 0) AS total_products
         FROM communities c
         WHERE 1=1
       `;
@@ -614,8 +652,8 @@ publicApiRouter.get('/communities/:id', requireApiKey, enforceRateLimit, async (
       const res = await pool.query(
         `SELECT 
           c.*,
-          COALESCE((SELECT COUNT(*)::int FROM stores s WHERE s.community_id = c.id), 0) AS total_stores,
-          COALESCE((SELECT COUNT(*)::int FROM products p JOIN stores s ON p.store_id = s.id WHERE s.community_id = c.id), 0) AS total_products
+          COALESCE((SELECT COUNT(*)::int FROM stores s WHERE ${sqlInCommunity('s.', 'c.id')}), 0) AS total_stores,
+          COALESCE((SELECT COUNT(*)::int FROM products p JOIN stores s ON p.store_id = s.id WHERE ${sqlInCommunity('s.', 'c.id')}), 0) AS total_products
         FROM communities c 
         WHERE (c.id = $1 OR c.slug = $1) 
         LIMIT 1`,
@@ -670,7 +708,7 @@ publicApiRouter.get('/communities/:id/stores', requireApiKey, enforceRateLimit, 
     let totalCount = 0;
 
     try {
-      let query = 'SELECT * FROM stores WHERE community_id = $1';
+      let query = `SELECT * FROM stores WHERE ${sqlInCommunity('stores.', '$1')}`;
       const params: any[] = [realCommunityId];
       let pIdx = 2;
 
@@ -693,10 +731,11 @@ publicApiRouter.get('/communities/:id/stores', requireApiKey, enforceRateLimit, 
       const result = await pool.query(query, params);
       rows = result.rows;
     } catch {
+      const ids = await communityStoreIdsFallback(realCommunityId);
       let sQuery = supabaseClient
         .from('stores')
         .select('*', { count: 'exact' })
-        .eq('community_id', realCommunityId);
+        .in('id', ids.length ? ids : ['__none__']);
 
       if (category) sQuery = sQuery.ilike('category', category);
       if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,slug.ilike.%${safeSearchTerm(search)}%`);
@@ -760,7 +799,7 @@ publicApiRouter.get('/communities/:id/products', requireApiKey, enforceRateLimit
         SELECT p.* 
         FROM products p
         JOIN stores s ON p.store_id = s.id
-        WHERE s.community_id = $1
+        WHERE ${sqlInCommunity('s.', '$1')}
       `;
       const params: any[] = [realCommunityId];
       let pIdx = 2;
@@ -794,12 +833,7 @@ publicApiRouter.get('/communities/:id/products', requireApiKey, enforceRateLimit
       rows = result.rows;
     } catch {
       // Supabase fallback: get store ids under community first
-      const { data: storeRows } = await supabaseClient
-        .from('stores')
-        .select('id')
-        .eq('community_id', realCommunityId);
-
-      const storeIds = (storeRows || []).map((s) => s.id);
+      const storeIds = await communityStoreIdsFallback(realCommunityId);
 
       if (storeIds.length === 0) {
         return sendSuccess(res, 200, 'COMMUNITY_PRODUCTS_FETCHED', 'Belum ada produk di komunitas ini.', [], {
@@ -870,7 +904,8 @@ publicApiRouter.get('/stores', requireApiKey, enforceRateLimit, async (req: Requ
     }
 
     // Filter by community jika API key terisolasi ke komunitas tertentu
-    const effectiveCommunityId = req.apiAuth?.communityId || communityId;
+    const effectiveCommunityId =
+      req.apiAuth?.communityId || (communityId ? (await resolveCommunityId(communityId)) || communityId : '');
 
     // Publik anonim HANYA melihat toko terbit. Partner key bisa melihat draf toko komunitasnya
     const isPrivileged = Boolean(req.apiAuth?.communityId || req.apiAuth?.isMaster);
@@ -887,7 +922,7 @@ publicApiRouter.get('/stores', requireApiKey, enforceRateLimit, async (req: Requ
       let pIdx = 1;
 
       if (effectiveCommunityId) {
-        query += ` AND (community_id = $${pIdx} OR community_id IN (SELECT id FROM communities WHERE slug = $${pIdx}))`;
+        query += ` AND ${sqlInCommunity('stores.', `$${pIdx}`)}`;
         params.push(effectiveCommunityId);
         pIdx++;
       }
@@ -916,7 +951,10 @@ publicApiRouter.get('/stores', requireApiKey, enforceRateLimit, async (req: Requ
       rows = result.rows;
     } catch {
       let sQuery = supabaseClient.from('stores').select('*', { count: 'exact' });
-      if (effectiveCommunityId) sQuery = sQuery.eq('community_id', effectiveCommunityId);
+      if (effectiveCommunityId) {
+        const ids = await communityStoreIdsFallback(effectiveCommunityId);
+        sQuery = sQuery.in('id', ids.length ? ids : ['__none__']);
+      }
       if (filterPublished !== undefined) sQuery = sQuery.eq('is_published', filterPublished);
       if (category) sQuery = sQuery.ilike('category', category);
       if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,slug.ilike.%${safeSearchTerm(search)}%`);
@@ -976,15 +1014,18 @@ publicApiRouter.get('/stores/:id', requireApiKey, enforceRateLimit, async (req: 
       return sendError(res, 404, 'NOT_FOUND', `Toko dengan identifier "${storeIdOrSlug}" tidak ditemukan.`);
     }
 
-    // Community scoping check (Poin 1.4):
-    if (req.apiAuth?.communityId && row.community_id !== req.apiAuth.communityId) {
+    // Community scoping check (Poin 1.4): komunitas utama atau tambahan
+    const inKeyCommunity = req.apiAuth?.communityId
+      ? await storeInCommunity(row.id, row.community_id, req.apiAuth.communityId)
+      : false;
+    if (req.apiAuth?.communityId && !inKeyCommunity) {
       return sendError(res, 404, 'NOT_FOUND', 'Toko tidak ditemukan di komunitas Anda.');
     }
 
     // Publication check (Poin 1.3):
     // Akses tanpa key (publik anonim): HANYA toko yang sudah dipublikasikan (is_published = true)
     // Key partner: boleh melihat toko komunitasnya yang belum terbit
-    const isPartnerAccess = Boolean(req.apiAuth?.communityId && row.community_id === req.apiAuth.communityId);
+    const isPartnerAccess = inKeyCommunity;
     const isMasterAccess = Boolean(req.apiAuth?.isMaster);
     if (!row.is_published && !isPartnerAccess && !isMasterAccess) {
       return sendError(res, 404, 'NOT_FOUND', 'Toko belum dipublikasikan.');
@@ -1026,13 +1067,16 @@ publicApiRouter.get('/stores/:storeId/products', requireApiKey, enforceRateLimit
       return sendError(res, 404, 'NOT_FOUND', `Toko "${storeIdOrSlug}" tidak ditemukan.`);
     }
 
-    // Community scoping check (Poin 1.4):
-    if (req.apiAuth?.communityId && storeRow.community_id !== req.apiAuth.communityId) {
+    // Community scoping check (Poin 1.4): komunitas utama atau tambahan
+    const inKeyCommunity = req.apiAuth?.communityId
+      ? await storeInCommunity(storeRow.id, storeRow.community_id, req.apiAuth.communityId)
+      : false;
+    if (req.apiAuth?.communityId && !inKeyCommunity) {
       return sendError(res, 404, 'NOT_FOUND', 'Toko tidak ditemukan di komunitas Anda.');
     }
 
     // Publication check (Poin 1.3):
-    const isPartnerAccess = Boolean(req.apiAuth?.communityId && storeRow.community_id === req.apiAuth.communityId);
+    const isPartnerAccess = inKeyCommunity;
     const isMasterAccess = Boolean(req.apiAuth?.isMaster);
     if (!storeRow.is_published && !isPartnerAccess && !isMasterAccess) {
       return sendError(res, 404, 'NOT_FOUND', 'Toko belum dipublikasikan.');
@@ -1135,7 +1179,8 @@ publicApiRouter.get('/products', requireApiKey, enforceRateLimit, async (req: Re
       if (resolved) communityId = resolved;
     }
 
-    const effectiveCommunityId = req.apiAuth?.communityId || communityId;
+    const effectiveCommunityId =
+      req.apiAuth?.communityId || (communityId ? (await resolveCommunityId(communityId)) || communityId : '');
 
     let rows: any[] = [];
     let totalCount = 0;
@@ -1151,7 +1196,7 @@ publicApiRouter.get('/products', requireApiKey, enforceRateLimit, async (req: Re
       let pIdx = 1;
 
       if (effectiveCommunityId) {
-        query += ` AND s.community_id = $${pIdx++}`;
+        query += ` AND ${sqlInCommunity('s.', `$${pIdx++}`)}`;
         params.push(effectiveCommunityId);
       }
       if (storeId) {
@@ -1195,6 +1240,10 @@ publicApiRouter.get('/products', requireApiKey, enforceRateLimit, async (req: Re
       rows = result.rows;
     } catch {
       let sQuery = supabaseClient.from('products').select('*', { count: 'exact' });
+      if (effectiveCommunityId) {
+        const ids = await communityStoreIdsFallback(effectiveCommunityId);
+        sQuery = sQuery.in('store_id', ids.length ? ids : ['__none__']);
+      }
       if (storeId) sQuery = sQuery.eq('store_id', storeId);
       if (category) sQuery = sQuery.ilike('category', category);
       if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,sku.ilike.%${safeSearchTerm(search)}%`);
@@ -1270,7 +1319,7 @@ publicApiRouter.get('/products/:id', requireApiKey, enforceRateLimit, async (req
     }
 
     if (storeRow) {
-      if (req.apiAuth?.communityId && storeRow.community_id !== req.apiAuth.communityId) {
+      if (req.apiAuth?.communityId && !(await storeInCommunity(row.store_id, storeRow.community_id, req.apiAuth.communityId))) {
         return sendError(res, 404, 'NOT_FOUND', 'Produk tidak ditemukan di komunitas Anda.');
       }
       const isPrivileged = Boolean(req.apiAuth?.communityId || req.apiAuth?.isMaster);

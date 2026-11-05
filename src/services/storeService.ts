@@ -1,5 +1,6 @@
 import { Store } from '../types';
 import { supabase } from './supabaseClient';
+import { withExtraMemberships } from '../utils/communityMembership';
 import { getWibIsoString } from '../utils/formatters';
 import { idService } from './idService';
 import { billingPlanService } from './billingPlanService';
@@ -77,7 +78,7 @@ class StoreService {
     try {
       const { data, error } = await supabase.from('stores').select('*').order('created_at', { ascending: false });
       if (!error && data && data.length > 0) {
-        return data.map((row) => ({
+        return withExtraMemberships(data.map((row): Store => ({
           id: row.id,
           merchantId: row.user_id,
           name: row.name,
@@ -118,7 +119,7 @@ class StoreService {
             paymentConnected: false,
           },
           createdAt: row.created_at || new Date().toISOString(),
-        }));
+        })));
       }
     } catch {
       // ignore

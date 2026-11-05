@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { storeInCommunity } from '../../../utils/communityMembership';
 import {
   Globe,
   Users,
@@ -189,11 +190,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     if (!activeCommunity?.id) return [];
     const cId = activeCommunity.id;
     const cName = (activeCommunity.name || '').trim().toLowerCase();
-    return stores.filter((s) => {
-      if (s.communityId === cId) return true;
-      if (cName && s.communityName && s.communityName.trim().toLowerCase() === cName) return true;
-      return false;
-    });
+    return stores.filter((s) => storeInCommunity(s, cId, cName));
   }, [stores, activeCommunity?.id, activeCommunity?.name]);
 
   // Filtered stores based on search
@@ -235,7 +232,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       setIsAssignModalOpen(false);
       setSelectedStoreToAssign('');
       if (onShowToast) {
-        onShowToast(`Toko berhasil ditambahkan ke naungan ${activeCommunity.name}!`);
+        onShowToast(`Toko berhasil ditambahkan ke naungan ${activeCommunity.name}. Komunitas lain toko ini tidak berubah.`);
       }
     } catch (err: any) {
       if (onShowToast) {
@@ -249,16 +246,13 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     setConfirmDialog({
       isOpen: true,
       title: `Lepas Toko "${storeName}"?`,
-      description: `Toko ini akan dikeluarkan dari naungan ${activeCommunity?.name || ''} dan beralih menjadi toko mandiri reguler.`,
+      description: `Toko ini akan dikeluarkan dari naungan ${activeCommunity?.name || ''}. Keanggotaan di komunitas lain tidak berubah; bila tidak ada, toko menjadi toko mandiri.`,
       confirmText: 'Ya, Lepas Toko',
       isDanger: true,
       onConfirm: async () => {
         setIsConfirmLoading(true);
         try {
-          await storeService.updateStore(storeId, {
-            communityId: undefined,
-            communityName: undefined,
-          });
+          await communityService.removeStoreFromCommunity(storeId, activeCommunity.id);
           const refreshedStores = await storeService.getStores();
           setStores(refreshedStores);
           setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
@@ -1409,10 +1403,10 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               >
                 <option value="">-- Pilih Toko --</option>
                 {stores
-                  .filter((s) => s.communityId !== activeCommunity.id)
+                  .filter((s) => !storeInCommunity(s, activeCommunity.id))
                   .map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.slug}.kroombox.com) {s.communityName ? `[Pindah dari: ${s.communityName}]` : '[Toko Mandiri]'}
+                      {s.name} ({s.slug}.lapakq.com) {s.communityName ? `[Juga di: ${s.communityName}]` : '[Toko Mandiri]'}
                     </option>
                   ))}
               </select>

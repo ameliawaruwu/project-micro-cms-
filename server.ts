@@ -8,6 +8,7 @@ import path from 'path';
 import dns from 'dns';
 import { deployRouter } from './backend/deployController';
 import { publicApiRouter } from './backend/publicApiController';
+import { partnerApiRouter } from './backend/partnerApiController';
 
 dotenv.config();
 
@@ -887,6 +888,9 @@ app.use('/deploy', deployRouter);
 app.use('/api/deploy', deployRouter);
 app.use('/', deployRouter); // Kompatibilitas rute domainService.ts (/cloudflare/*)
 app.use('/api', deployRouter);
+
+// 6a. Partner API v1 — key partner terikat komunitas (lookup akun, masukkan toko ke komunitas)
+app.use('/api/v1/partner', partnerApiRouter);
 
 // 6. Public API v1 — Account & Product (proteksi via header X-API-Key)
 app.use('/api/v1', publicApiRouter);

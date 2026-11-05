@@ -1,6 +1,8 @@
 import { Community, CommunityTurnoverInvoice, Store, Order, User } from '../types';
 import { storeService } from './storeService';
 import { supabase } from './supabaseClient';
+import { storeInCommunity, addExtraMembership, removeExtraMembership } from '../utils/communityMembership';
+import { getWibIsoString } from '../utils/formatters';
 import { hashPassword, authService } from './authService';
 
 const COMMUNITIES_KEY = 'microcms_communities_v1';
@@ -500,6 +502,8 @@ class CommunityService {
     try {
       const allStores = await storeService.getStores();
       const linkedStores = allStores.filter((s) => s.communityId === id);
+      // Keanggotaan tambahan ikut terhapus lewat ON DELETE CASCADE, ini untuk berjaga-jaga.
+      await supabase.from('store_communities').delete().eq('community_id', id);
       for (const st of linkedStores) {
         await storeService.updateStore(st.id, {
           communityId: undefined,
@@ -522,7 +526,7 @@ class CommunityService {
    */
   public async getCommunityStores(communityId: string): Promise<Store[]> {
     const allStores = await storeService.getStores();
-    return allStores.filter((s) => s.communityId === communityId);
+    return allStores.filter((s) => storeInCommunity(s, communityId));
   }
 
   /**
@@ -532,12 +536,45 @@ class CommunityService {
     storeId: string,
     communityId: string,
     communityName: string
-  ): Promise<Store> {
-    const updated = await storeService.updateStore(storeId, {
-      communityId,
-      communityName,
-    });
-    return updated;
+  ): Promise<void> {
+    // Toko tidak dipindah: toko mandiri mendapat komunitas utama, toko yang sudah di komunitas lain
+    // mendapat komunitas tambahan (store_communities).
+    const store = (await storeService.getStores()).find((s) => s.id === storeId);
+    if (!store) throw new Error('Toko tidak ditemukan.');
+    if (storeInCommunity(store, communityId)) return;
+    if (!store.communityId) {
+      const { error } = await supabase
+        .from('stores')
+        .update({ community_id: communityId, community_name: communityName, updated_at: getWibIsoString() })
+        .eq('id', storeId);
+      if (error) throw new Error(error.message);
+    } else {
+      await addExtraMembership(storeId, communityId);
+    }
+  }
+
+  /**
+   * Mengeluarkan toko dari satu komunitas saja. Bila itu komunitas utama, komunitas tambahan pertama
+   * (jika ada) naik menjadi komunitas utama; bila tidak ada, toko menjadi toko mandiri.
+   */
+  public async removeStoreFromCommunity(storeId: string, communityId: string): Promise<void> {
+    const store = (await storeService.getStores()).find((s) => s.id === storeId);
+    if (!store) throw new Error('Toko tidak ditemukan.');
+    await removeExtraMembership(storeId, communityId);
+    if (store.communityId !== communityId) return;
+
+    const nextId = (store.extraCommunityIds || []).find((c) => c !== communityId) || null;
+    let nextName: string | null = null;
+    if (nextId) {
+      const { data } = await supabase.from('communities').select('name').eq('id', nextId).maybeSingle();
+      nextName = data?.name || null;
+    }
+    const { error } = await supabase
+      .from('stores')
+      .update({ community_id: nextId, community_name: nextName, updated_at: getWibIsoString() })
+      .eq('id', storeId);
+    if (error) throw new Error(error.message);
+    if (nextId) await removeExtraMembership(storeId, nextId);
   }
 
   /**

@@ -1,4 +1,5 @@
 import { Store, WithdrawalRequest, AdminPlatformStats, Order, PlatformSettings } from '../types';
+import { withExtraMemberships } from '../utils/communityMembership';
 import { supabase } from './supabaseClient';
 import { storeService } from './storeService';
 
@@ -122,8 +123,9 @@ class AdminService {
         localStorage.setItem(STORE_SUSPENSIONS_KEY, JSON.stringify(suspendedFromDb));
       }
 
-      localStorage.setItem(STORES_CACHE_KEY, JSON.stringify(mapped));
-      return mapped;
+      const withMemberships = await withExtraMemberships(mapped);
+      localStorage.setItem(STORES_CACHE_KEY, JSON.stringify(withMemberships));
+      return withMemberships;
     } catch (err) {
       console.warn('Network error fetching stores:', err);
       return this.getAllStores();
