@@ -37,6 +37,7 @@ import { useCmsStore } from '../../cms/useCmsStore';
 
 interface RightPanelSettingsProps {
   store: Store;
+  products?: any[];
   selectedSection: StoreSectionConfig | null;
   onUpdateSectionOptions: (key: string, newOptions: Partial<StoreSectionOptions>) => void;
   onUpdateSectionTitle: (key: string, newTitle: string) => void;
@@ -54,6 +55,7 @@ interface RightPanelSettingsProps {
 
 export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   store,
+  products,
   selectedSection,
   onUpdateSectionOptions,
   onToggleVisibility,
@@ -69,6 +71,12 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
 }) => {
   const cmsProducts = useCmsStore(state => state.products);
   const updateProduct = useCmsStore(state => state.updateProduct);
+
+  // Jika merchant memiliki produk di daftar produk, gunakan produk merchant.
+  // Jika belum menambahkan produk apapun, gunakan produk bawaan template.
+  const effectiveProducts = (products && products.length > 0)
+    ? products
+    : (cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || []));
   const [showImagePresets, setShowImagePresets] = useState(false);
   const [customImageUrlInput, setCustomImageUrlInput] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
@@ -692,7 +700,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                   >
                     <option value="all">Semua Kategori Produk</option>
-                    {Array.from(new Set((cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || [])).map((p: any) => p.category || p.categoryName).filter(Boolean))).map((cat: any) => (
+                    {Array.from(new Set(effectiveProducts.map((p: any) => p.category || p.categoryName).filter(Boolean))).map((cat: any) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
@@ -738,17 +746,19 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   <label className="text-[12px] font-bold text-[#202223]">Pilih Produk Spesifik (Manual)</label>
                   <p className="text-[10px] text-[#8C9196]">Centang produk yang ingin ditampilkan khusus pada section ini:</p>
                   <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar p-2 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg">
-                    {(cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || [])).map((product: any) => {
+                    {effectiveProducts.map((product: any) => {
                       const selectedIds = opts.selectedProductIds || [];
-                      const isChecked = selectedIds.length === 0 || selectedIds.includes(product.id);
+                      // Pastikan jika ada selectedIds lama yang tidak cocok dengan produk saat ini, jangan auto-uncheck semua produk baru
+                      const hasMatchingProduct = effectiveProducts.some((p: any) => selectedIds.includes(p.id));
+                      const isChecked = selectedIds.length === 0 || !hasMatchingProduct || selectedIds.includes(product.id);
                       return (
                         <label key={product.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-white transition cursor-pointer text-[11px] text-[#202223]">
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={(e) => {
-                              const allProds = cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || []);
-                              let newIds = [...(opts.selectedProductIds || allProds.map((p: any) => p.id))];
+                              const allProds = effectiveProducts;
+                              let newIds = hasMatchingProduct ? [...selectedIds] : allProds.map((p: any) => p.id);
                               if (e.target.checked) {
                                 if (!newIds.includes(product.id)) newIds.push(product.id);
                               } else {
@@ -777,7 +787,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   </div>
 
                   <div className="space-y-2.5 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
-                    {(cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || [])).map((product: any) => {
+                    {effectiveProducts.map((product: any) => {
                       const isExpanded = expandedProductId === product.id;
 
                       const handleSaveProduct = (updated: any) => {

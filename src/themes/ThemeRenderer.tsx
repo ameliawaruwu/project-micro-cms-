@@ -58,29 +58,31 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
   const themeData = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['minimalist'];
 
   const displayProducts = React.useMemo(() => {
-    if (activeThemeId === 'nature') {
-      const hasCosmetics = (products || []).some(p => /elixir|botanical|clay mask|face oil|cleanser|body wash|body lotion|rimba/i.test(p.name || ''));
-      if (hasCosmetics || !products || products.length === 0) {
-        return THEME_DATA_MAP['nature'].products.map(cp => ({
-          id: cp.id,
-          storeId: store.id,
-          name: cp.name,
-          slug: cp.slug,
-          price: cp.price,
-          originalPrice: cp.originalPrice,
-          imageUrl: cp.image,
-          images: cp.images,
-          category: cp.categoryName,
-          description: cp.description,
-          status: 'Tersedia' as const,
-          stock: cp.stock,
-          isFeatured: cp.isFeatured,
-          weight: 1000,
-        }));
-      }
+    // 1. Jika merchant memiliki produk, tampilkan produk merchant
+    if (products && products.length > 0) {
+      return products;
     }
-    return products || [];
-  }, [products, activeThemeId, store.id]);
+    // 2. Jika merchant belum memiliki produk sama sekali, tampilkan produk bawaan template tema
+    if (themeData && themeData.products && themeData.products.length > 0) {
+      return themeData.products.map(cp => ({
+        id: cp.id,
+        storeId: store.id,
+        name: cp.name,
+        slug: cp.slug,
+        price: cp.price,
+        originalPrice: cp.originalPrice,
+        imageUrl: cp.image,
+        images: cp.images,
+        category: cp.categoryName,
+        description: cp.description,
+        status: 'Tersedia' as const,
+        stock: cp.stock,
+        isFeatured: cp.isFeatured,
+        weight: 1000,
+      }));
+    }
+    return [];
+  }, [products, themeData, store.id]);
 
   const sections = getStoreSectionsForPage(store.layoutSettings, activePage);
 

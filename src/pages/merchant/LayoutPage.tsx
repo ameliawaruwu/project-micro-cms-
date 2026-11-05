@@ -179,10 +179,20 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   }, [activeThemeId, currentStore.name]);
 
-  const rawDisplayProducts = (products && products.length > 0) ? products : cmsProducts;
+  // 1. Cek apakah merchant memiliki produk nyata di Daftar Produk
+  const hasMerchantProducts = Boolean(products && products.length > 0);
+
+  // 2. Jika ada produk merchant, tampilkan produk merchant. Jika kosong, tampilkan mock template bawaan.
   const displayProducts = useMemo(() => {
-    return (rawDisplayProducts || []).filter(p => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
-  }, [rawDisplayProducts]);
+    if (hasMerchantProducts) {
+      return products;
+    }
+    if (cmsProducts && cmsProducts.length > 0) {
+      return cmsProducts;
+    }
+    const themeData = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['minimalist'];
+    return themeData?.products || [];
+  }, [hasMerchantProducts, products, cmsProducts, activeThemeId]);
 
   // Multi-page sections map state
   const [pageSectionsMap, setPageSectionsMap] = useState<Record<string, StoreSectionConfig[]>>(() => {
@@ -1652,6 +1662,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             <div className={`${editorMobileTab === 'settings' ? 'flex' : 'hidden'} lg:${(selectedSectionKey || showGlobalSettings) && !isFullscreen ? 'flex' : 'hidden'} w-full lg:w-[320px] h-full shrink-0 z-20 bg-white border-l border-[#E1E3E5] overflow-hidden`}>
               <RightPanelSettings
                 store={currentStore}
+                products={displayProducts}
                 selectedSection={selectedSection}
                 onUpdateSectionOptions={handleUpdateSectionOptions}
                 onUpdateStore={handleUpdateStore}

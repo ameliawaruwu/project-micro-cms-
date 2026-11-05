@@ -276,10 +276,15 @@ export const useCmsStore = create<CmsState>((set, get) => ({
       } catch (e) {}
     }
 
+    const isMockId = (id: string) => /^(mp|mod_p|ep|fp|np|bp|cp|pro_p|mock-)[0-9]/i.test(id || '');
     const themeData = THEME_DATA_MAP[cleanThemeId] || THEME_DATA_MAP['minimalist'];
     if (themeData) {
-      const realProducts = activeProds.filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
       set((state) => {
+        // Cek apakah ada produk merchant nyata (bukan ID mock template)
+        const currentReal = state.products.filter(p => !isMockId(p.id));
+        const storedReal = activeProds.filter(p => !isMockId(p.id));
+        const effectiveReal = currentReal.length > 0 ? currentReal : storedReal;
+
         // ALWAYS resolve to the current logged-in merchant's store name
         let merchantStoreName = '';
         if (typeof window !== 'undefined') {
@@ -301,7 +306,8 @@ export const useCmsStore = create<CmsState>((set, get) => ({
             ...themeData.storeInfo,
             name: finalName,
           },
-          products: realProducts.length > 0 ? realProducts : themeData.products,
+          // Jika merchant memiliki produk asli, gunakan produk asli. Jika belum ada, gunakan mock template
+          products: effectiveReal.length > 0 ? effectiveReal : themeData.products,
           categories: themeData.categories || [],
           navigation: (themeData.navigation || []).sort((a: any, b: any) => a.order - b.order),
         };

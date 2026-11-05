@@ -1176,7 +1176,10 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                               displayList = displayList.filter(p => (p.category || p.categoryName) === opts.selectedCategoryId);
                             }
                             if (opts.selectedProductIds && opts.selectedProductIds.length > 0) {
-                              displayList = displayList.filter(p => opts.selectedProductIds.includes(p.id));
+                              const hasMatching = displayList.some(p => opts.selectedProductIds.includes(p.id));
+                              if (hasMatching) {
+                                displayList = displayList.filter(p => opts.selectedProductIds.includes(p.id));
+                              }
                             }
                             return displayList.length;
                           })()} produk siap dipesan
@@ -1190,7 +1193,10 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                         displayList = displayList.filter(p => (p.category || p.categoryName) === opts.selectedCategoryId);
                       }
                       if (opts.selectedProductIds && opts.selectedProductIds.length > 0) {
-                        displayList = displayList.filter(p => opts.selectedProductIds.includes(p.id));
+                        const hasMatching = displayList.some(p => opts.selectedProductIds.includes(p.id));
+                        if (hasMatching) {
+                          displayList = displayList.filter(p => opts.selectedProductIds.includes(p.id));
+                        }
                       }
                       if (opts.sortOrder === 'price-asc') {
                         displayList.sort((a, b) => a.price - b.price);
