@@ -25,6 +25,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Store, StorePaymentConfig } from '../../types';
 import { storeService } from '../../services/storeService';
 import { adminService } from '../../services/adminService';
+import { DEFAULT_MANUAL_INSTRUCTIONS, QRIS_MAX_FILE_BYTES, resolveManualInstructions } from '../../utils/manualPayment';
 
 interface PaymentListPageProps {
   store?: Store;
@@ -93,7 +94,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
         manualBankAccountNumber: '',
         manualBankAccountHolder: '',
         manualQrisImageUrl: '',
-        manualInstructions: 'Scan QRIS atau transfer ke rekening di atas, lalu konfirmasi pesanan ke WhatsApp toko.',
+        manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
         enablePaymentGateway: true,
       }
     );
@@ -117,8 +118,38 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
   );
   const [manualQrisImageUrl, setManualQrisImageUrl] = useState<string>(currentConfig.manualQrisImageUrl || '');
   const [manualInstructions, setManualInstructions] = useState<string>(
-    currentConfig.manualInstructions || 'Scan QRIS atau transfer ke rekening di atas, lalu konfirmasi pesanan ke WhatsApp toko.'
+    resolveManualInstructions(currentConfig.manualInstructions)
   );
+  const [isUploadingQris, setIsUploadingQris] = useState(false);
+  const qrisFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleQrisFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !store?.id) return;
+
+    if (!file.type.startsWith('image/')) {
+      onShowNotification?.('File harus berupa gambar (JPG, PNG, atau WEBP).', 'error');
+      return;
+    }
+    if (file.size > QRIS_MAX_FILE_BYTES) {
+      onShowNotification?.('Ukuran foto QRIS maksimal 2 MB.', 'error');
+      return;
+    }
+
+    setIsUploadingQris(true);
+    try {
+      const url = await storeService.uploadQrisImage(store.id, file);
+      setManualQrisImageUrl(url);
+      markDirty();
+      onShowNotification?.('Foto QRIS berhasil diupload. Klik Simpan untuk menerapkan.', 'success');
+    } catch (err: any) {
+      console.error('Upload QRIS gagal:', err);
+      onShowNotification?.(err?.message || 'Gagal mengupload foto QRIS.', 'error');
+    } finally {
+      setIsUploadingQris(false);
+    }
+  };
 
   const [enablePaymentGateway, setEnablePaymentGateway] = useState<boolean>(
     currentConfig.enablePaymentGateway ?? true
@@ -520,7 +551,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                 </span>
               </div>
               <p className="text-xs text-[#706866] mt-0.5">
-                Pelanggan scan barcode QRIS toko Anda atau transfer ke nomor rekening toko, lalu konfirmasi via WhatsApp.
+                Pelanggan scan barcode QRIS toko Anda atau transfer ke nomor rekening toko, lalu klik tombol &quot;Saya Sudah Bayar&quot; untuk dicek oleh Anda.
               </p>
             </div>
           </div>
@@ -611,56 +642,83 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               </div>
             </div>
 
-            {/* URL Gambar QRIS Statis */}
+            {/* Upload Foto QRIS Statis */}
             <div className="pt-2 border-t border-[#E5E0DD]/80">
               <label className="block text-xs font-bold text-[#241A1A] mb-1.5 flex items-center justify-between">
-                <span>Gambar / URL Barcode QRIS Toko (Opsional)</span>
+                <span>Foto Barcode QRIS Toko (Opsional)</span>
                 <span className="text-[11px] text-[#706866] font-normal">
-                  Dapat berupa link gambar JPG/PNG barcode QRIS merchant Anda
+                  JPG, PNG, atau WEBP • maks. 2 MB
                 </span>
               </label>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <div className="relative flex-1">
-                  <ImageIcon className="w-4 h-4 text-[#706866] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="url"
-                    value={manualQrisImageUrl}
-                    onChange={(e) => {
-                      setManualQrisImageUrl(e.target.value);
-                      markDirty();
-                    }}
-                    placeholder="https://.../qris-toko.png (atau tempel link barcode QRIS)"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
-                  />
-                </div>
-              </div>
 
-              {/* Preview QRIS jika ada */}
-              {manualQrisImageUrl && (
-                <div className="mt-3 p-3 bg-white rounded-xl border border-[#E5E0DD] inline-flex items-center gap-3">
+              <input
+                ref={qrisFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={handleQrisFileSelected}
+              />
+
+              {manualQrisImageUrl ? (
+                <div className="p-3 bg-white rounded-xl border border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center gap-3">
                   <img
                     src={manualQrisImageUrl}
-                    alt="Preview Barcode QRIS"
-                    className="w-16 h-16 object-contain rounded-lg border border-gray-100"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=100&auto=format&fit=crop';
-                    }}
+                    alt="Foto Barcode QRIS"
+                    className="w-24 h-24 object-contain rounded-lg border border-gray-100 bg-white"
                   />
-                  <div>
-                    <span className="text-xs font-bold text-gray-900 block">Preview Barcode QRIS</span>
+                  <div className="flex-1">
+                    <span className="text-xs font-bold text-gray-900 block">Foto QRIS Toko</span>
                     <span className="text-[11px] text-emerald-700 font-semibold">
                       Barcode ini akan muncul saat pembeli checkout
                     </span>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isUploadingQris}
+                      onClick={() => qrisFileInputRef.current?.click()}
+                      className="px-3 py-2 rounded-lg border border-[#E5E0DD] text-xs font-semibold text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
+                    >
+                      {isUploadingQris ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                      <span>{isUploadingQris ? 'Mengupload...' : 'Ganti Foto'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isUploadingQris}
+                      onClick={() => {
+                        setManualQrisImageUrl('');
+                        markDirty();
+                      }}
+                      className="px-3 py-2 rounded-lg border border-red-200 text-xs font-semibold text-red-700 hover:bg-red-50 transition cursor-pointer disabled:opacity-60"
+                    >
+                      Hapus
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isUploadingQris || !store?.id}
+                  onClick={() => qrisFileInputRef.current?.click()}
+                  className="w-full py-6 rounded-xl border-2 border-dashed border-[#D1C9C5] bg-white hover:border-blue-500 hover:bg-blue-50/40 transition cursor-pointer disabled:opacity-60 flex flex-col items-center justify-center gap-1.5 text-[#706866]"
+                >
+                  {isUploadingQris ? (
+                    <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                  ) : (
+                    <ImageIcon className="w-6 h-6 text-blue-600" />
+                  )}
+                  <span className="text-xs font-bold text-[#241A1A]">
+                    {isUploadingQris ? 'Mengupload foto QRIS...' : 'Upload Foto QRIS'}
+                  </span>
+                  <span className="text-[11px]">Klik untuk memilih foto barcode QRIS dari perangkat Anda</span>
+                </button>
               )}
             </div>
 
             {/* Petunjuk Tambahan */}
             <div>
               <label className="block text-xs font-bold text-[#241A1A] mb-1.5">
-                Petunjuk Konfirmasi Pembayaran
+                Petunjuk Pembayaran untuk Pembeli
               </label>
               <textarea
                 rows={2}
@@ -669,7 +727,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                   setManualInstructions(e.target.value);
                   markDirty();
                 }}
-                placeholder="Contoh: Setelah transfer atau scan QRIS, kirim bukti transaksi ke WhatsApp admin toko agar pesanan langsung diproses."
+                placeholder={DEFAULT_MANUAL_INSTRUCTIONS}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs font-medium text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition resize-none"
               />
             </div>

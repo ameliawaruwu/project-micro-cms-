@@ -1217,6 +1217,17 @@ export default function App() {
     addToast(`Pesanan #${updated.orderNumber} telah ditandai Selesai.`);
   };
 
+  const handleVerifyPayment = async (orderId: string) => {
+    try {
+      const updated = await orderService.updatePaymentStatus(orderId, 'Sudah Dibayar', currentStore?.id);
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      setSelectedOrderDetail((prev) => (prev && prev.id === orderId ? updated : prev));
+      addToast(`Pembayaran pesanan #${updated.orderNumber} ditandai lunas.`);
+    } catch (err: any) {
+      addToast(err?.message || 'Gagal menandai pembayaran lunas.', 'error');
+    }
+  };
+
   // Handlers for Store Settings & Wallet
   const handleUpdateStore = async (updated: Store) => {
     await storeService.updateStore(updated.id, updated, user?.id);
@@ -2194,6 +2205,7 @@ export default function App() {
         onProcessShipping={handleOpenProcessShipping}
         onPrintReceipt={handlePrintReceipt}
         onMarkCompleted={handleMarkCompleted}
+        onVerifyPayment={handleVerifyPayment}
         onShowNotification={addToast}
       />
 

@@ -5,7 +5,10 @@ import {
   Printer,
   CheckCircle2,
   Package,
+  Clock,
+  Loader2,
 } from 'lucide-react';
+import { isManualTransferMethod } from '../../utils/manualPayment';
 import { Order, Store as StoreType } from '../../types';
 import {
   formatRupiah,
@@ -26,6 +29,7 @@ interface OrderDetailModalProps {
   onProcessShipping: (order: Order) => void;
   onPrintReceipt: (order: Order) => void;
   onMarkCompleted?: (orderId: string) => void;
+  onVerifyPayment?: (orderId: string) => Promise<void>;
   onShowNotification?: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -37,11 +41,13 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   onProcessShipping,
   onPrintReceipt,
   onMarkCompleted,
+  onVerifyPayment,
   onShowNotification,
 }) => {
   const { t, language } = useLanguage();
   const isEn = language === 'en';
   const [copiedResi, setCopiedResi] = useState(false);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
   // Determine current active step index (0 to 4)
   const isPaid = order?.paymentStatus === 'Sudah Dibayar';
@@ -164,6 +170,47 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
         {/* Scrollable Modal Body */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5 text-xs custom-scrollbar">
+          {/* 0. PENGECEKAN PEMBAYARAN QRIS / TRANSFER LANGSUNG */}
+          {isManualTransferMethod(order.paymentMethod) && !isPaid && (
+            <div
+              className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-3 ${
+                order.paymentConfirmedAt ? 'bg-amber-50 border-amber-300' : 'bg-[#FAF7F7] border-[#E5E0DD]'
+              }`}
+            >
+              <div className="flex items-start gap-2.5 flex-1">
+                <Clock className={`w-5 h-5 shrink-0 ${order.paymentConfirmedAt ? 'text-amber-700' : 'text-[#706866]'}`} />
+                <div className="space-y-0.5">
+                  <p className="text-sm font-bold text-[#241A1A]">
+                    {order.paymentConfirmedAt ? 'Pembeli sudah konfirmasi pembayaran' : 'Menunggu pembayaran pembeli'}
+                  </p>
+                  <p className="text-xs text-[#706866] leading-relaxed">
+                    {order.paymentConfirmedAt
+                      ? `Dikonfirmasi ${formatDateIndo(order.paymentConfirmedAt)}. Cek mutasi rekening / QRIS Anda sebesar ${formatRupiah(order.grandTotal)}, lalu tandai lunas.`
+                      : `Pembeli belum menekan tombol "Saya Sudah Bayar". Anda tetap bisa menandai lunas jika dana ${formatRupiah(order.grandTotal)} sudah masuk.`}
+                  </p>
+                </div>
+              </div>
+              {onVerifyPayment && (
+                <button
+                  type="button"
+                  disabled={isVerifyingPayment}
+                  onClick={async () => {
+                    setIsVerifyingPayment(true);
+                    try {
+                      await onVerifyPayment(order.id);
+                    } finally {
+                      setIsVerifyingPayment(false);
+                    }
+                  }}
+                  className="shrink-0 px-4 py-2.5 rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-70"
+                >
+                  {isVerifyingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  <span>Tandai Lunas</span>
+                </button>
+              )}
+            </div>
+          )}
+
           {/* 1. STATUS PERJALANAN PESANAN (Interactive Stepper with Progress & Details) */}
           <OrderTimelineStepper
             order={order}

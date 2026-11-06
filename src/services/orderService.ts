@@ -79,6 +79,7 @@ function mapSupabaseRowToOrder(row: any): Order {
     grandTotal: Number(row.total_amount || subtotal),
     paymentMethod: row.payment_method || 'Manual',
     paymentStatus,
+    paymentConfirmedAt: row.payment_confirmed_at || undefined,
     courier: (row.shipping_courier as CourierType) || 'J&T',
     courierCode: row.courier_code || undefined,
     courierService: row.shipping_service || row.courier_service || undefined,
@@ -354,6 +355,33 @@ class OrderService {
     }
 
     return orders[index];
+  }
+
+  /**
+   * Dipanggil pembeli setelah membayar via QRIS / transfer langsung ke rekening toko.
+   * Hanya menandai "sudah konfirmasi"; status lunas tetap ditentukan merchant setelah cek mutasi.
+   */
+  async confirmPaymentByBuyer(orderId: string, storeId: string): Promise<string> {
+    const confirmedAt = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('orders')
+      .update({ payment_confirmed_at: confirmedAt, updated_at: confirmedAt })
+      .eq('id', orderId)
+      .eq('store_id', storeId)
+      .eq('payment_status', 'unpaid');
+    if (error) {
+      console.error('[Supabase Database] Gagal menyimpan konfirmasi pembayaran:', error);
+      throw new Error('Gagal mengirim konfirmasi pembayaran. Silakan coba lagi.');
+    }
+
+    const orders = this.getStoredOrders(storeId);
+    const index = orders.findIndex((o) => o.id === orderId);
+    if (index !== -1) {
+      orders[index] = { ...orders[index], paymentConfirmedAt: confirmedAt };
+      this.saveOrders(storeId, orders);
+    }
+    return confirmedAt;
   }
 
   async processShipment(orderId: string, courier: CourierType, resiNumber?: string, storeId?: string): Promise<Order> {

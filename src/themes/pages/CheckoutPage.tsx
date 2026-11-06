@@ -26,6 +26,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { orderService } from '../../services/orderService';
+import { DEFAULT_MANUAL_INSTRUCTIONS, resolveManualInstructions } from '../../utils/manualPayment';
 import { cartService } from '../../services/cartService';
 import { duitkuService } from '../../services/duitkuService';
 import { getDeviceClass } from '../../utils/responsivePreview';
@@ -143,6 +144,22 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+  const [paymentConfirmError, setPaymentConfirmError] = useState<string | null>(null);
+
+  const handleConfirmPayment = async () => {
+    if (!createdOrder?.id || !createdOrder.storeId) return;
+    setIsConfirmingPayment(true);
+    setPaymentConfirmError(null);
+    try {
+      const confirmedAt = await orderService.confirmPaymentByBuyer(createdOrder.id, createdOrder.storeId);
+      setCreatedOrder({ ...createdOrder, paymentConfirmedAt: confirmedAt });
+    } catch (err: any) {
+      setPaymentConfirmError(err?.message || 'Gagal mengirim konfirmasi pembayaran. Silakan coba lagi.');
+    } finally {
+      setIsConfirmingPayment(false);
+    }
+  };
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const handleCopyText = (text: string, field: string) => {
@@ -351,7 +368,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         manualBankAccountNumber: '',
         manualBankAccountHolder: '',
         manualQrisImageUrl: '',
-        manualInstructions: 'Scan QRIS atau transfer ke rekening toko di atas, lalu konfirmasi pesanan ke WhatsApp toko.',
+        manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
         enablePaymentGateway: true,
       }
     );
@@ -385,9 +402,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       options.push({
         id: 'manual_transfer',
         name: isEn ? 'Direct Bank Transfer / QRIS' : 'QRIS & Transfer Bank Langsung Milik Toko',
-        description:
-          paymentConfig.manualInstructions ||
-          `Transfer langsung ke ${bankDetails} atau scan QRIS toko, lalu kirim bukti transfer ke WhatsApp.`,
+        description: `Transfer langsung ke ${bankDetails} atau scan QRIS toko, lalu klik "Saya Sudah Bayar" agar penjual memeriksa pembayaran Anda.`,
         badge: '0% Biaya Gateway',
         type: 'manual',
       });
@@ -833,7 +848,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
       const waOrderMsg = isCodOrder
         ? `Halo ${store?.name || 'Toko'}, saya sudah melakukan pemesanan COD dengan Nomor Pesanan ${orderNum} sebesar Rp ${total.toLocaleString('id-ID')}. Mohon konfirmasi dan segera dikirim ke alamat saya. Terima kasih!`
-        : `Halo ${store?.name || 'Toko'}, saya sudah melakukan pemesanan dengan Nomor Pesanan ${orderNum} sebesar Rp ${total.toLocaleString('id-ID')}. Berikut bukti pembayaran transfer/QRIS saya. Mohon diproses ya!`;
+        : `Halo ${store?.name || 'Toko'}, saya ingin bertanya tentang pesanan ${orderNum} sebesar Rp ${total.toLocaleString('id-ID')}.`;
 
       const waLink = `https://wa.me/${finalWaPhone}?text=${encodeURIComponent(waOrderMsg)}`;
 
@@ -959,8 +974,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 </div>
 
                 <p className="text-[11px] text-blue-900/90 leading-relaxed">
-                  {paymentConfig.manualInstructions ||
-                    'Setelah melakukan transfer atau scan QRIS, mohon klik tombol WhatsApp di bawah untuk mengirimkan bukti transfer ke toko.'}
+                  {resolveManualInstructions(paymentConfig.manualInstructions)}
                 </p>
               </div>
             )}
@@ -979,7 +993,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   {isCodOrder
                     ? 'Menunggu Pengantaran (COD)'
                     : isManualTransfer
-                    ? 'Menunggu Verifikasi Bukti Bayar'
+                    ? createdOrder?.paymentConfirmedAt
+                      ? 'Menunggu Pengecekan Penjual'
+                      : 'Menunggu Pembayaran'
                     : 'Terkonfirmasi Otomatis'}
                 </span>
               </div>
@@ -995,19 +1011,51 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
             {/* Action Buttons */}
             <div className="space-y-2.5 pt-1">
-              <a
-                href={waLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-md text-sm"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>
-                  {isManualTransfer
-                    ? 'Kirim Bukti Pembayaran ke WhatsApp Toko'
-                    : 'Hubungi Penjual via WhatsApp'}
-                </span>
-              </a>
+              {isManualTransfer ? (
+                createdOrder?.paymentConfirmedAt ? (
+                  <div className="w-full p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-left flex items-start gap-3">
+                    <Check className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-bold text-emerald-900">Konfirmasi pembayaran terkirim</p>
+                      <p className="text-xs text-emerald-800 leading-relaxed">
+                        Penjual akan memeriksa pembayaran Anda. Pesanan diproses setelah pembayaran dinyatakan lunas.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleConfirmPayment}
+                      disabled={isConfirmingPayment}
+                      className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-md text-sm disabled:opacity-70 disabled:cursor-wait"
+                    >
+                      {isConfirmingPayment ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ShieldCheck className="w-4 h-4" />
+                      )}
+                      <span>{isConfirmingPayment ? 'Mengirim Konfirmasi...' : 'Saya Sudah Bayar'}</span>
+                    </button>
+                    <p className="text-[11px] text-gray-500">
+                      Klik setelah Anda menyelesaikan transfer atau scan QRIS sebesar Rp {total.toLocaleString('id-ID')}.
+                    </p>
+                    {paymentConfirmError && (
+                      <p className="text-xs font-semibold text-red-600">{paymentConfirmError}</p>
+                    )}
+                  </>
+                )
+              ) : (
+                <a
+                  href={waLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-md text-sm"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Hubungi Penjual via WhatsApp</span>
+                </a>
+              )}
 
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <button

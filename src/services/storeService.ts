@@ -4,6 +4,7 @@ import { withExtraMemberships } from '../utils/communityMembership';
 import { getWibIsoString } from '../utils/formatters';
 import { idService } from './idService';
 import { billingPlanService } from './billingPlanService';
+import { DEFAULT_MANUAL_INSTRUCTIONS } from '../utils/manualPayment';
 
 const STORE_KEY = 'microcms_stores_v2';
 const ACTIVE_STORE_KEY = 'microcms_active_store_id';
@@ -46,7 +47,7 @@ class StoreService {
               manualBankName: 'BCA',
               manualBankAccountNumber: '',
               manualBankAccountHolder: '',
-              manualInstructions: 'Transfer ke rekening atau scan QRIS, lalu konfirmasi via WhatsApp.',
+              manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
               enablePaymentGateway: false,
             };
           }
@@ -110,7 +111,7 @@ class StoreService {
             manualBankName: 'BCA',
             manualBankAccountNumber: '',
             manualBankAccountHolder: '',
-            manualInstructions: 'Transfer ke rekening atau scan QRIS, lalu konfirmasi via WhatsApp.',
+            manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
             enablePaymentGateway: false,
           },
           onboarding: row.onboarding || {
@@ -197,7 +198,7 @@ class StoreService {
               manualBankName: 'BCA',
               manualBankAccountNumber: '',
               manualBankAccountHolder: '',
-              manualInstructions: 'Transfer ke rekening atau scan QRIS, lalu konfirmasi via WhatsApp.',
+              manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
               enablePaymentGateway: false,
             },
             customDomain: row.custom_domain,
@@ -325,7 +326,7 @@ class StoreService {
             manualBankName: 'BCA',
             manualBankAccountNumber: '',
             manualBankAccountHolder: '',
-            manualInstructions: 'Transfer ke rekening atau scan QRIS, lalu konfirmasi via WhatsApp.',
+            manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
             enablePaymentGateway: false,
           },
           customDomain: data.custom_domain,
@@ -433,7 +434,7 @@ class StoreService {
             manualBankName: 'BCA',
             manualBankAccountNumber: '',
             manualBankAccountHolder: '',
-            manualInstructions: 'Transfer ke rekening atau scan QRIS, lalu konfirmasi via WhatsApp.',
+            manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
             enablePaymentGateway: false,
           },
 
@@ -518,6 +519,28 @@ class StoreService {
     const store = await this.getStoreById(storeId);
     if (!store) throw new Error('Toko tidak ditemukan');
     return store;
+  }
+
+  /**
+   * Upload foto barcode QRIS toko ke Supabase Storage dan kembalikan URL publiknya.
+   */
+  async uploadQrisImage(storeId: string, file: File): Promise<string> {
+    if (!file.type.startsWith('image/')) {
+      throw new Error('File harus berupa gambar (JPG, PNG, atau WEBP).');
+    }
+    const extension = file.type.includes('png') ? 'png' : file.type.includes('webp') ? 'webp' : 'jpg';
+    const fileName = `${storeId}/qris_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${extension}`;
+
+    const { data, error } = await supabase.storage
+      .from('product-images')
+      .upload(fileName, file, { contentType: file.type, upsert: true });
+    if (error || !data?.path) {
+      throw new Error(`Gagal mengupload foto QRIS: ${error?.message || 'path tidak valid'}`);
+    }
+
+    const { data: pub } = supabase.storage.from('product-images').getPublicUrl(data.path);
+    if (!pub?.publicUrl) throw new Error('Gagal mendapatkan URL foto QRIS.');
+    return pub.publicUrl;
   }
 
   /**

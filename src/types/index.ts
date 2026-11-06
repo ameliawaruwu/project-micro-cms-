@@ -505,6 +505,8 @@ export interface Order {
   grandTotal: number;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+  /** Waktu pembeli menekan "Saya Sudah Bayar" (QRIS / transfer langsung), menunggu dicek merchant. */
+  paymentConfirmedAt?: string;
   courier: CourierType;
   courierCode?: string;
   courierService?: string;

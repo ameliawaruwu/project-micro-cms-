@@ -179,6 +179,7 @@ CREATE TABLE IF NOT EXISTS orders (
     payment_status VARCHAR(32) NOT NULL DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'paid', 'expired', 'refunded')),
     order_status VARCHAR(32) NOT NULL DEFAULT 'pending' CHECK (order_status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled')),
     paid_at TIMESTAMP WITH TIME ZONE,
+    payment_confirmed_at TIMESTAMP WITH TIME ZONE, -- pembeli klik "Saya Sudah Bayar" (QRIS / transfer langsung)
     shipped_at TIMESTAMP WITH TIME ZONE,
     notes TEXT,
     -- Kolom Integrasi Logistik & Multi-Gudang (Biteship Aggregator)

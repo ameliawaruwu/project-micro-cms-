@@ -34,6 +34,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   const { t, language } = useLanguage();
   const [copiedResi, setCopiedResi] = useState(false);
 
+  const isAwaitingPaymentCheck = order.paymentStatus !== 'Sudah Dibayar' && Boolean(order.paymentConfirmedAt);
+  const paymentBadgeClass = isAwaitingPaymentCheck
+    ? 'text-amber-800 bg-amber-50 border-amber-300'
+    : 'text-[#027A48] bg-[#ECFDF3] border-[#ABEFC6]';
+
   const handleCopyResi = () => {
     if (!order.resiNumber) return;
     navigator.clipboard.writeText(order.resiNumber);
@@ -170,8 +175,8 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 <span className="text-[#CCCCCC] hidden sm:inline">•</span>
                 <span className="text-[#555555] font-normal hidden sm:inline">{order.courier}</span>
               </div>
-              <span className="font-semibold text-[#027A48] bg-[#ECFDF3] border border-[#ABEFC6] px-1.5 sm:px-2 py-0.5 rounded text-[10px] shrink-0 sm:hidden">
-                {order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Lunas') : order.paymentStatus}
+              <span className={`font-semibold border px-1.5 sm:px-2 py-0.5 rounded text-[10px] shrink-0 sm:hidden ${paymentBadgeClass}`}>
+                {isAwaitingPaymentCheck ? 'Perlu Dicek' : order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Lunas') : order.paymentStatus}
               </span>
             </div>
             <p className="text-[11px] text-[#555555] mt-0.5 line-clamp-1 sm:line-clamp-2">{order.customerAddress}</p>
@@ -180,8 +185,8 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
           <div className="pt-2 border-t border-[#E5E0DD] hidden sm:flex items-center justify-between">
             <span className="font-semibold text-[#1F1F1F]">{t('courier_colon', 'Kurir:')} {order.courier}</span>
-            <span className="font-semibold text-[#027A48] bg-[#ECFDF3] border border-[#ABEFC6] px-2 py-0.5 rounded-md text-[10px]">
-              {order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Sudah Dibayar') : (order.paymentStatus === 'Belum Dibayar' ? t('order_unpaid', 'Belum Dibayar') : order.paymentStatus)}
+            <span className={`font-semibold border px-2 py-0.5 rounded-md text-[10px] ${paymentBadgeClass}`}>
+              {isAwaitingPaymentCheck ? 'Menunggu Pengecekan Bayar' : order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Sudah Dibayar') : (order.paymentStatus === 'Belum Dibayar' ? t('order_unpaid', 'Belum Dibayar') : order.paymentStatus)}
             </span>
           </div>
         </div>
