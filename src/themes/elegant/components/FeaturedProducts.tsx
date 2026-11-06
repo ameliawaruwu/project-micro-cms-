@@ -2,16 +2,17 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { ElegantProductCard } from './ProductCard';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const ElegantFeaturedProducts: React.FC<{ isMobile?: boolean; isTablet?: boolean }> = ({ isMobile, isTablet }) => {
-  const allProducts = useCmsStore(state => state.products);
+  const allProducts = useThemeProductsSource('elegant');
   const products = allProducts.filter(p => p.isFeatured).slice(0, 3);
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'grid-cols-1',
-    tablet: 'grid-cols-2',
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
     desktop: 'grid-cols-3',
-    fallback: 'grid-cols-1 md:grid-cols-3',
+    fallback: 'grid-cols-2 md:grid-cols-3',
   });
 
   if (products.length === 0) return null;

@@ -42,3 +42,77 @@ export function getDeviceClass(
   if (isTablet) return options.tablet;
   return options.desktop;
 }
+
+export type PreviewDeviceMode = 'desktop' | 'tablet' | 'mobile';
+
+/**
+ * Breakpoint Tailwind yang "aktif" untuk tiap preview device di editor, disesuaikan dengan
+ * lebar kanvas sebenarnya: Ponsel ±390px, Tablet ±730px (isi frame 768px), Desktop ±970px.
+ */
+const ACTIVE_BREAKPOINTS: Record<PreviewDeviceMode, string[]> = {
+  mobile: [],
+  tablet: ['sm'],
+  desktop: ['sm', 'md'],
+};
+const ALL_BREAKPOINTS = ['sm', 'md', 'lg', 'xl', '2xl'];
+const TEXT_SIZES = new Set(['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', '8xl', '9xl']);
+const DISPLAY = new Set(['block', 'inline', 'inline-block', 'flex', 'inline-flex', 'grid', 'hidden', 'contents']);
+
+/** Kunci "jenis utilitas" agar kelas breakpoint bisa menimpa kelas dasar yang sejenis. */
+function utilityKey(cls: string): string {
+  const variantSplit = cls.lastIndexOf(':');
+  const variants = variantSplit >= 0 ? cls.slice(0, variantSplit + 1) : '';
+  const base = variantSplit >= 0 ? cls.slice(variantSplit + 1) : cls;
+  if (DISPLAY.has(base)) return `${variants}display`;
+  if (base === 'flex-row' || base === 'flex-col' || base === 'flex-row-reverse' || base === 'flex-col-reverse') return `${variants}flex-dir`;
+  const textMatch = base.match(/^text-(.+)$/);
+  if (textMatch) {
+    const v = textMatch[1];
+    if (TEXT_SIZES.has(v) || /^\[\d/.test(v)) return `${variants}text-size`;
+    if (['left', 'center', 'right', 'justify', 'start', 'end'].includes(v)) return `${variants}text-align`;
+    return `${variants}text-color`;
+  }
+  const dash = base.lastIndexOf('-');
+  return `${variants}${dash > 0 ? base.slice(0, dash) : base}`;
+}
+
+/**
+ * Mensimulasikan breakpoint Tailwind (`sm:`, `md:`, `lg:` …) untuk preview device di editor.
+ * - Di luar editor (deviceMode undefined) className dikembalikan apa adanya, sehingga storefront
+ *   produksi tetap memakai breakpoint asli berbasis lebar jendela.
+ * - Di editor, kelas breakpoint yang aktif untuk device tsb di-"unwrap" dan menimpa kelas dasar
+ *   sejenis; kelas breakpoint yang tidak aktif dibuang.
+ */
+export function resolveResponsiveClasses(className: string, deviceMode?: PreviewDeviceMode): string {
+  if (!deviceMode || !className) return className;
+  const active = ACTIVE_BREAKPOINTS[deviceMode];
+  const result: string[] = [];
+  const indexByKey = new Map<string, number>();
+
+  const push = (cls: string) => {
+    const key = utilityKey(cls);
+    const existing = indexByKey.get(key);
+    if (existing !== undefined) result[existing] = '';
+    indexByKey.set(key, result.length);
+    result.push(cls);
+  };
+
+  // Urutkan: kelas dasar dulu, lalu breakpoint dari kecil ke besar (seperti cascade CSS Tailwind).
+  const tokens = className.split(/\s+/).filter(Boolean);
+  const rank = (cls: string) => {
+    const bp = cls.split(':')[0];
+    const i = ALL_BREAKPOINTS.indexOf(bp);
+    return cls.includes(':') && i >= 0 ? i + 1 : 0;
+  };
+  tokens
+    .map((cls, i) => ({ cls, i, r: rank(cls) }))
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .forEach(({ cls, r }) => {
+      if (r === 0) return push(cls);
+      const bp = ALL_BREAKPOINTS[r - 1];
+      if (!active.includes(bp)) return;
+      push(cls.slice(bp.length + 1));
+    });
+
+  return result.filter(Boolean).join(' ');
+}

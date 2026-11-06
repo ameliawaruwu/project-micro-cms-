@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -99,20 +100,20 @@ export const FuturisticHero: React.FC<{ sectionOptions?: any; accentColor?: stri
 };
 
 export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
-  const allProducts = useCmsStore(state => state.products);
+  const allProducts = useThemeProductsSource('futuristic');
   const title = sectionOptions.featuredTitle || "Featured Hardware";
   const desiredCols = [2, 3, 4].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 3;
   const products = allProducts.filter(p => p.isFeatured).slice(0, 3); // match gridColumns default usually
 
   const desktopColsMap: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' };
   const fallbackColsMap: Record<number, string> = {
-    2: 'grid-cols-1 sm:grid-cols-2',
-    3: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3',
-    4: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4',
+    2: 'grid-cols-2',
+    3: 'grid-cols-2 md:grid-cols-3',
+    4: 'grid-cols-2 md:grid-cols-4',
   };
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'grid-cols-1',
-    tablet: 'grid-cols-2',
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
     desktop: desktopColsMap[desiredCols],
     fallback: fallbackColsMap[desiredCols],
   });

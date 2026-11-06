@@ -1,49 +1,29 @@
 import React from 'react';
-import { useCmsStore } from '../../../cms/useCmsStore';
+import { useSectionProducts } from '../../useSectionProducts';
 import { MinimalistProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 
 export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, isMobile, isTablet }) => {
-  const allProducts = useCmsStore(state => state.products);
-  
-  let filteredProducts = [...allProducts];
-
-  if (sectionOptions.selectedCategoryId && sectionOptions.selectedCategoryId !== 'all') {
-    filteredProducts = filteredProducts.filter(p => ((p as any).category || p.categoryName) === sectionOptions.selectedCategoryId);
-  }
-
-  if (sectionOptions.selectedProductIds && sectionOptions.selectedProductIds.length > 0) {
-    filteredProducts = filteredProducts.filter(p => sectionOptions.selectedProductIds.includes(p.id));
-  }
-
-  if (sectionOptions.sortOrder === 'price-asc') {
-    filteredProducts.sort((a, b) => a.price - b.price);
-  } else if (sectionOptions.sortOrder === 'price-desc') {
-    filteredProducts.sort((a, b) => b.price - a.price);
-  } else if (sectionOptions.sortOrder === 'name-asc') {
-    filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  const maxItems = sectionOptions.productCount || 4;
-  const products = filteredProducts.slice(0, maxItems);
+  const inEditor = typeof isMobile === 'boolean' || typeof isTablet === 'boolean';
+  const products = useSectionProducts('minimalist', sectionOptions, { defaultCount: 4, inEditor });
 
   const title = sectionOptions.featuredTitle || sectionOptions.heading || "Featured Objects";
   const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || "A selection of our finest pieces, crafted with purpose.";
   const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || "Explore All";
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'grid-cols-1',
-    tablet: 'grid-cols-2',
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
     desktop:
       sectionOptions.gridColumns === 2 ? 'grid-cols-2' :
       sectionOptions.gridColumns === 4 ? 'grid-cols-4' :
       'grid-cols-3',
     fallback:
-      sectionOptions.gridColumns === 2 ? 'grid-cols-1 sm:grid-cols-2' :
-      sectionOptions.gridColumns === 3 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' :
-      sectionOptions.gridColumns === 4 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4' :
-      'grid-cols-1 sm:grid-cols-2',
+      sectionOptions.gridColumns === 2 ? 'grid-cols-2 sm:grid-cols-2' :
+      sectionOptions.gridColumns === 3 ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3' :
+      sectionOptions.gridColumns === 4 ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-4' :
+      'grid-cols-2 sm:grid-cols-2',
   });
 
   if (products.length === 0) return null;

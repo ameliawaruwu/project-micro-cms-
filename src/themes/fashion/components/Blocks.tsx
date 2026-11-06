@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "The Lookbook";
@@ -58,14 +59,14 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
 };
 
 export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const { products } = useCmsStore();
+  const products = useThemeProductsSource('fashion');
   const heading = sectionOptions.heading || "Trending Now";
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'grid-cols-1',
-    tablet: 'grid-cols-2',
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
     desktop: 'grid-cols-4',
-    fallback: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+    fallback: 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-4',
   });
 
   return (

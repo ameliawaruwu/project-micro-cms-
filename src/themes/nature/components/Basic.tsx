@@ -72,14 +72,14 @@ export const NatureNavbar: React.FC<{
         )}
       </div>
       
-      <div className="shrink-0 flex justify-center items-center px-2 sm:px-6">
+      <div className="min-w-0 max-w-full flex justify-center items-center px-2 sm:px-6">
         {showLogo && (
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center min-w-0 max-w-full">
             <a href="/" className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-serif text-[#2C3B2D] tracking-wide hover:opacity-80 transition-opacity font-bold whitespace-nowrap inline-block text-center">
               {storeName}
             </a>
             {storeSubtitle && (
-              <span className="text-xs font-sans text-[#5C6B5D] tracking-wider mt-0.5">
+              <span className="text-xs font-sans text-[#5C6B5D] tracking-wider mt-0.5 max-w-full truncate text-center">
                 {storeSubtitle}
               </span>
             )}

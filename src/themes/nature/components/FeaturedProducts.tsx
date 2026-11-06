@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { NatureProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const NatureFeaturedProducts: React.FC<{ 
   sectionOptions?: any; 
@@ -12,7 +13,7 @@ export const NatureFeaturedProducts: React.FC<{
   isMobile?: boolean;
   isTablet?: boolean;
 }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, readonly = false, isMobile, isTablet }) => {
-  const allProducts = useCmsStore(state => state.products);
+  const allProducts = useThemeProductsSource('nature');
   
   // Dynamic product filtering and sorting
   let filteredProducts = [...allProducts];
@@ -43,15 +44,15 @@ export const NatureFeaturedProducts: React.FC<{
   const desiredCols = [2, 3, 4, 5, 6].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 4;
   const desktopColsMap: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-4', 6: 'grid-cols-4' };
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'grid-cols-1',
-    tablet: 'grid-cols-2',
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
     desktop: desktopColsMap[desiredCols],
     fallback:
-      desiredCols === 2 ? 'grid-cols-1 sm:grid-cols-2' :
-      desiredCols === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
+      desiredCols === 2 ? 'grid-cols-2 sm:grid-cols-2' :
+      desiredCols === 3 ? 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3' :
       desiredCols === 5 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' :
       desiredCols === 6 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6' :
-      'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+      'grid-cols-2 sm:grid-cols-2 lg:grid-cols-4',
   });
 
   if (products.length === 0) return null;

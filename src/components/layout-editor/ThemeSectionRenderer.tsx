@@ -1,6 +1,8 @@
 import React from 'react';
 import { StoreSectionConfig } from '../../types';
 import { ThemeRegistry, ThemeId, normalizeThemeId } from '../../themes/ThemeRegistry';
+import { ThemePreviewContext } from '../../themes/useSectionProducts';
+import { ResponsivePreviewScope } from './ResponsivePreviewScope';
 
 interface ThemeSectionRendererProps {
   themeId: ThemeId | string;
@@ -15,7 +17,7 @@ export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({
   themeId, 
   section, 
   onUpdateSectionOptions, 
-  deviceMode = 'desktop',
+  deviceMode,
   readonly = false,
   accentColor,
 }) => {
@@ -48,16 +50,21 @@ export const ThemeSectionRenderer: React.FC<ThemeSectionRendererProps> = ({
   if (Component) {
     const secKey = section.key || `${section.id}-0`;
     return (
-      <Component 
-        sectionOptions={section.options} 
-        onUpdateSectionOptions={onUpdateSectionOptions} 
-        sectionKey={secKey}
-        deviceMode={deviceMode}
-        isMobile={deviceMode === 'mobile'}
-        isTablet={deviceMode === 'tablet'}
-        readonly={readonly}
-        accentColor={accentColor}
-      />
+      // deviceMode undefined = storefront publik: isMobile/isTablet undefined agar kelas breakpoint asli dipakai.
+      <ThemePreviewContext.Provider value={deviceMode !== undefined}>
+        <ResponsivePreviewScope deviceMode={deviceMode}>
+        <Component
+          sectionOptions={section.options}
+          onUpdateSectionOptions={onUpdateSectionOptions}
+          sectionKey={secKey}
+          deviceMode={deviceMode}
+          isMobile={deviceMode ? deviceMode === 'mobile' : undefined}
+          isTablet={deviceMode ? deviceMode === 'tablet' : undefined}
+          readonly={readonly}
+          accentColor={accentColor}
+        />
+        </ResponsivePreviewScope>
+      </ThemePreviewContext.Provider>
     );
   }
 

@@ -97,6 +97,7 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
       onDeviceModeChange={() => {}}
       primaryAccent={store.layoutSettings?.primaryAccent || '#1A1A1A'}
       readonly={true}
+      isLiveStorefront={true}
       activeThemeId={activeThemeId as any}
       activePage={activePage}
       onPageChange={(newPage) => setActivePage(newPage)}

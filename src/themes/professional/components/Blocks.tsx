@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "Why Partner With Us";
@@ -44,14 +45,14 @@ export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobil
 };
 
 export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const { products } = useCmsStore();
+  const products = useThemeProductsSource('professional');
   const heading = sectionOptions.heading || "Product Catalog";
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'grid-cols-1',
-    tablet: 'grid-cols-2',
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
     desktop: 'grid-cols-3',
-    fallback: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+    fallback: 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
   });
 
   return (

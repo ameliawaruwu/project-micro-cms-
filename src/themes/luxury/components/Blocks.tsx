@@ -2,9 +2,10 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const LuxurySignatureCollection: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const { products } = useCmsStore();
+  const products = useThemeProductsSource('luxury');
   const { isEn } = useLanguage();
 
   const defaultHeading = isEn ? "Signature Pieces" : "Koleksi Utama";
@@ -34,10 +35,10 @@ export const LuxurySignatureCollection: React.FC<{ sectionOptions?: any; isMobil
   const buttonLink = sectionOptions.buttonLink || "#all";
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'grid-cols-1',
-    tablet: 'grid-cols-2',
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
     desktop: 'grid-cols-3',
-    fallback: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3',
+    fallback: 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3',
   });
 
   return (

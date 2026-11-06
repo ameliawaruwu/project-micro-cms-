@@ -1,9 +1,10 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const { products } = useCmsStore();
+  const products = useThemeProductsSource('editorial');
   const heading = sectionOptions.heading || "Lookbook";
   const desc = sectionOptions.description || "Discover the latest silhouettes designed for the modern metropolitan. A blend of classic tailoring and avant-garde details.";
   const mainGridClass = getDeviceClass(isMobile, isTablet, {
@@ -72,7 +73,7 @@ export const EditorialCampaign: React.FC<{ sectionOptions?: any }> = ({ sectionO
 };
 
 export const EditorialAsymmetricShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const { products } = useCmsStore();
+  const products = useThemeProductsSource('editorial');
   const product = products[2] || products[0];
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',

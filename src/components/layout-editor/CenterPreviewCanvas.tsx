@@ -39,6 +39,7 @@ import { InlineEditableImage } from './InlineEditableImage';
 import { InlineEditableButton } from './InlineEditableButton';
 import { ThemeId, ThemeRegistry, normalizeThemeId } from '../../themes/ThemeRegistry';
 import { ThemeSectionRenderer } from './ThemeSectionRenderer';
+import { ResponsivePreviewScope } from './ResponsivePreviewScope';
 import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage } from '../../themes/pages';
 import { loadGoogleFont } from '../../utils/fontLoader';
 
@@ -75,6 +76,8 @@ interface CenterPreviewCanvasProps {
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   readonly?: boolean;
+  /** True saat dirender sebagai storefront publik: komponen tema memakai breakpoint asli browser. */
+  isLiveStorefront?: boolean;
   activeThemeId?: ThemeId;
   activePage?: string;
   onPageChange?: (page: string) => void;
@@ -97,10 +100,13 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
   isFullscreen = false,
   onToggleFullscreen,
   readonly = false,
+  isLiveStorefront = false,
   activeThemeId,
   activePage = 'homepage',
   onPageChange,
 }) => {
+  /** Device untuk komponen tema/halaman: undefined di storefront publik agar breakpoint asli berlaku. */
+  const childDeviceMode = isLiveStorefront ? undefined : deviceMode;
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('Semua');
   const [searchPreviewQuery, setSearchPreviewQuery] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -343,7 +349,13 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     }
   };
 
+  // Halaman non-beranda dibungkus ResponsivePreviewScope agar breakpoint mengikuti device preview.
   const renderPageCustomContent = (pageId: string) => {
+    const content = renderPageCustomContentRaw(pageId);
+    return content ? <ResponsivePreviewScope deviceMode={childDeviceMode}>{content}</ResponsivePreviewScope> : null;
+  };
+
+  const renderPageCustomContentRaw = (pageId: string) => {
     if (pageId === 'homepage') return null;
 
     if (pageId === 'catalog' || pageId === 'katalog') {
@@ -353,7 +365,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
               store={store}
               products={products}
               onNavigate={(p) => onPageChange && onPageChange(p)}
-              deviceMode={deviceMode}
+              deviceMode={childDeviceMode}
             />
           );
         }
@@ -366,7 +378,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           products={products}
           productId={selectedProductId || undefined}
           onNavigate={(p) => onPageChange && onPageChange(p)}
-          deviceMode={deviceMode}
+          deviceMode={childDeviceMode}
         />
       );
     }
@@ -388,7 +400,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           themeId={activeThemeId}
           store={store}
           onNavigate={(p) => onPageChange && onPageChange(p)}
-          deviceMode={deviceMode}
+          deviceMode={childDeviceMode}
         />
       );
     }
@@ -400,7 +412,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           store={store}
           products={products}
           onNavigate={(p) => onPageChange && onPageChange(p)}
-          deviceMode={deviceMode}
+          deviceMode={childDeviceMode}
         />
       );
     }
@@ -411,7 +423,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           themeId={activeThemeId}
           store={store}
           onNavigate={(p) => onPageChange && onPageChange(p)}
-          deviceMode={deviceMode}
+          deviceMode={childDeviceMode}
         />
       );
     }
@@ -454,7 +466,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
               store={store}
               products={products}
               onNavigate={(p) => onPageChange && onPageChange(p)}
-              deviceMode={deviceMode}
+              deviceMode={childDeviceMode}
             />
           );
         }
@@ -465,7 +477,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           themeId={activeThemeId}
           store={store}
           onNavigate={(p) => onPageChange && onPageChange(p)}
-          deviceMode={deviceMode}
+          deviceMode={childDeviceMode}
         />
       );
     }
@@ -488,7 +500,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
           store={store}
           isDetailView={true}
           onNavigate={(p) => onPageChange && onPageChange(p)}
-          deviceMode={deviceMode}
+          deviceMode={childDeviceMode}
         />
       );
     }
@@ -500,7 +512,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
               store={store}
               products={products}
               onNavigate={(p) => onPageChange && onPageChange(p)}
-              deviceMode={deviceMode}
+              deviceMode={childDeviceMode}
             />
           );
         }
@@ -524,7 +536,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
               products={products}
               isWishlist={true}
               onNavigate={(p) => onPageChange && onPageChange(p)}
-              deviceMode={deviceMode}
+              deviceMode={childDeviceMode}
             />
           );
         }
@@ -607,7 +619,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                       themeId={activeThemeId} 
                       section={{ ...section, key: sectionKey }} 
                       onUpdateSectionOptions={onUpdateSectionOptions}
-                      deviceMode={deviceMode}
+                      deviceMode={childDeviceMode}
                       readonly={readonly}
                       accentColor={primaryAccent}
                     />
@@ -1827,7 +1839,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                           themeId={activeThemeId} 
                           section={section} 
                           onUpdateSectionOptions={onUpdateSectionOptions}
-                          deviceMode={deviceMode}
+                          deviceMode={childDeviceMode}
                           readonly={readonly}
                           accentColor={primaryAccent}
                         />

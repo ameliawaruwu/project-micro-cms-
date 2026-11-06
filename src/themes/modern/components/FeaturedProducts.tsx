@@ -3,9 +3,10 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { ModernProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, accentColor = '#2563EB', isMobile, isTablet }) => {
-  const allProducts = useCmsStore(state => state.products);
+  const allProducts = useThemeProductsSource('modern');
 
   let filteredProducts = [...allProducts];
 
@@ -45,8 +46,8 @@ export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSe
   };
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'grid-cols-1',
-    tablet: 'grid-cols-2',
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
     desktop: desktopColsMap[desiredCols],
     fallback:
       desiredCols === 2 ? 'grid-cols-2' :

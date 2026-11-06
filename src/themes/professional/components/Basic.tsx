@@ -85,7 +85,7 @@ export const ProfessionalHero: React.FC<{ sectionOptions?: any; isMobile?: boole
   const ptClass = isMobile || isTablet ? 'pt-12' : 'pt-12 md:pt-0';
 
   return (
-    <section className="relative w-full min-h-[75vh] flex items-center bg-gray-50 border-b border-gray-200">
+    <section className="relative w-full min-h-[75vh] flex items-center bg-gray-50 border-b border-gray-200 overflow-hidden">
       <div className={`w-full max-w-7xl mx-auto px-6 md:px-16 flex ${flexDirClass} items-center gap-12`}>
         <div className={`${halfWidthClass} ${ptClass} z-10`}>
           <div className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider rounded-full mb-6">

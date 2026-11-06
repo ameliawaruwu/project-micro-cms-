@@ -1,9 +1,10 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const { products } = useCmsStore();
+  const products = useThemeProductsSource('creative');
   const heading = sectionOptions.heading || "Visual Diary";
   const columnsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'columns-1',

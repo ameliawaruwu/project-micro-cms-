@@ -91,7 +91,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
       ? 'grid-cols-1 gap-6'
       : 'grid-cols-2 gap-4'
     : isTablet
-    ? (gridColumns === 2 ? 'grid-cols-2 gap-6' : 'grid-cols-2 gap-6 md:gap-8')
+    ? (gridColumns === 2 ? 'grid-cols-2 gap-6' : 'grid-cols-3 gap-5')
     : gridColumns === 2
     ? 'grid-cols-1 sm:grid-cols-2 gap-6 md:gap-10'
     : gridColumns === 4

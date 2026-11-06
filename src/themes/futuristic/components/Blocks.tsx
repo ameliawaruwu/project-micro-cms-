@@ -1,9 +1,10 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const { products } = useCmsStore();
+  const products = useThemeProductsSource('futuristic');
   const product = products[0]; // Just showing first product for showcase
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',

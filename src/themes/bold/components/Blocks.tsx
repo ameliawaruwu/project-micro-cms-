@@ -1,9 +1,10 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const { products } = useCmsStore();
+  const products = useThemeProductsSource('bold');
   const product = products[0] || {
     name: 'HEAVYWEIGHT OVERSIZED HOODIE',
     price: 499000,
