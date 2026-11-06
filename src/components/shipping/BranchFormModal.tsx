@@ -63,6 +63,10 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
 
   if (!isOpen) return null;
 
+  const labelClass = 'block text-xs font-semibold text-[#3D3535] mb-1.5';
+  const inputClass =
+    'w-full h-10 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] placeholder:text-[#A39C99] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -141,7 +145,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-3.5 text-xs text-left">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 text-xs text-left">
           {formError && (
             <div className="p-3 bg-[#FEF3F2] text-[#B42318] border border-[#FECDCA] rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -151,81 +155,79 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
 
           {/* Nama Cabang */}
           <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-              {t('branch_form_name', 'Nama Cabang / Gudang')} *
+            <label className={labelClass}>
+              {t('branch_form_name', 'Nama Cabang')} <span className="text-[#B42318]">*</span>
             </label>
             <input
               type="text"
               required
-              placeholder={t('branch_form_name_placeholder', 'Contoh: Gudang Pusat Jakarta, Cabang Bandung')}
+              placeholder={t('branch_form_name_placeholder', 'Contoh: Gudang Bandung')}
               value={branchName}
               onChange={(e) => setBranchName(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-medium text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
+              className={inputClass}
             />
           </div>
 
           {/* PIC Name & Phone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                {t('branch_form_pic', 'Nama Penanggung Jawab (PIC)')} *
+              <label className={labelClass}>
+                {t('branch_form_pic', 'Nama PIC')} <span className="text-[#B42318]">*</span>
               </label>
               <input
                 type="text"
                 required
-                placeholder={t('branch_form_pic_placeholder', 'Nama PIC penyerahan paket')}
+                placeholder={t('branch_form_pic_placeholder', 'Penanggung jawab')}
                 value={picName}
                 onChange={(e) => setPicName(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                {t('branch_form_phone', 'No. Handphone PIC')} *
+              <label className={labelClass}>
+                {t('branch_form_phone', 'No. HP PIC')} <span className="text-[#B42318]">*</span>
               </label>
               <input
                 type="tel"
                 required
-                placeholder={t('branch_form_phone_placeholder', '0812xxxxxxxx (untuk kurir)')}
+                placeholder={t('branch_form_phone_placeholder', '0812xxxxxxxx')}
                 value={picPhone}
                 onChange={(e) => setPicPhone(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
+                className={inputClass}
               />
             </div>
           </div>
 
-          {/* Alamat Lengkap */}
+          {/* Alamat */}
           <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-              {t('branch_form_address', 'Alamat Lengkap Gudang')} *
+            <label className={labelClass}>
+              {t('branch_form_address', 'Alamat')} <span className="text-[#B42318]">*</span>
             </label>
             <textarea
               rows={2}
               required
-              placeholder={t('branch_form_address_placeholder', 'Nama jalan, nomor gudang/ruko, RT/RW, patokan lokasi...')}
+              placeholder={t('branch_form_address_placeholder', 'Jalan, nomor, RT/RW')}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
+              className={`${inputClass} h-auto py-2.5 resize-none`}
             />
           </div>
 
-          {/* Wilayah: Subdistrict & Kota */}
+          {/* Wilayah */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                {t('branch_form_subdistrict', 'Kecamatan')}
-              </label>
+              <label className={labelClass}>{t('branch_form_subdistrict', 'Kecamatan')}</label>
               <input
                 type="text"
                 placeholder="Mampang Prapatan"
                 value={subdistrict}
                 onChange={(e) => setSubdistrict(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                {t('branch_form_city', 'Kota / Kab')} *
+              <label className={labelClass}>
+                {t('branch_form_city', 'Kota / Kab')} <span className="text-[#B42318]">*</span>
               </label>
               <input
                 type="text"
@@ -233,75 +235,70 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 placeholder="Jakarta Selatan"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
+                className={inputClass}
               />
             </div>
-          </div>
-
-          {/* Provinsi & Kode Pos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                {t('branch_form_province', 'Provinsi')}
-              </label>
+              <label className={labelClass}>{t('branch_form_province', 'Provinsi')}</label>
               <input
                 type="text"
                 placeholder="DKI Jakarta"
                 value={province}
                 onChange={(e) => setProvince(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#555555] mb-1">
-                {t('branch_form_postal_code', 'Kode Pos')} *
+              <label className={labelClass}>
+                {t('branch_form_postal_code', 'Kode Pos')} <span className="text-[#B42318]">*</span>
               </label>
               <input
                 type="text"
+                inputMode="numeric"
                 maxLength={5}
                 required
                 placeholder="12730"
                 value={postalCode}
                 onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, ''))}
-                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-mono font-bold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
+                className={inputClass}
               />
             </div>
           </div>
 
-          {/* Toggles: Jadikan Cabang Utama & Status Aktif */}
-          <div className="pt-2 border-t border-[#F0F0F0] space-y-2">
-            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+          {/* Toggles */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <label className="flex items-start gap-2.5 p-3 rounded-xl border border-[#E5E0DD] cursor-pointer select-none hover:bg-[#FAF7F7] transition">
               <input
                 type="checkbox"
                 checked={isDefault}
                 onChange={(e) => setIsDefault(e.target.checked)}
-                className="w-4 h-4 rounded text-[#66000E] focus:ring-[#66000E] border-[#CCCCCC]"
+                className="mt-0.5 w-4 h-4 shrink-0 rounded accent-[#66000E] cursor-pointer"
               />
-              <div>
-                <span className="font-semibold text-xs text-[#1F1F1F]">
-                  {t('branch_form_default_checkbox', 'Jadikan Cabang Utama')}
+              <span>
+                <span className="block font-semibold text-xs text-[#1F1F1F]">
+                  {t('branch_form_default_checkbox', 'Cabang utama')}
                 </span>
-                <p className="text-[11px] text-[#777777]">
-                  {t('branch_form_default_hint', 'Cabang utama otomatis terpilih sebagai origin saat checkout dan perhitungan ongkir pembeli.')}
-                </p>
-              </div>
+                <span className="block text-[11px] text-[#777777] mt-0.5">
+                  {t('branch_form_default_hint', 'Asal pengiriman default saat checkout')}
+                </span>
+              </span>
             </label>
 
-            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <label className="flex items-start gap-2.5 p-3 rounded-xl border border-[#E5E0DD] cursor-pointer select-none hover:bg-[#FAF7F7] transition">
               <input
                 type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 rounded text-[#66000E] focus:ring-[#66000E] border-[#CCCCCC]"
+                className="mt-0.5 w-4 h-4 shrink-0 rounded accent-[#66000E] cursor-pointer"
               />
-              <div>
-                <span className="font-semibold text-xs text-[#1F1F1F]">
-                  {t('branch_form_active_checkbox', 'Status Aktif')}
+              <span>
+                <span className="block font-semibold text-xs text-[#1F1F1F]">
+                  {t('branch_form_active_checkbox', 'Aktif')}
                 </span>
-                <p className="text-[11px] text-[#777777]">
-                  {t('branch_form_active_hint', 'Cabang aktif dapat digunakan untuk proses booking pengiriman dan penjemputan paket.')}
-                </p>
-              </div>
+                <span className="block text-[11px] text-[#777777] mt-0.5">
+                  {t('branch_form_active_hint', 'Bisa dipakai untuk pengiriman & pickup')}
+                </span>
+              </span>
             </label>
           </div>
 

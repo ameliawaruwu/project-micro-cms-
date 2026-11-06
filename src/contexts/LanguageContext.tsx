@@ -609,33 +609,33 @@ export const translations: Translations = {
   branch_delete: { id: 'Hapus Cabang', en: 'Delete Branch' },
   branch_modal_add_title: { id: 'Tambah Cabang / Gudang Asal', en: 'Add Origin Branch / Warehouse' },
   branch_modal_edit_title: { id: 'Edit Cabang / Gudang', en: 'Edit Branch / Warehouse' },
-  branch_form_name: { id: 'Nama Cabang / Gudang', en: 'Branch / Warehouse Name' },
+  branch_form_name: { id: 'Nama Cabang', en: 'Branch Name' },
   branch_form_name_placeholder: {
-    id: 'Contoh: Gudang Pusat Jakarta, Cabang Bandung',
-    en: 'Example: Jakarta Central Warehouse, Bandung Branch'
+    id: 'Contoh: Gudang Bandung',
+    en: 'Example: Bandung Warehouse'
   },
-  branch_form_pic: { id: 'Nama Penanggung Jawab (PIC)', en: 'Person in Charge (PIC) Name' },
-  branch_form_pic_placeholder: { id: 'Nama PIC penyerahan paket', en: 'PIC name for parcel handover' },
-  branch_form_phone: { id: 'No. Handphone PIC', en: 'PIC Phone Number' },
-  branch_form_phone_placeholder: { id: '0812xxxxxxxx (untuk kurir)', en: '0812xxxxxxxx (for courier)' },
-  branch_form_address: { id: 'Alamat Lengkap Gudang', en: 'Full Warehouse Address' },
+  branch_form_pic: { id: 'Nama PIC', en: 'PIC Name' },
+  branch_form_pic_placeholder: { id: 'Penanggung jawab', en: 'Person in charge' },
+  branch_form_phone: { id: 'No. HP PIC', en: 'PIC Phone' },
+  branch_form_phone_placeholder: { id: '0812xxxxxxxx', en: '0812xxxxxxxx' },
+  branch_form_address: { id: 'Alamat', en: 'Address' },
   branch_form_address_placeholder: {
-    id: 'Nama jalan, nomor gudang/ruko, RT/RW, patokan lokasi...',
-    en: 'Street name, unit number, district, landmarks...'
+    id: 'Jalan, nomor, RT/RW',
+    en: 'Street, number, area'
   },
   branch_form_subdistrict: { id: 'Kecamatan', en: 'Subdistrict' },
   branch_form_city: { id: 'Kota / Kab', en: 'City / Regency' },
   branch_form_postal_code: { id: 'Kode Pos', en: 'Postal Code' },
   branch_form_province: { id: 'Provinsi', en: 'Province' },
-  branch_form_default_checkbox: { id: 'Jadikan Cabang Utama', en: 'Set as Primary Branch' },
+  branch_form_default_checkbox: { id: 'Cabang utama', en: 'Primary branch' },
   branch_form_default_hint: {
-    id: 'Cabang utama otomatis terpilih sebagai origin saat checkout dan perhitungan ongkir pembeli.',
-    en: 'Primary branch is automatically selected as origin during checkout and shipping calculation.'
+    id: 'Asal pengiriman default saat checkout',
+    en: 'Default shipping origin at checkout'
   },
-  branch_form_active_checkbox: { id: 'Status Aktif', en: 'Active Status' },
+  branch_form_active_checkbox: { id: 'Aktif', en: 'Active' },
   branch_form_active_hint: {
-    id: 'Cabang aktif dapat digunakan untuk proses booking pengiriman dan penjemputan paket.',
-    en: 'Active branches can be used for shipping bookings and parcel pickups.'
+    id: 'Bisa dipakai untuk pengiriman & pickup',
+    en: 'Available for shipping & pickup'
   },
   branch_form_cancel: { id: 'Batal', en: 'Cancel' },
   branch_form_saving: { id: 'Menyimpan...', en: 'Saving...' },
