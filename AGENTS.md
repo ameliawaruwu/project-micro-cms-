@@ -4,6 +4,8 @@
 > Berkas ini adalah **single source of truth** bagi AI Agent (Cursor, Claude Code, Cline, Antigravity CLI `agy`, dll.) yang mendampingi developer yang bekerja di lingkungan **Windows**, mengelola platform **LapakQ** (`lapakq.com`), dan berinteraksi dengan server Synology NAS melalui **`kroomboxpanel-mcp`**.  
 >  
 > ⚠️ **CATATAN MIGRASI RESMI:** Seluruh pembaruan dan rilis telah dialihkan sepenuhnya ke **LapakQ** (`lapakq.com`). Jangan lagi mengarahkan rilis publik ke domain Kroomify lama. Repositori kode utama adalah `origin` (`project-pkm-micro-e-commerce`).
+>
+> 🚚 **REPO DEPLOY ≠ ORIGIN:** NAS menarik kode dari repo GitHub **`project-micro-cms-`** (remote lokal bernama **`panel`**), bukan dari `origin`. Commit baru hanya sampai ke NAS setelah `git push panel main`. Lihat [Bagian 4](#4-panduan-deploy-langkah-demi-langkah-via-mcp-terverifikasi-2026-11-06).
 
 ---
 
@@ -19,7 +21,7 @@
 > 4. Saat pengunjung membuka `https://<slug>.kroombox.com`, Nginx menampilkan halaman default *"Kroombox - Success"*.
 
 ### 🔒 INVARIAN MUTLAK:
-1. **Kroomify BUKAN Serverless / Frontend-Only SPA**: Kroomify memiliki backend daemon Express aktif (`kroomify-api` port `5055`) di server NAS.
+1. **Kroomify BUKAN Serverless / Frontend-Only SPA**: Kroomify memiliki backend daemon Express aktif di server NAS (PM2 `micro_cms_kromify-api`, port runtime `5058` menurut panel).
 2. **Setiap Aksi Fisik Wajib Memanggil Backend API**:
    - Aksi **Publish Toko** Wajib memanggil `POST /api/deploy/publish`.
    - Aksi **Unpublish Toko** Wajib memanggil `POST /api/deploy/unpublish`.
@@ -48,15 +50,19 @@
 | **Direktori Proyek di NAS** | `/volume1/web/www/KOLABPANEL_USERS/akun@kroombox.com/Micro_CMS_Kromify` | Root working directory aplikasi |
 | **Domain Utama CMS** | `https://lapakq.com` | Dashboard admin & merchant login (Produksi) |
 | **Subdomain Toko Merchant** | `https://<slug>.lapakq.com` | Storefront publik langsung tanpa login CMS |
-| **Backend Express Daemon** | PM2 Process: `kroomify-api` (Port `5055`) | Runtime Node.js untuk API dan deploy controller |
-| **Gateway Reverse Proxy** | Nginx DSM (Port `8080`) | Meneruskan traffic publik ke static webroot atau port 5055 |
+| **Repo GitHub yang Ditarik NAS** | `https://github.com/ameliawaruwu/project-micro-cms-.git` (branch `main`) | Remote lokal `panel`. **Wajib** `git push panel main` sebelum deploy |
+| **Webroot lapakq.com** | Snapshot **rilis** panel (bukan langsung `dist/`) | Situs live hanya berganti saat rilis baru dibuat oleh pipeline CI/CD (`kroombox_run_cicd_pipeline`) |
+| **Backend Express Daemon** | PM2 Process: `micro_cms_kromify-api` (runtime port `5058` menurut `kroombox_get_site_details`) | Runtime Node.js untuk API dan deploy controller. Nama lama `kroomify-api`/`5055` sudah tidak berlaku |
+| **Gateway Reverse Proxy** | Nginx DSM (Port `8080`) | Meneruskan traffic publik ke webroot rilis atau port backend |
 | **Cloudflare Anycast Tunnel**| Tunnel ID: `19956650-74b4-4479-9c22-79da749256da` | Ingress edge routing publik ke `http://localhost:8080` |
 
 ---
 
 ## 2. Katalog Backend API Kroomify (Wajib Di-wire oleh Frontend)
 
-Seluruh request API dari frontend dikirim ke path relatif `/api/...`. Nginx port 8080 secara otomatis mem-proxy `/api/` ke backend Express port 5055 (`proxy_pass http://127.0.0.1:5055/;`).
+Seluruh request API dari frontend dikirim ke path relatif `/api/...`. Nginx port 8080 mem-proxy `/api/` ke backend Express (port runtime saat ini `5058` menurut panel; konfigurasi lama menyebut `5055` — cek `kroombox_get_site_details` sebelum mengandalkan angkanya).
+
+> ℹ️ Path `/volume1/web/www/KroomBox/kroomify/...` di bawah adalah nilai default di kode (`KROOMIFY_DEPLOY_ROOT`). Path ini **tidak bisa diakses** dari `kroombox_execute_terminal_command` (terminal panel berjalan terbatas di folder situs), jadi jangan dipakai sebagai langkah deploy manual.
 
 ### 2.1 Endpoint Auto-Deployer (`backend/deployController.ts`)
 
@@ -124,101 +130,88 @@ Ketika developer bekerja di Windows dan Anda bertindak sebagai AI coding assista
 | **Pull Kode Terbaru ke NAS**| `kroombox_git_pull_latest` | `site_id: "s_1789953949220_1ee44e"`, `rebuild: false` |
 | **Restart Daemon PM2** | `kroombox_manage_site_process` | `site_id: "s_1789953949220_1ee44e"`, `action: "restart"` |
 | **Cek Health & Port** | `kroombox_get_site_health` | `site_id: "s_1789953949220_1ee44e"` |
+| **Deploy (build + rilis baru)** | `kroombox_run_cicd_pipeline` | `site_id: "s_1789953949220_1ee44e"` |
+| **Pantau Pipeline** | `kroombox_get_cicd_status` | `site_id: "s_1789953949220_1ee44e"` |
+| **Daftar Rilis / Rilis Live** | `kroombox_list_site_releases` | `site_id: "s_1789953949220_1ee44e"` |
+| **Rollback ke Rilis Lama** | `kroombox_activate_site_release` | `site_id`, `release_id` dari daftar rilis |
+
+### 3.1.1 Batasan `kroombox_execute_terminal_command` (terverifikasi 2026-11-06)
+- Menolak karakter shell seperti `|`, `&&`, `( )`, `*` → jalankan **satu perintah per panggilan**.
+- Hanya perintah dalam whitelist (contoh: `grep` ditolak; `npm`, `cp`, `ls` diterima).
+- Ada **micro-cooldown ±15 detik** antar panggilan; jika muncul pesan `[MCP GUARD]`, tunggu lalu ulangi.
+- `npm run lint` (tsc) bisa berhenti dengan `exit_code: 124` (timeout panel) — jalankan `npx tsc --noEmit` di Windows sebagai gantinya.
+- Terminal berjalan di folder situs; path di luar itu (mis. `/volume1/web/www/KroomBox`) tidak terlihat.
 
 ---
 
-### 3.2 Siklus Alur Kerja Lengkap (Windows Dev -> MCP -> NAS Live)
+### 3.2 Siklus Alur Kerja Lengkap (Windows Dev -> GitHub -> Panel CI/CD -> Live)
 
-Berikut adalah siklus standar yang **WAJIB** dijalankan setiap kali ada penambahan/perbaikan fitur:
+Berikut adalah siklus standar setiap kali ada penambahan/perbaikan fitur (deploy hanya atas instruksi developer, lihat Invarian #3):
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Dev as Developer / AI Agent (Windows)
-    participant Git as GitHub Repo (main)
+    participant Origin as GitHub origin (project-pkm-micro-e-commerce)
+    participant Panel as GitHub panel (project-micro-cms-)
     participant MCP as kroomboxpanel-mcp
     participant NAS as Synology NAS (KolabPanel)
-    participant PM2 as PM2 (kroomify-api :5055)
-    participant Nginx as Nginx (:8080)
 
-    Note over Dev: 1. Edit kode di Windows (TSX/CSS/TS)
-    Note over Dev: Pastikan tombol UI memanggil /api/...
-    Dev->>Git: git push origin main
-    
-    Dev->>MCP: kroombox_git_pull_latest(site_id: "s_1789953949220_1ee44e")
-    MCP->>NAS: git pull origin main
-    
-    Dev->>MCP: kroombox_execute_terminal_command("npm run lint && npm run build")
-    MCP->>NAS: tsc --noEmit && vite build
-    
-    Dev->>MCP: kroombox_execute_terminal_command("cp -r dist/* /volume1/web/www/KroomBox/kroomify/engine/dist/ && chmod -R a+rX /volume1/web/www/KroomBox/kroomify/engine/dist")
-    MCP->>NAS: Sync dist ke Shared Engine Storefront
-    
-    Dev->>MCP: kroombox_manage_site_process(action: "restart")
-    MCP->>PM2: pm2 restart kroomify-api
-    
-    Dev->>MCP: kroombox_execute_terminal_command("curl -s -i -H 'Host: flowerss.kroombox.com' http://127.0.0.1:8080/ | head -n 12")
-    MCP-->>Dev: HTTP/1.1 200 OK (Verified)
+    Note over Dev: 1. Edit kode di Windows, uji lokal (npm run dev, npx tsc --noEmit)
+    Dev->>Origin: git push origin main
+    Dev->>Panel: git push panel main
+    Dev->>MCP: kroombox_run_cicd_pipeline(site_id)
+    MCP->>NAS: source (git pull) -> install -> build -> cascade -> reload -> health
+    NAS-->>MCP: rilis baru diaktifkan (live=true)
+    Dev->>MCP: kroombox_get_cicd_status / kroombox_list_site_releases
+    Dev->>Dev: curl https://lapakq.com -> cek nama bundle assets/index-*.js baru
 ```
 
 ---
 
-## 4. Panduan Eksekusi Langkah-demi-Langkah via MCP
+## 4. Panduan Deploy Langkah-demi-Langkah via MCP (terverifikasi 2026-11-06)
 
-### Langkah 1: Verifikasi Kode di Windows & Push ke Git
-Sebelum melakukan pembaruan ke server, pastikan developer melakukan commit dan push dari Windows:
+> ⚠️ Jangan memakai alur lama (`npm run build` manual lalu `cp dist/* .../engine/dist` dan `pm2 restart kroomify-api`). Build manual **tidak** mengubah situs live karena lapakq.com disajikan dari snapshot rilis, folder engine tidak bisa diakses dari terminal panel, dan nama proses PM2 sudah berubah.
+
+### Langkah 1: Uji Lokal, Commit & Push ke Kedua Remote
 ```powershell
-# Di terminal Windows developer
-git add .
-git commit -m "feat: wire publish modal to POST /api/deploy/publish"
+npx tsc --noEmit
 git push origin main
+git push panel main   # repo yang ditarik NAS
+```
+Pastikan kedua remote menunjuk commit yang sama:
+```powershell
+git ls-remote origin refs/heads/main
+git ls-remote panel refs/heads/main
 ```
 
-### Langkah 2: Sinkronkan Git di Server NAS via MCP
-Panggil tool `kroombox_git_pull_latest`:
-```json
-{
-  "site_id": "s_1789953949220_1ee44e",
-  "rebuild": false
-}
-```
+### Langkah 2: (Opsional) Cek Status Git di NAS
+`kroombox_get_git_status` dengan `{"site_id": "s_1789953949220_1ee44e"}`. Di NAS ada perubahan lokal yang memang dibiarkan (`ecosystem.config.cjs`, `index.html`, `package-lock.json`); pipeline memakai `auto_stash`, jadi tidak perlu dibersihkan.
 
-### Langkah 3: Jalankan Lint & Build Frontend di NAS via MCP
-Gunakan `kroombox_execute_terminal_command` untuk memastikan tidak ada kesalahan TypeScript dan menghasilkan bundel `dist/` terbaru:
-```json
-{
-  "site_id": "s_1789953949220_1ee44e",
-  "command": "npm run lint && npm run build"
-}
-```
+### Langkah 3: Migrasi Database (jika ada)
+Jika commit membawa file baru di `supabase/migrations/`, terapkan ke Supabase **sebelum** deploy frontend (via MCP Supabase `apply_migration`, atas persetujuan developer), agar fitur baru tidak gagal karena kolom belum ada.
 
-### Langkah 4: Sinkronkan Bundel ke Shared Engine Storefront
-Storefront toko (`/volume1/web/www/KroomBox/kroomify/sites/<slug>`) menggunakan symlink aset yang merujuk ke engine bersama di `/volume1/web/www/KroomBox/kroomify/engine/dist`. Sinkronkan bundel baru:
-```json
-{
-  "site_id": "s_1789953949220_1ee44e",
-  "command": "cp -r dist/* /volume1/web/www/KroomBox/kroomify/engine/dist/ && chmod -R a+rX /volume1/web/www/KroomBox/kroomify/engine/dist"
-}
-```
+### Langkah 4: Jalankan Pipeline CI/CD Panel
+`kroombox_run_cicd_pipeline` dengan `{"site_id": "s_1789953949220_1ee44e"}`. Pipeline berjalan di background (install ±3–5 menit, build ±5 menit) dan membuat rilis baru.
 
-### Langkah 5: Restart Backend API Daemon
-Jika ada perubahan pada `server.ts` atau folder `backend/`, restart proses PM2:
-```json
-{
-  "site_id": "s_1789953949220_1ee44e",
-  "action": "restart"
-}
-```
-*(Atau via `kroombox_execute_terminal_command` dengan command `pm2 restart kroomify-api`)*.
+### Langkah 5: Pantau Sampai Selesai
+Panggil `kroombox_get_cicd_status` berkala sampai tahap `health` = `success` (tahap `cascade`/`reload` boleh `skipped`). Lalu `kroombox_list_site_releases` untuk memastikan rilis baru `live: true` dengan `commit` yang benar.
 
-### Langkah 6: Validasi & Smoke Test
-Jalankan uji internal untuk membuktikan gateway Nginx merespons dengan HTTP 200 OK:
-```json
-{
-  "site_id": "s_1789953949220_1ee44e",
-  "command": "curl -s -i -H 'Host: flowerss.kroombox.com' http://127.0.0.1:8080/ | head -n 12"
-}
+### Langkah 6: Smoke Test dari Windows
+```powershell
+curl.exe -s -o NUL -w "%{http_code}" https://lapakq.com/
+curl.exe -s https://lapakq.com/ | Select-String -Pattern "assets/index-[A-Za-z0-9_-]+\.js" -AllMatches
 ```
+Nama bundle `assets/index-*.js` harus berbeda dari rilis sebelumnya, dan header `last-modified` harus setelah waktu pipeline.
+
+### Langkah 7: Restart Backend (hanya jika `server.ts` / `backend/` berubah)
+`kroombox_manage_site_process` dengan `{"site_id": "s_1789953949220_1ee44e", "action": "restart"}` (proses PM2 `micro_cms_kromify-api`). Perubahan frontend saja tidak memerlukan restart.
+
+### Rollback
+`kroombox_list_site_releases` → pilih rilis sebelumnya → `kroombox_activate_site_release`.
+
+### Catatan Sesi Claude Code
+Server `kroomboxpanel-mcp` terpasang di scope lokal (`C:\Users\HP\.claude.json`, token tidak di-commit). Tool-nya baru muncul setelah sesi Claude Code dibuka ulang.
 
 ---
 
