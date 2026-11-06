@@ -11,6 +11,7 @@ import {
 } from '../../../services/userAdminService';
 import { communityService } from '../../../services/communityService';
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
+import { ConfirmDeleteModal } from '../../../components/common/ConfirmDeleteModal';
 import { SimpleModal, fieldClass, ghostBtn, labelClass, primaryBtn } from '../../../components/tickets/ticketUi';
 
 interface AdminUsersTabProps {
@@ -62,6 +63,8 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<ManagedUser | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -161,26 +164,26 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
     }
   };
 
-  const handleDelete = async (u: ManagedUser) => {
+  const handleDelete = (u: ManagedUser) => {
     if (u.id === currentUser?.id || u.email === currentUser?.email) {
       onShowToast?.(isEn ? 'You cannot delete your own account' : 'Tidak bisa menghapus akun sendiri');
       return;
     }
-    const warning =
-      u.role === 'merchant'
-        ? isEn
-          ? `Delete ${u.email}? Their stores will also be deleted.`
-          : `Hapus ${u.email}? Toko milik user ini ikut terhapus.`
-        : isEn
-        ? `Delete ${u.email}?`
-        : `Hapus ${u.email}?`;
-    if (!window.confirm(warning)) return;
+    setPendingDelete(u);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
     try {
-      await userAdminService.remove(u.id);
-      setUsers((prev) => prev.filter((x) => x.id !== u.id));
+      await userAdminService.remove(pendingDelete.id);
+      setUsers((prev) => prev.filter((x) => x.id !== pendingDelete.id));
       onShowToast?.(isEn ? 'User deleted' : 'User dihapus');
+      setPendingDelete(null);
     } catch (err: any) {
       onShowToast?.(err?.message || 'Gagal menghapus user.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -358,6 +361,25 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
         </div>
         {formError && <p className="text-xs text-[#66000E]">{formError}</p>}
       </SimpleModal>
+
+      <ConfirmDeleteModal
+        isOpen={!!pendingDelete}
+        title={isEn ? 'Delete User' : 'Hapus User'}
+        message={
+          pendingDelete
+            ? pendingDelete.role === 'merchant'
+              ? isEn
+                ? `${pendingDelete.email} and their stores will be permanently deleted.`
+                : `${pendingDelete.email} beserta tokonya akan dihapus permanen.`
+              : isEn
+              ? `${pendingDelete.email} will be permanently deleted.`
+              : `${pendingDelete.email} akan dihapus permanen.`
+            : undefined
+        }
+        isDeleting={deleting}
+        onConfirm={confirmDelete}
+        onClose={() => !deleting && setPendingDelete(null)}
+      />
     </div>
   );
 };

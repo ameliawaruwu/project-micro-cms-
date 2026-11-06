@@ -4,6 +4,7 @@ import { User } from '../../../types';
 import { ticketService, SupportTicket, TicketStatus } from '../../../services/ticketService';
 import { ROLE_LABELS } from '../../../services/userAdminService';
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
+import { ConfirmDeleteModal } from '../../../components/common/ConfirmDeleteModal';
 import {
   CATEGORY_LABELS,
   PRIORITY_LABELS,
@@ -45,6 +46,7 @@ export const AdminTicketsTab: React.FC<AdminTicketsTabProps> = ({
   const [draftResponse, setDraftResponse] = useState('');
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -114,16 +116,17 @@ export const AdminTicketsTab: React.FC<AdminTicketsTabProps> = ({
 
   const handleDelete = async () => {
     if (!selected) return;
-    if (!window.confirm(isEn ? `Delete ticket ${selected.ticketNumber}?` : `Hapus tiket ${selected.ticketNumber}?`)) return;
     setSaving(true);
     try {
       await ticketService.remove(selected.id);
       setTickets((prev) => prev.filter((t) => t.id !== selected.id));
       onShowToast?.(isEn ? 'Ticket deleted' : 'Tiket dihapus');
+      setConfirmOpen(false);
       setSelected(null);
       onTicketsChanged?.();
     } catch (err: any) {
       setModalError(err?.message || 'Gagal menghapus.');
+      setConfirmOpen(false);
     } finally {
       setSaving(false);
     }
@@ -209,7 +212,7 @@ export const AdminTicketsTab: React.FC<AdminTicketsTabProps> = ({
         onClose={() => !saving && setSelected(null)}
         footer={
           <>
-            <button type="button" onClick={handleDelete} disabled={saving} className={`${ghostBtn} mr-auto text-[#66000E]`}>
+            <button type="button" onClick={() => setConfirmOpen(true)} disabled={saving} className={`${ghostBtn} mr-auto text-[#66000E]`}>
               <Trash2 className="w-3.5 h-3.5" />
             </button>
             <button type="button" className={ghostBtn} onClick={() => setSelected(null)} disabled={saving}>
@@ -295,6 +298,15 @@ export const AdminTicketsTab: React.FC<AdminTicketsTabProps> = ({
           </>
         )}
       </SimpleModal>
+
+      <ConfirmDeleteModal
+        isOpen={confirmOpen && !!selected}
+        title={isEn ? 'Delete Ticket' : 'Hapus Tiket'}
+        itemName={selected?.ticketNumber}
+        isDeleting={saving}
+        onConfirm={handleDelete}
+        onClose={() => !saving && setConfirmOpen(false)}
+      />
     </div>
   );
 };
