@@ -11,6 +11,9 @@ import {
   Globe,
   Users,
   Package,
+  UserCog,
+  Ticket,
+  LifeBuoy,
 } from 'lucide-react';
 import { Store, WithdrawalRequest, AdminPlatformStats, Order, BillingPlan, BillingSubscription, User } from '../../types';
 import { adminService } from '../../services/adminService';
@@ -34,6 +37,10 @@ import { AdminSettingsTab } from './tabs/AdminSettingsTab';
 import { AdminCommunitiesTab } from './tabs/AdminCommunitiesTab';
 import { storeInCommunity } from '../../utils/communityMembership';
 import { AdminProductsTab } from './tabs/AdminProductsTab';
+import { AdminUsersTab } from './tabs/AdminUsersTab';
+import { AdminTicketsTab } from './tabs/AdminTicketsTab';
+import { TicketRequesterPanel } from '../../components/tickets/TicketRequesterPanel';
+import { ticketService } from '../../services/ticketService';
 import {
   getShippingStatusBadgeStyle,
   getShippingStatusLabel,
@@ -86,17 +93,25 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   // - Sub Admin Produk: Dashboard ('overview'), Toko Binaan ('stores'), dan Produk ('products')
   useEffect(() => {
     if (isSubAdminUmum) {
-      if (activeTab !== 'overview' && activeTab !== 'communities') {
+      if (activeTab !== 'overview' && activeTab !== 'communities' && activeTab !== 'my-tickets') {
         setActiveTab('overview');
       }
     } else if (isSubAdminProduk) {
-      if (activeTab !== 'overview' && activeTab !== 'stores' && activeTab !== 'products') {
+      if (activeTab !== 'overview' && activeTab !== 'stores' && activeTab !== 'products' && activeTab !== 'my-tickets') {
         setActiveTab('overview');
       }
     } else if (isSubAdmin) {
-      if (activeTab !== 'overview' && activeTab !== 'communities' && activeTab !== 'stores' && activeTab !== 'products') {
+      if (
+        activeTab !== 'overview' &&
+        activeTab !== 'communities' &&
+        activeTab !== 'stores' &&
+        activeTab !== 'products' &&
+        activeTab !== 'my-tickets'
+      ) {
         setActiveTab('overview');
       }
+    } else if (activeTab === 'my-tickets') {
+      setActiveTab('overview');
     }
   }, [isSubAdminUmum, isSubAdminProduk, isSubAdmin, activeTab]);
 
@@ -154,6 +169,17 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [orderFilterCourier, setOrderFilterCourier] = useState<string>('all');
   const [orderFilterStore, setOrderFilterStore] = useState<string>('all');
   const [selectedAdminOrder, setSelectedAdminOrder] = useState<Order | null>(null);
+
+  // Jumlah tiket pending (badge menu Kelola Tiket, khusus super admin)
+  const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
+  const refreshPendingTickets = React.useCallback(async () => {
+    if (isSubAdmin) return;
+    setPendingTicketsCount(await ticketService.countPending());
+  }, [isSubAdmin]);
+
+  useEffect(() => {
+    refreshPendingTickets();
+  }, [refreshPendingTickets]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -502,6 +528,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           label: language === 'en' ? 'Community Page' : 'Halaman Komunitas',
           icon: Users,
         },
+        {
+          id: 'my-tickets',
+          label: language === 'en' ? 'Support Tickets' : 'Tiket Bantuan',
+          icon: LifeBuoy,
+        },
       ]
     : isSubAdminProduk
     ? [
@@ -520,6 +551,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           id: 'products',
           label: language === 'en' ? 'Store Products' : 'Produk Toko Binaan',
           icon: Package,
+        },
+        {
+          id: 'my-tickets',
+          label: language === 'en' ? 'Support Tickets' : 'Tiket Bantuan',
+          icon: LifeBuoy,
         },
       ]
     : isSubAdmin
@@ -545,12 +581,24 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           label: language === 'en' ? 'Communities' : 'Komunitas',
           icon: Users,
         },
+        {
+          id: 'my-tickets',
+          label: language === 'en' ? 'Support Tickets' : 'Tiket Bantuan',
+          icon: LifeBuoy,
+        },
       ]
     : [
         { id: 'overview', label: language === 'en' ? 'Dashboard' : 'Dashboard', icon: LayoutDashboard },
         { id: 'stores', label: language === 'en' ? 'Manage Stores' : 'Kelola Toko', icon: StoreIcon, count: stores.length },
         { id: 'products', label: language === 'en' ? 'Products' : 'Produk', icon: Package },
         { id: 'communities', label: language === 'en' ? 'Communities' : 'Komunitas', icon: Users },
+        { id: 'users', label: language === 'en' ? 'Manage Users' : 'Kelola User', icon: UserCog },
+        {
+          id: 'tickets',
+          label: language === 'en' ? 'Manage Tickets' : 'Kelola Tiket',
+          icon: Ticket,
+          badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined,
+        },
         {
           id: 'domain-requests',
           label: language === 'en' ? 'Domain Requests' : 'Permintaan Domain',
@@ -634,6 +682,35 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               onShowToast={showToast}
               language={language}
               isSubAdmin={isSubAdmin}
+            />
+          )}
+
+          {activeTab === 'users' && !isSubAdmin && (
+            <AdminUsersTab
+              currentUser={loggedInUser}
+              language={language}
+              onShowToast={showToast}
+              onNavigateOverview={() => setActiveTab('overview')}
+            />
+          )}
+
+          {activeTab === 'tickets' && !isSubAdmin && (
+            <AdminTicketsTab
+              currentUser={loggedInUser}
+              language={language}
+              onShowToast={showToast}
+              onTicketsChanged={refreshPendingTickets}
+              onNavigateOverview={() => setActiveTab('overview')}
+            />
+          )}
+
+          {activeTab === 'my-tickets' && isSubAdmin && (
+            <TicketRequesterPanel
+              user={loggedInUser}
+              requesterRole={isSubAdminUmum ? 'sub_admin_umum' : isSubAdminProduk ? 'community_admin' : 'sub_admin'}
+              language={language}
+              onShowToast={(msg) => showToast(msg)}
+              onNavigateDashboard={() => setActiveTab('overview')}
             />
           )}
 

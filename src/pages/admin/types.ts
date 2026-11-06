@@ -11,7 +11,10 @@ export type AdminTab =
   | 'plans'
   | 'orders-shipping'
   | 'transactions'
-  | 'settings';
+  | 'settings'
+  | 'users'
+  | 'tickets'
+  | 'my-tickets';
 
 export interface AdminNavItem {
   id: AdminTab;

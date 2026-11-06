@@ -75,6 +75,7 @@ import { IntegrationListPage } from './pages/merchant/IntegrationListPage';
 import { SettingsPage } from './pages/merchant/SettingsPage';
 import { LayoutPage } from './pages/merchant/LayoutPage';
 import { DomainPage } from './pages/merchant/DomainPage';
+import { TicketRequesterPanel } from './components/tickets/TicketRequesterPanel';
 
 // Admin Pages
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
@@ -2105,6 +2106,17 @@ export default function App() {
                   store={currentStore}
                   onUpdateStore={handleUpdateStore}
                   onShowNotification={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
+                />
+              )}
+
+              {/* TAB: TIKET BANTUAN */}
+              {activeTab === 'tiket' && (
+                <TicketRequesterPanel
+                  user={user}
+                  store={currentStore?.id ? { id: currentStore.id, name: currentStore.name } : null}
+                  requesterRole="merchant"
+                  onShowToast={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
                 />
               )}

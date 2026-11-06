@@ -14,6 +14,7 @@ import {
   X,
   LogOut,
   Crown,
+  LifeBuoy,
 } from 'lucide-react';
 import { MerchantTab, Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -98,6 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     { id: 'pembayaran' as MerchantTab, label: t('nav_payment', 'Pembayaran'), icon: CreditCard },
     { id: 'pengiriman' as MerchantTab, label: t('nav_shipping', 'Pengiriman'), icon: Truck },
+    { id: 'tiket' as MerchantTab, label: t('nav_tickets', 'Tiket Bantuan'), icon: LifeBuoy },
     { id: 'pengaturan' as MerchantTab, label: t('nav_settings', 'Pengaturan'), icon: Settings },
   ];
 
