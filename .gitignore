@@ -10,3 +10,4 @@ current
 .env*
 !.env.example
 _backup*.json
+.mcp.json
