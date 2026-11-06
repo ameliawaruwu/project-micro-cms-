@@ -682,16 +682,7 @@ class StoreService {
       }
     }
 
-    // Toko pada Paket Free tidak dapat dipublikasikan (hanya mode pratinjau/lihat-lihat saja)
-    if (isPublished) {
-      const stores = this.getStoredStores();
-      const target = stores.find((s) => s.id === storeId);
-      const plan = (target?.plan || '').toLowerCase();
-      const isPaid = ['personal', 'community', 'corporate', 'startup', 'premium'].includes(plan);
-      if (!isPaid) {
-        throw new Error('Toko pada Paket Free tidak dapat dipublikasikan ke publik (hanya mode pratinjau/lihat-lihat saja). Silakan upgrade ke paket berbayar.');
-      }
-    }
+    // Semua paket (termasuk Free) boleh publish. Penagihan dilakukan di akhir bulan berdasarkan omset toko.
 
     // 1. Supabase-first: update langsung di database dengan ownership check
     let supaQuery = supabase
