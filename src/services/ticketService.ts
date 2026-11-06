@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { idService } from './idService';
 import { User } from '../types';
 
 export type TicketStatus = 'pending' | 'in_progress' | 'resolved';
@@ -62,13 +63,6 @@ const mapRow = (r: any): SupportTicket => ({
   resolvedAt: r.resolved_at || undefined,
 });
 
-const buildTicketNumber = (): string => {
-  const d = new Date();
-  const ymd = `${String(d.getFullYear()).slice(-2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `TKT-${ymd}-${rand}`;
-};
-
 const toError = (err: any, fallback: string): Error => {
   const msg = err?.message || '';
   if (/support_tickets/.test(msg) && /(does not exist|schema cache|not find)/i.test(msg)) {
@@ -113,8 +107,11 @@ class TicketService {
     if (subject.length < 3) throw new Error('Judul tiket minimal 3 karakter.');
     if (description.length < 5) throw new Error('Deskripsi tiket terlalu singkat.');
 
+    const ticketId = await idService.generateNextId('support_tickets');
+
     const payload = {
-      ticket_number: buildTicketNumber(),
+      id: ticketId,
+      ticket_number: ticketId,
       requester_id: input.requester.id,
       requester_name: input.requester.name || input.requester.email || 'Pengguna',
       requester_email: input.requester.email || null,

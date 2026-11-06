@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 import { storeInCommunity, addExtraMembership, removeExtraMembership } from '../utils/communityMembership';
 import { getWibIsoString } from '../utils/formatters';
 import { hashPassword, authService } from './authService';
+import { idService } from './idService';
 
 const COMMUNITIES_KEY = 'microcms_communities_v1';
 const INVOICES_KEY = 'microcms_community_invoices_v1';
@@ -153,7 +154,7 @@ class CommunityService {
     coordinatorPhone?: string;
     password?: string;
   }): Promise<{ community: Community; user: User; coordinatorUser?: User }> {
-    const commId = `comm_${Date.now()}`;
+    const commId = await idService.generateNextId('communities');
     const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `org-${Date.now().toString().slice(-4)}`;
     const turnoverFeePercent = 2.5; // Fee ditagihkan di akhir saat penerbitan invoice omset
 
@@ -224,12 +225,13 @@ class CommunityService {
     })();
 
     // 3. Simpan Akun Sub Admin Umum (Halaman & Produk)
-    let subAdminUserId = `USR_SUB_${Date.now().toString().slice(-6)}`;
+    let subAdminUserId = await idService.generateNextId('users');
     const saveSubAdminPromise = (async () => {
       try {
         const { data: insertedUser, error: insertErr } = await supabase
           .from('users')
           .insert({
+            id: subAdminUserId,
             email: cleanSubAdminEmail,
             password_hash: hashedSubAdminPassword,
             name: subAdminName,
@@ -276,7 +278,7 @@ class CommunityService {
     })();
 
     // 4. Simpan Akun Koordinator Toko jika emailnya berbeda
-    let coordUserId = `USR_COORD_${Date.now().toString().slice(-6)}`;
+    let coordUserId = await idService.generateNextId('users');
     const isSameAccount = cleanCoordEmail === cleanSubAdminEmail;
     const saveCoordPromise = isSameAccount
       ? Promise.resolve()
@@ -285,6 +287,7 @@ class CommunityService {
             const { data: insertedUser, error: insertErr } = await supabase
               .from('users')
               .insert({
+                id: coordUserId,
                 email: cleanCoordEmail,
                 password_hash: hashedCoordPassword,
                 name: coordName,
@@ -645,12 +648,14 @@ class CommunityService {
     const all = this.getCommunityInvoices();
     const comm = this.getCommunityById(communityId);
     const totalBilled = Math.round(totalTurnover * (feePercent / 100));
+    const nextSeq = all.length + 1;
+    const invId = idService.formatId('INV', nextSeq);
 
     const newInv: CommunityTurnoverInvoice = {
-      id: `inv_comm_${Date.now()}`,
+      id: invId,
       communityId,
       communityName: comm?.name || 'Komunitas',
-      invoiceNumber: `INV-${comm?.slug?.toUpperCase() || 'ORG'}-${Date.now().toString().slice(-6)}`,
+      invoiceNumber: invId,
       period,
       totalTurnover,
       feePercent,
