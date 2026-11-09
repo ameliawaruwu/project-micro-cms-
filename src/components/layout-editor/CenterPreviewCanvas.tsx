@@ -39,27 +39,14 @@ import { InlineEditableImage } from './InlineEditableImage';
 import { InlineEditableButton } from './InlineEditableButton';
 import { ThemeId, ThemeRegistry, normalizeThemeId } from '../../themes/ThemeRegistry';
 import { ThemeSectionRenderer } from './ThemeSectionRenderer';
+import { getThemeSectionComponent, resolveThemeForSections, HIDDEN_SECTION_IDS } from '../../themes/sectionResolver';
 import { ResponsivePreviewScope } from './ResponsivePreviewScope';
 import { getStorefrontThemeVars } from '../../themes/pages/storefrontTheme';
 import { StorefrontContext, StorefrontToast } from '../../themes/storefrontCart';
 import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage } from '../../themes/pages';
 import { loadGoogleFont } from '../../utils/fontLoader';
 
-const hasThemeComponent = (themeId: any, sectionId: string) => {
-  const normalizedId = normalizeThemeId(themeId);
-  const theme = ThemeRegistry[normalizedId] || ThemeRegistry[themeId as ThemeId];
-  if (!theme) return false;
-  const specialMap: Record<string, string> = {
-    'header': 'Navbar',
-    'hero_banner': 'Hero',
-    'footer': 'Footer',
-    'featured_products': 'FeaturedProducts',
-    'product_grid': 'FeaturedProducts',
-  };
-  const toPascalCase = (str: string) => str.replace(/[-_](.)/g, (_, c) => c.toUpperCase()).replace(/^(.)/, (_, c) => c.toUpperCase());
-  const componentName = specialMap[sectionId] || toPascalCase(sectionId);
-  return !!theme[componentName];
-};
+const hasThemeComponent = (themeId: any, sectionId: string) => !!getThemeSectionComponent(themeId, sectionId);
 
 interface CenterPreviewCanvasProps {
   store: Store;
@@ -2804,9 +2791,15 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
  * Kanvas toko (editor & toko live). Menyediakan slug toko untuk keranjang di komponen tema
  * dan notifikasi "berhasil ditambahkan ke keranjang".
  */
-export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = (props) => (
-  <StorefrontContext.Provider value={{ storeSlug: props.store?.slug || '' }}>
-    <CenterPreviewCanvasInner {...props} />
-    <StorefrontToast />
-  </StorefrontContext.Provider>
-);
+export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = (props) => {
+  // Ulasan pelanggan & newsletter belum punya fitur nyata: jangan dirender.
+  const visibleSections = (props.sections || []).filter((sec) => !HIDDEN_SECTION_IDS.has(sec.id));
+  // Tema yang sesuai dengan bagian-bagian layout (koreksi tema aktif yang tidak sinkron).
+  const effectiveThemeId = resolveThemeForSections(props.activeThemeId, visibleSections.map((sec) => sec.id));
+  return (
+    <StorefrontContext.Provider value={{ storeSlug: props.store?.slug || '' }}>
+      <CenterPreviewCanvasInner {...props} sections={visibleSections} activeThemeId={effectiveThemeId} />
+      <StorefrontToast />
+    </StorefrontContext.Provider>
+  );
+};

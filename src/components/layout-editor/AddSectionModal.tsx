@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { StoreSectionType } from '../../types';
 import { SECTION_TEMPLATES, SectionTemplateDef } from '../../utils/layoutConstants';
+import { HIDDEN_SECTION_IDS } from '../../themes/sectionResolver';
 
 interface AddSectionModalProps {
   isOpen: boolean;
@@ -73,6 +74,7 @@ export const AddSectionModal: React.FC<AddSectionModalProps> = ({
   };
 
   const filteredTemplates = SECTION_TEMPLATES.filter((t) => {
+    if (HIDDEN_SECTION_IDS.has(t.id)) return false;
     const matchCategory = selectedCategory === 'all' || t.category === selectedCategory;
     const matchSearch =
       t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

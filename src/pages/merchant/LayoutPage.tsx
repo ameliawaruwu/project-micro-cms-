@@ -26,6 +26,7 @@ import { useCmsStore } from '../../cms/useCmsStore';
 import { filterRealProducts } from '../../utils/demoProducts';
 import { THEME_DATA_MAP } from '../../themes/themeData';
 import { normalizeThemeId } from '../../themes/ThemeRegistry';
+import { resolveThemeForSections, HIDDEN_SECTION_IDS } from '../../themes/sectionResolver';
 import { storeService } from '../../services/storeService';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -107,6 +108,16 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     const raw = (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist';
     return normalizeThemeId(raw);
   });
+
+  // Tema aktif harus cocok dengan bagian-bagian layout. Bila layout berisi bagian khas template
+  // lain (mis. "Koleksi Privat" milik Luxury), pakai tema pemilik bagian itu agar tidak ada
+  // bagian kosong dan yang tersimpan ke toko juga benar.
+  useEffect(() => {
+    const resolved = resolveThemeForSections(activeThemeId, sections.map((s) => s.id));
+    if (resolved !== normalizeThemeId(activeThemeId)) {
+      setActiveThemeId(resolved);
+    }
+  }, [sections, activeThemeId]);
 
   // Sync template from URL parameter if opened via new tab (?mode=editor&editTheme=...)
   useEffect(() => {

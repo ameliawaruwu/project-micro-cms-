@@ -34,6 +34,7 @@ columns-3
 drop-shadow-[8px_8px_0_rgba(255,255,255,1)]
 flex
 flex-1
+flex-col
 flex-initial
 flex-none
 flex-nowrap
@@ -312,6 +313,7 @@ text-[16px]
 text-[20px]
 text-[52px]
 text-base
+text-center
 text-left
 text-lg
 text-right
@@ -329,6 +331,7 @@ tracking-[0.2em]
 tracking-widest
 translate-x-6
 translate-y-6
+truncate
 w-1/2
 w-1/3
 w-10

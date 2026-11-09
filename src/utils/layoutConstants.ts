@@ -145,7 +145,7 @@ export const SECTION_TEMPLATES: SectionTemplateDef[] = [
     badge: 'Rekomendasi',
     defaultOptions: {
       featuredTitle: '⭐ Produk Pilihan & Terlaris',
-      featuredSubtitle: 'Rekomendasi terbaik dengan rating dan ulasan tertinggi pelanggan',
+      featuredSubtitle: 'Pilihan produk terbaik dari toko kami',
       productCount: 4,
       gridColumns: 4,
       tabletColumns: 2,
@@ -767,7 +767,6 @@ export const STORE_TEMPLATES: StoreTemplate[] = [
       { id: "hero_banner", isVisible: true, options: { bannerStyle: "typographic", textAlignment: "left" } },
       { id: "store_benefits", isVisible: true, options: {} },
       { id: "featured_products", isVisible: true, options: { layout: "asymmetric" } },
-      { id: "testimonials", isVisible: true, options: {} },
       { id: "footer", isVisible: true, options: {} }
     ]
   }

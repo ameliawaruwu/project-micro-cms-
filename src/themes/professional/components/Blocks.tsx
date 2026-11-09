@@ -5,13 +5,13 @@ import { useThemeProductsSource } from '../../useSectionProducts';
 import { AddToCartButton, addProductToCart, useStorefrontSlug } from '../../storefrontCart';
 
 export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const heading = sectionOptions.heading || "Why Partner With Us";
+  const heading = sectionOptions.heading || "Mengapa Belanja di Toko Kami?";
   
   const benefits = sectionOptions.features || [
-    { title: "Dedicated Account Manager", desc: "A single point of contact for all your business needs." },
-    { title: "Volume Discounts", desc: "Tiered pricing structures tailored for enterprise procurement." },
-    { title: "SLA Guarantee", desc: "99.9% uptime and guaranteed delivery timeframes." },
-    { title: "Net-30 Terms", desc: "Flexible payment options for qualified business accounts." }
+    { title: "Produk Terjamin", desc: "Setiap produk dicek sebelum dikirim ke pelanggan." },
+    { title: "Pengiriman Aman", desc: "Dikemas rapi dan dikirim ke seluruh Indonesia." },
+    { title: "Pembayaran Mudah", desc: "Bayar lewat transfer, QRIS, atau COD." },
+    { title: "Pesanan Terpantau", desc: "Status pesanan bisa dicek kapan saja." }
   ];
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
@@ -22,11 +22,10 @@ export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobil
   });
 
   return (
-    <section className="py-24 bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-6 md:px-16">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{heading}</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">We provide the infrastructure and support necessary to scale your operations efficiently.</p>
+    <section className="py-14 sm:py-20 bg-white border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-16">
+        <div className="text-center mb-10 sm:mb-14">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">{heading}</h2>
         </div>
         
         <div className={`grid ${gridColsClass} gap-8`}>
@@ -47,7 +46,8 @@ export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobil
 
 export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const products = useThemeProductsSource('professional');
-  const heading = sectionOptions.heading || "Product Catalog";
+  const heading = sectionOptions.heading || sectionOptions.featuredTitle || "Katalog Produk";
+  const subheading = sectionOptions.subheading || sectionOptions.featuredSubtitle || "Pilihan produk terbaik dari toko kami.";
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-2',
@@ -57,17 +57,11 @@ export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?
   });
 
   return (
-    <section className="py-24 bg-gray-50 border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-6 md:px-16">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-          <div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-4 storefront-heading-section">{heading}</h2>
-            <p className="text-xs sm:text-sm text-gray-600">Browse our comprehensive selection of business-grade products.</p>
-          </div>
-          <div className="flex gap-4 w-full md:w-auto">
-            <input type="text" placeholder="Search by SKU or Name..." className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm" />
-            <button className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50">Filter</button>
-          </div>
+    <section className="py-14 sm:py-20 bg-gray-50 border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-16">
+        <div className="mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 storefront-heading-section">{heading}</h2>
+          {subheading && <p className="text-sm text-gray-600">{subheading}</p>}
         </div>
 
         <div className={`grid ${gridColsClass} gap-4 sm:gap-6`}>

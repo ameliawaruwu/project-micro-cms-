@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { StoreSectionConfig, StoreSectionType } from '../../types';
+import { HIDDEN_SECTION_IDS } from '../../themes/sectionResolver';
 
 interface LeftPanelSectionsProps {
   sections: StoreSectionConfig[];
@@ -198,8 +199,9 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
   const footerSectionIds = ['store_info', 'footer'];
 
   const headerSections = sections.filter((s) => headerSectionIds.includes(s.id));
+  // Ulasan pelanggan & newsletter tidak ditampilkan di toko, jadi tidak perlu muncul di daftar.
   const contentSections = sections.filter(
-    (s) => !headerSectionIds.includes(s.id) && !footerSectionIds.includes(s.id)
+    (s) => !headerSectionIds.includes(s.id) && !footerSectionIds.includes(s.id) && !HIDDEN_SECTION_IDS.has(s.id)
   );
   const footerSections = sections.filter((s) => footerSectionIds.includes(s.id));
 
