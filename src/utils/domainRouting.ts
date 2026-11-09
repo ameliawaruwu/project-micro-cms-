@@ -94,7 +94,7 @@ export function getStoreSlugFromHost(hostname?: string): string | null {
   }
 
   // Multi-tenant base domains
-  const BASE_DOMAINS = ['.kroombox.com', '.gmpsbandung.org', '.kromify.id', '.mykolab.store'];
+  const BASE_DOMAINS = ['.lapakq.com', '.kroombox.com', '.gmpsbandung.org', '.kromify.id', '.mykolab.store'];
   for (const base of BASE_DOMAINS) {
     if (host.endsWith(base)) {
       const sub = host.slice(0, -base.length);

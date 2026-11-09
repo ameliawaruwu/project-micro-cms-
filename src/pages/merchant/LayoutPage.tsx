@@ -28,6 +28,7 @@ import { THEME_DATA_MAP } from '../../themes/themeData';
 import { normalizeThemeId } from '../../themes/ThemeRegistry';
 import { resolveThemeForSections, HIDDEN_SECTION_IDS } from '../../themes/sectionResolver';
 import { storeService } from '../../services/storeService';
+import { fetchStoreBaseDomain } from '../../utils/storeDomain';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface LayoutPageProps {
@@ -1306,21 +1307,23 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const confirmUnpublish = async () => {
     setIsUnpublishing(true);
     try {
-      // Panggil backend API unpublish jika aktif
-      try {
-        await fetch('/api/deploy/unpublish', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug: currentStore.slug, customDomain: currentStore.customDomain }),
-        });
-      } catch (e) {
-        // Non-fatal jika serverless / remote API
-      }
-
       if (onUnpublishStore) {
         await onUnpublishStore();
       } else {
         await storeService.setPublishedStatus(currentStore.id, false, user?.id);
+      }
+
+      // WHY: the server only releases a store's hosts once the store is saved as a draft.
+      try {
+        const { domain: baseDomain } = await fetchStoreBaseDomain(currentStore);
+        const releaseRes = await fetch('/api/deploy/unpublish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storeId: currentStore.id, baseDomain }),
+        });
+        if (!releaseRes.ok) console.warn('Release store hosts notice:', releaseRes.status);
+      } catch (e) {
+        console.warn('Release store hosts notice:', e);
       }
 
       setCurrentStore((prev) => ({ ...prev, isPublished: false }));

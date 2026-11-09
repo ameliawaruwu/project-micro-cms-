@@ -67,7 +67,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   // Subdomain selection & regeneration states
   const [randomSubdomain, setRandomSubdomain] = useState('');
-  // Toko anggota komunitas memakai domain komunitasnya; toko tanpa komunitas memakai kroombox.com.
+  // Toko anggota komunitas memakai domain komunitasnya; toko tanpa komunitas memakai lapakq.com.
   const {
     domain: selectedBaseDomain,
     communityName: domainCommunityName,

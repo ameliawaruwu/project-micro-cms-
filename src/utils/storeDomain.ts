@@ -3,7 +3,8 @@ import { supabase } from '../services/supabaseClient';
 import type { Store } from '../types';
 
 /** Domain toko untuk merchant tanpa komunitas. */
-export const DEFAULT_BASE_DOMAIN = 'kroombox.com';
+// lapakq.com is the zone this app owns in the Kroombox Panel; store hosts are published under it.
+export const DEFAULT_BASE_DOMAIN = 'lapakq.com';
 
 export interface StoreBaseDomainInfo {
   /** Domain induk subdomain toko, mis. `kroombox.com` atau `gmpsbandung.org`. */
@@ -20,7 +21,7 @@ const cache = new Map<string, Promise<StoreBaseDomainInfo>>();
 /**
  * Domain induk subdomain toko: toko anggota komunitas memakai domain komunitasnya
  * (`communities.base_domain`, diatur admin di menu Komunitas); toko tanpa komunitas
- * — atau komunitas yang belum mengatur domain — memakai `kroombox.com`.
+ * — atau komunitas yang belum mengatur domain — memakai `lapakq.com`.
  */
 export function fetchStoreBaseDomain(store: Pick<Store, 'communityId' | 'communityName' | 'baseDomain'>): Promise<StoreBaseDomainInfo> {
   const explicit = cleanDomain(store.baseDomain);

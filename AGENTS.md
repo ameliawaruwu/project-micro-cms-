@@ -62,45 +62,26 @@
 
 Seluruh request API dari frontend dikirim ke path relatif `/api/...`. Nginx port 8080 mem-proxy `/api/` ke backend Express (port runtime saat ini `5058` menurut panel; konfigurasi lama menyebut `5055` — cek `kroombox_get_site_details` sebelum mengandalkan angkanya).
 
-> ℹ️ Path `/volume1/web/www/KroomBox/kroomify/...` di bawah adalah nilai default di kode (`KROOMIFY_DEPLOY_ROOT`). Path ini **tidak bisa diakses** dari `kroombox_execute_terminal_command` (terminal panel berjalan terbatas di folder situs), jadi jangan dipakai sebagai langkah deploy manual.
+### 2.1 Publikasi Toko (`backend/deployController.ts` → `backend/panelDomainClient.ts`)
 
-### 2.1 Endpoint Auto-Deployer (`backend/deployController.ts`)
+Aplikasi ini **tidak** menyentuh nginx, sudo, atau Cloudflare. Publikasi toko = mendaftarkan host toko sebagai alias situs ini lewat **API Kroombox Panel** (`POST/DELETE /api/sites/<KROOMBOX_SITE_ID>/custom-domains`) dengan API key ber-scope `domains:write` + `domains:read`. Panel yang mengatur vhost, ingress tunnel, dan DNS. SPA merender toko dari hostname (`src/utils/domainRouting.ts`), jadi tidak ada file yang dikemas.
+
+* Env: `KROOMBOX_PANEL_API_URL` (default `https://panel.kroombox.com/api`), `KROOMBOX_SITE_ID`, `KROOMBOX_PANEL_API_KEY`.
+* Domain induk default `lapakq.com` (BYOD aktif akun ini; kuota 200 subdomain per situs). Domain komunitas lain hanya bisa dipakai bila zonanya milik akun ini; bila tidak, panel menolak dan pesan ditampilkan ke merchant.
+* Tidak ada sesi server: setiap request dicek ke tabel `stores` (toko harus ada; slug tidak boleh milik toko lain; host hanya dilepas setelah toko berstatus draf / domain tidak lagi dipakai).
 
 #### A. Publish Toko (`POST /api/deploy/publish`)
-* **Dipanggil oleh**: `PublishStoreModal.tsx` saat merchant klik tombol "Publish Toko".
-* **Request Payload**:
-  ```json
-  {
-    "slug": "flowerss",
-    "baseDomain": "kroombox.com",
-    "customDomain": "optional-custom.com",
-    "store": { "id": "...", "name": "Flowerss Shop", "slug": "flowerss" },
-    "products": [ { "id": "...", "name": "Mawar Merah", "price": 50000 } ]
-  }
-  ```
-* **Eksekusi Fisik Backend**:
-  1. `sitePackager.packageStoreSite()`: Menyiapkan `/volume1/web/www/KroomBox/kroomify/sites/<slug>/`, menulis `store.json`, `products.json`, menginjeksi OpenGraph tags ke `index.html`, dan membuat symlink `assets -> ../../engine/dist/assets`.
-  2. `nginxDeployer.deployVhost()`: Membuat `/etc/nginx/sites-available/kroomify-<slug>.conf`, symlink ke `sites-enabled/`, uji sintaks `sudo /usr/sbin/nginx -t`, dan reload `sudo /usr/sbin/nginx -s reload`.
-  3. `cloudflareDeployer.deployHostname()`: Mendaftarkan ingress Cloudflare Tunnel dan DNS CNAME `<slug>.kroombox.com`.
-  4. Local Smoke Test: Melakukan internal probe HTTP 200 via `http://127.0.0.1:8080/`.
-* **Response**:
-  ```json
-  {
-    "success": true,
-    "primaryDomain": "flowerss.kroombox.com",
-    "storeUrl": "https://flowerss.kroombox.com",
-    "stages": [
-      { "name": "Persiapan Toko & Katalog", "status": "success" },
-      { "name": "Web Gateway & Routing", "status": "success" },
-      { "name": "Jaringan Anycast Edge & DNS", "status": "success" }
-    ]
-  }
-  ```
+* **Dipanggil oleh**: `PublishStoreModal.tsx`.
+* **Payload**: `{ "storeId": "...", "slug": "flowerss", "baseDomain": "lapakq.com", "customDomain": "opsional.com" }`
+* **Response**: `{ success, message, slug, primaryUrl, customDomainUrl, domains, stages }`. Domain kustom yang ditolak panel muncul sebagai stage `failed`, toko tetap live di subdomain.
 
 #### B. Unpublish Toko (`POST /api/deploy/unpublish`)
-* **Dipanggil oleh**: `PublishStoreModal.tsx` / `SettingsPage.tsx` saat toko dinonaktifkan.
-* **Request Payload**: `{ "slug": "flowerss" }`
-* **Eksekusi Fisik Backend**: Menghapus symlink vhost di `/etc/nginx/sites-enabled/kroomify-<slug>.conf` dan reload Nginx.
+* **Dipanggil oleh**: `LayoutPage.tsx` **setelah** toko disimpan sebagai draf.
+* **Payload**: `{ "storeId": "...", "baseDomain": "lapakq.com" }`. Menolak (409) bila toko masih terbit.
+
+#### C. Domain kustom (`src/services/domainService.ts`)
+* `POST /api/deploy/domains/connect` `{ storeId, hostname }`, `POST /api/deploy/domains/disconnect` `{ storeId, hostname }` (dipanggil setelah `custom_domain` toko dikosongkan), `GET /api/deploy/domains/status?hostname=`.
+* `GET /api/deploy/status/:slug?baseDomain=` — status DNS host toko.
 
 ---
 

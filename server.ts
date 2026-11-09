@@ -882,12 +882,10 @@ app.post(['/api/payment/callback', '/api/callback', '/api/duitku/callback'], asy
 });
 
 
-// 5. Endpoint Auto-Deploy Toko (Packaging Webroot, Nginx Vhost & Cloudflare Tunnel Ingress)
+// 5. Publikasi toko: host toko didaftarkan lewat API Kroombox Panel (backend/panelDomainClient.ts)
 
 app.use('/deploy', deployRouter);
 app.use('/api/deploy', deployRouter);
-app.use('/', deployRouter); // Kompatibilitas rute domainService.ts (/cloudflare/*)
-app.use('/api', deployRouter);
 
 // 6a. Partner API v1 — key partner terikat komunitas (lookup akun, masukkan toko ke komunitas)
 app.use('/api/v1/partner', partnerApiRouter);
