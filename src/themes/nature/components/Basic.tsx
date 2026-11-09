@@ -162,6 +162,7 @@ export const NatureHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
 export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo, navigation } = useCmsStore();
   const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
+  const footerAddress = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const rawStoreName = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo?.name;
   const storeName = (!rawStoreName || rawStoreName === 'NEON//CORE Electronics') ? 'Green Market' : rawStoreName;
 
@@ -195,6 +196,7 @@ export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
         </div>
         
         <div className="w-full h-px bg-[#E8E4DB]/20 mb-8"></div>
+        {footerAddress && <p className="text-sm opacity-80 mb-2 font-sans break-words">{footerAddress}</p>}
         {footerEmail && (
           <a href={`mailto:${footerEmail}`} className="inline-block text-sm opacity-80 mb-8 hover:underline font-sans break-all">{footerEmail}</a>
         )}

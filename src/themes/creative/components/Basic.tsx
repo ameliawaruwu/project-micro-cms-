@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 
 export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -100,36 +100,46 @@ export const CreativeHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
 
 export const CreativeFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
-  const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
+  const navItems = getNavMenuItems(sectionOptions);
+  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
 
   return (
-    <footer className="w-full px-8 py-20 bg-black text-white flex flex-col items-center relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-[#E11D48] via-yellow-300 to-blue-500"></div>
-      
-      <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-[#E11D48] mb-4 transform hover:scale-110 transition-transform cursor-default">
+    <footer className="w-full px-5 sm:px-8 py-14 sm:py-20 bg-black text-white flex flex-col items-center text-center relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-[#E11D48] via-yellow-300 to-blue-500"></div>
+
+      <h2 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-[#E11D48] mb-4 break-words max-w-full">
         {storeTitle}
       </h2>
       {storeDesc && (
-        <p className="text-sm md:text-base text-gray-300 max-w-md text-center mb-10 font-medium leading-relaxed">
-          {storeDesc}
-        </p>
+        <p className="text-sm md:text-base text-gray-300 max-w-md mb-8 font-medium leading-relaxed">{storeDesc}</p>
       )}
-      
-      <div className="flex gap-8 mb-16 text-sm font-bold uppercase tracking-widest">
-        <a href="#" className="hover:text-yellow-300 transition-colors">Behance</a>
-        <a href="#" className="hover:text-blue-400 transition-colors">Dribbble</a>
-        <a href="#" className="hover:text-pink-400 transition-colors">Instagram</a>
-      </div>
-      
-      {footerEmail && (
-        <a href={`mailto:${footerEmail}`} className="block text-sm text-gray-300 hover:text-white mb-6 break-all">{footerEmail}</a>
+
+      <nav className="flex flex-wrap justify-center gap-x-6 gap-y-3 mb-8 text-sm font-bold uppercase tracking-widest">
+        {navItems.map((nav) => (
+          <a key={nav.id} href={nav.route} className="hover:text-yellow-300 transition-colors">{nav.label}</a>
+        ))}
+      </nav>
+
+      {socials.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-6 mb-8 text-xs font-bold uppercase tracking-widest text-gray-400">
+          {socials.map((s) => (
+            <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-pink-400 transition-colors">{s.label}</a>
+          ))}
+        </div>
       )}
-      <p className="text-xs tracking-widest text-gray-500 font-medium">
-        {copyrightText} — CREATIVE STUDIO
-      </p>
+
+      {(email || address) && (
+        <div className="space-y-1 mb-6 text-sm text-gray-300">
+          {address && <p className="break-words">{address}</p>}
+          {email && <a href={`mailto:${email}`} className="block hover:text-white break-all">{email}</a>}
+        </div>
+      )}
+      <p className="text-xs tracking-widest text-gray-500 font-medium">{copyrightText}</p>
     </footer>
   );
 };

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, MessageCircle, Menu, X } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 
 export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -35,7 +35,7 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
   const showCart = sectionOptions.showCartBadge ?? true;
 
   const rawTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeTitle = (!rawTitle || rawTitle === 'Green Market Indonesia') ? 'LOOKSEE' : rawTitle;
+  const storeTitle = rawTitle;
   const leftSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description || "The Journal";
 
   const navItems = getNavMenuItems(sectionOptions);
@@ -189,9 +189,11 @@ export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
 export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
   const rawTitle = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo?.name;
-  const storeTitle = (!rawTitle || rawTitle === 'Green Market Indonesia') ? 'LOOKSEE' : rawTitle;
+  const storeTitle = rawTitle;
   const storeDesc = sectionOptions.description !== undefined ? sectionOptions.description : (sectionOptions.tagline || storeInfo?.description);
-  const address = sectionOptions.address !== undefined ? sectionOptions.address : ((storeInfo?.address && !storeInfo.address.includes('Lembang')) ? storeInfo.address : 'Grand Indonesia West Mall Lt. 1, Jakarta');
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
+  const footerNavItems = getNavMenuItems(sectionOptions);
+  const footerSocials = getFooterSocialLinks(sectionOptions);
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
   const footerFlexClass = getDeviceClass(isMobile, isTablet, {
@@ -202,23 +204,41 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolea
   });
 
   return (
-    <footer className="w-full px-6 md:px-12 py-24 bg-gray-900 text-white flex flex-col items-center">
-      <h2 className="text-4xl md:text-5xl font-serif italic mb-4">{storeTitle}</h2>
+    <footer className="w-full px-5 sm:px-6 md:px-12 py-16 sm:py-24 bg-gray-900 text-white flex flex-col items-center">
+      <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif italic mb-4 text-center break-words max-w-full">{storeTitle}</h2>
       {(sectionOptions.description || storeInfo?.description) && (
         <p className="text-xs md:text-sm font-serif italic text-gray-400 max-w-md text-center mb-10 leading-relaxed">
           {sectionOptions.description || storeInfo?.description}
         </p>
       )}
-      <div className={`flex ${footerFlexClass} gap-8 md:gap-16 text-center mb-16`}>
-        <div>
-          <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-4">Headquarters</p>
-          <p className="text-xs uppercase tracking-widest text-gray-300 max-w-xs">{address}</p>
+      <nav className="flex flex-wrap justify-center gap-x-8 gap-y-3 mb-10 text-[10px] uppercase tracking-[0.3em] text-gray-400">
+        {footerNavItems.map((nav) => (
+          <a key={nav.id} href={nav.route} className="hover:text-white transition-colors">{nav.label}</a>
+        ))}
+      </nav>
+      {(address || email) && (
+        <div className={`flex ${footerFlexClass} gap-8 md:gap-16 text-center mb-10`}>
+          {address && (
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-3">Alamat</p>
+              <p className="text-xs uppercase tracking-widest text-gray-300 max-w-xs break-words">{address}</p>
+            </div>
+          )}
+          {email && (
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-3">Email</p>
+              <a href={`mailto:${email}`} className="block text-xs uppercase tracking-widest text-gray-300 hover:text-white break-all">{email}</a>
+            </div>
+          )}
         </div>
-        <div>
-          <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-4">Inquiries</p>
-          {email && <a href={`mailto:${email}`} className="block text-xs uppercase tracking-widest text-gray-300 hover:text-white break-all">{email}</a>}
+      )}
+      {footerSocials.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-6 mb-10 text-[10px] uppercase tracking-[0.3em] text-gray-400">
+          {footerSocials.map((s) => (
+            <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{s.label}</a>
+          ))}
         </div>
-      </div>
+      )}
       <div className="w-full max-w-lg h-[1px] bg-gray-800 mb-8"></div>
       <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{copyrightText}</p>
     </footer>

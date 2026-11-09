@@ -27,3 +27,33 @@ export function getNavMenuItems(sectionOptions: any = {}): ResolvedNavItem[] {
       isActive: true,
     }));
 }
+
+export interface FooterSocialLink {
+  key: string;
+  label: string;
+  href: string;
+}
+
+/**
+ * Tautan media sosial footer: hanya yang diisi merchant di pengaturan footer (sectionOptions),
+ * tidak memakai akun contoh template.
+ */
+export function getFooterSocialLinks(sectionOptions: any = {}): FooterSocialLink[] {
+  const socials = sectionOptions?.socials || {};
+  const read = (key: string) => String(sectionOptions?.[key] || socials?.[key] || '').trim();
+  const toUrl = (value: string, base: string) =>
+    /^https?:\/\//i.test(value) ? value : `${base}${value.replace(/^@/, '')}`;
+
+  const links: FooterSocialLink[] = [];
+  const instagram = read('instagram');
+  const tiktok = read('tiktok');
+  const twitter = read('twitter');
+  const facebook = read('facebook');
+  const youtube = read('youtube');
+  if (instagram) links.push({ key: 'instagram', label: 'Instagram', href: toUrl(instagram, 'https://instagram.com/') });
+  if (tiktok) links.push({ key: 'tiktok', label: 'TikTok', href: toUrl(tiktok, 'https://tiktok.com/@') });
+  if (twitter) links.push({ key: 'twitter', label: 'X / Twitter', href: toUrl(twitter, 'https://x.com/') });
+  if (facebook) links.push({ key: 'facebook', label: 'Facebook', href: toUrl(facebook, 'https://facebook.com/') });
+  if (youtube) links.push({ key: 'youtube', label: 'YouTube', href: toUrl(youtube, 'https://youtube.com/@') });
+  return links;
+}

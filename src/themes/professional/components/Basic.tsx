@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 
 export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -135,84 +135,66 @@ export const ProfessionalFooter: React.FC<{ sectionOptions?: any; isMobile?: boo
   const { storeInfo } = useCmsStore();
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
-  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
+  const navItems = getNavMenuItems(sectionOptions);
+  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. All rights reserved.`;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-2',
     desktop: 'grid-cols-4',
-    fallback: 'grid-cols-1 md:grid-cols-4',
+    fallback: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4',
   });
-  const bottomFlexClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'flex-col',
-    tablet: 'flex-col',
-    desktop: 'flex-row',
-    fallback: 'flex-col md:flex-row',
+  const brandSpanClass = getDeviceClass(isMobile, isTablet, {
+    mobile: '',
+    tablet: 'col-span-2',
+    desktop: 'col-span-2',
+    fallback: 'sm:col-span-2',
   });
 
   return (
-    <footer className="w-full bg-gray-900 text-gray-300 pt-20 pb-10 border-t border-gray-800">
-      <div className="max-w-7xl mx-auto px-6 md:px-16">
-        <div className={`grid ${gridColsClass} gap-12 mb-16`}>
-          <div className="col-span-1">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center">
-                <span className="text-white font-bold text-xl leading-none">
-                  {(storeTitle || 'P')[0]?.toUpperCase()}
-                </span>
-              </div>
-              {storeTitle}
+    <footer className="w-full bg-gray-900 text-gray-300 pt-14 sm:pt-20 pb-10 border-t border-gray-800">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 md:px-16">
+        <div className={`grid ${gridColsClass} gap-10 mb-12`}>
+          <div className={brandSpanClass}>
+            <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-3 min-w-0">
+              <span className="w-8 h-8 shrink-0 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl leading-none">
+                {(storeTitle || 'P')[0]?.toUpperCase()}
+              </span>
+              <span className="break-words min-w-0">{storeTitle}</span>
             </h2>
-            <p className="text-sm text-gray-400 leading-relaxed mb-6">
-              {storeDesc || "Providing enterprise-grade solutions and dedicated support for businesses worldwide."}
-            </p>
+            {storeDesc && <p className="text-sm text-gray-400 leading-relaxed max-w-md">{storeDesc}</p>}
+            {socials.length > 0 && (
+              <div className="flex flex-wrap gap-4 mt-5 text-sm">
+                {socials.map((s) => (
+                  <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">{s.label}</a>
+                ))}
+              </div>
+            )}
           </div>
-          
+
           <div>
-            <h3 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Solutions</h3>
-            <ul className="space-y-4 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">Enterprise Procurement</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Bulk Ordering</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Custom Manufacturing</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Logistics</a></li>
+            <h3 className="text-white font-semibold mb-5 uppercase tracking-wider text-sm">Menu</h3>
+            <ul className="space-y-3 text-sm">
+              {navItems.map((nav) => (
+                <li key={nav.id}><a href={nav.route} className="hover:text-white transition-colors">{nav.label}</a></li>
+              ))}
             </ul>
           </div>
-          
-          <div>
-            <h3 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Company</h3>
-            <ul className="space-y-4 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Investors</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">Contact</h3>
-            <ul className="space-y-4 text-sm">
-              <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-gray-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                <span>{address}</span>
-              </li>
-              {email && (
-                <li className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                  <a href={`mailto:${email}`} className="hover:underline break-all">{email}</a>
-                </li>
-              )}
-            </ul>
-          </div>
+
+          {(email || address) && (
+            <div>
+              <h3 className="text-white font-semibold mb-5 uppercase tracking-wider text-sm">Kontak</h3>
+              <ul className="space-y-3 text-sm">
+                {address && <li className="break-words">{address}</li>}
+                {email && <li><a href={`mailto:${email}`} className="hover:underline break-all">{email}</a></li>}
+              </ul>
+            </div>
+          )}
         </div>
-        
-        <div className={`pt-8 border-t border-gray-800 flex ${bottomFlexClass} justify-between items-center gap-4`}>
-          <p className="text-sm text-gray-500">{copyrightText}</p>
-          <div className="flex gap-6 text-sm text-gray-500">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-          </div>
-        </div>
+
+        <div className="pt-6 border-t border-gray-800 text-sm text-gray-500 text-center">{copyrightText}</div>
       </div>
     </footer>
   );

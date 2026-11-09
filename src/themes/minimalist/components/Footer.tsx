@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 
 export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -12,12 +12,8 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address;
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
   const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
-  const instagram = sectionOptions.instagram || sectionOptions.socials?.instagram || storeInfo.socials?.instagram;
-  const twitter = sectionOptions.twitter || sectionOptions.socials?.twitter || storeInfo.socials?.twitter;
-  const tiktok = sectionOptions.tiktok || sectionOptions.socials?.tiktok || storeInfo.socials?.tiktok;
+  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
-  const privacyText = sectionOptions.privacyPolicyText || 'Privacy Policy';
-  const termsText = sectionOptions.termsOfServiceText || 'Terms of Service';
 
   const isDesktopPreview = !isMobile && !isTablet;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
@@ -72,23 +68,13 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
             {address && <li className="break-words">{address}</li>}
             {email && <li className="break-all"><a href={`mailto:${email}`} className="hover:text-black transition-colors">{email}</a></li>}
           </ul>
-          <div className="flex items-center gap-5">
-            {instagram && (
-              <a href={instagram.startsWith('http') ? instagram : `https://instagram.com/${instagram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-widest text-gray-900 hover:text-gray-500 transition-colors">
-                Instagram
-              </a>
-            )}
-            {tiktok && (
-              <a href={tiktok.startsWith('http') ? tiktok : `https://tiktok.com/@${tiktok.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-widest text-gray-900 hover:text-gray-500 transition-colors">
-                TikTok
-              </a>
-            )}
-            {twitter && (
-              <a href={twitter.startsWith('http') ? twitter : `https://x.com/${twitter.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-widest text-gray-900 hover:text-gray-500 transition-colors">
-                Twitter
-              </a>
-            )}
-          </div>
+          {socials.length > 0 && (
+            <div className="flex flex-wrap items-center gap-5">
+              {socials.map((s) => (
+                <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-widest text-gray-900 hover:text-gray-500 transition-colors">{s.label}</a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -96,10 +82,6 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
         <p className="text-[11px] sm:text-xs text-gray-400 font-light">
           {copyrightText}
         </p>
-        <div className="flex gap-4 sm:gap-6 text-[11px] sm:text-xs text-gray-400 font-light">
-          <a href="#" className="hover:text-gray-900 transition-colors">{privacyText}</a>
-          <a href="#" className="hover:text-gray-900 transition-colors">{termsText}</a>
-        </div>
       </div>
     </footer>
   );

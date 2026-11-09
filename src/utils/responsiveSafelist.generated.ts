@@ -27,6 +27,7 @@ col-span-2
 col-span-3
 col-span-4
 col-span-5
+col-span-6
 col-span-7
 col-span-8
 columns-3
@@ -217,6 +218,7 @@ pl-6
 pr-12
 pt-0
 pt-16
+pt-20
 pt-24
 pt-28
 pt-3

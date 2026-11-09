@@ -1,8 +1,8 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
-import { Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, MapPin } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 
 export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -40,14 +40,13 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
           <div className={colSpan5Class}>
             <h3 className="text-xl font-extrabold text-gray-900 mb-3">{storeName}</h3>
             <p className="text-sm text-gray-500 leading-relaxed max-w-sm mb-5">{storeDesc}</p>
-            <div className="flex items-center gap-3">
-              <a href="#" className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-gray-600 shadow-sm hover:text-white transition-colors" style={{ ['--hover-bg' as any]: accentColor }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; }}>
-                <Instagram className="w-4 h-4" />
-              </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-gray-600 shadow-sm hover:text-white transition-colors" onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; }}>
-                <Twitter className="w-4 h-4" />
-              </a>
-            </div>
+            {getFooterSocialLinks(sectionOptions).length > 0 && (
+              <div className="flex flex-wrap items-center gap-4 text-sm font-semibold">
+                {getFooterSocialLinks(sectionOptions).map((s) => (
+                  <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors">{s.label}</a>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className={colSpan3Class}>
@@ -71,10 +70,6 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
 
         <div className={`pt-6 border-t border-black/5 flex ${bottomFlexClass} items-center justify-between gap-3 text-xs text-gray-500`}>
           <p>{copyrightText}</p>
-          <div className="flex gap-5">
-            <a href="#" className="hover:text-gray-900 transition-colors">Kebijakan Privasi</a>
-            <a href="#" className="hover:text-gray-900 transition-colors">Syarat & Ketentuan</a>
-          </div>
         </div>
       </div>
     </footer>

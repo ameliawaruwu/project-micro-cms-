@@ -2,7 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 
 export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -138,24 +138,38 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
 
 export const BoldFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
-  const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
-  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo.name || 'RAWSTATE';
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
+  const navItems = getNavMenuItems(sectionOptions);
+  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle} ALL RIGHTS RESERVED`;
 
   return (
-    <footer className="w-full px-8 py-16 bg-zinc-950 text-white text-center border-t border-zinc-800/80 relative overflow-hidden">
+    <footer className="w-full px-5 sm:px-8 py-12 sm:py-16 bg-zinc-950 text-white text-center border-t border-zinc-800/80 relative overflow-hidden">
       <div className="max-w-4xl mx-auto space-y-6">
-        <a href="/" className="inline-block text-4xl md:text-6xl font-black tracking-tighter uppercase text-white hover:text-red-500 transition-colors">
+        <a href="/" className="inline-block text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter uppercase text-white hover:text-red-500 transition-colors break-words max-w-full">
           {storeTitle}
         </a>
-        <div className="flex flex-wrap justify-center gap-8 font-semibold uppercase tracking-wider text-xs text-zinc-400">
-          <a href="#" className="hover:text-white transition-colors">Instagram</a>
-          <a href="#" className="hover:text-white transition-colors">Twitter</a>
-          <a href="#" className="hover:text-white transition-colors">TikTok</a>
-          <a href="#" className="hover:text-white transition-colors">Discord</a>
-        </div>
-        {footerEmail && (
-          <a href={`mailto:${footerEmail}`} className="block text-xs font-black uppercase tracking-widest mb-3 hover:underline break-all">{footerEmail}</a>
+        {storeDesc && <p className="text-sm text-zinc-400 max-w-xl mx-auto leading-relaxed">{storeDesc}</p>}
+        <nav className="flex flex-wrap justify-center gap-x-6 gap-y-3 font-semibold uppercase tracking-wider text-xs text-zinc-400">
+          {navItems.map((nav) => (
+            <a key={nav.id} href={nav.route} className="hover:text-white transition-colors">{nav.label}</a>
+          ))}
+        </nav>
+        {(email || address) && (
+          <div className="space-y-1 text-xs text-zinc-400">
+            {address && <p className="break-words">{address}</p>}
+            {email && <a href={`mailto:${email}`} className="block font-black uppercase tracking-widest text-white hover:underline break-all">{email}</a>}
+          </div>
+        )}
+        {socials.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-6 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            {socials.map((s) => (
+              <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{s.label}</a>
+            ))}
+          </div>
         )}
         <div className="pt-6 border-t border-zinc-900 text-xs font-medium text-zinc-500 tracking-wider">
           {copyrightText}

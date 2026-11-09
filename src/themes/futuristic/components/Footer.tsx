@@ -1,201 +1,99 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
-import { Cpu, ShieldCheck, Truck, CreditCard, Headphones, Send, Phone, Mail, MapPin, Instagram, Youtube, Clock } from 'lucide-react';
+import { Cpu, Mail, MapPin } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 
 export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#8B5CF6', isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
-  const featureGridClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'grid-cols-1',
-    tablet: 'grid-cols-2',
-    desktop: 'grid-cols-4',
-    fallback: 'grid-cols-2 md:grid-cols-4',
-  });
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
+  const navItems = getNavMenuItems(sectionOptions);
+  const socials = getFooterSocialLinks(sectionOptions);
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. All rights reserved.`;
+
   const mainGridClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-2',
     desktop: 'grid-cols-12',
-    fallback: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-12',
+    fallback: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-12',
   });
-  const isDesktopPreview = !isMobile && !isTablet;
-  const colSpan4Class = isDesktopPreview ? 'lg:col-span-4' : '';
-  const colSpan2Class = isDesktopPreview ? 'lg:col-span-2' : '';
-  const colSpan3Class = isDesktopPreview ? 'lg:col-span-3' : '';
-  const bottomFlexClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'flex-col',
-    tablet: 'flex-col',
-    desktop: 'flex-row',
-    fallback: 'flex-col md:flex-row',
+  const brandSpanClass = getDeviceClass(isMobile, isTablet, {
+    mobile: '',
+    tablet: 'col-span-2',
+    desktop: 'col-span-6',
+    fallback: 'sm:col-span-2 lg:col-span-6',
+  });
+  const columnSpanClass = getDeviceClass(isMobile, isTablet, {
+    mobile: '',
+    tablet: '',
+    desktop: 'col-span-3',
+    fallback: 'lg:col-span-3',
   });
 
   return (
-    <footer className="w-full bg-[#070A14] text-gray-300 pt-16 pb-8 px-6 md:px-12 font-['Space_Grotesk',sans-serif] border-t relative overflow-hidden" style={{ borderColor: `${accentColor}4D` }}>
+    <footer className="w-full bg-[#070A14] text-gray-300 pt-14 pb-8 px-5 sm:px-6 md:px-12 font-['Space_Grotesk',sans-serif] border-t relative overflow-hidden" style={{ borderColor: `${accentColor}4D` }}>
       {/* Background Cyber Grid Lines */}
       <div className="absolute inset-0 bg-[radial-gradient(#1e1b4b_1px,transparent_1px)] [background-size:24px_24px] opacity-30 pointer-events-none"></div>
       <div className="absolute -top-32 left-1/4 w-96 h-96 rounded-full blur-[120px] pointer-events-none" style={{ backgroundColor: `${accentColor}1A` }}></div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-        
-        {/* Top Feature Bar */}
-        <div className={`grid ${featureGridClass} gap-6 pb-12 mb-12 border-b border-gray-800/80`}>
-          <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ backgroundColor: `${accentColor}14`, border: `1px solid ${accentColor}26` }}>
-            <Truck className="w-6 h-6 shrink-0" style={{ color: accentColor }} />
-            <div>
-              <h5 className="text-xs font-bold text-white uppercase tracking-wider">Pengiriman Cepat</h5>
-              <p className="text-[11px] text-gray-400">Gratis Ongkir & Instant Courier</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ backgroundColor: `${accentColor}14`, border: `1px solid ${accentColor}26` }}>
-            <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
-            <div>
-              <h5 className="text-xs font-bold text-white uppercase tracking-wider">Garansi Resmi</h5>
-              <p className="text-[11px] text-gray-400">100% Produk Original & BNIB</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ backgroundColor: `${accentColor}14`, border: `1px solid ${accentColor}26` }}>
-            <CreditCard className="w-6 h-6 text-cyan-400 shrink-0" />
-            <div>
-              <h5 className="text-xs font-bold text-white uppercase tracking-wider">Pembayaran Aman</h5>
-              <p className="text-[11px] text-gray-400">QRIS, Transfer Bank, Cicilan 0%</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-3.5 rounded-xl" style={{ backgroundColor: `${accentColor}14`, border: `1px solid ${accentColor}26` }}>
-            <Headphones className="w-6 h-6 text-pink-400 shrink-0" />
-            <div>
-              <h5 className="text-xs font-bold text-white uppercase tracking-wider">Layanan CS 24/7</h5>
-              <p className="text-[11px] text-gray-400">Konsultasi Hardware & Assembly</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Multi-Column Main Footer */}
-        <div className={`grid ${mainGridClass} gap-10 mb-12`}>
-          
-          {/* Column 1: Store Brand Info (col-span-4) */}
-          <div className={`${colSpan4Class} space-y-4`}>
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accentColor}33`, border: `1px solid ${accentColor}66`, color: accentColor }}>
+        <div className={`grid ${mainGridClass} gap-10 mb-10`}>
+          {/* Brand */}
+          <div className={`${brandSpanClass} space-y-4 min-w-0`}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accentColor}33`, border: `1px solid ${accentColor}66`, color: accentColor }}>
                 <Cpu className="w-5 h-5" />
               </div>
-              <h3 className="text-2xl font-extrabold tracking-wider uppercase text-white">
-                {storeTitle || "KROOM//HARDWARE"}
-              </h3>
+              <h3 className="text-2xl font-extrabold tracking-wider uppercase text-white break-words min-w-0">{storeTitle}</h3>
             </div>
-            <p className="text-gray-400 text-xs leading-relaxed max-w-sm">
-              {storeDesc || "Pusat Hardware, Component PC High-End, Gaming Gear & Watercooling System Terpercaya di Indonesia."}
-            </p>
-            <div className="space-y-2 text-xs text-gray-400 pt-2 font-mono">
-              {(sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address) && (
-                <p className="flex items-center gap-2.5"><MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> {sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address}</p>
-              )}
-              {(sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email) && (
-                <p className="flex items-center gap-2.5"><Mail className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> <a href={`mailto:${sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email}`} className="hover:underline break-all">{sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email}</a></p>
-              )}
-              <p className="flex items-center gap-2.5"><Clock className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} /> Senin - Sabtu: 09.00 - 21.00 WIB</p>
-            </div>
+            {storeDesc && <p className="text-gray-400 text-xs leading-relaxed max-w-md">{storeDesc}</p>}
+            {socials.length > 0 && (
+              <div className="flex flex-wrap gap-4 pt-1 text-xs uppercase tracking-widest">
+                {socials.map((s) => (
+                  <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">{s.label}</a>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Column 2: Product Categories (col-span-2) */}
-          <div className={`${colSpan2Class}`}>
+          {/* Menu */}
+          <div className={columnSpanClass}>
             <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accentColor }}></span> Kategori Hardware
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accentColor }}></span> Menu
             </h4>
             <ul className="space-y-2.5 text-xs text-gray-400">
-              <li><a href="/katalog" className="hover:text-white transition-colors">VGA Card RTX / RX</a></li>
-              <li><a href="/katalog" className="hover:text-white transition-colors">Processor & Mobo</a></li>
-              <li><a href="/katalog" className="hover:text-white transition-colors">RAM & NVMe SSD</a></li>
-              <li><a href="/katalog" className="hover:text-white transition-colors">Gaming Keyboard & Mouse</a></li>
-              <li><a href="/katalog" className="hover:text-white transition-colors">Cooling & PC Case</a></li>
-              <li><a href="/katalog" className="hover:text-white transition-colors">Monitor High Refresh</a></li>
+              {navItems.map((nav) => (
+                <li key={nav.id}><a href={nav.route} className="hover:text-white transition-colors">{nav.label}</a></li>
+              ))}
             </ul>
           </div>
 
-          {/* Column 3: Customer Service & Help (col-span-3) */}
-          <div className={`${colSpan3Class}`}>
-            <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span> Layanan & Bantuan
-            </h4>
-            <ul className="space-y-2.5 text-xs text-gray-400">
-              <li><a href="/tentang" className="hover:text-cyan-400 transition-colors">Lacak Status Pesanan</a></li>
-              <li><a href="/tentang" className="hover:text-cyan-400 transition-colors">Klaim Garansi & Retur</a></li>
-              <li><a href="/tentang" className="hover:text-cyan-400 transition-colors">Panduan Metode Pembayaran</a></li>
-              <li><a href="/tentang" className="hover:text-cyan-400 transition-colors">Syarat & Ketentuan Pembelian</a></li>
-              <li><a href="/tentang" className="hover:text-cyan-400 transition-colors">Kebijakan Privasi & Keamanan</a></li>
-              <li><a href="/tentang" className="hover:text-cyan-400 transition-colors">Simulasi Rakit PC Custom</a></li>
-            </ul>
-          </div>
-
-          {/* Column 4: Newsletter & Payment/Shipping Badges (col-span-3) */}
-          <div className={`${colSpan3Class} space-y-5`}>
-            <div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-3 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-pink-500"></span> Promo & Flash Sale
+          {/* Kontak */}
+          {(email || address) && (
+            <div className={`${columnSpanClass} min-w-0`}>
+              <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span> Kontak
               </h4>
-              <p className="text-gray-400 text-xs mb-3">Dapatkan voucher diskon hardware & promo rakitan PC.</p>
-              <form className="flex gap-1.5" onSubmit={(e) => e.preventDefault()}>
-                <input
-                  type="email"
-                  placeholder="Email anda..."
-                  className="w-full bg-gray-900/90 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none"
-                  style={{ borderColor: undefined }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = accentColor; }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = ''; }}
-                />
-                <button
-                  type="submit"
-                  className="text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors shrink-0 flex items-center gap-1"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </button>
-              </form>
-            </div>
-
-            {/* Payment & Shipping Logos */}
-            <div className="space-y-3 pt-2">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Metode Pembayaran</p>
-                <div className="flex flex-wrap gap-1.5 text-[11px] font-bold text-gray-300">
-                  <span className="px-2 py-1 bg-gray-900 border border-gray-800 rounded">BCA</span>
-                  <span className="px-2 py-1 bg-gray-900 border border-gray-800 rounded">Mandiri</span>
-                  <span className="px-2 py-1 bg-gray-900 border border-gray-800 rounded">BNI</span>
-                  <span className="px-2 py-1 bg-gray-900 border border-gray-800 rounded text-cyan-400">QRIS</span>
-                  <span className="px-2 py-1 bg-gray-900 border border-gray-800 rounded text-emerald-400">GoPay</span>
-                  <span className="px-2 py-1 bg-gray-900 border border-gray-800 rounded">Visa / MC</span>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Kurir Partner</p>
-                <div className="flex flex-wrap gap-1.5 text-[11px] font-bold text-gray-300">
-                  <span className="px-2 py-1 bg-gray-900 border border-gray-800 rounded text-red-400">JNE</span>
-                  <span className="px-2 py-1 bg-gray-900 border border-gray-800 rounded text-amber-400">J&T</span>
-                  <span className="px-2 py-1 bg-gray-900 border border-gray-800 rounded text-purple-400">SiCepat</span>
-                  <span className="px-2 py-1 bg-gray-900 border border-gray-800 rounded text-emerald-400">GoSend</span>
-                  <span className="px-2 py-1 bg-gray-900 border border-gray-800 rounded text-[#00A5CF]">GrabExpress</span>
-                </div>
+              <div className="space-y-2.5 text-xs text-gray-400 font-mono">
+                {address && (
+                  <p className="flex items-start gap-2.5"><MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: accentColor }} /> <span className="break-words min-w-0">{address}</span></p>
+                )}
+                {email && (
+                  <p className="flex items-start gap-2.5"><Mail className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: accentColor }} /> <a href={`mailto:${email}`} className="hover:underline break-all min-w-0">{email}</a></p>
+                )}
               </div>
             </div>
-
-          </div>
-
+          )}
         </div>
 
-        {/* Bottom Bar: Copyright & Social Links */}
-        <div className={`pt-6 border-t border-gray-800/80 flex ${bottomFlexClass} items-center justify-between gap-4 text-xs text-gray-500 font-mono`}>
-          <p>© {new Date().getFullYear()} {storeInfo.name || "Kroombox Store"}. All rights reserved.</p>
-          <div className="flex items-center gap-4 text-gray-400">
-            <span>Official Socials:</span>
-            <a href="#" className="transition-colors" style={{ color: undefined }} onMouseEnter={(e) => { e.currentTarget.style.color = accentColor; }} onMouseLeave={(e) => { e.currentTarget.style.color = ''; }}><Instagram className="w-4 h-4" /></a>
-            <a href="#" className="hover:text-red-400 transition-colors"><Youtube className="w-4 h-4" /></a>
-          </div>
+        {/* Bottom Bar */}
+        <div className="pt-6 border-t border-gray-800/80 text-xs text-gray-500 font-mono text-center">
+          {copyrightText}
         </div>
-
       </div>
     </footer>
   );
 };
-
-

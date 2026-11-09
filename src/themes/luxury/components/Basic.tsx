@@ -2,7 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 
 export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -120,53 +120,48 @@ export const LuxuryHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
 
 export const LuxuryFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
-  const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const { isEn } = useLanguage();
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeDesc = sectionOptions.description || storeInfo?.description;
-  const copyrightText = sectionOptions.copyrightText || (isEn 
+  const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
+  const navItems = getNavMenuItems(sectionOptions);
+  const socials = getFooterSocialLinks(sectionOptions);
+  const copyrightText = sectionOptions.copyrightText || (isEn
     ? `© ${new Date().getFullYear()} ${storeTitle}. All rights reserved.`
     : `© ${new Date().getFullYear()} ${storeTitle}. Seluruh hak cipta dilindungi.`);
 
-  const navLinks = isEn
-    ? [
-        { label: 'Boutiques', href: '#' },
-        { label: 'Client Services', href: '#' },
-        { label: 'Contact', href: '#' },
-        { label: 'Legal Mentions', href: '#' },
-      ]
-    : [
-        { label: 'Butik', href: '#' },
-        { label: 'Layanan Pelanggan', href: '#' },
-        { label: 'Kontak', href: '#' },
-        { label: 'Ketentuan Hukum', href: '#' },
-      ];
-
   return (
-    <footer className="w-full px-8 md:px-16 py-20 bg-white text-[#36281D] flex flex-col items-center border-t border-[#F0EBE1]">
-      <a href="/" className="text-3xl sm:text-4xl font-serif mb-3 text-[#8C531B] tracking-wider hover:opacity-85 transition-opacity">
+    <footer className="w-full px-5 sm:px-8 md:px-16 py-14 sm:py-20 bg-white text-[#36281D] flex flex-col items-center text-center border-t border-[#F0EBE1]">
+      <a href="/" className="text-3xl sm:text-4xl font-serif mb-3 text-[#8C531B] tracking-wider hover:opacity-85 transition-opacity break-words max-w-full">
         {storeTitle}
       </a>
       {storeDesc && (
-        <p className="text-xs sm:text-sm font-light text-[#7D6E63] max-w-md text-center mb-10 leading-relaxed font-sans">
-          {storeDesc}
-        </p>
+        <p className="text-xs sm:text-sm font-light text-[#7D6E63] max-w-md mb-8 leading-relaxed font-sans">{storeDesc}</p>
       )}
-      
-      <div className="flex flex-wrap justify-center gap-8 md:gap-16 text-[10px] uppercase tracking-[0.25em] mb-12 text-[#7D6E63] text-center font-sans">
-        {navLinks.map((link, idx) => (
-          <a key={idx} href={link.href} className="hover:text-[#8C531B] transition-colors">{link.label}</a>
+
+      <nav className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-[10px] uppercase tracking-[0.25em] mb-8 text-[#7D6E63] font-sans">
+        {navItems.map((nav) => (
+          <a key={nav.id} href={nav.route} className="hover:text-[#8C531B] transition-colors">{nav.label}</a>
         ))}
-      </div>
-      
-      <div className="w-12 h-px bg-[#8C531B]/30 mb-8"></div>
-      
-      {footerEmail && (
-        <a href={`mailto:${footerEmail}`} className="block text-xs text-[#7D6E63] font-sans mb-6 hover:underline break-all text-center">{footerEmail}</a>
+      </nav>
+
+      <div className="w-12 h-px bg-[#8C531B]/30 mb-6"></div>
+
+      {(email || address) && (
+        <div className="space-y-1 mb-6 text-xs text-[#7D6E63] font-sans">
+          {address && <p className="break-words">{address}</p>}
+          {email && <a href={`mailto:${email}`} className="block hover:underline break-all">{email}</a>}
+        </div>
       )}
-      <p className="text-[9px] uppercase tracking-[0.35em] text-[#9E8E81] text-center font-mono">
-        {copyrightText}
-      </p>
+      {socials.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-6 mb-6 text-[10px] uppercase tracking-[0.25em] text-[#7D6E63] font-sans">
+          {socials.map((s) => (
+            <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-[#8C531B] transition-colors">{s.label}</a>
+          ))}
+        </div>
+      )}
+      <p className="text-[9px] uppercase tracking-[0.35em] text-[#9E8E81] font-mono">{copyrightText}</p>
     </footer>
   );
 };

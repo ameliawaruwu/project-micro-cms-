@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 
 export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -58,12 +58,9 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
               {email && <li className="break-all"><a href={`mailto:${email}`} className="hover:underline">{email}</a></li>}
             </ul>
             <div className="mt-8 flex gap-6">
-              {storeInfo.socials.instagram && (
-                <a href="#" className="font-sans text-[10px] tracking-[0.2em] uppercase hover:text-[#A39D98] transition-colors">Instagram</a>
-              )}
-              {storeInfo.socials.tiktok && (
-                <a href="#" className="font-sans text-[10px] tracking-[0.2em] uppercase hover:text-[#A39D98] transition-colors">TikTok</a>
-              )}
+              {getFooterSocialLinks(sectionOptions).map((s) => (
+                <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="font-sans text-[10px] tracking-[0.2em] uppercase hover:text-[#A39D98] transition-colors">{s.label}</a>
+              ))}
             </div>
           </div>
         </div>

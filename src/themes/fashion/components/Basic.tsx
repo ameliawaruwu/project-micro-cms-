@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 
 export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -101,76 +101,64 @@ export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions
 
 export const FashionFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
-  const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
+  const navItems = getNavMenuItems(sectionOptions);
+  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-2',
     desktop: 'grid-cols-4',
-    fallback: 'grid-cols-1 md:grid-cols-4',
+    fallback: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4',
   });
-  const bottomFlexClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'flex-col',
-    tablet: 'flex-col',
-    desktop: 'flex-row',
-    fallback: 'flex-col md:flex-row',
+  const brandSpanClass = getDeviceClass(isMobile, isTablet, {
+    mobile: '',
+    tablet: 'col-span-2',
+    desktop: 'col-span-2',
+    fallback: 'sm:col-span-2',
   });
-  const colSpan2Class = isMobile || isTablet ? '' : 'md:col-span-2';
 
   return (
-    <footer className="w-full bg-[#18181B] text-white pt-24 pb-12 border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className={`grid ${gridColsClass} gap-12 mb-20`}>
-          <div className={`col-span-1 ${colSpan2Class}`}>
-            <h2 className="text-3xl font-serif italic mb-6">{storeTitle}</h2>
-            <p className="text-sm text-gray-400 leading-loose max-w-md mb-8">
-              {storeDesc || "Defining the modern silhouette with a blend of chic urban aesthetics and timeless elegance. Designed for the bold and the beautiful."}
-            </p>
-            <div className="flex gap-6">
-              <a href="#" className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-colors">
-                Ig
-              </a>
-              <a href="#" className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-colors">
-                Fb
-              </a>
-              <a href="#" className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-colors">
-                Pt
-              </a>
+    <footer className="w-full bg-[#18181B] text-white pt-16 sm:pt-20 pb-10 border-t border-white/10">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 md:px-12">
+        <div className={`grid ${gridColsClass} gap-10 mb-12`}>
+          <div className={brandSpanClass}>
+            <h2 className="text-3xl font-serif italic mb-4 break-words">{storeTitle}</h2>
+            {storeDesc && <p className="text-sm text-gray-400 leading-loose max-w-md">{storeDesc}</p>}
+            {socials.length > 0 && (
+              <div className="flex flex-wrap gap-4 mt-6 text-[10px] uppercase tracking-[0.2em]">
+                {socials.map((s) => (
+                  <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="border-b border-white/30 pb-1 hover:border-white transition-colors">{s.label}</a>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-5">Menu</h3>
+            <ul className="space-y-3 text-sm text-gray-300">
+              {navItems.map((nav) => (
+                <li key={nav.id}><a href={nav.route} className="hover:text-white transition-colors">{nav.label}</a></li>
+              ))}
+            </ul>
+          </div>
+
+          {(email || address) && (
+            <div>
+              <h3 className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-5">Kontak</h3>
+              <ul className="space-y-3 text-sm text-gray-300">
+                {address && <li className="break-words">{address}</li>}
+                {email && <li><a href={`mailto:${email}`} className="hover:text-white transition-colors break-all">{email}</a></li>}
+              </ul>
             </div>
-          </div>
-          
-          <div>
-            <h3 className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-6">Customer Care</h3>
-            <ul className="space-y-4 text-sm text-gray-300">
-              <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Shipping & Returns</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Size Guide</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-6">Explore</h3>
-            <ul className="space-y-4 text-sm text-gray-300">
-              <li><a href="#" className="hover:text-white transition-colors">Our Story</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Sustainability</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Journal</a></li>
-            </ul>
-          </div>
-        </div>
-        
-        <div className={`pt-8 border-t border-white/10 flex ${bottomFlexClass} justify-between items-center gap-4 text-xs text-gray-500 uppercase tracking-widest`}>
-          {footerEmail && (
-            <a href={`mailto:${footerEmail}`} className="hover:text-white transition-colors break-all">{footerEmail}</a>
           )}
-          <p>{copyrightText}</p>
-          <div className="flex gap-6">
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-          </div>
+        </div>
+
+        <div className="pt-6 border-t border-white/10 text-xs text-gray-500 uppercase tracking-widest text-center">
+          {copyrightText}
         </div>
       </div>
     </footer>

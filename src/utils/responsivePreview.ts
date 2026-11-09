@@ -46,13 +46,15 @@ export function getDeviceClass(
 export type PreviewDeviceMode = 'desktop' | 'tablet' | 'mobile';
 
 /**
- * Breakpoint Tailwind yang "aktif" untuk tiap preview device di editor, disesuaikan dengan
- * lebar kanvas sebenarnya: Ponsel ±390px, Tablet ±730px (isi frame 768px), Desktop ±970px.
+ * Breakpoint Tailwind yang "aktif" untuk tiap preview device di editor: Ponsel ±390px,
+ * Tablet ±730px (isi frame 768px), Desktop = tampilan desktop (sm/md/lg aktif). Kanvas desktop
+ * bisa sedikit di bawah 1024px, tetapi komponen tema memasangkan `grid-cols-12` desktop dengan
+ * `lg:col-span-*`, sehingga `lg` harus aktif agar kolom tidak menyempit.
  */
 const ACTIVE_BREAKPOINTS: Record<PreviewDeviceMode, string[]> = {
   mobile: [],
   tablet: ['sm'],
-  desktop: ['sm', 'md'],
+  desktop: ['sm', 'md', 'lg'],
 };
 const ALL_BREAKPOINTS = ['sm', 'md', 'lg', 'xl', '2xl'];
 const TEXT_SIZES = new Set(['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl', '8xl', '9xl']);
