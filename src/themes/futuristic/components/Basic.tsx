@@ -23,19 +23,19 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
   });
 
   return (
-    <nav className="w-full px-6 md:px-12 py-5 flex justify-between items-center bg-[#050505]/80 border-b backdrop-blur-md sticky top-0 z-50" style={{ borderColor: `${accentColor}4D` }}>
-      <div className="flex flex-col">
-        <div className="text-xl font-black tracking-[0.2em] text-white">
+    <nav className="w-full px-4 sm:px-6 md:px-12 py-4 md:py-5 flex flex-wrap md:flex-nowrap justify-between items-center gap-x-4 gap-y-3 bg-[#050505]/80 border-b backdrop-blur-md sticky top-0 z-50" style={{ borderColor: `${accentColor}4D` }}>
+      <div className="flex flex-col min-w-0 flex-1 md:flex-none">
+        <div className="text-lg sm:text-xl font-black tracking-[0.15em] sm:tracking-[0.2em] text-white truncate">
           {showLogo && <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11"><><span className="mr-2" style={{ color: accentColor }}>/</span>{storeTitle}</></StoreLogo>}
         </div>
         {storeSubtitle && (
-          <span className="text-[10px] font-mono tracking-widest mt-0.5" style={{ color: `${accentColor}CC` }}>
+          <span className="text-[10px] font-mono tracking-widest mt-0.5 line-clamp-1" style={{ color: `${accentColor}CC` }}>
             {storeSubtitle}
           </span>
         )}
       </div>
       {showNavMenu && (
-        <div className={`${showDesktopNav} gap-8`}>
+        <div className={`${showDesktopNav} gap-5 lg:gap-8 shrink-0`}>
           {getNavMenuItems(sectionOptions).map(nav => (
             <a
               key={nav.id}
@@ -52,14 +52,22 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
       <button
         type="button"
         data-href="/keranjang" aria-label="Buka keranjang belanja"
-        className="px-5 py-2 bg-transparent border text-xs uppercase tracking-widest font-bold rounded transition-all duration-300 cursor-pointer flex items-center gap-2"
+        className="shrink-0 px-3 sm:px-5 py-2 bg-transparent border text-xs uppercase tracking-widest font-bold rounded transition-all duration-300 cursor-pointer flex items-center gap-2 whitespace-nowrap"
         style={{ borderColor: accentColor, color: accentColor }}
         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; e.currentTarget.style.color = '#fff'; e.currentTarget.style.boxShadow = `0 0 15px ${accentColor}`; }}
         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = accentColor; e.currentTarget.style.boxShadow = ''; }}
       >
         <CartBagIcon className="w-4 h-4" />
-        <span>Keranjang [<CartCount />]</span>
+        <span className="hidden sm:inline">Keranjang</span>
+        <span>[<CartCount />]</span>
       </button>
+      {showNavMenu && (
+        <div className="md:hidden w-full flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap">
+          {getNavMenuItems(sectionOptions).map(nav => (
+            <a key={nav.id} href={nav.route} className="text-[11px] uppercase tracking-widest text-gray-400 hover:text-white transition-colors">{nav.label}</a>
+          ))}
+        </div>
+      )}
     </nav>
   );
 };

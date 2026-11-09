@@ -14,38 +14,28 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
 
   return (
     <nav className="w-full bg-[#18181B] text-white border-b border-white/10 sticky top-0 z-50">
-      <div className="w-full py-2 bg-black text-center text-[10px] uppercase tracking-[0.3em] text-gray-400">
-        Free Global Shipping on Orders Over $500
-      </div>
-      <div className="w-full px-6 md:px-12 py-5 flex justify-between items-center">
-        <div className="w-1/3 flex justify-start">
-          <button className="text-white hover:text-gray-400 transition-colors flex items-center gap-2">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" /></svg>
-          </button>
-        </div>
-        
-        <div className="w-1/3 flex justify-center">
+      <div className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-5 flex items-center gap-3">
+        <div className="w-10 shrink-0" aria-hidden="true" />
+
+        <div className="flex-1 min-w-0 flex justify-center">
           {showLogo && (
-            <div className="flex flex-col items-center">
-              <a href="/" className="text-3xl md:text-4xl font-serif italic tracking-wider hover:opacity-80 transition-opacity text-center">
+            <div className="flex flex-col items-center min-w-0 max-w-full">
+              <a href="/" className="text-2xl sm:text-3xl md:text-4xl font-serif italic tracking-wider hover:opacity-80 transition-opacity text-center max-w-full truncate">
                 <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-10 sm:h-12">{storeTitle}</StoreLogo>
               </a>
               {storeSubtitle && (
-                <span className="text-[11px] uppercase tracking-[0.25em] text-gray-400 mt-1 font-sans">
+                <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-gray-400 mt-1 font-sans text-center line-clamp-1 max-w-full">
                   {storeSubtitle}
                 </span>
               )}
             </div>
           )}
         </div>
-        
-        <div className="w-1/3 flex justify-end gap-6 items-center">
-          <button className="text-white hover:text-gray-400 transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          </button>
-          <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-white hover:text-gray-400 transition-colors relative cursor-pointer">
+
+        <div className="w-10 shrink-0 flex justify-end">
+          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-white hover:text-gray-400 transition-colors relative cursor-pointer p-1">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-            <CartCountBadge className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 bg-white text-black text-[9px] font-bold rounded-full flex items-center justify-center" />
+            <CartCountBadge className="absolute -top-1 -right-1.5 min-w-[16px] h-4 px-1 bg-white text-black text-[9px] font-bold rounded-full flex items-center justify-center" />
           </button>
         </div>
       </div>

@@ -36,6 +36,7 @@ flex
 flex-1
 flex-initial
 flex-none
+flex-nowrap
 flex-row
 flex-row-reverse
 gap-0
@@ -126,7 +127,6 @@ max-w-6xl
 max-w-[110px]
 max-w-[140px]
 max-w-[180px]
-max-w-[20rem]
 max-w-[220px]
 max-w-[240px]
 max-w-[320px]
@@ -189,6 +189,7 @@ mt-8
 mx-0
 order-1
 order-2
+order-3
 p-1.5
 p-10
 p-12
@@ -323,6 +324,8 @@ top-8
 top-[12%]
 top-[33%]
 top-[68px]
+tracking-[0.25em]
+tracking-[0.2em]
 tracking-widest
 translate-x-6
 translate-y-6
@@ -342,10 +345,8 @@ w-3.5
 w-3/5
 w-4
 w-4.5
-w-44
 w-5
 w-5/12
-w-52
 w-6
 w-6/12
 w-60

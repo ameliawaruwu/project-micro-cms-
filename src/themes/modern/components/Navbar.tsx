@@ -29,7 +29,7 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 bg-white border border-gray-100 rounded-full px-5 py-2.5 shadow-sm">
         
         {/* Logo */}
-        <a href="/" className="text-lg font-bold text-gray-900 shrink-0">
+        <a href="/" className="text-lg font-bold text-gray-900 min-w-0 truncate">
           <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
         </a>
 
@@ -57,12 +57,16 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
               <CartCount />
             </span>
           </button>
-          <button className={`${showMobileMenuBtn} w-9 h-9 rounded-full hover:bg-gray-50 items-center justify-center text-gray-500`}>
-            <Menu className="w-4 h-4" />
-          </button>
         </div>
 
       </div>
+      <nav className="lg:hidden max-w-7xl mx-auto flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap px-5 pt-3">
+        {getNavMenuItems(sectionOptions).map((nav) => (
+          <a key={nav.id} href={nav.route} className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+            {nav.label}
+          </a>
+        ))}
+      </nav>
     </header>
   );
 };

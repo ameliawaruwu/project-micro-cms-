@@ -71,7 +71,7 @@ interface NavCartButtonProps {
 export const NavCartButton: React.FC<NavCartButtonProps> = ({ className = '', badgeClassName, children }) => {
   const count = useCartCount(useStorefrontSlug());
   return (
-    <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" title="Keranjang Belanja" className={`relative cursor-pointer ${className}`}>
+    <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" title="Keranjang Belanja" className={`${/(^|\s)(absolute|fixed|sticky)(\s|$)/.test(className) ? '' : 'relative '}cursor-pointer ${className}`}>
       {children ?? <ShoppingBag className="w-5 h-5" />}
       {count > 0 && (
         <span

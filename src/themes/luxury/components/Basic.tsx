@@ -16,9 +16,9 @@ export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
   const navItems = getNavMenuItems(sectionOptions);
 
   return (
-    <nav className="w-full px-5 sm:px-8 md:px-16 pt-5 pb-4 sm:pt-6 bg-white/95 backdrop-blur-md border-b border-[#F0EBE1] sticky top-0 z-50 transition-all duration-300">
+    <nav className="relative w-full px-5 sm:px-8 md:px-16 pt-5 pb-4 sm:pt-6 bg-white/95 backdrop-blur-md border-b border-[#F0EBE1] sticky top-0 z-50 transition-all duration-300">
       <NavCartButton
-        className="absolute right-5 sm:right-8 md:right-16 top-5 sm:top-7 text-[#8C531B] hover:text-[#5C4533] transition-colors"
+        className="absolute right-4 sm:right-8 md:right-16 top-5 sm:top-7 p-1 text-[#8C531B] hover:text-[#5C4533] transition-colors"
         badgeClassName="absolute -top-2 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#8C531B] text-white text-[9px] font-sans font-bold flex items-center justify-center"
       >
         <CartBagIcon className="w-5 h-5" />

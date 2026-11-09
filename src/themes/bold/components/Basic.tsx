@@ -5,6 +5,7 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
+import { ShoppingBag as CartBagIcon } from 'lucide-react';
 
 export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -25,35 +26,38 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
   const navMarginClass = isMobile || isTablet ? 'mt-3' : 'mt-3 md:mt-0';
 
   return (
-    <nav className={`w-full px-6 md:px-12 py-4 flex ${navFlexClass} justify-between items-center bg-zinc-950/90 backdrop-blur-md text-white border-b border-zinc-800/80 sticky top-0 z-50 transition-all`}>
-      <div className={`${logoWidthClass} flex ${logoJustifyClass} items-center`}>
+    <nav className="w-full px-4 sm:px-6 md:px-12 py-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 bg-zinc-950/90 backdrop-blur-md text-white border-b border-zinc-800/80 sticky top-0 z-50 transition-all">
+      <div className="order-1 min-w-0 flex-1 lg:flex-none flex items-center">
         {showLogo && (
-          <div className="flex flex-col">
-            <a href="/" className="flex items-center gap-3 font-black tracking-tighter uppercase text-2xl md:text-3xl text-white hover:text-red-500 transition-colors group">
-              <span className="px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 text-white text-xs font-black tracking-widest rounded-md group-hover:scale-105 transition-transform shadow-md shadow-red-600/20">RAW</span>
-              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11"><span className="font-extrabold tracking-tight">{storeTitle}</span></StoreLogo>
+          <div className="flex flex-col min-w-0">
+            <a href="/" className="flex items-center gap-2 sm:gap-3 font-black tracking-tighter uppercase text-xl sm:text-2xl md:text-3xl text-white hover:text-red-500 transition-colors group min-w-0">
+              <span className="px-2 sm:px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[10px] sm:text-xs font-black tracking-widest rounded-md group-hover:scale-105 transition-transform shadow-md shadow-red-600/20 shrink-0">RAW</span>
+              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11"><span className="font-extrabold tracking-tight truncate">{storeTitle}</span></StoreLogo>
             </a>
             {storeSubtitle && (
-              <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 mt-0.5">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 mt-0.5 line-clamp-1">
                 {storeSubtitle}
               </span>
             )}
           </div>
         )}
       </div>
-      
+
       {showNav && (
-        <div className={`${navWidthClass} flex flex-wrap ${navJustifyClass} items-center gap-8 font-bold uppercase tracking-wider text-xs md:text-sm ${navMarginClass}`}>
+        <div className="order-3 lg:order-2 w-full lg:w-auto lg:flex-1 flex flex-wrap justify-center lg:justify-end items-center gap-x-6 sm:gap-x-8 gap-y-2 font-bold uppercase tracking-wider text-xs md:text-sm">
           {getNavMenuItems(sectionOptions).map(nav => (
             <a key={nav.id} href={nav.route} className="text-zinc-400 hover:text-white transition-colors relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-red-500 hover:after:w-full after:transition-all">
               {nav.label}
             </a>
           ))}
-          <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="cursor-pointer bg-white text-zinc-950 px-5 py-2.5 text-xs font-extrabold uppercase rounded-lg hover:bg-zinc-200 transition-all shadow-md hover:shadow-white/10 active:scale-95">
-            KERANJANG [<CartCount />]
-          </button>
         </div>
       )}
+
+      <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="order-2 lg:order-3 shrink-0 cursor-pointer bg-white text-zinc-950 px-3 sm:px-5 py-2 sm:py-2.5 text-xs font-extrabold uppercase rounded-lg hover:bg-zinc-200 transition-all shadow-md hover:shadow-white/10 active:scale-95 flex items-center gap-2">
+        <CartBagIcon className="w-4 h-4" />
+        <span className="hidden sm:inline">KERANJANG</span>
+        <span>[<CartCount />]</span>
+      </button>
     </nav>
   );
 };

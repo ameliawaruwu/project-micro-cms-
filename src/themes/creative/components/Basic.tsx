@@ -20,11 +20,11 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean
   });
 
   return (
-    <nav className="w-full px-8 py-6 flex justify-between items-center bg-[#E11D48] text-white sticky top-0 z-50">
-      <div className="flex-1 flex justify-start">
+    <nav className="w-full px-4 sm:px-8 py-4 sm:py-6 flex flex-wrap justify-between items-center gap-x-4 gap-y-3 bg-[#E11D48] text-white sticky top-0 z-50">
+      <div className="flex-1 min-w-0 flex justify-start">
         {showLogo && (
           <div className="flex flex-col">
-            <a href="/" className="text-3xl font-extrabold tracking-tighter hover:text-yellow-300 transition-colors transform hover:-rotate-3">
+            <a href="/" className="text-2xl sm:text-3xl font-extrabold tracking-tighter hover:text-yellow-300 transition-colors transform hover:-rotate-3">
               <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
             </a>
             {storeSubtitle && (
@@ -46,12 +46,21 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean
         </div>
       )}
       
-      <div className="flex-1 flex justify-end">
-        <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative w-12 h-12 rounded-full bg-yellow-300 text-[#E11D48] flex items-center justify-center font-bold hover:scale-110 transition-transform shadow-lg cursor-pointer">
+      <div className="flex-none md:flex-1 flex justify-end">
+        <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative w-12 h-12 rounded-full bg-yellow-300 text-[#E11D48] flex items-center justify-center font-bold hover:scale-110 transition-transform shadow-lg cursor-pointer">
           <CartBagIcon className="w-5 h-5" />
           <CartCountBadge className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#E11D48] text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-yellow-300" />
         </button>
       </div>
+      {showNav && (
+        <div className="md:hidden w-full flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap">
+          {getNavMenuItems(sectionOptions).map(nav => (
+            <a key={nav.id} href={nav.route} className="text-xs font-bold uppercase tracking-widest hover:text-yellow-300 transition-colors">
+              {nav.label}
+            </a>
+          ))}
+        </div>
+      )}
     </nav>
   );
 };

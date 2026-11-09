@@ -38,9 +38,7 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
         
         {/* Mobile top bar */}
         <div className={`w-full ${showMobileBar} justify-between items-center`}>
-          <button className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm">
-            <Menu className="w-5 h-5" />
-          </button>
+          <span className="w-9 h-9" aria-hidden="true" />
           <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm relative cursor-pointer">
             <ShoppingBag className="w-5 h-5" />
             <span className="absolute -top-1 -right-1 bg-[#FF85A1] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
@@ -91,6 +89,13 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
         </div>
 
       </div>
+      <nav className={`${showMobileBar} flex-wrap justify-center gap-2 mt-3`}>
+        {getNavMenuItems(sectionOptions).map((nav) => (
+          <a key={nav.id} href={nav.route} className="px-3 py-1.5 rounded-xl bg-white text-xs font-bold text-[#FF85A1] shadow-sm">
+            {nav.label}
+          </a>
+        ))}
+      </nav>
     </header>
   );
 };

@@ -57,64 +57,64 @@ export const NatureNavbar: React.FC<{
   const navGapClass = isMobile || isTablet ? 'gap-4' : 'gap-4 md:gap-0';
 
   return (
-    <nav className={`w-full px-4 sm:px-6 md:px-10 lg:px-12 py-5 flex ${navFlexClass} justify-between items-center bg-[#F9F6F0] border-b border-[#E8E4DB] sticky top-0 z-50 font-serif ${navGapClass}`}>
-      <div className={`${flex1Class} flex ${navJustifyStartClass}`}>
-        {showNav && (
-          <div className="flex flex-wrap justify-center md:justify-start gap-4 sm:gap-6 lg:gap-8 items-center">
-            {navList.map(nav => (
-              <a key={nav.id} href={nav.route} className="text-xs sm:text-[13px] tracking-wide font-medium text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors relative group font-sans whitespace-nowrap">
-                {nav.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-[#2C3B2D] group-hover:w-full transition-all duration-300"></span>
+    <nav className="w-full px-4 sm:px-6 md:px-10 lg:px-12 pt-4 pb-3 bg-[#F9F6F0] border-b border-[#E8E4DB] sticky top-0 z-50 font-serif">
+      <div className="flex items-center justify-between gap-3 sm:gap-6">
+        <div className="min-w-0 flex-1">
+          {showLogo && (
+            <div className="flex flex-col min-w-0">
+              <a href="/" className="text-xl sm:text-2xl lg:text-3xl font-serif text-[#2C3B2D] tracking-wide hover:opacity-80 transition-opacity font-bold truncate">
+                <StoreLogo sectionOptions={sectionOptions} name={storeName} imgClassName="h-9 sm:h-11">{storeName}</StoreLogo>
               </a>
-            ))}
-          </div>
-        )}
-      </div>
-      
-      <div className="min-w-0 max-w-full flex justify-center items-center px-2 sm:px-6">
-        {showLogo && (
-          <div className="flex flex-col items-center min-w-0 max-w-full">
-            <a href="/" className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-serif text-[#2C3B2D] tracking-wide hover:opacity-80 transition-opacity font-bold whitespace-nowrap inline-block text-center">
-              <StoreLogo sectionOptions={sectionOptions} name={storeName} imgClassName="h-9 sm:h-11">{storeName}</StoreLogo>
-            </a>
-            {storeSubtitle && (
-              <span className="text-xs font-sans text-[#5C6B5D] tracking-wider mt-0.5 max-w-[16rem] lg:max-w-[20rem] truncate text-center">
-                {storeSubtitle}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className={`${flex1Class} flex flex-wrap ${navJustifyEndClass} items-center gap-3 sm:gap-5`}>
-        {/* Search Bar in Header Right */}
-        <div className="relative w-44 sm:w-52 md:w-44 lg:w-60">
-          <svg className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5C6B5D]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            value={query}
-            onChange={handleInputChange}
-            placeholder="Cari produk segar..."
-            className="w-full pl-9 pr-7 py-1.5 bg-white border border-[#E8E4DB] rounded-full text-xs font-sans text-[#2C3B2D] placeholder-[#5C6B5D]/60 focus:outline-none focus:ring-1.5 focus:ring-[#2C3B2D] focus:border-transparent transition-all shadow-2xs"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => onSearchChange ? onSearchChange('') : setLocalSearch('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#5C6B5D] hover:text-[#2C3B2D] bg-[#E8E4DB]/50 hover:bg-[#E8E4DB] rounded-full w-4 h-4 flex items-center justify-center cursor-pointer"
-            >
-              ✕
-            </button>
+              {storeSubtitle && (
+                <span className="text-[11px] sm:text-xs font-sans text-[#5C6B5D] tracking-wider mt-0.5 truncate">
+                  {storeSubtitle}
+                </span>
+              )}
+            </div>
           )}
         </div>
 
-        <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-xs sm:text-[13px] tracking-wide text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors flex items-center gap-2 cursor-pointer font-sans whitespace-nowrap shrink-0">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-          Keranjang (<CartCount />)
-        </button>
+        <div className="flex items-center gap-3 sm:gap-5 shrink-0">
+          <div className="relative hidden sm:block w-44 lg:w-60">
+            <svg className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5C6B5D]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={handleInputChange}
+              placeholder="Cari produk segar..."
+              className="w-full pl-9 pr-7 py-1.5 bg-white border border-[#E8E4DB] rounded-full text-xs font-sans text-[#2C3B2D] placeholder-[#5C6B5D]/60 focus:outline-none focus:ring-1.5 focus:ring-[#2C3B2D] focus:border-transparent transition-all shadow-2xs"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => onSearchChange ? onSearchChange('') : setLocalSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#5C6B5D] hover:text-[#2C3B2D] bg-[#E8E4DB]/50 hover:bg-[#E8E4DB] rounded-full w-4 h-4 flex items-center justify-center cursor-pointer"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative text-xs sm:text-[13px] tracking-wide text-[#2C3B2D] hover:text-[#1B3B2B] transition-colors flex items-center gap-2 cursor-pointer font-sans whitespace-nowrap p-1">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+            <span className="hidden md:inline">Keranjang</span>
+            <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#2D5A27] text-white text-[10px] font-bold leading-none flex items-center justify-center"><CartCount /></span>
+          </button>
+        </div>
       </div>
+
+      {showNav && (
+        <div className="mt-3 flex flex-wrap justify-center gap-x-5 sm:gap-x-8 gap-y-2">
+          {navList.map(nav => (
+            <a key={nav.id} href={nav.route} className="text-xs sm:text-[13px] tracking-wide font-medium text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors relative group font-sans whitespace-nowrap">
+              {nav.label}
+              <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-[#2C3B2D] group-hover:w-full transition-all duration-300"></span>
+            </a>
+          ))}
+        </div>
+      )}
     </nav>
   );
 };

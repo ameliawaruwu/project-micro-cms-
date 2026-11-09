@@ -4,6 +4,7 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
+import { ShoppingBag as CartBagIcon } from 'lucide-react';
 
 export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -20,7 +21,7 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
 
   return (
     <nav className="w-full bg-[#1E40AF] text-white shadow-md sticky top-0 z-50">
-      <div className="w-full bg-[#1e3a8a] py-2 px-6 md:px-16 flex justify-between text-xs font-medium text-blue-200">
+      <div className="w-full bg-[#1e3a8a] py-2 px-6 md:px-16 hidden md:flex justify-between text-xs font-medium text-blue-200">
         <div className="flex gap-6">
           <span>Enterprise Solutions</span>
           <span>Global Shipping</span>
@@ -30,11 +31,11 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
           <a href="#" className="hover:text-white transition-colors">Client Portal</a>
         </div>
       </div>
-      <div className="w-full px-6 md:px-16 py-5 flex justify-between items-center">
-        <div className="flex items-center gap-12">
+      <div className="w-full px-4 sm:px-6 md:px-16 py-4 md:py-5 flex justify-between items-center gap-4">
+        <div className="flex items-center gap-12 min-w-0">
           {showLogo && (
-            <div className="flex flex-col">
-              <a href="/" className="text-2xl font-bold tracking-tight flex items-center gap-3">
+            <div className="flex flex-col min-w-0">
+              <a href="/" className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-3 min-w-0">
                 <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">
                   <>
                     <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center shrink-0">
@@ -47,7 +48,7 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
                 </StoreLogo>
               </a>
               {storeSubtitle && (
-                <span className="text-xs text-blue-200 font-medium pl-11 -mt-1">
+                <span className="text-xs text-blue-200 font-medium pl-11 -mt-1 line-clamp-1">
                   {storeSubtitle}
                 </span>
               )}
@@ -63,15 +64,24 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
             </div>
           )}
         </div>
-        <div className="flex gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           <a href="#kontak" className="hidden sm:inline-flex px-5 py-2 text-sm font-semibold text-white border border-blue-400 rounded-md hover:bg-blue-800 transition-colors">
             Hubungi Kami
           </a>
-          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="px-5 py-2 text-sm font-semibold bg-white text-[#1E40AF] rounded-md hover:bg-gray-100 transition-colors shadow-sm cursor-pointer">
-            Keranjang (<CartCount />)
+          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="flex items-center gap-2 px-3 sm:px-5 py-2 text-sm font-semibold bg-white text-[#1E40AF] rounded-md hover:bg-gray-100 transition-colors shadow-sm cursor-pointer whitespace-nowrap">
+            <CartBagIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">Keranjang</span>
+            <span>(<CartCount />)</span>
           </button>
         </div>
       </div>
+      {showNav && (
+        <div className="md:hidden flex gap-6 overflow-x-auto [scrollbar-width:none] px-4 sm:px-6 pb-3 -mt-1 text-sm font-semibold text-blue-50 whitespace-nowrap">
+          {getNavMenuItems(sectionOptions).map(nav => (
+            <a key={nav.id} href={nav.route} className="hover:text-white transition-colors">{nav.label}</a>
+          ))}
+        </div>
+      )}
     </nav>
   );
 };
