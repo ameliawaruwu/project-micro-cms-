@@ -4,6 +4,7 @@ import { useThemeProductsSource } from '../../useSectionProducts';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { Search, ShoppingBag } from 'lucide-react';
 import { cartService } from '../../../services/cartService';
+import { AddToCartButton, addProductToCart, useStorefrontSlug } from '../../storefrontCart';
 
 interface EditorialProductGridProps {
   sectionOptions?: any;
@@ -21,6 +22,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
   readonly = false,
 }) => {
   const rawProducts = useThemeProductsSource('editorial');
+  const storeSlug = useStorefrontSlug();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
@@ -209,15 +211,16 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
                   {/* Editorial Minimal Add to Cart / Detail */}
                   <button
                     type="button"
+                    data-cart-action="add"
                     onClick={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
-                      const pObj = cmsProductToProduct(product as any);
-                      cartService.addToCart('editorial', pObj, 1);
+                      addProductToCart(storeSlug, product, 1);
                     }}
                     className="mt-auto py-2.5 px-4 border border-[#241A1A] text-[#241A1A] text-[10px] uppercase tracking-[0.2em] font-sans hover:bg-[#241A1A] hover:text-white transition-colors duration-200 flex items-center justify-center gap-2"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />
-                    <span>Beli Sekarang</span>
+                    <span>+ Keranjang</span>
                   </button>
                 </div>
               );

@@ -4,6 +4,7 @@ import { InlineEditableText } from '../../../components/layout-editor/InlineEdit
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
+import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 
 export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -48,8 +49,8 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
               {nav.label}
             </a>
           ))}
-          <button className="bg-white text-zinc-950 px-5 py-2.5 text-xs font-extrabold uppercase rounded-lg hover:bg-zinc-200 transition-all shadow-md hover:shadow-white/10 active:scale-95">
-            CART [0]
+          <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="cursor-pointer bg-white text-zinc-950 px-5 py-2.5 text-xs font-extrabold uppercase rounded-lg hover:bg-zinc-200 transition-all shadow-md hover:shadow-white/10 active:scale-95">
+            KERANJANG [<CartCount />]
           </button>
         </div>
       )}

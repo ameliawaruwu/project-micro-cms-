@@ -1,5 +1,6 @@
 import React from 'react';
 import { CmsProduct } from '../../../cms/mockCmsData';
+import { AddToCartButton, addProductToCart, useStorefrontSlug } from '../../storefrontCart';
 
 interface ProductCardProps {
   product: CmsProduct;
@@ -21,13 +22,13 @@ export const ModernProductCard: React.FC<ProductCardProps> = ({ product, accentC
             Baru
           </div>
         )}
-        <button
+        <AddToCartButton
+          product={product}
           className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-gray-700 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300"
           style={{ color: accentColor }}
-          onClick={(e) => e.preventDefault()}
         >
           +
-        </button>
+        </AddToCartButton>
       </div>
       <div className="px-1">
         <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium mb-1">{product.categoryName}</p>

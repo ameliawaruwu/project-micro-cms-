@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
+import { CartCount } from '../../storefrontCart';
 
 export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -63,11 +64,11 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
           )}
         </div>
         <div className="flex gap-4">
-          <button className="px-5 py-2 text-sm font-semibold text-white border border-blue-400 rounded-md hover:bg-blue-800 transition-colors">
-            Contact Sales
-          </button>
-          <button className="px-5 py-2 text-sm font-semibold bg-white text-[#1E40AF] rounded-md hover:bg-gray-100 transition-colors shadow-sm">
-            Cart (0)
+          <a href="#kontak" className="hidden sm:inline-flex px-5 py-2 text-sm font-semibold text-white border border-blue-400 rounded-md hover:bg-blue-800 transition-colors">
+            Hubungi Kami
+          </a>
+          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="px-5 py-2 text-sm font-semibold bg-white text-[#1E40AF] rounded-md hover:bg-gray-100 transition-colors shadow-sm cursor-pointer">
+            Keranjang (<CartCount />)
           </button>
         </div>
       </div>

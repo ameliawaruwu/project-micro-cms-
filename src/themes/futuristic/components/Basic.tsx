@@ -4,6 +4,8 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
 import { getNavMenuItems } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
+import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
+import { ShoppingBag as CartBagIcon } from 'lucide-react';
 
 export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -48,12 +50,15 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
         </div>
       )}
       <button
-        className="px-5 py-2 bg-transparent border text-xs uppercase tracking-widest font-bold rounded transition-all duration-300"
+        type="button"
+        data-href="/keranjang" aria-label="Buka keranjang belanja"
+        className="px-5 py-2 bg-transparent border text-xs uppercase tracking-widest font-bold rounded transition-all duration-300 cursor-pointer flex items-center gap-2"
         style={{ borderColor: accentColor, color: accentColor }}
         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; e.currentTarget.style.color = '#fff'; e.currentTarget.style.boxShadow = `0 0 15px ${accentColor}`; }}
         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = accentColor; e.currentTarget.style.boxShadow = ''; }}
       >
-        System Access
+        <CartBagIcon className="w-4 h-4" />
+        <span>Keranjang [<CartCount />]</span>
       </button>
     </nav>
   );

@@ -260,6 +260,7 @@ py-5
 py-6
 py-8
 relative
+right-16
 right-8
 right-[10%]
 right-auto
@@ -317,6 +318,7 @@ text-sm
 text-xl
 text-xs
 top-12
+top-7
 top-8
 top-[12%]
 top-[33%]

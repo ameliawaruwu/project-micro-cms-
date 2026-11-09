@@ -4,6 +4,7 @@ import { Search, ShoppingBag, Menu } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
+import { CartCount } from '../../storefrontCart';
 
 export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -50,10 +51,10 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
           <button className="w-9 h-9 rounded-full hover:bg-gray-50 flex items-center justify-center text-gray-500 transition-colors">
             <Search className="w-4 h-4" />
           </button>
-          <button className="w-9 h-9 rounded-full text-white flex items-center justify-center relative transition-transform hover:scale-105" style={{ backgroundColor: accentColor }}>
+          <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="w-9 h-9 rounded-full text-white flex items-center justify-center relative transition-transform hover:scale-105 cursor-pointer" style={{ backgroundColor: accentColor }}>
             <ShoppingBag className="w-4 h-4" />
             <span className="absolute -top-1 -right-1 bg-gray-900 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border-2 border-white">
-              0
+              <CartCount />
             </span>
           </button>
           <button className={`${showMobileMenuBtn} w-9 h-9 rounded-full hover:bg-gray-50 items-center justify-center text-gray-500`}>

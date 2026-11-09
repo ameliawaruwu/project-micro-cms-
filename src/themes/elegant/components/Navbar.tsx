@@ -4,6 +4,7 @@ import { Search, ShoppingBag, Menu } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
+import { CartCount } from '../../storefrontCart';
 
 export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -63,11 +64,11 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
 
         {/* Right: Actions */}
         <div className="flex-1 flex items-center justify-end gap-6">
-          <button className="text-[#6B6865] hover:text-[#2C2A29] transition-colors flex items-center gap-2">
-            <span className={`text-xs tracking-[0.15em] uppercase ${showCartLabel} font-sans`}>Cart</span>
+          <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-[#6B6865] hover:text-[#2C2A29] transition-colors flex items-center gap-2 cursor-pointer">
+            <span className={`text-xs tracking-[0.15em] uppercase ${showCartLabel} font-sans`}>Keranjang</span>
             <div className="relative">
               <ShoppingBag className="w-4 h-4" />
-              <span className="absolute -bottom-2 -right-2 text-[#2C2A29] text-[9px] font-sans">0</span>
+              <span className="absolute -bottom-2 -right-2 text-[#2C2A29] text-[9px] font-sans"><CartCount /></span>
             </div>
           </button>
         </div>

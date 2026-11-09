@@ -10,6 +10,7 @@ import { ShoppingCart, Heart, ShieldCheck, Truck, Star, ArrowRight, Sparkles } f
 import { useCmsStore } from '../../cms/useCmsStore';
 import { cartService } from '../../services/cartService';
 import { getDeviceClass, resolveResponsiveClasses } from '../../utils/responsivePreview';
+import { addProductToCart } from '../storefrontCart';
 
 interface ProductDetailPageProps {
   themeData?: ThemeSchema;
@@ -87,14 +88,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   const handleAddToCart = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    const activeStoreSlug = store?.slug || (liveStoreInfo as any)?.slug;
-    if (activeStoreSlug && product) {
-      cartService.addToCart(activeStoreSlug, product as any, 1);
-      window.dispatchEvent(new CustomEvent('cart_updated'));
-      window.dispatchEvent(new CustomEvent('toast_notification', {
-        detail: { message: `"${product.name}" berhasil dimasukkan ke keranjang!`, type: 'success' }
-      }));
-    }
+    addProductToCart(store?.slug || '', product, 1);
   };
 
   const handleBuyNow = (e?: React.MouseEvent) => {
@@ -164,6 +158,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 >
                   BELI SEKARANG 🛒
                 </button>
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  className="w-full py-3.5 bg-white text-black text-sm sm:text-base font-black uppercase tracking-widest hover:bg-yellow-300 transition-all border-4 border-black cursor-pointer"
+                >
+                  + KERANJANG
+                </button>
               </div>
             </div>
           </div>
@@ -191,7 +192,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 onClick={handleAddToCart}
                 className="w-full py-4 border border-[#241A1A] text-[#241A1A] font-serif uppercase tracking-[0.2em] hover:bg-[#241A1A] hover:text-white transition-colors duration-500 cursor-pointer"
               >
-                Add to Cart
+                Tambah ke Keranjang
               </button>
             </div>
             <div className={`${width7of12Class} ${orderSecondClass}`}>
@@ -231,7 +232,14 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   onClick={handleBuyNow}
                   className="w-full py-4 bg-gradient-to-r from-[var(--sf-primary)] to-[color-mix(in_srgb,var(--sf-primary)_55%,white)] rounded-xl font-bold text-sm uppercase tracking-wider text-white shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:opacity-90 cursor-pointer"
                 >
-                  ACQUIRE ITEM
+                  Beli Sekarang
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  className="w-full py-3.5 border border-[var(--sf-primary)] text-[var(--sf-primary)] hover:bg-[var(--sf-primary)] hover:text-white rounded-xl font-bold text-sm uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  + Keranjang
                 </button>
               </div>
             </div>
@@ -261,6 +269,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               >
                 Beli Sekarang 🍃
               </button>
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="w-full py-3.5 border-2 border-[#2D5A27] text-[#2D5A27] rounded-2xl font-bold text-sm hover:bg-[#2D5A27] hover:text-white transition-colors cursor-pointer"
+              >
+                + Masukkan Keranjang
+              </button>
             </div>
           </div>
         </div>
@@ -286,6 +301,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 className="w-full py-4 bg-[#8C531B] hover:bg-[#724113] text-[#FFFDF9] font-sans text-xs uppercase tracking-[0.2em] rounded-lg shadow-sm transition-all duration-300 cursor-pointer"
               >
                 Pesan Koleksi Eksklusif
+              </button>
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="w-full py-3.5 border border-[#8C531B] text-[#8C531B] hover:bg-[#8C531B] hover:text-[#FFFDF9] font-sans text-xs uppercase tracking-[0.2em] rounded-lg transition-all duration-300 cursor-pointer"
+              >
+                Tambah ke Keranjang
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { Search, ShoppingBag, MessageCircle, Menu, X } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
+import { CartCount } from '../../storefrontCart';
 
 export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -99,13 +100,14 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
           {showCart && (
             <button
               type="button"
+              data-href="/keranjang" aria-label="Buka keranjang belanja"
               className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] hover:text-black transition-colors relative cursor-pointer"
               title="Keranjang Belanja"
             >
               <ShoppingBag className="w-4 h-4 text-gray-800" />
-              <span className="hidden lg:inline">Cart</span>
+              <span className="hidden lg:inline">Keranjang</span>
               <span className="w-4 h-4 rounded-full bg-black text-white text-[9px] font-bold flex items-center justify-center -ml-0.5">
-                0
+                <CartCount />
               </span>
             </button>
           )}

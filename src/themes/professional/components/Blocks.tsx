@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
+import { AddToCartButton, addProductToCart, useStorefrontSlug } from '../../storefrontCart';
 
 export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "Why Partner With Us";
@@ -75,18 +76,17 @@ export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?
               <div>
                 <div className="aspect-[4/3] min-h-[160px] sm:min-h-[190px] bg-gray-100 overflow-hidden relative">
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute top-2 right-2 px-2 py-1 bg-green-100 text-green-800 text-[10px] font-bold uppercase rounded">In Stock</div>
+                  {(product.stock ?? 1) > 0 && <div className="absolute top-2 right-2 px-2 py-1 bg-green-100 text-green-800 text-[10px] font-bold uppercase rounded">Stok tersedia</div>}
                 </div>
                 <div className="p-4 sm:p-5">
-                  <p className="text-[10px] sm:text-xs text-gray-500 mb-1 font-mono">SKU: {Math.random().toString(36).substr(2, 8).toUpperCase()}</p>
                   <h3 className="font-bold text-gray-900 text-xs sm:text-sm md:text-base mb-1.5 truncate storefront-card-title">{product.name}</h3>
                   <p className="text-sm sm:text-base md:text-lg font-bold text-[#1E40AF] mb-3 sm:mb-4 storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
                 </div>
               </div>
               <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-                <button className="w-full py-2 bg-gray-50 border border-gray-300 rounded-md text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors">
-                  Add to Quote
-                </button>
+                <AddToCartButton product={product} className="w-full py-2 bg-gray-50 border border-gray-300 rounded-md text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors">
+                  + Keranjang
+                </AddToCartButton>
               </div>
             </div>
           ))}

@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
+import { AddToCartButton, addProductToCart, useStorefrontSlug } from '../../storefrontCart';
 
 export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "The Lookbook";
@@ -85,9 +86,9 @@ export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?
               <div className="relative overflow-hidden mb-4 sm:mb-6 aspect-[3/4] min-h-[220px] sm:min-h-[260px]">
                 <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s]" />
                 <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
-                <button className="absolute bottom-0 left-0 w-full bg-white text-black text-[10px] uppercase tracking-[0.2em] py-3 sm:py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 font-medium">
-                  Quick Add
-                </button>
+                <AddToCartButton product={p} className="absolute bottom-0 left-0 w-full bg-white text-black text-[10px] uppercase tracking-[0.2em] py-3 sm:py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 font-medium">
+                  + Keranjang
+                </AddToCartButton>
               </div>
               <div className="text-center">
                 <h3 className="text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 group-hover:text-gray-500 transition-colors storefront-card-title">{p.name}</h3>

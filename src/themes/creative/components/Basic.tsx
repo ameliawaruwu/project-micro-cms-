@@ -3,6 +3,8 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
+import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
+import { ShoppingBag as CartBagIcon } from 'lucide-react';
 
 export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -45,8 +47,9 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean
       )}
       
       <div className="flex-1 flex justify-end">
-        <button className="w-12 h-12 rounded-full bg-yellow-300 text-[#E11D48] flex items-center justify-center font-bold hover:scale-110 transition-transform shadow-lg">
-          0
+        <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative w-12 h-12 rounded-full bg-yellow-300 text-[#E11D48] flex items-center justify-center font-bold hover:scale-110 transition-transform shadow-lg cursor-pointer">
+          <CartBagIcon className="w-5 h-5" />
+          <CartCountBadge className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#E11D48] text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-yellow-300" />
         </button>
       </div>
     </nav>

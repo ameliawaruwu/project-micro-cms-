@@ -41,6 +41,7 @@ import { ThemeId, ThemeRegistry, normalizeThemeId } from '../../themes/ThemeRegi
 import { ThemeSectionRenderer } from './ThemeSectionRenderer';
 import { ResponsivePreviewScope } from './ResponsivePreviewScope';
 import { getStorefrontThemeVars } from '../../themes/pages/storefrontTheme';
+import { StorefrontContext, StorefrontToast } from '../../themes/storefrontCart';
 import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage } from '../../themes/pages';
 import { loadGoogleFont } from '../../utils/fontLoader';
 
@@ -84,7 +85,7 @@ interface CenterPreviewCanvasProps {
   onPageChange?: (page: string) => void;
 }
 
-export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
+const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
   store,
   products,
   sections,
@@ -310,6 +311,8 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
   // Intercept anchor and button clicks to fake routing without reloading browser
   const handleCanvasClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
+    // Tombol "tambah ke keranjang" di kartu produk menangani kliknya sendiri (jangan ikut membuka produk).
+    if (target.closest('[data-cart-action]')) return;
     const anchor = target.closest('a');
     const button = target.closest('button');
 
@@ -592,6 +595,8 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                 id={`preview-${sectionKey}`}
                 onClickCapture={(e) => {
                   const target = e.target as HTMLElement;
+                  // Tombol tambah keranjang menangani kliknya sendiri (jangan ikut membuka produk).
+                  if (target.closest('[data-cart-action]')) return;
                   const anchor = target.closest('a');
                   if (anchor) {
                     const href = anchor.getAttribute('href') || '';
@@ -1710,6 +1715,8 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                       if (target.closest('.section-floating-toolbar')) return;
 
                       // Prevent default browser navigation on any internal anchor or link
+                      // Tombol tambah keranjang menangani kliknya sendiri (jangan ikut membuka produk).
+                      if (target.closest('[data-cart-action]')) return;
                       const anchor = target.closest('a');
                       if (anchor) {
                         const href = anchor.getAttribute('href') || '';
@@ -2792,3 +2799,14 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     </main>
   );
 };
+
+/**
+ * Kanvas toko (editor & toko live). Menyediakan slug toko untuk keranjang di komponen tema
+ * dan notifikasi "berhasil ditambahkan ke keranjang".
+ */
+export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = (props) => (
+  <StorefrontContext.Provider value={{ storeSlug: props.store?.slug || '' }}>
+    <CenterPreviewCanvasInner {...props} />
+    <StorefrontToast />
+  </StorefrontContext.Provider>
+);

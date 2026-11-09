@@ -24,6 +24,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { cartService } from '../../services/cartService';
 import { getEnrichedCatalog, CatalogProduct } from '../catalogData';
 import { getShopThemeStyle, getShopAccent } from './shopThemeStyles';
+import { addProductToCart } from '../storefrontCart';
 
 interface ShopPageProps {
   themeData?: ThemeSchema;
@@ -170,10 +171,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
   const handleAddToCart = (e: React.MouseEvent, p: CatalogProduct) => {
     e.stopPropagation();
-    if (store?.slug) {
-      cartService.addToCart(store.slug, p as any, 1);
-    }
-    showToast(`"${p.name}" ditambahkan ke keranjang belanja`);
+    addProductToCart(store?.slug || '', p, 1);
   };
 
   const handleBuyNow = (e: React.MouseEvent, p: CatalogProduct) => {

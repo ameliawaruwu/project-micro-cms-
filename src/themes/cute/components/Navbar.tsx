@@ -4,6 +4,7 @@ import { Search, ShoppingBag, Menu, Heart } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
+import { CartCount } from '../../storefrontCart';
 
 export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -40,10 +41,10 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
           <button className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm">
             <Menu className="w-5 h-5" />
           </button>
-          <button className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm relative">
+          <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm relative cursor-pointer">
             <ShoppingBag className="w-5 h-5" />
             <span className="absolute -top-1 -right-1 bg-[#FF85A1] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-              0
+              <CartCount />
             </span>
           </button>
         </div>
@@ -81,10 +82,10 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
           <button className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm">
             <Search className="w-5 h-5" />
           </button>
-          <button className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm relative">
+          <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm relative cursor-pointer">
             <ShoppingBag className="w-5 h-5" />
             <span className="absolute -top-1 -right-1 bg-[#FF85A1] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">
-              0
+              <CartCount />
             </span>
           </button>
         </div>

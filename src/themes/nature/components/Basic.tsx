@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
+import { CartCount } from '../../storefrontCart';
 
 export const NatureNavbar: React.FC<{ 
   sectionOptions?: any; 
@@ -109,9 +110,9 @@ export const NatureNavbar: React.FC<{
           )}
         </div>
 
-        <button className="text-xs sm:text-[13px] tracking-wide text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors flex items-center gap-2 cursor-pointer font-sans whitespace-nowrap shrink-0">
+        <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-xs sm:text-[13px] tracking-wide text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors flex items-center gap-2 cursor-pointer font-sans whitespace-nowrap shrink-0">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-          Keranjang (0)
+          Keranjang (<CartCount />)
         </button>
       </div>
     </nav>

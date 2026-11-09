@@ -3,6 +3,7 @@ import { CmsProduct } from '../../../cms/mockCmsData';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { InlineEditableImage } from '../../../components/layout-editor/InlineEditableImage';
+import { AddToCartButton, addProductToCart, useStorefrontSlug } from '../../storefrontCart';
 
 interface ProductCardProps {
   product: CmsProduct;
@@ -82,12 +83,12 @@ export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options
         </div>
 
         {showAddToCart && (
-          <button 
-            type="button"
+          <AddToCartButton
+            product={product}
             className="w-full py-2 sm:py-2.5 px-3 bg-[#2C3B2D] hover:bg-[#1E2A1F] text-[#F9F6F0] font-sans text-xs font-medium rounded-xl transition duration-200 flex items-center justify-center gap-1.5 shadow-2xs active:scale-98 cursor-pointer"
           >
-            <span>+ Beli Sekarang</span>
-          </button>
+            <span>+ Keranjang</span>
+          </AddToCartButton>
         )}
       </div>
     </div>

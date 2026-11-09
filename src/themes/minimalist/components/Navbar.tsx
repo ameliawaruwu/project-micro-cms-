@@ -5,36 +5,14 @@ import { Search, ShoppingBag, Menu, X } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
+import { useCartCount, useStorefrontSlug } from '../../storefrontCart';
 
 export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const navigation = useCmsStore((state) => state.navigation);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  const storeSlug = (storeInfo as any)?.slug || '';
-  const [cartCount, setCartCount] = useState<number>(() => {
-    if (!storeSlug) return 0;
-    try {
-      const items = cartService.getCart(storeSlug);
-      return items.reduce((acc, it) => acc + (it.quantity || 1), 0);
-    } catch (e) {
-      return 0;
-    }
-  });
-
-  useEffect(() => {
-    const updateCount = () => {
-      const currentSlug = (storeInfo as any)?.slug || '';
-      if (currentSlug) {
-        try {
-          const items = cartService.getCart(currentSlug);
-          setCartCount(items.reduce((acc, it) => acc + (it.quantity || 1), 0));
-        } catch (e) {}
-      }
-    };
-    window.addEventListener('cart_updated', updateCount);
-    return () => window.removeEventListener('cart_updated', updateCount);
-  }, [storeInfo]);
+  const cartCount = useCartCount(useStorefrontSlug());
   
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
