@@ -77,7 +77,7 @@ export const NatureNavbar: React.FC<{
               <StoreLogo sectionOptions={sectionOptions} name={storeName} imgClassName="h-9 sm:h-11">{storeName}</StoreLogo>
             </a>
             {storeSubtitle && (
-              <span className="text-xs font-sans text-[#5C6B5D] tracking-wider mt-0.5 max-w-full truncate text-center">
+              <span className="text-xs font-sans text-[#5C6B5D] tracking-wider mt-0.5 max-w-[16rem] lg:max-w-[20rem] truncate text-center">
                 {storeSubtitle}
               </span>
             )}

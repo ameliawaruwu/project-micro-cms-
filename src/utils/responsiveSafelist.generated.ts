@@ -126,6 +126,7 @@ max-w-6xl
 max-w-[110px]
 max-w-[140px]
 max-w-[180px]
+max-w-[20rem]
 max-w-[220px]
 max-w-[240px]
 max-w-[320px]

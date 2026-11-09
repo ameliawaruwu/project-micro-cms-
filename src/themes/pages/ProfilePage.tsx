@@ -55,18 +55,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
     }
 
     // 2. FUTURISTIC / MODERN THEME
-    if (activeThemeId === 'futuristic' || activeThemeId === 'modern') {
+    if (activeThemeId === 'futuristic') {
       return (
         <div className="pt-28 pb-24 bg-[#0B0F19] text-white min-h-screen font-mono">
           <div className="max-w-4xl mx-auto px-6">
-            <div className="border-b border-cyan-500/20 pb-6 mb-8">
-              <span className="text-xs text-cyan-400 uppercase tracking-widest">[USER_CARD]</span>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
+            <div className="border-b border-[var(--sf-primary-border)] pb-6 mb-8">
+              <span className="text-xs text-[var(--sf-primary)] uppercase tracking-widest">[USER_CARD]</span>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-[var(--sf-primary)] to-[color-mix(in_srgb,var(--sf-primary)_55%,white)] bg-clip-text text-transparent">
                 ACCOUNT PROFILE
               </h1>
             </div>
-            <div className="bg-slate-900/60 border border-cyan-500/30 rounded-3xl p-8 backdrop-blur-md space-y-4">
-              <p className="text-cyan-300 font-bold text-xl">Budi Santoso</p>
+            <div className="bg-slate-900/60 border border-[var(--sf-primary-border)] rounded-3xl p-8 backdrop-blur-md space-y-4">
+              <p className="text-[var(--sf-primary)] font-bold text-xl">Budi Santoso</p>
               <p className="text-slate-400 text-sm">Email: budi@example.com</p>
               <p className="text-slate-400 text-sm">Phone: +62 812 3456 7890</p>
               <p className="text-slate-400 text-sm">Address: Sector 7, Jakarta</p>
@@ -78,25 +78,25 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
 
     // 3. DEFAULT / MINIMALIST / NATURE / CUTE / LUXURY / EDITORIAL ETC
     return (
-      <div className="pt-28 pb-24 bg-gray-50 text-gray-900 min-h-screen font-sans">
+      <div className="pt-28 pb-24 bg-[var(--sf-subtle)] text-[var(--sf-text)] min-h-screen font-sans">
         <div className="max-w-3xl mx-auto px-6 space-y-6">
-          <h1 className="text-3xl font-bold text-gray-900">Profil Pelanggan</h1>
-          <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-            <div className="flex items-center gap-4 border-b border-gray-100 pb-6">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center font-bold text-xl text-gray-700">
+          <h1 className="text-3xl font-bold text-[var(--sf-text)]">Profil Pelanggan</h1>
+          <div className="bg-[var(--sf-card)] p-8 rounded-[var(--sf-radius)] border border-[var(--sf-border)] shadow-sm space-y-6">
+            <div className="flex items-center gap-4 border-b border-[var(--sf-border)] pb-6">
+              <div className="w-16 h-16 bg-[var(--sf-subtle)] rounded-full flex items-center justify-center font-bold text-xl text-[var(--sf-text-soft)]">
                 BS
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Budi Santoso</h2>
-                <p className="text-xs text-gray-500">Member Aktif sejak 2026</p>
+                <h2 className="text-xl font-bold text-[var(--sf-text)]">Budi Santoso</h2>
+                <p className="text-xs text-[var(--sf-muted)]">Member Aktif sejak 2026</p>
               </div>
             </div>
-            <div className="space-y-4 text-sm text-gray-700">
-              <div className="flex items-center gap-3"><Mail className="w-4 h-4 text-gray-400" /> budi@example.com</div>
-              <div className="flex items-center gap-3"><Phone className="w-4 h-4 text-gray-400" /> +62 812 3456 7890</div>
-              <div className="flex items-center gap-3"><MapPin className="w-4 h-4 text-gray-400" /> Jl. Sudirman No 123, Jakarta</div>
+            <div className="space-y-4 text-sm text-[var(--sf-text-soft)]">
+              <div className="flex items-center gap-3"><Mail className="w-4 h-4 text-[var(--sf-muted)]" /> budi@example.com</div>
+              <div className="flex items-center gap-3"><Phone className="w-4 h-4 text-[var(--sf-muted)]" /> +62 812 3456 7890</div>
+              <div className="flex items-center gap-3"><MapPin className="w-4 h-4 text-[var(--sf-muted)]" /> Jl. Sudirman No 123, Jakarta</div>
             </div>
-            <button className="px-6 py-2.5 bg-black text-white font-bold text-xs rounded-xl hover:bg-gray-800 transition">
+            <button className="px-6 py-2.5 bg-[var(--sf-primary)] text-white font-bold text-xs rounded-[var(--sf-radius)] hover:bg-[var(--sf-primary)] transition">
               Edit Informasi
             </button>
           </div>
@@ -106,7 +106,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
   };
 
   return (
-    <div className="flex flex-col w-full min-h-screen">
+    <div className="flex flex-col w-full min-h-screen bg-[var(--sf-page)] text-[var(--sf-text)]">
       {CustomNavbar ? <CustomNavbar /> : headerSection && (
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}

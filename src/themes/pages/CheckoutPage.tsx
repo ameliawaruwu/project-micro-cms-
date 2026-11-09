@@ -856,12 +856,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
       return (
         <div className="py-12 sm:py-20 px-4 sm:px-6 max-w-2xl mx-auto text-center font-sans">
-          <div className="p-6 sm:p-10 rounded-3xl bg-white border border-gray-200/90 shadow-xl space-y-6">
+          <div className="p-6 sm:p-10 rounded-[var(--sf-radius)] bg-[var(--sf-card)] border border-[var(--sf-border)] shadow-xl space-y-6">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto border ${
               isCodOrder
                 ? 'bg-amber-50 text-amber-600 border-amber-200'
                 : isManualTransfer
-                ? 'bg-blue-50 text-blue-600 border-blue-200'
+                ? 'bg-[var(--sf-primary-soft)] text-[var(--sf-primary)] border-[var(--sf-primary-border)]'
                 : 'bg-emerald-50 text-emerald-600 border-emerald-200'
             }`}>
               {isCodOrder ? (
@@ -874,21 +874,21 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             </div>
 
             <div className="space-y-1">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--sf-text)] tracking-tight">
                 {isCodOrder
                   ? 'Pesanan COD Berhasil Diterima!'
                   : isManualTransfer
                   ? 'Pesanan Diterima! Selesaikan Pembayaran'
                   : 'Pesanan Berhasil Diproses!'}
               </h1>
-              <p className="text-sm font-medium text-gray-500">
-                Nomor Pesanan: <span className="font-bold font-mono text-gray-900">{orderNum}</span>
+              <p className="text-sm font-medium text-[var(--sf-muted)]">
+                Nomor Pesanan: <span className="font-bold font-mono text-[var(--sf-text)]">{orderNum}</span>
               </p>
             </div>
 
             {/* Instruction Box for COD */}
             {isCodOrder && (
-              <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-left text-xs text-amber-900 space-y-1.5">
+              <div className="p-4 rounded-[var(--sf-radius)] bg-amber-50/80 border border-amber-200/80 text-left text-xs text-amber-900 space-y-1.5">
                 <div className="flex items-center gap-2 font-bold text-amber-950">
                   <Banknote className="w-4 h-4 text-amber-700" />
                   <span>Petunjuk Pembayaran Tunai (COD)</span>
@@ -905,47 +905,47 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
             {/* Instruction Box for Manual Transfer / QRIS */}
             {isManualTransfer && (
-              <div className="p-5 rounded-2xl bg-blue-50/70 border border-blue-200 text-left text-xs text-blue-950 space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-blue-200/70">
-                  <div className="flex items-center gap-2 font-bold text-blue-900 text-sm">
-                    <QrCode className="w-4 h-4 text-blue-700" />
+              <div className="p-5 rounded-[var(--sf-radius)] bg-[var(--sf-primary-soft)] border border-[var(--sf-primary-border)] text-left text-xs text-[var(--sf-primary-strong)] space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-[var(--sf-primary-border)]">
+                  <div className="flex items-center gap-2 font-bold text-[var(--sf-primary-strong)] text-sm">
+                    <QrCode className="w-4 h-4 text-[var(--sf-primary)]" />
                     <span>Rekening &amp; QRIS Pembayaran Toko</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">
+                  <span className="px-2 py-0.5 rounded-full bg-[var(--sf-primary-soft)] text-[var(--sf-primary-strong)] font-bold text-[10px]">
                     Direct Transfer
                   </span>
                 </div>
 
                 {/* QRIS Image if available */}
                 {paymentConfig.manualQrisImageUrl && (
-                  <div className="text-center py-2 bg-white p-3 rounded-xl border border-blue-100 space-y-2">
-                    <p className="text-[11px] font-bold text-gray-700">Scan QR Code Barcode di Bawah Ini:</p>
+                  <div className="text-center py-2 bg-[var(--sf-card)] p-3 rounded-[var(--sf-radius)] border border-[var(--sf-primary-border)] space-y-2">
+                    <p className="text-[11px] font-bold text-[var(--sf-text-soft)]">Scan QR Code Barcode di Bawah Ini:</p>
                     <img
                       src={paymentConfig.manualQrisImageUrl}
                       alt="Barcode QRIS Toko"
-                      className="w-48 h-48 mx-auto object-contain rounded-lg border border-gray-200 shadow-2xs"
+                      className="w-48 h-48 mx-auto object-contain rounded-[var(--sf-radius)] border border-[var(--sf-border)] shadow-2xs"
                     />
-                    <p className="text-[10px] text-gray-500">Mendukung BCA, Mandiri, BRI, BNI, GoPay, OVO, DANA, ShopeePay</p>
+                    <p className="text-[10px] text-[var(--sf-muted)]">Mendukung BCA, Mandiri, BRI, BNI, GoPay, OVO, DANA, ShopeePay</p>
                   </div>
                 )}
 
                 {/* Bank Account Info Card */}
-                <div className="bg-white p-3.5 rounded-xl border border-blue-100 space-y-2">
+                <div className="bg-[var(--sf-card)] p-3.5 rounded-[var(--sf-radius)] border border-[var(--sf-primary-border)] space-y-2">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-500 font-medium">Bank Tujuan:</span>
-                    <span className="font-bold text-gray-900">{paymentConfig.manualBankName || 'Transfer Bank'}</span>
+                    <span className="text-[var(--sf-muted)] font-medium">Bank Tujuan:</span>
+                    <span className="font-bold text-[var(--sf-text)]">{paymentConfig.manualBankName || 'Transfer Bank'}</span>
                   </div>
                   {paymentConfig.manualBankAccountNumber && (
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-500 font-medium">Nomor Rekening:</span>
+                      <span className="text-[var(--sf-muted)] font-medium">Nomor Rekening:</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-extrabold text-blue-900 text-sm">
+                        <span className="font-mono font-extrabold text-[var(--sf-primary-strong)] text-sm">
                           {paymentConfig.manualBankAccountNumber}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleCopyText(paymentConfig.manualBankAccountNumber!, 'account')}
-                          className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-[10px] font-bold border border-blue-200 transition cursor-pointer"
+                          className="px-2 py-0.5 bg-[var(--sf-primary-soft)] hover:bg-[var(--sf-primary-soft)] text-[var(--sf-primary)] rounded text-[10px] font-bold border border-[var(--sf-primary-border)] transition cursor-pointer"
                         >
                           {copiedField === 'account' ? 'Tersalin!' : 'Salin'}
                         </button>
@@ -954,20 +954,20 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   )}
                   {paymentConfig.manualBankAccountHolder && (
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-500 font-medium">Atas Nama:</span>
-                      <span className="font-bold text-gray-900">{paymentConfig.manualBankAccountHolder}</span>
+                      <span className="text-[var(--sf-muted)] font-medium">Atas Nama:</span>
+                      <span className="font-bold text-[var(--sf-text)]">{paymentConfig.manualBankAccountHolder}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center text-xs pt-2 border-t border-gray-100">
-                    <span className="text-gray-500 font-medium">Total Nominal Transfer:</span>
+                  <div className="flex justify-between items-center text-xs pt-2 border-t border-[var(--sf-border)]">
+                    <span className="text-[var(--sf-muted)] font-medium">Total Nominal Transfer:</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-blue-700 text-base">
+                      <span className="font-extrabold text-[var(--sf-primary)] text-base">
                         Rp {total.toLocaleString('id-ID')}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleCopyText(String(total), 'amount')}
-                        className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-[10px] font-bold border border-blue-200 transition cursor-pointer"
+                        className="px-2 py-0.5 bg-[var(--sf-primary-soft)] hover:bg-[var(--sf-primary-soft)] text-[var(--sf-primary)] rounded text-[10px] font-bold border border-[var(--sf-primary-border)] transition cursor-pointer"
                       >
                         {copiedField === 'amount' ? 'Tersalin!' : 'Salin'}
                       </button>
@@ -975,21 +975,21 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </div>
                 </div>
 
-                <p className="text-[11px] text-blue-900/90 leading-relaxed">
+                <p className="text-[11px] text-[var(--sf-primary-strong)] leading-relaxed">
                   {resolveManualInstructions(paymentConfig.manualInstructions)}
                 </p>
               </div>
             )}
 
             {/* General Manifest Details */}
-            <div className="p-5 bg-gray-50/90 rounded-2xl text-left text-xs text-gray-700 space-y-2.5 border border-gray-200/70">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                <span className="font-semibold text-gray-600">Status Transaksi:</span>
+            <div className="p-5 bg-[var(--sf-subtle)] rounded-[var(--sf-radius)] text-left text-xs text-[var(--sf-text-soft)] space-y-2.5 border border-[var(--sf-border)]">
+              <div className="flex justify-between items-center pb-2 border-b border-[var(--sf-border)]">
+                <span className="font-semibold text-[var(--sf-text-soft)]">Status Transaksi:</span>
                 <span className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] ${
                   isCodOrder
                     ? 'bg-amber-100 text-amber-800'
                     : isManualTransfer
-                    ? 'bg-blue-100 text-blue-800'
+                    ? 'bg-[var(--sf-primary-soft)] text-[var(--sf-primary-strong)]'
                     : 'bg-emerald-100 text-emerald-800'
                 }`}>
                   {isCodOrder
@@ -1001,13 +1001,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     : 'Terkonfirmasi Otomatis'}
                 </span>
               </div>
-              <p><span className="text-gray-500">Metode Pembayaran:</span> <span className="font-semibold text-gray-900">{selectedPaymentName}</span></p>
-              <p><span className="text-gray-500">Penerima:</span> <span className="font-semibold text-gray-900">{customerName} ({customerPhone})</span></p>
-              <p><span className="text-gray-500">Alamat Pengiriman:</span> <span className="font-semibold text-gray-900">{createdOrder?.customerAddress || detailedAddress}</span></p>
-              <p><span className="text-gray-500">Kurir:</span> <span className="font-semibold text-gray-900">{courierInfo} • Rp {shippingFee.toLocaleString('id-ID')}</span></p>
-              <div className="pt-2.5 border-t border-gray-200 flex justify-between items-center text-sm font-extrabold text-gray-900">
+              <p><span className="text-[var(--sf-muted)]">Metode Pembayaran:</span> <span className="font-semibold text-[var(--sf-text)]">{selectedPaymentName}</span></p>
+              <p><span className="text-[var(--sf-muted)]">Penerima:</span> <span className="font-semibold text-[var(--sf-text)]">{customerName} ({customerPhone})</span></p>
+              <p><span className="text-[var(--sf-muted)]">Alamat Pengiriman:</span> <span className="font-semibold text-[var(--sf-text)]">{createdOrder?.customerAddress || detailedAddress}</span></p>
+              <p><span className="text-[var(--sf-muted)]">Kurir:</span> <span className="font-semibold text-[var(--sf-text)]">{courierInfo} • Rp {shippingFee.toLocaleString('id-ID')}</span></p>
+              <div className="pt-2.5 border-t border-[var(--sf-border)] flex justify-between items-center text-sm font-extrabold text-[var(--sf-text)]">
                 <span>Total Tagihan</span>
-                <span className="text-blue-600 text-base">Rp {total.toLocaleString('id-ID')}</span>
+                <span className="text-[var(--sf-primary)] text-base">Rp {total.toLocaleString('id-ID')}</span>
               </div>
             </div>
 
@@ -1015,7 +1015,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             <div className="space-y-2.5 pt-1">
               {isManualTransfer ? (
                 createdOrder?.paymentConfirmedAt ? (
-                  <div className="w-full p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-left flex items-start gap-3">
+                  <div className="w-full p-4 rounded-[var(--sf-radius)] bg-emerald-50 border border-emerald-200 text-left flex items-start gap-3">
                     <Check className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
                       <p className="text-sm font-bold text-emerald-900">Konfirmasi pembayaran terkirim</p>
@@ -1030,7 +1030,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       type="button"
                       onClick={handleConfirmPayment}
                       disabled={isConfirmingPayment}
-                      className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-md text-sm disabled:opacity-70 disabled:cursor-wait"
+                      className="w-full py-3.5 px-4 bg-[var(--sf-primary)] hover:bg-[var(--sf-primary)] text-white font-bold rounded-[var(--sf-radius)] flex items-center justify-center gap-2 transition cursor-pointer shadow-md text-sm disabled:opacity-70 disabled:cursor-wait"
                     >
                       {isConfirmingPayment ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -1039,7 +1039,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       )}
                       <span>{isConfirmingPayment ? 'Mengirim Konfirmasi...' : 'Saya Sudah Bayar'}</span>
                     </button>
-                    <p className="text-[11px] text-gray-500">
+                    <p className="text-[11px] text-[var(--sf-muted)]">
                       Klik setelah Anda menyelesaikan transfer atau scan QRIS sebesar Rp {total.toLocaleString('id-ID')}.
                     </p>
                     {paymentConfirmError && (
@@ -1052,7 +1052,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <button
                   onClick={() => (onNavigate ? onNavigate('orders') : null)}
-                  className="w-full sm:w-1/2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-xs text-xs"
+                  className="w-full sm:w-1/2 py-3 px-4 bg-[var(--sf-primary)] hover:bg-[var(--sf-primary)] text-white font-bold rounded-[var(--sf-radius)] flex items-center justify-center gap-2 transition cursor-pointer shadow-xs text-xs"
                 >
                   <Package className="w-4 h-4" />
                   <span>Lihat Riwayat Pesanan</span>
@@ -1060,7 +1060,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <button
                   onClick={() => (onNavigate ? onNavigate('homepage') : null)}
-                  className="w-full sm:w-1/2 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition cursor-pointer text-xs"
+                  className="w-full sm:w-1/2 py-3 px-4 bg-[var(--sf-subtle)] hover:brightness-95 text-[var(--sf-text)] font-bold rounded-[var(--sf-radius)] transition cursor-pointer text-xs"
                 >
                   Kembali Belanja
                 </button>
@@ -1076,12 +1076,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       return (
         <div className="pt-24 pb-24 min-h-[60vh] flex items-center justify-center px-6 text-center font-sans">
           <div className="max-w-sm space-y-3">
-            <h1 className="text-xl font-semibold text-gray-900">Keranjang belanja kosong</h1>
-            <p className="text-sm text-gray-500">Tambahkan produk ke keranjang terlebih dahulu sebelum checkout.</p>
+            <h1 className="text-xl font-semibold text-[var(--sf-text)]">Keranjang belanja kosong</h1>
+            <p className="text-sm text-[var(--sf-muted)]">Tambahkan produk ke keranjang terlebih dahulu sebelum checkout.</p>
             <button
               type="button"
               onClick={() => onNavigate && onNavigate('katalog')}
-              className="px-5 py-2.5 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition cursor-pointer"
+              className="px-5 py-2.5 rounded-[var(--sf-radius)] bg-[var(--sf-primary)] text-white text-xs font-semibold hover:bg-[var(--sf-primary)] transition cursor-pointer"
             >
               Lihat Katalog
             </button>
@@ -1092,13 +1092,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
     // 2. MAIN REDESIGNED BALANCED CHECKOUT FLOW
     return (
-      <div className="pt-20 pb-28 bg-[#F8FAFC] text-[#1E293B] min-h-screen font-sans antialiased">
+      <div className="pt-20 pb-28 bg-[var(--sf-subtle)] text-[var(--sf-text)] min-h-screen font-sans antialiased">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Bar Navigation */}
           <div className="mb-6 flex items-center justify-between">
             <button
               onClick={() => (onNavigate ? onNavigate('homepage') : null)}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-blue-600 transition cursor-pointer"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--sf-muted)] hover:text-[var(--sf-primary)] transition cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Kembali ke Katalog Belanja</span>
@@ -1109,32 +1109,32 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             {/* Left Column: Checkout Details Form (lg:col-span-7) */}
             <div className="lg:col-span-7 space-y-5">
               {/* Card 1: Data Kontak Penerima */}
-              <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/90 shadow-xs space-y-4">
-                <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+              <div className="bg-[var(--sf-card)] p-5 sm:p-6 rounded-[var(--sf-radius)] border border-[var(--sf-border)] shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--sf-border)]">
+                  <div className="w-6 h-6 rounded-full bg-[var(--sf-primary)] text-white flex items-center justify-center text-xs font-bold shrink-0">
                     1
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-gray-900">Informasi Kontak Penerima</h2>
-                    <p className="text-[11px] text-gray-500">Data penerima paket pesanan dan konfirmasi pembayaran</p>
+                    <h2 className="text-sm font-bold text-[var(--sf-text)]">Informasi Kontak Penerima</h2>
+                    <p className="text-[11px] text-[var(--sf-muted)]">Data penerima paket pesanan dan konfirmasi pembayaran</p>
                   </div>
                 </div>
 
                 <div className={`grid ${formGridColsClass} gap-3.5`}>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Nama Lengkap *</label>
+                    <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">Nama Lengkap *</label>
                     <input
                       type="text"
                       required
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="Nama lengkap penerima"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-white shadow-2xs"
+                      className="w-full px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-medium text-[var(--sf-text)] placeholder:text-[var(--sf-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition bg-[var(--sf-card)] shadow-2xs"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Nomor WhatsApp *</label>
+                    <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">Nomor WhatsApp *</label>
                     <input
                       type="tel"
                       inputMode="numeric"
@@ -1145,34 +1145,34 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))}
                       placeholder="08xxxxxxxxxx"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-white shadow-2xs"
+                      className="w-full px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-medium text-[var(--sf-text)] placeholder:text-[var(--sf-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition bg-[var(--sf-card)] shadow-2xs"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Alamat Email <span className="text-gray-400 font-normal">(Untuk invoice &amp; tanda terima pesanan)</span>
+                  <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">
+                    Alamat Email <span className="text-[var(--sf-muted)] font-normal">(Untuk invoice &amp; tanda terima pesanan)</span>
                   </label>
                   <input
                     type="email"
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     placeholder="email@example.com"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-white shadow-2xs"
+                    className="w-full px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-medium text-[var(--sf-text)] placeholder:text-[var(--sf-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition bg-[var(--sf-card)] shadow-2xs"
                   />
                 </div>
               </div>
 
               {/* Card 2: Hierarchical Address Selection */}
-              <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/90 shadow-xs space-y-4">
-                <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+              <div className="bg-[var(--sf-card)] p-5 sm:p-6 rounded-[var(--sf-radius)] border border-[var(--sf-border)] shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--sf-border)]">
+                  <div className="w-6 h-6 rounded-full bg-[var(--sf-primary)] text-white flex items-center justify-center text-xs font-bold shrink-0">
                     2
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-gray-900">Alamat Pengiriman Bertingkat</h2>
-                    <p className="text-[11px] text-gray-500">Provinsi → Kota/Kabupaten → Kecamatan → Kelurahan/Desa → Kode Pos</p>
+                    <h2 className="text-sm font-bold text-[var(--sf-text)]">Alamat Pengiriman Bertingkat</h2>
+                    <p className="text-[11px] text-[var(--sf-muted)]">Provinsi → Kota/Kabupaten → Kecamatan → Kelurahan/Desa → Kode Pos</p>
                   </div>
                 </div>
 
@@ -1180,15 +1180,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   {/* Level 1 & 2: Provinsi & Kota/Kabupaten */}
                   <div className={`grid ${formGridColsClass} gap-3.5`}>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                      <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5 flex items-center justify-between">
                         <span>1. Provinsi *</span>
-                        {isLoadingProvinces && <Loader2 className="w-3 h-3 animate-spin text-blue-600" />}
+                        {isLoadingProvinces && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
                         <select
                           value={selectedProvinceId}
                           onChange={(e) => handleProvinceChange(e.target.value)}
-                          className="w-full appearance-none px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition cursor-pointer pr-9 shadow-2xs"
+                          className="w-full appearance-none px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-medium text-[var(--sf-text)] bg-[var(--sf-card)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition cursor-pointer pr-9 shadow-2xs"
                         >
                           <option value="">-- Pilih Provinsi --</option>
                           {provinces.map((p) => (
@@ -1197,24 +1197,24 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                             </option>
                           ))}
                         </select>
-                        <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <ChevronDown className="w-3.5 h-3.5 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                      <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5 flex items-center justify-between">
                         <span>2. Kota / Kabupaten *</span>
-                        {isLoadingRegencies && <Loader2 className="w-3 h-3 animate-spin text-blue-600" />}
+                        {isLoadingRegencies && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
                         <select
                           disabled={!selectedProvinceId || isLoadingRegencies}
                           value={selectedRegencyId}
                           onChange={(e) => handleRegencyChange(e.target.value)}
-                          className={`w-full appearance-none px-3.5 py-2.5 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition pr-9 shadow-2xs ${
+                          className={`w-full appearance-none px-3.5 py-2.5 rounded-[var(--sf-radius)] border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition pr-9 shadow-2xs ${
                             !selectedProvinceId
-                              ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
-                              : 'bg-white border-gray-200 text-gray-900 cursor-pointer'
+                              ? 'bg-[var(--sf-subtle)] border-[var(--sf-border)] text-[var(--sf-muted)] cursor-not-allowed'
+                              : 'bg-[var(--sf-card)] border-[var(--sf-border)] text-[var(--sf-text)] cursor-pointer'
                           }`}
                         >
                           <option value="">
@@ -1230,7 +1230,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                             </option>
                           ))}
                         </select>
-                        <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <ChevronDown className="w-3.5 h-3.5 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
                   </div>
@@ -1238,19 +1238,19 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   {/* Level 3 & 4: Kecamatan & Kelurahan/Desa */}
                   <div className={`grid ${formGridColsClass} gap-3.5`}>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                      <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5 flex items-center justify-between">
                         <span>3. Kecamatan *</span>
-                        {isLoadingDistricts && <Loader2 className="w-3 h-3 animate-spin text-blue-600" />}
+                        {isLoadingDistricts && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
                         <select
                           disabled={!selectedRegencyId || isLoadingDistricts}
                           value={selectedDistrictId}
                           onChange={(e) => handleDistrictChange(e.target.value)}
-                          className={`w-full appearance-none px-3.5 py-2.5 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition pr-9 shadow-2xs ${
+                          className={`w-full appearance-none px-3.5 py-2.5 rounded-[var(--sf-radius)] border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition pr-9 shadow-2xs ${
                             !selectedRegencyId
-                              ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
-                              : 'bg-white border-gray-200 text-gray-900 cursor-pointer'
+                              ? 'bg-[var(--sf-subtle)] border-[var(--sf-border)] text-[var(--sf-muted)] cursor-not-allowed'
+                              : 'bg-[var(--sf-card)] border-[var(--sf-border)] text-[var(--sf-text)] cursor-pointer'
                           }`}
                         >
                           <option value="">
@@ -1266,24 +1266,24 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                             </option>
                           ))}
                         </select>
-                        <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <ChevronDown className="w-3.5 h-3.5 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                      <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5 flex items-center justify-between">
                         <span>4. Kelurahan / Desa *</span>
-                        {isLoadingVillages && <Loader2 className="w-3 h-3 animate-spin text-blue-600" />}
+                        {isLoadingVillages && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
                         <select
                           disabled={!selectedDistrictId || isLoadingVillages}
                           value={selectedVillageId}
                           onChange={(e) => handleVillageChange(e.target.value)}
-                          className={`w-full appearance-none px-3.5 py-2.5 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition pr-9 shadow-2xs ${
+                          className={`w-full appearance-none px-3.5 py-2.5 rounded-[var(--sf-radius)] border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition pr-9 shadow-2xs ${
                             !selectedDistrictId
-                              ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
-                              : 'bg-white border-gray-200 text-gray-900 cursor-pointer'
+                              ? 'bg-[var(--sf-subtle)] border-[var(--sf-border)] text-[var(--sf-muted)] cursor-not-allowed'
+                              : 'bg-[var(--sf-card)] border-[var(--sf-border)] text-[var(--sf-text)] cursor-pointer'
                           }`}
                         >
                           <option value="">
@@ -1299,26 +1299,26 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                             </option>
                           ))}
                         </select>
-                        <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <ChevronDown className="w-3.5 h-3.5 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
                   </div>
 
                   {/* Level 5: Kode Pos (Dropdown selection, NOT free-text input) */}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5 flex items-center justify-between">
                       <span>5. Kode Pos * (Pilihan Wilayah Valid)</span>
-                      {isLoadingPostalCodes && <Loader2 className="w-3 h-3 animate-spin text-blue-600" />}
+                      {isLoadingPostalCodes && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                     </label>
                     <div className="relative">
                       <select
                         disabled={!selectedVillageId || isLoadingPostalCodes}
                         value={selectedPostalCode}
                         onChange={(e) => handlePostalCodeChange(e.target.value)}
-                        className={`w-full appearance-none px-3.5 py-2.5 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition pr-9 shadow-2xs ${
+                        className={`w-full appearance-none px-3.5 py-2.5 rounded-[var(--sf-radius)] border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition pr-9 shadow-2xs ${
                           !selectedVillageId
-                            ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-white border-gray-200 text-gray-900 cursor-pointer'
+                            ? 'bg-[var(--sf-subtle)] border-[var(--sf-border)] text-[var(--sf-muted)] cursor-not-allowed'
+                            : 'bg-[var(--sf-card)] border-[var(--sf-border)] text-[var(--sf-text)] cursor-pointer'
                         }`}
                       >
                         <option value="">
@@ -1336,13 +1336,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <ChevronDown className="w-3.5 h-3.5 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
 
                   {/* Detailed Address (Street name, building number, unit, floor) */}
                   <div className="pt-1">
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">
                       Alamat Lengkap &amp; Nomor Bangunan *
                     </label>
                     <textarea
@@ -1351,21 +1351,21 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       value={detailedAddress}
                       onChange={(e) => setDetailedAddress(e.target.value)}
                       placeholder="Nama jalan, nomor rumah/gedung, RT/RW, lantai, unit, atau detail spesifik lainnya"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition resize-none bg-white shadow-2xs"
+                      className="w-full px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-medium text-[var(--sf-text)] placeholder:text-[var(--sf-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition resize-none bg-[var(--sf-card)] shadow-2xs"
                     />
                   </div>
 
                   {/* Address Notes (Patokan / Catatan Pengiriman) */}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                      Catatan Alamat / Patokan <span className="text-gray-400 font-normal">(Opsional)</span>
+                    <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">
+                      Catatan Alamat / Patokan <span className="text-[var(--sf-muted)] font-normal">(Opsional)</span>
                     </label>
                     <input
                       type="text"
                       value={addressNotes}
                       onChange={(e) => setAddressNotes(e.target.value)}
                       placeholder="Contoh: Rumah cat putih pagar hitam depan musholla, titip di pos sekuriti"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition bg-white shadow-2xs"
+                      className="w-full px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-medium text-[var(--sf-text)] placeholder:text-[var(--sf-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition bg-[var(--sf-card)] shadow-2xs"
                     />
                   </div>
                 </div>
@@ -1375,33 +1375,33 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             {/* Right Column: Unified Card (lg:col-span-5) */}
             {/* Hierarchy: Shipping/Courier -> Payment Method -> Order Manifest -> Order Total -> Checkout/Pay Button */}
             <div className="lg:col-span-5 sticky top-24 space-y-4">
-              <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/90 shadow-xs space-y-5">
+              <div className="bg-[var(--sf-card)] p-5 sm:p-6 rounded-[var(--sf-radius)] border border-[var(--sf-border)] shadow-xs space-y-5">
                 {/* 1. SHIPPING / COURIER SELECTION */}
                 <div>
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-3.5">
+                  <div className="flex items-center justify-between pb-3 border-b border-[var(--sf-border)] mb-3.5">
                     <div className="flex items-center gap-2">
-                      <Truck className="w-4 h-4 text-blue-600" />
-                      <h3 className="text-sm font-bold text-gray-900">1. Pilihan Ekspedisi</h3>
+                      <Truck className="w-4 h-4 text-[var(--sf-primary)]" />
+                      <h3 className="text-sm font-bold text-[var(--sf-text)]">1. Pilihan Ekspedisi</h3>
                     </div>
                     {selectedRate && (
-                      <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
+                      <span className="text-[11px] font-semibold text-[var(--sf-primary)] bg-[var(--sf-primary-soft)] px-2 py-0.5 rounded-full border border-[var(--sf-primary-border)]">
                         {selectedRate.courier_name}
                       </span>
                     )}
                   </div>
 
                   {!selectedPostalCode ? (
-                    <div className="p-3.5 rounded-xl bg-gray-50 border border-dashed border-gray-200 text-xs text-gray-500 flex items-start gap-2.5">
-                      <Info className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                    <div className="p-3.5 rounded-[var(--sf-radius)] bg-[var(--sf-subtle)] border border-dashed border-[var(--sf-border)] text-xs text-[var(--sf-muted)] flex items-start gap-2.5">
+                      <Info className="w-4 h-4 text-[var(--sf-muted)] shrink-0 mt-0.5" />
                       <span>Pilih wilayah pengiriman bertingkat dan kode pos di formulir sebelah kiri untuk melihat pilihan kurir dan tarif ongkir otomatis.</span>
                     </div>
                   ) : isLoadingRates ? (
-                    <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-2.5 text-xs text-gray-600 font-medium">
-                      <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                    <div className="p-4 rounded-[var(--sf-radius)] bg-[var(--sf-subtle)] border border-[var(--sf-border)] flex items-center justify-center gap-2.5 text-xs text-[var(--sf-text-soft)] font-medium">
+                      <Loader2 className="w-4 h-4 animate-spin text-[var(--sf-primary)]" />
                       <span>Menghitung tarif ongkir resmi...</span>
                     </div>
                   ) : displayedRates.length === 0 ? (
-                    <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 text-xs text-amber-800 flex items-start gap-2">
+                    <div className="p-3.5 rounded-[var(--sf-radius)] bg-amber-50 border border-amber-200/80 text-xs text-amber-800 flex items-start gap-2">
                       <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                       <span>{ratesError || 'Tidak ada kurir yang tersedia untuk kode pos ini.'}</span>
                     </div>
@@ -1421,33 +1421,33 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                               role="radio"
                               aria-checked={isSelected}
                               onClick={() => setSelectedRate(rate)}
-                              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition cursor-pointer ${
+                              className={`w-full flex items-center gap-3 px-4 py-3 rounded-[var(--sf-radius)] border text-left transition cursor-pointer ${
                                 isSelected
-                                  ? 'border-blue-600 bg-blue-50/70 ring-1 ring-blue-600'
-                                  : 'border-gray-200 bg-white hover:border-gray-300'
+                                  ? 'border-[var(--sf-primary)] bg-[var(--sf-primary-soft)] ring-1 ring-[var(--sf-primary)]'
+                                  : 'border-[var(--sf-border)] bg-[var(--sf-card)] hover:border-[var(--sf-border)]'
                               }`}
                             >
                               <span
                                 className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                                  isSelected ? 'border-blue-600' : 'border-gray-300'
+                                  isSelected ? 'border-[var(--sf-primary)]' : 'border-[var(--sf-border)]'
                                 }`}
                               >
-                                {isSelected && <span className="w-2 h-2 rounded-full bg-blue-600" />}
+                                {isSelected && <span className="w-2 h-2 rounded-full bg-[var(--sf-primary)]" />}
                               </span>
                               <span className="flex-1 min-w-0">
-                                <span className="block text-xs font-bold text-gray-900 truncate">
+                                <span className="block text-xs font-bold text-[var(--sf-text)] truncate">
                                   {rate.courier_name} · {rate.courier_service_name}
                                 </span>
-                                <span className="block text-[11px] text-gray-500 mt-0.5">Estimasi tiba {rate.etd}</span>
+                                <span className="block text-[11px] text-[var(--sf-muted)] mt-0.5">Estimasi tiba {rate.etd}</span>
                               </span>
-                              <span className="text-xs font-bold text-gray-900 whitespace-nowrap">
+                              <span className="text-xs font-bold text-[var(--sf-text)] whitespace-nowrap">
                                 Rp {rate.price.toLocaleString('id-ID')}
                               </span>
                             </button>
                           );
                         })}
                       </div>
-                      <p className="text-[11px] text-gray-400 leading-relaxed">
+                      <p className="text-[11px] text-[var(--sf-muted)] leading-relaxed">
                         Ongkir dihitung otomatis dari kode pos toko ke kode pos tujuan dan berat total paket ({(totalWeightGrams / 1000).toLocaleString('id-ID')} kg).
                       </p>
                     </div>
@@ -1456,12 +1456,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 {/* 2. PAYMENT METHOD SELECTION */}
                 <div>
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-3.5">
+                  <div className="flex items-center justify-between pb-3 border-b border-[var(--sf-border)] mb-3.5">
                     <div className="flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-emerald-600" />
-                      <h3 className="text-sm font-bold text-gray-900">2. Metode Pembayaran</h3>
+                      <h3 className="text-sm font-bold text-[var(--sf-text)]">2. Metode Pembayaran</h3>
                     </div>
-                    <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-[var(--sf-primary)] bg-[var(--sf-primary-soft)] px-2 py-0.5 rounded-full border border-[var(--sf-primary-border)] uppercase tracking-wider">
                       {paymentOptions.find((p) => p.id === selectedPaymentId)?.badge || 'Pilihan Toko'}
                     </span>
                   </div>
@@ -1471,7 +1471,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       <select
                         value={selectedPaymentId}
                         onChange={(e) => setSelectedPaymentId(e.target.value)}
-                        className="w-full appearance-none px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition cursor-pointer pr-9 shadow-2xs"
+                        className="w-full appearance-none px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-semibold text-[var(--sf-text)] bg-[var(--sf-card)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition cursor-pointer pr-9 shadow-2xs"
                       >
                         {paymentOptions.map((opt) => (
                           <option key={opt.id} value={opt.id}>
@@ -1479,10 +1479,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <ChevronDown className="w-4 h-4 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
 
-                    <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100 text-[11px] text-gray-600 flex items-start gap-2">
+                    <div className="p-2.5 bg-[var(--sf-subtle)] rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-[11px] text-[var(--sf-text-soft)] flex items-start gap-2">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                       <span className="leading-relaxed">
                         {paymentOptions.find((p) => p.id === selectedPaymentId)?.description ||
@@ -1494,8 +1494,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 {/* 3. ORDER ITEMS MANIFEST */}
                 <div>
-                  <div className="flex items-center justify-between pb-2.5 border-b border-gray-100 mb-3">
-                    <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Daftar Produk ({sampleItems.length})</h4>
+                  <div className="flex items-center justify-between pb-2.5 border-b border-[var(--sf-border)] mb-3">
+                    <h4 className="text-xs font-bold text-[var(--sf-text-soft)] uppercase tracking-wider">Daftar Produk ({sampleItems.length})</h4>
                   </div>
                   <div className="space-y-2.5 max-h-40 overflow-y-auto pr-1">
                     {sampleItems.map((p) => (
@@ -1506,13 +1506,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&auto=format&fit=crop';
                           }}
-                          className="w-11 h-11 object-cover rounded-lg border border-gray-100 bg-gray-50 shrink-0"
+                          className="w-11 h-11 object-cover rounded-[var(--sf-radius)] border border-[var(--sf-border)] bg-[var(--sf-subtle)] shrink-0"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-xs text-gray-900 truncate">{p.name}</p>
-                          <p className="text-[11px] text-gray-500">Qty: {p.quantity || 1}</p>
+                          <p className="font-semibold text-xs text-[var(--sf-text)] truncate">{p.name}</p>
+                          <p className="text-[11px] text-[var(--sf-muted)]">Qty: {p.quantity || 1}</p>
                         </div>
-                        <p className="font-bold text-xs text-gray-900 shrink-0">
+                        <p className="font-bold text-xs text-[var(--sf-text)] shrink-0">
                           Rp {(p.price * (p.quantity || 1)).toLocaleString('id-ID')}
                         </p>
                       </div>
@@ -1521,20 +1521,20 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 </div>
 
                 {/* 4. ORDER TOTAL BREAKDOWN */}
-                <div className="pt-3 border-t border-gray-100 space-y-2 text-xs text-gray-600">
+                <div className="pt-3 border-t border-[var(--sf-border)] space-y-2 text-xs text-[var(--sf-text-soft)]">
                   <div className="flex justify-between">
                     <span>Subtotal Produk</span>
-                    <span className="font-semibold text-gray-900">Rp {subtotal.toLocaleString('id-ID')}</span>
+                    <span className="font-semibold text-[var(--sf-text)]">Rp {subtotal.toLocaleString('id-ID')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Biaya Pengiriman</span>
-                    <span className="font-semibold text-gray-900">
+                    <span className="font-semibold text-[var(--sf-text)]">
                       {shippingFee > 0 ? `Rp ${shippingFee.toLocaleString('id-ID')}` : selectedRate ? 'Gratis' : 'Menunggu alamat'}
                     </span>
                   </div>
-                  <div className="flex justify-between items-baseline font-extrabold text-gray-900 text-base pt-2.5 border-t border-gray-100">
+                  <div className="flex justify-between items-baseline font-extrabold text-[var(--sf-text)] text-base pt-2.5 border-t border-[var(--sf-border)]">
                     <span>Total Tagihan</span>
-                    <span className="text-blue-700 text-lg">Rp {total.toLocaleString('id-ID')}</span>
+                    <span className="text-[var(--sf-primary)] text-lg">Rp {total.toLocaleString('id-ID')}</span>
                   </div>
                 </div>
 
@@ -1544,7 +1544,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     type="button"
                     disabled={isSubmitting}
                     onClick={handleProcessCheckout}
-                    className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white rounded-xl font-bold text-sm transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-3.5 px-4 bg-[var(--sf-primary)] hover:bg-[var(--sf-primary)] active:scale-[0.99] text-white rounded-[var(--sf-radius)] font-bold text-sm transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (
                       <>
@@ -1569,7 +1569,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     )}
                   </button>
 
-                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500 font-medium">
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-[var(--sf-muted)] font-medium">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                     <span>
                       {selectedPaymentId === 'cod'
@@ -1589,7 +1589,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   };
 
   return (
-    <div className="flex flex-col w-full min-h-screen">
+    <div className="flex flex-col w-full min-h-screen bg-[var(--sf-page)] text-[var(--sf-text)]">
       {CustomNavbar ? <CustomNavbar /> : headerSection && (
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}

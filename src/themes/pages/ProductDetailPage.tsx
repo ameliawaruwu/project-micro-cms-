@@ -205,31 +205,31 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     }
 
     // 3. FUTURISTIC / MODERN THEME
-    if (activeThemeId === 'futuristic' || activeThemeId === 'modern') {
+    if (activeThemeId === 'futuristic') {
       return (
         <div className="pt-28 pb-24 bg-[#0B0F19] text-white min-h-screen font-mono relative overflow-hidden">
           <div className={`max-w-6xl mx-auto px-6 grid ${splitGridClass} gap-12 items-center`}>
-            <div className="bg-slate-900/60 border border-cyan-500/30 rounded-3xl p-6 backdrop-blur-md relative">
+            <div className="bg-slate-900/60 border border-[var(--sf-primary-border)] rounded-3xl p-6 backdrop-blur-md relative">
               <div className="aspect-square rounded-2xl overflow-hidden bg-slate-950">
                 <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-full object-cover" />
               </div>
-              <span className="absolute top-10 left-10 px-3 py-1 bg-cyan-500/20 text-cyan-300 border border-cyan-400 text-xs rounded-full">
+              <span className="absolute top-10 left-10 px-3 py-1 bg-[var(--sf-primary-soft)] text-[var(--sf-primary)] border border-[var(--sf-primary-border)] text-xs rounded-full">
                 [VERIFIED_ITEM]
               </span>
             </div>
             <div className="space-y-6">
-              <span className="text-xs text-cyan-400 uppercase tracking-widest">[ITEM_CODE: #PROD-{product.id || '881'}]</span>
-              <h1 className={rc("text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent storefront-heading-hero")}>
+              <span className="text-xs text-[var(--sf-primary)] uppercase tracking-widest">[ITEM_CODE: #PROD-{product.id || '881'}]</span>
+              <h1 className={rc("text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-[var(--sf-primary)] to-[color-mix(in_srgb,var(--sf-primary)_55%,white)] bg-clip-text text-transparent storefront-heading-hero")}>
                 {product.name}
               </h1>
-              <p className={rc("text-xl sm:text-2xl md:text-3xl font-bold text-cyan-300 storefront-card-price")}>Rp {product.price.toLocaleString('id-ID')}</p>
+              <p className={rc("text-xl sm:text-2xl md:text-3xl font-bold text-[var(--sf-primary)] storefront-card-price")}>Rp {product.price.toLocaleString('id-ID')}</p>
               <div className={rc("p-3.5 sm:p-4 bg-slate-900/80 border border-slate-800 rounded-xl text-slate-300 text-xs sm:text-sm leading-relaxed storefront-card-desc")}>
                 {product.description}
               </div>
               <div className="pt-4 space-y-3">
                 <button 
                   onClick={handleBuyNow}
-                  className="w-full py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-xl font-bold text-sm uppercase tracking-wider text-white shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:opacity-90 cursor-pointer"
+                  className="w-full py-4 bg-gradient-to-r from-[var(--sf-primary)] to-[color-mix(in_srgb,var(--sf-primary)_55%,white)] rounded-xl font-bold text-sm uppercase tracking-wider text-white shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:opacity-90 cursor-pointer"
                 >
                   ACQUIRE ITEM
                 </button>
@@ -322,29 +322,29 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
     // 7. DEFAULT / MINIMALIST / CREATIVE / PROFESSIONAL / ELEGANT / FASHION
     return (
-      <div className="pt-32 pb-24 bg-white text-[#1A1A1A]">
+      <div className="pt-32 pb-24 bg-[var(--sf-card)] text-[var(--sf-text)]">
         <div className={`max-w-5xl mx-auto px-6 ${plainFlexClass} gap-16 items-center`}>
           <div className={halfWidthClass}>
-            <div className="aspect-[4/5] bg-gray-50 overflow-hidden rounded-xl">
+            <div className="aspect-[4/5] bg-[var(--sf-subtle)] overflow-hidden rounded-[var(--sf-radius)]">
               <img src={product.imageUrl || (product as any).image} alt={product.name} className="w-full h-full object-cover" />
             </div>
           </div>
           <div className={rc(`${halfWidthClass} flex flex-col justify-center mt-8 md:mt-0 space-y-4 sm:space-y-6`)}>
-            <h1 className={rc("text-2xl sm:text-3xl md:text-4xl font-light text-[#1A1A1A] tracking-tight storefront-heading-hero")}>{product.name}</h1>
-            <p className={rc("text-lg sm:text-xl md:text-2xl text-gray-900 font-bold storefront-card-price")}>Rp {product.price.toLocaleString('id-ID')}</p>
-            <div className="w-12 h-px bg-gray-300"></div>
-            <p className={rc("text-gray-600 text-xs sm:text-sm leading-relaxed storefront-card-desc")}>{product.description}</p>
+            <h1 className={rc("text-2xl sm:text-3xl md:text-4xl font-light text-[var(--sf-text)] tracking-tight storefront-heading-hero")}>{product.name}</h1>
+            <p className={rc("text-lg sm:text-xl md:text-2xl text-[var(--sf-text)] font-bold storefront-card-price")}>Rp {product.price.toLocaleString('id-ID')}</p>
+            <div className="w-12 h-px bg-[var(--sf-border)]"></div>
+            <p className={rc("text-[var(--sf-text-soft)] text-xs sm:text-sm leading-relaxed storefront-card-desc")}>{product.description}</p>
             <div className={rc("flex flex-col sm:flex-row gap-3 pt-2")}>
               <button 
                 onClick={handleAddToCart}
-                className={rc("flex-1 py-3.5 px-6 border-2 border-[#1A1A1A] text-[#1A1A1A] text-xs sm:text-sm font-semibold uppercase tracking-wider hover:bg-gray-50 transition-colors rounded-lg cursor-pointer flex items-center justify-center gap-2")}
+                className={rc("flex-1 py-3.5 px-6 border-2 border-[var(--sf-primary)] text-[var(--sf-text)] text-xs sm:text-sm font-semibold uppercase tracking-wider hover:bg-[var(--sf-subtle)] transition-colors rounded-[var(--sf-radius)] cursor-pointer flex items-center justify-center gap-2")}
               >
                 <ShoppingCart className="w-4 h-4" />
                 <span>Tambah ke Keranjang</span>
               </button>
               <button 
                 onClick={handleBuyNow}
-                className={rc("flex-1 py-3.5 px-6 bg-[#1A1A1A] text-white text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors rounded-lg cursor-pointer shadow-md flex items-center justify-center gap-2")}
+                className={rc("flex-1 py-3.5 px-6 bg-[var(--sf-primary)] text-white text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-[var(--sf-primary)] transition-colors rounded-[var(--sf-radius)] cursor-pointer shadow-md flex items-center justify-center gap-2")}
               >
                 <span>Beli Sekarang</span>
                 <ArrowRight className="w-4 h-4" />
@@ -357,7 +357,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   };
 
   return (
-    <div className="flex flex-col w-full min-h-screen">
+    <div className="flex flex-col w-full min-h-screen bg-[var(--sf-page)] text-[var(--sf-text)]">
       {CustomNavbar ? (
         <CustomNavbar sectionOptions={navbarOptions} />
       ) : headerSection && (

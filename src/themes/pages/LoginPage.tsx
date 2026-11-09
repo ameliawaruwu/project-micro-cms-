@@ -89,7 +89,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   ) : (
                     <>
                       <p className="text-white font-black uppercase text-xs">Masukkan email terdaftar untuk reset kata sandi:</p>
-                      <input type="email" defaultValue="pelanggan@example.com" placeholder="EMAIL TERDAFTAR" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
+                      <input type="email" placeholder="EMAIL TERDAFTAR" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
                       <button 
                         onClick={() => setResetSent(true)}
                         className="w-full py-5 bg-black text-white text-lg font-black uppercase border-4 border-black hover:bg-yellow-300 hover:text-black transition shadow-[4px_4px_0px_rgba(0,0,0,1)] cursor-pointer"
@@ -107,10 +107,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               ) : (
                 <>
                   {viewMode === 'register' && (
-                    <input type="text" defaultValue="Alya Permata" placeholder="NAMA LENGKAP" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
+                    <input type="text" placeholder="NAMA LENGKAP" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
                   )}
-                  <input type="email" defaultValue="pelanggan@example.com" placeholder="EMAIL" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
-                  <input type="password" defaultValue="••••••••" placeholder="KATA SANDI" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
+                  <input type="email" placeholder="EMAIL" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
+                  <input type="password" placeholder="KATA SANDI" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
                   
                   <button 
                     onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'profile')}
@@ -139,16 +139,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     }
 
     // 2. FUTURISTIC / MODERN THEME (CYBERPUNK NEON TECH)
-    if (activeThemeId === 'futuristic' || activeThemeId === 'modern') {
+    if (activeThemeId === 'futuristic') {
       return (
         <div className="pt-28 pb-24 bg-[#050505] text-white min-h-screen font-mono flex items-center justify-center relative overflow-hidden">
           {/* Cyber ambient glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-red-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[var(--sf-primary-soft)] blur-[120px] rounded-full pointer-events-none"></div>
           
           <div className="w-full max-w-md px-6 relative z-10">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/60 border border-red-500/30 rounded-full text-red-500 text-[10px] uppercase tracking-[0.3em] mb-3 backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--sf-primary-soft)] border border-[var(--sf-primary-border)] rounded-full text-[var(--sf-primary)] text-[10px] uppercase tracking-[0.3em] mb-3 backdrop-blur-md">
+                <span className="w-2 h-2 rounded-full bg-[var(--sf-primary)] animate-pulse"></span>
                 {brandName} // AUTH_GATEWAY
               </div>
               <h1 className="text-3xl font-black tracking-tight text-white uppercase drop-shadow-md">
@@ -160,23 +160,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               {viewMode === 'forgot_password' ? (
                 <>
                   {resetSent ? (
-                    <div className="p-4 bg-red-950/40 border border-red-500/50 rounded-xl text-red-400 text-xs font-mono text-center">
+                    <div className="p-4 bg-[var(--sf-primary-soft)] border border-[var(--sf-primary-border)] rounded-xl text-[var(--sf-primary)] text-xs font-mono text-center">
                       ⚡ Security token generated & dispatched to email.
                     </div>
                   ) : (
                     <>
                       <p className="text-xs text-gray-400">Enter registered terminal email address:</p>
-                      <input type="email" defaultValue="sys@neonlab.io" placeholder="TERMINAL_EMAIL" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-red-400 text-sm focus:border-red-500 focus:outline-none" />
+                      <input type="email" placeholder="TERMINAL_EMAIL" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-[var(--sf-primary)] text-sm focus:border-[var(--sf-primary)] focus:outline-none" />
                       <button 
                         onClick={() => setResetSent(true)}
-                        className="w-full py-4 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-xs uppercase tracking-widest text-white shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all cursor-pointer"
+                        className="w-full py-4 bg-[var(--sf-primary)] hover:bg-[var(--sf-primary)] rounded-xl font-bold text-xs uppercase tracking-widest text-white shadow-[0_0_20px_var(--sf-primary-soft)] transition-all cursor-pointer"
                       >
                         GENERATE RESET TOKEN ⚡
                       </button>
                     </>
                   )}
                   <div className="text-center pt-2 text-xs text-zinc-500">
-                    <button onClick={() => onNavigate?.('login')} className="hover:text-red-400 cursor-pointer">
+                    <button onClick={() => onNavigate?.('login')} className="hover:text-[var(--sf-primary)] cursor-pointer">
                       ← RETURN TO AUTHENTICATION
                     </button>
                   </div>
@@ -184,23 +184,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               ) : (
                 <>
                   {viewMode === 'register' && (
-                    <input type="text" defaultValue="Alya Permata" placeholder="USER_FULL_NAME" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-red-400 text-sm focus:border-red-500 focus:outline-none" />
+                    <input type="text" placeholder="USER_FULL_NAME" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-[var(--sf-primary)] text-sm focus:border-[var(--sf-primary)] focus:outline-none" />
                   )}
-                  <input type="email" defaultValue="user@neonlab.io" placeholder="USER_EMAIL" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-red-400 text-sm focus:border-red-500 focus:outline-none" />
-                  <input type="password" defaultValue="••••••••" placeholder="SECURITY_KEY" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-red-400 text-sm focus:border-red-500 focus:outline-none" />
+                  <input type="email" placeholder="USER_EMAIL" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-[var(--sf-primary)] text-sm focus:border-[var(--sf-primary)] focus:outline-none" />
+                  <input type="password" placeholder="SECURITY_KEY" className="w-full p-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-[var(--sf-primary)] text-sm focus:border-[var(--sf-primary)] focus:outline-none" />
                   
                   <button 
                     onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'profile')}
-                    className="w-full py-4 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-xs uppercase tracking-widest text-white shadow-[0_0_25px_rgba(220,38,38,0.4)] transition-all cursor-pointer"
+                    className="w-full py-4 bg-[var(--sf-primary)] hover:bg-[var(--sf-primary)] rounded-xl font-bold text-xs uppercase tracking-widest text-white shadow-[0_0_25px_var(--sf-primary-soft)] transition-all cursor-pointer"
                   >
                     {viewMode === 'register' ? 'INITIATE ACCOUNT ⚡' : 'AUTHORIZE SYSTEM ACCESS ⚡'}
                   </button>
 
                   <div className="flex justify-between items-center pt-2 text-xs text-zinc-400">
-                    <button onClick={() => onNavigate?.('forgot_password')} className="hover:text-red-400 cursor-pointer">
+                    <button onClick={() => onNavigate?.('forgot_password')} className="hover:text-[var(--sf-primary)] cursor-pointer">
                       Forgot Key?
                     </button>
-                    <button onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'register')} className="hover:text-red-400 cursor-pointer font-bold">
+                    <button onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'register')} className="hover:text-[var(--sf-primary)] cursor-pointer font-bold">
                       {viewMode === 'register' ? 'Existing System User' : 'New System Registration'}
                     </button>
                   </div>
@@ -234,7 +234,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   ) : (
                     <>
                       <p className="text-xs text-[#7D6E63]">Enter your registered email address to receive concierge instructions:</p>
-                      <input type="email" defaultValue="concierge@maisonelan.com" placeholder="Email Address" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
+                      <input type="email" placeholder="Email Address" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
                       <button 
                         onClick={() => setResetSent(true)}
                         className="w-full py-4 bg-[#8C531B] hover:bg-[#724113] rounded-xl font-medium text-xs uppercase tracking-[0.2em] text-[#FFFDF9] shadow-sm transition-all duration-300 cursor-pointer"
@@ -252,10 +252,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               ) : (
                 <>
                   {viewMode === 'register' && (
-                    <input type="text" defaultValue="Alya Permata" placeholder="Full Name" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
+                    <input type="text" placeholder="Full Name" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
                   )}
-                  <input type="email" defaultValue="client@maisonelan.com" placeholder="Email Address" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
-                  <input type="password" defaultValue="••••••••" placeholder="Password" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
+                  <input type="email" placeholder="Email Address" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
+                  <input type="password" placeholder="Password" className="w-full p-3.5 bg-[#FAF5EE] border border-[#E5D7C7] rounded-xl text-[#36281D] text-sm focus:border-[#9A6027] focus:outline-none" />
                   
                   <button 
                     onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'profile')}
@@ -302,7 +302,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   ) : (
                     <>
                       <p className="text-xs text-emerald-700">Masukkan alamat email terdaftar Anda:</p>
-                      <input type="email" defaultValue="halo@greenmarket.id" placeholder="Email Terdaftar" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                      <input type="email" placeholder="Email Terdaftar" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                       <button 
                         onClick={() => setResetSent(true)}
                         className="w-full py-4 bg-emerald-800 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm transition-all shadow-md cursor-pointer"
@@ -320,10 +320,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               ) : (
                 <>
                   {viewMode === 'register' && (
-                    <input type="text" defaultValue="Alya Permata" placeholder="Nama Lengkap" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                    <input type="text" placeholder="Nama Lengkap" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                   )}
-                  <input type="email" defaultValue="pelanggan@greenmarket.id" placeholder="Email Anda" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
-                  <input type="password" defaultValue="••••••••" placeholder="Kata Sandi" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                  <input type="email" placeholder="Email Anda" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                  <input type="password" placeholder="Kata Sandi" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                   
                   <button 
                     onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'profile')}
@@ -370,7 +370,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   ) : (
                     <>
                       <p className="text-xs text-gray-500 font-semibold">Ketik email terdaftar kamu di bawah ya:</p>
-                      <input type="email" defaultValue="cutie@fuzzycute.com" placeholder="Email Terdaftar" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
+                      <input type="email" placeholder="Email Terdaftar" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
                       <button 
                         onClick={() => setResetSent(true)}
                         className="w-full py-4 bg-[#FF85A1] hover:bg-[#FF6B8B] text-white rounded-2xl font-black text-sm transition-all shadow-sm cursor-pointer"
@@ -388,10 +388,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               ) : (
                 <>
                   {viewMode === 'register' && (
-                    <input type="text" defaultValue="Alya Permata" placeholder="Nama Lengkap Kamu" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
+                    <input type="text" placeholder="Nama Lengkap Kamu" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
                   )}
-                  <input type="email" defaultValue="cutie@fuzzycute.com" placeholder="Alamat Email" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
-                  <input type="password" defaultValue="••••••••" placeholder="Password Cantik" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
+                  <input type="email" placeholder="Alamat Email" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
+                  <input type="password" placeholder="Password Cantik" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
                   
                   <button 
                     onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'profile')}
@@ -418,36 +418,36 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
     // 6. DEFAULT / MINIMALIST / EDITORIAL / CREATIVE / PROFESSIONAL
     return (
-      <div className="pt-28 pb-24 bg-gray-50 text-gray-900 min-h-screen font-sans flex items-center justify-center">
+      <div className="pt-28 pb-24 bg-[var(--sf-subtle)] text-[var(--sf-text)] min-h-screen font-sans flex items-center justify-center">
         <div className="w-full max-w-md px-6">
           <div className="text-center mb-8">
-            <span className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2 block">{brandName}</span>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <span className="text-xs font-semibold uppercase tracking-widest text-[var(--sf-muted)] mb-2 block">{brandName}</span>
+            <h1 className="text-3xl font-bold text-[var(--sf-text)]">
               {viewMode === 'register' ? 'Buat Akun Baru' : viewMode === 'forgot_password' ? 'Reset Kata Sandi' : 'Masuk ke Akun Anda'}
             </h1>
           </div>
 
-          <div className="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm space-y-5">
+          <div className="bg-[var(--sf-card)] p-8 rounded-[var(--sf-radius)] border border-[var(--sf-border)] shadow-sm space-y-5">
             {viewMode === 'forgot_password' ? (
               <>
                 {resetSent ? (
-                  <div className="p-4 bg-gray-100 rounded-xl text-gray-800 text-xs font-medium text-center">
+                  <div className="p-4 bg-[var(--sf-subtle)] rounded-[var(--sf-radius)] text-[var(--sf-text)] text-xs font-medium text-center">
                     ✅ Link petunjuk reset password telah dikirim ke alamat email Anda.
                   </div>
                 ) : (
                   <>
-                    <p className="text-xs text-gray-600">Masukkan email yang terdaftar di akun Anda:</p>
-                    <input type="email" defaultValue="pelanggan@example.com" placeholder="Email Anda" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                    <p className="text-xs text-[var(--sf-text-soft)]">Masukkan email yang terdaftar di akun Anda:</p>
+                    <input type="email" placeholder="Email Anda" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
                     <button 
                       onClick={() => setResetSent(true)}
-                      className="w-full py-3.5 bg-black text-white font-bold text-sm rounded-xl hover:bg-gray-800 transition shadow-md cursor-pointer"
+                      className="w-full py-3.5 bg-[var(--sf-primary)] text-white font-bold text-sm rounded-[var(--sf-radius)] hover:bg-[var(--sf-primary)] transition shadow-md cursor-pointer"
                     >
                       Kirim Link Reset
                     </button>
                   </>
                 )}
-                <div className="text-center pt-2 text-xs text-gray-500">
-                  <button onClick={() => onNavigate?.('login')} className="hover:underline cursor-pointer font-semibold text-black">
+                <div className="text-center pt-2 text-xs text-[var(--sf-muted)]">
+                  <button onClick={() => onNavigate?.('login')} className="hover:underline cursor-pointer font-semibold text-[var(--sf-text)]">
                     ← Kembali ke Masuk
                   </button>
                 </div>
@@ -455,23 +455,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             ) : (
               <>
                 {viewMode === 'register' && (
-                  <input type="text" defaultValue="Alya Permata" placeholder="Nama Lengkap" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                  <input type="text" placeholder="Nama Lengkap" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
                 )}
-                <input type="email" defaultValue="pelanggan@example.com" placeholder="Email Anda" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-                <input type="password" defaultValue="••••••••" placeholder="Kata Sandi" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="email" placeholder="Email Anda" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="password" placeholder="Kata Sandi" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
                 
                 <button 
                   onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'profile')}
-                  className="w-full py-3.5 bg-black text-white font-bold text-sm rounded-xl hover:bg-gray-800 transition shadow-md cursor-pointer"
+                  className="w-full py-3.5 bg-[var(--sf-primary)] text-white font-bold text-sm rounded-[var(--sf-radius)] hover:bg-[var(--sf-primary)] transition shadow-md cursor-pointer"
                 >
                   {viewMode === 'register' ? 'Daftar Sekarang' : 'Masuk'}
                 </button>
 
-                <div className="flex justify-between items-center text-xs text-gray-500 pt-2 border-t border-gray-100">
+                <div className="flex justify-between items-center text-xs text-[var(--sf-muted)] pt-2 border-t border-[var(--sf-border)]">
                   <span onClick={() => onNavigate?.('forgot_password')} className="hover:underline cursor-pointer">
                     Lupa Password?
                   </span>
-                  <span onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'register')} className="hover:underline cursor-pointer font-semibold text-black">
+                  <span onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'register')} className="hover:underline cursor-pointer font-semibold text-[var(--sf-text)]">
                     {viewMode === 'register' ? 'Sudah Punya Akun' : 'Belum Punya Akun'}
                   </span>
                 </div>
@@ -484,7 +484,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   };
 
   return (
-    <div className="flex flex-col w-full min-h-screen">
+    <div className="flex flex-col w-full min-h-screen bg-[var(--sf-page)] text-[var(--sf-text)]">
       {CustomNavbar ? (
         <CustomNavbar sectionOptions={navbarOptions} />
       ) : headerSection && (

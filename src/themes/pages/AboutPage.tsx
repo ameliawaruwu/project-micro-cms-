@@ -132,18 +132,18 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
     }
 
     // 3. FUTURISTIC / MODERN THEME
-    if (activeThemeId === 'futuristic' || activeThemeId === 'modern') {
+    if (activeThemeId === 'futuristic') {
       return (
         <div className="pt-28 pb-24 bg-[#0B0F19] text-white min-h-screen font-mono">
           <div className="max-w-5xl mx-auto px-6">
-            <div className="border-b border-cyan-500/20 pb-8 mb-12 text-center">
-              <span className="text-xs text-cyan-400 uppercase tracking-widest">[ENTITY_PROFILE_SYS]</span>
-              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent mt-2">
+            <div className="border-b border-[var(--sf-primary-border)] pb-8 mb-12 text-center">
+              <span className="text-xs text-[var(--sf-primary)] uppercase tracking-widest">[ENTITY_PROFILE_SYS]</span>
+              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-[var(--sf-primary)] to-[color-mix(in_srgb,var(--sf-primary)_55%,white)] bg-clip-text text-transparent mt-2">
                 ABOUT {storeName.toUpperCase()}
               </h1>
             </div>
-            <div className="bg-slate-900/60 border border-cyan-500/30 rounded-3xl p-8 backdrop-blur-md mb-12">
-              <p className="text-cyan-300 text-lg leading-relaxed">{storeDesc}</p>
+            <div className="bg-slate-900/60 border border-[var(--sf-primary-border)] rounded-3xl p-8 backdrop-blur-md mb-12">
+              <p className="text-[var(--sf-primary)] text-lg leading-relaxed">{storeDesc}</p>
             </div>
           </div>
         </div>
@@ -184,18 +184,18 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
 
     // 6. DEFAULT / MINIMALIST / LUXURY / CREATIVE / PROFESSIONAL / ELEGANT / FASHION
     return (
-      <div className="pt-32 pb-24 bg-white text-[#1A1A1A] min-h-screen">
+      <div className="pt-32 pb-24 bg-[var(--sf-card)] text-[var(--sf-text)] min-h-screen">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
           <h1 className="text-4xl md:text-5xl font-light tracking-tight">Tentang {storeName}</h1>
-          <div className="w-12 h-0.5 bg-black mx-auto"></div>
-          <p className="text-gray-600 text-lg leading-relaxed max-w-2xl mx-auto">{storeDesc}</p>
+          <div className="w-12 h-0.5 bg-[var(--sf-primary)] mx-auto"></div>
+          <p className="text-[var(--sf-text-soft)] text-lg leading-relaxed max-w-2xl mx-auto">{storeDesc}</p>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="flex flex-col w-full min-h-screen">
+    <div className="flex flex-col w-full min-h-screen bg-[var(--sf-page)] text-[var(--sf-text)]">
       {CustomNavbar ? (
         <CustomNavbar sectionOptions={navbarOptions} />
       ) : headerSection && (

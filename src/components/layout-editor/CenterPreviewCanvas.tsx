@@ -40,6 +40,7 @@ import { InlineEditableButton } from './InlineEditableButton';
 import { ThemeId, ThemeRegistry, normalizeThemeId } from '../../themes/ThemeRegistry';
 import { ThemeSectionRenderer } from './ThemeSectionRenderer';
 import { ResponsivePreviewScope } from './ResponsivePreviewScope';
+import { getStorefrontThemeVars } from '../../themes/pages/storefrontTheme';
 import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage } from '../../themes/pages';
 import { loadGoogleFont } from '../../utils/fontLoader';
 
@@ -352,7 +353,13 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
   // Halaman non-beranda dibungkus ResponsivePreviewScope agar breakpoint mengikuti device preview.
   const renderPageCustomContent = (pageId: string) => {
     const content = renderPageCustomContentRaw(pageId);
-    return content ? <ResponsivePreviewScope deviceMode={childDeviceMode}>{content}</ResponsivePreviewScope> : null;
+    if (!content) return null;
+    // Variabel warna tema (--sf-*) agar Keranjang, Checkout, Detail Produk, dll. mengikuti tema toko.
+    return (
+      <div className="contents" style={getStorefrontThemeVars(activeThemeId, primaryAccent)}>
+        <ResponsivePreviewScope deviceMode={childDeviceMode}>{content}</ResponsivePreviewScope>
+      </div>
+    );
   };
 
   const renderPageCustomContentRaw = (pageId: string) => {

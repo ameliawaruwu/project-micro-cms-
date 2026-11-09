@@ -83,21 +83,21 @@ export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: pr
     }
 
     // 2. FUTURISTIC / MODERN THEME
-    if (activeThemeId === 'futuristic' || activeThemeId === 'modern') {
+    if (activeThemeId === 'futuristic') {
       return (
         <div className="pt-28 pb-24 bg-[#0B0F19] text-white min-h-screen font-mono">
           <div className="max-w-4xl mx-auto px-6">
             <div className="text-center mb-8">
-              <span className="text-xs text-cyan-400 uppercase tracking-widest">[DISPATCH_COMMUNICATION]</span>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent mt-2">
+              <span className="text-xs text-[var(--sf-primary)] uppercase tracking-widest">[DISPATCH_COMMUNICATION]</span>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-[var(--sf-primary)] to-[color-mix(in_srgb,var(--sf-primary)_55%,white)] bg-clip-text text-transparent mt-2">
                 CONTACT MATRIX
               </h1>
             </div>
-            <div className="bg-slate-900/60 border border-cyan-500/30 rounded-3xl p-8 backdrop-blur-md space-y-4">
-              <input type="text" placeholder="FULL_NAME" className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400" />
-              <input type="email" placeholder="EMAIL_ADDRESS" className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400" />
-              <textarea placeholder="TRANSMISSION_DATA..." rows={4} className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-cyan-300 text-sm focus:border-cyan-400" />
-              <button className="w-full py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-xl font-bold text-sm uppercase tracking-wider text-white shadow-[0_0_20px_rgba(34,211,238,0.4)]">
+            <div className="bg-slate-900/60 border border-[var(--sf-primary-border)] rounded-3xl p-8 backdrop-blur-md space-y-4">
+              <input type="text" placeholder="FULL_NAME" className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-[var(--sf-primary)] text-sm focus:border-[var(--sf-primary-border)]" />
+              <input type="email" placeholder="EMAIL_ADDRESS" className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-[var(--sf-primary)] text-sm focus:border-[var(--sf-primary-border)]" />
+              <textarea placeholder="TRANSMISSION_DATA..." rows={4} className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-[var(--sf-primary)] text-sm focus:border-[var(--sf-primary-border)]" />
+              <button className="w-full py-4 bg-gradient-to-r from-[var(--sf-primary)] to-[color-mix(in_srgb,var(--sf-primary)_55%,white)] rounded-xl font-bold text-sm uppercase tracking-wider text-white shadow-[0_0_20px_rgba(34,211,238,0.4)]">
                 TRANSMIT MESSAGE ⚡
               </button>
             </div>
@@ -108,26 +108,26 @@ export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: pr
 
     // 3. DEFAULT / MINIMALIST / NATURE / CUTE / LUXURY / EDITORIAL ETC
     return (
-      <div className="pt-28 pb-24 bg-gray-50 text-gray-900 min-h-screen font-sans">
+      <div className="pt-28 pb-24 bg-[var(--sf-subtle)] text-[var(--sf-text)] min-h-screen font-sans">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="bg-white p-8 md:p-12 rounded-3xl border border-gray-200 shadow-sm space-y-8">
+          <div className="bg-[var(--sf-card)] p-8 md:p-12 rounded-[var(--sf-radius)] border border-[var(--sf-border)] shadow-sm space-y-8">
             <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold text-gray-900">Hubungi Kami</h1>
-              <p className="text-sm text-gray-500">Ada pertanyaan? Tim kami siap membantu Anda kapan saja.</p>
+              <h1 className="text-3xl font-bold text-[var(--sf-text)]">Hubungi Kami</h1>
+              <p className="text-sm text-[var(--sf-muted)]">Ada pertanyaan? Tim kami siap membantu Anda kapan saja.</p>
             </div>
             <div className={`grid ${gridCols2Class} gap-8`}>
               <div className="space-y-4">
-                <input type="text" placeholder="Nama Anda" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-                <input type="email" placeholder="Email Anda" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-                <textarea placeholder="Pesan Anda..." rows={4} className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-                <button className="w-full py-3.5 bg-black text-white font-bold text-sm rounded-xl hover:bg-gray-800 transition shadow-md">
+                <input type="text" placeholder="Nama Anda" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="email" placeholder="Email Anda" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                <textarea placeholder="Pesan Anda..." rows={4} className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                <button className="w-full py-3.5 bg-[var(--sf-primary)] text-white font-bold text-sm rounded-[var(--sf-radius)] hover:bg-[var(--sf-primary)] transition shadow-md">
                   Kirim Pesan
                 </button>
               </div>
-              <div className="bg-gray-50 p-6 rounded-2xl space-y-4 text-sm text-gray-600 border border-gray-100">
-                <div className="flex items-center gap-3"><Mail className="w-5 h-5 text-gray-400" /> support@{store?.name?.toLowerCase()?.replace(/\s+/g, '') || 'toko'}.com</div>
-                <div className="flex items-center gap-3"><Phone className="w-5 h-5 text-gray-400" /> +62 812 3456 7890</div>
-                <div className="flex items-center gap-3"><MapPin className="w-5 h-5 text-gray-400" /> Jakarta, Indonesia</div>
+              <div className="bg-[var(--sf-subtle)] p-6 rounded-[var(--sf-radius)] space-y-4 text-sm text-[var(--sf-text-soft)] border border-[var(--sf-border)]">
+                <div className="flex items-center gap-3"><Mail className="w-5 h-5 text-[var(--sf-muted)]" /> support@{store?.name?.toLowerCase()?.replace(/\s+/g, '') || 'toko'}.com</div>
+                <div className="flex items-center gap-3"><Phone className="w-5 h-5 text-[var(--sf-muted)]" /> +62 812 3456 7890</div>
+                <div className="flex items-center gap-3"><MapPin className="w-5 h-5 text-[var(--sf-muted)]" /> Jakarta, Indonesia</div>
               </div>
             </div>
           </div>
@@ -137,7 +137,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: pr
   };
 
   return (
-    <div className="flex flex-col w-full min-h-screen">
+    <div className="flex flex-col w-full min-h-screen bg-[var(--sf-page)] text-[var(--sf-text)]">
       {CustomNavbar ? (
         <CustomNavbar sectionOptions={navbarOptions} />
       ) : headerSection && (

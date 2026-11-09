@@ -93,17 +93,17 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
 
   const renderEmptyCart = () => (
     <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-16 text-center min-h-[50vh]">
-      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4 text-gray-400">
+      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[var(--sf-subtle)] flex items-center justify-center mb-4 text-[var(--sf-muted)]">
         <ShoppingBag className="w-8 h-8 sm:w-10 sm:h-10" />
       </div>
-      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Keranjang Belanja Kosong</h2>
-      <p className="text-xs sm:text-sm text-gray-500 max-w-md mb-6 leading-relaxed">
+      <h2 className="text-xl sm:text-2xl font-bold text-[var(--sf-text)] mb-2">Keranjang Belanja Kosong</h2>
+      <p className="text-xs sm:text-sm text-[var(--sf-muted)] max-w-md mb-6 leading-relaxed">
         Anda belum menambahkan barang apapun ke keranjang belanja. Jelajahi katalog kami dan temukan produk terbaik.
       </p>
       <button 
         type="button"
         onClick={() => onNavigate ? onNavigate('katalog') : null}
-        className="px-6 py-3 bg-[#1A1A1A] text-white rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition cursor-pointer shadow-md"
+        className="px-6 py-3 bg-[var(--sf-primary)] text-white rounded-[var(--sf-radius)] text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-[var(--sf-primary)] transition cursor-pointer shadow-md"
       >
         Mulai Belanja
       </button>
@@ -162,31 +162,31 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
 
     // 2. DEFAULT / MINIMALIST / OTHERS
     return (
-      <div className="pt-28 pb-24 bg-white text-[#1A1A1A] min-h-screen">
+      <div className="pt-28 pb-24 bg-[var(--sf-card)] text-[var(--sf-text)] min-h-screen">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <h1 className="text-2xl sm:text-4xl font-light tracking-tight mb-6 sm:mb-8">Keranjang Belanja ({cartItems.reduce((acc, it) => acc + it.quantity, 0)} Item)</h1>
-          <div className="bg-gray-50 rounded-2xl p-4 sm:p-8 border border-gray-200 space-y-4 sm:space-y-6">
-            <div className="divide-y divide-gray-200">
+          <div className="bg-[var(--sf-subtle)] rounded-[var(--sf-radius)] p-4 sm:p-8 border border-[var(--sf-border)] space-y-4 sm:space-y-6">
+            <div className="divide-y divide-[var(--sf-border)]">
               {cartItems.map((item) => (
                 <div key={item.product.id} className="py-4 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                    <img src={item.product.imageUrl || (item.product as any).image} alt={item.product.name} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl border border-gray-200 shrink-0" />
+                    <img src={item.product.imageUrl || (item.product as any).image} alt={item.product.name} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-[var(--sf-radius)] border border-[var(--sf-border)] shrink-0" />
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-sm sm:text-base text-gray-900 truncate">{item.product.name}</h3>
-                      <p className="text-gray-600 text-xs sm:text-sm font-medium">Rp {item.product.price.toLocaleString('id-ID')}</p>
+                      <h3 className="font-semibold text-sm sm:text-base text-[var(--sf-text)] truncate">{item.product.name}</h3>
+                      <p className="text-[var(--sf-text-soft)] text-xs sm:text-sm font-medium">Rp {item.product.price.toLocaleString('id-ID')}</p>
                       <div className="flex items-center gap-2 mt-2">
                         <button
                           type="button"
                           onClick={() => handleUpdateQty(item.product.id, Math.max(1, item.quantity - 1))}
-                          className="w-6 h-6 rounded border border-gray-300 bg-white text-gray-700 flex items-center justify-center text-xs font-bold hover:bg-gray-100 cursor-pointer"
+                          className="w-6 h-6 rounded border border-[var(--sf-border)] bg-[var(--sf-card)] text-[var(--sf-text-soft)] flex items-center justify-center text-xs font-bold hover:bg-[var(--sf-subtle)] cursor-pointer"
                         >
                           -
                         </button>
-                        <span className="text-xs font-semibold text-gray-800 px-1">{item.quantity}</span>
+                        <span className="text-xs font-semibold text-[var(--sf-text)] px-1">{item.quantity}</span>
                         <button
                           type="button"
                           onClick={() => handleUpdateQty(item.product.id, item.quantity + 1)}
-                          className="w-6 h-6 rounded border border-gray-300 bg-white text-gray-700 flex items-center justify-center text-xs font-bold hover:bg-gray-100 cursor-pointer"
+                          className="w-6 h-6 rounded border border-[var(--sf-border)] bg-[var(--sf-card)] text-[var(--sf-text-soft)] flex items-center justify-center text-xs font-bold hover:bg-[var(--sf-subtle)] cursor-pointer"
                         >
                           +
                         </button>
@@ -194,13 +194,13 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
-                    <span className="font-bold text-sm sm:text-base text-gray-900">
+                    <span className="font-bold text-sm sm:text-base text-[var(--sf-text)]">
                       Rp {(item.product.price * item.quantity).toLocaleString('id-ID')}
                     </span>
                     <button 
                       type="button"
                       onClick={() => handleRemove(item.product.id)}
-                      className="text-gray-400 hover:text-red-500 p-1 transition cursor-pointer"
+                      className="text-[var(--sf-muted)] hover:text-red-500 p-1 transition cursor-pointer"
                       title="Hapus dari keranjang"
                     >
                       <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -210,15 +210,15 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
               ))}
             </div>
             
-            <div className="border-t border-gray-200 pt-4 flex justify-between items-center font-bold text-lg sm:text-xl text-gray-900">
+            <div className="border-t border-[var(--sf-border)] pt-4 flex justify-between items-center font-bold text-lg sm:text-xl text-[var(--sf-text)]">
               <span>Total Pembayaran</span>
-              <span className="text-[#66000E]">Rp {totalAmount.toLocaleString('id-ID')}</span>
+              <span className="text-[var(--sf-primary)]">Rp {totalAmount.toLocaleString('id-ID')}</span>
             </div>
 
             <button 
               type="button"
               onClick={() => onNavigate ? onNavigate('checkout') : null}
-              className="w-full py-3.5 sm:py-4 bg-[#1A1A1A] hover:bg-black text-white rounded-xl font-bold text-xs sm:text-sm uppercase tracking-widest transition cursor-pointer shadow-md flex items-center justify-center gap-2"
+              className="w-full py-3.5 sm:py-4 bg-[var(--sf-primary)] hover:bg-[var(--sf-primary)] text-white rounded-[var(--sf-radius)] font-bold text-xs sm:text-sm uppercase tracking-widest transition cursor-pointer shadow-md flex items-center justify-center gap-2"
             >
               <span>Lanjut ke Pembayaran &amp; Checkout</span>
               <ArrowRight className="w-4 h-4" />
@@ -230,7 +230,7 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
   };
 
   return (
-    <div className="flex flex-col w-full min-h-screen">
+    <div className="flex flex-col w-full min-h-screen bg-[var(--sf-page)] text-[var(--sf-text)]">
       {CustomNavbar ? (
         <CustomNavbar sectionOptions={navbarOptions} />
       ) : headerSection && (
