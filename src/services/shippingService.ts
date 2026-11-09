@@ -142,7 +142,18 @@ export const shippingService = {
     }
 
     const packageWeight = Math.max(100, weight || 500);
-    const originPostal = branch?.postalCode || '12730';
+
+    // Asal pengiriman: kode pos cabang utama toko; jika toko belum punya cabang, pakai kode pos toko.
+    let originPostal = branch?.postalCode || '';
+    if (!originPostal && storeId) {
+      try {
+        const { data: storeRow } = await supabase.from('stores').select('postal_code').eq('id', storeId).maybeSingle();
+        originPostal = (storeRow?.postal_code || '').trim();
+      } catch {
+        // abaikan, pakai fallback di bawah
+      }
+    }
+    if (!originPostal) originPostal = '12730';
 
     // 1. Coba via Supabase Edge Function
     try {
