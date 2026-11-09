@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { sitePackager } from './sitePackager';
 import { nginxDeployer } from './nginxDeployer';
 import { cloudflareDeployer } from './cloudflareDeployer';
+import { filterRealProducts } from '../src/utils/demoProducts';
 
 export const deployRouter = Router();
 
@@ -21,7 +22,9 @@ function sanitizeError(msg: any): string {
  */
 deployRouter.post('/publish', async (req: Request, res: Response) => {
   try {
-    const { storeId, slug, baseDomain = 'lapakq.com', customDomain, store, products = [] } = req.body;
+    const { storeId, slug, baseDomain = 'lapakq.com', customDomain, store } = req.body;
+    // Jangan pernah menerbitkan produk contoh template ke toko live.
+    const products = filterRealProducts(Array.isArray(req.body.products) ? req.body.products : []);
 
     // Semua paket (termasuk Free) boleh publish. Penagihan dilakukan di akhir bulan berdasarkan omset toko.
 

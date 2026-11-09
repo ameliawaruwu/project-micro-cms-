@@ -65,14 +65,6 @@ export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options
               />
             </h3>
 
-            {showRating && (
-              <div className="flex items-center justify-center gap-1 mb-2 font-sans text-xs text-[#706866]">
-                <span className="text-amber-500 text-sm">★</span>
-                <span className="font-semibold text-[#2C3B2D]">5.0</span>
-                <span className="text-[11px] text-[#8C8481]">(Teruji Alami)</span>
-              </div>
-            )}
-
             {showPrice && (
               <div className="font-sans font-bold text-xs sm:text-sm md:text-base text-[#166534] mb-3 storefront-card-price">
                 <InlineEditableText

@@ -61,13 +61,6 @@ export const CuteProductCard: React.FC<ProductCardProps> = ({ product, options =
               />
             </h3>
 
-            {showRating && (
-              <div className="flex items-center justify-center gap-1 mb-1 text-amber-400 text-xs font-bold">
-                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                <span className="text-gray-400 text-[10px] ml-1">(5.0)</span>
-              </div>
-            )}
-
             {showPrice && (
               <div className="flex items-center justify-center gap-2 mt-1">
                 <p className="text-sm sm:text-base md:text-lg font-black text-[#FF85A1] storefront-card-price">

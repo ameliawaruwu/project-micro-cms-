@@ -70,7 +70,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   const displayProducts = (products && products.length > 0) ? products : (cmsProducts && cmsProducts.length > 0 ? (cmsProducts as any[]) : []);
 
-  const product = displayProducts?.find(p => p.id === id || p.slug === id) || displayProducts[0] || {
+  const foundProduct = displayProducts?.find(p => p.id === id || p.slug === id) || displayProducts[0];
+  // Di toko publik, jangan tampilkan produk contoh bila produk tidak ditemukan.
+  const productMissing = !foundProduct && deviceMode === undefined;
+  const product = foundProduct || {
     id: 'sample-1',
     name: 'Produk Unggulan Premium',
     price: 349000,
@@ -361,7 +364,25 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
       
-      <div className="flex-1">{renderProductContent()}</div>
+      <div className="flex-1">
+        {productMissing ? (
+          <div className="pt-24 pb-24 min-h-[60vh] flex items-center justify-center px-6 text-center">
+            <div className="max-w-sm space-y-3">
+              <h1 className="text-xl font-semibold text-gray-900">Produk tidak ditemukan</h1>
+              <p className="text-sm text-gray-500">Produk ini tidak tersedia atau sudah tidak dijual.</p>
+              <button
+                type="button"
+                onClick={() => onNavigate && onNavigate('katalog')}
+                className="px-5 py-2.5 rounded-lg border border-gray-900 text-gray-900 text-xs font-semibold hover:bg-gray-900 hover:text-white transition cursor-pointer"
+              >
+                Lihat Katalog
+              </button>
+            </div>
+          </div>
+        ) : (
+          renderProductContent()
+        )}
+      </div>
 
       {CustomFooter ? (
         <CustomFooter sectionOptions={footerOptions} />

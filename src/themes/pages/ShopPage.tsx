@@ -107,8 +107,9 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
   // 1. Get rich, abundant product catalog (16-24 items per theme)
   const fullCatalog = useMemo(() => {
-    return getEnrichedCatalog(activeThemeId, products);
-  }, [activeThemeId, products]);
+    // Produk contoh hanya di Editor Layout (deviceMode terisi) saat toko belum punya produk.
+    return getEnrichedCatalog(activeThemeId, products, { useDemoWhenEmpty: deviceMode !== undefined });
+  }, [activeThemeId, products, deviceMode]);
 
   // 2. Compute categories with count
   const categoryStats = useMemo(() => {
@@ -187,6 +188,20 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
   // Render Theme-aware Shop UI
   const renderThemeContent = () => {
+    // Toko publik tanpa produk: tampilkan pesan kosong, bukan produk contoh.
+    if (fullCatalog.length === 0) {
+      return (
+        <div className="pt-24 pb-24 min-h-[60vh] flex items-center justify-center px-6 text-center">
+          <div className="max-w-sm space-y-2">
+            <h1 className="text-xl font-semibold text-gray-900">{storeName}</h1>
+            <p className="text-sm text-gray-500">
+              {isEn ? 'No products are available yet. Please check back soon.' : 'Belum ada produk yang dijual. Silakan kembali lagi nanti.'}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     // ── 1. BOLD THEME (RawState / Streetwear) ─────────────────────────────────
     if (activeThemeId === 'bold') {
       return (
@@ -312,13 +327,8 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   </div>
 
                   <div>
-                    {/* Rating & Stock */}
-                    <div className="flex items-center justify-between text-xs font-black mb-2 pt-2 border-t-2 border-black">
-                      <span className="flex items-center gap-1 text-black">
-                        <Star className="w-3.5 h-3.5 fill-yellow-400 text-black" />
-                        <span>{p.rating}</span>
-                        <span className="text-gray-500 text-[10px]">({p.salesCount}+ terjual)</span>
-                      </span>
+                    {/* Stok */}
+                    <div className="flex items-center justify-end text-xs font-black mb-2 pt-2 border-t-2 border-black">
                       <span className="text-emerald-700 bg-emerald-100 px-1.5 py-0.5 text-[10px] border border-black">
                         Stok: {p.stock}
                       </span>
@@ -491,12 +501,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between font-sans text-xs text-gray-500 mb-2">
-                      <span className="flex items-center gap-1">
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
-                        <span className="font-medium text-[#241A1A]">{p.rating}</span>
-                        <span className="text-[11px]">({p.salesCount} terjual)</span>
-                      </span>
+                    <div className="flex items-center justify-end font-sans text-xs text-gray-500 mb-2">
                       <span className="text-[11px] text-emerald-800 font-medium">
                         Stok {p.stock} unit
                       </span>
@@ -654,11 +659,6 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                       <p className={rc("text-[#8C531B] font-mono text-xs sm:text-sm md:text-base font-semibold storefront-card-price")}>
                         Rp {p.price.toLocaleString('id-ID')}
                       </p>
-                      {p.rating && (
-                        <span className="flex items-center gap-1 text-[11px] text-[#A39281] font-sans">
-                          <Star className="w-3 h-3 fill-[#C07E28] text-[#C07E28]" /> {p.rating}
-                        </span>
-                      )}
                     </div>
                   </div>
 
@@ -816,7 +816,6 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
                     <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
                       <p className={rc("text-xs sm:text-sm md:text-base font-bold text-[#1E40AF] storefront-card-price")}>Rp {p.price.toLocaleString('id-ID')}</p>
-                      {p.rating && <span className="flex items-center gap-1 text-[11px] text-gray-400"><Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />{p.rating}</span>}
                     </div>
                     <button
                       type="button"

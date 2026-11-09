@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCmsStore, cmsProductToProduct } from '../../../cms/useCmsStore';
-import { THEME_DATA_MAP } from '../../themeData';
+import { useThemeProductsSource } from '../../useSectionProducts';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { Search, ShoppingBag } from 'lucide-react';
 import { cartService } from '../../../services/cartService';
@@ -20,9 +20,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
   deviceMode = 'desktop',
   readonly = false,
 }) => {
-  const cmsProducts = useCmsStore((state) => state.products);
-  const fallbackProducts = THEME_DATA_MAP['editorial']?.products || [];
-  const rawProducts = cmsProducts && cmsProducts.length > 0 ? cmsProducts : fallbackProducts;
+  const rawProducts = useThemeProductsSource('editorial');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');

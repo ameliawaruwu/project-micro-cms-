@@ -57,32 +57,9 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
   const activeThemeId = normalizeThemeId(rawThemeId);
   const themeData = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['minimalist'];
 
-  const displayProducts = React.useMemo(() => {
-    // 1. Jika merchant memiliki produk, tampilkan produk merchant
-    if (products && products.length > 0) {
-      return products;
-    }
-    // 2. Jika merchant belum memiliki produk sama sekali, tampilkan produk bawaan template tema
-    if (themeData && themeData.products && themeData.products.length > 0) {
-      return themeData.products.map(cp => ({
-        id: cp.id,
-        storeId: store.id,
-        name: cp.name,
-        slug: cp.slug,
-        price: cp.price,
-        originalPrice: cp.originalPrice,
-        imageUrl: cp.image,
-        images: cp.images,
-        category: cp.categoryName,
-        description: cp.description,
-        status: 'Tersedia' as const,
-        stock: cp.stock,
-        isFeatured: cp.isFeatured,
-        weight: 1000,
-      }));
-    }
-    return [];
-  }, [products, themeData, store.id]);
+  // Storefront publik & pratinjau hanya menampilkan produk asli toko (dari menu Produk).
+  // Produk contoh template hanya dipakai di Editor Layout.
+  const displayProducts = products || [];
 
   const sections = getStoreSectionsForPage(store.layoutSettings, activePage);
 

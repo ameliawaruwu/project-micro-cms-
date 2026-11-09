@@ -559,10 +559,16 @@ const THEME_PRODUCTS_EXTENDED: Record<string, CatalogProduct[]> = {
 };
 
 /**
- * Returns a rich, complete catalog array for the given theme.
- * Always guarantees 12-24 items with badges, ratings, discounts, and clear specs.
+ * Katalog untuk halaman Katalog toko.
+ * - Toko publik / pratinjau: hanya produk asli toko (dari menu Produk).
+ * - Editor Layout (`useDemoWhenEmpty`): jika toko belum punya produk sama sekali,
+ *   tampilkan produk contoh tema sebagai gambaran desain.
  */
-export function getEnrichedCatalog(activeThemeId: string, merchantProducts?: Product[]): CatalogProduct[] {
+export function getEnrichedCatalog(
+  activeThemeId: string,
+  merchantProducts?: Product[],
+  { useDemoWhenEmpty = false }: { useDemoWhenEmpty?: boolean } = {}
+): CatalogProduct[] {
   const normTheme = (activeThemeId || 'minimalist').toLowerCase();
   
   // Theme base fallback
@@ -588,21 +594,16 @@ export function getEnrichedCatalog(activeThemeId: string, merchantProducts?: Pro
         category: p.category || 'Koleksi Utama',
         description: p.description || 'Dibuat dengan bahan pilihan berkualitas prima untuk kenyamanan dan kepuasan Anda.',
         stock: p.stock !== undefined ? Number(p.stock) : 10,
-        rating: 4.8 + ((idx % 3) * 0.1),
-        salesCount: 45 + (idx * 12),
-        badge: idx === 0 ? 'Produk Anda' : (p.isFeatured ? 'Unggulan' : undefined),
+        // Belum ada data ulasan & penjualan asli: jangan tampilkan angka karangan.
+        rating: 0,
+        salesCount: 0,
+        badge: p.isFeatured ? 'Unggulan' : undefined,
         isFeatured: Boolean(p.isFeatured)
       };
     });
 
-  // If merchant has plenty of products (>= 12), use merchant's directly
-  if (formattedMerchant.length >= 12) {
+  if (formattedMerchant.length > 0 || !useDemoWhenEmpty) {
     return formattedMerchant;
   }
-
-  // If merchant has fewer than 12, prepend merchant products then fill up to 16-20 with theme curated items
-  const merchantIds = new Set(formattedMerchant.map(p => p.name.toLowerCase()));
-  const fillers = baseList.filter(b => !merchantIds.has(b.name.toLowerCase()));
-
-  return [...formattedMerchant, ...fillers];
+  return baseList;
 }

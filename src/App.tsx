@@ -106,6 +106,7 @@ import { ThemeRenderer } from './themes/ThemeRenderer';
 import { normalizeThemeId } from './themes/ThemeRegistry';
 import { THEME_DATA_MAP } from './themes/themeData';
 import { useCmsStore } from './cms/useCmsStore';
+import { filterRealProducts } from './utils/demoProducts';
 
 const isAnyAdminRole = (role?: string) =>
   role === 'admin' ||
@@ -425,15 +426,14 @@ export default function App() {
         };
         setActiveStore(hydratedStore);
         setStores([hydratedStore]);
-        if (Array.isArray(injectedProducts) && injectedProducts.length > 0) {
-          const cleanInjected = injectedProducts.filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
-          setProducts(cleanInjected);
-          useCmsStore.getState().setProductsFromMerchant(cleanInjected as any);
-        } else if (hydratedStore.id) {
-          const storeProducts = await productService.getProductsByStore(hydratedStore.id);
-          setProducts(storeProducts);
-          useCmsStore.getState().setProductsFromMerchant(storeProducts);
-        }
+        // Produk live selalu diambil dari database (sinkron dengan menu Produk). Salinan produk
+        // saat publish hanya cadangan bila database tidak bisa dihubungi. Produk contoh template dibuang.
+        const dbProducts = hydratedStore.id ? await productService.getProductsByStore(hydratedStore.id) : [];
+        const liveProducts = filterRealProducts(
+          dbProducts.length > 0 ? dbProducts : Array.isArray(injectedProducts) ? injectedProducts : []
+        );
+        setProducts(liveProducts as any);
+        useCmsStore.getState().setProductsFromMerchant(liveProducts as any);
         const initialCart = cartService.getCart(hydratedStore.slug);
         setCartItems(initialCart);
         setIsStoreLoading(false);
