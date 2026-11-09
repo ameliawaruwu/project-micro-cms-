@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
+import { StoreLogo } from '../../StoreLogo';
 
 export const NatureNavbar: React.FC<{ 
   sectionOptions?: any; 
@@ -73,7 +74,7 @@ export const NatureNavbar: React.FC<{
         {showLogo && (
           <div className="flex flex-col items-center min-w-0 max-w-full">
             <a href="/" className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-serif text-[#2C3B2D] tracking-wide hover:opacity-80 transition-opacity font-bold whitespace-nowrap inline-block text-center">
-              {storeName}
+              <StoreLogo sectionOptions={sectionOptions} name={storeName} imgClassName="h-9 sm:h-11">{storeName}</StoreLogo>
             </a>
             {storeSubtitle && (
               <span className="text-xs font-sans text-[#5C6B5D] tracking-wider mt-0.5 max-w-full truncate text-center">

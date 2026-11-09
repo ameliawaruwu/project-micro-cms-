@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { StoreLogo } from '../../StoreLogo';
 
 export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -22,7 +23,7 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean
         {showLogo && (
           <div className="flex flex-col">
             <a href="/" className="text-3xl font-extrabold tracking-tighter hover:text-yellow-300 transition-colors transform hover:-rotate-3">
-              {storeTitle}
+              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
             </a>
             {storeSubtitle && (
               <span className="text-xs font-semibold tracking-wider text-pink-200 mt-0.5">

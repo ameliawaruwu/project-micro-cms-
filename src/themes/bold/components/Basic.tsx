@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { StoreLogo } from '../../StoreLogo';
 
 export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -29,7 +30,7 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
           <div className="flex flex-col">
             <a href="/" className="flex items-center gap-3 font-black tracking-tighter uppercase text-2xl md:text-3xl text-white hover:text-red-500 transition-colors group">
               <span className="px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 text-white text-xs font-black tracking-widest rounded-md group-hover:scale-105 transition-transform shadow-md shadow-red-600/20">RAW</span>
-              <span className="font-extrabold tracking-tight">{storeTitle}</span>
+              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11"><span className="font-extrabold tracking-tight">{storeTitle}</span></StoreLogo>
             </a>
             {storeSubtitle && (
               <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 mt-0.5">

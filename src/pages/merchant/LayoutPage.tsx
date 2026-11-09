@@ -176,9 +176,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         address: currentStore.address || '',
         email: (currentStore as any).email || user?.email || '',
         phone: '',
+        logoUrl: currentStore.logoUrl || '',
       });
     }
-  }, [activeThemeId, currentStore.name, user?.email]);
+  }, [activeThemeId, currentStore.name, currentStore.logoUrl, user?.email]);
 
   // 1. Cek apakah merchant memiliki produk nyata di Daftar Produk
   const hasMerchantProducts = Boolean(products && products.length > 0);

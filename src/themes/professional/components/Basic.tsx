@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { StoreLogo } from '../../StoreLogo';
 
 export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -33,12 +34,16 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
           {showLogo && (
             <div className="flex flex-col">
               <a href="/" className="text-2xl font-bold tracking-tight flex items-center gap-3">
-                <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center shrink-0">
-                  <span className="text-[#1E40AF] font-bold text-xl leading-none">
-                    {(storeTitle || 'P')[0]?.toUpperCase()}
-                  </span>
-                </div>
-                <span>{storeTitle}</span>
+                <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">
+                  <>
+                    <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center shrink-0">
+                      <span className="text-[#1E40AF] font-bold text-xl leading-none">
+                        {(storeTitle || 'P')[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                    <span>{storeTitle}</span>
+                  </>
+                </StoreLogo>
               </a>
               {storeSubtitle && (
                 <span className="text-xs text-blue-200 font-medium pl-11 -mt-1">

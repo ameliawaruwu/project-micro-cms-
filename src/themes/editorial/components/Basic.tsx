@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, MessageCircle, Menu, X } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { StoreLogo } from '../../StoreLogo';
 
 export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -71,7 +72,7 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
               className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif italic tracking-tight text-gray-950 hover:opacity-80 transition-opacity truncate max-w-full inline-block py-0.5"
               title={storeTitle}
             >
-              {storeTitle}
+              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-10 sm:h-14">{storeTitle}</StoreLogo>
             </a>
           )}
           {leftSubtitle && (

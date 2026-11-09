@@ -3,53 +3,40 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { StoreLogo } from '../../StoreLogo';
 
-export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const { storeInfo, navigation } = useCmsStore();
-  const { isEn } = useLanguage();
+export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {} }) => {
+  const { storeInfo } = useCmsStore();
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
-  const showDesktopNav = getDeviceClass(isMobile, isTablet, {
-    mobile: 'hidden',
-    tablet: 'hidden',
-    desktop: 'flex',
-    fallback: 'hidden md:flex',
-  });
+  const navItems = getNavMenuItems(sectionOptions);
 
   return (
-    <nav className="w-full px-8 md:px-16 py-6 md:py-8 flex justify-between items-center bg-white/95 backdrop-blur-md border-b border-[#F0EBE1] sticky top-0 z-50 transition-all duration-300">
-      <div className="w-1/3 flex justify-start">
-        {showNav && (
-          <div className={`${showDesktopNav} gap-10`}>
-            {getNavMenuItems(sectionOptions).map(nav => (
-              <a key={nav.id} href={nav.route} className="text-[10px] uppercase tracking-[0.25em] text-[#7D6E63] hover:text-[#8C531B] transition-colors duration-300">
-                {nav.label}
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
-      
-      <div className="w-1/3 flex flex-col justify-center items-center text-center">
+    <nav className="w-full px-5 sm:px-8 md:px-16 pt-5 pb-4 sm:pt-6 bg-white/95 backdrop-blur-md border-b border-[#F0EBE1] sticky top-0 z-50 transition-all duration-300">
+      <div className="flex flex-col items-center text-center min-w-0">
         {showLogo && (
-          <a href="/" className="text-3xl md:text-4xl font-serif text-[#8C531B] tracking-tight text-center block">
-            {storeTitle}
+          <a href="/" className="text-2xl sm:text-3xl md:text-4xl font-serif text-[#8C531B] tracking-tight block max-w-full break-words">
+            <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-10 sm:h-12 mx-auto">{storeTitle}</StoreLogo>
           </a>
         )}
         {storeSubtitle && (
-          <span className="text-[10px] uppercase tracking-[0.25em] text-[#9A6027]/80 mt-1 block font-sans">
+          <span className="text-[10px] uppercase tracking-[0.25em] text-[#9A6027]/80 mt-1 font-sans max-w-xl line-clamp-1 sm:line-clamp-2">
             {storeSubtitle}
           </span>
         )}
       </div>
 
-      <div className="w-1/3 flex justify-end">
-        <button className="text-[10px] uppercase tracking-[0.25em] text-[#8C531B] hover:text-[#5C4533] transition-colors duration-300">
-          {isEn ? 'Boutique' : 'Butik'}
-        </button>
-      </div>
+      {showNav && navItems.length > 0 && (
+        <div className="mt-4 pt-3 border-t border-[#F0EBE1] flex flex-wrap justify-center gap-x-8 gap-y-2">
+          {navItems.map((nav) => (
+            <a key={nav.id} href={nav.route} className="text-[10px] uppercase tracking-[0.25em] text-[#7D6E63] hover:text-[#8C531B] transition-colors duration-300">
+              {nav.label}
+            </a>
+          ))}
+        </div>
+      )}
     </nav>
   );
 };

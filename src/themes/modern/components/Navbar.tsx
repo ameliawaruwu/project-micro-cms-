@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, Menu } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
+import { StoreLogo } from '../../StoreLogo';
 
 export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -28,7 +29,7 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
         
         {/* Logo */}
         <a href="/" className="text-lg font-bold text-gray-900 shrink-0">
-          {storeTitle}
+          <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
         </a>
 
         {/* Desktop Navigation */}

@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, Menu } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
+import { StoreLogo } from '../../StoreLogo';
 
 export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -51,7 +52,7 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
         {/* Center: Logo */}
         <div className="flex-1 text-center flex flex-col items-center">
           <a href="/" className="text-3xl md:text-4xl font-normal tracking-wide text-[#2C2A29]">
-            {storeTitle}
+            <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
           </a>
           {(sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description) && (
             <span className="text-[11px] tracking-[0.2em] uppercase text-[#6B6865] mt-1 font-sans">

@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
 import { getNavMenuItems } from '../../navMenu';
+import { StoreLogo } from '../../StoreLogo';
 
 export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -23,7 +24,7 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
     <nav className="w-full px-6 md:px-12 py-5 flex justify-between items-center bg-[#050505]/80 border-b backdrop-blur-md sticky top-0 z-50" style={{ borderColor: `${accentColor}4D` }}>
       <div className="flex flex-col">
         <div className="text-xl font-black tracking-[0.2em] text-white">
-          {showLogo && <><span className="mr-2" style={{ color: accentColor }}>/</span>{storeTitle}</>}
+          {showLogo && <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11"><><span className="mr-2" style={{ color: accentColor }}>/</span>{storeTitle}</></StoreLogo>}
         </div>
         {storeSubtitle && (
           <span className="text-[10px] font-mono tracking-widest mt-0.5" style={{ color: `${accentColor}CC` }}>

@@ -4,6 +4,7 @@ import { cartService } from '../../../services/cartService';
 import { Search, ShoppingBag, Menu, X } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
+import { StoreLogo } from '../../StoreLogo';
 
 export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -99,7 +100,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
               className={`text-base sm:text-lg md:text-2xl font-light tracking-tighter text-gray-900 uppercase whitespace-nowrap block hover:opacity-75 transition-opacity truncate max-w-[160px] sm:max-w-[240px] md:max-w-none ${brandMarginClass}`}
               title={storeTitle}
             >
-              {storeTitle}
+              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
             </a>
           )}
           {storeSubtitle && (

@@ -38,6 +38,7 @@ import { Store, StoreSectionConfig, StoreSectionOptions } from '../../types';
 import { CURATED_BANNER_PRESETS, DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
 import { GlobalThemeSettingsPanel } from './GlobalThemeSettingsPanel';
 import { useCmsStore } from '../../cms/useCmsStore';
+import { storeService } from '../../services/storeService';
 
 interface RightPanelSettingsProps {
   store: Store;
@@ -83,6 +84,9 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
     : (cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || []));
   const [showImagePresets, setShowImagePresets] = useState(false);
   const [customImageUrlInput, setCustomImageUrlInput] = useState('');
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoError, setLogoError] = useState('');
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [newMenuLabel, setNewMenuLabel] = useState('');
   const [newMenuHref, setNewMenuHref] = useState('');
@@ -733,6 +737,91 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       className="w-4 h-4 rounded text-[#202223]"
                     />
                   </label>
+                  {/* Logo gambar toko */}
+                  <div className="p-3 rounded-lg border border-[#E1E3E5] bg-white space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] font-semibold text-[#202223]">Logo Gambar</span>
+                      <span className="text-[10px] text-[#6D7175]">PNG/JPG/WEBP/SVG, maks. 2 MB</span>
+                    </div>
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = '';
+                        if (!file) return;
+                        setLogoError('');
+                        if (!file.type.startsWith('image/')) {
+                          setLogoError('File harus berupa gambar.');
+                          return;
+                        }
+                        if (file.size > 2 * 1024 * 1024) {
+                          setLogoError('Ukuran logo maksimal 2 MB.');
+                          return;
+                        }
+                        if (!store?.id) {
+                          setLogoError('Toko belum siap, coba lagi.');
+                          return;
+                        }
+                        setIsUploadingLogo(true);
+                        try {
+                          const url = await storeService.uploadStoreImage(store.id, file, 'logo');
+                          handleOptionChange({ logoUrl: url } as any);
+                          useCmsStore.getState().updateStoreInfo({ logoUrl: url });
+                          if (onUpdateStore) onUpdateStore({ logoUrl: url });
+                        } catch (err: any) {
+                          setLogoError(err?.message || 'Gagal mengupload logo.');
+                        } finally {
+                          setIsUploadingLogo(false);
+                        }
+                      }}
+                    />
+                    {(opts as any).logoUrl || store.logoUrl ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-24 h-14 rounded-md border border-[#E1E3E5] bg-[repeating-conic-gradient(#F1F2F3_0%_25%,#FFFFFF_0%_50%)] [background-size:12px_12px] flex items-center justify-center overflow-hidden">
+                          <img src={(opts as any).logoUrl || store.logoUrl} alt="Logo toko" className="max-w-full max-h-full object-contain" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <button
+                            type="button"
+                            disabled={isUploadingLogo}
+                            onClick={() => logoInputRef.current?.click()}
+                            className="px-2.5 py-1 rounded-md border border-[#E1E3E5] text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] disabled:opacity-60 cursor-pointer"
+                          >
+                            {isUploadingLogo ? 'Mengupload...' : 'Ganti Logo'}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isUploadingLogo}
+                            onClick={() => {
+                              handleOptionChange({ logoUrl: '' } as any);
+                              useCmsStore.getState().updateStoreInfo({ logoUrl: '' });
+                              if (onUpdateStore) onUpdateStore({ logoUrl: '' });
+                            }}
+                            className="px-2.5 py-1 rounded-md border border-red-200 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60 cursor-pointer"
+                          >
+                            Hapus Logo
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isUploadingLogo}
+                        onClick={() => logoInputRef.current?.click()}
+                        className="w-full py-3 rounded-md border-2 border-dashed border-[#C9CCCF] text-[12px] font-semibold text-[#2C6ECB] hover:border-[#2C6ECB] hover:bg-[#F1F8FF] disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{isUploadingLogo ? 'Mengupload logo...' : 'Upload Logo'}</span>
+                      </button>
+                    )}
+                    <p className="text-[11px] text-[#6D7175]">
+                      Jika logo gambar diupload, nama toko di header diganti dengan logo. Tanpa logo, header menampilkan nama toko.
+                    </p>
+                    {logoError && <p className="text-[11px] font-semibold text-red-600">{logoError}</p>}
+                  </div>
                   <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
                     <span className="text-[12px] text-[#202223]">Header Sticky / Melayang</span>
                     <input

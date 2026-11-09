@@ -4,6 +4,7 @@ import { getStoreSectionsForPage } from '../utils/layoutConstants';
 import { CenterPreviewCanvas } from '../components/layout-editor/CenterPreviewCanvas';
 import { THEME_DATA_MAP } from './themeData';
 import { normalizeThemeId } from './ThemeRegistry';
+import { useCmsStore } from '../cms/useCmsStore';
 
 interface ThemeRendererProps {
   store?: Store;
@@ -40,6 +41,11 @@ const resolveInitialPage = (store?: Store): string => {
 export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = [] }) => {
   // ✅ Hooks MUST be called unconditionally at the top — before any early returns
   const [activePage, setActivePage] = React.useState<string>(() => resolveInitialPage(store));
+
+  // Logo gambar toko (stores.logo_url) dipakai navbar tema bila header belum punya logo sendiri.
+  React.useEffect(() => {
+    useCmsStore.getState().updateStoreInfo({ logoUrl: store?.logoUrl || '' });
+  }, [store?.logoUrl]);
 
   // Guard: if no store, render a fallback (after hooks)
   if (!store || !store.id) {

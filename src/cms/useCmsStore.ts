@@ -317,6 +317,7 @@ export const useCmsStore = create<CmsState>((set, get) => ({
             email: isDemoContact(state.storeInfo.email) ? '' : state.storeInfo.email,
             phone: '',
             socials: {},
+            logoUrl: state.storeInfo.logoUrl || '',
           },
           // Hanya produk asli toko. Produk contoh template ditampilkan oleh section tema
           // khusus di Editor Layout (lihat useThemeProductsSource), tidak di toko publik.
