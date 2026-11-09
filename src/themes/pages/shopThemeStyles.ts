@@ -152,26 +152,26 @@ const fashion: ShopThemeStyle = {
 
 const futuristic: ShopThemeStyle = {
   page: "bg-[#050505] text-white font-['Space_Grotesk',sans-serif]",
-  eyebrow: 'inline-block px-4 py-1.5 border border-red-500/40 text-red-400 rounded-full text-[10px] font-mono uppercase tracking-widest',
+  eyebrow: 'inline-block px-4 py-1.5 border border-[color-mix(in_srgb,var(--shop-accent)_45%,transparent)] text-[var(--shop-accent)] rounded-full text-[10px] font-mono uppercase tracking-widest',
   title: 'font-black uppercase tracking-tighter text-white',
   description: 'text-gray-400 font-mono',
-  divider: 'w-16 h-px bg-gradient-to-r from-red-500 to-transparent',
-  searchInput: 'bg-white/5 border border-white/15 rounded text-white placeholder:text-gray-500 focus:border-red-500 font-mono',
+  divider: 'w-16 h-px bg-gradient-to-r from-[var(--shop-accent)] to-transparent',
+  searchInput: 'bg-white/5 border border-white/15 rounded text-white placeholder:text-gray-500 focus:border-[var(--shop-accent)] font-mono',
   select: 'bg-[#0d0d0d] border border-white/15 rounded text-gray-200 font-mono',
-  pillActive: 'bg-red-600 text-white rounded uppercase tracking-widest text-[10px] font-bold',
-  pillInactive: 'border border-white/15 text-gray-300 rounded uppercase tracking-widest text-[10px] hover:border-red-500/60',
+  pillActive: 'bg-[var(--shop-accent)] text-white rounded uppercase tracking-widest text-[10px] font-bold',
+  pillInactive: 'border border-white/15 text-gray-300 rounded uppercase tracking-widest text-[10px] hover:border-[color-mix(in_srgb,var(--shop-accent)_45%,transparent)]',
   countText: 'text-gray-500 font-mono',
-  card: 'group bg-[#0D0D0D] border border-white/10 rounded-xl p-3 hover:border-red-500/60 transition-colors',
+  card: 'group bg-[#0D0D0D] border border-white/10 rounded-xl p-3 hover:border-[color-mix(in_srgb,var(--shop-accent)_45%,transparent)] transition-colors',
   imageWrap: 'aspect-square rounded-lg bg-[#111111]',
   image: 'group-hover:scale-105 duration-500',
-  badge: 'bg-red-500/10 border border-red-500 text-red-400 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded',
-  discount: 'bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded',
-  category: 'text-[10px] text-red-500 uppercase tracking-widest font-bold',
+  badge: 'bg-[color-mix(in_srgb,var(--shop-accent)_14%,transparent)] border border-[var(--shop-accent)] text-[var(--shop-accent)] text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded',
+  discount: 'bg-[var(--shop-accent)] text-white text-[10px] font-bold px-2 py-1 rounded',
+  category: 'text-[10px] text-[var(--shop-accent)] uppercase tracking-widest font-bold',
   name: 'text-sm text-white font-medium line-clamp-2',
   price: 'text-base font-bold text-white',
-  comparePrice: 'text-xs text-gray-500 line-through decoration-red-500/50',
-  button: 'w-full py-2 border border-red-500 text-red-400 hover:bg-red-600 hover:text-white uppercase tracking-widest text-[10px] font-bold rounded',
-  loadMore: 'border border-red-500 text-red-400 hover:bg-red-600 hover:text-white uppercase tracking-widest text-[10px] font-bold rounded px-8 py-3',
+  comparePrice: 'text-xs text-gray-500 line-through',
+  button: 'w-full py-2 border border-[var(--shop-accent)] text-[var(--shop-accent)] hover:bg-[var(--shop-accent)] hover:text-white uppercase tracking-widest text-[10px] font-bold rounded',
+  loadMore: 'border border-[var(--shop-accent)] text-[var(--shop-accent)] hover:bg-[var(--shop-accent)] hover:text-white uppercase tracking-widest text-[10px] font-bold rounded px-8 py-3',
 };
 
 const STYLES: Record<string, ShopThemeStyle> = {
@@ -183,6 +183,19 @@ const STYLES: Record<string, ShopThemeStyle> = {
   fashion,
   futuristic,
 };
+
+/** Warna aksen bawaan tema bila merchant belum mengatur warna aksen. */
+const DEFAULT_ACCENTS: Record<string, string> = {
+  futuristic: '#8B5CF6',
+};
+
+/** Warna aksen untuk halaman katalog (dipakai lewat variabel CSS --shop-accent). */
+export function getShopAccent(themeId?: string, accentColor?: string): string {
+  const custom = (accentColor || '').trim();
+  // '#1A1A1A' adalah nilai default editor bila aksen belum dipilih.
+  if (custom && custom.toUpperCase() !== '#1A1A1A') return custom;
+  return DEFAULT_ACCENTS[normalizeThemeId(themeId)] || '#1A1A1A';
+}
 
 export function getShopThemeStyle(themeId?: string): ShopThemeStyle {
   return STYLES[normalizeThemeId(themeId)] || minimalist;

@@ -361,6 +361,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     if (pageId === 'catalog' || pageId === 'katalog') {
           return (
             <ShopPage 
+              accentColor={primaryAccent}
               themeId={activeThemeId}
               store={store}
               products={products}
@@ -462,6 +463,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     if (pageId === 'promo') {
           return (
             <ShopPage 
+              accentColor={primaryAccent}
               themeId={activeThemeId}
               store={store}
               products={products}
@@ -508,6 +510,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     if (pageId === 'category') {
           return (
             <ShopPage 
+              accentColor={primaryAccent}
               themeId={activeThemeId}
               store={store}
               products={products}
@@ -531,6 +534,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
     if (pageId === 'wishlist') {
           return (
             <ShopPage 
+              accentColor={primaryAccent}
               themeId={activeThemeId}
               store={store}
               products={products}

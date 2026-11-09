@@ -23,7 +23,7 @@ import { useCmsStore } from '../../cms/useCmsStore';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { cartService } from '../../services/cartService';
 import { getEnrichedCatalog, CatalogProduct } from '../catalogData';
-import { getShopThemeStyle } from './shopThemeStyles';
+import { getShopThemeStyle, getShopAccent } from './shopThemeStyles';
 
 interface ShopPageProps {
   themeData?: ThemeSchema;
@@ -33,6 +33,8 @@ interface ShopPageProps {
   isWishlist?: boolean;
   onNavigate?: (pageId: string) => void;
   deviceMode?: 'desktop' | 'tablet' | 'mobile';
+  /** Warna aksen tema dari editor (primaryAccent). */
+  accentColor?: string;
 }
 
 export const ShopPage: React.FC<ShopPageProps> = ({ 
@@ -43,6 +45,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   isWishlist, 
   onNavigate,
   deviceMode,
+  accentColor,
 }) => {
   const isMobile = deviceMode === 'mobile';
   const isTablet = deviceMode === 'tablet';
@@ -851,7 +854,10 @@ export const ShopPage: React.FC<ShopPageProps> = ({
     const ts = getShopThemeStyle(activeThemeId);
 
     return (
-      <div className={`pt-20 pb-20 min-h-screen ${ts.page}`}>
+      <div
+        className={`pt-20 pb-20 min-h-screen ${ts.page}`}
+        style={{ ['--shop-accent' as any]: getShopAccent(activeThemeId, accentColor || store?.layoutSettings?.primaryAccent) }}
+      >
         <div className={rc('max-w-7xl mx-auto px-4 sm:px-6 md:px-8')}>
 
           {/* Header Title */}
