@@ -178,17 +178,6 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
               </div>
             ) : (
               <div className="space-y-2.5">
-                {phoneWhatsApp && (
-                  <a
-                    href={`https://wa.me/${phoneWhatsApp}?text=${encodeURIComponent(`Halo ${storeName}, saya melihat toko online Anda sedang tidak aktif. Apakah masih menerima pesanan?`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <MessageCircle className="w-4 h-4 text-white" />
-                    <span>Hubungi Penjual via WhatsApp</span>
-                  </a>
-                )}
 
                 <a
                   href="https://lapakq.com"

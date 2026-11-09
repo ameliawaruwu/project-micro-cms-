@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const NatureNavbar: React.FC<{ 
   sectionOptions?: any; 
@@ -40,11 +41,7 @@ export const NatureNavbar: React.FC<{
     ? undefined
     : rawSub;
 
-  const navList = (navigation && navigation.length > 0) ? navigation : [
-    { id: 'nn1', label: 'Pasar Segar', route: '/katalog' },
-    { id: 'nn2', label: 'Mitra Petani', route: '/tentang' },
-    { id: 'nn3', label: 'Edukasi Organik', route: '/berita' },
-  ];
+  const navList = getNavMenuItems(sectionOptions);
 
   const navFlexClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
@@ -164,6 +161,7 @@ export const NatureHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
 
 export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo, navigation } = useCmsStore();
+  const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const rawStoreName = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo?.name;
   const storeName = (!rawStoreName || rawStoreName === 'NEON//CORE Electronics') ? 'Green Market' : rawStoreName;
 
@@ -174,12 +172,7 @@ export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
 
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName.toUpperCase()}. ALL RIGHTS RESERVED.`;
 
-  const footerLinks = (navigation && navigation.length > 0) ? navigation : [
-    { id: "fn1", label: "Pasar Segar", route: "/katalog" },
-    { id: "fn2", label: "Mitra Petani", route: "/tentang" },
-    { id: "fn3", label: "Edukasi Organik", route: "/berita" },
-    { id: "fn4", label: "Kontak Kami", route: "/kontak" }
-  ];
+  const footerLinks = getNavMenuItems(sectionOptions);
 
   return (
     <footer className="w-full px-8 md:px-16 py-24 bg-[#2C3B2D] text-[#E8E4DB] rounded-t-[40px] mt-12 flex flex-col items-center shadow-inner font-serif">
@@ -202,6 +195,9 @@ export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
         </div>
         
         <div className="w-full h-px bg-[#E8E4DB]/20 mb-8"></div>
+        {footerEmail && (
+          <a href={`mailto:${footerEmail}`} className="inline-block text-sm opacity-80 mb-8 hover:underline font-sans break-all">{footerEmail}</a>
+        )}
         <div className="text-[10px] uppercase font-sans tracking-widest opacity-50 font-medium">
           {copyrightText}
         </div>

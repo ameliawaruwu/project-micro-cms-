@@ -466,9 +466,9 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-gray-700">Email Kontak</label>
+                      <label className="text-[11px] font-bold text-gray-700">Email Kontak Toko</label>
                       <input
                         type="email"
                         value={opts.email !== undefined ? opts.email : ((store as any).email || '')}
@@ -482,21 +482,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                         className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-gray-700">No. WhatsApp</label>
-                      <input
-                        type="text"
-                        value={opts.phone !== undefined ? opts.phone : (store.phoneWhatsApp || '')}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          handleOptionChange({ phone: val, phoneWhatsApp: val });
-                          useCmsStore.getState().updateStoreInfo({ phone: val });
-                          if (onUpdateStore) onUpdateStore({ phoneWhatsApp: val });
-                        }}
-                        placeholder="081234567890"
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
-                      />
-                    </div>
+                    <p className="text-[11px] text-gray-500">Pembeli menghubungi toko lewat email ini (tampil di footer).</p>
                   </div>
                 </div>
 
@@ -771,15 +757,6 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       type="checkbox"
                       checked={opts.showCartBadge !== false}
                       onChange={(e) => handleOptionChange({ showCartBadge: e.target.checked })}
-                      className="w-4 h-4 rounded text-[#202223]"
-                    />
-                  </label>
-                  <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
-                    <span className="text-[12px] text-[#202223]">Tombol Kontak WhatsApp</span>
-                    <input
-                      type="checkbox"
-                      checked={opts.showWhatsAppButton !== false}
-                      onChange={(e) => handleOptionChange({ showWhatsAppButton: e.target.checked })}
                       className="w-4 h-4 rounded text-[#202223]"
                     />
                   </label>

@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { cartService } from '../../../services/cartService';
 import { Search, ShoppingBag, Menu, X } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -39,14 +40,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
 
-  const navItems = (sectionOptions.navMenuItems && sectionOptions.navMenuItems.length > 0)
-    ? sectionOptions.navMenuItems.map((item: any, i: number) => ({
-        id: item.id || `nav-${i}`,
-        label: item.label || item.name,
-        route: item.href || item.route || '#',
-        isActive: true,
-      }))
-    : navigation.filter(n => n.isActive);
+  const navItems = getNavMenuItems(sectionOptions);
 
   // Pada preview editor (device dipaksa), nav desktop & hamburger harus mengikuti
   // device yang DIPILIH, bukan lebar window browser sesungguhnya.

@@ -993,19 +993,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
               </div>
 
-              {/* WhatsApp Notification CTA */}
-              <a
-                href={generateWhatsAppLink(
-                  store.phoneWhatsApp,
-                  `Halo ${store.name}, saya sudah melakukan pembayaran pesanan di toko online Anda.\n\nNo Pesanan: #${completedOrder.orderNumber}\nPenerima: ${completedOrder.customerName}\nTotal: ${formatRupiah(completedOrder.grandTotal)}\nMetode: ${completedOrder.paymentMethod}\n\nMohon bantu proses pengirimannya ya, terima kasih!`
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3 px-4 rounded-xl bg-[#ECFDF3] hover:bg-[#D1FADF] text-[#027A48] font-bold text-xs border border-[#ABEFC6] transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Kirim Bukti Pesanan ke WA Toko</span>
-              </a>
 
               <div className="space-y-2 pt-1">
                 <button

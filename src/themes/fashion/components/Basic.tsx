@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -46,6 +47,19 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
           </button>
         </div>
       </div>
+      {showNav && (
+        <div className="w-full border-t border-white/10 px-6 py-3 flex flex-wrap justify-center gap-x-8 gap-y-2">
+          {getNavMenuItems(sectionOptions).map((nav) => (
+            <a
+              key={nav.id}
+              href={nav.route}
+              className="text-[10px] uppercase tracking-[0.25em] text-gray-300 hover:text-white transition-colors"
+            >
+              {nav.label}
+            </a>
+          ))}
+        </div>
+      )}
     </nav>
   );
 };
@@ -87,6 +101,7 @@ export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions
 
 export const FashionFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
+  const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
@@ -148,6 +163,9 @@ export const FashionFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
         </div>
         
         <div className={`pt-8 border-t border-white/10 flex ${bottomFlexClass} justify-between items-center gap-4 text-xs text-gray-500 uppercase tracking-widest`}>
+          {footerEmail && (
+            <a href={`mailto:${footerEmail}`} className="hover:text-white transition-colors break-all">{footerEmail}</a>
+          )}
           <p>{copyrightText}</p>
           <div className="flex gap-6">
             <a href="#" className="hover:text-white transition-colors">Privacy</a>

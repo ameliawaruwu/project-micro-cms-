@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -22,7 +23,7 @@ export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
       <div className="w-1/3 flex justify-start">
         {showNav && (
           <div className={`${showDesktopNav} gap-10`}>
-            {navigation.map(nav => (
+            {getNavMenuItems(sectionOptions).map(nav => (
               <a key={nav.id} href={nav.route} className="text-[10px] uppercase tracking-[0.25em] text-[#7D6E63] hover:text-[#8C531B] transition-colors duration-300">
                 {nav.label}
               </a>
@@ -119,6 +120,7 @@ export const LuxuryHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
 
 export const LuxuryFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
+  const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const { isEn } = useLanguage();
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.description || storeInfo?.description;
@@ -159,6 +161,9 @@ export const LuxuryFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
       
       <div className="w-12 h-px bg-[#8C531B]/30 mb-8"></div>
       
+      {footerEmail && (
+        <a href={`mailto:${footerEmail}`} className="block text-xs text-[#7D6E63] font-sans mb-6 hover:underline break-all text-center">{footerEmail}</a>
+      )}
       <p className="text-[9px] uppercase tracking-[0.35em] text-[#9E8E81] text-center font-mono">
         {copyrightText}
       </p>

@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, Menu, Heart } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -63,7 +64,7 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
 
         {/* Center: Desktop Navigation */}
         <nav className={`${showDesktopNav} items-center justify-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm`}>
-          {navigation.filter(n => n.isActive).map((nav) => (
+          {getNavMenuItems(sectionOptions).map((nav) => (
             <a
               key={nav.id}
               href={nav.route}

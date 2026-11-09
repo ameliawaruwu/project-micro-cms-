@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -41,7 +42,7 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
       
       {showNav && (
         <div className={`${navWidthClass} flex flex-wrap ${navJustifyClass} items-center gap-8 font-bold uppercase tracking-wider text-xs md:text-sm ${navMarginClass}`}>
-          {navigation.map(nav => (
+          {getNavMenuItems(sectionOptions).map(nav => (
             <a key={nav.id} href={nav.route} className="text-zinc-400 hover:text-white transition-colors relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-red-500 hover:after:w-full after:transition-all">
               {nav.label}
             </a>
@@ -137,6 +138,7 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
 
 export const BoldFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
+  const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo.name || 'RAWSTATE';
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle} ALL RIGHTS RESERVED`;
 
@@ -152,6 +154,9 @@ export const BoldFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
           <a href="#" className="hover:text-white transition-colors">TikTok</a>
           <a href="#" className="hover:text-white transition-colors">Discord</a>
         </div>
+        {footerEmail && (
+          <a href={`mailto:${footerEmail}`} className="block text-xs font-black uppercase tracking-widest mb-3 hover:underline break-all">{footerEmail}</a>
+        )}
         <div className="pt-6 border-t border-zinc-900 text-xs font-medium text-zinc-500 tracking-wider">
           {copyrightText}
         </div>

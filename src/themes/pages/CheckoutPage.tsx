@@ -183,6 +183,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         imageUrl: ci.product.imageUrl,
         weightGrams: ci.product.weightGrams || 350,
       }))
+    : deviceMode === undefined
+    ? [] // Toko publik: keranjang kosong tetap kosong, jangan isi produk contoh.
     : products.length > 0
     ? products.slice(0, 2).map((p) => ({
         id: p.id,
@@ -356,6 +358,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
   const shippingFee = selectedRate ? selectedRate.price : 0;
   const total = subtotal + shippingFee;
+  const cartTotal = total;
 
   // Store payment configuration (COD, Manual QRIS/Bank, Payment Gateway)
   const paymentConfig: StorePaymentConfig = useMemo(() => {
@@ -835,6 +838,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const renderContent = () => {
     // 1. ORDER COMPLETED VIEW
     if (isCompleted) {
+      // Keranjang sudah dikosongkan setelah pesanan dibuat; pakai total dari pesanan.
+      const total = createdOrder?.grandTotal ?? cartTotal;
       const orderNum = createdOrder?.orderNumber || '#ORD-88231';
       const courierInfo = selectedRate
         ? `${selectedRate.courier_name} (${selectedRate.courier_service_name})`
@@ -848,14 +853,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         createdOrder?.paymentMethod?.includes('QRIS & Transfer') ||
         selectedPaymentId === 'manual_transfer';
 
-      const cleanPhone = (store?.phoneWhatsApp || '081234567890').replace(/[^0-9]/g, '');
-      const finalWaPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
-
-      const waOrderMsg = isCodOrder
-        ? `Halo ${store?.name || 'Toko'}, saya sudah melakukan pemesanan COD dengan Nomor Pesanan ${orderNum} sebesar Rp ${total.toLocaleString('id-ID')}. Mohon konfirmasi dan segera dikirim ke alamat saya. Terima kasih!`
-        : `Halo ${store?.name || 'Toko'}, saya ingin bertanya tentang pesanan ${orderNum} sebesar Rp ${total.toLocaleString('id-ID')}.`;
-
-      const waLink = `https://wa.me/${finalWaPhone}?text=${encodeURIComponent(waOrderMsg)}`;
 
       return (
         <div className="py-12 sm:py-20 px-4 sm:px-6 max-w-2xl mx-auto text-center font-sans">
@@ -1050,17 +1047,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     )}
                   </>
                 )
-              ) : (
-                <a
-                  href={waLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold rounded-xl flex items-center justify-center gap-2 transition cursor-pointer shadow-md text-sm"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Hubungi Penjual via WhatsApp</span>
-                </a>
-              )}
+              ) : null}
 
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <button
@@ -1079,6 +1066,25 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Toko publik dengan keranjang kosong.
+    if (sampleItems.length === 0) {
+      return (
+        <div className="pt-24 pb-24 min-h-[60vh] flex items-center justify-center px-6 text-center font-sans">
+          <div className="max-w-sm space-y-3">
+            <h1 className="text-xl font-semibold text-gray-900">Keranjang belanja kosong</h1>
+            <p className="text-sm text-gray-500">Tambahkan produk ke keranjang terlebih dahulu sebelum checkout.</p>
+            <button
+              type="button"
+              onClick={() => onNavigate && onNavigate('katalog')}
+              className="px-5 py-2.5 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition cursor-pointer"
+            >
+              Lihat Katalog
+            </button>
           </div>
         </div>
       );

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -35,14 +36,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
     fallback: 'flex-col sm:flex-row',
   });
 
-  const navList = (sectionOptions.navMenuItems && sectionOptions.navMenuItems.length > 0)
-    ? sectionOptions.navMenuItems.map((item: any, i: number) => ({
-        id: item.id || `nav-${i}`,
-        label: item.label || item.name,
-        route: item.href || item.route || '#',
-        isActive: true,
-      }))
-    : navigation.filter(n => n.isActive);
+  const navList = getNavMenuItems(sectionOptions);
 
   return (
     <footer className="w-full max-w-full bg-white pt-10 sm:pt-16 md:pt-28 pb-8 sm:pb-12 px-3.5 sm:px-6 md:px-12 font-sans box-border overflow-hidden border-t border-gray-100">
@@ -76,8 +70,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
           <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">Connect</h4>
           <ul className="space-y-2 text-xs sm:text-sm text-gray-600 font-light mb-6">
             {address && <li className="break-words">{address}</li>}
-            {email && <li className="break-words">{email}</li>}
-            {phone && <li className="break-words">{phone}</li>}
+            {email && <li className="break-all"><a href={`mailto:${email}`} className="hover:text-black transition-colors">{email}</a></li>}
           </ul>
           <div className="flex items-center gap-5">
             {instagram && (

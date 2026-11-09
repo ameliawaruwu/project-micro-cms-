@@ -59,7 +59,6 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
       : DEFAULT_LANDING_NAV_ITEMS;
   const showSearchBar = opts.showSearchBar !== false;
   const showCartBadge = opts.showCartBadge !== false;
-  const showWhatsAppButton = opts.showWhatsAppButton !== false;
 
   const isBrandStyle = style === 'brand';
   const isMinimalStyle = style === 'minimal';
@@ -207,25 +206,6 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
 
         {/* Action Buttons: WhatsApp, Cart, Mobile Menu Toggle */}
         <div className="flex items-center gap-2 shrink-0">
-          {showWhatsAppButton && (
-            <a
-              href={generateWhatsAppLink(
-                store.phoneWhatsApp,
-                `Halo ${store.name}, saya ingin bertanya mengenai katalog produk online.`
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition border cursor-pointer ${
-                isBrandStyle
-                  ? 'bg-white/15 text-white hover:bg-white/25 border-white/20'
-                  : 'bg-[#ECFDF3] hover:bg-[#D1FADF] text-[#027A48] border-[#ABEFC6]'
-              }`}
-              title="Chat Toko via WhatsApp"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              <span>Chat Toko</span>
-            </a>
-          )}
 
           {/* Cart Button */}
           {showCartBadge && (
@@ -323,22 +303,6 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
               <ChevronRight className="w-3.5 h-3.5 opacity-50" />
             </a>
           ))}
-          {showWhatsAppButton && (
-            <div className="pt-2">
-              <a
-                href={generateWhatsAppLink(
-                  store.phoneWhatsApp,
-                  `Halo ${store.name}, saya ingin bertanya mengenai katalog produk online.`
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2 rounded-xl bg-[#ECFDF3] text-[#027A48] font-bold text-xs border border-[#ABEFC6]"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Hubungi via WhatsApp</span>
-              </a>
-            </div>
-          )}
         </div>
       )}
 

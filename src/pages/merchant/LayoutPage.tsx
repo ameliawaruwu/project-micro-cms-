@@ -23,6 +23,7 @@ import { ThemeLibraryView, TemplateGalleryItem, SavedThemeItem, TEMPLATE_GALLERY
 import { PublishStoreModal } from '../../components/layout-editor/PublishStoreModal';
 import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2, EyeOff, Eye } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
+import { filterRealProducts } from '../../utils/demoProducts';
 import { THEME_DATA_MAP } from '../../themes/themeData';
 import { normalizeThemeId } from '../../themes/ThemeRegistry';
 import { storeService } from '../../services/storeService';
@@ -172,12 +173,12 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       useCmsStore.getState().updateStoreInfo({
         name: activeName,
         description: currentStore.description || themeData.storeInfo.description,
-        address: currentStore.address || themeData.storeInfo.address,
-        email: (currentStore as any).email || themeData.storeInfo.email,
-        phone: currentStore.phoneWhatsApp || themeData.storeInfo.phone,
+        address: currentStore.address || '',
+        email: (currentStore as any).email || user?.email || '',
+        phone: '',
       });
     }
-  }, [activeThemeId, currentStore.name]);
+  }, [activeThemeId, currentStore.name, user?.email]);
 
   // 1. Cek apakah merchant memiliki produk nyata di Daftar Produk
   const hasMerchantProducts = Boolean(products && products.length > 0);
@@ -319,6 +320,26 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
     return defaultMap;
   });
+
+  // Email kontak footer: default ke email akun merchant agar ikut tersimpan saat Simpan/Publikasikan.
+  useEffect(() => {
+    const ownerEmail = (currentStore as any).email || user?.email;
+    if (!ownerEmail) return;
+    setPageSectionsMap((prev) => {
+      let changed = false;
+      const next: Record<string, StoreSectionConfig[]> = {};
+      for (const [page, sections] of Object.entries(prev)) {
+        next[page] = sections.map((section) => {
+          if (section.id === 'footer' && !(section.options as any)?.email) {
+            changed = true;
+            return { ...section, options: { ...(section.options || {}), email: ownerEmail } as any };
+          }
+          return section;
+        });
+      }
+      return changed ? next : prev;
+    });
+  }, [user?.email]);
 
   useEffect(() => {
     setCurrentStore(store);
@@ -1763,7 +1784,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             isOpen={isPublishModalOpen}
             onClose={() => setIsPublishModalOpen(false)}
             store={currentStore}
-            products={displayProducts}
+            products={filterRealProducts(products)}
             onNavigateBilling={onNavigateBilling}
             onNavigateDomain={onNavigateDomain}
             onPublish={() => {

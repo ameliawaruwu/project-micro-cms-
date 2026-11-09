@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, MessageCircle, Menu, X } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -32,24 +33,12 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
   const isSticky = sectionOptions.stickyHeader ?? true;
   const showSearch = sectionOptions.showSearchBar ?? true;
   const showCart = sectionOptions.showCartBadge ?? true;
-  const showWhatsApp = sectionOptions.showWhatsAppButton ?? false;
 
   const rawTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeTitle = (!rawTitle || rawTitle === 'Green Market Indonesia') ? 'LOOKSEE' : rawTitle;
   const leftSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description || "The Journal";
 
-  const navItems = (sectionOptions.navMenuItems && sectionOptions.navMenuItems.length > 0)
-    ? sectionOptions.navMenuItems.map((item: any, i: number) => ({
-        id: item.id || `nav-${i}`,
-        label: item.label || item.name,
-        route: item.href || item.route || '#',
-        isActive: true,
-      }))
-    : (navigation && navigation.length > 0 ? navigation : [
-        { id: 'en1', label: 'Collection', route: '/katalog', isActive: true },
-        { id: 'en2', label: 'Editorial', route: '/berita', isActive: true },
-        { id: 'en3', label: 'Behind The Scenes', route: '/tentang', isActive: true },
-      ]);
+  const navItems = getNavMenuItems(sectionOptions);
 
   return (
     <header className={`w-full bg-[#FAFAFA] border-b border-gray-200/90 font-serif ${isSticky ? 'sticky top-0 z-50' : 'relative z-10'} transition-all`}>
@@ -105,18 +94,6 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
             </button>
           )}
 
-          {showWhatsApp && (
-            <a
-              href={`https://wa.me/${(storeInfo.phone || '628123456789').replace(/[^0-9]/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-emerald-700 hover:text-emerald-900 transition-colors"
-              title="WhatsApp"
-            >
-              <MessageCircle className="w-4 h-4 text-emerald-600" />
-              <span className="hidden xl:inline">Chat</span>
-            </a>
-          )}
 
           {showCart && (
             <button
@@ -215,7 +192,7 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolea
   const storeTitle = (!rawTitle || rawTitle === 'Green Market Indonesia') ? 'LOOKSEE' : rawTitle;
   const storeDesc = sectionOptions.description !== undefined ? sectionOptions.description : (sectionOptions.tagline || storeInfo?.description);
   const address = sectionOptions.address !== undefined ? sectionOptions.address : ((storeInfo?.address && !storeInfo.address.includes('Lembang')) ? storeInfo.address : 'Grand Indonesia West Mall Lt. 1, Jakarta');
-  const email = sectionOptions.email !== undefined ? sectionOptions.email : ((storeInfo?.email && !storeInfo.email.includes('greenmarket')) ? storeInfo.email : 'contact@looksee.id');
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
   const footerFlexClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
@@ -239,7 +216,7 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolea
         </div>
         <div>
           <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-4">Inquiries</p>
-          <p className="text-xs uppercase tracking-widest text-gray-300">{email}</p>
+          {email && <a href={`mailto:${email}`} className="block text-xs uppercase tracking-widest text-gray-300 hover:text-white break-all">{email}</a>}
         </div>
       </div>
       <div className="w-full max-w-lg h-[1px] bg-gray-800 mb-8"></div>

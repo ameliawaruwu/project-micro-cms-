@@ -763,18 +763,6 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                       )}
 
                       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                        {!isMobile && opts.showWhatsAppButton !== false && (
-                          <div
-                            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl font-semibold text-xs border ${
-                              opts.headerStyle === 'brand'
-                                ? 'bg-white/15 text-white border-white/20'
-                                : 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]'
-                            }`}
-                          >
-                            <MessageCircle className="w-3.5 h-3.5" />
-                            <span className={isTablet ? 'hidden' : 'inline'}>Chat Toko</span>
-                          </div>
-                        )}
 
                         {opts.showCartBadge !== false && (
                           <div
@@ -1511,17 +1499,6 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                         </p>
                       </div>
 
-                      {opts.showWhatsAppButton !== false && (
-                        <button
-                          type="button"
-                          className={`rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-2xs cursor-pointer ${
-                            isMobile ? 'w-full py-2' : 'px-4 py-2'
-                          }`}
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                          <span>Chat WhatsApp Toko</span>
-                        </button>
-                      )}
                     </div>
                   </div>
                 )}
@@ -2007,18 +1984,6 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                           {/* Action Buttons: WhatsApp, Cart, and Mobile/Tablet Hamburger */}
                           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                             {/* WhatsApp Button (Shown on Desktop & Tablet) */}
-                            {!isMobile && opts.showWhatsAppButton !== false && (
-                              <div
-                                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl font-semibold text-xs border ${
-                                  opts.headerStyle === 'brand'
-                                    ? 'bg-white/15 text-white border-white/20'
-                                    : 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]'
-                                }`}
-                              >
-                                <MessageCircle className="w-3.5 h-3.5" />
-                                <span className={isTablet ? 'hidden' : 'inline'}>Chat Toko</span>
-                              </div>
-                            )}
 
                             {/* Cart Button */}
                             {opts.showCartBadge !== false && (
@@ -2115,14 +2080,6 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                                 <ChevronRight className="w-3.5 h-3.5 opacity-50" />
                               </div>
                             ))}
-                            {opts.showWhatsAppButton !== false && (
-                              <div className="pt-2">
-                                <div className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl bg-[#ECFDF3] text-[#027A48] font-bold text-xs border border-[#ABEFC6]">
-                                  <MessageCircle className="w-3.5 h-3.5" />
-                                  <span>Hubungi via WhatsApp</span>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         )}
                       </div>
@@ -2749,17 +2706,6 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                             </p>
                           </div>
 
-                          {opts.showWhatsAppButton !== false && (
-                            <button
-                              type="button"
-                              className={`rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-2xs cursor-pointer ${
-                                isMobile ? 'w-full py-2' : 'px-4 py-2'
-                              }`}
-                            >
-                              <MessageCircle className="w-4 h-4" />
-                              <span>Chat WhatsApp Toko</span>
-                            </button>
-                          )}
                         </div>
                       </div>
                     )}
@@ -2771,11 +2717,10 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = ({
                         {(opts.description || store.description) && (
                           <p className="text-xs text-[#A8A09E] max-w-md mx-auto">{opts.description || store.description}</p>
                         )}
-                        {(opts.address || opts.email || opts.phone || store.address || store.phoneWhatsApp) && (
+                        {(opts.address || opts.email || store.address) && (
                           <div className="text-[11px] text-[#A8A09E] space-y-0.5 pt-1">
                             {(opts.address || store.address) && <p>{opts.address || store.address}</p>}
-                            {(opts.email || (store as any).email) && <p>{opts.email || (store as any).email}</p>}
-                            {(opts.phone || store.phoneWhatsApp) && <p>{opts.phone || store.phoneWhatsApp}</p>}
+                            {opts.email && <p><a href={`mailto:${opts.email}`} className="hover:underline">{opts.email}</a></p>}
                           </div>
                         )}
                         <InlineEditableText

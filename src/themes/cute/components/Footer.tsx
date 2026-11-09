@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Heart } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -58,7 +59,7 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
             Jalan Pintas 🌈
           </h4>
           <ul className="space-y-4">
-            {navigation.map(nav => (
+            {getNavMenuItems(sectionOptions).map(nav => (
               <li key={nav.id}>
                 <a href={nav.route} className="text-gray-600 font-bold hover:text-[#FF85A1] transition-colors flex items-center gap-2">
                   <span className="text-[#FF85A1]">✿</span> {nav.label}
@@ -75,8 +76,7 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
           </h4>
           <ul className="space-y-4 font-bold text-gray-600">
             {address && <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full">{address}</li>}
-            {email && <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full">{email}</li>}
-            {phone && <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full">{phone}</li>}
+            {email && <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full break-all"><a href={`mailto:${email}`} className="hover:underline">{email}</a></li>}
           </ul>
         </div>
 

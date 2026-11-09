@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -34,7 +35,7 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean
       
       {showNav && (
         <div className={`${showDesktopNav} gap-8 flex-1 justify-center items-center`}>
-          {navigation.map(nav => (
+          {getNavMenuItems(sectionOptions).map(nav => (
             <a key={nav.id} href={nav.route} className="text-sm font-bold uppercase tracking-widest hover:text-yellow-300 hover:scale-110 transition-transform">
               {nav.label}
             </a>
@@ -99,6 +100,7 @@ export const CreativeHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
 
 export const CreativeFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
+  const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
@@ -122,6 +124,9 @@ export const CreativeFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
         <a href="#" className="hover:text-pink-400 transition-colors">Instagram</a>
       </div>
       
+      {footerEmail && (
+        <a href={`mailto:${footerEmail}`} className="block text-sm text-gray-300 hover:text-white mb-6 break-all">{footerEmail}</a>
+      )}
       <p className="text-xs tracking-widest text-gray-500 font-medium">
         {copyrightText} — CREATIVE STUDIO
       </p>

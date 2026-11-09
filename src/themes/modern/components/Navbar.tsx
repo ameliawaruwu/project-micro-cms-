@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, Menu } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -32,7 +33,7 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
 
         {/* Desktop Navigation */}
         <nav className={`${showDesktopNav} items-center gap-7`}>
-          {navigation.filter(n => n.isActive).map((nav) => (
+          {getNavMenuItems(sectionOptions).map((nav) => (
             <a
               key={nav.id}
               href={nav.route}

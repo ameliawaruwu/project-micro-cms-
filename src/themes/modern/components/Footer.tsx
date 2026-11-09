@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
 
 export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -52,7 +53,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
           <div className={colSpan3Class}>
             <h4 className="text-xs font-bold uppercase tracking-wide text-gray-900 mb-4">Navigasi</h4>
             <ul className="space-y-2.5 text-sm text-gray-600">
-              {navigation.filter(n => n.isActive).map(nav => (
+              {getNavMenuItems(sectionOptions).map(nav => (
                 <li key={nav.id}><a href={nav.route} className="hover:text-gray-900 transition-colors">{nav.label}</a></li>
               ))}
             </ul>
@@ -62,8 +63,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
             <h4 className="text-xs font-bold uppercase tracking-wide text-gray-900 mb-4">Kontak</h4>
             <ul className="space-y-2.5 text-sm text-gray-600">
               {address && <li className="flex items-center gap-2"><MapPin className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {address}</li>}
-              {phone && <li className="flex items-center gap-2"><Phone className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {phone}</li>}
-              {email && <li className="flex items-center gap-2"><Mail className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {email}</li>}
+              {email && <li className="flex items-center gap-2"><Mail className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> <a href={`mailto:${email}`} className="hover:underline break-all">{email}</a></li>}
             </ul>
           </div>
 

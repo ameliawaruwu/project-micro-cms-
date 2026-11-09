@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
+import { getNavMenuItems } from '../../navMenu';
 
 export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -32,7 +33,7 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
       </div>
       {showNavMenu && (
         <div className={`${showDesktopNav} gap-8`}>
-          {navigation.map(nav => (
+          {getNavMenuItems(sectionOptions).map(nav => (
             <a
               key={nav.id}
               href={nav.route}

@@ -17,6 +17,7 @@ import { THEME_DATA_MAP } from '../themes/themeData';
 import { normalizeThemeId } from '../themes/ThemeRegistry';
 import { Product } from '../types';
 import { productService } from '../services/productService';
+import { isDemoProductId } from '../utils/demoProducts';
 
 export function productToCmsProduct(p: Product): CmsProduct {
   let cmsStatus: 'active' | 'draft' | 'archived' = 'active';
@@ -94,6 +95,12 @@ interface CmsState {
   getPageBySlug: (slug: string) => CmsPage | undefined;
 }
 
+/** Alamat/email/telepon milik data contoh template (THEME_DATA_MAP). */
+const DEMO_CONTACTS = new Set(
+  Object.values(THEME_DATA_MAP).flatMap((t) => [t?.storeInfo?.address, t?.storeInfo?.email, t?.storeInfo?.phone]).filter(Boolean) as string[]
+);
+const isDemoContact = (value?: string) => !value || DEMO_CONTACTS.has(value);
+
 const getInitialProducts = () => {
   if (typeof window !== 'undefined') {
     try {
@@ -101,7 +108,7 @@ const getInitialProducts = () => {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const filtered = parsed.filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
+          const filtered = parsed.filter((p: any) => p?.id && !isDemoProductId(p.id));
           if (filtered.length > 0) return filtered;
         }
       }
@@ -276,7 +283,7 @@ export const useCmsStore = create<CmsState>((set, get) => ({
       } catch (e) {}
     }
 
-    const isMockId = (id: string) => /^(mp|mod_p|ep|fp|np|bp|cp|pro_p|mock-)[0-9]/i.test(id || '');
+    const isMockId = isDemoProductId;
     const themeData = THEME_DATA_MAP[cleanThemeId] || THEME_DATA_MAP['minimalist'];
     if (themeData) {
       set((state) => {
@@ -305,9 +312,14 @@ export const useCmsStore = create<CmsState>((set, get) => ({
           storeInfo: {
             ...themeData.storeInfo,
             name: finalName,
+            // Kontak contoh template tidak boleh tampil di toko: pakai data toko (atau kosong).
+            address: isDemoContact(state.storeInfo.address) ? '' : state.storeInfo.address,
+            email: isDemoContact(state.storeInfo.email) ? '' : state.storeInfo.email,
+            phone: '',
           },
-          // Jika merchant memiliki produk asli, gunakan produk asli. Jika belum ada, gunakan mock template
-          products: effectiveReal.length > 0 ? effectiveReal : themeData.products,
+          // Hanya produk asli toko. Produk contoh template ditampilkan oleh section tema
+          // khusus di Editor Layout (lihat useThemeProductsSource), tidak di toko publik.
+          products: effectiveReal,
           categories: themeData.categories || [],
           navigation: (themeData.navigation || []).sort((a: any, b: any) => a.order - b.order),
         };
