@@ -1,6 +1,7 @@
 import React from 'react';
 import { Order, Store as StoreType } from '../../../types';
 import { formatRupiah, formatDateIndo } from '../../../utils/formatters';
+import { useStoreBaseDomain } from '../../../utils/storeDomain';
 
 interface InvoiceA4ViewProps {
   order: Order;
@@ -17,6 +18,7 @@ export const InvoiceA4View: React.FC<InvoiceA4ViewProps> = ({
   courierService,
   resiNumber,
 }) => {
+  const { domain: storeBaseDomain } = useStoreBaseDomain(store);
   return (
     <div
       id="printable-receipt"
@@ -30,7 +32,7 @@ export const InvoiceA4View: React.FC<InvoiceA4ViewProps> = ({
           </h1>
           <p className="text-xs text-gray-600 mt-0.5">{store.city || 'Indonesia'}</p>
           <p className="text-xs text-gray-600 font-mono">WA: {store.phoneWhatsApp || '-'}</p>
-          <p className="text-xs text-gray-500 font-mono">{store.customDomain || `${store.slug}.kroombox.com`}</p>
+          <p className="text-xs text-gray-500 font-mono">{store.customDomain || `${store.slug}.${storeBaseDomain}`}</p>
         </div>
 
         <div className="text-right">

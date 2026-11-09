@@ -2,6 +2,7 @@ import React from 'react';
 import { Order, Store as StoreType } from '../../../types';
 import { formatRupiah, formatDateIndo } from '../../../utils/formatters';
 import { BarcodeSvg } from './BarcodeSvg';
+import { useStoreBaseDomain } from '../../../utils/storeDomain';
 
 interface ShippingLabelViewProps {
   order: Order;
@@ -20,6 +21,7 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
   resiNumber,
   isCOD,
 }) => {
+  const { domain: storeBaseDomain } = useStoreBaseDomain(store);
   return (
     <div
       id="printable-receipt"
@@ -85,7 +87,7 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
             {store.city || 'Kota Toko'}
           </div>
           <div className="text-[9px] text-gray-500 font-mono">
-            {store.customDomain || `${store.slug}.kroombox.com`}
+            {store.customDomain || `${store.slug}.${storeBaseDomain}`}
           </div>
         </div>
       </div>

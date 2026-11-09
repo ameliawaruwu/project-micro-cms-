@@ -5,6 +5,7 @@ import html2canvas from 'html2canvas';
 import { Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { KroomifyLogo } from '../common/KroomifyLogo';
+import { useStoreBaseDomain } from '../../utils/storeDomain';
 
 export interface InvoiceRecord {
   id: string;
@@ -28,6 +29,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { domain: storeBaseDomain } = useStoreBaseDomain(store);
   const { language } = useLanguage();
   const isEn = language === 'en';
   const [copied, setCopied] = useState(false);
@@ -248,7 +250,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
                         : `Langganan Platform — ${invoice.plan} (${invoice.cycle})`}
                     </p>
                     <p className="text-[10px] text-gray-500 mt-0.5">
-                      {store.slug ? `${store.slug}.kroombox.com` : 'lapakq.com'}
+                      {store.slug ? `${store.slug}.${storeBaseDomain}` : 'lapakq.com'}
                     </p>
                   </td>
                   <td className="py-2.5 px-1.5 text-center font-semibold text-gray-800 align-top">

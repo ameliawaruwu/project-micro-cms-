@@ -8,6 +8,7 @@ import { RecentOrdersSection } from '../../components/dashboard/RecentOrdersSect
 import { useLanguage } from '../../contexts/LanguageContext';
 import { formatRupiah } from '../../utils/formatters';
 import { useDashboardData } from '../../hooks/useDashboardData';
+import { useStoreBaseDomain } from '../../utils/storeDomain';
 
 interface DashboardPageProps {
   currentUser?: User | null;
@@ -40,6 +41,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 }) => {
   const { t, language } = useLanguage();
   const isEn = language === 'en';
+  const { domain: storeBaseDomain } = useStoreBaseDomain(store);
 
   // Coordinated Single Source of Truth Hook for Dashboard Metrics
   const {
@@ -100,7 +102,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           {store.slug && store.id && Boolean(store.isPublished) && (
             <a
-              href={store.customDomain ? `https://${store.customDomain}` : `https://${store.slug}.${store.baseDomain || (store.communityId === 'comm_gmps' || store.communityName === 'GMPS' ? 'gmpsbandung.org' : 'kroombox.com')}`}
+              href={store.customDomain ? `https://${store.customDomain}` : `https://${store.slug}.${storeBaseDomain}`}
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-1.5 rounded-xl bg-[#F5E8EA] hover:bg-[#F9EDEF] border border-[#E8DDDE] text-[#66000E] text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"

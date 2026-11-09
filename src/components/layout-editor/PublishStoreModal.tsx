@@ -26,6 +26,7 @@ import { Store } from '../../types';
 import { domainRequestService, DomainRequest } from '../../services/domainRequestService';
 import { billingPlanService } from '../../services/billingPlanService';
 import { storeService } from '../../services/storeService';
+import { useStoreBaseDomain } from '../../utils/storeDomain';
 import confetti from 'canvas-confetti';
 
 interface PublishStoreModalProps {
@@ -48,9 +49,6 @@ interface DeployStage {
   status: 'pending' | 'running' | 'success' | 'failed';
 }
 
-const BASE_DOMAINS = [
-  { value: 'kroombox.com', label: '.kroombox.com', tag: 'Default Edge' },
-];
 
 export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
   isOpen,
@@ -69,8 +67,12 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   // Subdomain selection & regeneration states
   const [randomSubdomain, setRandomSubdomain] = useState('');
-  const communityBaseDomain = store.baseDomain || (store.communityId === 'comm_gmps' || store.communityName === 'GMPS' ? 'gmpsbandung.org' : null);
-  const [selectedBaseDomain, setSelectedBaseDomain] = useState(communityBaseDomain || 'kroombox.com');
+  // Toko anggota komunitas memakai domain komunitasnya; toko tanpa komunitas memakai kroombox.com.
+  const {
+    domain: selectedBaseDomain,
+    communityName: domainCommunityName,
+    loading: isBaseDomainLoading,
+  } = useStoreBaseDomain(store);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Auto Deploy states
@@ -529,11 +531,21 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 {/* Domain Jaringan */}
                 <div className="space-y-1.5 pt-1">
                   <label className="text-[11px] font-bold text-gray-700">Domain Jaringan:</label>
-                  <div className="p-2.5 rounded-xl border border-[#66000E] bg-white shadow-xs ring-1 ring-[#66000E]">
-                    <div className="text-xs font-bold text-gray-900 font-mono">
-                      .kroombox.com
+                  <div className="p-2.5 rounded-xl border border-[#66000E] bg-white shadow-xs ring-1 ring-[#66000E] flex items-center justify-between gap-2">
+                    <div className="text-xs font-bold text-gray-900 font-mono truncate">
+                      {isBaseDomainLoading ? 'Memeriksa domain komunitas…' : `.${selectedBaseDomain}`}
                     </div>
+                    {!isBaseDomainLoading && (
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F5E8EA] text-[#66000E]">
+                        {domainCommunityName ? `Domain komunitas ${domainCommunityName}` : 'Domain default'}
+                      </span>
+                    )}
                   </div>
+                  <p className="text-[10px] text-gray-500">
+                    {domainCommunityName
+                      ? 'Toko anggota komunitas otomatis memakai domain komunitasnya.'
+                      : 'Toko tanpa komunitas memakai domain default kroombox.com.'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -755,7 +767,8 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
               <button
                 type="button"
                 onClick={startAutoDeploySimulation}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-lg shadow-2xs transition active:scale-[0.98] cursor-pointer"
+                disabled={isBaseDomainLoading}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-lg shadow-2xs transition active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-wait"
               >
                 <Rocket className="w-3.5 h-3.5" />
                 <span>Konfirmasi &amp; Mulai Deploy</span>

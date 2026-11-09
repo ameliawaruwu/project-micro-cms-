@@ -1,6 +1,7 @@
 import React from 'react';
 import { Order, Store as StoreType } from '../../../types';
 import { formatRupiah, formatDateIndo } from '../../../utils/formatters';
+import { useStoreBaseDomain } from '../../../utils/storeDomain';
 
 interface ThermalReceiptViewProps {
   order: Order;
@@ -15,6 +16,7 @@ export const ThermalReceiptView: React.FC<ThermalReceiptViewProps> = ({
   courierName,
   resiNumber,
 }) => {
+  const { domain: storeBaseDomain } = useStoreBaseDomain(store);
   return (
     <div
       id="printable-receipt"
@@ -78,7 +80,7 @@ export const ThermalReceiptView: React.FC<ThermalReceiptViewProps> = ({
       {/* Footer */}
       <div className="text-center pt-2 text-[9px] text-gray-500 space-y-0.5">
         <p>Terima kasih telah berbelanja!</p>
-        <p>{store.customDomain || `${store.slug}.kroombox.com`}</p>
+        <p>{store.customDomain || `${store.slug}.${storeBaseDomain}`}</p>
       </div>
     </div>
   );
