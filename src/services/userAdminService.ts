@@ -1,6 +1,5 @@
 import { supabase } from './supabaseClient';
-import { idService } from './idService';
-import { hashPassword, getWibIsoString } from './authService';
+import { authService, getWibIsoString } from './authService';
 import { User } from '../types';
 
 export type ManagedRole = User['role'];
@@ -74,29 +73,35 @@ class UserAdminService {
     const name = input.name.trim();
     if (!name) throw new Error('Nama wajib diisi.');
     if (!isValidEmail(email)) throw new Error('Format email tidak valid.');
-    if (!input.password || input.password.length < 6) throw new Error('Password minimal 6 karakter.');
+    if (!input.password || input.password.length < 8) throw new Error('Password minimal 8 karakter.');
     if (isCommunityRole(input.role) && !input.communityId) throw new Error('Pilih komunitas untuk peran admin komunitas.');
 
     const { data: existing } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
     if (existing) throw new Error('Email sudah terdaftar.');
 
-    const now = getWibIsoString();
-    const row = {
-      id: await idService.generateNextId('users'),
-      email,
-      name,
-      phone: input.phone?.trim() || null,
-      role: input.role,
-      community_id: isCommunityRole(input.role) ? input.communityId || null : null,
-      community_name: isCommunityRole(input.role) ? input.communityName || null : null,
-      password_hash: await hashPassword(input.password),
-      created_at: now,
-      updated_at: now,
-    };
+    // Password di-hash & ditulis oleh database setelah kredensial super admin dikonfirmasi.
+    return this.adminUpsert(input, email, name);
+  }
 
-    const { data, error } = await supabase.from('users').insert(row).select(COLUMNS).single();
-    if (error) throw new Error(error.message || 'Gagal menambahkan user.');
-    return mapRow(data);
+  /** Buat/ubah akun lewat RPC admin_upsert_user (wajib kredensial super admin yang sedang login). */
+  private async adminUpsert(input: ManagedUserInput, email: string, name: string, userId?: string): Promise<ManagedUser> {
+    const admin = authService.getAdminCredential();
+    const community = isCommunityRole(input.role);
+    const { data, error } = await supabase.rpc('admin_upsert_user', {
+      p_admin_email: admin.email,
+      p_admin_password: admin.password,
+      p_email: email,
+      p_name: name,
+      p_role: input.role,
+      p_password: input.password || null,
+      p_phone: input.phone?.trim() || null,
+      p_community_id: community ? input.communityId || null : null,
+      p_community_name: community ? input.communityName || null : null,
+      p_user_id: userId || null,
+    });
+    if (error) throw new Error(/minimal 8|tidak valid|tidak dikenal/i.test(error.message) ? error.message : 'Gagal menyimpan user.');
+    if (!data?.success || !data.user) throw new Error(data?.message || 'Gagal menyimpan user.');
+    return mapRow(data.user);
   }
 
   async update(id: string, input: ManagedUserInput): Promise<ManagedUser> {
@@ -113,8 +118,9 @@ class UserAdminService {
       updated_at: getWibIsoString(),
     };
     if (input.password) {
-      if (input.password.length < 6) throw new Error('Password minimal 6 karakter.');
-      payload.password_hash = await hashPassword(input.password);
+      // Ganti password akun lain hanya lewat RPC admin (password tidak bisa ditulis langsung dari browser).
+      if (input.password.length < 8) throw new Error('Password minimal 8 karakter.');
+      return this.adminUpsert(input, input.email.toLowerCase().trim(), name, id);
     }
 
     const { data, error } = await supabase.from('users').update(payload).eq('id', id).select(COLUMNS).single();

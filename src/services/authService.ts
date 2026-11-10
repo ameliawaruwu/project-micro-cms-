@@ -10,19 +10,6 @@ const AUTH_STORE_KEY = 'microcms_active_store';
 const ACCOUNTS_KEY = 'microcms_accounts_v1';
 const ACTIVE_STORE_ID_KEY = 'microcms_active_store_id';
 
-export async function hashPassword(plain: string): Promise<string> {
-  if (!plain) return '';
-  try {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(`kroomify_salt_v1_${plain}`);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-  } catch {
-    return plain;
-  }
-}
-
 export function getWibIsoString(date: Date = new Date()): string {
   const pad = (n: number, digits: number = 2) => String(n).padStart(digits, '0');
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -53,189 +40,59 @@ interface StoredAccount {
   storeId: string;
 }
 
-const defaultAccounts: StoredAccount[] = [
-  {
-    id: 'USR001',
-    email: 'admin@lapakq.com',
-    password: 'bantuumkm2344@',
-    user: {
-      id: 'USR001',
-      name: 'Super Admin LapakQ',
-      email: 'admin@lapakq.com',
-      phoneWhatsApp: '081289201928',
-      role: 'admin',
-      createdAt: '2026-01-01T00:00:00Z',
-    },
-    merchant: {
-      id: 'merch-USR001',
-      userId: 'USR001',
-      storeId: '',
-      plan: 'premium',
-      isVerified: true,
-    },
-    storeId: '',
-  },
-  {
-    id: 'USR001_LEGACY',
-    email: 'admin@kroomify.id',
-    password: 'bantuumkm2344@',
-    user: {
-      id: 'USR001',
-      name: 'Super Admin LapakQ',
-      email: 'admin@lapakq.com',
-      phoneWhatsApp: '081289201928',
-      role: 'admin',
-      createdAt: '2026-01-01T00:00:00Z',
-    },
-    merchant: {
-      id: 'merch-USR001',
-      userId: 'USR001',
-      storeId: '',
-      plan: 'premium',
-      isVerified: true,
-    },
-    storeId: '',
-  },
-  {
-    id: 'USR004',
-    email: 'admin1@gmps.com',
-    password: 'subadmin123',
-    user: {
-      id: 'USR004',
-      name: 'Admin 1 (Admin Umum GMPS)',
-      email: 'admin1@gmps.com',
-      phoneWhatsApp: '0881022084791',
-      role: 'sub_admin_umum',
-      communityId: 'comm_1793843915683',
-      communityName: 'GMPS',
-      createdAt: '2026-11-05T08:58:37Z',
-    },
-    merchant: {
-      id: 'merch-USR004',
-      userId: 'USR004',
-      storeId: '',
-      plan: 'free',
-      isVerified: true,
-    },
-    storeId: '',
-  },
-  {
-    id: 'USR005',
-    email: 'admin2@gmail.com',
-    password: 'subadmin2',
-    user: {
-      id: 'USR005',
-      name: 'Admin 2 (Admin Produk GMPS)',
-      email: 'admin2@gmail.com',
-      phoneWhatsApp: '0881022084792',
-      role: 'community_admin',
-      communityId: 'comm_1793843915683',
-      communityName: 'GMPS',
-      createdAt: '2026-11-05T09:56:30Z',
-    },
-    merchant: {
-      id: 'merch-USR005',
-      userId: 'USR005',
-      storeId: '',
-      plan: 'free',
-      isVerified: true,
-    },
-    storeId: '',
-  },
-  {
-    id: 'USR005_GMPS',
-    email: 'admin2@gmps.com',
-    password: 'subadmin2',
-    user: {
-      id: 'USR005_GMPS',
-      name: 'Admin 2 (Admin Produk GMPS)',
-      email: 'admin2@gmps.com',
-      phoneWhatsApp: '0881022084792',
-      role: 'community_admin',
-      communityId: 'comm_1793843915683',
-      communityName: 'GMPS',
-      createdAt: '2026-11-05T09:56:30Z',
-    },
-    merchant: {
-      id: 'merch-USR005_GMPS',
-      userId: 'USR005_GMPS',
-      storeId: '',
-      plan: 'free',
-      isVerified: true,
-    },
-    storeId: '',
-  },
-  {
-    id: 'USR005_SUB',
-    email: 'subadmin2@gmail.com',
-    password: 'subadmin2',
-    user: {
-      id: 'USR005_SUB',
-      name: 'Sub Admin 2 (GMPS)',
-      email: 'subadmin2@gmail.com',
-      phoneWhatsApp: '0881022084792',
-      role: 'community_admin',
-      communityId: 'comm_1793843915683',
-      communityName: 'GMPS',
-      createdAt: '2026-11-05T09:56:30Z',
-    },
-    merchant: {
-      id: 'merch-USR005_SUB',
-      userId: 'USR005_SUB',
-      storeId: '',
-      plan: 'free',
-      isVerified: true,
-    },
-    storeId: '',
-  },
-];
+// Akun TIDAK lagi punya data/password bawaan di kode. Semua verifikasi lewat database.
+const defaultAccounts: StoredAccount[] = [];
+
+/** Kredensial super admin di MEMORI saja (tidak pernah di storage) untuk konfirmasi aksi admin. */
+let adminCredential: { email: string; password: string } | null = null;
+
+/** Pesan error dari RPC Supabase dalam bahasa yang dipahami pengguna. */
+const rpcErrorMessage = (err: any, fallback: string): string => {
+  const msg = String(err?.message || '');
+  if (/minimal 8 karakter|tidak valid|tidak dikenal|dikunci/i.test(msg)) return msg;
+  return fallback;
+};
 
 class AuthService {
+  /**
+   * Cache akun lokal (hanya data profil untuk UI). Password TIDAK pernah disimpan; versi lama yang
+   * masih menyimpan password/hash di localStorage dibersihkan di sini.
+   */
   private getStoredAccounts(): StoredAccount[] {
-    const raw = localStorage.getItem(ACCOUNTS_KEY);
-    if (!raw) {
-      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(defaultAccounts));
-      return defaultAccounts;
-    }
     try {
+      const raw = localStorage.getItem(ACCOUNTS_KEY);
+      if (!raw) return [];
       const parsed: StoredAccount[] = JSON.parse(raw);
-      // Filter out legacy dummy account USR000 and andi
-      const filtered = parsed.filter(
-        (a) =>
-          a.id !== 'USR000' &&
-          a.email.toLowerCase() !== 'andhika@gmail.com' &&
-          a.email.toLowerCase() !== 'gmps@kroomify.id' &&
-          a.email.toLowerCase() !== 'andi@gmail.com'
-      );
-      // Merge and sync with defaultAccounts
-      let changed = filtered.length !== parsed.length;
-      defaultAccounts.forEach((def) => {
-        const idx = filtered.findIndex((a) => a.email.toLowerCase() === def.email.toLowerCase());
-        if (idx >= 0) {
-          if (
-            filtered[idx].id !== def.id ||
-            filtered[idx].user.role !== def.user.role ||
-            filtered[idx].password !== def.password
-          ) {
-            filtered[idx] = def;
+      if (!Array.isArray(parsed)) return [];
+      let changed = false;
+      const cleaned = parsed
+        .filter((a) => a && typeof a.email === 'string')
+        .map((a) => {
+          if ('password' in a) {
             changed = true;
+            const { password: _drop, ...rest } = a;
+            return rest as StoredAccount;
           }
-        } else {
-          filtered.push(def);
-          changed = true;
-        }
-      });
-      if (changed) {
-        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(filtered));
-      }
-      return filtered;
+          return a;
+        });
+      if (changed) localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(cleaned));
+      return cleaned;
     } catch {
-      return defaultAccounts;
+      return [];
     }
   }
 
   private saveAccounts(accounts: StoredAccount[]) {
-    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+    const safe = accounts.map(({ password: _drop, ...rest }) => rest);
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(safe));
+  }
+
+  /** Kredensial super admin yang dikonfirmasi saat login (memori saja) untuk RPC admin. */
+  getAdminCredential(): { email: string; password: string } {
+    if (!adminCredential) {
+      throw new Error('Demi keamanan, keluar lalu masuk ulang sebagai super admin sebelum membuat atau mengubah password akun.');
+    }
+    return adminCredential;
   }
 
   purgeLocalAccount(email: string): void {
@@ -320,8 +177,6 @@ class AuthService {
   }
 
   async login(email: string, _password?: string): Promise<{ user: User; merchant: Merchant; store: Store }> {
-    await new Promise((res) => setTimeout(res, 350));
-
     if (!email) {
       throw new Error('Format email tidak valid.');
     }
@@ -329,233 +184,50 @@ class AuthService {
     let cleanEmail = email.toLowerCase().trim();
     if (cleanEmail === 'admin' || cleanEmail === 'superadmin') {
       cleanEmail = 'admin@lapakq.com';
-    } else if (cleanEmail === 'admin1' || cleanEmail === 'subadmin1') {
-      cleanEmail = 'admin1@gmps.com';
-    } else if (cleanEmail === 'admin2' || cleanEmail === 'subadmin2' || cleanEmail === 'sub admin 2') {
-      cleanEmail = 'admin2@gmail.com';
     }
-
     if (!cleanEmail.includes('@')) {
       throw new Error('Format email tidak valid.');
     }
 
     localStorage.removeItem('microcms_explicit_logout');
-    const cleanPassword = _password ? _password.trim() : '';
+    const password = _password || '';
+    let dbUser: any = null;
 
-    const isSuperAdminEmail = cleanEmail === 'admin@lapakq.com' || cleanEmail === 'admin@kroomify.id';
-    const isSubAdminEmail =
-      cleanEmail === 'admin1@gmps.com' ||
-      cleanEmail === 'admin1@gmail.com' ||
-      cleanEmail === 'admin2@gmail.com' ||
-      cleanEmail === 'admin2@gmps.com' ||
-      cleanEmail === 'subadmin2@gmail.com' ||
-      cleanEmail === 'subadmin2@gmps.com';
-    // Master password HANYA milik Super Admin
-    const isSuperAdminMasterPassword =
-      cleanPassword === 'bantuumkm2344@' ||
-      cleanPassword === 'bantuumkm2344' ||
-      cleanPassword.toLowerCase() === 'bantuumkm2344@' ||
-      cleanPassword === 'admin123' ||
-      cleanPassword.toLowerCase() === 'admin123';
-
-    // Password bawaan khusus Sub-Admin
-    const isSubAdmin1DefaultPassword =
-      cleanPassword === 'subadmin123' || cleanPassword.toLowerCase() === 'subadmin123';
-    const isSubAdmin2DefaultPassword =
-      cleanPassword === 'subadmin2' || cleanPassword.toLowerCase() === 'subadmin2';
-
-    // 1. Coba verifikasi aman server-side via Supabase RPC verify_user_credentials
-    let verifiedDbUser: any = null;
-    if (_password && _password !== 'google-auth') {
-      try {
-        const hashedPass = await hashPassword(cleanPassword);
-        let { data: rpcRes, error: rpcErr } = await supabase.rpc('verify_user_credentials', {
-          p_email: cleanEmail,
-          p_password: cleanPassword,
-        });
-
-        // Fallback retry dengan hash jika database belum termigrasi atau password disimpan sebagai hash
-        if ((!rpcErr && rpcRes && !rpcRes.success) || (rpcRes && rpcRes.message === 'Kata sandi tidak sesuai')) {
-          const retryRes = await supabase.rpc('verify_user_credentials', {
-            p_email: cleanEmail,
-            p_password: hashedPass,
-          });
-          if (!retryRes.error && retryRes.data && retryRes.data.success) {
-            rpcRes = retryRes.data;
-            rpcErr = null;
-          }
-        }
-
-        if (!rpcErr && rpcRes) {
-          if (rpcRes.success && rpcRes.user) {
-            verifiedDbUser = rpcRes.user;
-          } else if (rpcRes.message === 'Akun tidak ditemukan') {
-            // Khusus Super Admin jika belum tersinkronisasi di database
-            if (isSuperAdminEmail && isSuperAdminMasterPassword) {
-              console.warn('[AuthService] Master admin offline/cache fallback for unregistered DB account');
-            } else {
-              this.purgeLocalAccount(cleanEmail);
-              throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
-            }
-          } else if (rpcRes.message === 'Kata sandi tidak sesuai') {
-            // Master password DILARANG untuk Sub-Admin! Hanya untuk Super Admin
-            if (isSuperAdminEmail && isSuperAdminMasterPassword) {
-              console.warn('[AuthService] Master credential bypass for super admin login');
-            } else {
-              throw new Error('Kata sandi yang Anda masukkan salah.');
-            }
-          } else {
-            if (!(isSuperAdminEmail && isSuperAdminMasterPassword)) {
-              throw new Error(rpcRes.message || 'Gagal masuk ke akun.');
-            }
-          }
-        }
-      } catch (rpcEx: any) {
-        if (
-          rpcEx.message === 'Kata sandi yang Anda masukkan salah.' ||
-          rpcEx.message === 'Akun tidak terdaftar atau telah dihapus dari sistem.'
-        ) {
-          throw rpcEx;
-        }
-        console.warn('verify_user_credentials RPC notice:', rpcEx);
+    if (password === 'google-auth') {
+      // Login Google: identitas diambil dari sesi Supabase Auth (token Google asli), bukan dari klien.
+      const { data, error } = await supabase.rpc('google_session_user', { p_name: null });
+      if (error || !data?.success || !data.user) {
+        throw new Error('Sesi Google tidak valid. Silakan masuk ulang dengan Google.');
       }
-    }
-
-    // 2. Jika belum terverifikasi melalui RPC (misal login Google atau RPC error), cek langsung ke database users
-    let dbUser: any = verifiedDbUser;
-    if (!dbUser) {
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('id, name, email, phone, role, community_id, community_name, password_hash, created_at')
-          .eq('email', cleanEmail)
-          .maybeSingle();
-
-        if (!error && data) {
-          dbUser = data;
-        } else if (!error && !data) {
-          if (!(isSuperAdminEmail && isSuperAdminMasterPassword)) {
-            this.purgeLocalAccount(cleanEmail);
-            throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
-          }
-        }
-      } catch (e: any) {
-        if (e.message === 'Akun tidak terdaftar atau telah dihapus dari sistem.') {
-          throw e;
-        }
-        console.warn('Supabase query user warning:', e);
+      if (String(data.user.email || '').toLowerCase() !== cleanEmail) {
+        throw new Error('Akun Google tidak cocok dengan email yang diminta.');
       }
-    }
-
-    // 3. Jika database masih tidak dapat dihubungi dan dbUser kosong:
-    if (!dbUser) {
-      const accounts = this.getStoredAccounts();
-      const account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
-      if (
-        isSuperAdminEmail ||
-        account?.id === 'USR001' ||
-        account?.id === 'USR001_LEGACY' ||
-        account?.id === 'usr-admin-1'
-      ) {
-        dbUser = {
-          id: 'USR001',
-          name: 'Super Admin LapakQ',
-          email: 'admin@lapakq.com',
-          phone: account?.user.phoneWhatsApp || '081289201928',
-          role: 'admin',
-          password_hash: account?.password || 'bantuumkm2344@',
-          created_at: account?.user.createdAt || new Date().toISOString(),
-        };
-      } else if (
-        cleanEmail === 'admin1@gmps.com' ||
-        cleanEmail === 'admin1@gmail.com' ||
-        account?.id === 'USR004' ||
-        account?.id === 'USR004_GMAIL'
-      ) {
-        dbUser = {
-          id: 'USR004',
-          name: 'Admin 1 (Admin Umum GMPS)',
-          email: cleanEmail,
-          phone: account?.user.phoneWhatsApp || '0881022084791',
-          role: 'sub_admin_umum',
-          community_id: 'comm_1793843915683',
-          community_name: 'GMPS',
-          password_hash: account?.password || 'subadmin123',
-          created_at: account?.user.createdAt || new Date().toISOString(),
-        };
-      } else if (
-        cleanEmail === 'admin2@gmail.com' ||
-        cleanEmail === 'admin2@gmps.com' ||
-        cleanEmail === 'subadmin2@gmail.com' ||
-        cleanEmail === 'subadmin2@gmps.com' ||
-        account?.id === 'USR005' ||
-        account?.id === 'USR005_GMPS' ||
-        account?.id === 'USR005_SUB' ||
-        account?.id === 'USR005_SUB_GMPS'
-      ) {
-        dbUser = {
-          id: 'USR005',
-          name: 'Admin 2 (Admin Produk GMPS)',
-          email: cleanEmail,
-          phone: account?.user.phoneWhatsApp || '0881022084792',
-          role: 'community_admin',
-          community_id: 'comm_1793843915683',
-          community_name: 'GMPS',
-          password_hash: account?.password || 'subadmin2',
-          created_at: account?.user.createdAt || new Date().toISOString(),
-        };
-      } else if (account) {
-        this.purgeLocalAccount(cleanEmail);
-        throw new Error('Akun tidak terdaftar atau telah dihapus dari sistem.');
-      } else {
-        throw new Error('Akun belum terdaftar. Silakan lakukan registrasi terlebih dahulu.');
+      dbUser = data.user;
+    } else {
+      if (!password) {
+        throw new Error('Kata sandi wajib diisi.');
       }
-    }
-
-    // 4. Verifikasi kata sandi jika belum diverifikasi oleh RPC
-    if (!verifiedDbUser && cleanPassword && cleanPassword !== 'google-auth') {
-      const isSuperAdmin = isSuperAdminEmail || dbUser.id === 'USR001' || dbUser.role === 'admin';
-      const isMasterAdminPassword = isSuperAdmin && isSuperAdminMasterPassword;
-
-      const isSub1 =
-        cleanEmail === 'admin1@gmps.com' ||
-        cleanEmail === 'admin1@gmail.com' ||
-        dbUser.role === 'sub_admin_umum' ||
-        dbUser.id === 'USR004' ||
-        dbUser.id === 'USR004_GMAIL';
-
-      const isSub2 =
-        cleanEmail === 'admin2@gmail.com' ||
-        cleanEmail === 'admin2@gmps.com' ||
-        cleanEmail === 'subadmin2@gmail.com' ||
-        cleanEmail === 'subadmin2@gmps.com' ||
-        dbUser.role === 'community_admin' ||
-        dbUser.role === 'sub_admin_produk' ||
-        dbUser.id === 'USR005' ||
-        dbUser.id === 'USR005_GMPS' ||
-        dbUser.id === 'USR005_SUB' ||
-        dbUser.id === 'USR005_SUB_GMPS';
-
-      const isSubAdminValid =
-        (isSub1 && isSubAdmin1DefaultPassword) ||
-        (isSub2 && isSubAdmin2DefaultPassword);
-
-      if (dbUser.password_hash) {
-        const hashedInput = await hashPassword(cleanPassword);
-        const hashedRaw = await hashPassword(_password || '');
-        const isMatch =
-          isMasterAdminPassword ||
-          isSubAdminValid ||
-          dbUser.password_hash === cleanPassword ||
-          dbUser.password_hash === _password ||
-          dbUser.password_hash === hashedInput ||
-          dbUser.password_hash === hashedRaw;
-        if (!isMatch) {
+      // Password diverifikasi sepenuhnya di database (bcrypt); hash tidak pernah dikirim ke browser.
+      const { data, error } = await supabase.rpc('verify_user_credentials', {
+        p_email: cleanEmail,
+        p_password: password,
+      });
+      if (error) {
+        throw new Error('Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.');
+      }
+      if (!data?.success || !data.user) {
+        if (data?.message === 'Akun tidak ditemukan') {
+          this.purgeLocalAccount(cleanEmail);
+          throw new Error('Akun belum terdaftar. Silakan lakukan registrasi terlebih dahulu.');
+        }
+        if (data?.message === 'Kata sandi tidak sesuai') {
           throw new Error('Kata sandi yang Anda masukkan salah.');
         }
-      } else if (!isMasterAdminPassword && !isSubAdminValid) {
-        throw new Error('Verifikasi kata sandi gagal.');
+        throw new Error(data?.message || 'Gagal masuk ke akun.');
       }
+      dbUser = data.user;
+      // Simpan di memori untuk konfirmasi aksi super admin (buat/ubah password akun lain).
+      adminCredential = dbUser.role === 'admin' ? { email: cleanEmail, password } : null;
     }
 
     // 5. Bangun user, merchant, dan store dari data database yang valid
@@ -574,7 +246,7 @@ class AuthService {
       name: userName,
       email: cleanEmail,
       phoneWhatsApp: dbUser.phone || '',
-      avatarUrl: defaultAcc?.user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1F4072&color=FFD358&bold=true`,
+      avatarUrl: dbUser.avatar_url || defaultAcc?.user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1F4072&color=FFD358&bold=true`,
       role: userRole,
       communityId: dbUser.community_id || defaultAcc?.user.communityId || undefined,
       communityName: dbUser.community_name || defaultAcc?.user.communityName || undefined,
@@ -601,7 +273,6 @@ class AuthService {
     accounts.push({
       id: userId,
       email: cleanEmail,
-      password: await hashPassword(_password || 'password123'),
       user,
       merchant,
       storeId: storeToUse?.id || '',
@@ -687,7 +358,9 @@ class AuthService {
       }
     }
 
-    const userId = await idService.generateNextId('users');
+    if (!params.password || params.password.length < 8) {
+      throw new Error('Kata sandi minimal 8 karakter.');
+    }
 
     // Resolusi kode komunitas jika diisi calon merchant
     let matchedCommunity: any = undefined;
@@ -706,6 +379,23 @@ class AuthService {
         console.warn('Error resolving community in authService:', e);
       }
     }
+
+    // 1. Buat akun di database. Password di-hash (bcrypt) oleh database; akun yang sudah ada
+    //    tidak pernah ditimpa.
+    const { data: regData, error: regErr } = await supabase.rpc('register_merchant', {
+      p_email: cleanEmail,
+      p_password: params.password,
+      p_name: params.fullName.trim(),
+      p_phone: (params.phoneWhatsApp || '').trim() || null,
+      p_community_id: matchedCommunity?.id || null,
+    });
+    if (regErr) {
+      throw new Error(rpcErrorMessage(regErr, 'Pendaftaran gagal. Periksa koneksi lalu coba lagi.'));
+    }
+    if (!regData?.success || !regData.user?.id) {
+      throw new Error(regData?.message || 'Pendaftaran gagal. Silakan coba lagi.');
+    }
+    const userId: string = regData.user.id;
 
     const user: User = {
       id: userId,
@@ -780,64 +470,7 @@ class AuthService {
       isVerified: true,
     };
 
-    const hashedPassword = await hashPassword(params.password);
-
-    // 1. Sync User to Supabase Database with hashed password
     const nowWib = getWibIsoString();
-    try {
-      let registered = false;
-      try {
-        const { data: rpcData, error: rpcErr } = await supabase.rpc('register_new_user', {
-          p_id: userId,
-          p_email: cleanEmail,
-          p_password_hash: hashedPassword,
-          p_name: params.fullName.trim(),
-          p_phone: (params.phoneWhatsApp || '').trim() || null,
-          p_role: 'merchant',
-        });
-        if (!rpcErr && rpcData && rpcData.success) {
-          registered = true;
-          console.log('✅ User berhasil didaftarkan via RPC Supabase:', cleanEmail);
-        } else if (rpcErr) {
-          console.warn('⚠️ Supabase register_new_user RPC notice:', rpcErr.message);
-        }
-      } catch (rpcEx) {
-        console.warn('RPC register notice, fallback to direct upsert:', rpcEx);
-      }
-
-      if (!registered) {
-        const { error: dbUserErr } = await supabase.from('users').upsert({
-          id: userId,
-          email: cleanEmail,
-          password_hash: hashedPassword,
-          name: params.fullName.trim(),
-          phone: (params.phoneWhatsApp || '').trim() || null,
-          role: 'merchant',
-          community_id: matchedCommunity?.id || null,
-          community_name: matchedCommunity?.name || null,
-          created_at: nowWib,
-          updated_at: nowWib,
-        }).select('id');
-
-        if (dbUserErr) {
-          console.error('❌ Supabase users upsert error:', dbUserErr.message);
-        } else {
-          console.log('✅ User berhasil disimpan ke database Supabase:', cleanEmail);
-        }
-      }
-    } catch (err: any) {
-      console.warn('⚠️ Supabase users connection notice:', err?.message || err);
-    }
-    if (matchedCommunity?.id) {
-      try {
-        await supabase.from('users').update({
-          community_id: matchedCommunity.id,
-          community_name: matchedCommunity.name,
-        }).eq('id', userId);
-      } catch (commSyncErr) {
-        console.warn('Community sync to user notice:', commSyncErr);
-      }
-    }
 
     // 2. Sync newStore to Supabase stores table (clean with all details empty)
     if (newStore) {
@@ -898,7 +531,6 @@ class AuthService {
     const newAccountRecord: StoredAccount = {
       id: userId,
       email: cleanEmail,
-      password: hashedPassword,
       user,
       merchant,
       storeId: newStore ? newStore.id : '',
@@ -953,30 +585,24 @@ class AuthService {
       throw new Error('Alamat Google Account tidak valid.');
     }
 
-    const accounts = this.getStoredAccounts();
-    const existing = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
+    const defaultName = cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    const requestedName = (params.fullName || defaultName).trim();
 
-    if (existing) {
-      // User already registered via Google before, log them in
+    // Akun Google dibuat/diambil oleh database dari token sesi Supabase Auth (email terverifikasi Google).
+    const { data: gData, error: gErr } = await supabase.rpc('google_session_user', { p_name: requestedName });
+    if (gErr || !gData?.success || !gData.user?.id) {
+      throw new Error('Sesi Google tidak valid. Silakan masuk ulang dengan Google.');
+    }
+    if (String(gData.user.email || '').toLowerCase() !== cleanEmail) {
+      throw new Error('Akun Google tidak cocok dengan email yang diminta.');
+    }
+    if (!gData.is_new) {
+      // Sudah pernah terdaftar: langsung masuk.
       return this.login(cleanEmail, 'google-auth');
     }
 
-    // Check if user already exists in Supabase
-    try {
-      const { data: dbUser } = await supabase
-        .from('users')
-        .select('id, email, name')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-      if (dbUser) {
-        return this.login(cleanEmail, 'google-auth');
-      }
-    } catch (e) {}
-
-    const userId = await idService.generateNextId('users');
-
-    const defaultName = cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-    const finalName = (params.fullName || defaultName).trim();
+    const userId: string = gData.user.id;
+    const finalName = gData.user.name || requestedName;
 
     const userAvatar =
       params.avatarUrl ||
@@ -1086,33 +712,16 @@ class AuthService {
       isVerified: true,
     };
 
-    // Sync to Supabase Database
-    try {
-      const nowWib = getWibIsoString();
-      await supabase.from('users').upsert({
-        id: userId,
-        email: cleanEmail,
-        password_hash: 'google-oauth-managed',
-        name: finalName,
-        phone: null,
-        role: 'merchant',
-        created_at: nowWib,
-        updated_at: nowWib,
-      }).select('id');
-
-    } catch (e) {
-      console.warn('Supabase Google auth insert warning:', e);
-    }
 
     const newAccountRecord: StoredAccount = {
       id: userId,
       email: cleanEmail,
-      password: 'google-oauth-managed',
       user,
       merchant,
       storeId: merchant.storeId,
     };
 
+    const accounts = this.getStoredAccounts().filter((a) => a.email.toLowerCase() !== cleanEmail);
     accounts.push(newAccountRecord);
     this.saveAccounts(accounts);
 
@@ -1127,202 +736,69 @@ class AuthService {
   }
 
 
+  /**
+   * Minta kode reset. Kode 6 digit dibuat & disimpan (ter-hash) oleh server, lalu dikirim ke email;
+   * browser tidak pernah melihat kode tersebut.
+   */
   async forgotPassword(email: string): Promise<boolean> {
-    await new Promise((res) => setTimeout(res, 400));
     const cleanEmail = email.toLowerCase().trim();
     if (!cleanEmail || !cleanEmail.includes('@')) {
       throw new Error('Alamat email tidak valid.');
     }
-
-    // 1. Cek keberadaan user di database Supabase atau di stored accounts
-    let userExists = false;
+    let res: Response;
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, email')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-      if (!error && data) {
-        userExists = true;
-      }
-    } catch (e) {
-      console.warn('Supabase check user in forgotPassword notice:', e);
+      res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+    } catch {
+      throw new Error('Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.');
     }
-
-    const accounts = this.getStoredAccounts();
-    const account = accounts.find((a) => a.email.toLowerCase() === cleanEmail);
-    if (account) {
-      userExists = true;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.success) {
+      throw new Error(data?.error || 'Gagal mengirim kode reset. Coba lagi beberapa saat.');
     }
-
-    if (!userExists) {
-      throw new Error('Alamat email belum terdaftar di sistem.');
-    }
-
-    // 2. Generate token 6 digit
-    const token = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // Simpan token hanya di session storage untuk verifikasi saat user memasukkan kode
-    sessionStorage.setItem(`reset_token_${cleanEmail}`, token);
-
-    // Notifikasi bahwa instruksi telah dikirim ke email (tanpa menampilkan kode di UI)
     window.dispatchEvent(
       new CustomEvent('toast_notification', {
         detail: {
-          message: `Kode verifikasi telah dikirim ke email ${cleanEmail}. Silakan cek kotak masuk atau folder spam.`,
+          message: `Jika ${cleanEmail} terdaftar, kode verifikasi telah dikirim. Cek kotak masuk atau folder spam.`,
           type: 'success',
           duration: 6000,
         },
       })
     );
-
-    // Coba kirimkan email jika server lokal tersedia
-    try {
-      const response = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: cleanEmail,
-          subject: 'LapakQ - Token Reset Password Anda',
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-              <h2 style="color: #66000E;">Permintaan Reset Kata Sandi</h2>
-              <p>Halo,</p>
-              <p>Kami menerima permintaan untuk mengatur ulang kata sandi akun LapakQ Anda. Gunakan token 6 digit di bawah ini untuk melanjutkan:</p>
-              <div style="background-color: #F9EDEF; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
-                <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #66000E;">${token}</span>
-              </div>
-              <p>Token ini hanya berlaku selama sesi ini. Jika Anda tidak meminta reset kata sandi, abaikan email ini.</p>
-              <br/>
-              <p style="font-size: 12px; color: #666;">Tim LapakQ</p>
-            </div>
-          `
-        }),
-      });
-
-      if (response.ok) {
-        console.log('✅ Email OTP berhasil dikirim via mail server');
-      } else {
-        const errData = await response.json().catch(() => ({}));
-        console.warn('⚠️ Mail endpoint notice:', errData);
-      }
-    } catch (err) {
-      console.warn('Failed to call /api/send-email:', err);
-    }
-
-    // Coba kirim juga via Supabase Auth jika SMTP Supabase terhubung
-    try {
-      await supabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo: `${window.location.origin}/`,
-      });
-    } catch (sbErr) {
-      // Ignored if user not in auth.users
-    }
-
     return true;
   }
 
+  /** Periksa kode reset (tanpa mengganti password). Percobaan dibatasi di database. */
   async verifyResetToken(email: string, token: string): Promise<boolean> {
-    await new Promise((res) => setTimeout(res, 300));
-    const cleanEmail = email.toLowerCase().trim();
-    const cleanToken = token.trim();
-
-    // 1. Cek kecocokan dengan token lokal
-    const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
-    if (storedToken && storedToken === cleanToken) {
-      return true;
+    const { data, error } = await supabase.rpc('complete_password_reset', {
+      p_email: email.toLowerCase().trim(),
+      p_token: token.trim(),
+      p_new_password: null,
+    });
+    if (error || !data?.success) {
+      throw new Error(data?.message || 'Token verifikasi tidak valid atau sudah kadaluarsa.');
     }
-
-    // 2. Cek verifikasi OTP via Supabase Auth jika token dikirim dari Supabase Email
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: cleanEmail,
-        token: cleanToken,
-        type: 'recovery',
-      });
-      if (!error && (data?.session || data?.user)) {
-        sessionStorage.setItem(`reset_verified_${cleanEmail}`, 'true');
-        return true;
-      }
-    } catch (sbErr) {
-      console.warn('Supabase verifyOtp check notice:', sbErr);
-    }
-
-    throw new Error('Token verifikasi tidak valid atau sudah kadaluarsa.');
+    return true;
   }
 
   async resetPassword(email: string, token: string, newPassword: string): Promise<boolean> {
-    await new Promise((res) => setTimeout(res, 400));
-    const cleanEmail = email.toLowerCase().trim();
-    const cleanToken = token.trim();
-    
-    // Verifikasi validitas token (lokal atau supabase)
-    const storedToken = sessionStorage.getItem(`reset_token_${cleanEmail}`);
-    const isSupabaseVerified = sessionStorage.getItem(`reset_verified_${cleanEmail}`) === 'true';
-    let isTokenValid = (storedToken && storedToken === cleanToken) || isSupabaseVerified;
-
-    if (!isTokenValid) {
-      try {
-        const { data, error } = await supabase.auth.verifyOtp({
-          email: cleanEmail,
-          token: cleanToken,
-          type: 'recovery',
-        });
-        if (!error && (data?.session || data?.user)) {
-          isTokenValid = true;
-        }
-      } catch (e) {}
+    if (!newPassword || newPassword.length < 8) {
+      throw new Error('Kata sandi baru minimal 8 karakter.');
     }
-
-    if (!isTokenValid) {
-      throw new Error('Token verifikasi tidak valid atau sudah kadaluarsa.');
+    const { data, error } = await supabase.rpc('complete_password_reset', {
+      p_email: email.toLowerCase().trim(),
+      p_token: token.trim(),
+      p_new_password: newPassword,
+    });
+    if (error) {
+      throw new Error(rpcErrorMessage(error, 'Gagal mengganti kata sandi. Coba lagi.'));
     }
-
-    if (!newPassword || newPassword.length < 6) {
-      throw new Error('Kata sandi baru minimal 6 karakter.');
+    if (!data?.success) {
+      throw new Error(data?.message || 'Token verifikasi tidak valid atau sudah kadaluarsa.');
     }
-
-    // 1. Hash kata sandi baru dengan salt Kroomify
-    const hashedPass = await hashPassword(newPassword);
-
-    // 2. Perbarui ke database Supabase (public.users)
-    try {
-      const { error: dbError } = await supabase
-        .from('users')
-        .update({
-          password_hash: hashedPass,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('email', cleanEmail);
-
-      if (dbError) {
-        console.warn('Supabase password update error:', dbError);
-      }
-    } catch (e) {
-      console.warn('Failed to update password in Supabase:', e);
-    }
-
-    // 3. Update Supabase Auth user password jika ada active session
-    try {
-      await supabase.auth.updateUser({ password: newPassword });
-    } catch (authErr) {
-      // Ignored if user only exists in public.users
-    }
-
-    // 4. Perbarui akun lokal di localStorage jika ada
-    const accounts = this.getStoredAccounts();
-    const accountIndex = accounts.findIndex((a) => a.email.toLowerCase() === cleanEmail);
-    if (accountIndex !== -1) {
-      accounts[accountIndex].password = newPassword;
-      this.saveAccounts(accounts);
-    }
-
-    // 5. Bersihkan token setelah berhasil digunakan
-    sessionStorage.removeItem(`reset_token_${cleanEmail}`);
-    sessionStorage.removeItem(`reset_verified_${cleanEmail}`);
-
     return true;
   }
 
@@ -1441,7 +917,27 @@ class AuthService {
    * Memperbarui profil user (nama, telepon, avatarUrl, dan password opsional)
    * baik di Supabase maupun di local session
    */
-  async updateProfile(userId: string, data: { name?: string; phoneWhatsApp?: string; avatarUrl?: string | null; newPassword?: string }): Promise<User> {
+  async updateProfile(
+    userId: string,
+    data: { name?: string; phoneWhatsApp?: string; avatarUrl?: string | null; newPassword?: string; currentPassword?: string }
+  ): Promise<User> {
+    // Ganti password wajib membuktikan password lama; diverifikasi & di-hash oleh database.
+    if (data.newPassword) {
+      const email = this.getCurrentUser().user?.email;
+      if (!email) throw new Error('Sesi tidak valid. Silakan masuk ulang.');
+      if (!data.currentPassword) throw new Error('Masukkan kata sandi saat ini untuk mengganti kata sandi.');
+      const { data: res, error } = await supabase.rpc('change_my_password', {
+        p_email: email,
+        p_old_password: data.currentPassword,
+        p_new_password: data.newPassword,
+      });
+      if (error) throw new Error(rpcErrorMessage(error, 'Gagal mengganti kata sandi. Coba lagi.'));
+      if (!res?.success) throw new Error(res?.message || 'Gagal mengganti kata sandi.');
+      if (adminCredential && adminCredential.email === email.toLowerCase()) {
+        adminCredential = { email: adminCredential.email, password: data.newPassword };
+      }
+    }
+
     const accounts = this.getStoredAccounts();
     const idx = accounts.findIndex(a => a.id === userId);
     
@@ -1455,9 +951,6 @@ class AuthService {
         avatarUrl: data.avatarUrl !== undefined ? (data.avatarUrl || undefined) : acc.user.avatarUrl,
       };
       acc.user = updatedUser;
-      if (data.newPassword) {
-        acc.password = data.newPassword;
-      }
       accounts[idx] = acc;
       this.saveAccounts(accounts);
     } else {
@@ -1479,9 +972,6 @@ class AuthService {
       if (data.name !== undefined) updatePayload.name = data.name;
       if (data.phoneWhatsApp !== undefined) updatePayload.phone = data.phoneWhatsApp;
       if (data.avatarUrl !== undefined) updatePayload.avatar_url = data.avatarUrl;
-      if (data.newPassword) {
-        updatePayload.password_hash = await hashPassword(data.newPassword);
-      }
       updatePayload.updated_at = getWibIsoString();
 
       await supabase.from('users').update(updatePayload).eq('id', userId);

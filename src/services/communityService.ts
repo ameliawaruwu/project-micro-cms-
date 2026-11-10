@@ -3,7 +3,7 @@ import { storeService } from './storeService';
 import { supabase } from './supabaseClient';
 import { storeInCommunity, addExtraMembership, removeExtraMembership } from '../utils/communityMembership';
 import { getWibIsoString } from '../utils/formatters';
-import { hashPassword, authService } from './authService';
+import { authService } from './authService';
 import { idService } from './idService';
 
 const COMMUNITIES_KEY = 'microcms_communities_v1';
@@ -161,14 +161,40 @@ class CommunityService {
     const subAdminName = (data.subAdminName || data.coordinatorName).trim();
     const cleanSubAdminEmail = (data.subAdminEmail || data.coordinatorEmail).toLowerCase().trim();
     const subAdminPhone = (data.subAdminPhone || data.coordinatorPhone || '').trim();
-    const plainSubAdminPassword = data.subAdminPassword || data.password || 'subadmin123';
-    const hashedSubAdminPassword = await hashPassword(plainSubAdminPassword);
+    // Tidak ada password bawaan: password akun admin komunitas wajib diisi super admin.
+    const plainSubAdminPassword = data.subAdminPassword || data.password || '';
 
     const coordName = data.coordinatorName.trim();
     const cleanCoordEmail = data.coordinatorEmail.toLowerCase().trim();
     const coordPhone = (data.coordinatorPhone || '').trim();
-    const plainCoordPassword = data.password || 'subadmin123';
-    const hashedCoordPassword = await hashPassword(plainCoordPassword);
+    const plainCoordPassword = data.password || '';
+    if (plainSubAdminPassword.length < 8 || plainCoordPassword.length < 8) {
+      throw new Error('Password akun admin komunitas wajib diisi, minimal 8 karakter.');
+    }
+    // Konfirmasi kredensial super admin di awal agar komunitas tidak dibuat setengah jalan.
+    const adminCred = authService.getAdminCredential();
+
+    // Akun dibuat/diperbarui oleh database (password di-hash bcrypt di sana).
+    const upsertCommunityAccount = async (
+      email: string, name: string, phone: string, role: 'sub_admin' | 'community_admin', password: string
+    ): Promise<string> => {
+      const { data: res, error } = await supabase.rpc('admin_upsert_user', {
+        p_admin_email: adminCred.email,
+        p_admin_password: adminCred.password,
+        p_email: email,
+        p_name: name,
+        p_role: role,
+        p_password: password,
+        p_phone: phone || null,
+        p_community_id: commId,
+        p_community_name: data.name.trim(),
+        p_user_id: null,
+      });
+      if (error || !res?.success || !res.user?.id) {
+        throw new Error(res?.message || error?.message || `Gagal membuat akun ${email}.`);
+      }
+      return res.user.id as string;
+    };
 
     // 1. Simpan Komunitas ke Local & Service State
     const newComm: Community = {
@@ -225,119 +251,26 @@ class CommunityService {
     })();
 
     // 3. Simpan Akun Sub Admin Umum (Halaman & Produk)
-    let subAdminUserId = await idService.generateNextId('users');
+    let subAdminUserId = '';
     const saveSubAdminPromise = (async () => {
-      try {
-        const { data: insertedUser, error: insertErr } = await supabase
-          .from('users')
-          .insert({
-            id: subAdminUserId,
-            email: cleanSubAdminEmail,
-            password_hash: hashedSubAdminPassword,
-            name: subAdminName,
-            phone: subAdminPhone,
-            role: 'sub_admin',
-            community_id: commId,
-            community_name: newComm.name,
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (!insertErr && insertedUser) {
-          subAdminUserId = insertedUser.id;
-          console.log(`[communityService] Akun Sub-Admin Umum ${cleanSubAdminEmail} (${subAdminUserId}) berhasil dibuat di Supabase!`);
-        } else if (insertErr) {
-          if (
-            insertErr.code === '23505' ||
-            insertErr.message?.includes('duplicate key') ||
-            insertErr.message?.includes('users_email_key')
-          ) {
-            const { data: updatedUser } = await supabase
-              .from('users')
-              .update({
-                role: 'sub_admin',
-                community_id: commId,
-                community_name: newComm.name,
-                password_hash: hashedSubAdminPassword,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('email', cleanSubAdminEmail)
-              .select()
-              .single();
-
-            if (updatedUser) subAdminUserId = updatedUser.id;
-            console.log(`[communityService] Akun ${cleanSubAdminEmail} berhasil diperbarui sebagai Sub-Admin Umum.`);
-          } else {
-            console.warn('[communityService] Warning insert sub_admin ke Supabase:', insertErr.message);
-          }
-        }
-      } catch (e) {
-        console.warn('[communityService] Exception saat simpan sub_admin ke DB:', e);
-      }
+      subAdminUserId = await upsertCommunityAccount(cleanSubAdminEmail, subAdminName, subAdminPhone, 'sub_admin', plainSubAdminPassword);
+      console.log(`[communityService] Akun Sub-Admin Umum ${cleanSubAdminEmail} (${subAdminUserId}) tersimpan.`);
     })();
 
     // 4. Simpan Akun Koordinator Toko jika emailnya berbeda
-    let coordUserId = await idService.generateNextId('users');
+    let coordUserId = '';
     const isSameAccount = cleanCoordEmail === cleanSubAdminEmail;
     const saveCoordPromise = isSameAccount
       ? Promise.resolve()
       : (async () => {
-          try {
-            const { data: insertedUser, error: insertErr } = await supabase
-              .from('users')
-              .insert({
-                id: coordUserId,
-                email: cleanCoordEmail,
-                password_hash: hashedCoordPassword,
-                name: coordName,
-                phone: coordPhone,
-                role: 'community_admin',
-                community_id: commId,
-                community_name: newComm.name,
-                updated_at: new Date().toISOString(),
-              })
-              .select()
-              .single();
-
-            if (!insertErr && insertedUser) {
-              coordUserId = insertedUser.id;
-              console.log(`[communityService] Akun Koordinator Toko ${cleanCoordEmail} (${coordUserId}) berhasil dibuat di Supabase!`);
-            } else if (insertErr) {
-              if (
-                insertErr.code === '23505' ||
-                insertErr.message?.includes('duplicate key') ||
-                insertErr.message?.includes('users_email_key')
-              ) {
-                const { data: updatedUser } = await supabase
-                  .from('users')
-                  .update({
-                    role: 'community_admin',
-                    community_id: commId,
-                    community_name: newComm.name,
-                    password_hash: hashedCoordPassword,
-                    updated_at: new Date().toISOString(),
-                  })
-                  .eq('email', cleanCoordEmail)
-                  .select()
-                  .single();
-
-                if (updatedUser) coordUserId = updatedUser.id;
-                console.log(`[communityService] Akun ${cleanCoordEmail} berhasil diperbarui sebagai Koordinator Toko.`);
-              } else {
-                console.warn('[communityService] Warning insert koordinator ke Supabase:', insertErr.message);
-              }
-            }
-          } catch (e) {
-            console.warn('[communityService] Exception saat simpan koordinator ke DB:', e);
-          }
+          coordUserId = await upsertCommunityAccount(cleanCoordEmail, coordName, coordPhone, 'community_admin', plainCoordPassword);
+          console.log(`[communityService] Akun Koordinator Toko ${cleanCoordEmail} (${coordUserId}) tersimpan.`);
         })();
 
     // Eksekusi paralel dengan batas waktu timeout maks 5 detik agar modal tidak menggantung
-    await Promise.race([
-      Promise.allSettled([saveCommunityPromise, saveSubAdminPromise, saveCoordPromise]),
-      new Promise((resolve) => setTimeout(resolve, 5000)),
-    ]);
+    await saveCommunityPromise;
+    // Akun harus benar-benar tersimpan; kegagalan ditampilkan ke super admin (bukan diabaikan).
+    await Promise.all([saveSubAdminPromise, saveCoordPromise]);
 
     const createdSubAdminUser: User = {
       id: subAdminUserId,
@@ -375,7 +308,6 @@ class CommunityService {
       accounts.push({
         id: subAdminUserId,
         email: cleanSubAdminEmail,
-        password: hashedSubAdminPassword,
         user: createdSubAdminUser,
         merchant: {
           id: `merch-${subAdminUserId}`,
@@ -390,7 +322,6 @@ class CommunityService {
         accounts.push({
           id: coordUserId,
           email: cleanCoordEmail,
-          password: hashedCoordPassword,
           user: createdCoordUser,
           merchant: {
             id: `merch-${coordUserId}`,

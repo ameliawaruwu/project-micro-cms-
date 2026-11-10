@@ -1,12 +1,13 @@
 import express from 'express';
 import cors from 'cors';
-import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import dns from 'dns';
 import { deployRouter } from './backend/deployController';
+import { authRouter } from './backend/authController';
+import { sendMail, MailerNotConfiguredError } from './backend/mailer';
 import { publicApiRouter } from './backend/publicApiController';
 import { partnerApiRouter } from './backend/partnerApiController';
 
@@ -18,6 +19,9 @@ dotenv.config();
 dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
+// Di belakang Nginx (8080) & Cloudflare Tunnel di mesin yang sama: percayai X-Forwarded-For dari
+// proxy loopback agar req.ip = IP pengunjung asli (dipakai pembatas laju email & reset password).
+app.set('trust proxy', 'loopback');
 const PORT = process.env.PORT || 5055;
 
 app.use(cors());
@@ -80,55 +84,14 @@ app.post('/api/send-email', async (req, res) => {
       return res.status(400).json({ error: 'Ukuran konten email melebihi batas (maks 100KB)' });
     }
 
-    const smtpEmail = process.env.SMTP_EMAIL;
-    const smtpPassword = process.env.SMTP_PASSWORD;
+    const messageId = await sendMail(String(to).trim(), String(subject).trim(), String(html));
 
-    if (!smtpEmail || !smtpPassword) {
+    return res.status(200).json({ success: true, messageId });
+  } catch (error: any) {
+    if (error instanceof MailerNotConfiguredError) {
       console.error('SMTP credentials are not configured in .env');
       return res.status(500).json({ error: 'Konfigurasi SMTP server belum tersedia' });
     }
-
-    const isGmail = smtpEmail.toLowerCase().includes('@gmail.com');
-    const smtpHostname = isGmail ? 'smtp.gmail.com' : 'smtp.ethereal.email';
-
-    // Nodemailer v10 melakukan resolusi DNS sendiri (resolve4 + resolve6) lalu memilih
-    // alamat secara ACAK, sehingga opsi `family: 4` bawaan nodemailer diabaikan. Pada
-    // jaringan yang IPv6-nya tidak ter-route keluar, ini menyebabkan "ENETUNREACH" tiap
-    // kali alamat IPv6 terpilih. Untuk itu kita resolve IPv4 secara manual dan sambungkan
-    // langsung ke IP tersebut, sembari tetap mengirim `servername` asli agar verifikasi
-    // sertifikat TLS tidak gagal.
-    const smtpHostIpv4: string = await new Promise((resolve, reject) => {
-      dns.resolve4(smtpHostname, (err, addresses) => {
-        if (err || !addresses || !addresses.length) {
-          return reject(err || new Error(`Gagal resolve alamat IPv4 untuk ${smtpHostname}`));
-        }
-        resolve(addresses[0]);
-      });
-    });
-
-    const transporter = nodemailer.createTransport({
-      host: smtpHostIpv4,
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      tls: {
-        servername: smtpHostname, // perlu agar SNI & verifikasi sertifikat TLS tetap cocok dengan hostname asli
-      },
-      auth: {
-        user: smtpEmail,
-        pass: smtpPassword,
-      },
-    });
-
-    const info = await transporter.sendMail({
-      from: `"LapakQ" <${smtpEmail}>`,
-      to: String(to).trim(),
-      subject: String(subject).trim(),
-      html: String(html),
-    });
-
-    return res.status(200).json({ success: true, messageId: info.messageId });
-  } catch (error: any) {
     console.error('Error sending email:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });
   }
@@ -886,6 +849,9 @@ app.post(['/api/payment/callback', '/api/callback', '/api/duitku/callback'], asy
 
 app.use('/deploy', deployRouter);
 app.use('/api/deploy', deployRouter);
+
+// 5b. Reset kata sandi (token dibuat server lewat service_role, dikirim via email)
+app.use('/api/auth', authRouter);
 
 // 6a. Partner API v1 — key partner terikat komunitas (lookup akun, masukkan toko ke komunitas)
 app.use('/api/v1/partner', partnerApiRouter);

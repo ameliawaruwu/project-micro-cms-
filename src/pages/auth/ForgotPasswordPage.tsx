@@ -46,7 +46,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
   }, [resendCooldown]);
 
   const isInputValid = email.trim().length >= 2;
-  const isPasswordValid = newPassword.length >= 6;
+  const isPasswordValid = newPassword.length >= 8;
   const isPasswordMatch = newPassword === confirmPassword;
 
   const handleRequestToken = async (e: React.FormEvent) => {
@@ -110,7 +110,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
     setError(null);
 
     if (!isPasswordValid) {
-      setError('Kata sandi baru minimal 6 karakter.');
+      setError('Kata sandi baru minimal 8 karakter.');
       return;
     }
     if (!isPasswordMatch) {
@@ -394,7 +394,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                         type={showPassword ? 'text' : 'password'}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Minimal 6 karakter"
+                        placeholder="Minimal 8 karakter"
                         required
                         className="w-full h-12 pl-5 pr-12 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7] tracking-wider"
                       />

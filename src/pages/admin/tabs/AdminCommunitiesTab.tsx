@@ -332,7 +332,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         subAdminName: createForm.subAdminName.trim() || `Sub Admin ${createForm.name.trim()}`,
         subAdminEmail: createForm.subAdminEmail.trim(),
         subAdminPhone: cleanSubAdminPhone,
-        subAdminPassword: createForm.subAdminPassword.trim() || 'subadmin123',
+        subAdminPassword: createForm.subAdminPassword,
         // Akun 2: Koordinator Toko (Lapak Binaan)
         coordinatorName: createForm.sameAsSubAdmin
           ? (createForm.subAdminName.trim() || `Koordinator ${createForm.name.trim()}`)
@@ -340,8 +340,8 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         coordinatorEmail: finalCoordEmail.trim(),
         coordinatorPhone: cleanCoordPhone,
         password: createForm.sameAsSubAdmin
-          ? (createForm.subAdminPassword.trim() || 'subadmin123')
-          : (createForm.coordinatorPassword.trim() || 'subadmin123'),
+          ? createForm.subAdminPassword
+          : createForm.coordinatorPassword,
       });
 
       // Optimistic update: Langsung tutup modal dan perbarui state antarmuka tanpa lag
@@ -1244,9 +1244,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     <div>
                       <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Kata Sandi *</label>
                       <input
-                        type="text"
+                        type="password"
+                        autoComplete="new-password"
                         required
-                        placeholder="subadmin123"
+                        placeholder="Minimal 8 karakter"
+                        minLength={8}
                         value={createForm.subAdminPassword}
                         onChange={(e) => setCreateForm({ ...createForm, subAdminPassword: e.target.value })}
                         className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-purple-600"
@@ -1331,9 +1333,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                         <div>
                           <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Kata Sandi *</label>
                           <input
-                            type="text"
+                            type="password"
+                            autoComplete="new-password"
                             required={!createForm.sameAsSubAdmin}
-                            placeholder="subadmin2"
+                            minLength={8}
+                            placeholder="Minimal 8 karakter"
                             value={createForm.coordinatorPassword}
                             onChange={(e) => setCreateForm({ ...createForm, coordinatorPassword: e.target.value })}
                             className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-blue-600"

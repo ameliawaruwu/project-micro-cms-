@@ -25,6 +25,7 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
   const [name, setName] = useState(currentUser?.name?.replace(/Kroomify/g, 'LapakQ') || 'Super Admin LapakQ');
   const [phone, setPhone] = useState(currentUser?.phoneWhatsApp || '');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(currentUser?.avatarUrl || null);
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -70,8 +71,13 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
       return;
     }
 
-    if (newPassword && newPassword.length < 6) {
-      setError(isEn ? 'Password must be at least 6 characters.' : 'Kata sandi minimal 6 karakter.');
+    if (newPassword && newPassword.length < 8) {
+      setError(isEn ? 'Password must be at least 8 characters.' : 'Kata sandi minimal 8 karakter.');
+      return;
+    }
+
+    if (newPassword && !currentPassword) {
+      setError(isEn ? 'Enter your current password to change it.' : 'Masukkan kata sandi saat ini untuk mengganti kata sandi.');
       return;
     }
 
@@ -90,6 +96,7 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
         phoneWhatsApp: phone.trim(),
         avatarUrl: avatarUrl,
         newPassword: newPassword ? newPassword : undefined,
+        currentPassword: newPassword ? currentPassword : undefined,
       });
 
       onProfileUpdated(updated);
@@ -277,6 +284,25 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
                 <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3 pointer-events-none" />
               </div>
             </div>
+
+            {newPassword && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  {isEn ? 'Current Password' : 'Kata Sandi Saat Ini'}
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder={isEn ? 'Required to change password' : 'Wajib untuk mengganti kata sandi'}
+                    className="w-full h-10 px-3 pl-9 rounded-xl border border-gray-300 focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 text-xs text-gray-900 transition outline-none"
+                  />
+                  <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3 pointer-events-none" />
+                </div>
+              </div>
+            )}
 
             {newPassword && (
               <div>

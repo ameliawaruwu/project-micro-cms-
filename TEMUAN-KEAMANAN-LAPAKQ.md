@@ -5,15 +5,29 @@ Dokumen ini sengaja **tidak** memuat nilai password, token, atau key. Semua nila
 
 ## Ringkasan prioritas
 
+Status per 10 November 2026. "Kode siap" = sudah di repo, menunggu migrasi `20261110_security_phase1_auth.sql` diterapkan **bersamaan** dengan deploy.
+
 | # | Temuan | Tingkat | Status |
 |---|---|---|---|
-| 1 | Password master/bawaan admin tertanam di kode frontend | KRITIS | Belum diperbaiki |
-| 2 | Login diputuskan di browser, tanpa sesi server | KRITIS | Belum diperbaiki |
+| 1 | Password master/bawaan admin tertanam di kode frontend (dan di fungsi SQL login) | KRITIS | Kode siap (tahap 1) — **ganti password admin setelah deploy** |
+| 2 | Login diputuskan di browser, tanpa sesi server | KRITIS | Sebagian: password kini diverifikasi di database; sesi masih localStorage → tahap 2 |
 | 3 | Password sudo NAS pernah di-commit (masih di riwayat git) | KRITIS | Kode sudah dihapus, **rotasi + bersihkan riwayat belum** |
-| 4 | URL & anon key Supabase sebagai fallback di kode | SEDANG | Perlu cek RLS |
+| 4 | URL & anon key Supabase + RLS terbuka | KRITIS | Sebagian: kolom password/reset `users` dikunci; tabel lain (toko, pesanan, wallet, billing) → tahap 2 |
 | 5 | Token Cloudflare di `.env` tidak terpakai lagi | SEDANG | Perlu dicabut |
 | 6 | Route `/cloudflare/*` tanpa autentikasi | TINGGI | ✅ Sudah dihapus di `f9de84c` |
-| 7 | Perubahan lokal belum di-commit & push ke remote ditolak | INFO | Perlu dirapikan |
+| 7 | Perubahan lokal belum di-commit & push ke remote ditolak | INFO | ✅ Selesai (`7e0ad21`, `047ad83`) |
+| 8 | Login tanpa password lewat `login(email, 'google-auth')` | KRITIS | Kode siap (tahap 1): Google wajib sesi Supabase Auth asli |
+| 9 | Siapa pun bisa mengganti password akun lain (`users.update` / reset palsu di browser) | KRITIS | Kode siap (tahap 1): token reset dibuat server, password hanya lewat RPC |
+| 10 | `register_new_user` menimpa password akun yang sudah ada | KRITIS | Kode siap (tahap 1): diganti `register_merchant` yang menolak email terdaftar |
+| 11 | Akun Google bisa dimasuki dengan password `google-oauth-managed` | KRITIS | Kode siap (tahap 1) |
+| 12 | Hash password SHA-256 tanpa salt per user | TINGGI | Kode siap (tahap 1): bcrypt, hash lama di-upgrade saat login |
+| 13 | `/api/send-email` bisa dipakai siapa pun mengirim HTML apa pun dari SMTP LapakQ | TINGGI | Tahap 2 (batasi ke template & penerima yang sah) |
+
+### Tahap 1 — yang wajib dilakukan saat rilis
+1. Jalankan uji `supabase/tests/20261110_security_phase1_rollback_test.sql` (aman, selalu rollback).
+2. Terapkan migrasi `supabase/migrations/20261110_security_phase1_auth.sql` lalu **langsung** deploy frontend + backend dan restart backend.
+3. Isi `SUPABASE_SERVICE_ROLE_KEY` di env server (untuk email reset password). Tanpa ini reset menampilkan "hubungi admin".
+4. Ganti password semua akun admin/sub-admin yang pernah memakai password bawaan.
 
 ---
 

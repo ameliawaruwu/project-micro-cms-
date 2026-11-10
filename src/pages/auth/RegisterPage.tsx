@@ -50,8 +50,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
       return;
     }
 
-    if (!password.trim() || password.length < 6) {
-      setError('Kata sandi harus minimal 6 karakter.');
+    if (!password.trim() || password.length < 8) {
+      setError('Kata sandi harus minimal 8 karakter.');
       return;
     }
 
@@ -272,7 +272,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimal 6 karakter"
+                  placeholder="Minimal 8 karakter"
                   required
                   autoComplete="new-password"
                   className="w-full h-12 pl-5 pr-12 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7] tracking-wider"
