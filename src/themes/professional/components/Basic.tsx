@@ -1,17 +1,21 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { getHeroContent, HeroActionLink } from '../../heroContent';
 
 export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const { storeInfo, navigation } = useCmsStore();
+  const { storeInfo } = useCmsStore();
+  const header = getHeaderDisplay(sectionOptions);
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
   const showDesktopNav = getDeviceClass(isMobile, isTablet, {
     mobile: 'hidden',
     tablet: 'hidden',
@@ -20,7 +24,7 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
   });
 
   return (
-    <nav className="w-full bg-[#1E40AF] text-white shadow-md sticky top-0 z-50">
+    <nav className={`w-full bg-[#1E40AF] text-white shadow-md ${header.positionClass}`}>
       <div className="w-full bg-[#1e3a8a] py-2 px-6 md:px-16 hidden md:flex justify-between text-xs font-medium text-blue-200">
         <div className="flex gap-6">
           <span>Enterprise Solutions</span>
@@ -68,11 +72,16 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
           <a href="#kontak" className="hidden sm:inline-flex px-5 py-2 text-sm font-semibold text-white border border-blue-400 rounded-md hover:bg-blue-800 transition-colors">
             Hubungi Kami
           </a>
-          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="flex items-center gap-2 px-3 sm:px-5 py-2 text-sm font-semibold bg-white text-[#1E40AF] rounded-md hover:bg-gray-100 transition-colors shadow-sm cursor-pointer whitespace-nowrap">
-            <CartBagIcon className="w-4 h-4" />
-            <span className="hidden sm:inline">Keranjang</span>
-            <span>(<CartCount />)</span>
-          </button>
+          {header.showSearch && (
+            <NavSearchButton className="p-2 text-blue-50 hover:text-white transition-colors" iconClassName="w-5 h-5" />
+          )}
+          {header.showCart && (
+            <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="flex items-center gap-2 px-3 sm:px-5 py-2 text-sm font-semibold bg-white text-[#1E40AF] rounded-md hover:bg-gray-100 transition-colors shadow-sm cursor-pointer whitespace-nowrap">
+              <CartBagIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Keranjang</span>
+              <span>(<CartCount />)</span>
+            </button>
+          )}
         </div>
       </div>
       {showNav && (
@@ -90,7 +99,12 @@ export const ProfessionalHero: React.FC<{ sectionOptions?: any; isMobile?: boole
   const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "Professional B2B Solutions";
   const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || storeInfo?.description || "Streamline your procurement process with our enterprise-grade supplies and dedicated account management.";
-  const buttonLabel = sectionOptions.buttonLabel || "Request a Quote";
+  const hero = getHeroContent(sectionOptions, {
+    badge: 'Enterprise Ready',
+    buttonLabel: 'Request a Quote',
+    buttonLink: '/kontak',
+    secondaryButtonLabel: 'View Catalog',
+  });
   const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1600&q=80";
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
@@ -105,9 +119,11 @@ export const ProfessionalHero: React.FC<{ sectionOptions?: any; isMobile?: boole
     <section className="relative w-full min-h-[75vh] flex items-center bg-gray-50 border-b border-gray-200 overflow-hidden">
       <div className={`w-full max-w-7xl mx-auto px-6 md:px-16 flex ${flexDirClass} items-center gap-12`}>
         <div className={`${halfWidthClass} ${ptClass} z-10`}>
-          <div className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider rounded-full mb-6">
-            Enterprise Ready
-          </div>
+          {hero.badge && (
+            <div className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider rounded-full mb-6">
+              {hero.badge}
+            </div>
+          )}
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-[1.1] mb-6 tracking-tight">
             {heading}
           </h1>
@@ -115,19 +131,23 @@ export const ProfessionalHero: React.FC<{ sectionOptions?: any; isMobile?: boole
             {subheading}
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <button className="px-8 py-3.5 bg-[#1E40AF] text-white font-semibold rounded-md hover:bg-[#1e3a8a] transition-colors shadow-md text-center">
-              {buttonLabel}
-            </button>
-            <button className="px-8 py-3.5 bg-white text-gray-700 font-semibold rounded-md border border-gray-300 hover:bg-gray-50 transition-colors text-center">
-              View Catalog
-            </button>
+            <HeroActionLink
+              action={hero.primary}
+              className="inline-block px-8 py-3.5 bg-[#1E40AF] text-white font-semibold rounded-md hover:bg-[#1e3a8a] transition-colors shadow-md text-center"
+            />
+            {hero.secondary && (
+              <HeroActionLink
+                action={hero.secondary}
+                className="inline-block px-8 py-3.5 bg-white text-gray-700 font-semibold rounded-md border border-gray-300 hover:bg-gray-50 transition-colors text-center"
+              />
+            )}
           </div>
         </div>
         <div className={`${halfWidthClass} relative`}>
           <div className="absolute inset-0 bg-blue-600 rounded-2xl transform translate-x-4 translate-y-4 opacity-10"></div>
-          <img 
-            src={bgImage} 
-            alt="Corporate" 
+          <img
+            src={bgImage}
+            alt="Corporate"
             className="w-full aspect-[4/3] object-cover rounded-2xl shadow-xl relative z-10"
           />
           <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-lg z-20 border border-gray-100">
@@ -210,7 +230,7 @@ export const ProfessionalFooter: React.FC<{ sectionOptions?: any; isMobile?: boo
           )}
         </div>
 
-        <div className="pt-6 border-t border-gray-800 text-sm text-gray-500 text-center">{copyrightText}</div>
+        <div className="pt-6 border-t border-gray-800 text-sm text-gray-500 text-center">{copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} /></div>
       </div>
     </footer>
   );

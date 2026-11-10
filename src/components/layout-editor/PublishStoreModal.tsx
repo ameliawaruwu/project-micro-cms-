@@ -537,7 +537,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                   <p className="text-[10px] text-gray-500">
                     {domainCommunityName
                       ? 'Toko anggota komunitas otomatis memakai domain komunitasnya.'
-                      : 'Toko tanpa komunitas memakai domain default kroombox.com.'}
+                      : 'Toko tanpa komunitas memakai domain default lapakq.com.'}
                   </p>
                 </div>
               </div>

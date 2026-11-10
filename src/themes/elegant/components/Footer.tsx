@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
 
 export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -69,7 +70,7 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
 
       <div className={`max-w-7xl mx-auto pt-8 border-t border-[#A39D98]/20 flex ${flexDirClass} justify-between items-center gap-4`}>
         <p className="font-sans text-[10px] tracking-[0.2em] uppercase text-[#A39D98]">
-          {copyrightText}
+          {copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} />
         </p>
         <p className="font-sans text-[10px] tracking-[0.2em] uppercase text-[#A39D98]">
           Elegance is an attitude.

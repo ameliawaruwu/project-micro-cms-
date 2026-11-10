@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { Heart } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
 
 export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -79,7 +80,7 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
 
       <div className="max-w-5xl mx-auto pt-8 border-t-4 border-white text-center flex flex-col items-center gap-2">
         <p className="text-sm font-bold text-[#FF85A1]">
-          {copyrightText}
+          {copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} />
         </p>
       </div>
     </footer>

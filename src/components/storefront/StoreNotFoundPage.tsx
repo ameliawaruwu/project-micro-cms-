@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Store } from '../../types';
 import { Shield } from 'lucide-react';
+import { useStoreBaseDomain } from '../../utils/storeDomain';
 
 interface StoreNotFoundPageProps {
   store?: Store | null;
@@ -37,6 +38,10 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
   const storeSlug = store?.slug || slug || '';
   const storeName = store?.name || (storeSlug ? `Toko (${storeSlug})` : 'Toko Online');
   const phoneWhatsApp = store?.phoneWhatsApp?.replace(/[^0-9]/g, '') || '';
+  const { domain: baseDomain } = useStoreBaseDomain(store);
+  // Di halaman storefront, tampilkan host yang sedang dibuka bila memang host toko ini.
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+  const storeHost = storeSlug && currentHost.startsWith(`${storeSlug}.`) ? currentHost : `${storeSlug}.${baseDomain}`;
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-[#FAF7F7] via-[#FDFBFB] to-[#F5EFEF] flex flex-col items-center justify-between p-4 sm:p-6 md:p-10 font-sans text-center relative overflow-hidden selection:bg-[#F5E8EA] selection:text-[#66000E]">
@@ -113,7 +118,7 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
               <div className="min-w-0">
                 <span className="text-[10px] text-gray-400 uppercase font-bold block">Alamat Subdomain</span>
                 <span className="font-mono text-[11px] text-gray-700 truncate block font-medium">
-                  {storeSlug}.kroombox.com
+                  {storeHost}
                 </span>
               </div>
               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">

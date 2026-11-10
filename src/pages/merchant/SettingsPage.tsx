@@ -5,6 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { wilayahService, WilayahItem, PostalCodeItem, ReverseGeocodeResult } from '../../services/wilayahService';
 import { StoreLocationPickerMap } from '../../components/merchant/StoreLocationPickerMap';
+import { useStoreBaseDomain } from '../../utils/storeDomain';
 
 export const UMKM_CATEGORIES = [
   'Kuliner & Minuman',
@@ -60,8 +61,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     store.name === 'Toko Baru UMKM' ||
     store.name.trim() === '';
   const isNewStore = !store || !store.id || isStoreNameEmpty;
+  const { domain: baseDomain } = useStoreBaseDomain(store);
   const storeUrl = store?.slug
-    ? (store.customDomain ? `https://${store.customDomain}` : `https://${store.slug}.kroombox.com`)
+    ? (store.customDomain ? `https://${store.customDomain}` : `https://${store.slug}.${baseDomain}`)
     : null;
 
   const [formData, setFormData] = useState({

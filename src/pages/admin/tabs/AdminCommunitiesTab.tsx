@@ -36,6 +36,7 @@ import { communityService } from '../../../services/communityService';
 import { storeService } from '../../../services/storeService';
 import { adminService } from '../../../services/adminService';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { DEFAULT_BASE_DOMAIN } from '../../../utils/storeDomain';
 
 interface AdminCommunitiesTabProps {
   currentUser?: User | null;
@@ -939,7 +940,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                         </div>
                       </td>
                       <td className="py-3.5 px-4 font-mono text-[11px] text-blue-700">
-                        {st.slug}.kroombox.com
+                        {st.slug}.{activeCommunity.baseDomain || DEFAULT_BASE_DOMAIN}
                       </td>
                       <td className="py-3.5 px-4 text-gray-600">
                         {st.phoneWhatsApp || '-'}

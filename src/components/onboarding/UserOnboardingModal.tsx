@@ -215,7 +215,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
                 <Globe className="w-3 h-3 text-slate-400 shrink-0" />
                 <span>https://</span>
                 <span className="font-bold text-[#66000E]">{storeSlug}</span>
-                <span>.kroombox.com</span>
+                <span>.lapakq.com</span>
               </p>
             )}
           </div>

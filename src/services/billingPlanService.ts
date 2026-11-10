@@ -63,7 +63,7 @@ export const DEFAULT_BILLING_PLANS: BillingPlan[] = [
     hostingPriceYearly: 0,
     cmsPriceYearly: 0,
     features: [
-      'Subdomain pratinjau: namatoko.kroombox.com',
+      'Subdomain pratinjau: namatoko.lapakq.com',
       'Katalog produk dasar (maksimal 10 produk)',
       '❌ Tanpa Checkout Otomatis Midtrans (Manual/WA saja)',
       '❌ Tanpa Ekspedisi Kurir Otomatis Biteship',

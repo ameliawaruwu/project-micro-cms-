@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, MessageCircle, Menu, X } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { getHeroContent, HeroActionLink } from '../../heroContent';
 
 export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -32,18 +34,16 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
-  const isSticky = sectionOptions.stickyHeader ?? true;
-  const showSearch = sectionOptions.showSearchBar ?? true;
-  const showCart = sectionOptions.showCartBadge ?? true;
+  const { positionClass, showSearch, showCart } = getHeaderDisplay(sectionOptions);
 
   const rawTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeTitle = rawTitle;
-  const leftSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description || "The Journal";
+  const leftSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description ?? 'The Journal');
 
   const navItems = getNavMenuItems(sectionOptions);
 
   return (
-    <header className={`w-full bg-[#FAFAFA] border-b border-gray-200/90 font-serif ${isSticky ? 'sticky top-0 z-50' : 'relative z-10'} transition-all`}>
+    <header className={`w-full bg-[#FAFAFA] border-b border-gray-200/90 font-serif ${positionClass} transition-all`}>
       {/* Top Tier: Editorial Masthead */}
       <div className="w-full px-5 sm:px-8 md:px-12 py-5 sm:py-6 flex items-center justify-between gap-4">
         {/* Left: Magazine / Editorial Tagline */}
@@ -88,11 +88,13 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
           {showSearch && (
             <button
               type="button"
+              data-href="/katalog"
+              aria-label="Cari produk"
               className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] hover:text-black transition-colors cursor-pointer"
-              title="Search"
+              title="Cari produk"
             >
               <Search className="w-4 h-4 text-gray-700" />
-              <span className="hidden lg:inline">Search</span>
+              <span className="hidden lg:inline">Cari</span>
             </button>
           )}
 
@@ -156,26 +158,31 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
 export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const heading = sectionOptions.heading || "Autumn / Winter";
-  const announcementText = sectionOptions.announcementText || "The New Collection";
+  const hero = getHeroContent(sectionOptions, {
+    badge: sectionOptions.announcementText || 'The New Collection',
+    buttonLabel: 'Shop The Collection',
+  });
   const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1600&q=80";
 
   return (
     <section className="relative w-full h-[85vh] flex flex-col items-center justify-center bg-[#fafafa] overflow-hidden">
       <div className="absolute inset-0 p-4 md:p-8">
         <div className="w-full h-full relative overflow-hidden bg-gray-200">
-          <img 
-            src={bgImage} 
-            alt="Editorial Campaign" 
+          <img
+            src={bgImage}
+            alt="Editorial Campaign"
             className="w-full h-full object-cover grayscale-[30%] hover:grayscale-0 transition-all duration-1000 scale-105"
           />
           <div className="absolute inset-0 bg-black/20"></div>
         </div>
       </div>
-      
+
       <div className="z-10 text-center text-white mix-blend-difference mt-auto mb-24 pointer-events-none px-4">
-        <p className="text-[10px] md:text-xs uppercase tracking-[0.4em] mb-6 md:mb-8 font-medium">
-          {announcementText}
-        </p>
+        {hero.badge && (
+          <p className="text-[10px] md:text-xs uppercase tracking-[0.4em] mb-6 md:mb-8 font-medium">
+            {hero.badge}
+          </p>
+        )}
         <h1 className="text-5xl md:text-8xl lg:text-[10rem] font-serif italic leading-none">
           {heading}
         </h1>
@@ -184,6 +191,18 @@ export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
             {sectionOptions.subheading || sectionOptions.description}
           </p>
         )}
+        <div className="pointer-events-auto mt-8 flex flex-wrap gap-6 justify-center">
+          <HeroActionLink
+            action={hero.primary}
+            className="inline-block text-[10px] md:text-xs uppercase tracking-[0.3em] pb-1 border-b border-white hover:opacity-70 transition-opacity"
+          />
+          {hero.secondary && (
+            <HeroActionLink
+              action={hero.secondary}
+              className="inline-block text-[10px] md:text-xs uppercase tracking-[0.3em] pb-1 border-b border-white/40 hover:opacity-70 transition-opacity"
+            />
+          )}
+        </div>
       </div>
     </section>
   );
@@ -243,7 +262,7 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolea
         </div>
       )}
       <div className="w-full max-w-lg h-[1px] bg-gray-800 mb-8"></div>
-      <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{copyrightText}</p>
+      <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} /></p>
     </footer>
   );
 };

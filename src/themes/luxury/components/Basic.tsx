@@ -2,27 +2,39 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { getHeroContent, HeroActionLink } from '../../heroContent';
 
 export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
+  const header = getHeaderDisplay(sectionOptions);
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
   const navItems = getNavMenuItems(sectionOptions);
 
   return (
-    <nav className="relative w-full px-5 sm:px-8 md:px-16 pt-5 pb-4 sm:pt-6 bg-white/95 backdrop-blur-md border-b border-[#F0EBE1] sticky top-0 z-50 transition-all duration-300">
-      <NavCartButton
-        className="absolute right-4 sm:right-8 md:right-16 top-5 sm:top-7 p-1 text-[#8C531B] hover:text-[#5C4533] transition-colors"
-        badgeClassName="absolute -top-2 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#8C531B] text-white text-[9px] font-sans font-bold flex items-center justify-center"
-      >
-        <CartBagIcon className="w-5 h-5" />
-      </NavCartButton>
+    <nav className={`w-full px-5 sm:px-8 md:px-16 pt-5 pb-4 sm:pt-6 bg-white/95 backdrop-blur-md border-b border-[#F0EBE1] ${header.positionClass} transition-all duration-300`}>
+      {header.showSearch && (
+        <NavSearchButton
+          className="absolute left-4 sm:left-8 md:left-16 top-5 sm:top-7 p-1 text-[#8C531B] hover:text-[#5C4533] transition-colors"
+          iconClassName="w-5 h-5"
+        />
+      )}
+      {header.showCart && (
+        <NavCartButton
+          className="absolute right-4 sm:right-8 md:right-16 top-5 sm:top-7 p-1 text-[#8C531B] hover:text-[#5C4533] transition-colors"
+          badgeClassName="absolute -top-2 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#8C531B] text-white text-[9px] font-sans font-bold flex items-center justify-center"
+        >
+          <CartBagIcon className="w-5 h-5" />
+        </NavCartButton>
+      )}
       <div className="flex flex-col items-center text-center min-w-0">
         {showLogo && (
           <a href="/" className="text-2xl sm:text-3xl md:text-4xl font-serif text-[#8C531B] tracking-tight block max-w-full break-words">
@@ -56,26 +68,29 @@ export const LuxuryHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   const defaultHeading = isEn ? "Timeless Elegance" : "Elegansi Klasik";
   const defaultAnnouncement = isEn ? "Haute Creation" : "Koleksi Eksklusif";
   const defaultButton = isEn ? "Discover Collection" : "Jelajahi Koleksi";
-  const defaultSubheading = isEn 
+  const defaultSubheading = isEn
     ? "The art of quiet luxury, timeless sophistication, and exquisite artisan craftsmanship."
     : "Seni kemewahan abadi, keanggunan sejati, dan dedikasi pada kesempurnaan kreasi.";
 
-  const isDefaultHeading = !sectionOptions.heading 
-    || sectionOptions.heading === "Elegansi Klasik" 
+  const isDefaultHeading = !sectionOptions.heading
+    || sectionOptions.heading === "Elegansi Klasik"
     || sectionOptions.heading === "Timeless Elegance";
   const heading = isDefaultHeading ? defaultHeading : sectionOptions.heading;
 
-  const isDefaultAnnouncement = !sectionOptions.announcementText 
-    || sectionOptions.announcementText === "Collection Privée" 
-    || sectionOptions.announcementText === "Haute Creation" 
+  const isDefaultAnnouncement = !sectionOptions.announcementText
+    || sectionOptions.announcementText === "Collection Privée"
+    || sectionOptions.announcementText === "Haute Creation"
     || sectionOptions.announcementText === "Koleksi Eksklusif";
   const announcementText = isDefaultAnnouncement ? defaultAnnouncement : sectionOptions.announcementText;
 
-  const isDefaultButton = !sectionOptions.buttonLabel 
-    || sectionOptions.buttonLabel === "Discover" 
-    || sectionOptions.buttonLabel === "Discover Collection" 
+  const isDefaultButton = !sectionOptions.buttonLabel
+    || sectionOptions.buttonLabel === "Discover"
+    || sectionOptions.buttonLabel === "Discover Collection"
     || sectionOptions.buttonLabel === "Jelajahi Koleksi";
-  const buttonLabel = isDefaultButton ? defaultButton : sectionOptions.buttonLabel;
+  const hero = getHeroContent(
+    { ...sectionOptions, buttonLabel: isDefaultButton ? defaultButton : sectionOptions.buttonLabel },
+    { badge: announcementText, buttonLabel: defaultButton }
+  );
 
   const currentSub = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle;
   const isDefaultSub = !currentSub
@@ -86,16 +101,18 @@ export const LuxuryHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   return (
     <section className="relative w-full h-[90vh] bg-white px-4 md:px-12 pb-12 pt-4">
       <div className="w-full h-full relative overflow-hidden group">
-        <img 
-          src={bgImage} 
-          alt="Luxury Collection" 
+        <img
+          src={bgImage}
+          alt="Luxury Collection"
           className="w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-[20s] ease-out"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a]/80 via-[#1a1a1a]/20 to-transparent"></div>
         <div className="absolute bottom-16 left-8 md:left-16 text-white max-w-2xl">
-          <p className="text-[10px] md:text-[11px] uppercase tracking-[0.4em] mb-6 text-[#D4AF37] opacity-90">
-            {announcementText}
-          </p>
+          {hero.badge && (
+            <p className="text-[10px] md:text-[11px] uppercase tracking-[0.4em] mb-6 text-[#D4AF37] opacity-90">
+              {hero.badge}
+            </p>
+          )}
           <h1 className="text-5xl md:text-7xl font-serif mb-4 leading-tight drop-shadow-md">
             {heading}
           </h1>
@@ -104,9 +121,18 @@ export const LuxuryHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
               {subheading}
             </p>
           )}
-          <button className="text-[10px] md:text-[11px] uppercase tracking-[0.3em] border-b border-[#D4AF37] pb-2 text-white hover:text-[#D4AF37] transition-colors duration-500">
-            {buttonLabel}
-          </button>
+          <div className="flex flex-wrap items-center gap-8">
+            <HeroActionLink
+              action={hero.primary}
+              className="inline-block text-[10px] md:text-[11px] uppercase tracking-[0.3em] border-b border-[#D4AF37] pb-2 text-white hover:text-[#D4AF37] transition-colors duration-500"
+            />
+            {hero.secondary && (
+              <HeroActionLink
+                action={hero.secondary}
+                className="inline-block text-[10px] md:text-[11px] uppercase tracking-[0.3em] border-b border-white/40 pb-2 text-white/80 hover:text-white transition-colors duration-500"
+              />
+            )}
+          </div>
         </div>
       </div>
     </section>
@@ -156,7 +182,7 @@ export const LuxuryFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
           ))}
         </div>
       )}
-      <p className="text-[9px] uppercase tracking-[0.35em] text-[#9E8E81] font-mono">{copyrightText}</p>
+      <p className="text-[9px] uppercase tracking-[0.35em] text-[#9E8E81] font-mono">{copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} /></p>
     </footer>
   );
 };

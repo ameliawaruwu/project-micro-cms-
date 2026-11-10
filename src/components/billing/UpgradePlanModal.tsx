@@ -54,7 +54,7 @@ const PLANS: PlanDetail[] = [
     priceYearly: 350000,
     features: [
       'Publikasi Toko Online Aktif ke Publik (Live)',
-      'Subdomain resmi namatoko.kroombox.com',
+      'Subdomain resmi namatoko.lapakq.com',
       'Kapasitas hingga 50 produk & varian',
       'Checkout otomatis Midtrans (QRIS & VA)',
       'Cek ongkir & kirim otomatis Biteship',

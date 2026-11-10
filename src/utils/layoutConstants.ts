@@ -772,6 +772,25 @@ export const STORE_TEMPLATES: StoreTemplate[] = [
   }
 ];
 
+/** Section yang tampil sama di semua halaman toko (header/navbar & footer). */
+export const SHARED_CHROME_SECTION_IDS = ['header', 'footer'];
+
+/**
+ * Header & footer setiap halaman mengikuti pengaturan beranda, sehingga menu navigasi,
+ * logo, toggle, sosial media, dan tautan legal konsisten di seluruh halaman toko.
+ * Visibilitas & urutan section halaman itu sendiri tetap dipertahankan.
+ */
+const withSharedChrome = (
+  pageSections: StoreSectionConfig[],
+  homeSections: StoreSectionConfig[] = []
+): StoreSectionConfig[] =>
+  pageSections.map((sec) => {
+    if (!SHARED_CHROME_SECTION_IDS.includes(sec.id)) return sec;
+    const homeSection = homeSections.find((h) => h.id === sec.id);
+    if (!homeSection?.options) return sec;
+    return { ...sec, options: { ...sec.options, ...homeSection.options } };
+  });
+
 export const getStoreSectionsForPage = (
   layoutSettings?: StoreLayoutSettings,
   pageId: string = 'homepage'
@@ -800,7 +819,8 @@ export const getStoreSectionsForPage = (
       return pSlug === normalizedPageId || p.id === pageId || p.slug === pageId;
     });
     if (pageConfig && pageConfig.sections && pageConfig.sections.length > 0) {
-      return getStoreSections({ ...layoutSettings, sections: pageConfig.sections });
+      const pageSections = withSharedChrome(pageConfig.sections, layoutSettings.sections);
+      return getStoreSections({ ...layoutSettings, sections: pageSections });
     }
   }
 

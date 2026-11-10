@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
 
 export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -80,7 +81,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
 
       <div className={`max-w-7xl mx-auto flex ${bottomFlexClass} items-center justify-between gap-3 sm:gap-4 pt-6 border-t border-gray-100 text-center sm:text-left`}>
         <p className="text-[11px] sm:text-xs text-gray-400 font-light">
-          {copyrightText}
+          {copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} />
         </p>
       </div>
     </footer>

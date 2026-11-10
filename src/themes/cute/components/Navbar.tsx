@@ -1,16 +1,17 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
-import { Search, ShoppingBag, Menu, Heart } from 'lucide-react';
+import { ShoppingBag, Heart } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
 
 export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
-  const navigation = useCmsStore((state) => state.navigation);
+  const header = getHeaderDisplay(sectionOptions);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
   const navFlexClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -33,18 +34,24 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
   });
 
   return (
-    <header className="w-full bg-[#FFF5F7] border-b-4 border-[#FFD1DC] py-4 px-6 sticky top-0 z-50 font-['Outfit',sans-serif] rounded-b-3xl shadow-sm">
+    <header className={`w-full bg-[#FFF5F7] border-b-4 border-[#FFD1DC] py-4 px-6 ${header.positionClass} font-['Outfit',sans-serif] rounded-b-3xl shadow-sm`}>
       <div className={`max-w-5xl mx-auto flex ${navFlexClass} items-center ${navGapClass} justify-between`}>
         
         {/* Mobile top bar */}
         <div className={`w-full ${showMobileBar} justify-between items-center`}>
-          <span className="w-9 h-9" aria-hidden="true" />
-          <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm relative cursor-pointer">
-            <ShoppingBag className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 bg-[#FF85A1] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-              <CartCount />
-            </span>
-          </button>
+          {header.showSearch ? (
+            <NavSearchButton className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm" iconClassName="w-5 h-5" />
+          ) : (
+            <span className="w-9 h-9" aria-hidden="true" />
+          )}
+          {header.showCart && (
+            <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm relative cursor-pointer">
+              <ShoppingBag className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 bg-[#FF85A1] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <CartCount />
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Center: Logo */}
@@ -77,15 +84,20 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
 
         {/* Right: Actions */}
         <div className={`${showDesktopNav} items-center gap-3`}>
-          <button className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm">
-            <Search className="w-5 h-5" />
-          </button>
-          <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm relative cursor-pointer">
-            <ShoppingBag className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 bg-[#FF85A1] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">
-              <CartCount />
-            </span>
-          </button>
+          {header.showSearch && (
+            <NavSearchButton
+              className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm"
+              iconClassName="w-5 h-5"
+            />
+          )}
+          {header.showCart && (
+            <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm relative cursor-pointer">
+              <ShoppingBag className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 bg-[#FF85A1] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">
+                <CartCount />
+              </span>
+            </button>
+          )}
         </div>
 
       </div>

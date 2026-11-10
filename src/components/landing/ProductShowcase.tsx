@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   TrendingUp,
   Package,
@@ -25,6 +25,10 @@ interface ProductShowcaseProps {
   onNavigateRegister: () => void;
   onLaunchDemo: () => void;
 }
+
+const DEMO_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+const DEMO_PLACEHOLDER_IMAGE =
+  'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=120&auto=format&fit=crop&q=80';
 
 interface DemoProduct {
   id: string;
@@ -72,27 +76,76 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const [newProductPrice, setNewProductPrice] = useState('');
   const [newProductStock, setNewProductStock] = useState('10');
   const [justAddedAlert, setJustAddedAlert] = useState(false);
+  const [newProductImage, setNewProductImage] = useState<string | null>(null);
+  const [formError, setFormError] = useState('');
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  // URL objek foto simulasi; dilepas saat komponen dilepas agar tidak bocor memori.
+  const objectUrlsRef = useRef<string[]>([]);
 
-  const handleAddProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProductName.trim()) return;
+  useEffect(() => () => objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
-    const parsedPrice = parseInt(newProductPrice.replace(/\D/g, ''), 10) || 120000;
-    const parsedStock = parseInt(newProductStock, 10) || 10;
+  const handlePickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setFormError(t('product_modal_photo_invalid', 'File harus berupa gambar (JPG, PNG, atau WEBP).'));
+      return;
+    }
+    if (file.size > DEMO_PHOTO_MAX_BYTES) {
+      setFormError(t('product_modal_photo_too_big', 'Ukuran foto maksimal 5 MB.'));
+      return;
+    }
+    // Simulasi saja: foto hanya ditampilkan lokal di browser, tidak diunggah ke server.
+    const url = URL.createObjectURL(file);
+    objectUrlsRef.current.push(url);
+    setNewProductImage(url);
+    setFormError('');
+  };
 
-    const newProd: DemoProduct = {
-      id: Date.now().toString(),
-      name: newProductName.trim(),
-      price: parsedPrice,
-      stock: parsedStock,
-      image: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=120&auto=format&fit=crop&q=80',
-      status: parsedStock <= 3 ? 'Stok Menipis' : 'Tersedia',
-    };
-
-    setProducts([newProd, ...products]);
+  const resetForm = () => {
     setNewProductName('');
     setNewProductPrice('');
     setNewProductStock('10');
+    setNewProductImage(null);
+    setFormError('');
+  };
+
+  const closeModal = () => {
+    resetForm();
+    setIsAddModalOpen(false);
+  };
+
+  const handleAddProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newProductName.trim();
+    const price = parseInt(newProductPrice.replace(/\D/g, ''), 10);
+    const stock = parseInt(newProductStock.replace(/\D/g, ''), 10);
+
+    if (!name) {
+      setFormError(t('product_modal_name_required', 'Nama produk wajib diisi.'));
+      return;
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      setFormError(t('product_modal_price_required', 'Harga harus lebih dari 0.'));
+      return;
+    }
+    if (!Number.isFinite(stock) || stock < 0) {
+      setFormError(t('product_modal_stock_invalid', 'Jumlah stok tidak valid.'));
+      return;
+    }
+
+    const newProd: DemoProduct = {
+      id: Date.now().toString(),
+      name,
+      price,
+      stock,
+      image: newProductImage || DEMO_PLACEHOLDER_IMAGE,
+      status: stock <= 3 ? 'Stok Menipis' : 'Tersedia',
+    };
+
+    setProducts((prev) => [newProd, ...prev]);
+    resetForm();
     setIsAddModalOpen(false);
     setJustAddedAlert(true);
     setTimeout(() => setJustAddedAlert(false), 3000);
@@ -263,7 +316,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       {isAddModalOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#241A1A]/50 backdrop-blur-xs animate-in fade-in duration-150"
-          onClick={() => setIsAddModalOpen(false)}
+          onClick={closeModal}
         >
           <div 
             className="relative w-full max-w-md bg-white rounded-2xl p-5 sm:p-6 shadow-2xl border border-[#E8DDDE] space-y-4 animate-in zoom-in-95 duration-150 text-left"
@@ -278,7 +331,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <h3 className="font-bold text-base text-[#241A1A]">{t('product_modal_title', 'Simulasi Tambah Produk')}</h3>
               </div>
               <button
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={closeModal}
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-[#5F5652] hover:bg-[#FAF7F7] hover:text-[#241A1A] transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
@@ -291,10 +344,30 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <label className="block text-xs font-bold text-[#241A1A] mb-1">
                   {t('product_modal_photo', 'Foto Produk')}
                 </label>
-                <div className="p-3 border-2 border-dashed border-[#E8DDDE] rounded-xl bg-[#FAF7F7] text-center flex flex-col items-center justify-center gap-1 text-xs text-[#5F5652]">
-                  <ImageIcon className="w-5 h-5 text-[#66000E]" />
-                  <span>{t('product_modal_photo_hint', 'Foto terisi otomatis dari galeri/kamera')}</span>
-                </div>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePickPhoto}
+                />
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="w-full p-3 border-2 border-dashed border-[#E8DDDE] hover:border-[#66000E]/50 rounded-xl bg-[#FAF7F7] text-center flex flex-col items-center justify-center gap-1 text-xs text-[#5F5652] transition cursor-pointer"
+                >
+                  {newProductImage ? (
+                    <>
+                      <img src={newProductImage} alt="" className="w-16 h-16 rounded-lg object-cover border border-[#E8DDDE]" />
+                      <span>{t('product_modal_photo_change', 'Ganti foto')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-5 h-5 text-[#66000E]" />
+                      <span>{t('product_modal_photo_hint', 'Pilih foto dari galeri/kamera')}</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               <div>
@@ -318,6 +391,8 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </label>
                   <input
                     type="number"
+                    required
+                    min={1}
                     placeholder="120000"
                     value={newProductPrice}
                     onChange={(e) => setNewProductPrice(e.target.value)}
@@ -330,6 +405,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </label>
                   <input
                     type="number"
+                    min={0}
                     placeholder="10"
                     value={newProductStock}
                     onChange={(e) => setNewProductStock(e.target.value)}
@@ -338,10 +414,16 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 </div>
               </div>
 
+              {formError && (
+                <p role="alert" className="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {formError}
+                </p>
+              )}
+
               <div className="pt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={closeModal}
                   className="px-4 py-2 rounded-xl border border-[#E8DDDE] text-xs font-semibold text-[#5F5652] hover:bg-[#FAF7F7]"
                 >
                   {t('product_modal_cancel', 'Batal')}

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { cartService } from '../../../services/cartService';
-import { Search, ShoppingBag, Menu, X } from 'lucide-react';
+import { ShoppingBag, Menu, X } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { useCartCount, useStorefrontSlug } from '../../storefrontCart';
 
 export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
-  const navigation = useCmsStore((state) => state.navigation);
+  const header = getHeaderDisplay(sectionOptions);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const cartCount = useCartCount(useStorefrontSlug());
@@ -17,7 +18,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
 
   const navItems = getNavMenuItems(sectionOptions);
 
@@ -55,7 +56,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
   });
 
   return (
-    <header className="w-full max-w-full bg-white/95 backdrop-blur-md sticky top-0 z-50 font-sans border-b border-gray-100/90 box-border overflow-x-hidden transition-all">
+    <header className={`w-full max-w-full bg-white/95 backdrop-blur-md ${header.positionClass} font-sans border-b border-gray-100/90 box-border overflow-x-hidden transition-all`}>
       <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between py-3 sm:py-4 px-3 sm:px-5 md:px-10 gap-2 sm:gap-4 box-border">
         
         {/* Mobile / Tablet Hamburger Button */}
@@ -105,13 +106,13 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
 
         {/* Right Action Icons (Compact & perfectly aligned on mobile) */}
         <div className="flex-shrink-0 flex items-center justify-end gap-1.5 sm:gap-3 md:gap-6">
-          <a 
-            href="/katalog"
-            aria-label="Pencarian Produk"
-            className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform p-1.5 rounded-lg focus:outline-none cursor-pointer inline-flex items-center"
-          >
-            <Search className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.5]" />
-          </a>
+          {header.showSearch && (
+            <NavSearchButton
+              className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform p-1.5 rounded-lg focus:outline-none inline-flex items-center"
+              iconClassName="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.5]"
+            />
+          )}
+          {header.showCart && (
           <a 
             href="/cart"
             aria-label="Keranjang Belanja"
@@ -127,6 +128,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
               </span>
             )}
           </a>
+          )}
         </div>
 
       </div>

@@ -10,7 +10,7 @@ import { ShoppingCart, Heart, ShieldCheck, Truck, Star, ArrowRight, Sparkles } f
 import { useCmsStore } from '../../cms/useCmsStore';
 import { cartService } from '../../services/cartService';
 import { getDeviceClass, resolveResponsiveClasses } from '../../utils/responsivePreview';
-import { addProductToCart } from '../storefrontCart';
+import { addProductToCart, toCartProduct } from '../storefrontCart';
 
 interface ProductDetailPageProps {
   themeData?: ThemeSchema;
@@ -95,7 +95,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     if (e) e.stopPropagation();
     const activeStoreSlug = store?.slug || (liveStoreInfo as any)?.slug;
     if (activeStoreSlug && product) {
-      cartService.addToCart(activeStoreSlug, product as any, 1);
+      cartService.addToCart(activeStoreSlug, toCartProduct(product), 1);
       window.dispatchEvent(new CustomEvent('cart_updated'));
       if (onNavigate) {
         onNavigate('checkout');

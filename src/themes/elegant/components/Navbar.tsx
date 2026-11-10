@@ -1,21 +1,17 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
-import { Search, ShoppingBag, Menu } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
 
 export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
-  const navigation = useCmsStore((state) => state.navigation);
+  const header = getHeaderDisplay(sectionOptions);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const showHamburger = getDeviceClass(isMobile, isTablet, {
-    mobile: 'inline-block',
-    tablet: 'inline-block',
-    desktop: 'hidden',
-    fallback: 'md:hidden inline-block',
-  });
+  const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
   const showDesktopSearch = getDeviceClass(isMobile, isTablet, {
     mobile: 'hidden',
     tablet: 'hidden',
@@ -36,18 +32,17 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
   });
 
   return (
-    <header className="w-full bg-[#FAF9F6]/90 backdrop-blur-sm border-b border-[#E8E6E1] py-5 px-8 md:px-16 sticky top-0 z-50 font-['Cormorant_Garamond',serif]">
+    <header className={`w-full bg-[#FAF9F6]/90 backdrop-blur-sm border-b border-[#E8E6E1] py-5 px-8 md:px-16 ${header.positionClass} font-['Cormorant_Garamond',serif]`}>
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         
-        {/* Left: Mobile Menu & Search */}
+        {/* Left: Search */}
         <div className="flex-1 flex items-center gap-6">
-          <button className={`${showHamburger} text-[#2C2A29]`}>
-            <Menu className="w-5 h-5" />
-          </button>
-          <button className={`${showDesktopSearch} items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors`}>
-            <Search className="w-4 h-4" />
-            <span className="text-xs tracking-[0.15em] uppercase font-sans">Search</span>
-          </button>
+          {header.showSearch && (
+            <NavSearchButton
+              className="flex items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors"
+              label={<span className={`${showDesktopSearch} text-xs tracking-[0.15em] uppercase font-sans`}>Cari</span>}
+            />
+          )}
         </div>
 
         {/* Center: Logo */}
@@ -55,22 +50,24 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
           <a href="/" className="text-3xl md:text-4xl font-normal tracking-wide text-[#2C2A29]">
             <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
           </a>
-          {(sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description) && (
+          {storeSubtitle && (
             <span className="text-[11px] tracking-[0.2em] uppercase text-[#6B6865] mt-1 font-sans">
-              {sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description}
+              {storeSubtitle}
             </span>
           )}
         </div>
 
         {/* Right: Actions */}
         <div className="flex-1 flex items-center justify-end gap-6">
-          <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-[#6B6865] hover:text-[#2C2A29] transition-colors flex items-center gap-2 cursor-pointer">
-            <span className={`text-xs tracking-[0.15em] uppercase ${showCartLabel} font-sans`}>Keranjang</span>
-            <div className="relative">
-              <ShoppingBag className="w-4 h-4" />
-              <span className="absolute -bottom-2 -right-2 text-[#2C2A29] text-[9px] font-sans"><CartCount /></span>
-            </div>
-          </button>
+          {header.showCart && (
+            <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-[#6B6865] hover:text-[#2C2A29] transition-colors flex items-center gap-2 cursor-pointer">
+              <span className={`text-xs tracking-[0.15em] uppercase ${showCartLabel} font-sans`}>Keranjang</span>
+              <div className="relative">
+                <ShoppingBag className="w-4 h-4" />
+                <span className="absolute -bottom-2 -right-2 text-[#2C2A29] text-[9px] font-sans"><CartCount /></span>
+              </div>
+            </button>
+          )}
         </div>
 
       </div>

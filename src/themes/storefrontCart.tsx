@@ -21,7 +21,7 @@ export function notifyStorefront(message: string) {
 }
 
 /** Ubah produk CMS/tema menjadi Product untuk disimpan di keranjang. */
-function toCartProduct(product: any): Product {
+export function toCartProduct(product: any): Product {
   if (product && 'image' in product && !('imageUrl' in product)) return cmsProductToProduct(product);
   return product as Product;
 }

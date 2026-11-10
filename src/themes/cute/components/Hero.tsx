@@ -2,6 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Sparkles } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getHeroContent, HeroActionLink } from '../../heroContent';
 
 export const CuteHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -12,6 +13,7 @@ export const CuteHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTa
     desktop: 'flex-row',
     fallback: 'flex-col md:flex-row',
   });
+  const hero = getHeroContent(sectionOptions, { badge: '✨ Toko Paling Gemas', buttonLabel: 'Mulai Belanja!' });
   const contentTextAlignClass = isMobile || isTablet ? 'text-center' : 'text-center md:text-left';
   const contentPadClass = isMobile || isTablet ? 'p-10' : 'p-10 md:p-16';
   const imageHeightClass = isMobile || isTablet ? 'h-[400px]' : 'h-[400px] md:h-[600px]';
@@ -19,7 +21,7 @@ export const CuteHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTa
   return (
     <section className="relative w-full py-12 px-6 font-['Outfit',sans-serif]">
       <div className={`max-w-6xl mx-auto bg-[#FFD1DC]/30 rounded-[3rem] overflow-hidden relative flex ${flexDirClass} items-center border-8 border-white shadow-xl`}>
-        
+
         {/* Floating decorations */}
         <div className="absolute top-10 left-10 text-[#FF85A1] animate-bounce">
           <Sparkles className="w-8 h-8" />
@@ -30,29 +32,37 @@ export const CuteHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTa
 
         {/* Content */}
         <div className={`flex-1 ${contentPadClass} ${contentTextAlignClass} z-10`}>
-          <div className="inline-block px-4 py-2 bg-white rounded-full text-[#FF85A1] font-bold text-sm mb-6 shadow-sm border-2 border-[#FFF5F7]">
-            ✨ Toko Paling Gemas
-          </div>
+          {hero.badge && (
+            <div className="inline-block px-4 py-2 bg-white rounded-full text-[#FF85A1] font-bold text-sm mb-6 shadow-sm border-2 border-[#FFF5F7]">
+              {hero.badge}
+            </div>
+          )}
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[#FF85A1] leading-[1.1] mb-6">
             {sectionOptions?.heading || `Selamat Datang di ${storeInfo.name}! 💖`}
           </h1>
           <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-lg font-medium leading-relaxed">
             {sectionOptions?.subheading || sectionOptions?.subtitle || sectionOptions?.description || storeInfo.description}
           </p>
-          <a 
-            href="/produk" 
-            className="inline-flex items-center justify-center px-8 py-4 bg-[#FF85A1] text-white text-lg font-black hover:bg-[#FF6B8B] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 min-w-[200px] rounded-full border-4 border-white"
-          >
-            Mulai Belanja!
-          </a>
+          <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+            <HeroActionLink
+              action={hero.primary}
+              className="inline-flex items-center justify-center px-8 py-4 bg-[#FF85A1] text-white text-lg font-black hover:bg-[#FF6B8B] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 min-w-[200px] rounded-full border-4 border-white"
+            />
+            {hero.secondary && (
+              <HeroActionLink
+                action={hero.secondary}
+                className="inline-flex items-center justify-center px-8 py-4 bg-white text-[#FF85A1] text-lg font-black hover:-translate-y-1 hover:shadow-lg transition-all duration-300 rounded-full border-4 border-[#FFD1DC]"
+              />
+            )}
+          </div>
         </div>
 
         {/* Image */}
         <div className={`flex-1 w-full ${imageHeightClass} relative p-6`}>
           <div className="w-full h-full rounded-[2.5rem] overflow-hidden border-8 border-white shadow-lg bg-white relative group">
-            <img 
-              src={bgImage} 
-              alt="Hero" 
+            <img
+              src={bgImage}
+              alt="Hero"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
             {/* Cute badge on image */}

@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { Cpu, Mail, MapPin } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
 
 export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#8B5CF6', isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -91,7 +92,7 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
 
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-gray-800/80 text-xs text-gray-500 font-mono text-center">
-          {copyrightText}
+          {copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} />
         </div>
       </div>
     </footer>

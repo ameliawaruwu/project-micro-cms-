@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, HelpCircle, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { adminWhatsAppLink } from '../../config/contact';
 
 export const FAQSection: React.FC = () => {
   const { t } = useLanguage();
@@ -63,7 +64,7 @@ export const FAQSection: React.FC = () => {
                 Tim CS LapakQ siap membantu panduan setting toko dan pertanyaan teknis Anda.
               </p>
               <a
-                href="https://wa.me/6281234567890?text=Halo%20Admin%20LapakQ,%20saya%20ingin%20tanya%20seputar%20pembuatan%20toko%20online"
+                href={adminWhatsAppLink('Halo Admin LapakQ, saya ingin tanya seputar pembuatan toko online')}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 w-full h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition cursor-pointer active:scale-[0.98] shadow-xs"

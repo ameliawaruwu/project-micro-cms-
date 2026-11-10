@@ -37,8 +37,24 @@ import {
 import { Store, StoreSectionConfig, StoreSectionOptions } from '../../types';
 import { CURATED_BANNER_PRESETS, DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
 import { GlobalThemeSettingsPanel } from './GlobalThemeSettingsPanel';
+import { SectionContentFields } from './SectionContentFields';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { storeService } from '../../services/storeService';
+
+/** Kolom media sosial footer (dibaca tema lewat getFooterSocialLinks). */
+const FOOTER_SOCIAL_FIELDS = [
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'tiktok', label: 'TikTok' },
+  { key: 'twitter', label: 'X / Twitter' },
+  { key: 'facebook', label: 'Facebook' },
+  { key: 'youtube', label: 'YouTube' },
+] as const;
+
+/** Kolom tautan legal footer (dibaca tema lewat getFooterLegalLinks). */
+const FOOTER_LEGAL_FIELDS = [
+  { textKey: 'privacyPolicyText', urlKey: 'privacyPolicyUrl', label: 'Kebijakan Privasi' },
+  { textKey: 'termsOfServiceText', urlKey: 'termsOfServiceUrl', label: 'Syarat & Ketentuan' },
+] as const;
 
 interface RightPanelSettingsProps {
   store: Store;
@@ -212,7 +228,6 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
       'lookbook',
       'brand_story',
       'ingredient_story',
-      'sustainability',
       'latest_drop',
       'floating_showcase',
       'signature_collection',
@@ -436,10 +451,10 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       rows={3}
                       value={opts.description !== undefined ? opts.description : (store.description || '')}
                       onChange={(e) => {
+                        // Hanya milik footer: tidak disinkronkan ke deskripsi toko agar tidak
+                        // ikut mengubah subjudul header/hero.
                         const val = e.target.value;
                         handleOptionChange({ description: val, tagline: val, subheading: val });
-                        useCmsStore.getState().updateStoreInfo({ description: val });
-                        if (onUpdateStore) onUpdateStore({ description: val });
                       }}
                       placeholder="Tuliskan deskripsi singkat atau slogan toko..."
                       className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
@@ -498,43 +513,23 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-gray-700">Instagram</label>
-                      <input
-                        type="text"
-                        value={opts.instagram !== undefined ? opts.instagram : (opts.socials?.instagram || '')}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          handleOptionChange({ 
-                            instagram: val, 
-                            socials: { ...(opts.socials || {}), instagram: val } 
-                          });
-                          const currentSocials = useCmsStore.getState().storeInfo.socials || {};
-                          useCmsStore.getState().updateStoreInfo({ socials: { ...currentSocials, instagram: val } });
-                        }}
-                        placeholder="@username"
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-gray-700">TikTok</label>
-                      <input
-                        type="text"
-                        value={opts.tiktok !== undefined ? opts.tiktok : (opts.socials?.tiktok || '')}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          handleOptionChange({ 
-                            tiktok: val, 
-                            socials: { ...(opts.socials || {}), tiktok: val } 
-                          });
-                          const currentSocials = useCmsStore.getState().storeInfo.socials || {};
-                          useCmsStore.getState().updateStoreInfo({ socials: { ...currentSocials, tiktok: val } });
-                        }}
-                        placeholder="@username"
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
-                      />
-                    </div>
+                    {FOOTER_SOCIAL_FIELDS.map(({ key, label }) => (
+                      <div key={key} className="space-y-1">
+                        <label className="text-[11px] font-bold text-gray-700">{label}</label>
+                        <input
+                          type="text"
+                          value={opts[key] !== undefined ? opts[key] : (opts.socials?.[key] || '')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleOptionChange({ [key]: val, socials: { ...(opts.socials || {}), [key]: val } });
+                          }}
+                          placeholder="@username atau URL"
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                        />
+                      </div>
+                    ))}
                   </div>
+                  <p className="text-[11px] text-gray-500">Kosongkan untuk menyembunyikan ikon media sosial tersebut.</p>
                 </div>
 
                 {/* 4. Hak Cipta & Kebijakan */}
@@ -555,28 +550,31 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-gray-700">Kebijakan Privasi</label>
-                      <input
-                        type="text"
-                        value={opts.privacyPolicyText !== undefined ? opts.privacyPolicyText : 'Privacy Policy'}
-                        onChange={(e) => handleOptionChange({ privacyPolicyText: e.target.value })}
-                        placeholder="Privacy Policy"
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
-                      />
+                  {FOOTER_LEGAL_FIELDS.map(({ textKey, urlKey, label }) => (
+                    <div key={textKey} className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-gray-700">{label}</label>
+                        <input
+                          type="text"
+                          value={opts[textKey] ?? ''}
+                          onChange={(e) => handleOptionChange({ [textKey]: e.target.value })}
+                          placeholder={label}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-gray-700">Link {label}</label>
+                        <input
+                          type="text"
+                          value={opts[urlKey] ?? ''}
+                          onChange={(e) => handleOptionChange({ [urlKey]: e.target.value })}
+                          placeholder="https://..."
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-gray-700">Syarat & Ketentuan</label>
-                      <input
-                        type="text"
-                        value={opts.termsOfServiceText !== undefined ? opts.termsOfServiceText : 'Terms of Service'}
-                        onChange={(e) => handleOptionChange({ termsOfServiceText: e.target.value })}
-                        placeholder="Terms of Service"
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
-                      />
-                    </div>
-                  </div>
+                  ))}
+                  <p className="text-[11px] text-gray-500">Tautan legal tampil di footer setelah link diisi (https://, /halaman, atau #bagian).</p>
                 </div>
               </div>
             ) : (
@@ -647,12 +645,17 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       else if (selectedSection.id === 'newsletter') handleOptionChange({ incentiveBadge: e.target.value });
                       else handleOptionChange({ badgeText: e.target.value });
                     }}
-                    placeholder="Contoh: PROMO SPESIAL"
+                    placeholder={selectedSection.id === 'hero_banner' ? 'Kosongkan untuk label bawaan tema' : 'Contoh: PROMO SPESIAL'}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                   />
                 </div>
               )}
             </div>
+            )}
+
+            {/* Sub-bagian halaman (mis. checkout_address) memakai id store_info tetapi bukan blok Info Toko. */}
+            {sectionKey.startsWith(selectedSection.id) && (
+              <SectionContentFields sectionId={selectedSection.id} opts={opts} onChange={handleOptionChange} />
             )}
 
             {/* ── COLLECTION GRID SPECIFIC SETTINGS ── */}
@@ -912,23 +915,47 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   )}
 
                   <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
-                    {(opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS).map((item: any, idx: number) => (
-                      <div key={item.id || idx} className="flex items-center justify-between p-2 rounded border border-[#E1E3E5] bg-white text-[12px]">
-                        <span className="font-semibold text-[#202223] truncate">{item.label}</span>
-                        <span className="text-[10px] text-[#8C9196] truncate max-w-[80px]">{item.href}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const currentItems = opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS;
-                            const updatedItems = currentItems.filter((_: any, i: number) => i !== idx);
-                            handleOptionChange({ navMenuItems: updatedItems });
-                          }}
-                          className="text-red-500 hover:text-red-700 p-0.5"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
+                    {(opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS).map((item: any, idx: number) => {
+                      const updateNavItem = (patch: Record<string, string>) => {
+                        const currentItems = opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS;
+                        const updatedItems = currentItems.map((navItem: any, i: number) =>
+                          i === idx ? { ...navItem, ...patch } : navItem
+                        );
+                        handleOptionChange({ navMenuItems: updatedItems });
+                      };
+                      return (
+                        <div key={item.id || idx} className="flex items-center gap-1.5 p-1.5 rounded border border-[#E1E3E5] bg-white text-[12px]">
+                          <input
+                            type="text"
+                            value={item.label || ''}
+                            onChange={(e) => updateNavItem({ label: e.target.value })}
+                            aria-label="Nama menu"
+                            placeholder="Nama menu"
+                            className="flex-1 min-w-0 px-1.5 py-1 font-semibold text-[#202223] border border-transparent hover:border-[#E1E3E5] focus:border-[#2C6ECB] rounded outline-none"
+                          />
+                          <input
+                            type="text"
+                            value={item.href || ''}
+                            onChange={(e) => updateNavItem({ href: e.target.value })}
+                            aria-label="Link tujuan menu"
+                            placeholder="/katalog"
+                            className="w-[90px] px-1.5 py-1 text-[10px] text-[#6D7175] border border-transparent hover:border-[#E1E3E5] focus:border-[#2C6ECB] rounded outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentItems = opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS;
+                              const updatedItems = currentItems.filter((_: any, i: number) => i !== idx);
+                              handleOptionChange({ navMenuItems: updatedItems });
+                            }}
+                            aria-label="Hapus menu"
+                            className="text-red-500 hover:text-red-700 p-0.5 shrink-0"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

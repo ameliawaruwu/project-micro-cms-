@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Copy, Check, ExternalLink, Share2, MessageCircle, QrCode } from 'lucide-react';
 import { Store } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useStoreBaseDomain } from '../../utils/storeDomain';
 
 interface ShareStoreModalProps {
   store: Store;
@@ -18,10 +19,11 @@ export const ShareStoreModal: React.FC<ShareStoreModalProps> = ({
 }) => {
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
+  const { domain: baseDomain } = useStoreBaseDomain(store);
 
   if (!isOpen) return null;
 
-  const storeUrl = store.customDomain ? `https://${store.customDomain}` : `https://${store.slug || 'toko'}.kroombox.com`;
+  const storeUrl = store.customDomain ? `https://${store.customDomain}` : `https://${store.slug || 'toko'}.${baseDomain}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(storeUrl);

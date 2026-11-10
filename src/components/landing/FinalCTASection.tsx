@@ -11,6 +11,7 @@ import {
   Check,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { adminWhatsAppLink } from '../../config/contact';
 
 interface FinalCTASectionProps {
   onNavigateRegister: () => void;
@@ -86,7 +87,7 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
 
                 {/* WhatsApp Secondary Button */}
                 <a
-                  href="https://wa.me/6281234567890?text=Halo%20Admin%20LapakQ,%20saya%20tertarik%20buka%20toko%20online"
+                  href={adminWhatsAppLink('Halo Admin LapakQ, saya tertarik buka toko online')}
                   target="_blank"
                   rel="noreferrer"
                   className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-normal text-xs sm:text-sm border border-white/20 active:scale-[0.98] transition-all duration-150 cursor-pointer"

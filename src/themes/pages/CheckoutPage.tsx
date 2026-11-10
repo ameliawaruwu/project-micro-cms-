@@ -41,6 +41,7 @@ import {
 } from '../../services/paymentChannelService';
 import { wilayahService, WilayahItem, PostalCodeItem } from '../../services/wilayahService';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { customerService } from '../../services/customerService';
 
 export function mapPaymentIdToDuitkuMethod(paymentId: string): string {
   const p = (paymentId || '').toLowerCase();
@@ -92,9 +93,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   };
 
   // 1. Customer contact state - Starts empty so buyer fills in their own details
-  const [customerName, setCustomerName] = useState('');
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
+  // Isi awal dari Profil Saya (jika pelanggan pernah menyimpannya di perangkat ini).
+  const savedCustomer = useMemo(() => customerService.getSavedInfo(), []);
+  const [customerName, setCustomerName] = useState(() => String(savedCustomer?.name ?? ''));
+  const [customerEmail, setCustomerEmail] = useState(() => String(savedCustomer?.email ?? ''));
+  const [customerPhone, setCustomerPhone] = useState(() => String(savedCustomer?.phoneWhatsApp ?? ''));
 
   // 2. Hierarchical Address state: Province -> Regency/City -> District -> Village -> Postal Code
   const [provinces, setProvinces] = useState<WilayahItem[]>([]);
@@ -122,7 +125,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [isLoadingPostalCodes, setIsLoadingPostalCodes] = useState(false);
 
   // Detailed address & notes
-  const [detailedAddress, setDetailedAddress] = useState('');
+  const [detailedAddress, setDetailedAddress] = useState(() => String(savedCustomer?.address ?? ''));
   const [addressNotes, setAddressNotes] = useState('');
 
   // 3. Couriers & Rates state
@@ -179,7 +182,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         name: ci.product.name,
         price: ci.product.price,
         quantity: ci.quantity,
-        imageUrl: ci.product.imageUrl,
+        // Produk dari kartu tema (CmsProduct) menyimpan gambar di `image`, bukan `imageUrl`.
+        imageUrl: ci.product.imageUrl || (ci.product as any).image || ci.product.images?.[0],
         weightGrams: ci.product.weightGrams || 350,
       }))
     : deviceMode === undefined

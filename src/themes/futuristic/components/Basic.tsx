@@ -2,18 +2,21 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
+import { getHeroContent, HeroActionLink } from '../../heroContent';
 
 export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
-  const { storeInfo, navigation } = useCmsStore();
-  
+  const { storeInfo } = useCmsStore();
+  const header = getHeaderDisplay(sectionOptions);
+
   const showLogo = sectionOptions.showLogo ?? true;
   const showNavMenu = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
 
   const showDesktopNav = getDeviceClass(isMobile, isTablet, {
     mobile: 'hidden',
@@ -23,7 +26,7 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
   });
 
   return (
-    <nav className="w-full px-4 sm:px-6 md:px-12 py-4 md:py-5 flex flex-wrap md:flex-nowrap justify-between items-center gap-x-4 gap-y-3 bg-[#050505]/80 border-b backdrop-blur-md sticky top-0 z-50" style={{ borderColor: `${accentColor}4D` }}>
+    <nav className={`w-full px-4 sm:px-6 md:px-12 py-4 md:py-5 flex flex-wrap md:flex-nowrap justify-between items-center gap-x-4 gap-y-3 bg-[#050505]/80 border-b backdrop-blur-md ${header.positionClass}`} style={{ borderColor: `${accentColor}4D` }}>
       <div className="flex flex-col min-w-0 flex-1 md:flex-none">
         <div className="text-lg sm:text-xl font-black tracking-[0.15em] sm:tracking-[0.2em] text-white truncate">
           {showLogo && <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11"><><span className="mr-2" style={{ color: accentColor }}>/</span>{storeTitle}</></StoreLogo>}
@@ -49,18 +52,25 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
           ))}
         </div>
       )}
-      <button
-        type="button"
-        data-href="/keranjang" aria-label="Buka keranjang belanja"
-        className="shrink-0 px-3 sm:px-5 py-2 bg-transparent border text-xs uppercase tracking-widest font-bold rounded transition-all duration-300 cursor-pointer flex items-center gap-2 whitespace-nowrap"
-        style={{ borderColor: accentColor, color: accentColor }}
-        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; e.currentTarget.style.color = '#fff'; e.currentTarget.style.boxShadow = `0 0 15px ${accentColor}`; }}
-        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = accentColor; e.currentTarget.style.boxShadow = ''; }}
-      >
-        <CartBagIcon className="w-4 h-4" />
-        <span className="hidden sm:inline">Keranjang</span>
-        <span>[<CartCount />]</span>
-      </button>
+      <div className="shrink-0 flex items-center gap-3">
+        {header.showSearch && (
+          <NavSearchButton className="p-2 text-gray-400 hover:text-white transition-colors" />
+        )}
+        {header.showCart && (
+          <button
+            type="button"
+            data-href="/keranjang" aria-label="Buka keranjang belanja"
+            className="px-3 sm:px-5 py-2 bg-transparent border text-xs uppercase tracking-widest font-bold rounded transition-all duration-300 cursor-pointer flex items-center gap-2 whitespace-nowrap"
+            style={{ borderColor: accentColor, color: accentColor }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; e.currentTarget.style.color = '#fff'; e.currentTarget.style.boxShadow = `0 0 15px ${accentColor}`; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = accentColor; e.currentTarget.style.boxShadow = ''; }}
+          >
+            <CartBagIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">Keranjang</span>
+            <span>[<CartCount />]</span>
+          </button>
+        )}
+      </div>
       {showNavMenu && (
         <div className="md:hidden w-full flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap">
           {getNavMenuItems(sectionOptions).map(nav => (
@@ -76,9 +86,9 @@ export const FuturisticHero: React.FC<{ sectionOptions?: any; accentColor?: stri
   const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "Next Gen Hardware";
   const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content || storeInfo?.description || "Engineered for the future. Equip your battle station with uncompromising technology.";
-  const buttonLabel = sectionOptions.buttonLabel || "Initialize Sequence";
+  const hero = getHeroContent(sectionOptions, { badge: 'SYS.v2.0_ONLINE', buttonLabel: 'Initialize Sequence' });
   const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2000&q=80";
-  
+
   return (
     <section className="relative w-full min-h-[90vh] flex items-center justify-center bg-[#050505] overflow-hidden">
       <div className="absolute inset-0 z-0 opacity-20 mix-blend-luminosity">
@@ -87,28 +97,38 @@ export const FuturisticHero: React.FC<{ sectionOptions?: any; accentColor?: stri
       <div className="absolute inset-0 bg-gradient-to-b to-transparent" style={{ backgroundImage: `linear-gradient(to bottom, ${accentColor}33, transparent)` }}></div>
       <div className="absolute w-[60vw] h-[60vw] rounded-full blur-[120px] -top-1/4 -left-1/4 animate-pulse" style={{ backgroundColor: `${accentColor}1A` }}></div>
       <div className="absolute w-[40vw] h-[40vw] bg-blue-600/10 rounded-full blur-[100px] bottom-0 right-0 animate-pulse" style={{ animationDelay: '2s' }}></div>
-      
+
       <div className="relative z-10 text-center text-white px-6 w-full max-w-5xl mx-auto">
-        <div
-          className="inline-block px-4 py-1.5 border rounded-full text-xs font-mono mb-8 uppercase tracking-widest backdrop-blur-sm"
-          style={{ borderColor: `${accentColor}4D`, backgroundColor: `${accentColor}33`, color: accentColor, boxShadow: `0 0 15px ${accentColor}33` }}
-        >
-          SYS.v2.0_ONLINE
-        </div>
+        {hero.badge && (
+          <div
+            className="inline-block px-4 py-1.5 border rounded-full text-xs font-mono mb-8 uppercase tracking-widest backdrop-blur-sm"
+            style={{ borderColor: `${accentColor}4D`, backgroundColor: `${accentColor}33`, color: accentColor, boxShadow: `0 0 15px ${accentColor}33` }}
+          >
+            {hero.badge}
+          </div>
+        )}
         <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-8 uppercase leading-tight" style={{ filter: `drop-shadow(0 0 30px ${accentColor}4D)` }}>
           {heading}
         </h1>
         <p className="text-gray-400 max-w-xl mx-auto mb-12 font-mono text-sm md:text-base leading-relaxed">
           {subheading}
         </p>
-        <button
-          className="px-10 py-5 text-white font-bold uppercase tracking-widest transition-all duration-300 rounded-sm"
-          style={{ backgroundColor: accentColor }}
-          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 0 25px ${accentColor}`; }}
-          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ''; }}
-        >
-          {buttonLabel}
-        </button>
+        <div className="flex flex-wrap gap-4 justify-center">
+          <HeroActionLink
+            action={hero.primary}
+            className="inline-block px-10 py-5 text-white font-bold uppercase tracking-widest transition-all duration-300 rounded-sm"
+            style={{ backgroundColor: accentColor }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 0 25px ${accentColor}`; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ''; }}
+          />
+          {hero.secondary && (
+            <HeroActionLink
+              action={hero.secondary}
+              className="inline-block px-10 py-5 font-bold uppercase tracking-widest transition-all duration-300 rounded-sm border bg-transparent"
+              style={{ borderColor: accentColor, color: accentColor }}
+            />
+          )}
+        </div>
       </div>
     </section>
   );
@@ -169,7 +189,7 @@ export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accent
 export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#A855F7' }) => {
   const { storeInfo } = useCmsStore();
   const copyrightText = sectionOptions.copyrightText || `SYS_CORE_TERMINATED. © ${new Date().getFullYear()} ${storeInfo.name}`;
-  
+
   return (
     <footer className="w-full px-8 py-16 bg-[#020202] border-t text-center relative overflow-hidden" style={{ borderColor: `${accentColor}33` }}>
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[100px] blur-[80px]" style={{ backgroundColor: `${accentColor}33` }}></div>

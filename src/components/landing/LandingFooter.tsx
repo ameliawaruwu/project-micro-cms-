@@ -3,6 +3,7 @@ import { ChevronDown, MessageSquare } from 'lucide-react';
 import { scrollToLandingSection } from '../../utils/scroll';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { KroomifyLogo } from '../common/KroomifyLogo';
+import { adminWhatsAppLink } from '../../config/contact';
 
 interface LandingFooterProps {
   onNavigateLogin: () => void;
@@ -151,7 +152,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
                 </li>
                 <li>
                   <a
-                    href="https://wa.me/6281234567890?text=Halo%20Admin%20LapakQ,%20saya%20butuh%20bantuan"
+                    href={adminWhatsAppLink('Halo Admin LapakQ, saya butuh bantuan')}
                     target="_blank"
                     rel="noreferrer"
                     className="hover:text-[#801010] transition-colors inline-flex items-center gap-1.5 text-[#66000E] font-bold"
@@ -300,7 +301,7 @@ export const LandingFooter: React.FC<LandingFooterProps> = ({
                     {t('footer_link_help_center', 'Pusat Bantuan')}
                   </a>
                   <a
-                    href="https://wa.me/6281234567890?text=Halo%20Admin%20LapakQ,%20saya%20butuh%20bantuan"
+                    href={adminWhatsAppLink('Halo Admin LapakQ, saya butuh bantuan')}
                     target="_blank"
                     rel="noreferrer"
                     className="block py-1 text-[#66000E] font-bold"

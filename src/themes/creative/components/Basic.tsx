@@ -1,17 +1,21 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { getHeroContent, HeroActionLink } from '../../heroContent';
 
 export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const { storeInfo, navigation } = useCmsStore();
+  const { storeInfo } = useCmsStore();
+  const header = getHeaderDisplay(sectionOptions);
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeSubtitle = sectionOptions.headerSubtitle ?? sectionOptions.subheading ?? sectionOptions.tagline ?? sectionOptions.subtitle ?? '';
+  const storeSubtitle = getHeaderSubtitle(sectionOptions);
   const showDesktopNav = getDeviceClass(isMobile, isTablet, {
     mobile: 'hidden',
     tablet: 'hidden',
@@ -20,7 +24,7 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean
   });
 
   return (
-    <nav className="w-full px-4 sm:px-8 py-4 sm:py-6 flex flex-wrap justify-between items-center gap-x-4 gap-y-3 bg-[#E11D48] text-white sticky top-0 z-50">
+    <nav className={`w-full px-4 sm:px-8 py-4 sm:py-6 flex flex-wrap justify-between items-center gap-x-4 gap-y-3 bg-[#E11D48] text-white ${header.positionClass}`}>
       <div className="flex-1 min-w-0 flex justify-start">
         {showLogo && (
           <div className="flex flex-col">
@@ -35,7 +39,7 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean
           </div>
         )}
       </div>
-      
+
       {showNav && (
         <div className={`${showDesktopNav} gap-8 flex-1 justify-center items-center`}>
           {getNavMenuItems(sectionOptions).map(nav => (
@@ -45,12 +49,20 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean
           ))}
         </div>
       )}
-      
-      <div className="flex-none md:flex-1 flex justify-end">
-        <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative w-12 h-12 rounded-full bg-yellow-300 text-[#E11D48] flex items-center justify-center font-bold hover:scale-110 transition-transform shadow-lg cursor-pointer">
-          <CartBagIcon className="w-5 h-5" />
-          <CartCountBadge className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#E11D48] text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-yellow-300" />
-        </button>
+
+      <div className="flex-none md:flex-1 flex justify-end items-center gap-3">
+        {header.showSearch && (
+          <NavSearchButton
+            className="w-12 h-12 rounded-full bg-white/15 text-white flex items-center justify-center hover:scale-110 transition-transform"
+            iconClassName="w-5 h-5"
+          />
+        )}
+        {header.showCart && (
+          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative w-12 h-12 rounded-full bg-yellow-300 text-[#E11D48] flex items-center justify-center font-bold hover:scale-110 transition-transform shadow-lg cursor-pointer">
+            <CartBagIcon className="w-5 h-5" />
+            <CartCountBadge className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#E11D48] text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-yellow-300" />
+          </button>
+        )}
       </div>
       {showNav && (
         <div className="md:hidden w-full flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap">
@@ -69,6 +81,7 @@ export const CreativeHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
   const heading = sectionOptions.heading || "Where Art Meets Commerce";
   const subheading = sectionOptions.heroSubtitle ?? sectionOptions.description ?? sectionOptions.subheading ?? sectionOptions.content ?? "Explore unique handcrafted art supplies, pigments, canvases, and creative tools crafted for visionary artists.";
   const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1600&q=80";
+  const hero = getHeroContent(sectionOptions, { buttonLabel: 'View Gallery' });
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -82,6 +95,11 @@ export const CreativeHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
   return (
     <section className={`relative w-full h-[85vh] bg-[#E11D48] flex ${flexDirClass} items-center overflow-hidden`}>
       <div className={`${halfWidthClass} ${halfHeightClass} relative z-10 flex flex-col justify-center px-12 md:px-24`}>
+        {hero.badge && (
+          <span className="inline-block w-fit px-4 py-1.5 mb-6 bg-yellow-300 text-black text-xs font-black uppercase tracking-wider rounded-full z-20 transform rotate-1">
+            {hero.badge}
+          </span>
+        )}
         <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.9] mb-6 mix-blend-difference z-20 transform -rotate-2">
           {heading}
         </h1>
@@ -90,18 +108,25 @@ export const CreativeHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
             {subheading}
           </p>
         )}
-        <div className="flex gap-4 z-20">
-          <button className="px-8 py-4 bg-yellow-300 text-black font-bold uppercase tracking-wider rounded-full hover:bg-white transition-colors transform hover:scale-105 shadow-xl">
-            View Gallery
-          </button>
+        <div className="flex flex-wrap gap-4 z-20">
+          <HeroActionLink
+            action={hero.primary}
+            className="inline-block px-8 py-4 bg-yellow-300 text-black font-bold uppercase tracking-wider rounded-full hover:bg-white transition-colors transform hover:scale-105 shadow-xl"
+          />
+          {hero.secondary && (
+            <HeroActionLink
+              action={hero.secondary}
+              className="inline-block px-8 py-4 border-2 border-white text-white font-bold uppercase tracking-wider rounded-full hover:bg-white hover:text-black transition-colors transform hover:scale-105"
+            />
+          )}
         </div>
       </div>
-      
+
       <div className={`${halfWidthClass} ${halfHeightClass} ${imgPositionClass} bottom-0 right-0 z-0`}>
         <div className="absolute inset-0 bg-blue-600 mix-blend-color z-10 opacity-30"></div>
-        <img 
-          src={bgImage} 
-          alt="Creative Hero" 
+        <img
+          src={bgImage}
+          alt="Creative Hero"
           className="w-full h-full object-cover scale-110 rotate-3 opacity-90 rounded-bl-[100px]"
         />
         <div className="absolute top-1/2 -left-12 w-32 h-32 bg-yellow-300 rounded-full mix-blend-multiply blur-xl animate-pulse"></div>
@@ -152,7 +177,7 @@ export const CreativeFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
           {email && <a href={`mailto:${email}`} className="block hover:text-white break-all">{email}</a>}
         </div>
       )}
-      <p className="text-xs tracking-widest text-gray-500 font-medium">{copyrightText}</p>
+      <p className="text-xs tracking-widest text-gray-500 font-medium">{copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} /></p>
     </footer>
   );
 };

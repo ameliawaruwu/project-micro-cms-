@@ -17,6 +17,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { domainService } from '../../services/domainService';
+import { useStoreBaseDomain } from '../../utils/storeDomain';
 import {
   domainRequestService,
   DomainRequest,
@@ -86,8 +87,9 @@ export const DomainPage: React.FC<DomainPageProps> = ({
     store.name !== 'Belum Memiliki Toko' &&
     store.name !== 'Toko Baru UMKM'
   );
+  const { domain: baseDomain } = useStoreBaseDomain(store);
   const randomDomain = hasStoreName && store?.slug && store.slug.trim()
-    ? `${store.slug}.kroombox.com`
+    ? `${store.slug}.${baseDomain}`
     : '';
 
   // Fetch request domain dari Supabase / service

@@ -1,6 +1,13 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import {
+  DEFAULT_INGREDIENT_EYEBROW,
+  DEFAULT_INGREDIENT_ITEMS,
+  DEFAULT_SUSTAINABILITY_PILLARS,
+  nonEmptyStrings,
+  SustainabilityPillar,
+} from '../../sectionContent';
 
 export const NatureIngredientStory: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "Powered by Nature";
@@ -12,6 +19,8 @@ export const NatureIngredientStory: React.FC<{ sectionOptions?: any; isMobile?: 
     fallback: 'flex-col md:flex-row',
   });
   const halfWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-1/2';
+  const eyebrow = String(sectionOptions.eyebrowText ?? DEFAULT_INGREDIENT_EYEBROW).trim();
+  const ingredients = nonEmptyStrings(sectionOptions.ingredients, DEFAULT_INGREDIENT_ITEMS);
 
   return (
     <section className="py-24 md:py-40 px-6 md:px-12 bg-[#F9F6F0]">
@@ -19,22 +28,22 @@ export const NatureIngredientStory: React.FC<{ sectionOptions?: any; isMobile?: 
         <div className={halfWidthClass}>
           <div className="relative">
             <div className="absolute inset-0 bg-[#E8E4DB] rounded-t-full translate-x-4 translate-y-4"></div>
-            <img 
-              src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=80"} 
-              alt="Ingredients" 
-              className="relative w-full aspect-[3/4] object-cover rounded-t-full rounded-b-3xl shadow-lg hover:scale-[1.02] transition-transform duration-700 ease-out" 
+            <img
+              src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=80"}
+              alt="Ingredients"
+              className="relative w-full aspect-[3/4] object-cover rounded-t-full rounded-b-3xl shadow-lg hover:scale-[1.02] transition-transform duration-700 ease-out"
             />
           </div>
         </div>
         <div className={halfWidthClass}>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[#5C6B5D] mb-6 font-medium">The Origin</p>
+          {eyebrow && <p className="text-[11px] uppercase tracking-[0.2em] text-[#5C6B5D] mb-6 font-medium">{eyebrow}</p>}
           <h2 className="text-4xl md:text-5xl font-serif text-[#2C3B2D] mb-8 leading-tight">{heading}</h2>
           <p className="text-[#5C6B5D] leading-loose text-base md:text-lg mb-12 font-light">
             {desc}
           </p>
           <ul className="space-y-6">
-            {['Wildcrafted Herbs', 'Cold-pressed Oils', 'Volcanic Clay', 'Distilled Floral Waters'].map(item => (
-              <li key={item} className="flex items-center gap-4 text-[#2C3B2D] text-lg">
+            {ingredients.map((item, i) => (
+              <li key={i} className="flex items-center gap-4 text-[#2C3B2D] text-lg">
                 <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#E8E4DB] text-[#5C6B5D]">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                 </span>
@@ -56,12 +65,10 @@ export const NatureSustainability: React.FC<{ sectionOptions?: any; isMobile?: b
     desktop: 'grid-cols-3',
     fallback: 'grid-cols-1 md:grid-cols-3',
   });
-  
-  const pillars = sectionOptions.features || [
-    { title: "Zero Waste", desc: "100% recyclable glass and aluminum packaging." },
-    { title: "Ethical Harvest", desc: "Working directly with local farmers." },
-    { title: "Carbon Neutral", desc: "Offsetting our footprint on every shipment." }
-  ];
+
+  const description = String(sectionOptions.description ?? '').trim();
+  const pillars: SustainabilityPillar[] = (Array.isArray(sectionOptions.features) ? sectionOptions.features : DEFAULT_SUSTAINABILITY_PILLARS)
+    .filter((item: SustainabilityPillar) => item && (String(item.title ?? '').trim() || String(item.desc ?? '').trim()));
 
   return (
     <section className="py-24 md:py-40 px-6 md:px-12 text-center bg-white">
@@ -69,12 +76,13 @@ export const NatureSustainability: React.FC<{ sectionOptions?: any; isMobile?: b
         <svg className="w-12 h-12 mx-auto mb-8 text-[#5C6B5D]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <h2 className="text-4xl md:text-5xl font-serif text-[#2C3B2D] mb-16">{heading}</h2>
+        <h2 className={`text-4xl md:text-5xl font-serif text-[#2C3B2D] ${description ? 'mb-6' : 'mb-16'}`}>{heading}</h2>
+        {description && <p className="max-w-2xl mx-auto text-[#5C6B5D] leading-loose text-base md:text-lg font-light mb-16">{description}</p>}
         <div className={`grid ${gridColsClass} gap-8 md:gap-12 mt-12`}>
-          {pillars.map((item: any, i: number) => (
+          {pillars.map((item, i) => (
             <div key={i} className="p-10 bg-[#F9F6F0] rounded-[32px] hover:-translate-y-2 transition-transform duration-300 shadow-sm hover:shadow-md border border-[#E8E4DB]">
               <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-[#2C3B2D] text-xl font-serif mb-6 mx-auto shadow-sm">
-                0{i + 1}
+                {String(i + 1).padStart(2, '0')}
               </div>
               <h3 className="font-serif text-2xl text-[#2C3B2D] mb-4">{item.title}</h3>
               <p className="text-[#5C6B5D] leading-relaxed font-light">{item.desc}</p>

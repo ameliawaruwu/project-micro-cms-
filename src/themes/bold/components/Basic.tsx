@@ -2,17 +2,21 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { getHeroContent, HeroActionLink } from '../../heroContent';
 
 export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const { storeInfo, navigation } = useCmsStore();
+  const { storeInfo } = useCmsStore();
+  const header = getHeaderDisplay(sectionOptions);
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo.name || 'RAWSTATE';
-  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
   const navFlexClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -26,7 +30,7 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
   const navMarginClass = isMobile || isTablet ? 'mt-3' : 'mt-3 md:mt-0';
 
   return (
-    <nav className="w-full px-4 sm:px-6 md:px-12 py-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 bg-zinc-950/90 backdrop-blur-md text-white border-b border-zinc-800/80 sticky top-0 z-50 transition-all">
+    <nav className={`w-full px-4 sm:px-6 md:px-12 py-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 bg-zinc-950/90 backdrop-blur-md text-white border-b border-zinc-800/80 ${header.positionClass} transition-all`}>
       <div className="order-1 min-w-0 flex-1 lg:flex-none flex items-center">
         {showLogo && (
           <div className="flex flex-col min-w-0">
@@ -53,11 +57,18 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
         </div>
       )}
 
-      <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="order-2 lg:order-3 shrink-0 cursor-pointer bg-white text-zinc-950 px-3 sm:px-5 py-2 sm:py-2.5 text-xs font-extrabold uppercase rounded-lg hover:bg-zinc-200 transition-all shadow-md hover:shadow-white/10 active:scale-95 flex items-center gap-2">
-        <CartBagIcon className="w-4 h-4" />
-        <span className="hidden sm:inline">KERANJANG</span>
-        <span>[<CartCount />]</span>
-      </button>
+      <div className="order-2 lg:order-3 shrink-0 flex items-center gap-2 sm:gap-3">
+        {header.showSearch && (
+          <NavSearchButton className="p-2 text-zinc-400 hover:text-white transition-colors" />
+        )}
+        {header.showCart && (
+          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="cursor-pointer bg-white text-zinc-950 px-3 sm:px-5 py-2 sm:py-2.5 text-xs font-extrabold uppercase rounded-lg hover:bg-zinc-200 transition-all shadow-md hover:shadow-white/10 active:scale-95 flex items-center gap-2">
+            <CartBagIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">KERANJANG</span>
+            <span>[<CartCount />]</span>
+          </button>
+        )}
+      </div>
     </nav>
   );
 };
@@ -66,28 +77,34 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
   const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || "LOUD & CLEAR";
   const subheading = sectionOptions.subheading || sectionOptions.description || "The New Standard in Streetwear & Modern Aesthetics";
-  const buttonLabel = sectionOptions.buttonLabel || "Explore Collection";
+  const hero = getHeroContent(sectionOptions, {
+    badge: 'STREETWEAR COLLECTION 2026',
+    buttonLabel: 'Explore Collection',
+    secondaryButtonLabel: 'Lookbook',
+  });
   const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1600&q=80";
 
   return (
     <section className="relative w-full min-h-[85vh] flex flex-col items-center justify-center bg-zinc-950 text-white overflow-hidden border-b border-zinc-800">
       {/* Background Image with Dark Gradient Overlay */}
       <div className="absolute inset-0">
-        <img 
-          src={bgImage} 
-          alt="Bold Market" 
+        <img
+          src={bgImage}
+          alt="Bold Market"
           className="w-full h-full object-cover opacity-40 filter contrast-110 scale-105 animate-pulse-subtle"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/40"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(9,9,11,0.8)_100%)]"></div>
       </div>
-      
+
       {/* Hero Content */}
       <div className="z-10 text-center relative w-full px-6 max-w-5xl mx-auto flex flex-col items-center justify-center flex-grow py-24">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-zinc-900/90 border border-zinc-700/80 rounded-full text-zinc-300 font-bold text-xs uppercase tracking-[0.25em] mb-8 backdrop-blur-md shadow-xl">
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-          STREETWEAR COLLECTION 2026
-        </div>
+        {hero.badge && (
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-zinc-900/90 border border-zinc-700/80 rounded-full text-zinc-300 font-bold text-xs uppercase tracking-[0.25em] mb-8 backdrop-blur-md shadow-xl">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+            {hero.badge}
+          </div>
+        )}
 
         <h1 className="text-6xl sm:text-8xl md:text-9xl font-black tracking-tighter uppercase text-white leading-none mb-8 text-center max-w-full drop-shadow-2xl">
           <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
@@ -99,7 +116,7 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
             />
           </span>
         </h1>
-        
+
         <p className="text-base sm:text-xl font-medium text-zinc-300 max-w-2xl mx-auto mb-10 tracking-wide leading-relaxed">
           <InlineEditableText
             tagName="span"
@@ -108,25 +125,29 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
             readonly={!onUpdateSectionOptions}
           />
         </p>
-        
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md">
-          <button 
-            className="w-full sm:w-auto px-10 py-4 bg-red-600 hover:bg-red-500 text-white font-extrabold uppercase tracking-widest text-sm rounded-xl transition-all duration-300 shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 cursor-pointer"
+          <HeroActionLink
+            action={hero.primary}
+            className="w-full sm:w-auto text-center px-10 py-4 bg-red-600 hover:bg-red-500 text-white font-extrabold uppercase tracking-widest text-sm rounded-xl transition-all duration-300 shadow-lg shadow-red-600/30 hover:scale-105 active:scale-95 cursor-pointer"
             onClick={(e) => { if (onUpdateSectionOptions) e.preventDefault(); }}
           >
             <InlineEditableText
               tagName="span"
-              value={buttonLabel}
-              onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { buttonLabel: val })}
+              value={hero.primary.label}
+              onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { buttonLabel: val, buttonText: val })}
               readonly={!onUpdateSectionOptions}
             /> →
-          </button>
-          <button className="w-full sm:w-auto px-8 py-4 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 font-bold uppercase tracking-widest text-sm rounded-xl transition-all duration-300 backdrop-blur-md hover:border-zinc-500">
-            Lookbook
-          </button>
+          </HeroActionLink>
+          {hero.secondary && (
+            <HeroActionLink
+              action={hero.secondary}
+              className="w-full sm:w-auto text-center px-8 py-4 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 font-bold uppercase tracking-widest text-sm rounded-xl transition-all duration-300 backdrop-blur-md hover:border-zinc-500"
+            />
+          )}
         </div>
       </div>
-      
+
       {/* Ticker / Marquee */}
       <div className="w-full overflow-hidden bg-zinc-900/90 text-zinc-400 py-3 z-20 whitespace-nowrap border-t border-b border-zinc-800/80 backdrop-blur-md">
         <div className="animate-marquee font-extrabold uppercase tracking-[0.2em] text-xs flex items-center">
@@ -178,7 +199,7 @@ export const BoldFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
           </div>
         )}
         <div className="pt-6 border-t border-zinc-900 text-xs font-medium text-zinc-500 tracking-wider">
-          {copyrightText}
+          {copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} />
         </div>
       </div>
     </footer>

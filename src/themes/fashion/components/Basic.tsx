@@ -1,21 +1,29 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCountBadge } from '../../storefrontCart';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { getHeroContent, HeroActionLink } from '../../heroContent';
 
 export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const { storeInfo, navigation } = useCmsStore();
+  const { storeInfo } = useCmsStore();
+  const header = getHeaderDisplay(sectionOptions);
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
-  const storeSubtitle = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
 
   return (
-    <nav className="w-full bg-[#18181B] text-white border-b border-white/10 sticky top-0 z-50">
+    <nav className={`w-full bg-[#18181B] text-white border-b border-white/10 ${header.positionClass}`}>
       <div className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-5 flex items-center gap-3">
-        <div className="w-10 shrink-0" aria-hidden="true" />
+        <div className="w-10 shrink-0 flex justify-start">
+          {header.showSearch && (
+            <NavSearchButton className="text-white hover:text-gray-400 transition-colors p-1" iconClassName="w-5 h-5" />
+          )}
+        </div>
 
         <div className="flex-1 min-w-0 flex justify-center">
           {showLogo && (
@@ -33,10 +41,12 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
         </div>
 
         <div className="w-10 shrink-0 flex justify-end">
-          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-white hover:text-gray-400 transition-colors relative cursor-pointer p-1">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-            <CartCountBadge className="absolute -top-1 -right-1.5 min-w-[16px] h-4 px-1 bg-white text-black text-[9px] font-bold rounded-full flex items-center justify-center" />
-          </button>
+          {header.showCart && (
+            <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-white hover:text-gray-400 transition-colors relative cursor-pointer p-1">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+              <CartCountBadge className="absolute -top-1 -right-1.5 min-w-[16px] h-4 px-1 bg-white text-black text-[9px] font-bold rounded-full flex items-center justify-center" />
+            </button>
+          )}
         </div>
       </div>
       {showNav && (
@@ -61,20 +71,23 @@ export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions
   const heading = sectionOptions.heading || "CHIC & URBAN";
   const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content || storeInfo?.description;
   const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1600&q=80";
+  const hero = getHeroContent(sectionOptions, { badge: 'New Season', buttonLabel: 'Shop The Collection' });
 
   return (
     <section className="relative w-full h-[90vh] bg-[#18181B] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
-        <img 
-          src={bgImage} 
-          alt="Fashion Campaign" 
+        <img
+          src={bgImage}
+          alt="Fashion Campaign"
           className="w-full h-full object-cover object-top opacity-70 grayscale-[20%] mix-blend-luminosity scale-105 hover:scale-100 transition-transform duration-[15s]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#18181B] via-transparent to-transparent"></div>
       </div>
-      
+
       <div className="z-10 text-center relative mt-32">
-        <p className="text-[10px] md:text-xs uppercase tracking-[0.5em] text-gray-300 mb-6">New Season</p>
+        {hero.badge && (
+          <p className="text-[10px] md:text-xs uppercase tracking-[0.5em] text-gray-300 mb-6">{hero.badge}</p>
+        )}
         <h1 className="text-6xl md:text-9xl font-serif italic text-white drop-shadow-2xl mb-6">
           {heading}
         </h1>
@@ -83,9 +96,18 @@ export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions
             {subheading}
           </p>
         )}
-        <button className="px-10 py-4 border border-white text-white text-xs uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-colors duration-500">
-          Shop The Collection
-        </button>
+        <div className="flex flex-wrap gap-4 justify-center">
+          <HeroActionLink
+            action={hero.primary}
+            className="inline-block px-10 py-4 border border-white text-white text-xs uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-colors duration-500"
+          />
+          {hero.secondary && (
+            <HeroActionLink
+              action={hero.secondary}
+              className="inline-block px-10 py-4 bg-white text-black text-xs uppercase tracking-[0.3em] hover:bg-transparent hover:text-white border border-white transition-colors duration-500"
+            />
+          )}
+        </div>
       </div>
     </section>
   );
@@ -150,7 +172,7 @@ export const FashionFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
         </div>
 
         <div className="pt-6 border-t border-white/10 text-xs text-gray-500 uppercase tracking-widest text-center">
-          {copyrightText}
+          {copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} />
         </div>
       </div>
     </footer>

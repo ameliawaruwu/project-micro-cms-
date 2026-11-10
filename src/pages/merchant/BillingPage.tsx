@@ -192,7 +192,8 @@ const PLAN_BADGE_MAP: Record<string, string> = {
 const PLAN_FEATURE_MAP: Record<string, string> = {
   // Plan Free
   'Subdomain gratis [slug].lapakq.com': 'Free subdomain [slug].lapakq.com',
-  'Subdomain pratinjau: namatoko.kroombox.com': 'Preview subdomain: yourstore.kroombox.com',
+  'Subdomain pratinjau: namatoko.kroombox.com': 'Preview subdomain: yourstore.lapakq.com',
+  'Subdomain pratinjau: namatoko.lapakq.com': 'Preview subdomain: yourstore.lapakq.com',
   'Katalog produk hingga 15 item': 'Product catalog up to 15 items',
   'Katalog produk dasar (maksimal 10 produk)': 'Basic product catalog (maximum 10 products)',
   'Checkout katalog & order WhatsApp': 'Catalog checkout & WhatsApp ordering',

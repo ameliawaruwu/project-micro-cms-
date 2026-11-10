@@ -34,6 +34,7 @@ import {
 import { Store, StoreSectionConfig, Product, StoreSectionOptions, NavMenuItem } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
 import { DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
+import { resolveNavPage } from '../../themes/navMenu';
 import { InlineEditableText } from './InlineEditableText';
 import { InlineEditableImage } from './InlineEditableImage';
 import { InlineEditableButton } from './InlineEditableButton';
@@ -159,15 +160,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
       return;
     }
 
-    // 1. Homepage / Beranda
-    if (cleanHref === '/' || cleanHref === '/beranda' || cleanHref === '#beranda' || text === 'beranda' || text === 'home') {
-      if (onPageChange) onPageChange('homepage');
-      const el = document.getElementById('preview-hero_banner');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-
-    // 2. Product Detail (Check BEFORE Katalog to match /produk/:slug properly)
+    // 1. Detail produk (dicek sebelum katalog agar /produk/:slug tidak dianggap katalog)
     if (cleanHref.includes('/product/') || cleanHref.includes('/produk/')) {
       const parts = cleanHref.split('/');
       const slugOrId = parts[parts.length - 1] || '';
@@ -181,100 +174,38 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
       return;
     }
 
-    // 3. Katalog / Shop / Products / Collection / Drops / Gadget / Wearables / Fine Necklaces
-    if (
-      cleanHref.includes('/katalog') || cleanHref.includes('/products') || cleanHref.includes('/catalog') || cleanHref === '#katalog' ||
-      text.includes('shop') || text.includes('katalog') || text.includes('produk') || text.includes('collection') || text.includes('drop') || 
-      text.includes('gadget') || text.includes('jewelry') || text.includes('new arrival') || text.includes('explore') || text.includes('koleksi') || text.includes('etalase')
-    ) {
-      if (onPageChange) onPageChange('katalog');
-      return;
-    }
-
-    // 4. About / Philosophy / Brand Story / Story / Archive / Kisah Kami / B2B / Craftsmanship
-    if (
-      cleanHref.includes('/about') || cleanHref.includes('/tentang') || cleanHref.includes('/archive') || cleanHref === '#about' ||
-      text.includes('about') || text.includes('tentang') || text.includes('philosophy') || text.includes('story') || text.includes('archive') || 
-      text.includes('kisah kami') || text.includes('b2b') || text.includes('craftsmanship') || text.includes('behind the scenes') || text.includes('brand')
-    ) {
-      if (onPageChange) onPageChange('about');
-      return;
-    }
-
-    // 5. Contact / Support / Bantuan / Store Locator / Private Fitting
-    if (
-      cleanHref.includes('/contact') || cleanHref.includes('/kontak') || cleanHref === '#kontak' ||
-      text.includes('kontak') || text.includes('contact') || text.includes('support') || text.includes('bantuan') || 
-      text.includes('store locator') || text.includes('fitting')
-    ) {
-      if (onPageChange) onPageChange('contact');
-      return;
-    }
-
-    // 6. Cart / Keranjang
-    if (
-      cleanHref.includes('/cart') || cleanHref.includes('/keranjang') || cleanHref === '#cart' ||
-      text.includes('cart') || text.includes('keranjang')
-    ) {
-      if (onPageChange) onPageChange('cart');
-      return;
-    }
-
-    // 7. Checkout / Bayar
-    if (
-      cleanHref.includes('/checkout') || cleanHref === '#checkout' ||
-      text.includes('checkout') || text.includes('bayar')
-    ) {
-      if (onPageChange) onPageChange('checkout');
-      return;
-    }
-
-    // 8. Orders / Pesanan / Status
-    if (
-      cleanHref.includes('/orders') || cleanHref.includes('/pesanan') || cleanHref === '#orders' ||
-      text.includes('orders') || text.includes('pesanan')
-    ) {
-      if (onPageChange) onPageChange('orders');
-      return;
-    }
-
-    // 9. Profile / Profil / Account / User
-    if (
-      cleanHref.includes('/profile') || cleanHref.includes('/profil') || cleanHref === '#profile' ||
-      text.includes('profile') || text.includes('profil') || text.includes('akun')
-    ) {
-      if (onPageChange) onPageChange('profile');
-      return;
-    }
-
-    // 10. Login / Masuk
-    if (
-      cleanHref.includes('/login') || cleanHref === '#login' ||
-      text.includes('login') || text.includes('masuk')
-    ) {
-      if (onPageChange) onPageChange('login');
-      return;
-    }
-
-    // 11. Journal / Berita / Stories / Lookbook / Resep
-    if (
-      cleanHref.includes('/berita') || cleanHref.includes('/lookbook') || cleanHref.includes('/journal') ||
-      text.includes('journal') || text.includes('berita') || text.includes('lookbook') || text.includes('resep')
-    ) {
+    // 2. Journal / Lookbook: gulir ke section-nya di beranda (atau halaman About bila tidak ada).
+    const openJournal = () => {
       const lookbookSec = sections.find(s => s.id === 'lookbook' || s.id === 'journal');
-      if (lookbookSec) {
-        if (onPageChange && activePage !== 'homepage') onPageChange('homepage');
-        const idx = sections.indexOf(lookbookSec);
-        const secKey = lookbookSec.key || `${lookbookSec.id}-${idx}`;
-        setTimeout(() => {
-          const el = document.getElementById(`preview-${secKey}`);
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
+      if (!lookbookSec) {
+        if (onPageChange) onPageChange('about');
         return;
       }
-      if (onPageChange) onPageChange('about');
-      return;
-    }
+      if (onPageChange && activePage !== 'homepage') onPageChange('homepage');
+      const idx = sections.indexOf(lookbookSec);
+      const secKey = lookbookSec.key || `${lookbookSec.id}-${idx}`;
+      setTimeout(() => {
+        const el = document.getElementById(`preview-${secKey}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    };
+    const goToPage = (page: string) => {
+      if (onPageChange) onPageChange(page);
+      if (page === 'homepage') {
+        const el = document.getElementById('preview-hero_banner');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+
+    // 3. Alamat (href) yang diisi merchant selalu diutamakan; label hanya cadangan.
+    const isJournalHref = ['/berita', '/lookbook', '/journal'].some((p) => cleanHref.includes(p));
+    if (isJournalHref) return openJournal();
+    const pageByHref = resolveNavPage(href);
+    if (pageByHref) return goToPage(pageByHref);
+    const isJournalText = ['journal', 'berita', 'lookbook', 'resep'].some((w) => text.includes(w));
+    if (!cleanHref.startsWith('#') && isJournalText) return openJournal();
+    const pageByText = resolveNavPage(href, anchorText);
+    if (pageByText) return goToPage(pageByText);
 
     // Hash section scroll fallback
     if (cleanHref.startsWith('#')) {
@@ -1491,14 +1422,14 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                       <div className="space-y-1">
                         <h4 className="text-xs font-bold text-[#241A1A] flex items-center gap-1.5">
                           <MapPin className="w-3.5 h-3.5 text-[#66000E]" />
-                          <span>Lokasi & Kontak Toko</span>
+                          <span>{opts.heading || 'Lokasi & Kontak Toko'}</span>
                         </h4>
                         <p className="text-[11px] text-[#5A5250]">
-                          {store.address ? `${store.address}, ${store.city}` : store.city}
+                          {opts.address || (store.address ? `${store.address}, ${store.city}` : store.city)}
                         </p>
                         <p className="text-[10px] text-[#706866] flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          <span>Buka Setiap Hari: 08:00 - 20:00 WIB</span>
+                          <span>{opts.openingHours || 'Buka Setiap Hari: 08:00 - 20:00 WIB'}</span>
                         </p>
                       </div>
 
@@ -2700,14 +2631,14 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           <div className="space-y-1">
                             <h4 className="text-xs font-bold text-[#241A1A] flex items-center gap-1.5">
                               <MapPin className="w-3.5 h-3.5 text-[#66000E]" />
-                              <span>Lokasi & Kontak Toko</span>
+                              <span>{opts.heading || 'Lokasi & Kontak Toko'}</span>
                             </h4>
                             <p className="text-[11px] text-[#5A5250]">
-                              {store.address ? `${store.address}, ${store.city}` : store.city}
+                              {opts.address || (store.address ? `${store.address}, ${store.city}` : store.city)}
                             </p>
                             <p className="text-[10px] text-[#706866] flex items-center gap-1">
                               <Clock className="w-3 h-3" />
-                              <span>Buka Setiap Hari: 08:00 - 20:00 WIB</span>
+                              <span>{opts.openingHours || 'Buka Setiap Hari: 08:00 - 20:00 WIB'}</span>
                             </p>
                           </div>
 

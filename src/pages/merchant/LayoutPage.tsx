@@ -10,6 +10,7 @@ import {
   DEFAULT_STORE_LAYOUT,
   LAYOUT_PRESETS,
   getStoreSections,
+  SHARED_CHROME_SECTION_IDS,
   SectionTemplateDef,
   STORE_TEMPLATES,
 } from '../../utils/layoutConstants';
@@ -399,30 +400,18 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         ? currentStore.name
         : (activeThemeId === 'editorial' ? 'LOOKSEE' : currentStore.name || 'Toko Saya');
 
+      // Header & footer sama di semua halaman: seluruh pengaturan beranda (menu navigasi,
+      // toggle, sosial media, tautan legal, dll.) disalin ke halaman tujuan.
+      const syncSharedSection = (sec: StoreSectionConfig, homeSection?: StoreSectionConfig) => {
+        const merged: any = { ...sec.options, ...homeSection?.options };
+        merged.heading = merged.heading || brandFallback;
+        merged.storeName = merged.storeName || brandFallback;
+        return { ...sec, options: merged };
+      };
+
       const syncedSections = targetSections.map((sec) => {
-        if (sec.id === 'header') {
-          return {
-            ...sec,
-            options: {
-              ...sec.options,
-              heading: hpHeader?.options?.heading || sec.options?.heading || brandFallback,
-              storeName: hpHeader?.options?.storeName || sec.options?.storeName || brandFallback,
-              headerStyle: hpHeader?.options?.headerStyle || sec.options?.headerStyle,
-              showLogo: hpHeader?.options?.showLogo !== undefined ? hpHeader.options.showLogo : sec.options?.showLogo,
-            },
-          };
-        }
-        if (sec.id === 'footer') {
-          return {
-            ...sec,
-            options: {
-              ...sec.options,
-              heading: hpFooter?.options?.heading || sec.options?.heading || brandFallback,
-              storeName: hpFooter?.options?.storeName || sec.options?.storeName || brandFallback,
-              copyrightText: hpFooter?.options?.copyrightText || sec.options?.copyrightText,
-            },
-          };
-        }
+        if (sec.id === 'header') return syncSharedSection(sec, hpHeader);
+        if (sec.id === 'footer') return syncSharedSection(sec, hpFooter);
         return sec;
       });
 
@@ -1144,23 +1133,27 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     });
     setSections(updated);
 
-    // HANYA section Header yang boleh mensinkronkan judul/deskripsinya ke nama & tagline toko secara global.
-    // Section lain (Hero Banner, Testimonials, Newsletter, dll) juga memakai field `heading`/`description`
-    // untuk kontennya sendiri — mensinkronkannya secara global akan menimpa identitas toko secara tidak sengaja.
-    if (targetSection?.id === 'header') {
-      if (newOptions.heading || (newOptions as any).storeName) {
-        const newName = newOptions.heading || (newOptions as any).storeName;
-        useCmsStore.getState().updateStoreInfo({ name: newName });
-        setCurrentStore((prev) => ({ ...prev, name: newName }));
-      }
+    // Header & footer dipakai bersama oleh semua halaman toko: terapkan perubahan yang sama
+    // ke header/footer halaman lain agar menu, logo, dan tautan konsisten di seluruh toko.
+    if (targetSection && SHARED_CHROME_SECTION_IDS.includes(targetSection.id)) {
+      setPageSectionsMap((prev) => {
+        const next: Record<string, StoreSectionConfig[]> = {};
+        for (const [page, pageSections] of Object.entries(prev)) {
+          next[page] = pageSections.map((sec) =>
+            sec.id === targetSection.id ? { ...sec, options: { ...sec.options, ...newOptions } } : sec
+          );
+        }
+        return next;
+      });
+    }
 
-      const newDesc = newOptions.description !== undefined
-        ? newOptions.description
-        : (newOptions.subheading !== undefined ? newOptions.subheading : (newOptions as any).subtitle);
-      if (newDesc !== undefined) {
-        useCmsStore.getState().updateStoreInfo({ description: newDesc });
-        setCurrentStore((prev) => ({ ...prev, description: newDesc, tagline: newDesc }));
-      }
+    // Hanya NAMA toko di header yang disinkronkan ke identitas toko. Subjudul header TIDAK
+    // disinkronkan: Hero & Footer memakai deskripsi toko sebagai teks bawaan, sehingga
+    // menyinkronkannya membuat subjudul ketiga komponen ikut berubah.
+    if (targetSection?.id === 'header' && (newOptions.heading || (newOptions as any).storeName)) {
+      const newName = newOptions.heading || (newOptions as any).storeName;
+      useCmsStore.getState().updateStoreInfo({ name: newName });
+      setCurrentStore((prev) => ({ ...prev, name: newName }));
     }
 
     pushToHistory(updated);

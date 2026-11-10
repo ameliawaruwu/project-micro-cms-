@@ -25,4 +25,9 @@ export const customerService = {
   saveInfo(info: CustomerInfo): void {
     localStorage.setItem(CUSTOMER_SAVED_INFO_KEY, JSON.stringify(info));
   },
+
+  /** Hapus data pelanggan yang tersimpan di perangkat ini (dipakai tombol Keluar). */
+  clearInfo(): void {
+    localStorage.removeItem(CUSTOMER_SAVED_INFO_KEY);
+  },
 };

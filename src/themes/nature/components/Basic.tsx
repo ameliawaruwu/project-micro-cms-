@@ -1,18 +1,20 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle, getFooterSocialLinks } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { getHeroContent, HeroActionLink } from '../../heroContent';
 
-export const NatureNavbar: React.FC<{ 
-  sectionOptions?: any; 
-  isMobile?: boolean; 
-  isTablet?: boolean; 
+export const NatureNavbar: React.FC<{
+  sectionOptions?: any;
+  isMobile?: boolean;
+  isTablet?: boolean;
   readonly?: boolean;
   searchQuery?: string;
   onSearchChange?: (val: string) => void;
-}> = ({ 
+}> = ({
   sectionOptions = {},
   isMobile = false,
   isTablet = false,
@@ -32,13 +34,14 @@ export const NatureNavbar: React.FC<{
     }
   };
 
-  const { storeInfo, navigation } = useCmsStore();
+  const { storeInfo } = useCmsStore();
+  const header = getHeaderDisplay(sectionOptions);
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
 
   const rawName = sectionOptions.heading || sectionOptions.storeName || storeInfo?.name;
   const storeName = (!rawName || rawName === 'NEON//CORE Electronics') ? 'Green Market Indonesia' : rawName;
-  const rawSub = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.tagline || storeInfo?.description;
+  const rawSub = getHeaderSubtitle(sectionOptions, storeInfo?.description);
   const storeSubtitle = (!rawSub || rawSub.includes("Komponen Komputer") || rawSub.includes("PC Gaming") || rawSub.includes("GPU RTX"))
     ? undefined
     : rawSub;
@@ -57,7 +60,7 @@ export const NatureNavbar: React.FC<{
   const navGapClass = isMobile || isTablet ? 'gap-4' : 'gap-4 md:gap-0';
 
   return (
-    <nav className="w-full px-4 sm:px-6 md:px-10 lg:px-12 pt-4 pb-3 bg-[#F9F6F0] border-b border-[#E8E4DB] sticky top-0 z-50 font-serif">
+    <nav className={`w-full px-4 sm:px-6 md:px-10 lg:px-12 pt-4 pb-3 bg-[#F9F6F0] border-b border-[#E8E4DB] ${header.positionClass} font-serif`}>
       <div className="flex items-center justify-between gap-3 sm:gap-6">
         <div className="min-w-0 flex-1">
           {showLogo && (
@@ -75,6 +78,7 @@ export const NatureNavbar: React.FC<{
         </div>
 
         <div className="flex items-center gap-3 sm:gap-5 shrink-0">
+          {header.showSearch && (
           <div className="relative hidden sm:block w-44 lg:w-60">
             <svg className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5C6B5D]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -96,12 +100,15 @@ export const NatureNavbar: React.FC<{
               </button>
             )}
           </div>
+          )}
 
-          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative text-xs sm:text-[13px] tracking-wide text-[#2C3B2D] hover:text-[#1B3B2B] transition-colors flex items-center gap-2 cursor-pointer font-sans whitespace-nowrap p-1">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-            <span className="hidden md:inline">Keranjang</span>
-            <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#2D5A27] text-white text-[10px] font-bold leading-none flex items-center justify-center"><CartCount /></span>
-          </button>
+          {header.showCart && (
+            <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative text-xs sm:text-[13px] tracking-wide text-[#2C3B2D] hover:text-[#1B3B2B] transition-colors flex items-center gap-2 cursor-pointer font-sans whitespace-nowrap p-1">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+              <span className="hidden md:inline">Keranjang</span>
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#2D5A27] text-white text-[10px] font-bold leading-none flex items-center justify-center"><CartCount /></span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -128,23 +135,28 @@ export const NatureHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   const subheading = (!rawSub || rawSub.includes("Komponen Komputer") || rawSub.includes("PC Gaming") || rawSub.includes("GPU RTX"))
     ? "Pilihan sayur, buah segar, dan produk pangan organik langsung dari mitra petani lokal."
     : rawSub;
-  const buttonLabel = sectionOptions.buttonLabel || "Jelajahi Produk Segar";
+  const hero = getHeroContent(sectionOptions, { buttonLabel: 'Jelajahi Produk Segar' });
   const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=1600&q=80";
 
   return (
     <section className="relative w-full min-h-[80vh] flex items-center justify-center bg-[#F9F6F0] p-4 md:p-8">
       <div className="absolute inset-0 w-full h-full p-4 md:p-8">
         <div className="w-full h-full relative overflow-hidden rounded-[40px] shadow-sm">
-          <img 
-            src={bgImage} 
-            alt="Green Market Organic" 
+          <img
+            src={bgImage}
+            alt="Green Market Organic"
             className="w-full h-full object-cover rounded-[40px] scale-105 hover:scale-100 transition-transform duration-[20s] ease-out"
           />
           <div className="absolute inset-0 bg-black/10"></div>
         </div>
       </div>
-      
+
       <div className="z-10 text-center text-white bg-black/20 p-8 sm:p-12 md:p-16 max-w-3xl mx-4 rounded-[32px] backdrop-blur-md border border-white/10 shadow-2xl transform hover:-translate-y-1 transition-transform duration-500">
+        {hero.badge && (
+          <span className="inline-block px-4 py-1.5 mb-5 rounded-full bg-[#F9F6F0]/90 text-[#2C3B2D] text-[11px] font-semibold uppercase tracking-[0.2em] font-sans">
+            {hero.badge}
+          </span>
+        )}
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-bold mb-3 sm:mb-4 leading-tight drop-shadow-md tracking-tight">
           {heading}
         </h1>
@@ -153,9 +165,18 @@ export const NatureHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
             {subheading}
           </p>
         )}
-        <button className="px-8 sm:px-10 py-3 sm:py-3.5 bg-[#F9F6F0] text-[#2C3B2D] rounded-full text-xs sm:text-sm font-medium hover:bg-white hover:shadow-lg transition-all duration-300 cursor-pointer font-sans">
-          {buttonLabel}
-        </button>
+        <div className="flex flex-wrap gap-3 justify-center">
+          <HeroActionLink
+            action={hero.primary}
+            className="inline-block px-8 sm:px-10 py-3 sm:py-3.5 bg-[#F9F6F0] text-[#2C3B2D] rounded-full text-xs sm:text-sm font-medium hover:bg-white hover:shadow-lg transition-all duration-300 cursor-pointer font-sans"
+          />
+          {hero.secondary && (
+            <HeroActionLink
+              action={hero.secondary}
+              className="inline-block px-8 sm:px-10 py-3 sm:py-3.5 border border-[#F9F6F0] text-[#F9F6F0] rounded-full text-xs sm:text-sm font-medium hover:bg-[#F9F6F0]/10 transition-all duration-300 cursor-pointer font-sans"
+            />
+          )}
+        </div>
       </div>
     </section>
   );
@@ -176,6 +197,7 @@ export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName.toUpperCase()}. ALL RIGHTS RESERVED.`;
 
   const footerLinks = getNavMenuItems(sectionOptions);
+  const socials = getFooterSocialLinks(sectionOptions);
 
   return (
     <footer className="w-full px-8 md:px-16 py-24 bg-[#2C3B2D] text-[#E8E4DB] rounded-t-[40px] mt-12 flex flex-col items-center shadow-inner font-serif">
@@ -188,7 +210,7 @@ export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
         <p className="text-sm md:text-base leading-relaxed tracking-wide mb-12 max-w-xl mx-auto opacity-80 font-light font-sans">
           {description}
         </p>
-        
+
         <div className="flex flex-wrap justify-center gap-6 md:gap-12 mb-14 text-sm font-sans tracking-wider opacity-85">
           {footerLinks.map(link => (
             <a key={link.id} href={link.route} className="hover:text-white hover:opacity-100 transition-opacity">
@@ -196,14 +218,24 @@ export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
             </a>
           ))}
         </div>
-        
+
+        {socials.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-6 mb-10 text-xs font-sans uppercase tracking-widest opacity-80">
+            {socials.map((s) => (
+              <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-white hover:opacity-100 transition-opacity">
+                {s.label}
+              </a>
+            ))}
+          </div>
+        )}
+
         <div className="w-full h-px bg-[#E8E4DB]/20 mb-8"></div>
         {footerAddress && <p className="text-sm opacity-80 mb-2 font-sans break-words">{footerAddress}</p>}
         {footerEmail && (
           <a href={`mailto:${footerEmail}`} className="inline-block text-sm opacity-80 mb-8 hover:underline font-sans break-all">{footerEmail}</a>
         )}
         <div className="text-[10px] uppercase font-sans tracking-widest opacity-50 font-medium">
-          {copyrightText}
+          {copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} />
         </div>
       </div>
     </footer>
