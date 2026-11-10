@@ -220,14 +220,6 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
           slug: cleanSlug,
           baseDomain: selectedBaseDomain,
           customDomain: cleanCustomDomain,
-          store: {
-            ...store,
-            slug: cleanSlug,
-            isPublished: true,
-            customDomain: cleanCustomDomain || store.customDomain,
-            domainStatus: cleanCustomDomain ? 'connected' : store.domainStatus,
-          },
-          products: products || [],
         }),
       });
 
