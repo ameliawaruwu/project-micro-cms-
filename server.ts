@@ -7,6 +7,7 @@ import path from 'path';
 import dns from 'dns';
 import { deployRouter } from './backend/deployController';
 import { authRouter } from './backend/authController';
+import { readPlatformSettings } from './backend/platformSettings';
 import { sendMail, MailerNotConfiguredError } from './backend/mailer';
 import { publicApiRouter } from './backend/publicApiController';
 import { partnerApiRouter } from './backend/partnerApiController';
@@ -144,35 +145,18 @@ async function getMidtransConfig() {
   let clientKey = (process.env.VITE_MIDTRANS_CLIENT_KEY || '').trim();
   let env = (process.env.VITE_MIDTRANS_ENV || 'sandbox').trim().toLowerCase();
 
-  // Jika serverKey belum diisi di .env atau ingin fallback ke Supabase platform_settings
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
-
-  if (supabaseUrl && supabaseAnonKey) {
-    try {
-      const resp = await fetch(`${supabaseUrl}/rest/v1/platform_settings?select=midtrans_environment,midtrans_server_key,midtrans_client_key&limit=1`, {
-        headers: {
-          apikey: supabaseAnonKey,
-          Authorization: `Bearer ${supabaseAnonKey}`,
-        },
-      });
-      if (resp.ok) {
-        const rows = await resp.json();
-        if (Array.isArray(rows) && rows[0]) {
-          const dbRow = rows[0];
-          if (dbRow.midtrans_server_key && dbRow.midtrans_server_key.trim()) {
-            serverKey = dbRow.midtrans_server_key.trim();
-          }
-          if (dbRow.midtrans_client_key && dbRow.midtrans_client_key.trim()) {
-            clientKey = dbRow.midtrans_client_key.trim();
-          }
-          if (dbRow.midtrans_environment && dbRow.midtrans_environment.trim()) {
-            env = dbRow.midtrans_environment.trim().toLowerCase();
-          }
-        }
-      }
-    } catch {
-      // Fallback silently to process.env
+  // Nilai di platform_settings (diatur super admin) diutamakan. Dibaca lewat koneksi DB server
+  // karena kolom kunci rahasia tidak lagi bisa dibaca anon key.
+  const dbRow = await readPlatformSettings();
+  if (dbRow) {
+    if (dbRow.midtrans_server_key && String(dbRow.midtrans_server_key).trim()) {
+      serverKey = String(dbRow.midtrans_server_key).trim();
+    }
+    if (dbRow.midtrans_client_key && String(dbRow.midtrans_client_key).trim()) {
+      clientKey = String(dbRow.midtrans_client_key).trim();
+    }
+    if (dbRow.midtrans_environment && String(dbRow.midtrans_environment).trim()) {
+      env = String(dbRow.midtrans_environment).trim().toLowerCase();
     }
   }
 
@@ -403,34 +387,16 @@ async function getDuitkuConfig(): Promise<{ merchantCode: string; apiKey: string
     }
   } catch {}
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-
-  if (supabaseUrl && supabaseAnonKey) {
-    try {
-      const resp = await fetch(`${supabaseUrl}/rest/v1/platform_settings?select=*&limit=1`, {
-        headers: {
-          apikey: supabaseAnonKey,
-          Authorization: `Bearer ${supabaseAnonKey}`,
-        },
-      });
-      if (resp.ok) {
-        const rows = await resp.json();
-        if (Array.isArray(rows) && rows[0]) {
-          const dbRow = rows[0];
-          if (dbRow.duitku_merchant_code && dbRow.duitku_merchant_code.trim()) {
-            merchantCode = dbRow.duitku_merchant_code.trim();
-          }
-          if (dbRow.duitku_api_key && dbRow.duitku_api_key.trim()) {
-            apiKey = dbRow.duitku_api_key.trim();
-          }
-          if (dbRow.duitku_environment && dbRow.duitku_environment.trim()) {
-            env = dbRow.duitku_environment.trim().toLowerCase() === 'production' ? 'production' : 'sandbox';
-          }
-        }
-      }
-    } catch {
-      // Fallback to process.env
+  const dbRow = await readPlatformSettings();
+  if (dbRow) {
+    if (dbRow.duitku_merchant_code && String(dbRow.duitku_merchant_code).trim()) {
+      merchantCode = String(dbRow.duitku_merchant_code).trim();
+    }
+    if (dbRow.duitku_api_key && String(dbRow.duitku_api_key).trim()) {
+      apiKey = String(dbRow.duitku_api_key).trim();
+    }
+    if (dbRow.duitku_environment && String(dbRow.duitku_environment).trim()) {
+      env = String(dbRow.duitku_environment).trim().toLowerCase() === 'production' ? 'production' : 'sandbox';
     }
   }
 

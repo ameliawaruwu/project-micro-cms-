@@ -2,12 +2,19 @@ import { Store, WithdrawalRequest, AdminPlatformStats, Order, PlatformSettings }
 import { withExtraMemberships } from '../utils/communityMembership';
 import { supabase } from './supabaseClient';
 import { storeService } from './storeService';
+import { authService } from './authService';
 
 const WITHDRAWALS_KEY = 'microcms_admin_withdrawals_v2';
 const STORE_SUSPENSIONS_KEY = 'microcms_admin_suspended_stores_v1';
 const STORES_CACHE_KEY = 'microcms_admin_stores_v2';
 const ORDERS_CACHE_KEY = 'microcms_admin_orders_v2';
 const SETTINGS_KEY = 'microcms_admin_settings_v1';
+
+/** Kolom platform_settings yang boleh dibaca browser (tanpa kunci rahasia). */
+const PUBLIC_SETTINGS_COLUMNS =
+  'id, midtrans_environment, midtrans_merchant_id, midtrans_client_key, biteship_enabled, biteship_origin_city, ' +
+  'wa_gateway_enabled, wa_sender_phone, platform_fee_percent, payout_min_amount, payout_bank_fee, ' +
+  'auto_approve_payout_under, maintenance_mode, updated_at, payment_gateway_enabled';
 
 class AdminService {
   private getStoredWithdrawals(): WithdrawalRequest[] {
@@ -389,11 +396,13 @@ class AdminService {
   async fetchPlatformSettingsFromDatabase(): Promise<PlatformSettings> {
     const current = this.getPlatformSettings();
     try {
-      const { data, error } = await supabase
+      // Hanya kolom publik: kunci rahasia (midtrans_server_key, dsb.) hanya bisa dibaca server.
+      const { data: rawData, error } = await supabase
         .from('platform_settings')
-        .select('*')
+        .select(PUBLIC_SETTINGS_COLUMNS)
         .limit(1)
         .maybeSingle();
+      const data: any = rawData;
 
       if (error || !data) {
         return current;
@@ -403,10 +412,11 @@ class AdminService {
         midtransEnvironment: (data.midtrans_environment as any) || current.midtransEnvironment,
         midtransMerchantId: data.midtrans_merchant_id || current.midtransMerchantId,
         midtransClientKey: data.midtrans_client_key || current.midtransClientKey,
-        midtransServerKey: data.midtrans_server_key || current.midtransServerKey,
-        duitkuEnvironment: (data.duitku_environment as any) || current.duitkuEnvironment,
-        duitkuMerchantCode: data.duitku_merchant_code || current.duitkuMerchantCode,
-        duitkuApiKey: data.duitku_api_key || current.duitkuApiKey,
+        // Kunci rahasia tidak pernah dikirim ke browser.
+        midtransServerKey: '',
+        duitkuEnvironment: current.duitkuEnvironment,
+        duitkuMerchantCode: current.duitkuMerchantCode,
+        duitkuApiKey: '',
         biteshipEnabled: data.biteship_enabled ?? current.biteshipEnabled,
         biteshipApiKey: current.biteshipApiKey,
         biteshipOriginCity: data.biteship_origin_city || current.biteshipOriginCity,
@@ -450,14 +460,26 @@ class AdminService {
         midtrans_client_key: settings.midtransClientKey,
         updated_at: new Date().toISOString(),
       };
-      const { error } = await supabase
-        .from('platform_settings')
-        .update(updatePayload)
-        .eq('id', 'SET001');
+      // Kunci rahasia hanya dikirim bila super admin mengisinya (untuk mengganti kunci).
+      if (settings.midtransServerKey && settings.midtransServerKey.trim()) {
+        updatePayload.midtrans_server_key = settings.midtransServerKey.trim();
+      }
+      if (settings.waGatewayApiKey && settings.waGatewayApiKey.trim()) {
+        updatePayload.wa_gateway_api_key = settings.waGatewayApiKey.trim();
+      }
+      delete updatePayload.updated_at;
+      // Ditulis lewat RPC yang memverifikasi kredensial super admin (tabel tidak bisa diubah langsung).
+      const admin = authService.getAdminCredential();
+      const { data: res, error } = await supabase.rpc('admin_update_platform_settings', {
+        p_admin_email: admin.email,
+        p_admin_password: admin.password,
+        p_settings: updatePayload,
+      });
 
-      if (error) {
-        console.error('Failed to sync platform settings to Supabase:', error);
-        throw error;
+      if (error || !res?.success) {
+        const message = res?.message || error?.message || 'Gagal menyimpan pengaturan platform.';
+        console.error('Failed to sync platform settings to Supabase:', message);
+        throw new Error(message);
       }
     } catch (err) {
       console.warn('Failed to sync platform settings to Supabase:', err);
