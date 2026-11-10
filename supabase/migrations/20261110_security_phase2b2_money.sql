@@ -243,9 +243,13 @@ CREATE POLICY billing_plans_delete_admin ON public.billing_plans FOR DELETE TO a
 DROP POLICY IF EXISTS store_subscriptions_all_policy ON public.store_subscriptions;
 CREATE POLICY store_subs_select_owner_admin ON public.store_subscriptions FOR SELECT TO anon, authenticated
   USING (app_private.is_platform_admin() OR app_private.owns_store(store_id));
+-- Nilai bawaan lama status='paid' membuat baris tanpa status dianggap lunas.
+ALTER TABLE public.store_subscriptions ALTER COLUMN status SET DEFAULT 'pending';
+-- Pemilik boleh mencatat 'pending', atau 'paid' hanya untuk paket gratis (nominal 0, mis. onboarding).
 CREATE POLICY store_subs_insert_owner_pending ON public.store_subscriptions FOR INSERT TO anon, authenticated
   WITH CHECK (app_private.is_platform_admin()
-              OR (app_private.owns_store(store_id) AND status = 'pending' AND paid_at IS NULL));
+              OR (app_private.owns_store(store_id)
+                  AND (status = 'pending' OR (status = 'paid' AND coalesce(amount, 0) = 0))));
 CREATE POLICY store_subs_update_owner_admin ON public.store_subscriptions FOR UPDATE TO anon, authenticated
   USING (app_private.is_platform_admin() OR app_private.owns_store(store_id))
   WITH CHECK (app_private.is_platform_admin()
