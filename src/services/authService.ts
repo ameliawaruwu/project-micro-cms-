@@ -1,7 +1,7 @@
 import { User, Merchant, Store } from '../types';
 import { storeService } from './storeService';
 import { productService } from './productService';
-import { supabase } from './supabaseClient';
+import { supabase, setSessionToken } from './supabaseClient';
 import { idService } from './idService';
 
 const AUTH_USER_KEY = 'microcms_auth_user';
@@ -220,6 +220,7 @@ class AuthService {
         throw new Error('Akun Google tidak cocok dengan email yang diminta.');
       }
       dbUser = data.user;
+      setSessionToken(data.session_token);
     } else {
       if (!password) {
         throw new Error('Kata sandi wajib diisi.');
@@ -243,6 +244,7 @@ class AuthService {
         throw new Error(data?.message || 'Gagal masuk ke akun.');
       }
       dbUser = data.user;
+      setSessionToken(data.session_token);
       // Simpan di memori untuk konfirmasi aksi super admin (buat/ubah password akun lain).
       adminCredential = dbUser.role === 'admin' ? { email: cleanEmail, password } : null;
     }
@@ -412,6 +414,8 @@ class AuthService {
       throw new Error(regData?.message || 'Pendaftaran gagal. Silakan coba lagi.');
     }
     const userId: string = regData.user.id;
+    // Sesi dipakai untuk menyimpan toko baru milik akun ini; dilepas lagi bila tidak auto-login.
+    setSessionToken(regData.session_token);
 
     const user: User = {
       id: userId,
@@ -574,6 +578,13 @@ class AuthService {
       sessionStorage.removeItem('microcms_cms_products');
     } catch (e) {}
 
+    if (!params.autoLogin) {
+      try {
+        await supabase.rpc('end_session');
+      } catch {}
+      setSessionToken(null);
+    }
+
     // Set Active Session ONLY if autoLogin is true
     if (params.autoLogin) {
       localStorage.removeItem('microcms_explicit_logout');
@@ -619,6 +630,7 @@ class AuthService {
 
     const userId: string = gData.user.id;
     const finalName = gData.user.name || requestedName;
+    setSessionToken(gData.session_token);
 
     const userAvatar =
       params.avatarUrl ||
@@ -859,12 +871,32 @@ class AuthService {
     localStorage.removeItem('microcms_preview_draft');
     sessionStorage.removeItem('microcms_preview_draft');
     localStorage.setItem('microcms_explicit_logout', 'true');
+    adminCredential = null;
+    try {
+      // Hapus sesi di database agar token lama tidak bisa dipakai lagi.
+      await supabase.rpc('end_session');
+    } catch (e) {}
+    setSessionToken(null);
     try {
       await supabase.auth.signOut();
     } catch (e) {}
   }
 
   async validateSessionWithDatabase(userId: string, email: string): Promise<boolean> {
+    // Sesi sah = token yang dikenali database (bukan sekadar data di localStorage).
+    try {
+      const { data, error } = await supabase.rpc('session_me');
+      if (!error && data && data.success === false) {
+        console.warn('[authService] Sesi tidak valid atau kedaluwarsa. Silakan masuk ulang.');
+        await this.logout();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth_session_invalidated'));
+        }
+        return false;
+      }
+    } catch {
+      // Jaringan bermasalah: lanjut ke pemeriksaan lama di bawah.
+    }
     try {
       const cleanEmail = email.toLowerCase().trim();
       let query = supabase.from('users').select('id, email');
