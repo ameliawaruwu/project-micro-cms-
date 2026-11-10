@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { panelDomainClient, PanelResult } from './panelDomainClient';
+import { pool } from './publicApiController';
 
 // Publishing a store = adding <slug>.lapakq.com (and the merchant's custom domain, if any) as a
 // host of this app through the Kroombox Panel API. The SPA already renders the store from the
@@ -38,6 +39,20 @@ const cleanBaseDomain = (raw: unknown): string | null => {
   return HOST_RE.test(base) ? base : null;
 };
 
+const STORE_COLUMNS = 'id, slug, is_published, is_suspended, custom_domain';
+
+// Dibaca lewat koneksi server (DATABASE_URL) agar tidak bergantung pada aturan baca anon key.
+async function queryStores(where: string, params: unknown[]): Promise<StoreRow[] | null> {
+  if (!process.env.DATABASE_URL) return null;
+  try {
+    const result = await pool.query(`SELECT ${STORE_COLUMNS} FROM public.stores WHERE ${where} LIMIT 1`, params);
+    return result.rows as StoreRow[];
+  } catch (err: any) {
+    console.error('[deploy] stores query error:', err?.message);
+    return null;
+  }
+}
+
 async function supabaseStores(filter: string): Promise<StoreRow[] | null> {
   const url = process.env.VITE_SUPABASE_URL;
   const key = process.env.VITE_SUPABASE_ANON_KEY;
@@ -56,15 +71,25 @@ async function supabaseStores(filter: string): Promise<StoreRow[] | null> {
 }
 
 const findStoreById = async (storeId: string) =>
-  (await supabaseStores(`id=eq.${encodeURIComponent(storeId)}&limit=1`))?.[0] || null;
+  ((await queryStores('id = $1', [storeId])) ??
+    (await supabaseStores(`id=eq.${encodeURIComponent(storeId)}&limit=1`)))?.[0] || null;
+
+const findOtherSlugOwner = async (slug: string, storeId: string) =>
+  (await queryStores('slug = $1 AND id <> $2', [slug, storeId])) ??
+  (await supabaseStores(`slug=eq.${encodeURIComponent(slug)}&id=neq.${encodeURIComponent(storeId)}&limit=1`));
 
 // Is the host still used by any store (as its slug host or custom domain)?
 async function hostInUse(host: string, baseDomain = PUBLIC_BASE_DOMAIN): Promise<boolean | null> {
   const base = `.${baseDomain}`;
-  const filter = host.endsWith(base)
-    ? `slug=eq.${encodeURIComponent(host.slice(0, -base.length))}&is_published=eq.true&limit=1`
-    : `custom_domain=eq.${encodeURIComponent(host)}&limit=1`;
-  const rows = await supabaseStores(filter);
+  const isSlugHost = host.endsWith(base);
+  const value = isSlugHost ? host.slice(0, -base.length) : host;
+  const rows =
+    (await queryStores(isSlugHost ? 'slug = $1 AND is_published = true' : 'custom_domain = $1', [value])) ??
+    (await supabaseStores(
+      isSlugHost
+        ? `slug=eq.${encodeURIComponent(value)}&is_published=eq.true&limit=1`
+        : `custom_domain=eq.${encodeURIComponent(value)}&limit=1`
+    ));
   return rows === null ? null : rows.length > 0;
 }
 
@@ -93,7 +118,7 @@ deployRouter.post('/publish', async (req: Request, res: Response) => {
     if (store.is_suspended) return res.status(403).json({ error: 'Toko sedang ditangguhkan' });
 
     // The slug may change on publish, but never to one another store already owns.
-    const slugOwners = await supabaseStores(`slug=eq.${encodeURIComponent(slug)}&id=neq.${encodeURIComponent(storeId)}&limit=1`);
+    const slugOwners = await findOtherSlugOwner(slug, storeId);
     if (slugOwners === null) return res.status(503).json({ error: 'Database toko tidak dapat dihubungi' });
     if (slugOwners.length > 0) return res.status(409).json({ error: 'Alamat toko sudah dipakai toko lain' });
 

@@ -705,31 +705,46 @@ class BillingPlanService {
       };
       if (updated.orderId) dbUpdates.order_id = updated.orderId;
 
+      // Status "paid" & paket toko hanya bisa diubah server (lihat confirmPayment); di sini
+      // hanya status yang boleh diubah pemilik toko (pending/cancelled/failed/expired).
       await supabase
         .from('store_subscriptions')
         .update(dbUpdates)
         .eq('id', updated.id);
-
-      // Auto-update stores table in Supabase when paid
-      if (status === 'paid' && existing.storeId) {
-        const planSlug = resolvePlanSlug(existing.planId || existing.planName);
-        await supabase
-          .from('stores')
-          .update({
-            plan: planSlug,
-            theme_settings: {
-              planExpiresAt: expiresAtIso,
-              planSubscribedAt: paidAtIso,
-            },
-            updated_at: new Date().toISOString(),
-          } as any)
-          .eq('id', existing.storeId);
-      }
     } catch (err) {
       console.warn('Failed to update subscription status in Supabase:', err);
     }
 
     return updated;
+  }
+
+  /**
+   * Minta server memverifikasi pembayaran ke Duitku dan mengaktifkan paket bila lunas.
+   * Mengembalikan langganan yang sudah diperbarui, atau null bila belum lunas.
+   */
+  async confirmPayment(
+    subscriptionId: string
+  ): Promise<{ paid: boolean; message?: string; subscription?: BillingSubscription; planSlug?: string }> {
+    const res = await fetch('/api/billing/confirm-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscriptionId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status !== 200) {
+      throw new Error(data?.message || 'Gagal memverifikasi pembayaran.');
+    }
+    if (!data?.paid) return { paid: false, message: data?.message };
+
+    const subs = this.getSubscriptions();
+    const index = subs.findIndex((s) => s.id === subscriptionId);
+    let subscription: BillingSubscription | undefined;
+    if (index !== -1) {
+      subscription = { ...subs[index], status: 'paid', paidAt: data.paidAt, expiresAt: data.expiresAt };
+      subs[index] = subscription;
+      localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subs));
+    }
+    return { paid: true, subscription, planSlug: data.planSlug };
   }
 }
 

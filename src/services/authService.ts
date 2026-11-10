@@ -172,13 +172,10 @@ class AuthService {
     let cleanEmail = email.toLowerCase().trim();
     if (cleanEmail === 'admin') cleanEmail = 'admin@lapakq.com';
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', cleanEmail)
-        .maybeSingle();
+      // Data user tidak lagi terbaca bebas (tahap 2b-3); cek lewat RPC yang hanya menjawab ya/tidak.
+      const { data, error } = await supabase.rpc('email_registered', { p_email: cleanEmail });
       if (!error) {
-        if (data) {
+        if (data === true) {
           return true;
         } else {
           // Database secara definitif mengonfirmasi akun tidak ada (telah dihapus)
@@ -334,36 +331,23 @@ class AuthService {
     const priorAccounts = this.getStoredAccounts();
     const localExisting = priorAccounts.find((a) => a.email.toLowerCase() === cleanEmail);
 
-    let dbExistingUser: any = null;
+    let dbEmailRegistered = false;
     try {
-      const { data } = await supabase
-        .from('users')
-        .select('id, email, name')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-      if (data) dbExistingUser = data;
+      const { data } = await supabase.rpc('email_registered', { p_email: cleanEmail });
+      dbEmailRegistered = data === true;
     } catch (e) {
       console.warn('Supabase check existing user notice:', e);
     }
 
-    const existingUserId = dbExistingUser?.id || localExisting?.user?.id;
-    if (existingUserId) {
+    if (dbEmailRegistered || localExisting?.user?.id) {
+      // Nama toko hanya dari cache perangkat ini — tidak dicari di database agar
+      // pendaftar tidak bisa mengintip toko milik email orang lain.
       let existingStoreName = '';
       if (localExisting?.storeId) {
         const foundStore = storeService.getStoredStores().find((s) => s.id === localExisting.storeId);
         if (foundStore?.name) {
           existingStoreName = foundStore.name;
         }
-      }
-      if (!existingStoreName) {
-        try {
-          const { data: storeData } = await supabase
-            .from('stores')
-            .select('id, name')
-            .eq('user_id', existingUserId)
-            .maybeSingle();
-          if (storeData) existingStoreName = storeData.name;
-        } catch (e) {}
       }
 
       if (existingStoreName) {

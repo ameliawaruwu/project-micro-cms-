@@ -593,6 +593,121 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
   }
 });
 
+const planSlugFor = (planName: unknown, planId: unknown): string => {
+  const pName = String(planName || planId || '').toLowerCase();
+  if (pName.includes('community') || pName.includes('scale') || pName.includes('pln003')) return 'community';
+  return 'personal';
+};
+
+/**
+ * Tandai langganan lunas & aktifkan paket toko (hanya server; dipanggil setelah pembayaran
+ * terverifikasi dari Duitku). Nominal yang dibayar harus sama dengan tagihan.
+ * Idempoten: langganan yang sudah "paid" dikembalikan apa adanya.
+ */
+async function activatePaidSubscription(
+  merchantOrderId: string,
+  paidAmount: unknown
+): Promise<{ storeId: string; subscriptionId: string; planSlug: string; paidAt: string; expiresAt: string } | null> {
+  const subRes = await pool.query(
+    `SELECT id, store_id, plan_id, plan_name, amount, status, paid_at, expires_at FROM store_subscriptions
+      WHERE order_id = $1 OR invoice_number = $1 OR id = $1
+      LIMIT 1`,
+    [merchantOrderId]
+  );
+  const sub = subRes.rows[0];
+  if (!sub) return null;
+  const planSlug = planSlugFor(sub.plan_name, sub.plan_id);
+  if (sub.status === 'paid' && sub.paid_at && sub.expires_at) {
+    return {
+      storeId: sub.store_id,
+      subscriptionId: sub.id,
+      planSlug,
+      paidAt: new Date(sub.paid_at).toISOString(),
+      expiresAt: new Date(sub.expires_at).toISOString(),
+    };
+  }
+  if (Number(paidAmount) !== Number(sub.amount)) {
+    console.warn(`[Billing] Nominal pembayaran ${paidAmount} tidak sama dengan tagihan ${sub.amount} (order ${merchantOrderId})`);
+    return null;
+  }
+  const paidAt = new Date();
+  const expiresAt = new Date(paidAt.getTime() + 365 * 24 * 60 * 60 * 1000);
+  await pool.query(
+    `UPDATE store_subscriptions SET status = 'paid', paid_at = $2, expires_at = $3, order_id = $4 WHERE id = $1`,
+    [sub.id, paidAt.toISOString(), expiresAt.toISOString(), merchantOrderId]
+  );
+  if (sub.store_id) {
+    await pool.query('UPDATE stores SET plan = $2, updated_at = $3 WHERE id = $1', [
+      sub.store_id,
+      planSlug,
+      paidAt.toISOString(),
+    ]);
+  }
+  return {
+    storeId: sub.store_id,
+    subscriptionId: sub.id,
+    planSlug,
+    paidAt: paidAt.toISOString(),
+    expiresAt: expiresAt.toISOString(),
+  };
+}
+
+async function fetchDuitkuStatus(merchantOrderId: string): Promise<any> {
+  const { merchantCode, apiKey, env } = await getDuitkuConfig();
+  if (!merchantCode || !apiKey) throw new Error('DUITKU_MERCHANT_CODE belum dikonfigurasi');
+  const signature = crypto.createHash('md5').update(`${merchantCode}${merchantOrderId}${apiKey}`).digest('hex');
+  const apiUrl =
+    env === 'production'
+      ? 'https://passport.duitku.com/webapi/api/merchant/transactionStatus'
+      : 'https://sandbox.duitku.com/webapi/api/merchant/transactionStatus';
+  const statusRes = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ merchantCode, merchantOrderId, signature }).toString(),
+    signal: AbortSignal.timeout(15_000),
+  });
+  return statusRes.json();
+}
+
+// 4b.2b Konfirmasi pembayaran paket dari halaman Billing: server sendiri yang menanyakan status
+// ke Duitku, lalu mengaktifkan paket bila lunas. Browser tidak bisa lagi menandai "paid".
+app.post('/api/billing/confirm-payment', async (req, res) => {
+  try {
+    const subscriptionId = String(req.body?.subscriptionId || '').trim();
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(subscriptionId)) {
+      return res.status(400).json({ success: false, message: 'ID tagihan tidak valid.' });
+    }
+    const subRes = await pool.query(
+      'SELECT id, order_id, invoice_number, status FROM store_subscriptions WHERE id = $1 LIMIT 1',
+      [subscriptionId]
+    );
+    const sub = subRes.rows[0];
+    if (!sub) return res.status(404).json({ success: false, message: 'Tagihan tidak ditemukan.' });
+
+    if (sub.status !== 'paid') {
+      const orderId = String(sub.order_id || sub.invoice_number || '').trim();
+      if (!orderId) return res.status(400).json({ success: false, message: 'Tagihan belum memiliki ID pembayaran.' });
+      const status = await fetchDuitkuStatus(orderId);
+      if (String(status?.statusCode) !== '00') {
+        return res.status(200).json({
+          success: false,
+          paid: false,
+          message: status?.statusMessage || 'Pembayaran belum lunas.',
+        });
+      }
+      const activated = await activatePaidSubscription(orderId, status?.amount);
+      if (!activated) return res.status(409).json({ success: false, message: 'Nominal pembayaran tidak sesuai tagihan.' });
+      return res.status(200).json({ success: true, paid: true, ...activated });
+    }
+
+    const activated = await activatePaidSubscription(sub.id, null);
+    return res.status(200).json({ success: true, paid: true, ...activated });
+  } catch (err: any) {
+    console.error('[Billing confirm-payment]', err?.message);
+    return res.status(502).json({ success: false, message: 'Gagal memverifikasi pembayaran. Coba lagi beberapa saat.' });
+  }
+});
+
 // 4b.3 Check Transaction Status
 app.post('/api/duitku/check-status', async (req, res) => {
   try {
@@ -722,36 +837,9 @@ app.post(['/api/payment/callback', '/api/callback', '/api/duitku/callback'], asy
       // tidak boleh menandai langganan "paid" atau mengubah paket toko.
       try {
         // 1. Pembayaran paket berlangganan toko (store_subscriptions)
-        const subRes = await pool.query(
-          `SELECT id, store_id, plan_id, plan_name FROM store_subscriptions
-            WHERE order_id = $1 OR invoice_number = $1 OR id = $1
-            LIMIT 1`,
-          [merchantOrderId]
-        );
-        const sub = subRes.rows[0];
-        if (sub) {
-          const paidAt = new Date();
-          const expiresAt = new Date(paidAt.getTime() + 365 * 24 * 60 * 60 * 1000);
-          await pool.query(
-            `UPDATE store_subscriptions SET status = 'paid', paid_at = $2, expires_at = $3, order_id = $4 WHERE id = $1`,
-            [sub.id, paidAt.toISOString(), expiresAt.toISOString(), merchantOrderId]
-          );
-
-          if (sub.store_id) {
-            let planSlug = 'personal';
-            const pName = String(sub.plan_name || sub.plan_id || '').toLowerCase();
-            if (pName.includes('community') || pName.includes('scale') || pName.includes('pln003')) {
-              planSlug = 'community';
-            } else if (pName.includes('personal') || pName.includes('pro') || pName.includes('pln002')) {
-              planSlug = 'personal';
-            }
-            await pool.query('UPDATE stores SET plan = $2, updated_at = $3 WHERE id = $1', [
-              sub.store_id,
-              planSlug,
-              paidAt.toISOString(),
-            ]);
-          }
-          console.log(`[Duitku Callback] Berhasil mengaktifkan langganan toko ${sub.store_id} untuk order ${merchantOrderId}`);
+        const activated = await activatePaidSubscription(merchantOrderId, amount);
+        if (activated) {
+          console.log(`[Duitku Callback] Berhasil mengaktifkan langganan toko ${activated.storeId} untuk order ${merchantOrderId}`);
         }
       } catch (subErr) {
         console.error('[Duitku Callback Subscription Handler Error]', subErr);

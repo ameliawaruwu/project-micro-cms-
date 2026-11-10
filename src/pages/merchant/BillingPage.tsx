@@ -668,16 +668,36 @@ export const BillingPage: React.FC<BillingPageProps> = ({
    * Activate plan immediately on merchant store & mark subscription as paid for exactly 1 year (365 days)
    */
   const handleActivatePlan = async (sub: BillingSubscription) => {
-    const planSlug = resolvePlanSlug(sub.planId || sub.planName);
+    // 0. Server memverifikasi pembayaran ke Duitku lalu menandai lunas & mengaktifkan paket.
+    //    Browser tidak bisa mengaktifkan paket sendiri (dikunci di database).
+    let confirmation: Awaited<ReturnType<typeof billingPlanService.confirmPayment>>;
+    try {
+      confirmation = await billingPlanService.confirmPayment(sub.id);
+    } catch (err: any) {
+      if (onShowNotification) {
+        onShowNotification(err?.message || (isEn ? 'Failed to verify payment.' : 'Gagal memverifikasi pembayaran.'));
+      }
+      return;
+    }
+    if (!confirmation.paid) {
+      if (onShowNotification) {
+        onShowNotification(
+          confirmation.message
+            ? (isEn ? `Payment not completed yet: ${confirmation.message}` : `Pembayaran belum lunas: ${confirmation.message}`)
+            : (isEn ? 'Payment not detected yet.' : 'Pembayaran belum terdeteksi.')
+        );
+      }
+      return;
+    }
 
-    // Calculate 1 Year (365 Days) Expiration Date from actual payment time
+    const planSlug = confirmation.planSlug || resolvePlanSlug(sub.planId || sub.planName);
     const now = new Date();
-    const paidAtIso = sub.paidAt || now.toISOString();
-    const paidTime = new Date(paidAtIso).getTime();
-    const oneYearLater = new Date((isNaN(paidTime) ? now.getTime() : paidTime) + 365 * 24 * 60 * 60 * 1000);
-    const expiresAtIso = oneYearLater.toISOString();
+    const paidAtIso = confirmation.subscription?.paidAt || now.toISOString();
+    const expiresAtIso =
+      confirmation.subscription?.expiresAt || new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    const oneYearLater = new Date(expiresAtIso);
 
-    // 1. Update store record & notify parent state (App.tsx)
+    // 1. Simpan tanggal paket di pengaturan toko & beri tahu App.tsx (paket sudah diaktifkan server)
     const updated = await storeService.updateStore(store.id, {
       plan: planSlug,
       planExpiresAt: expiresAtIso,
@@ -688,14 +708,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
         planSubscribedAt: paidAtIso,
       }
     }, store.merchantId);
-    onUpdateStore(updated);
-
-    // 2. Mark subscription as paid
-    await billingPlanService.updateSubscriptionStatus(sub.id, 'paid', {
-      paidAt: paidAtIso,
-      expiresAt: expiresAtIso,
-      orderId: sub.orderId,
-    });
+    onUpdateStore({ ...updated, plan: planSlug as StoreType['plan'] });
 
     // 3. Clear pending state
     setPendingSubscription(null);
