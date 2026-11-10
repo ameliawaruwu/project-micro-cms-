@@ -413,6 +413,8 @@ $$;
 -- -----------------------------------------------------------------------------
 -- 7. Hak akses fungsi
 -- -----------------------------------------------------------------------------
+-- Fungsi baru otomatis EXECUTE untuk PUBLIC (default global Postgres); cabut eksplisit.
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA app_private FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.verify_user_credentials(text, text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.register_merchant(text, text, text, text, text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.google_session_user(text) FROM PUBLIC, anon, authenticated;

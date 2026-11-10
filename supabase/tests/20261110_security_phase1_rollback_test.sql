@@ -347,6 +347,7 @@ BEGIN
   RETURN jsonb_build_object('success', true);
 END;
 $$;
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA app_private FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.verify_user_credentials(text, text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.register_merchant(text, text, text, text, text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.google_session_user(text) FROM PUBLIC, anon, authenticated;
@@ -401,6 +402,7 @@ BEGIN
   out := out || ' anon_req_reset=' || has_function_privilege('anon','public.request_password_reset(text)','EXECUTE');
   out := out || ' anon_verify=' || has_function_privilege('anon','public.verify_user_credentials(text,text)','EXECUTE');
   out := out || ' anon_private=' || has_function_privilege('anon','app_private.hash_password(text)','EXECUTE');
+  out := out || ' anon_schema=' || has_schema_privilege('anon','app_private','USAGE');
   SELECT string_agg(u.email || '(' || u.role || ')', ',') INTO leaked FROM public.users u
    WHERE u.email NOT LIKE 'zz_%' AND EXISTS (SELECT 1 FROM unnest(ARRAY['bantuumkm2344@','bantuumkm2344','admin123','subadmin123','subadmin2','password123','Password123']) k WHERE app_private.check_password(u.password_hash, k));
   out := out || ' LEAKED_PW_ACCOUNTS=' || coalesce(leaked,'none');
