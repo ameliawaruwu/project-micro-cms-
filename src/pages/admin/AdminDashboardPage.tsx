@@ -295,16 +295,24 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   };
 
   const handleApproveWithdrawal = async (id: string, storeName?: string) => {
-    await adminService.approveWithdrawal(id);
+    try {
+      await adminService.approveWithdrawal(id);
+      showToast(storeName ? `Pencairan dana ${storeName} berhasil disetujui & dipindahkan ke Paid` : 'Pencairan dana berhasil disetujui & dipindahkan ke Paid');
+    } catch (err: any) {
+      showToast(err?.message || 'Gagal menyetujui pencairan dana.');
+    }
     await loadData();
-    showToast(storeName ? `Pencairan dana ${storeName} berhasil disetujui & dipindahkan ke Paid` : 'Pencairan dana berhasil disetujui & dipindahkan ke Paid');
   };
 
   const handleRejectWithdrawal = async (id: string, storeName?: string) => {
     if (window.confirm(`Tolak pengajuan penarikan dana ${storeName || ''}? Saldo akan dikembalikan ke dompet toko.`)) {
-      await adminService.rejectWithdrawal(id);
+      try {
+        await adminService.rejectWithdrawal(id);
+        showToast('Pencairan dana ditolak & saldo toko dikembalikan');
+      } catch (err: any) {
+        showToast(err?.message || 'Gagal menolak pencairan dana.');
+      }
       await loadData();
-      showToast('Pencairan dana ditolak & saldo toko dikembalikan');
     }
   };
 

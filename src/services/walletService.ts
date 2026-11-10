@@ -2,7 +2,6 @@ import { WithdrawalRequest, WalletTransaction } from '../types';
 import { adminService } from './adminService';
 import { storeService } from './storeService';
 import { supabase } from './supabaseClient';
-import { idService } from './idService';
 
 // ============================================================
 // MERCHANT DATA ISOLATION: localStorage dipartisi per storeId
@@ -63,23 +62,26 @@ class WalletService {
       return { success: false, message: 'Minimal penarikan dana adalah Rp 50.000' };
     }
 
-    // 2. Fetch balance dari toko yang spesifik (bukan semua toko)
-    const currentStore = await storeService.getStoreById(storeId);
-    const balance = currentStore ? (currentStore.balance || 0) : 0;
-
-    if (amount > balance) {
-      return { success: false, message: 'Saldo aktif tidak mencukupi untuk nominal penarikan ini' };
+    // 2. Saldo dicek & dikurangi secara atomik oleh database (bukan oleh browser), lalu penarikan
+    //    dan riwayat wallet dicatat dalam satu transaksi. Wajib sesi login pemilik toko.
+    const { data, error } = await supabase.rpc('request_withdrawal', {
+      p_store_id: storeId,
+      p_amount: Math.round(amount),
+      p_bank_name: bankName,
+      p_account_number: accountNumber,
+      p_account_holder: accountHolder,
+    });
+    if (error) {
+      return { success: false, message: 'Tidak dapat terhubung ke server. Coba lagi beberapa saat.' };
+    }
+    if (!data?.success) {
+      return { success: false, message: data?.message || 'Penarikan dana gagal diajukan.' };
     }
 
-    // 3. Deduct store balance
-    const updatedBalance = balance - amount;
-    await storeService.updateStore(storeId, { balance: updatedBalance });
-
-    // 4. Create Withdrawal Request in Admin Service
-    const allWithdrawals = adminService.getWithdrawals();
-    const newId = await idService.generateNextId('withdrawals');
+    // 3. Perbarui cache lokal untuk tampilan (sumber kebenaran tetap database)
+    const requestedAt = new Date().toISOString();
     const newWithdrawal: WithdrawalRequest = {
-      id: newId,
+      id: data.withdrawal_id,
       storeId,
       storeName,
       storeLogo,
@@ -88,63 +90,24 @@ class WalletService {
       accountNumber,
       accountHolder,
       status: 'pending',
-      requestedAt: new Date().toISOString(),
+      requestedAt,
     };
-
-    localStorage.setItem('microcms_admin_withdrawals_v1', JSON.stringify([newWithdrawal, ...allWithdrawals]));
-
-    // Sync to Supabase withdrawals table
-    try {
-      await supabase.from('withdrawals').insert([
-        {
-          id: newWithdrawal.id,
-          store_id: newWithdrawal.storeId,
-          store_name: newWithdrawal.storeName,
-          store_logo: newWithdrawal.storeLogo,
-          amount: newWithdrawal.amount,
-          bank_name: newWithdrawal.bankName,
-          account_number: newWithdrawal.accountNumber,
-          account_holder: newWithdrawal.accountHolder,
-          status: 'pending',
-          requested_at: newWithdrawal.requestedAt,
-        },
-      ]);
-    } catch (err) {
-      console.warn('Failed to insert withdrawal to Supabase:', err);
-    }
-
-    // 5. Record in Wallet Transaction History (partisi per storeId)
-    const allTxs = this.getStoredTransactions(storeId);
-    const txId = await idService.generateNextId('wallet_transactions');
+    localStorage.setItem('microcms_admin_withdrawals_v1', JSON.stringify([newWithdrawal, ...adminService.getWithdrawals()]));
     const newTx: WalletTransaction = {
-      id: txId,
+      id: data.transaction_id,
       storeId,
       type: 'withdrawal',
       title: `Penarikan Dana ke ${bankName} (${accountNumber})`,
       amount,
-      referenceId: newId,
+      referenceId: data.withdrawal_id,
       status: 'pending',
-      createdAt: new Date().toISOString(),
+      createdAt: requestedAt,
     };
-    this.saveTransactions(storeId, [newTx, ...allTxs]);
-
-    // Sync to Supabase wallet_transactions table
+    this.saveTransactions(storeId, [newTx, ...this.getStoredTransactions(storeId)]);
     try {
-      await supabase.from('wallet_transactions').insert([
-        {
-          id: newTx.id,
-          store_id: newTx.storeId,
-          type: newTx.type,
-          title: newTx.title,
-          amount: newTx.amount,
-          reference_id: newTx.referenceId,
-          status: 'pending',
-          created_at: newTx.createdAt,
-        },
-      ]);
-    } catch (err) {
-      console.warn('Failed to insert wallet_transaction to Supabase:', err);
-    }
+      const current = await storeService.getStoreById(storeId);
+      if (current) await storeService.updateStore(storeId, { balance: Number(data.balance ?? current.balance) });
+    } catch { /* tampilan saja */ }
 
     return { success: true, message: 'Permohonan penarikan dana berhasil diajukan dan sedang diproses admin!' };
   }

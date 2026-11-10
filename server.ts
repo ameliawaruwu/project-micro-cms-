@@ -8,6 +8,7 @@ import dns from 'dns';
 import { deployRouter } from './backend/deployController';
 import { authRouter } from './backend/authController';
 import { readPlatformSettings } from './backend/platformSettings';
+import { pool } from './backend/publicApiController';
 import { sendMail, MailerNotConfiguredError } from './backend/mailer';
 import { publicApiRouter } from './backend/publicApiController';
 import { partnerApiRouter } from './backend/partnerApiController';
@@ -717,88 +718,53 @@ app.post(['/api/payment/callback', '/api/callback', '/api/duitku/callback'], asy
 
     // Jika pembayaran berhasil (00)
     if (resultCode === '00') {
-      const supabaseUrl = process.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
-
-      if (supabaseUrl && supabaseAnonKey) {
-        // 1. Cek apakah ini pembayaran paket berlangganan toko (store_subscriptions)
-        try {
-          const subRes = await fetch(
-            `${supabaseUrl}/rest/v1/store_subscriptions?or=(order_id.eq.${encodeURIComponent(merchantOrderId)},invoice_number.eq.${encodeURIComponent(merchantOrderId)},id.eq.${encodeURIComponent(merchantOrderId)})`,
-            {
-              headers: {
-                apikey: supabaseAnonKey,
-                Authorization: `Bearer ${supabaseAnonKey}`,
-              },
-            }
+      // Ditulis lewat koneksi DATABASE_URL (server tepercaya): sejak tahap keamanan 2b-2 anon key
+      // tidak boleh menandai langganan "paid" atau mengubah paket toko.
+      try {
+        // 1. Pembayaran paket berlangganan toko (store_subscriptions)
+        const subRes = await pool.query(
+          `SELECT id, store_id, plan_id, plan_name FROM store_subscriptions
+            WHERE order_id = $1 OR invoice_number = $1 OR id = $1
+            LIMIT 1`,
+          [merchantOrderId]
+        );
+        const sub = subRes.rows[0];
+        if (sub) {
+          const paidAt = new Date();
+          const expiresAt = new Date(paidAt.getTime() + 365 * 24 * 60 * 60 * 1000);
+          await pool.query(
+            `UPDATE store_subscriptions SET status = 'paid', paid_at = $2, expires_at = $3, order_id = $4 WHERE id = $1`,
+            [sub.id, paidAt.toISOString(), expiresAt.toISOString(), merchantOrderId]
           );
-          if (subRes.ok) {
-            const subs = await subRes.json();
-            if (Array.isArray(subs) && subs.length > 0) {
-              const sub = subs[0];
-              const paidAt = new Date().toISOString();
-              const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
 
-              // Update subscription menjadi paid
-              await fetch(`${supabaseUrl}/rest/v1/store_subscriptions?id=eq.${encodeURIComponent(sub.id)}`, {
-                method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                  apikey: supabaseAnonKey,
-                  Authorization: `Bearer ${supabaseAnonKey}`,
-                },
-                body: JSON.stringify({
-                  status: 'paid',
-                  paid_at: paidAt,
-                  expires_at: expiresAt,
-                  order_id: merchantOrderId,
-                }),
-              });
-
-              // Update plan toko di tabel stores
-              if (sub.store_id) {
-                let planSlug = 'personal';
-                const pName = (sub.plan_name || sub.plan_id || '').toLowerCase();
-                if (pName.includes('community') || pName.includes('scale') || pName.includes('pln003')) {
-                  planSlug = 'community';
-                } else if (pName.includes('personal') || pName.includes('pro') || pName.includes('pln002')) {
-                  planSlug = 'personal';
-                }
-
-                await fetch(`${supabaseUrl}/rest/v1/stores?id=eq.${encodeURIComponent(sub.store_id)}`, {
-                  method: 'PATCH',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    apikey: supabaseAnonKey,
-                    Authorization: `Bearer ${supabaseAnonKey}`,
-                  },
-                  body: JSON.stringify({
-                    plan: planSlug,
-                    updated_at: paidAt,
-                  }),
-                });
-              }
-              console.log(`[Duitku Callback] Berhasil mengaktifkan langganan toko ${sub.store_id} untuk order ${merchantOrderId}`);
+          if (sub.store_id) {
+            let planSlug = 'personal';
+            const pName = String(sub.plan_name || sub.plan_id || '').toLowerCase();
+            if (pName.includes('community') || pName.includes('scale') || pName.includes('pln003')) {
+              planSlug = 'community';
+            } else if (pName.includes('personal') || pName.includes('pro') || pName.includes('pln002')) {
+              planSlug = 'personal';
             }
+            await pool.query('UPDATE stores SET plan = $2, updated_at = $3 WHERE id = $1', [
+              sub.store_id,
+              planSlug,
+              paidAt.toISOString(),
+            ]);
           }
-        } catch (subErr) {
-          console.error('[Duitku Callback Subscription Handler Error]', subErr);
+          console.log(`[Duitku Callback] Berhasil mengaktifkan langganan toko ${sub.store_id} untuk order ${merchantOrderId}`);
         }
+      } catch (subErr) {
+        console.error('[Duitku Callback Subscription Handler Error]', subErr);
+      }
 
-        // 2. Update Order produk di database jika ada
-        await fetch(`${supabaseUrl}/rest/v1/orders?order_number=eq.${encodeURIComponent(merchantOrderId)}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: supabaseAnonKey,
-            Authorization: `Bearer ${supabaseAnonKey}`,
-          },
-          body: JSON.stringify({
-            payment_status: 'paid',
-            order_status: 'processing',
-            updated_at: new Date().toISOString(),
-          }),
-        }).catch(() => {});
+      // 2. Order produk
+      try {
+        await pool.query(
+          `UPDATE orders SET payment_status = 'paid', order_status = 'processing', updated_at = now() WHERE order_number = $1`,
+          [merchantOrderId]
+        );
+      } catch (orderErr) {
+        console.error('[Duitku Callback Order Update Error]', orderErr);
       }
     }
 

@@ -177,81 +177,34 @@ class AdminService {
     }
   }
 
-  async approveWithdrawal(id: string): Promise<boolean> {
+  /**
+   * Proses penarikan oleh super admin lewat RPC (database memverifikasi sesi admin, mengubah status
+   * secara atomik, dan mengembalikan saldo toko bila ditolak).
+   */
+  private async processWithdrawal(id: string, approve: boolean): Promise<boolean> {
+    const { data, error } = await supabase.rpc('admin_process_withdrawal', {
+      p_withdrawal_id: id,
+      p_approve: approve,
+    });
+    if (error || !data?.success) {
+      throw new Error(data?.message || 'Gagal memproses penarikan dana. Coba lagi.');
+    }
     const list = this.getStoredWithdrawals();
     const target = list.find((w) => w.id === id);
-    const processedAt = new Date().toISOString();
-
     if (target) {
-      target.status = 'approved';
-      target.processedAt = processedAt;
+      target.status = approve ? 'approved' : 'rejected';
+      target.processedAt = new Date().toISOString();
       this.saveWithdrawals(list);
     }
-
-    // Sync to Supabase
-    try {
-      await supabase
-        .from('withdrawals')
-        .update({ status: 'approved', processed_at: processedAt })
-        .eq('id', id);
-
-      await supabase
-        .from('wallet_transactions')
-        .update({ status: 'completed' })
-        .eq('reference_id', id);
-    } catch (err) {
-      console.warn('Failed to update approved withdrawal in Supabase:', err);
-    }
-
     return true;
   }
 
+  async approveWithdrawal(id: string): Promise<boolean> {
+    return this.processWithdrawal(id, true);
+  }
+
   async rejectWithdrawal(id: string): Promise<boolean> {
-    const list = this.getStoredWithdrawals();
-    const target = list.find((w) => w.id === id);
-    const processedAt = new Date().toISOString();
-
-    if (target) {
-      target.status = 'rejected';
-      target.processedAt = processedAt;
-      this.saveWithdrawals(list);
-
-      // Refund store balance
-      try {
-        const { data: storeData } = await supabase
-          .from('stores')
-          .select('balance')
-          .eq('id', target.storeId)
-          .single();
-
-        if (storeData) {
-          const newBalance = Number(storeData.balance || 0) + target.amount;
-          await supabase
-            .from('stores')
-            .update({ balance: newBalance })
-            .eq('id', target.storeId);
-        }
-      } catch (err) {
-        console.warn('Failed to refund store balance in Supabase:', err);
-      }
-    }
-
-    // Sync to Supabase
-    try {
-      await supabase
-        .from('withdrawals')
-        .update({ status: 'rejected', processed_at: processedAt })
-        .eq('id', id);
-
-      await supabase
-        .from('wallet_transactions')
-        .update({ status: 'rejected' })
-        .eq('reference_id', id);
-    } catch (err) {
-      console.warn('Failed to update rejected withdrawal in Supabase:', err);
-    }
-
-    return true;
+    return this.processWithdrawal(id, false);
   }
 
   async updateStorePlan(storeId: string, newPlan: string): Promise<boolean> {

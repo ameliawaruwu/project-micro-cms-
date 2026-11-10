@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { sendMail, MailerNotConfiguredError } from './mailer';
+import { pool } from './publicApiController';
 
 // Reset password: kode 6 digit dibuat & disimpan (ter-hash bcrypt) oleh fungsi database
 // request_password_reset, yang HANYA bisa dipanggil service_role. Kode dikirim ke email pemilik akun
 // dan tidak pernah dikembalikan ke browser. Verifikasi & penggantian password lewat RPC
 // complete_password_reset (percobaan dibatasi di database).
 //
-// Env server: VITE_SUPABASE_URL (atau SUPABASE_URL) dan SUPABASE_SERVICE_ROLE_KEY (jangan di-commit).
+// Env server: DATABASE_URL (diutamakan) atau VITE_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (jangan di-commit).
 
 export const authRouter = Router();
 
@@ -33,6 +34,32 @@ const escapeHtml = (v: string) =>
 // Balasan sama untuk email terdaftar maupun tidak, agar keberadaan akun tidak bocor.
 const GENERIC_OK = { success: true, message: 'Jika email terdaftar, kode verifikasi telah dikirim.' };
 
+/**
+ * Buat token reset lewat fungsi database request_password_reset (hanya boleh dipanggil server).
+ * Utamakan koneksi DATABASE_URL; bila tidak ada, pakai SUPABASE_SERVICE_ROLE_KEY lewat REST.
+ */
+async function createResetToken(email: string): Promise<{ token?: string | null; name?: string } | 'unconfigured'> {
+  if (process.env.DATABASE_URL) {
+    const result = await pool.query('SELECT public.request_password_reset($1) AS data', [email]);
+    return result.rows[0]?.data || {};
+  }
+  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
+  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  if (!supabaseUrl || !serviceKey) return 'unconfigured';
+  const rpcRes = await fetch(`${supabaseUrl}/rest/v1/rpc/request_password_reset`, {
+    method: 'POST',
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ p_email: email }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!rpcRes.ok) throw new Error(`request_password_reset HTTP ${rpcRes.status}`);
+  return rpcRes.json();
+}
+
 authRouter.post('/forgot-password', async (req: Request, res: Response) => {
   const email = String(req.body?.email || '').toLowerCase().trim();
   if (!EMAIL_RE.test(email) || email.length > 254) {
@@ -44,31 +71,14 @@ authRouter.post('/forgot-password', async (req: Request, res: Response) => {
     return res.status(429).json({ error: 'Terlalu banyak permintaan. Coba lagi dalam 15 menit.' });
   }
 
-  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
-  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-  if (!supabaseUrl || !serviceKey) {
-    console.error('[auth] forgot-password: SUPABASE_SERVICE_ROLE_KEY belum diatur di .env server');
-    return res.status(503).json({ error: 'Reset kata sandi belum tersedia. Hubungi admin LapakQ untuk mengatur ulang kata sandi Anda.' });
-  }
-
   let token: string | null = null;
   let name = '';
   try {
-    const rpcRes = await fetch(`${supabaseUrl}/rest/v1/rpc/request_password_reset`, {
-      method: 'POST',
-      headers: {
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ p_email: email }),
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!rpcRes.ok) {
-      console.error('[auth] request_password_reset HTTP', rpcRes.status);
-      return res.status(502).json({ error: 'Gagal memproses permintaan. Coba lagi beberapa saat.' });
+    const data = await createResetToken(email);
+    if (data === 'unconfigured') {
+      console.error('[auth] forgot-password: DATABASE_URL / SUPABASE_SERVICE_ROLE_KEY belum diatur di .env server');
+      return res.status(503).json({ error: 'Reset kata sandi belum tersedia. Hubungi admin LapakQ untuk mengatur ulang kata sandi Anda.' });
     }
-    const data = await rpcRes.json();
     token = typeof data?.token === 'string' ? data.token : null;
     name = typeof data?.name === 'string' ? data.name : '';
   } catch (err: any) {
