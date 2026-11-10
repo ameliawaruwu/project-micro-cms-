@@ -87,6 +87,13 @@ class AuthService {
     localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(safe));
   }
 
+  /** Perbarui kredensial admin di memori setelah super admin mengganti password akunnya sendiri. */
+  refreshAdminCredential(email: string, newPassword: string): void {
+    if (adminCredential && adminCredential.email === email.toLowerCase().trim()) {
+      adminCredential = { email: adminCredential.email, password: newPassword };
+    }
+  }
+
   /** Kredensial super admin yang dikonfirmasi saat login (memori saja) untuk RPC admin. */
   getAdminCredential(): { email: string; password: string } {
     if (!adminCredential) {

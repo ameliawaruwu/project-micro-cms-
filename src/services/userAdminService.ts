@@ -101,6 +101,8 @@ class UserAdminService {
     });
     if (error) throw new Error(/minimal 8|tidak valid|tidak dikenal/i.test(error.message) ? error.message : 'Gagal menyimpan user.');
     if (!data?.success || !data.user) throw new Error(data?.message || 'Gagal menyimpan user.');
+    // Super admin mengganti password akunnya sendiri: aksi admin berikutnya memakai password baru.
+    if (input.password) authService.refreshAdminCredential(email, input.password);
     return mapRow(data.user);
   }
 
