@@ -46,6 +46,7 @@ import {
   getShippingStatusLabel,
   getPaymentStatusLabel,
 } from './utils';
+import { sessionHeaders } from '../../services/supabaseClient';
 
 interface AdminDashboardPageProps {
   currentUser?: User | null;
@@ -195,7 +196,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     setTestingService(service);
     if (service === 'duitku') {
       try {
-        const res = await fetch('/api/duitku/test-connection', { method: 'POST' });
+        const res = await fetch('/api/duitku/test-connection', { method: 'POST', headers: sessionHeaders() });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.success) {
           showToast(`✅ ${data.message} (${data.channelCount} saluran pembayaran aktif)`);
@@ -212,7 +213,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
     if (service === 'midtrans') {
       try {
-        const res = await fetch('/api/midtrans/test-ping');
+        const res = await fetch('/api/midtrans/test-ping', { headers: sessionHeaders() });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.success) {
           showToast(`✅ ${data.message}`);

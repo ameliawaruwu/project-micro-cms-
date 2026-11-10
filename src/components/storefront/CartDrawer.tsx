@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Plus,
@@ -29,7 +29,6 @@ import { CartItem, Store, CourierType, PaymentMethod, Order, ShippingBranch, Bit
 import { formatRupiah, generateWhatsAppLink } from '../../utils/formatters';
 import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
-import { storeService } from '../../services/storeService';
 import { shippingService, INDONESIAN_CITIES, ShippingRate } from '../../services/shippingService';
 import { duitkuService } from '../../services/duitkuService';
 import {
@@ -159,7 +158,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     }
   };
 
-  const recordSuccessOrder = async (orderIdCode?: string, verifiedMethod?: string, isPaid: boolean = true) => {
+  // Pesanan gateway belum lunas yang dipakai ulang saat pembeli mencoba bayar lagi.
+  const pendingGatewayOrderRef = useRef<{ key: string; order: Order } | null>(null);
+
+  /** Buat pesanan di database (harga & total dihitung server, status selalu belum dibayar). */
+  const createOrderRecord = async (verifiedMethod?: string): Promise<Order> => {
     const orderItems = items.map((item) => ({
       productId: item.product.id,
       productName: item.product.name,
@@ -172,7 +175,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
     const finalMethod = verifiedMethod || selectedChannel.name || 'QRIS Real-Time';
 
-    const newOrder = await orderService.createOrder({
+    return orderService.createOrder({
       storeId: store.id,
       customerName: name.trim(),
       customerPhone: phone.trim(),
@@ -194,18 +197,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       discount: 0,
       grandTotal,
       paymentMethod: finalMethod as PaymentMethod,
-      paymentStatus: isPaid ? 'Sudah Dibayar' : 'Belum Dibayar',
+      paymentStatus: 'Belum Dibayar',
       courier,
       shippingStatus: 'Baru',
       notes: notes.trim() || undefined,
     });
+  };
 
-    // Credit the merchant store balance only if actually paid
-    if (isPaid) {
-      const currentBalance = store.balance || 0;
-      await storeService.updateStore(store.id, { balance: currentBalance + grandTotal });
-    }
-
+  /** Tampilkan halaman sukses. Saldo toko ditambah oleh server setelah gateway mengonfirmasi. */
+  const showCompletedOrder = (newOrder: Order) => {
+    pendingGatewayOrderRef.current = null;
+    const isPaid = newOrder.paymentStatus === 'Sudah Dibayar';
     cartService.clearCart(store.slug);
     setCompletedOrder(newOrder);
     setStep('success');
@@ -227,32 +229,53 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   // Trigger Duitku payment
   const handleLaunchDuitkuPayment = async () => {
     setIsSubmitting(true);
-    const orderId = `KROOM-${Date.now()}`;
 
     try {
+      const orderKey = JSON.stringify([
+        items.map((i) => [i.product.id, i.quantity, i.variantName || '']),
+        shippingCost,
+        selectedChannel.id,
+        name.trim(),
+        phone.trim(),
+        postalCode,
+      ]);
+      const order =
+        pendingGatewayOrderRef.current?.key === orderKey
+          ? pendingGatewayOrderRef.current.order
+          : await createOrderRecord(`Duitku (${selectedChannel.name})`);
+      pendingGatewayOrderRef.current = { key: orderKey, order };
+      const orderId = `${order.orderNumber}-${Date.now().toString(36)}`;
+
       await duitkuService.payWithDuitku(
         {
           orderId,
-          grossAmount: grandTotal,
+          grossAmount: order.grandTotal,
           customerName: name.trim(),
           customerEmail: 'customer@example.com',
           customerPhone: phone.trim(),
           paymentMethod: selectedChannel.id,
           productDetails: `Pesanan ${items.length} item - ${store.name}`,
-          items: items.map((i) => ({
-            id: i.product.id,
-            name: i.product.name,
-            price: i.product.price,
-            quantity: i.quantity,
-          })),
+          // Harga dari database; ongkir ikut agar jumlah rincian = total tagihan.
+          items: [
+            ...order.items.map((it) => ({
+              id: it.productId,
+              name: it.productName,
+              price: it.price,
+              quantity: it.quantity,
+            })),
+            ...(order.shippingCost > 0
+              ? [{ id: 'shipping-charge', name: 'Ongkos Kirim', price: order.shippingCost, quantity: 1 }]
+              : []),
+          ],
         },
         {
-          onSuccess: async (result) => {
-            await recordSuccessOrder(result.merchantOrderId || orderId, `Duitku (${selectedChannel.name})`, true);
+          onSuccess: async () => {
+            const paid = await orderService.confirmGatewayPayment(order, orderId);
+            showCompletedOrder(paid ? { ...order, paymentStatus: 'Sudah Dibayar', shippingStatus: 'Diproses' } : order);
             setIsSubmitting(false);
           },
-          onPending: async (result) => {
-            await recordSuccessOrder(result.merchantOrderId || orderId, `Duitku Pending (${selectedChannel.name})`, false);
+          onPending: async () => {
+            showCompletedOrder(order);
             setIsSubmitting(false);
           },
           onError: (err) => {
@@ -280,9 +303,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
     if (isFreePlan) {
       // Toko dengan Paket Free memproses order manual (Transfer/WA/COD)
-      const orderId = `KB-${Date.now().toString().slice(-6)}`;
       const selectedName = selectedChannelId === 'cod' ? 'COD (Bayar di Tempat)' : 'Transfer Bank Manual';
-      recordSuccessOrder(orderId, selectedName, false);
+      createOrderRecord(selectedName)
+        .then(showCompletedOrder)
+        .catch((err) => alert('Gagal membuat pesanan: ' + (err?.message || 'Silakan coba lagi.')));
       return;
     }
 
@@ -296,8 +320,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const handleManualFinalizeOrder = async () => {
     setIsSubmitting(true);
     try {
-      const orderId = `KROOM-${Date.now()}`;
-      await recordSuccessOrder(orderId, selectedChannel.name, false);
+      showCompletedOrder(await createOrderRecord(selectedChannel.name));
     } catch {
       alert('Terjadi kesalahan saat memproses pesanan.');
     } finally {

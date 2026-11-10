@@ -1,6 +1,5 @@
 import { Order, ShippingStatus, CourierType, PaymentStatus, OrderItem } from '../types';
-import { supabase } from './supabaseClient';
-import { idService } from './idService';
+import { supabase, getSessionToken } from './supabaseClient';
 
 // ============================================================
 // MERCHANT DATA ISOLATION: localStorage dipartisi per storeId
@@ -143,6 +142,10 @@ class OrderService {
 
     let storeOrders = this.getStoredOrders(storeId);
 
+    // Pesanan hanya bisa dibaca pengelola toko yang login (RLS). Pengunjung tanpa sesi
+    // memakai salinan lokal agar cache-nya tidak terhapus oleh hasil kosong.
+    if (!getSessionToken()) return storeOrders;
+
     // Fetch from Supabase PostgreSQL Database (filter by store_id)
     try {
       const { data, error } = await supabase
@@ -184,93 +187,74 @@ class OrderService {
     return orders.find((o) => o.id === id);
   }
 
+  /**
+   * Buat pesanan lewat RPC `place_order`: harga, total, nomor pesanan, dan status (selalu
+   * belum dibayar) ditentukan database. Status lunas & saldo toko hanya diubah server
+   * setelah gateway pembayaran mengonfirmasi (lihat confirmGatewayPayment).
+   */
   async createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt'>): Promise<Order> {
-    const orders = this.getStoredOrders(orderData.storeId);
-    const orderNumber = `KB-${Math.floor(1000 + Math.random() * 9000)}`;
-    const orderId = await idService.generateNextId('orders');
-    const newOrder: Order = {
-      ...orderData,
-      id: orderId,
-      orderNumber,
-      createdAt: new Date().toISOString(),
-    };
-
-    // 1. Save locally for instantaneous response (partisi per storeId)
-    orders.unshift(newOrder);
-    this.saveOrders(orderData.storeId, orders);
-
-    // 2. Persist to Supabase Database
-    try {
-      const dbPaymentStatus = newOrder.paymentStatus === 'Sudah Dibayar' ? 'paid' : 'unpaid';
-      let dbOrderStatus = 'pending';
-      if (newOrder.shippingStatus === 'Dikirim') dbOrderStatus = 'shipped';
-      else if (newOrder.shippingStatus === 'Selesai') dbOrderStatus = 'delivered';
-      else if (newOrder.shippingStatus === 'Dibatalkan') dbOrderStatus = 'cancelled';
-      else if (newOrder.shippingStatus === 'Diproses') dbOrderStatus = 'processing';
-
-      const { error: orderErr } = await supabase.from('orders').insert([
-        {
-          id: newOrder.id,
-          store_id: newOrder.storeId,
-          order_number: newOrder.orderNumber,
-          customer_name: newOrder.customerName,
-          customer_phone: newOrder.customerPhone,
-          customer_email: newOrder.customerEmail || null,
-          shipping_address: newOrder.customerAddress,
-          shipping_city: newOrder.customerCity || 'Indonesia',
-          shipping_courier: newOrder.courier || 'Kurir Toko',
-          shipping_service: newOrder.courierService || 'Reguler',
-          shipping_cost: newOrder.shippingCost || 0,
-          tracking_number: newOrder.resiNumber || newOrder.trackingNumber || null,
-          total_amount: newOrder.grandTotal,
-          payment_method: newOrder.paymentMethod || 'Manual',
-          payment_status: dbPaymentStatus,
-          order_status: dbOrderStatus,
-          notes: newOrder.notes || null,
-          destination_address: newOrder.customerAddress,
-          destination_postal_code: newOrder.customerPostalCode || null,
-          created_at: newOrder.createdAt,
-          updated_at: new Date().toISOString(),
-        },
-      ]);
-
-      if (orderErr) {
-        console.warn('[Supabase Database] Error inserting order:', orderErr);
-      } else {
-        console.log(`[Supabase Database] Pesanan ${newOrder.orderNumber} tersimpan di cloud!`);
-      }
-
-      // Insert items
-      if (newOrder.items && newOrder.items.length > 0) {
-        const dbItems = await Promise.all(
-          newOrder.items.map(async (it) => {
-            const itemId = await idService.generateNextId('order_items');
-            return {
-              id: itemId,
-              order_id: newOrder.id,
-              product_id: it.productId || null,
-              product_name: it.productName,
-              product_image: it.productImage || null,
-              price: it.price,
-              quantity: it.quantity,
-              subtotal: it.subtotal,
-              variant_info: it.variantName || null,
-            };
-          })
-        );
-
-        const { error: itemsErr } = await supabase.from('order_items').insert(dbItems);
-        if (itemsErr) {
-          console.warn('[Supabase Database] Error inserting order_items:', itemsErr);
-        } else {
-          console.log(`[Supabase Database] ${dbItems.length} item pesanan tersimpan di cloud!`);
-        }
-      }
-    } catch (err) {
-      console.warn('[Supabase Database] Gagal sinkron pesanan ke cloud:', err);
+    const { data, error } = await supabase.rpc('place_order', {
+      p_store_id: orderData.storeId,
+      p_customer: {
+        name: orderData.customerName,
+        phone: orderData.customerPhone,
+        email: orderData.customerEmail || null,
+        address: orderData.customerAddress,
+      },
+      p_items: (orderData.items || []).map((it) => ({
+        product_id: it.productId,
+        quantity: it.quantity,
+        variant_info: it.variantName || null,
+      })),
+      p_shipping: {
+        cost: Math.max(0, Math.round(Number(orderData.shippingCost || 0))),
+        city: orderData.customerCity || null,
+        courier: orderData.courier || null,
+        service: orderData.courierService || null,
+        courier_code: orderData.courierCode || null,
+        postal_code: orderData.customerPostalCode || null,
+        origin_branch_id: orderData.originBranchId || null,
+      },
+      p_payment_method: orderData.paymentMethod || 'Manual',
+      p_notes: orderData.notes || null,
+    });
+    if (error || !data) {
+      console.error('[Supabase Database] Gagal membuat pesanan:', error);
+      throw new Error(error?.message || 'Gagal membuat pesanan. Silakan coba lagi.');
     }
 
+    const newOrder = mapSupabaseRowToOrder(data);
+    // Simpan di perangkat pembeli agar halaman status pesanan tetap bisa menampilkannya.
+    const orders = this.getStoredOrders(orderData.storeId);
+    orders.unshift(newOrder);
+    this.saveOrders(orderData.storeId, orders);
     return newOrder;
+  }
+
+  /**
+   * Minta server memeriksa status transaksi ke payment gateway; bila lunas, server menandai
+   * pesanan dibayar dan menambah saldo toko (sekali saja).
+   */
+  async confirmGatewayPayment(order: Order, merchantOrderId: string): Promise<boolean> {
+    try {
+      const res = await fetch('/api/orders/confirm-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id, merchantOrderId }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || !result?.paid) return false;
+    } catch (err) {
+      console.warn('[orderService] confirm-payment gagal:', err);
+      return false;
+    }
+    const orders = this.getStoredOrders(order.storeId);
+    const index = orders.findIndex((o) => o.id === order.id);
+    if (index !== -1) {
+      orders[index] = { ...orders[index], paymentStatus: 'Sudah Dibayar', shippingStatus: 'Diproses' };
+      this.saveOrders(order.storeId, orders);
+    }
+    return true;
   }
 
   async updateOrderStatus(orderId: string, shippingStatus: ShippingStatus, resiNumber?: string, storeId?: string): Promise<Order> {
@@ -361,19 +345,16 @@ class OrderService {
    * Dipanggil pembeli setelah membayar via QRIS / transfer langsung ke rekening toko.
    * Hanya menandai "sudah konfirmasi"; status lunas tetap ditentukan merchant setelah cek mutasi.
    */
-  async confirmPaymentByBuyer(orderId: string, storeId: string): Promise<string> {
-    const confirmedAt = new Date().toISOString();
-
-    const { error } = await supabase
-      .from('orders')
-      .update({ payment_confirmed_at: confirmedAt, updated_at: confirmedAt })
-      .eq('id', orderId)
-      .eq('store_id', storeId)
-      .eq('payment_status', 'unpaid');
+  async confirmPaymentByBuyer(orderId: string, storeId: string, orderNumber: string): Promise<string> {
+    const { data, error } = await supabase.rpc('buyer_confirm_payment', {
+      p_order_id: orderId,
+      p_order_number: orderNumber,
+    });
     if (error) {
       console.error('[Supabase Database] Gagal menyimpan konfirmasi pembayaran:', error);
       throw new Error('Gagal mengirim konfirmasi pembayaran. Silakan coba lagi.');
     }
+    const confirmedAt = String(data || new Date().toISOString());
 
     const orders = this.getStoredOrders(storeId);
     const index = orders.findIndex((o) => o.id === orderId);

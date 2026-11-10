@@ -30,6 +30,7 @@ import { resolveThemeForSections, HIDDEN_SECTION_IDS } from '../../themes/sectio
 import { storeService } from '../../services/storeService';
 import { fetchStoreBaseDomain } from '../../utils/storeDomain';
 import { useAuth } from '../../contexts/AuthContext';
+import { sessionHeaders } from '../../services/supabaseClient';
 
 interface LayoutPageProps {
   store: Store;
@@ -1318,7 +1319,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         const { domain: baseDomain } = await fetchStoreBaseDomain(currentStore);
         const releaseRes = await fetch('/api/deploy/unpublish', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: sessionHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ storeId: currentStore.id, baseDomain }),
         });
         if (!releaseRes.ok) console.warn('Release store hosts notice:', releaseRes.status);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ThemeSchema } from '../schema';
 import { Product, OrderItem, Order, BiteshipRateOption, StorePaymentConfig } from '../../types';
 import { HeaderSection } from '../sections/HeaderSection';
@@ -30,7 +30,6 @@ import { DEFAULT_MANUAL_INSTRUCTIONS, resolveManualInstructions } from '../../ut
 import { cartService } from '../../services/cartService';
 import { duitkuService } from '../../services/duitkuService';
 import { getDeviceClass } from '../../utils/responsivePreview';
-import { storeService } from '../../services/storeService';
 import { shippingService, INDONESIAN_CITIES } from '../../services/shippingService';
 import { integrationService } from '../../services/integrationService';
 import { adminService } from '../../services/adminService';
@@ -152,7 +151,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     setIsConfirmingPayment(true);
     setPaymentConfirmError(null);
     try {
-      const confirmedAt = await orderService.confirmPaymentByBuyer(createdOrder.id, createdOrder.storeId);
+      const confirmedAt = await orderService.confirmPaymentByBuyer(createdOrder.id, createdOrder.storeId, createdOrder.orderNumber);
       setCreatedOrder({ ...createdOrder, paymentConfirmedAt: confirmedAt });
     } catch (err: any) {
       setPaymentConfirmError(err?.message || 'Gagal mengirim konfirmasi pembayaran. Silakan coba lagi.');
@@ -647,7 +646,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
   };
 
-  const finalizeOrder = async (isPaid: boolean, methodDesc: string) => {
+  // Pesanan gateway yang sudah dibuat (belum lunas) dipakai ulang bila pembeli mencoba bayar lagi
+  // tanpa mengubah keranjang/ongkir, agar tidak tercipta pesanan ganda.
+  const pendingGatewayOrderRef = useRef<{ key: string; order: Order } | null>(null);
+
+  const createOrderRecord = async (methodDesc: string): Promise<Order> => {
     const orderItems: OrderItem[] = sampleItems.map((s) => ({
       productId: s.id,
       productName: s.name,
@@ -673,7 +676,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
     const formattedFullAddress = fullAddressParts.join(', ');
 
-    const newOrder = await orderService.createOrder({
+    return orderService.createOrder({
       storeId: store?.id || '',
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
@@ -687,19 +690,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       discount: 0,
       grandTotal: total,
       paymentMethod: methodDesc as any,
-      paymentStatus: isPaid ? 'Sudah Dibayar' : 'Belum Dibayar',
+      paymentStatus: 'Belum Dibayar',
       courier: (selectedRate?.courier_code?.toUpperCase() || 'KURIR') as any,
       courierCode: selectedRate?.courier_code || 'kurir',
       courierService: selectedRate ? `${selectedRate.courier_service_name} • ${selectedRate.etd}` : 'Reguler',
       shippingStatus: 'Baru',
       notes: `Alamat: ${formattedFullAddress}. Kurir: ${courierDisplayName}. Ongkir: Rp ${shippingFee.toLocaleString('id-ID')}`,
     });
+  };
 
-    if (isPaid && store?.id) {
-      const currentBalance = store.balance || 0;
-      await storeService.updateStore(store.id, { balance: currentBalance + total });
-    }
-
+  /** Tampilkan halaman selesai. Saldo toko tidak lagi ditambah dari browser (server yang mengurus). */
+  const completeOrder = (newOrder: Order) => {
+    pendingGatewayOrderRef.current = null;
     setCreatedOrder(newOrder);
     setIsCompleted(true);
     if (store?.slug) {
@@ -745,7 +747,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     if (selectedOption?.type === 'cod' || selectedPaymentId === 'cod') {
       setIsSubmitting(true);
       try {
-        await finalizeOrder(false, 'Bayar di Tempat (COD)');
+        completeOrder(await createOrderRecord('Bayar di Tempat (COD)'));
       } catch (err: any) {
         console.error('COD checkout error:', err);
         alert('Gagal memproses pesanan COD: ' + (err?.message || 'Silakan coba lagi.'));
@@ -760,7 +762,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       setIsSubmitting(true);
       try {
         const title = `QRIS & Transfer Bank Langsung (${paymentConfig.manualBankName || 'Toko'})`;
-        await finalizeOrder(false, title);
+        completeOrder(await createOrderRecord(title));
       } catch (err: any) {
         console.error('Manual transfer checkout error:', err);
         alert('Gagal memproses pesanan: ' + (err?.message || 'Silakan coba lagi.'));
@@ -773,41 +775,58 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     // 3. Automated Gateway (Duitku)
     setIsSubmitting(true);
     try {
-      const orderId = `INV-${Date.now()}`;
       const duitkuMethod = mapPaymentIdToDuitkuMethod(selectedPaymentId);
       const methodLabel = selectedOption?.name || 'Payment Gateway';
+      const orderKey = JSON.stringify([
+        sampleItems.map((s) => [s.id, s.quantity || 1]),
+        shippingFee,
+        selectedPaymentId,
+        customerName.trim(),
+        customerPhone.trim(),
+        selectedPostalCode,
+      ]);
+      // Pesanan dibuat dulu (belum dibayar); nominal tagihan diambil dari total versi database.
+      const order =
+        pendingGatewayOrderRef.current?.key === orderKey
+          ? pendingGatewayOrderRef.current.order
+          : await createOrderRecord(`Duitku (${methodLabel})`);
+      pendingGatewayOrderRef.current = { key: orderKey, order };
+      // Sufiks unik per percobaan bayar; server mencocokkan awalan dengan nomor pesanan.
+      const orderId = `${order.orderNumber}-${Date.now().toString(36)}`;
 
       await duitkuService.payWithDuitku(
         {
           orderId,
-          grossAmount: total,
+          grossAmount: order.grandTotal,
           customerName: customerName.trim(),
           customerEmail: customerEmail.trim() || 'customer@example.com',
           customerPhone: customerPhone.trim(),
           paymentMethod: duitkuMethod,
-          productDetails: `Pesanan ${orderId} - ${store?.name || 'Store'}`,
+          productDetails: `Pesanan ${order.orderNumber} - ${store?.name || 'Store'}`,
+          // Rincian memakai harga dari database agar jumlahnya sama dengan total tagihan.
           items: [
-            ...sampleItems.map((s) => ({
-              id: s.id,
-              name: s.name,
-              price: s.price,
-              quantity: s.quantity || 1,
+            ...order.items.map((it) => ({
+              id: it.productId,
+              name: it.productName,
+              price: it.price,
+              quantity: it.quantity,
             })),
             {
               id: 'shipping-charge',
               name: `Ongkir (${selectedRate?.courier_name || 'Pengiriman'})`,
-              price: shippingFee,
+              price: order.shippingCost,
               quantity: 1,
             },
           ],
         },
         {
-          onSuccess: async (result) => {
-            await finalizeOrder(true, `Duitku (${methodLabel})`);
+          onSuccess: async () => {
+            const paid = await orderService.confirmGatewayPayment(order, orderId);
+            completeOrder(paid ? { ...order, paymentStatus: 'Sudah Dibayar', shippingStatus: 'Diproses' } : order);
             setIsSubmitting(false);
           },
-          onPending: async (result) => {
-            await finalizeOrder(false, `Duitku Pending (${methodLabel})`);
+          onPending: async () => {
+            completeOrder(order);
             setIsSubmitting(false);
           },
           onError: (err) => {

@@ -9,6 +9,7 @@ import { deployRouter } from './backend/deployController';
 import { authRouter } from './backend/authController';
 import { readPlatformSettings } from './backend/platformSettings';
 import { pool } from './backend/publicApiController';
+import { requireAdmin } from './backend/sessionAuth';
 import { sendMail, MailerNotConfiguredError } from './backend/mailer';
 import { publicApiRouter } from './backend/publicApiController';
 import { partnerApiRouter } from './backend/partnerApiController';
@@ -52,8 +53,11 @@ app.get(['/health', '/api/health'], (_req, res) => {
 const emailRateLimit = new Map<string, { count: number; resetAt: number }>();
 
 // 1. Endpoint Kirim Email dengan Proteksi Anti-Spam & Rate Limiting
+// Hanya super admin (sesi LapakQ) yang boleh mengirim email lewat SMTP platform;
+// sebelumnya endpoint ini terbuka dan bisa dipakai siapa pun untuk spam/phishing.
 app.post('/api/send-email', async (req, res) => {
   try {
+    if (!(await requireAdmin(req, res))) return;
     const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
     const now = Date.now();
     const limitInfo = emailRateLimit.get(clientIp);
@@ -287,8 +291,9 @@ app.get('/api/midtrans/status', async (req, res) => {
 });
 
 // 3c. Endpoint Tes Ping & Diagnosa Kunci Midtrans
-app.get('/api/midtrans/test-ping', async (_req, res) => {
+app.get('/api/midtrans/test-ping', async (req, res) => {
   try {
+    if (!(await requireAdmin(req, res))) return;
     const { serverKey, env } = await getMidtransConfig();
     if (!serverKey) {
       return res.status(400).json({ success: false, message: 'MIDTRANS_SERVER_KEY belum disetel' });
@@ -347,7 +352,8 @@ app.get('/api/midtrans/test-ping', async (_req, res) => {
 app.post('/api/midtrans/notification', async (req, res) => {
   try {
     const notif = req.body || {};
-    const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+    const { serverKey } = await getMidtransConfig();
+    if (!serverKey) return res.status(500).json({ error: 'MIDTRANS_SERVER_KEY belum dikonfigurasi' });
     const orderId = notif.order_id || '';
     const statusCode = notif.status_code || '';
     const grossAmount = notif.gross_amount || '';
@@ -362,6 +368,9 @@ app.post('/api/midtrans/notification', async (req, res) => {
       return res.status(403).json({ error: 'Invalid Midtrans Signature Key' });
     }
 
+    if (isMidtransPaid(notif)) {
+      await applyGatewayPayment(String(orderId), Math.round(Number(grossAmount)));
+    }
     return res.status(200).json({ success: true, message: 'Notification verified successfully' });
   } catch (err: any) {
     return res.status(500).json({ error: err?.message || 'Webhook processing error' });
@@ -669,6 +678,117 @@ async function fetchDuitkuStatus(merchantOrderId: string): Promise<any> {
   return statusRes.json();
 }
 
+const isMidtransPaid = (data: any) => {
+  const status = String(data?.transaction_status || '');
+  if (status === 'settlement') return true;
+  return status === 'capture' && String(data?.fraud_status || 'accept') === 'accept';
+};
+
+async function fetchMidtransStatus(orderId: string): Promise<any> {
+  const { serverKey, env } = await getMidtransConfig();
+  if (!serverKey) throw new Error('MIDTRANS_SERVER_KEY belum dikonfigurasi');
+  const apiUrl =
+    env === 'production'
+      ? `https://api.midtrans.com/v2/${encodeURIComponent(orderId)}/status`
+      : `https://api.sandbox.midtrans.com/v2/${encodeURIComponent(orderId)}/status`;
+  const statusRes = await fetch(apiUrl, {
+    headers: { Accept: 'application/json', Authorization: `Basic ${Buffer.from(serverKey + ':').toString('base64')}` },
+    signal: AbortSignal.timeout(15_000),
+  });
+  return statusRes.json();
+}
+
+/**
+ * Tanyakan langsung ke gateway (Duitku lalu Midtrans) apakah ID transaksi ini lunas.
+ * Nominal yang dipakai berasal dari gateway, bukan dari browser.
+ */
+async function verifyGatewayPayment(merchantOrderId: string): Promise<{ paid: boolean; amount: number; message: string }> {
+  let message = 'Pembayaran belum lunas.';
+  try {
+    const duitku = await fetchDuitkuStatus(merchantOrderId);
+    if (String(duitku?.statusCode) === '00') {
+      return { paid: true, amount: Math.round(Number(duitku.amount)), message: 'Lunas' };
+    }
+    if (duitku?.statusMessage) message = String(duitku.statusMessage);
+  } catch {}
+  try {
+    const midtrans = await fetchMidtransStatus(merchantOrderId);
+    if (isMidtransPaid(midtrans)) {
+      return { paid: true, amount: Math.round(Number(midtrans.gross_amount)), message: 'Lunas' };
+    }
+  } catch {}
+  return { paid: false, amount: 0, message };
+}
+
+/** Catat pembayaran pesanan/domain yang sudah diverifikasi gateway (idempoten di database). */
+async function applyGatewayPayment(merchantOrderId: string, amount: number): Promise<{ order: any; domain: any }> {
+  if (!Number.isFinite(amount) || amount <= 0) return { order: null, domain: null };
+  let order: any = null;
+  let domain: any = null;
+  try {
+    if (/^(DOM-|INV-DOM)/.test(merchantOrderId)) {
+      const r = await pool.query('SELECT app_private.mark_domain_paid($1, $2) AS result', [merchantOrderId, amount]);
+      domain = r.rows[0]?.result || null;
+    } else {
+      const r = await pool.query('SELECT app_private.mark_order_paid($1, $2) AS result', [merchantOrderId, amount]);
+      order = r.rows[0]?.result || null;
+    }
+  } catch (err: any) {
+    console.error('[applyGatewayPayment]', merchantOrderId, err?.message);
+  }
+  return { order, domain };
+}
+
+const GATEWAY_ID_RE = /^[A-Za-z0-9_-]{3,64}$/;
+
+// 4b.2a Pembeli menyelesaikan pembayaran pesanan: server memeriksa status ke gateway lalu
+// menandai lunas & menambah saldo toko. Browser tidak lagi menulis payment_status/balance.
+app.post('/api/orders/confirm-payment', async (req, res) => {
+  try {
+    const orderId = String(req.body?.orderId || '').trim();
+    const merchantOrderId = String(req.body?.merchantOrderId || '').trim();
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(orderId) || !GATEWAY_ID_RE.test(merchantOrderId)) {
+      return res.status(400).json({ success: false, message: 'ID pesanan tidak valid.' });
+    }
+    const orderRes = await pool.query('SELECT order_number FROM orders WHERE id = $1 LIMIT 1', [orderId]);
+    const order = orderRes.rows[0];
+    if (!order) return res.status(404).json({ success: false, message: 'Pesanan tidak ditemukan.' });
+    if (merchantOrderId !== order.order_number && !merchantOrderId.startsWith(`${order.order_number}-`)) {
+      return res.status(400).json({ success: false, message: 'ID transaksi tidak cocok dengan pesanan.' });
+    }
+    const status = await verifyGatewayPayment(merchantOrderId);
+    if (!status.paid) return res.status(200).json({ success: false, paid: false, message: status.message });
+    const applied = await applyGatewayPayment(merchantOrderId, status.amount);
+    if (!applied.order) return res.status(409).json({ success: false, paid: false, message: 'Nominal pembayaran tidak sesuai pesanan.' });
+    return res.status(200).json({ success: true, paid: true, ...applied.order });
+  } catch (err: any) {
+    console.error('[Orders confirm-payment]', err?.message);
+    return res.status(502).json({ success: false, message: 'Gagal memverifikasi pembayaran. Coba lagi beberapa saat.' });
+  }
+});
+
+// 4b.2c Merchant menyelesaikan pembayaran domain: aktivasi hanya setelah gateway menyatakan lunas.
+app.post('/api/domains/confirm-payment', async (req, res) => {
+  try {
+    const requestId = String(req.body?.requestId || '').trim();
+    const merchantOrderId = String(req.body?.merchantOrderId || '').trim();
+    if (!/^[A-Za-z0-9_-]{1,60}$/.test(requestId) || !GATEWAY_ID_RE.test(merchantOrderId)
+        || !merchantOrderId.startsWith(`DOM-${requestId}-`)) {
+      return res.status(400).json({ success: false, message: 'ID tagihan domain tidak valid.' });
+    }
+    const status = await verifyGatewayPayment(merchantOrderId);
+    if (!status.paid) return res.status(200).json({ success: false, paid: false, message: status.message });
+    const applied = await applyGatewayPayment(merchantOrderId, status.amount);
+    if (!applied.domain) {
+      return res.status(409).json({ success: false, paid: false, message: 'Tagihan domain belum disetujui atau nominal tidak sesuai.' });
+    }
+    return res.status(200).json({ success: true, paid: true, ...applied.domain });
+  } catch (err: any) {
+    console.error('[Domains confirm-payment]', err?.message);
+    return res.status(502).json({ success: false, message: 'Gagal memverifikasi pembayaran. Coba lagi beberapa saat.' });
+  }
+});
+
 // 4b.2b Konfirmasi pembayaran paket dari halaman Billing: server sendiri yang menanyakan status
 // ke Duitku, lalu mengaktifkan paket bila lunas. Browser tidak bisa lagi menandai "paid".
 app.post('/api/billing/confirm-payment', async (req, res) => {
@@ -750,6 +870,7 @@ app.post('/api/duitku/check-status', async (req, res) => {
 // 4b.4 Test Connection Duitku
 app.post('/api/duitku/test-connection', async (req, res) => {
   try {
+    if (!(await requireAdmin(req, res))) return;
     const { merchantCode, apiKey, env } = await getDuitkuConfig();
     if (!merchantCode || !apiKey) {
       return res.status(400).json({
@@ -845,15 +966,8 @@ app.post(['/api/payment/callback', '/api/callback', '/api/duitku/callback'], asy
         console.error('[Duitku Callback Subscription Handler Error]', subErr);
       }
 
-      // 2. Order produk
-      try {
-        await pool.query(
-          `UPDATE orders SET payment_status = 'paid', order_status = 'processing', updated_at = now() WHERE order_number = $1`,
-          [merchantOrderId]
-        );
-      } catch (orderErr) {
-        console.error('[Duitku Callback Order Update Error]', orderErr);
-      }
+      // 2. Order produk / domain: nominal dicocokkan dengan tagihan & saldo dikredit sekali saja.
+      await applyGatewayPayment(String(merchantOrderId), Math.round(Number(amount)));
     }
 
     // Duitku mewajibkan respon HTTP 200 dengan text "Success" atau "OK"

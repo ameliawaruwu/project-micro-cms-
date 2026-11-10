@@ -21,6 +21,12 @@ export const setSessionToken = (token: string | null | undefined): void => {
   } catch {}
 };
 
+/** Header untuk endpoint server `/api/...` yang memeriksa sesi login (deploy, email, tes gateway). */
+export const sessionHeaders = (extra: Record<string, string> = {}): Record<string, string> => {
+  const token = getSessionToken();
+  return token ? { ...extra, 'x-lapakq-session': token } : { ...extra };
+};
+
 /**
  * Kirim token sesi di header `x-lapakq-session` pada setiap permintaan database (PostgREST).
  * Database memakainya untuk mengenali pemanggil (app_private.session_user_id) pada aturan RLS.

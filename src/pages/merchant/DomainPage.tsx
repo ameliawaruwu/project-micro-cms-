@@ -213,7 +213,8 @@ export const DomainPage: React.FC<DomainPageProps> = ({
     if (!activeRequest || activeRequest.status !== 'approved') return;
 
     setIsPaying(true);
-    const orderId = `DOM-${Date.now()}`;
+    // Server mencocokkan awalan DOM-<id permintaan>- lalu menanyakan status lunas ke gateway.
+    const orderId = `DOM-${activeRequest.id}-${Date.now().toString(36)}`;
 
     try {
       await midtransService.payWithSnap(
@@ -225,7 +226,18 @@ export const DomainPage: React.FC<DomainPageProps> = ({
         },
         {
           onSuccess: async () => {
-            await domainRequestService.markAsPaidAndActivate(activeRequest.id);
+            const paid = await domainRequestService.confirmDomainPayment(activeRequest.id, orderId);
+            if (!paid) {
+              setIsPaying(false);
+              setAlert({
+                type: 'info',
+                message: isEn
+                  ? 'Payment received. The domain will be activated as soon as the payment gateway confirms it.'
+                  : 'Pembayaran diterima. Domain akan aktif segera setelah payment gateway mengonfirmasi pembayaran.',
+              });
+              await loadDomainRequest();
+              return;
+            }
             await domainService.connectCustomDomain(store.id, activeRequest.fullDomain);
             await loadDomainRequest();
             setIsConnected(true);

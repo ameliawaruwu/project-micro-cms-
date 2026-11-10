@@ -1,5 +1,5 @@
 import { storeService } from './storeService';
-import { supabase } from './supabaseClient';
+import { supabase, sessionHeaders } from './supabaseClient';
 
 export interface DomainConnectResult {
   success: boolean;
@@ -42,9 +42,9 @@ class DomainService {
       // 1. Daftarkan domain ke Kroombox Panel (lewat backend toko)
       const res = await fetch('/api/deploy/domains/connect', {
         method: 'POST',
-        headers: {
+        headers: sessionHeaders({
           'Content-Type': 'application/json',
-        },
+        }),
         body: JSON.stringify({
           storeId,
           hostname: cleanHost,
@@ -181,9 +181,9 @@ class DomainService {
       // 3. Lepas domain dari Kroombox Panel. WHY: server hanya melepas domain yang tidak lagi dipakai toko.
       const releaseRes = await fetch('/api/deploy/domains/disconnect', {
         method: 'POST',
-        headers: {
+        headers: sessionHeaders({
           'Content-Type': 'application/json',
-        },
+        }),
         body: JSON.stringify({
           storeId,
           hostname: cleanHost,

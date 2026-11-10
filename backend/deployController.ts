@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { panelDomainClient, PanelResult } from './panelDomainClient';
 import { pool } from './publicApiController';
+import { requireStoreManager } from './sessionAuth';
 
 // Publishing a store = adding <slug>.lapakq.com (and the merchant's custom domain, if any) as a
 // host of this app through the Kroombox Panel API. The SPA already renders the store from the
@@ -112,6 +113,7 @@ deployRouter.post('/publish', async (req: Request, res: Response) => {
     if (RESERVED_SLUGS.has(slug)) return res.status(400).json({ error: 'Alamat toko ini dicadangkan sistem' });
     const baseDomain = cleanBaseDomain(req.body?.baseDomain);
     if (!baseDomain) return res.status(400).json({ error: 'Domain induk toko tidak valid' });
+    if (!(await requireStoreManager(req, res, storeId))) return;
 
     const store = await findStoreById(storeId);
     if (!store) return res.status(404).json({ error: 'Toko tidak ditemukan' });
@@ -173,6 +175,7 @@ deployRouter.post('/unpublish', async (req: Request, res: Response) => {
     const storeId = requireStoreId(req.body?.storeId);
     const baseDomain = cleanBaseDomain(req.body?.baseDomain);
     if (!storeId || !baseDomain) return res.status(400).json({ error: 'ID toko wajib diisi' });
+    if (!(await requireStoreManager(req, res, storeId))) return;
 
     const store = await findStoreById(storeId);
     if (!store) return res.status(404).json({ error: 'Toko tidak ditemukan' });
@@ -226,6 +229,7 @@ deployRouter.post('/domains/connect', async (req: Request, res: Response) => {
   if (host.endsWith(`.${PUBLIC_BASE_DOMAIN}`) || host === PUBLIC_BASE_DOMAIN) {
     return res.status(400).json({ error: `Gunakan domain milik Anda sendiri, bukan ${PUBLIC_BASE_DOMAIN}` });
   }
+  if (!(await requireStoreManager(req, res, storeId))) return;
   const store = await findStoreById(storeId);
   if (!store) return res.status(404).json({ error: 'Toko tidak ditemukan' });
   const result = await panelDomainClient.addHost(host);
@@ -237,6 +241,7 @@ deployRouter.post('/domains/disconnect', async (req: Request, res: Response) => 
   const storeId = requireStoreId(req.body?.storeId);
   const host = cleanHost(req.body?.hostname);
   if (!storeId || !HOST_RE.test(host)) return res.status(400).json({ error: 'ID toko dan domain wajib valid' });
+  if (!(await requireStoreManager(req, res, storeId))) return;
   const store = await findStoreById(storeId);
   if (!store) return res.status(404).json({ error: 'Toko tidak ditemukan' });
   const inUse = await hostInUse(host);

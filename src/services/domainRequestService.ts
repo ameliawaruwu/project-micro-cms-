@@ -477,7 +477,29 @@ class DomainRequestService {
   }
 
   /**
-   * Menandai domain lunas dan aktifkan koneksi ke toko
+   * Minta server memverifikasi pembayaran domain ke payment gateway. Server yang menandai
+   * permintaan aktif & memasang custom_domain toko; browser hanya memperbarui cache lokal.
+   */
+  async confirmDomainPayment(requestId: string, merchantOrderId: string): Promise<boolean> {
+    try {
+      const res = await fetch('/api/domains/confirm-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, merchantOrderId }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || !result?.paid) return false;
+    } catch (err) {
+      console.warn('[domainRequestService] confirm-payment gagal:', err);
+      return false;
+    }
+    await this.markAsPaidAndActivate(requestId);
+    return true;
+  }
+
+  /**
+   * Menandai domain lunas dan aktifkan koneksi ke toko (cache lokal; perubahan database
+   * untuk merchant ditolak RLS — status aktif hanya ditulis server / super admin).
    */
   async markAsPaidAndActivate(requestId: string): Promise<boolean> {
     const adminCached = this.getAdminStoredRequests();

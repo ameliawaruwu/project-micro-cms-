@@ -1,12 +1,40 @@
 import { Community, CommunityTurnoverInvoice, Store, Order, User } from '../types';
 import { storeService } from './storeService';
-import { supabase } from './supabaseClient';
+import { supabase, getSessionToken } from './supabaseClient';
 import { storeInCommunity, addExtraMembership, removeExtraMembership } from '../utils/communityMembership';
 import { getWibIsoString } from '../utils/formatters';
 import { authService, passwordProblem } from './authService';
 import { idService } from './idService';
 
 const COMMUNITIES_KEY = 'microcms_communities_v1';
+
+// Kolom publik tabel communities. Email/telepon koordinator & sub admin tidak bisa dibaca
+// langsung (REVOKE di database); hanya lewat RPC community_contacts untuk admin/staf.
+const PUBLIC_COMMUNITY_COLUMNS =
+  'id, name, slug, description, coordinator_name, turnover_fee_percent, logo_url, status, created_at, updated_at, base_domain, sub_admin_name';
+
+type CommunityContact = {
+  id: string;
+  coordinator_email: string | null;
+  coordinator_phone: string | null;
+  sub_admin_email: string | null;
+  sub_admin_phone: string | null;
+};
+
+/** Kontak komunitas yang boleh dilihat user login (super admin: semua; staf: komunitasnya). */
+async function fetchCommunityContacts(): Promise<Map<string, CommunityContact>> {
+  const map = new Map<string, CommunityContact>();
+  if (!getSessionToken()) return map;
+  try {
+    const { data, error } = await supabase.rpc('community_contacts');
+    if (!error && Array.isArray(data)) {
+      for (const row of data as CommunityContact[]) map.set(String(row.id), row);
+    }
+  } catch (e) {
+    console.warn('[communityService] Gagal mengambil kontak komunitas:', e);
+  }
+  return map;
+}
 const INVOICES_KEY = 'microcms_community_invoices_v1';
 
 export const DEFAULT_COMMUNITIES: Community[] = [];
@@ -39,19 +67,20 @@ class CommunityService {
 
   public async fetchCommunitiesFromDatabase(): Promise<Community[]> {
     try {
-      const { data, error } = await supabase
-        .from('communities')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const [{ data, error }, contacts] = await Promise.all([
+        supabase.from('communities').select(PUBLIC_COMMUNITY_COLUMNS).order('created_at', { ascending: false }),
+        fetchCommunityContacts(),
+      ]);
 
       if (!error && data) {
-        const mapped: Community[] = data
+        const mapped: Community[] = (data as any[])
           .filter(
             (r) =>
               r.id !== 'comm_sentra_umkm' &&
               r.id !== 'comm_default' &&
               r.slug !== 'sentra-umkm'
           )
+          .map((row) => ({ ...row, ...(contacts.get(String(row.id)) || {}) }))
           .map((r) => ({
             id: r.id,
             name: r.name,
@@ -107,22 +136,21 @@ class CommunityService {
     try {
       const { data } = await supabase
         .from('communities')
-        .select('*')
+        .select(PUBLIC_COMMUNITY_COLUMNS)
         .or(`slug.ilike.${clean},name.ilike.${clean},id.ilike.${clean}`)
         .maybeSingle();
 
       if (data) {
+        // Kontak tidak ikut dibaca di sini (tidak publik).
         return {
           id: data.id,
           name: data.name,
           slug: data.slug,
           description: data.description || '',
           subAdminName: data.sub_admin_name || undefined,
-          subAdminEmail: data.sub_admin_email || undefined,
-          subAdminPhone: data.sub_admin_phone || undefined,
           coordinatorName: data.coordinator_name || '',
-          coordinatorEmail: data.coordinator_email,
-          coordinatorPhone: data.coordinator_phone || '',
+          coordinatorEmail: '',
+          coordinatorPhone: '',
           turnoverFeePercent: Number(data.turnover_fee_percent || 2.5),
           logoUrl: data.logo_url || undefined,
           status: data.status || 'active',

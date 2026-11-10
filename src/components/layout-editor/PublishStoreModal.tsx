@@ -28,6 +28,7 @@ import { billingPlanService } from '../../services/billingPlanService';
 import { storeService } from '../../services/storeService';
 import { useStoreBaseDomain } from '../../utils/storeDomain';
 import confetti from 'canvas-confetti';
+import { sessionHeaders } from '../../services/supabaseClient';
 
 interface PublishStoreModalProps {
   isOpen: boolean;
@@ -213,7 +214,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
     try {
       const response = await fetch('/api/deploy/publish', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: sessionHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           storeId: store.id,
           slug: cleanSlug,
