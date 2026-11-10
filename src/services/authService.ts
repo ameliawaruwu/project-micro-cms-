@@ -10,6 +10,16 @@ const AUTH_STORE_KEY = 'microcms_active_store';
 const ACCOUNTS_KEY = 'microcms_accounts_v1';
 const ACTIVE_STORE_ID_KEY = 'microcms_active_store_id';
 
+/**
+ * Aturan password baru. Halaman login membuang spasi di awal/akhir, jadi password yang
+ * diawali/diakhiri spasi tidak akan pernah bisa dipakai masuk — tolak sejak dibuat.
+ */
+export function passwordProblem(p: string | undefined | null): string | null {
+  if (!p || p.length < 8) return 'Kata sandi minimal 8 karakter.';
+  if (p !== p.trim()) return 'Kata sandi tidak boleh diawali atau diakhiri spasi.';
+  return null;
+}
+
 export function getWibIsoString(date: Date = new Date()): string {
   const pad = (n: number, digits: number = 2) => String(n).padStart(digits, '0');
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -49,7 +59,7 @@ let adminCredential: { email: string; password: string } | null = null;
 /** Pesan error dari RPC Supabase dalam bahasa yang dipahami pengguna. */
 const rpcErrorMessage = (err: any, fallback: string): string => {
   const msg = String(err?.message || '');
-  if (/minimal 8 karakter|tidak valid|tidak dikenal|dikunci/i.test(msg)) return msg;
+  if (/minimal 8 karakter|spasi|tidak valid|tidak dikenal|dikunci/i.test(msg)) return msg;
   return fallback;
 };
 
@@ -365,9 +375,8 @@ class AuthService {
       }
     }
 
-    if (!params.password || params.password.length < 8) {
-      throw new Error('Kata sandi minimal 8 karakter.');
-    }
+    const pwProblem = passwordProblem(params.password);
+    if (pwProblem) throw new Error(pwProblem);
 
     // Resolusi kode komunitas jika diisi calon merchant
     let matchedCommunity: any = undefined;
@@ -792,9 +801,8 @@ class AuthService {
   }
 
   async resetPassword(email: string, token: string, newPassword: string): Promise<boolean> {
-    if (!newPassword || newPassword.length < 8) {
-      throw new Error('Kata sandi baru minimal 8 karakter.');
-    }
+    const pwProblem = passwordProblem(newPassword);
+    if (pwProblem) throw new Error(pwProblem);
     const { data, error } = await supabase.rpc('complete_password_reset', {
       p_email: email.toLowerCase().trim(),
       p_token: token.trim(),
@@ -933,6 +941,8 @@ class AuthService {
       const email = this.getCurrentUser().user?.email;
       if (!email) throw new Error('Sesi tidak valid. Silakan masuk ulang.');
       if (!data.currentPassword) throw new Error('Masukkan kata sandi saat ini untuk mengganti kata sandi.');
+      const pwProblem = passwordProblem(data.newPassword);
+      if (pwProblem) throw new Error(pwProblem);
       const { data: res, error } = await supabase.rpc('change_my_password', {
         p_email: email,
         p_old_password: data.currentPassword,

@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { authService, getWibIsoString } from './authService';
+import { authService, getWibIsoString, passwordProblem } from './authService';
 import { User } from '../types';
 
 export type ManagedRole = User['role'];
@@ -73,7 +73,8 @@ class UserAdminService {
     const name = input.name.trim();
     if (!name) throw new Error('Nama wajib diisi.');
     if (!isValidEmail(email)) throw new Error('Format email tidak valid.');
-    if (!input.password || input.password.length < 8) throw new Error('Password minimal 8 karakter.');
+    const pwProblem = passwordProblem(input.password);
+    if (pwProblem) throw new Error(pwProblem);
     if (isCommunityRole(input.role) && !input.communityId) throw new Error('Pilih komunitas untuk peran admin komunitas.');
 
     const { data: existing } = await supabase.from('users').select('id').eq('email', email).maybeSingle();
@@ -99,7 +100,7 @@ class UserAdminService {
       p_community_name: community ? input.communityName || null : null,
       p_user_id: userId || null,
     });
-    if (error) throw new Error(/minimal 8|tidak valid|tidak dikenal/i.test(error.message) ? error.message : 'Gagal menyimpan user.');
+    if (error) throw new Error(/minimal 8|spasi|tidak valid|tidak dikenal/i.test(error.message) ? error.message : 'Gagal menyimpan user.');
     if (!data?.success || !data.user) throw new Error(data?.message || 'Gagal menyimpan user.');
     // Super admin mengganti password akunnya sendiri: aksi admin berikutnya memakai password baru.
     if (input.password) authService.refreshAdminCredential(email, input.password);
@@ -121,7 +122,8 @@ class UserAdminService {
     };
     if (input.password) {
       // Ganti password akun lain hanya lewat RPC admin (password tidak bisa ditulis langsung dari browser).
-      if (input.password.length < 8) throw new Error('Password minimal 8 karakter.');
+      const pwProblem = passwordProblem(input.password);
+      if (pwProblem) throw new Error(pwProblem);
       return this.adminUpsert(input, input.email.toLowerCase().trim(), name, id);
     }
 

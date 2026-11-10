@@ -3,7 +3,7 @@ import { storeService } from './storeService';
 import { supabase } from './supabaseClient';
 import { storeInCommunity, addExtraMembership, removeExtraMembership } from '../utils/communityMembership';
 import { getWibIsoString } from '../utils/formatters';
-import { authService } from './authService';
+import { authService, passwordProblem } from './authService';
 import { idService } from './idService';
 
 const COMMUNITIES_KEY = 'microcms_communities_v1';
@@ -168,8 +168,9 @@ class CommunityService {
     const cleanCoordEmail = data.coordinatorEmail.toLowerCase().trim();
     const coordPhone = (data.coordinatorPhone || '').trim();
     const plainCoordPassword = data.password || '';
-    if (plainSubAdminPassword.length < 8 || plainCoordPassword.length < 8) {
-      throw new Error('Password akun admin komunitas wajib diisi, minimal 8 karakter.');
+    const pwProblem = passwordProblem(plainSubAdminPassword) || passwordProblem(plainCoordPassword);
+    if (pwProblem) {
+      throw new Error(`Password akun admin komunitas: ${pwProblem}`);
     }
     // Konfirmasi kredensial super admin di awal agar komunitas tidak dibuat setengah jalan.
     const adminCred = authService.getAdminCredential();
