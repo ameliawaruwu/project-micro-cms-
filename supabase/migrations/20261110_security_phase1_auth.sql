@@ -23,6 +23,8 @@
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS failed_login_count integer NOT NULL DEFAULT 0;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS locked_until timestamptz;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS reset_attempts integer NOT NULL DEFAULT 0;
+-- reset_token kini menyimpan hash bcrypt (60 karakter), bukan kode 6 digit polos.
+ALTER TABLE public.users ALTER COLUMN reset_token TYPE varchar(255);
 
 -- -----------------------------------------------------------------------------
 -- Helper privat (tidak terekspos lewat PostgREST)

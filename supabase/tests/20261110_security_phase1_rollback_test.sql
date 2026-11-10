@@ -8,6 +8,7 @@ CREATE TEMP TABLE zz_seq ON COMMIT DROP AS SELECT last_value, is_called FROM pub
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS failed_login_count integer NOT NULL DEFAULT 0;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS locked_until timestamptz;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS reset_attempts integer NOT NULL DEFAULT 0;
+ALTER TABLE public.users ALTER COLUMN reset_token TYPE varchar(255);
 CREATE SCHEMA IF NOT EXISTS app_private;
 REVOKE ALL ON SCHEMA app_private FROM PUBLIC, anon, authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA app_private REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon, authenticated;
