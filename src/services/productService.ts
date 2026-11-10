@@ -385,7 +385,13 @@ class ProductService {
     });
   }
 
-  async deleteProduct(id: string, storeId?: string): Promise<void> {
+  /**
+   * Menghapus produk dari database lalu dari cache lokal.
+   * `requireDatabase: true` (dipakai panel admin) membuat penghapusan gagal dengan error
+   * bila database menolak atau tidak ada baris yang terhapus, sehingga produk tidak
+   * "hilang" di layar padahal masih ada di database.
+   */
+  async deleteProduct(id: string, storeId?: string, options: { requireDatabase?: boolean } = {}): Promise<void> {
     // Temukan storeId yang tepat untuk isolasi
     const resolvedStoreId = storeId || this._findStoreIdForProduct(id);
 
@@ -395,11 +401,15 @@ class ProductService {
       if (resolvedStoreId) {
         query = query.eq('store_id', resolvedStoreId); // <- ownership check
       }
-      const { error } = await query;
+      const { data, error } = await query.select('id');
       if (error) {
-        console.warn('[Supabase Database Delete]:', error.message);
+        throw new Error(error.message || 'Gagal menghapus produk dari database.');
+      }
+      if (options.requireDatabase && (!data || data.length === 0)) {
+        throw new Error('Produk tidak dapat dihapus. Produk tidak ditemukan atau Anda tidak berwenang.');
       }
     } catch (err: any) {
+      if (options.requireDatabase) throw err;
       console.warn('[Supabase Database] Gagal hapus dari cloud:', err);
     }
 

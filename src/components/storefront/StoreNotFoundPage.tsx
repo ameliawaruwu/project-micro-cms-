@@ -34,7 +34,9 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
   onGoToAdmin,
   onPublishStore,
 }) => {
-  const isUnpublished = Boolean(store && store.id && !store.isPublished);
+  // Toko yang ditangguhkan admin punya pesan sendiri dan tidak bisa dipublikasikan ulang oleh pemiliknya.
+  const isSuspended = Boolean(store && store.id && store.isSuspended);
+  const isUnpublished = Boolean(store && store.id && !store.isPublished && !isSuspended);
   const storeSlug = store?.slug || slug || '';
   const storeName = store?.name || (storeSlug ? `Toko (${storeSlug})` : 'Toko Online');
   const phoneWhatsApp = store?.phoneWhatsApp?.replace(/[^0-9]/g, '') || '';
@@ -92,15 +94,19 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
           <div className="text-center space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[11px] font-mono font-semibold border border-gray-200">
               <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-              <span>{isUnpublished ? 'Draf • Belum Dipublikasikan' : '404 • Store Inactive'}</span>
+              <span>{isSuspended ? 'Ditangguhkan • Nonaktif' : isUnpublished ? 'Draf • Belum Dipublikasikan' : '404 • Store Inactive'}</span>
             </div>
 
             <h1 className="text-xl sm:text-2xl font-extrabold text-[#241A1A] tracking-tight font-poppins">
-              {isUnpublished ? 'Toko Belum Dipublikasikan' : 'Toko Tidak Ditemukan'}
+              {isSuspended ? 'Toko Sedang Dinonaktifkan' : isUnpublished ? 'Toko Belum Dipublikasikan' : 'Toko Tidak Ditemukan'}
             </h1>
 
             <p className="text-xs sm:text-sm text-[#706866] leading-relaxed">
-              {isUnpublished ? (
+              {isSuspended ? (
+                <>
+                  Website toko online <strong className="text-[#241A1A] font-semibold">"{storeName}"</strong> sedang dinonaktifkan sementara oleh pengelola platform LapakQ.
+                </>
+              ) : isUnpublished ? (
                 <>
                   Website toko online <strong className="text-[#241A1A] font-semibold">"{storeName}"</strong> saat ini belum dipublikasikan untuk umum karena masih dalam tahap penyusunan atau berstatus draf oleh pemiliknya.
                 </>
@@ -122,7 +128,7 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
                 </span>
               </div>
               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                {isUnpublished ? 'Belum Terbit' : 'Tidak Ditemukan'}
+                {isSuspended ? 'Dinonaktifkan' : isUnpublished ? 'Belum Terbit' : 'Tidak Ditemukan'}
               </span>
             </div>
           )}
@@ -136,7 +142,15 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
                     <Shield className="w-4 h-4 text-amber-700" />
                     <span>Mode Pengelola / Administrator</span>
                   </div>
-                  Toko <strong className="text-amber-950">"{storeName}"</strong> saat ini berstatus <strong>Draf / Belum Publish</strong>. Halaman publik storefront belum dapat diakses oleh pembeli hingga pemilik toko mempublikasikannya.
+                  {isSuspended ? (
+                    <>
+                      Toko <strong className="text-amber-950">"{storeName}"</strong> sedang <strong>disuspend</strong>. Aktifkan kembali dari menu Kelola Toko agar storefront dapat diakses pembeli.
+                    </>
+                  ) : (
+                    <>
+                      Toko <strong className="text-amber-950">"{storeName}"</strong> saat ini berstatus <strong>Draf / Belum Publish</strong>. Halaman publik storefront belum dapat diakses oleh pembeli hingga pemilik toko mempublikasikannya.
+                    </>
+                  )}
                 </div>
 
                 {onGoToAdmin && (
@@ -154,7 +168,9 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
               <div className="space-y-2 pt-2 border-t border-[#E5E0DD]">
                 <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
                   <span className="font-bold block text-amber-950">Anda Pemilik Toko Ini:</span>
-                  Toko sedang dimatikan dari akses publik. Anda dapat mempublikasikannya kembali kapan saja melalui editor layout.
+                  {isSuspended
+                    ? 'Toko Anda sedang dinonaktifkan oleh admin LapakQ. Hubungi admin untuk mengaktifkannya kembali.'
+                    : 'Toko sedang dimatikan dari akses publik. Anda dapat mempublikasikannya kembali kapan saja melalui editor layout.'}
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2 pt-1">
@@ -169,7 +185,7 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
                     </button>
                   )}
 
-                  {onPublishStore && (
+                  {onPublishStore && !isSuspended && (
                     <button
                       type="button"
                       onClick={onPublishStore}

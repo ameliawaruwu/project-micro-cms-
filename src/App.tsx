@@ -1553,8 +1553,11 @@ export default function App() {
       isPreview || (currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published)
     );
 
-    // Jika toko belum dipublikasikan atau toko belum ada (dan BUKAN di mode pratinjau)
-    if (!currentStore || !currentStore.id || (!isPublished && !isPreview)) {
+    // Toko yang disuspend admin tertutup untuk publik; hanya pengguna yang login boleh melihat pratinjaunya.
+    const isBlockedBySuspension = Boolean(currentStore?.isSuspended) && !(isPreview && user);
+
+    // Jika toko belum dipublikasikan, disuspend, atau belum ada (dan BUKAN di mode pratinjau)
+    if (!currentStore || !currentStore.id || (!isPublished && !isPreview) || isBlockedBySuspension) {
       const isAdmin = Boolean(user && isAnyAdminRole(user.role));
       return (
         <StoreNotFoundPage
@@ -1817,8 +1820,11 @@ export default function App() {
           );
         }
 
-        // Jika toko belum dipublikasikan atau sedang di-unpublish dan pengunjung bukan di mode preview
-        if (!isPublished && !isPreview) {
+        // Toko yang disuspend admin tertutup untuk publik; hanya pengguna yang login boleh melihat pratinjaunya.
+        const isBlockedBySuspension = Boolean(currentStore.isSuspended) && !(isPreview && user);
+
+        // Jika toko belum dipublikasikan, sedang di-unpublish, atau disuspend dan pengunjung bukan di mode preview
+        if ((!isPublished && !isPreview) || isBlockedBySuspension) {
           const isOwner = user && activeStore && activeStore.id === currentStore.id;
           const isAdmin = user && isAnyAdminRole(user.role);
           return (

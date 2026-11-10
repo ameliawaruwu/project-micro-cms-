@@ -5,7 +5,8 @@ import { storeService } from './storeService';
 import { authService } from './authService';
 
 const WITHDRAWALS_KEY = 'microcms_admin_withdrawals_v2';
-const STORE_SUSPENSIONS_KEY = 'microcms_admin_suspended_stores_v1';
+/** Kunci lama: status suspend dulu disimpan di browser. Kini hanya dibersihkan. */
+const LEGACY_STORE_SUSPENSIONS_KEY = 'microcms_admin_suspended_stores_v1';
 const STORES_CACHE_KEY = 'microcms_admin_stores_v2';
 const ORDERS_CACHE_KEY = 'microcms_admin_orders_v2';
 const SETTINGS_KEY = 'microcms_admin_settings_v1';
@@ -32,39 +33,24 @@ class AdminService {
     localStorage.setItem(WITHDRAWALS_KEY, JSON.stringify(list));
   }
 
-  getSuspendedStoreIds(): string[] {
-    const raw = localStorage.getItem(STORE_SUSPENSIONS_KEY);
-    if (!raw) return [];
-    try {
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
+  /**
+   * Menangguhkan (suspend = true) atau mengaktifkan kembali toko. Status hanya
+   * disimpan di kolom stores.is_suspended; RLS & trigger database yang menentukan
+   * siapa yang boleh mengubahnya. Melempar error bila ditolak atau toko tidak ada.
+   */
+  async setStoreSuspension(storeId: string, suspend: boolean): Promise<void> {
+    const { data, error } = await supabase
+      .from('stores')
+      .update({ is_suspended: suspend })
+      .eq('id', storeId)
+      .select('id, is_suspended');
 
-  async toggleStoreSuspension(storeId: string): Promise<boolean> {
-    const suspended = this.getSuspendedStoreIds();
-    let updated: string[];
-    const isCurrentlySuspended = suspended.includes(storeId);
-    if (isCurrentlySuspended) {
-      updated = suspended.filter((id) => id !== storeId);
-    } else {
-      updated = [...suspended, storeId];
+    if (error) {
+      throw new Error(error.message || 'Gagal memperbarui status toko.');
     }
-    localStorage.setItem(STORE_SUSPENSIONS_KEY, JSON.stringify(updated));
-
-    // Update in Supabase
-    try {
-      await supabase
-        .from('stores')
-        .update({ is_suspended: !isCurrentlySuspended })
-        .eq('id', storeId);
-    } catch (err) {
-      console.warn('Failed to sync store suspension in Supabase:', err);
+    if (!data || data.length === 0) {
+      throw new Error('Status toko tidak dapat diubah. Pastikan Anda berwenang mengelola toko ini.');
     }
-
-    return !isCurrentlySuspended;
   }
 
   getAllStores(): Store[] {
@@ -124,11 +110,7 @@ class AdminService {
         createdAt: s.created_at || new Date().toISOString(),
       }));
 
-      // Sync suspended list with DB state
-      const suspendedFromDb = mapped.filter((s) => s.isSuspended).map((s) => s.id);
-      if (suspendedFromDb.length > 0) {
-        localStorage.setItem(STORE_SUSPENSIONS_KEY, JSON.stringify(suspendedFromDb));
-      }
+      localStorage.removeItem(LEGACY_STORE_SUSPENSIONS_KEY);
 
       const withMemberships = await withExtraMemberships(mapped);
       localStorage.setItem(STORES_CACHE_KEY, JSON.stringify(withMemberships));
@@ -444,9 +426,7 @@ class AdminService {
     const currentStores = stores || this.getAllStores();
     const currentWithdrawals = withdrawals || this.getStoredWithdrawals();
     const currentOrders = orders || this.getAllOrders();
-    const suspended = this.getSuspendedStoreIds();
-
-    const activeStores = currentStores.filter((s) => !suspended.includes(s.id) && !s.isSuspended).length;
+    const activeStores = currentStores.filter((s) => !s.isSuspended).length;
     const proSubscribers = currentStores.filter((s) => s.plan && s.plan !== 'free').length;
 
     // GMV from real paid orders, or aggregate balance of real stores

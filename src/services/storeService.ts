@@ -103,6 +103,7 @@ class StoreService {
           communityId: row.community_id || row.theme_settings?.communityId || undefined,
           communityName: row.community_name || row.theme_settings?.communityName || undefined,
           isPublished: Boolean(row.is_published),
+          isSuspended: Boolean(row.is_suspended),
           layoutSettings: row.theme_settings || row.layout_settings,
           paymentConfig: row.theme_settings?.paymentConfig || row.layout_settings?.paymentConfig || {
             enableCod: true,
@@ -190,6 +191,7 @@ class StoreService {
             isPublished: row.is_published !== undefined && row.is_published !== null
               ? Boolean(row.is_published)
               : ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id),
+            isSuspended: Boolean(row.is_suspended),
             layoutSettings: row.theme_settings,
             paymentConfig: row.theme_settings?.paymentConfig || {
               enableCod: true,
@@ -318,6 +320,7 @@ class StoreService {
           communityId: data.community_id || data.theme_settings?.communityId || undefined,
           communityName: data.community_name || data.theme_settings?.communityName || undefined,
           isPublished: isPub,
+          isSuspended: Boolean(data.is_suspended),
           layoutSettings: data.theme_settings,
           paymentConfig: data.theme_settings?.paymentConfig || {
             enableCod: true,
@@ -426,6 +429,7 @@ class StoreService {
           communityName: row.community_name || row.theme_settings?.communityName || undefined,
           plan: row.plan || 'free',
           isPublished: isPub,
+          isSuspended: Boolean(row.is_suspended),
           layoutSettings: row.theme_settings,
           paymentConfig: row.theme_settings?.paymentConfig || {
             enableCod: true,
@@ -947,6 +951,7 @@ class StoreService {
                     name: row.name || stored[idx].name,
                     slug: row.slug || stored[idx].slug,
                     isPublished: isPub,
+                    isSuspended: Boolean(row.is_suspended),
                     customDomain: row.custom_domain !== undefined ? row.custom_domain : stored[idx].customDomain,
                   };
                   stored[idx] = merged;
@@ -975,6 +980,7 @@ class StoreService {
                     balance: Number(row.balance || 0),
                     plan: row.plan || 'free',
                     isPublished: isPub,
+                    isSuspended: Boolean(row.is_suspended),
                     onboarding: row.theme_settings?.onboarding || {},
                     createdAt: row.created_at || new Date().toISOString(),
                   };

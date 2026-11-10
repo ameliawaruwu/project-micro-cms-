@@ -266,8 +266,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       if (fetchedReqs) setDomainRequests(fetchedReqs);
       if (fetchedSettings) setPlatformSettings(fetchedSettings);
 
-      const suspended = fetchedStores.filter((s) => s.isSuspended).map((s) => s.id);
-      setSuspendedIds(suspended.length > 0 ? suspended : adminService.getSuspendedStoreIds());
+      setSuspendedIds(fetchedStores.filter((s) => s.isSuspended).map((s) => s.id));
 
       setStats(adminService.getPlatformStats(fetchedStores, fetchedWithdrawals, fetchedOrders));
     } catch (err) {
@@ -277,7 +276,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   useEffect(() => {
     // Initial sync from local caches
-    setStores(adminService.getAllStores());
+    const cachedStores = adminService.getAllStores();
+    setStores(cachedStores);
+    setSuspendedIds(cachedStores.filter((s) => s.isSuspended).map((s) => s.id));
     setWithdrawals(adminService.getWithdrawals());
     setOrders(adminService.getAllOrders());
     setBillingPlans(billingPlanService.getPlans());
@@ -290,9 +291,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   }, []);
 
   const handleToggleSuspend = async (storeId: string, storeName: string) => {
-    const isNowActive = await adminService.toggleStoreSuspension(storeId);
+    const suspend = !suspendedIds.includes(storeId);
+    try {
+      await adminService.setStoreSuspension(storeId, suspend);
+      showToast(suspend ? `${storeName} berhasil disuspend` : `${storeName} diaktifkan kembali`);
+    } catch (err: any) {
+      showToast(err?.message || 'Gagal memperbarui status toko.');
+    }
     await loadData();
-    showToast(isNowActive ? `${storeName} diaktifkan kembali` : `${storeName} berhasil disuspend`);
   };
 
   const handleApproveWithdrawal = async (id: string, storeName?: string) => {
