@@ -251,7 +251,9 @@ class CommunityService {
     // 2. Simpan Komunitas ke Supabase
     const saveCommunityPromise = (async () => {
       try {
-        const { error } = await supabase.from('communities').upsert({
+        // insert (bukan upsert): ID selalu baru, dan ON CONFLICT DO UPDATE butuh hak baca
+        // kolom kontak yang sengaja ditutup dari anon/authenticated (migrasi 2b-4).
+        const { error } = await supabase.from('communities').insert({
           id: commId,
           name: newComm.name,
           slug: newComm.slug,
