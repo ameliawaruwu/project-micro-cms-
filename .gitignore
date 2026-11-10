@@ -11,3 +11,8 @@ current
 !.env.example
 _backup*.json
 .mcp.json
+
+# Uji SQL berisi daftar password bocor & data uji: jangan di-commit
+supabase/tests/
+# Catatan audit keamanan: memetakan celah yang belum ditutup, simpan lokal saja
+TEMUAN-KEAMANAN-*.md

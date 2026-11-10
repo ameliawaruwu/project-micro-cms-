@@ -391,10 +391,15 @@ CREATE INDEX IF NOT EXISTS idx_domain_requests_status ON domain_requests(status)
 -- ============================================================================
 INSERT INTO platform_settings (id) VALUES ('global_config') ON CONFLICT (id) DO NOTHING;
 
+-- Akun seed TIDAK punya password yang bisa dipakai login ('!locked' tidak pernah cocok di
+-- app_private.check_password). Setelah instalasi, atur password super admin langsung di SQL:
+--   UPDATE users SET password_hash = extensions.crypt('<password-kuat>', extensions.gen_salt('bf', 10))
+--    WHERE id = 'usr-admin-1';
+-- Jangan pernah menulis password asli ke file yang di-commit.
 INSERT INTO users (id, email, password_hash, name, phone, role) VALUES
-('usr-admin-1', 'admin@kroomify.id', crypt('admin123', gen_salt('bf')), 'Super Admin Kroomify', '081289201928', 'admin'),
-('usr-andhika-1', 'andhika@gmail.com', crypt('password123', gen_salt('bf')), 'Andhika Pratama', '081298765432', 'merchant')
-ON CONFLICT (id) DO UPDATE SET password_hash = EXCLUDED.password_hash;
+('usr-admin-1', 'admin@kroomify.id', '!locked', 'Super Admin Kroomify', '081289201928', 'admin'),
+('usr-andhika-1', 'andhika@gmail.com', '!locked', 'Andhika Pratama', '081298765432', 'merchant')
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO stores (id, user_id, name, slug, tagline, description, phone_whatsapp, city, province, address, category, plan, balance) VALUES
 ('store-andhika', 'usr-andhika-1', 'Toko Andhika', 'toko-andhika', 'Toko Online Andhika', 'Pusat belanja produk berkualitas', '6281298765432', 'Jakarta Selatan', 'DKI Jakarta', 'Jl. Kemang Raya No. 42', 'Fashion & Retail', 'starter', 0)
