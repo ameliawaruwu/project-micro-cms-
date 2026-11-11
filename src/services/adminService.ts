@@ -3,6 +3,7 @@ import { withExtraMemberships } from '../utils/communityMembership';
 import { supabase } from './supabaseClient';
 import { storeService } from './storeService';
 import { authService } from './authService';
+import { getPlatformLogo, loadPlatformLogo, setPlatformLogo } from './platformLogoService';
 
 const WITHDRAWALS_KEY = 'microcms_admin_withdrawals_v2';
 /** Kunci lama: status suspend dulu disimpan di browser. Kini hanya dibersihkan. */
@@ -317,12 +318,14 @@ class AdminService {
       autoApprovePayoutUnder: 500000,
       maintenanceMode: false,
       paymentGatewayEnabled: true,
+      ...getPlatformLogo(),
     };
 
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return defaultSettings;
     try {
-      return { ...defaultSettings, ...JSON.parse(raw) };
+      // Logo selalu dari cache logo agar simpan pengaturan tidak menimpa logo dengan nilai usang.
+      return { ...defaultSettings, ...JSON.parse(raw), ...getPlatformLogo() };
     } catch {
       return defaultSettings;
     }
@@ -339,8 +342,11 @@ class AdminService {
         .maybeSingle();
       const data: any = rawData;
 
+      // Logo dibaca terpisah agar pengaturan lain tetap termuat walau kolom logo belum dimigrasi.
+      const logo = await loadPlatformLogo(true);
+
       if (error || !data) {
-        return current;
+        return { ...current, ...logo };
       }
 
       const mapped: PlatformSettings = {
@@ -364,6 +370,8 @@ class AdminService {
         autoApprovePayoutUnder: Number(data.auto_approve_payout_under || current.autoApprovePayoutUnder),
         maintenanceMode: Boolean(data.maintenance_mode),
         paymentGatewayEnabled: data.payment_gateway_enabled !== undefined ? Boolean(data.payment_gateway_enabled) : (current.paymentGatewayEnabled ?? true),
+        logoUrl: logo.logoUrl,
+        logoIconUrl: logo.logoIconUrl,
       };
 
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(mapped));
@@ -393,6 +401,9 @@ class AdminService {
         midtrans_environment: settings.midtransEnvironment,
         midtrans_merchant_id: settings.midtransMerchantId,
         midtrans_client_key: settings.midtransClientKey,
+        // String kosong = kembali ke logo bawaan.
+        logo_url: settings.logoUrl || '',
+        logo_icon_url: settings.logoIconUrl || '',
         updated_at: new Date().toISOString(),
       };
       // Kunci rahasia hanya dikirim bila super admin mengisinya (untuk mengganti kunci).
@@ -416,6 +427,7 @@ class AdminService {
         console.error('Failed to sync platform settings to Supabase:', message);
         throw new Error(message);
       }
+      setPlatformLogo({ logoUrl: settings.logoUrl || '', logoIconUrl: settings.logoIconUrl || '' });
     } catch (err) {
       console.warn('Failed to sync platform settings to Supabase:', err);
       throw err;

@@ -4,7 +4,8 @@ import { sessionHeaders } from './supabaseClient';
  * Upload gambar ke CDNKroombox lewat backend (`POST /api/media/upload`).
  * Backend yang memegang API key CDN dan memeriksa sesi login serta hak atas toko.
  */
-export type MediaKind = 'product' | 'logo' | 'qris' | 'layout' | 'avatar';
+/** `platform` = logo platform LapakQ, hanya untuk super admin. */
+export type MediaKind = 'product' | 'logo' | 'qris' | 'layout' | 'avatar' | 'platform';
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 

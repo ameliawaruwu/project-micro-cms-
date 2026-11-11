@@ -654,6 +654,10 @@ export interface PlatformSettings {
   payoutBankFee: number;
   autoApprovePayoutUnder: number;
   maintenanceMode: boolean;
+
+  // Logo platform (URL CDN); kosong = logo bawaan
+  logoUrl?: string;
+  logoIconUrl?: string;
 }
 
 export interface BillingPlan {

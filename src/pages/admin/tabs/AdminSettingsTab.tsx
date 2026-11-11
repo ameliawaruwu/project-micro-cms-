@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Settings as SettingsIcon,
   Check,
@@ -7,9 +7,96 @@ import {
   Copy,
   ShieldCheck,
   Loader2,
+  ImagePlus,
+  RotateCcw,
 } from 'lucide-react';
 import { PlatformSettings } from '../../../types';
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
+import { mediaService } from '../../../services/mediaService';
+import { DEFAULT_LOGO_ICON_URL, DEFAULT_LOGO_URL } from '../../../services/platformLogoService';
+
+const LOGO_ACCEPT = 'image/png,image/webp,image/jpeg,image/gif';
+
+interface LogoFieldProps {
+  isEn: boolean;
+  label: string;
+  hint: string;
+  value: string;
+  fallbackSrc: string;
+  previewClassName: string;
+  disabled: boolean;
+  onChange: (url: string) => void;
+}
+
+/** Satu slot logo: pratinjau, unggah ke CDN (khusus super admin), dan reset ke bawaan. */
+const LogoField: React.FC<LogoFieldProps> = ({
+  isEn,
+  label,
+  hint,
+  value,
+  fallbackSrc,
+  previewClassName,
+  disabled,
+  onChange,
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handlePick = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setError('');
+    setIsUploading(true);
+    try {
+      onChange(await mediaService.uploadImage(file, 'platform'));
+    } catch (err: any) {
+      setError(err?.message || (isEn ? 'Upload failed.' : 'Gagal mengunggah logo.'));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="p-3 rounded-lg bg-gray-50/80 border border-gray-200 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-medium text-xs text-gray-800">{label}</span>
+        <span className="text-[10px] text-gray-500">
+          {value ? (isEn ? 'Custom' : 'Kustom') : isEn ? 'Default' : 'Bawaan'}
+        </span>
+      </div>
+      <div className="h-20 rounded-md bg-white border border-dashed border-gray-300 flex items-center justify-center p-2">
+        <img src={value || fallbackSrc} alt={label} className={`${previewClassName} object-contain`} />
+      </div>
+      <p className="text-[10px] text-gray-500">{hint}</p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={disabled || isUploading}
+          className="px-2.5 py-1 rounded border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 shadow-xs flex items-center gap-1"
+        >
+          {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImagePlus className="w-3 h-3" />}
+          <span>{isUploading ? (isEn ? 'Uploading...' : 'Mengunggah...') : isEn ? 'Upload' : 'Unggah'}</span>
+        </button>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            disabled={disabled || isUploading}
+            className="px-2.5 py-1 rounded text-gray-600 hover:text-gray-900 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 flex items-center gap-1"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>{isEn ? 'Use default' : 'Pakai bawaan'}</span>
+          </button>
+        )}
+      </div>
+      <input ref={inputRef} type="file" accept={LOGO_ACCEPT} onChange={handlePick} className="hidden" />
+      {error && <p className="text-[11px] font-medium text-red-600">{error}</p>}
+    </div>
+  );
+};
 
 interface AdminSettingsTabProps {
   isEn: boolean;
@@ -75,6 +162,40 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
             </>
           )}
         </button>
+      </div>
+
+      {/* LOGO PLATFORM */}
+      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs space-y-3">
+        <div className="pb-2 border-b border-gray-100">
+          <h3 className="font-semibold text-xs text-gray-900">{isEn ? 'Platform Logo' : 'Logo Platform'}</h3>
+          <p className="text-[11px] text-gray-500 mt-0.5">
+            {isEn
+              ? 'Shown on the landing page, login pages, and dashboards. Click Save Changes after uploading.'
+              : 'Tampil di landing page, halaman masuk, dan dashboard. Klik Simpan Perubahan setelah mengunggah.'}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <LogoField
+            isEn={isEn}
+            label={isEn ? 'Full Logo' : 'Logo Lengkap'}
+            hint={isEn ? 'Wide image with wordmark, transparent PNG recommended. Max 5MB.' : 'Gambar melebar dengan tulisan, disarankan PNG transparan. Maks. 5MB.'}
+            value={platformSettings.logoUrl || ''}
+            fallbackSrc={DEFAULT_LOGO_URL}
+            previewClassName="h-12 max-w-full"
+            disabled={isSaving}
+            onChange={(url) => setPlatformSettings((prev) => ({ ...prev, logoUrl: url }))}
+          />
+          <LogoField
+            isEn={isEn}
+            label={isEn ? 'Logo Icon' : 'Ikon Logo'}
+            hint={isEn ? 'Square image for the collapsed sidebar. Max 5MB.' : 'Gambar persegi untuk sidebar yang diciutkan. Maks. 5MB.'}
+            value={platformSettings.logoIconUrl || ''}
+            fallbackSrc={DEFAULT_LOGO_ICON_URL}
+            previewClassName="h-14 w-14"
+            disabled={isSaving}
+            onChange={(url) => setPlatformSettings((prev) => ({ ...prev, logoIconUrl: url }))}
+          />
+        </div>
       </div>
 
       {/* SAKELAR MASTER PAYMENT GATEWAY */}

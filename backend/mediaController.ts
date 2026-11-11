@@ -1,6 +1,6 @@
 import express, { Router, Request, Response } from 'express';
 import { pool } from './publicApiController';
-import { canManageStore, requireAdmin, requireSession, SessionUser } from './sessionAuth';
+import { canManageStore, isPlatformAdmin, requireAdmin, requireSession, SessionUser } from './sessionAuth';
 
 // Upload gambar (produk, logo, QRIS, gambar editor layout, avatar, bukti bayar) ke CDNKroombox.
 // Browser tidak pernah melihat API key CDN: file dikirim ke endpoint ini sebagai data URL,
@@ -14,9 +14,11 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const STORE_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const ORDER_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const ORDER_NUMBER_RE = /^[A-Z0-9-]{4,32}$/;
-const UPLOAD_KINDS = new Set(['product', 'logo', 'qris', 'layout', 'avatar']);
+const UPLOAD_KINDS = new Set(['product', 'logo', 'qris', 'layout', 'avatar', 'platform']);
 // Gambar toko wajib menyebut storeId agar hak kelolanya bisa dicek.
 const STORE_KINDS = new Set(['product', 'logo', 'qris']);
+// Logo platform LapakQ: hanya super admin, tidak terkait toko mana pun.
+const PLATFORM_KIND = 'platform';
 const READY_TIMEOUT_MS = 25_000;
 const READY_POLL_MS = 1_500;
 
@@ -150,6 +152,17 @@ async function checkUploadAccess(
   if (user.role === 'buyer') {
     fail(res, 403, 'Akun pembeli tidak dapat mengunggah gambar.');
     return false;
+  }
+  if (kind === PLATFORM_KIND) {
+    if (!isPlatformAdmin(user)) {
+      fail(res, 403, 'Hanya super admin yang dapat mengganti logo platform.');
+      return false;
+    }
+    if (storeId) {
+      fail(res, 400, 'Logo platform tidak terkait toko.');
+      return false;
+    }
+    return true;
   }
   if (STORE_KINDS.has(kind) && !storeId) {
     fail(res, 400, 'storeId wajib diisi untuk gambar toko.');
