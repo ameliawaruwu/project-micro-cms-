@@ -48,7 +48,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const { domain: storeBaseDomain } = useStoreBaseDomain(store);
   // Toko kosong saat data masih dimuat belum berarti merchant tidak punya toko.
   const isLoadingStore = isStoreLoading && !store.id;
-  const hasNoStore = !isStoreLoading && !store.id;
+  // Merchant baru otomatis dibuatkan toko kosong (tanpa nama) saat login agar halaman Pengaturan
+  // punya data untuk diisi. Toko tanpa nama itu belum dihitung sebagai toko milik merchant.
+  const storeName = (store.name || '').trim();
+  const isStoreSetUp = Boolean(store.id) && storeName !== '' && !storeName.startsWith('Toko usr_');
+  const hasNoStore = !isLoadingStore && !isStoreSetUp;
 
   // Coordinated Single Source of Truth Hook for Dashboard Metrics
   const {
