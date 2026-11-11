@@ -10,6 +10,7 @@ import { formatRupiah } from '../../utils/formatters';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { useStoreBaseDomain } from '../../utils/storeDomain';
 import { WALLET_ENABLED } from '../../config/features';
+import { isStoreSetUp } from '../../utils/storeSetup';
 
 interface DashboardPageProps {
   currentUser?: User | null;
@@ -48,11 +49,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const { domain: storeBaseDomain } = useStoreBaseDomain(store);
   // Toko kosong saat data masih dimuat belum berarti merchant tidak punya toko.
   const isLoadingStore = isStoreLoading && !store.id;
-  // Merchant baru otomatis dibuatkan toko kosong (tanpa nama) saat login agar halaman Pengaturan
-  // punya data untuk diisi. Toko tanpa nama itu belum dihitung sebagai toko milik merchant.
-  const storeName = (store.name || '').trim();
-  const isStoreSetUp = Boolean(store.id) && storeName !== '' && !storeName.startsWith('Toko usr_');
-  const hasNoStore = !isLoadingStore && !isStoreSetUp;
+  // Toko otomatis dari registrasi belum dihitung sampai merchant melengkapi Pengaturan Toko.
+  const hasNoStore = !isLoadingStore && !isStoreSetUp(store);
 
   // Coordinated Single Source of Truth Hook for Dashboard Metrics
   const {
