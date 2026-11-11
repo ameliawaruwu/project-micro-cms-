@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { panelDomainClient, PanelResult } from './panelDomainClient';
 import { pool } from './publicApiController';
 import { isPlatformAdmin, requireAdmin, requireStoreManager } from './sessionAuth';
+import { checkHostLive, waitForHostLive } from './hostLiveCheck';
 
 // Publishing a store = adding <slug>.lapakq.com (and the merchant's custom domain, if any) as a
 // host of this app through the Kroombox Panel API. The SPA already renders the store from the
@@ -167,7 +168,7 @@ deployRouter.post('/publish', async (req: Request, res: Response) => {
     if (slugOwners.length > 0) return res.status(409).json({ error: 'Alamat toko sudah dipakai toko lain' });
 
     const primaryHost = storeHost(slug, baseDomain);
-    const stages: Array<{ name: string; status: 'success' | 'failed'; detail?: string }> = [];
+    const stages: Array<{ name: string; status: 'success' | 'failed' | 'pending'; detail?: string }> = [];
 
     const primary = await panelDomainClient.addHost(primaryHost);
     if (!primary.ok) {
@@ -176,7 +177,23 @@ deployRouter.post('/publish', async (req: Request, res: Response) => {
         stage: 'domain',
       });
     }
-    stages.push({ name: 'Alamat Toko', status: 'success', detail: primaryHost });
+    stages.push({ name: 'Alamat Toko', status: 'success', detail: `${primaryHost} terdaftar di server` });
+
+    // Registered is not live: wait until the public internet resolves and answers the host.
+    const primaryLive = await waitForHostLive(primaryHost);
+    stages.push({ name: 'DNS Publik', status: primaryLive.dns ? 'success' : 'pending', detail: primaryLive.dns ? 'Domain sudah ter-resolve' : 'DNS belum aktif' });
+    stages.push({ name: 'Uji Akses HTTPS', status: primaryLive.live ? 'success' : 'pending', detail: primaryLive.detail });
+    if (!primaryLive.live) {
+      console.warn(`[Deploy] Store ${slug} registered at ${primaryHost} but not reachable yet (${primaryLive.detail})`);
+      return res.status(202).json({
+        success: false,
+        pending: true,
+        slug,
+        primaryUrl: `https://${primaryHost}`,
+        error: `Alamat ${primaryHost} sudah didaftarkan, tetapi belum bisa diakses publik (${primaryLive.detail}). Toko belum ditandai live. Klik Terbitkan lagi dalam 1–2 menit.`,
+        stages,
+      });
+    }
 
     let customDomainUrl: string | null = null;
     const customHost = cleanHost(req.body?.customDomain);
@@ -187,10 +204,14 @@ deployRouter.post('/publish', async (req: Request, res: Response) => {
         stages.push({ name: 'Domain Kustom', status: 'failed', detail: CUSTOM_DOMAIN_NOT_ASSIGNED });
       } else {
         const custom = await panelDomainClient.addHost(customHost);
-        stages.push(custom.ok
-          ? { name: 'Domain Kustom', status: 'success', detail: customHost }
-          : { name: 'Domain Kustom', status: 'failed', detail: panelError(custom, 'Domain belum bisa dihubungkan') });
-        if (custom.ok) customDomainUrl = `https://${customHost}`;
+        if (!custom.ok) {
+          stages.push({ name: 'Domain Kustom', status: 'failed', detail: panelError(custom, 'Domain belum bisa dihubungkan') });
+        } else {
+          // A custom domain may wait on DNS the owner manages; it is only linked as live once it answers.
+          const customLive = await checkHostLive(customHost);
+          stages.push({ name: 'Domain Kustom', status: customLive.live ? 'success' : 'pending', detail: `${customHost}: ${customLive.live ? 'aktif' : customLive.detail}` });
+          if (customLive.live) customDomainUrl = `https://${customHost}`;
+        }
       }
     }
 

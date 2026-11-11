@@ -119,6 +119,7 @@ justify-start
 leading-[1.1]
 leading-loose
 left-16
+left-8
 left-[10%]
 left-[67%]
 line-clamp-2
@@ -263,6 +264,7 @@ py-6
 py-8
 relative
 right-16
+right-24
 right-8
 right-[10%]
 right-auto

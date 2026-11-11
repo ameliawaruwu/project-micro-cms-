@@ -162,54 +162,29 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
     const primaryDomain = `${cleanSlug}.${selectedBaseDomain}`;
     const targetHost = cleanCustomDomain || primaryDomain;
 
-    const initialStages: DeployStage[] = [
-      { id: '1', name: 'Persiapan Webroot & Katalog', detail: 'Mengemas build SPA, template tema, store.json & produk', status: 'running' },
-      { id: '2', name: 'Konfigurasi Web Gateway & Vhost', detail: `Menerbitkan virtual host Nginx port 8080 untuk ${targetHost}`, status: 'pending' },
-      { id: '3', name: 'Cloudflare Anycast DNS & Tunnel', detail: 'Rute Ingress Cloudflare Tunnel & perambatan edge', status: 'pending' },
-      { id: '4', name: 'Health Check & Smoke Test', detail: 'Verifikasi endpoint live respon HTTP 200 OK', status: 'pending' },
-    ];
-
-    setDeployStages(initialStages);
+    // Only real steps are shown: the server reports each one, nothing is ticked on a timer.
+    // WHY: a timer marked Nginx/Tunnel/smoke test "done" while the store host had no DNS yet.
+    setDeployStages([
+      { id: '1', name: 'Mendaftarkan alamat toko', detail: targetHost, status: 'running' },
+      { id: '2', name: 'DNS publik', detail: 'Menunggu domain ter-resolve', status: 'pending' },
+      { id: '3', name: 'Uji akses HTTPS', detail: `https://${primaryDomain}`, status: 'pending' },
+    ]);
     const now = () => new Date().toLocaleTimeString('id-ID');
     setTerminalLogs([
-      `[${now()}] INITIATE: Dispatching deployment pipeline for storeId="${store.id}" (${cleanSlug})`,
-      `[${now()}] TARGET: ${primaryDomain}${cleanCustomDomain ? ` + ${cleanCustomDomain}` : ''}`,
-      `[${now()}] STEP 1: Bundling store theme, hydration tokens & catalog...`,
+      `[${now()}] Mendaftarkan ${primaryDomain}${cleanCustomDomain ? ` + ${cleanCustomDomain}` : ''} ke server...`,
+      `[${now()}] Server memeriksa DNS publik dan akses HTTPS (maks. ±45 detik).`,
     ]);
+    setDeployProgress(30);
 
-    // Visual progress ticker while backend works
-    let stepCount = 0;
-    const progressTimer = setInterval(() => {
-      stepCount++;
-      if (stepCount === 1) {
-        setDeployProgress(35);
-        setDeployStages((prev) =>
-          prev.map((s, idx) => (idx === 0 ? { ...s, status: 'success' } : idx === 1 ? { ...s, status: 'running' } : s))
-        );
-        setTerminalLogs((prev) => [
-          ...prev,
-          `[${now()}] STEP 2: Writing Nginx reverse proxy configuration & running syntax test...`,
-        ]);
-      } else if (stepCount === 2) {
-        setDeployProgress(65);
-        setDeployStages((prev) =>
-          prev.map((s, idx) => (idx <= 1 ? { ...s, status: 'success' } : idx === 2 ? { ...s, status: 'running' } : s))
-        );
-        setTerminalLogs((prev) => [
-          ...prev,
-          `[${now()}] STEP 3: Connecting hostname to Cloudflare Anycast Tunnel network...`,
-        ]);
-      } else if (stepCount === 3) {
-        setDeployProgress(85);
-        setDeployStages((prev) =>
-          prev.map((s, idx) => (idx <= 2 ? { ...s, status: 'success' } : idx === 3 ? { ...s, status: 'running' } : s))
-        );
-        setTerminalLogs((prev) => [
-          ...prev,
-          `[${now()}] STEP 4: Executing edge smoke test probe...`,
-        ]);
-      }
-    }, 750);
+    const serverStages = (raw: unknown): DeployStage[] =>
+      Array.isArray(raw)
+        ? raw.map((s: any, idx: number) => ({
+            id: String(idx + 1),
+            name: String(s?.name || ''),
+            detail: String(s?.detail || ''),
+            status: s?.status === 'success' || s?.status === 'failed' ? s.status : 'pending',
+          }))
+        : [];
 
     try {
       const response = await fetch('/api/deploy/publish', {
@@ -223,41 +198,43 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
         }),
       });
 
-      clearInterval(progressTimer);
-      const resData = await response.json();
+      const resData = await response.json().catch(() => ({}));
+      const reported = serverStages(resData.stages);
+      if (reported.length) setDeployStages(reported);
+      setTerminalLogs((prev) => [
+        ...prev,
+        ...reported.map((s) => `[${now()}] ${s.name}: ${s.status.toUpperCase()} — ${s.detail}`),
+      ]);
 
       if (!response.ok || !resData.success) {
+        if (!reported.length) {
+          setDeployStages((prev) => prev.map((s) => (s.status === 'running' ? { ...s, status: 'failed' } : s)));
+        }
         throw new Error(resData.error || resData.message || 'Gagal mempublikasikan toko');
       }
 
+      setDeployProgress(90);
+      // The store is only marked live once its address answered; a failed save is reported, not hidden.
+      await storeService.updateStore(
+        store.id,
+        {
+          slug: cleanSlug,
+          isPublished: true,
+          customDomain: cleanCustomDomain || store.customDomain,
+          domainStatus: cleanCustomDomain ? (resData.customDomainUrl ? 'connected' : 'pending') : store.domainStatus,
+        },
+        store.merchantId
+      );
+      await storeService.setPublishedStatus(store.id, true, store.merchantId);
+
       setDeployProgress(100);
-      setDeployStages((prev) => prev.map((s) => ({ ...s, status: 'success' })));
       setTerminalLogs((prev) => [
         ...prev,
-        `[${now()}] SUCCESS: ${resData.message || 'Toko online berhasil live!'}`,
-        `[${now()}] LIVE_URL: ${resData.customDomainUrl || resData.primaryUrl || `https://${primaryDomain}`}`,
+        `[${now()}] LIVE: ${resData.customDomainUrl || resData.primaryUrl}`,
       ]);
-
-      // Update store state and persist
-      try {
-        await storeService.updateStore(
-          store.id,
-          {
-            slug: cleanSlug,
-            isPublished: true,
-            customDomain: cleanCustomDomain || store.customDomain,
-            domainStatus: cleanCustomDomain ? 'connected' : store.domainStatus,
-          },
-          store.merchantId
-        );
-        await storeService.setPublishedStatus(store.id, true, store.merchantId);
-      } catch (e) {
-        console.warn('Sync store slug warning:', e);
-      }
 
       if (onPublish) onPublish();
 
-      // Trigger celebration confetti
       setTimeout(() => {
         try {
           confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
@@ -265,12 +242,8 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
         setStep('published');
       }, 500);
     } catch (err: any) {
-      clearInterval(progressTimer);
-      const errMsg = err?.message || 'Terjadi kesalahan saat memproses deployment';
+      const errMsg = err?.message || 'Terjadi kesalahan saat memproses publikasi';
       setDeployError(errMsg);
-      setDeployStages((prev) =>
-        prev.map((s) => (s.status === 'running' ? { ...s, status: 'failed', detail: errMsg } : s))
-      );
       setTerminalLogs((prev) => [
         ...prev,
         `[${now()}] ERROR: ${errMsg}`,
@@ -341,7 +314,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                   : step === 'confirm_subdomain'
                   ? 'Periksa subdomain otomatis atau acak ulang untuk kombinasi baru'
                   : step === 'auto_deploy'
-                  ? 'Sinkronisasi otomatis ke Kroombox Edge Network v2.1'
+                  ? 'Mendaftarkan alamat lalu memastikan toko benar-benar bisa dibuka'
                   : 'Website toko Anda kini online dan dapat diakses pembeli'}
               </p>
             </div>
@@ -776,8 +749,15 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 <>
                   <span className="text-xs text-rose-600 font-semibold flex items-center gap-1.5">
                     <X className="w-3.5 h-3.5" />
-                    <span className="truncate max-w-[280px]">{deployError}</span>
+                    <span className="break-words">{deployError}</span>
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => startAutoDeploySimulation()}
+                    className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition cursor-pointer shrink-0"
+                  >
+                    Coba lagi
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -793,7 +773,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 <div className="flex items-center justify-center py-1 w-full">
                   <span className="text-xs text-gray-500 font-medium flex items-center gap-2">
                     <Wifi className="w-3.5 h-3.5 text-blue-500 animate-pulse" />
-                    <span>Sinkronisasi otomatis ke cloud sedang berjalan, harap tunggu...</span>
+                    <span>Memeriksa DNS dan akses toko, harap tunggu (maks. ±1 menit)...</span>
                   </span>
                 </div>
               )}
