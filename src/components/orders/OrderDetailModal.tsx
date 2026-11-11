@@ -9,6 +9,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { isManualTransferMethod } from '../../utils/manualPayment';
+import { getMerchantOrderAction } from '../../utils/orderFlow';
 import { Order, Store as StoreType } from '../../types';
 import {
   formatRupiah,
@@ -30,6 +31,7 @@ interface OrderDetailModalProps {
   onPrintReceipt: (order: Order) => void;
   onMarkCompleted?: (orderId: string) => void;
   onVerifyPayment?: (orderId: string) => Promise<void>;
+  onConfirmCodOrder?: (orderId: string) => Promise<void>;
   onShowNotification?: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -42,18 +44,31 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   onPrintReceipt,
   onMarkCompleted,
   onVerifyPayment,
+  onConfirmCodOrder,
   onShowNotification,
 }) => {
   const { t, language } = useLanguage();
   const isEn = language === 'en';
   const [copiedResi, setCopiedResi] = useState(false);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [isConfirmingCod, setIsConfirmingCod] = useState(false);
 
   // Determine current active step index (0 to 4)
   const isPaid = order?.paymentStatus === 'Sudah Dibayar';
   const isProcessed = order?.shippingStatus !== 'Baru';
   const isShipped = order?.shippingStatus === 'Dikirim' || order?.shippingStatus === 'Selesai';
   const isCompleted = order?.shippingStatus === 'Selesai';
+  const nextAction = order ? getMerchantOrderAction(order) : 'none';
+
+  const handleConfirmCod = async () => {
+    if (!order || !onConfirmCodOrder) return;
+    setIsConfirmingCod(true);
+    try {
+      await onConfirmCodOrder(order.id);
+    } finally {
+      setIsConfirmingCod(false);
+    }
+  };
 
   const currentStepIndex = isCompleted ? 4 : isShipped ? 3 : isProcessed ? 2 : isPaid ? 1 : 0;
   const progressPercentage = Math.round((currentStepIndex / 4) * 100);
@@ -211,6 +226,19 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             </div>
           )}
 
+          {/* 0b. PESANAN COD: perlu dikonfirmasi merchant sebelum dikirim */}
+          {nextAction === 'confirm_cod' && (
+            <div className="p-4 rounded-xl border bg-[#FAF7F7] border-[#E5E0DD] flex items-start gap-2.5">
+              <Clock className="w-5 h-5 shrink-0 text-[#706866]" />
+              <div className="space-y-0.5">
+                <p className="text-sm font-bold text-[#241A1A]">Pesanan COD menunggu konfirmasi Anda</p>
+                <p className="text-xs text-[#706866] leading-relaxed">
+                  {`Pastikan stok tersedia lalu konfirmasi pesanan sebelum mengatur pengiriman. Pembeli membayar ${formatRupiah(order.grandTotal)} saat barang tiba, dan pembayaran tercatat lunas otomatis ketika pesanan ditandai selesai.`}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* 1. STATUS PERJALANAN PESANAN (Interactive Stepper with Progress & Details) */}
           <OrderTimelineStepper
             order={order}
@@ -226,6 +254,9 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             biteshipTrackingUrl={biteshipTrackingUrl}
             onProcessShipping={onProcessShipping}
             onMarkCompleted={onMarkCompleted}
+            nextAction={nextAction}
+            isConfirmingCod={isConfirmingCod}
+            onConfirmCod={onConfirmCodOrder ? handleConfirmCod : undefined}
             onPrintReceipt={onPrintReceipt}
           />
 
@@ -273,7 +304,22 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
           </div>
 
           <div className="flex items-center w-full sm:w-auto">
-            {order.shippingStatus === 'Baru' || order.shippingStatus === 'Diproses' ? (
+            {nextAction === 'verify_payment' ? (
+              <span className="w-full sm:w-auto justify-center px-4 py-2.5 min-h-[42px] rounded-xl border border-amber-300 bg-amber-50 text-amber-800 font-semibold text-xs flex items-center gap-1.5">
+                <Clock className="w-4 h-4" />
+                <span>Tandai lunas dulu untuk mengirim</span>
+              </span>
+            ) : nextAction === 'confirm_cod' && onConfirmCodOrder ? (
+              <button
+                type="button"
+                disabled={isConfirmingCod}
+                onClick={handleConfirmCod}
+                className="w-full sm:w-auto justify-center px-5 py-2.5 min-h-[42px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs flex items-center gap-1.5 transition cursor-pointer active:scale-98 disabled:opacity-70"
+              >
+                {isConfirmingCod ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                <span>{t('confirm_order', 'Konfirmasi Pesanan')}</span>
+              </button>
+            ) : nextAction === 'ship' ? (
               <button
                 onClick={() => {
                   onClose();
@@ -284,7 +330,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 <Send className="w-4 h-4" />
                 <span>{t('order_btn_process_shipping', 'Proses Pengiriman')}</span>
               </button>
-            ) : order.shippingStatus === 'Dikirim' && onMarkCompleted ? (
+            ) : nextAction === 'complete' && onMarkCompleted ? (
               <button
                 onClick={() => {
                   onMarkCompleted(order.id);

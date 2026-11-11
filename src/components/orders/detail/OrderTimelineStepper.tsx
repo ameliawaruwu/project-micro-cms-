@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Order } from '../../../types';
 import { formatRupiah, formatDateIndo } from '../../../utils/formatters';
+import { isCodMethod, MerchantOrderAction } from '../../../utils/orderFlow';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 export interface TimelineStepItem {
@@ -46,6 +47,9 @@ interface OrderTimelineStepperProps {
   biteshipTrackingUrl: string;
   onProcessShipping: (order: Order) => void;
   onMarkCompleted?: (orderId: string) => void;
+  nextAction: MerchantOrderAction;
+  isConfirmingCod?: boolean;
+  onConfirmCod?: () => void;
   onPrintReceipt: (order: Order) => void;
 }
 
@@ -63,10 +67,15 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
   biteshipTrackingUrl,
   onProcessShipping,
   onMarkCompleted,
+  nextAction,
+  isConfirmingCod = false,
+  onConfirmCod,
   onPrintReceipt,
 }) => {
   const { t, language } = useLanguage();
   const isPaid = order.paymentStatus === 'Sudah Dibayar';
+  // COD dibayar saat barang tiba; tampilkan sebagai "bayar di tempat", bukan menunggu verifikasi.
+  const isCodUnpaid = !isPaid && isCodMethod(order.paymentMethod);
   const isProcessed = order.shippingStatus !== 'Baru';
 
   const steps: TimelineStepItem[] = [
@@ -87,16 +96,28 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
     {
       id: 2,
       title: language === 'en' ? 'Payment Received' : 'Pembayaran Diterima',
-      subtitle: isPaid ? `${order.paymentMethod} (${language === 'en' ? 'Paid' : 'Lunas'})` : (language === 'en' ? 'Awaiting Payment' : 'Menunggu Bayar'),
+      subtitle: isPaid
+        ? `${order.paymentMethod} (${language === 'en' ? 'Paid' : 'Lunas'})`
+        : isCodUnpaid
+        ? (language === 'en' ? 'Pay on Delivery' : 'Bayar di Tempat')
+        : (language === 'en' ? 'Awaiting Payment' : 'Menunggu Bayar'),
       icon: CreditCard,
       completed: isPaid,
       active: isPaid && !isProcessed,
-      statusLabel: isPaid ? (language === 'en' ? 'Payment Completed' : 'Pembayaran Lunas') : (language === 'en' ? 'Awaiting Verification' : 'Menunggu Verifikasi'),
+      statusLabel: isPaid
+        ? (language === 'en' ? 'Payment Completed' : 'Pembayaran Lunas')
+        : isCodUnpaid
+        ? (language === 'en' ? 'Paid on Arrival' : 'Dibayar Saat Tiba')
+        : (language === 'en' ? 'Awaiting Verification' : 'Menunggu Verifikasi'),
       badgeColor: isPaid ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]' : 'bg-[#FEFCE8] text-[#A16207] border-[#FEF08A]',
       description: isPaid
         ? (language === 'en'
             ? `Order bill of ${formatRupiah(order.grandTotal)} has been verified via ${order.paymentMethod}.`
             : `Tagihan pesanan sebesar ${formatRupiah(order.grandTotal)} telah diverifikasi lunas melalui metode pembayaran ${order.paymentMethod}.`)
+        : isCodUnpaid
+        ? (language === 'en'
+            ? `Customer pays ${formatRupiah(order.grandTotal)} in cash when the package arrives. Payment is recorded as paid once the order is marked completed.`
+            : `Pembeli membayar tunai ${formatRupiah(order.grandTotal)} saat paket tiba. Pembayaran tercatat lunas otomatis ketika pesanan ditandai selesai.`)
         : (language === 'en'
             ? `Waiting for payment of ${formatRupiah(order.grandTotal)} from customer via ${order.paymentMethod}.`
             : `Menunggu penyelesaian pembayaran sebesar ${formatRupiah(order.grandTotal)} dari pelanggan via ${order.paymentMethod}.`),
@@ -363,7 +384,26 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
             </div>
           )}
 
-          {currentSelectedStep.id === 3 && !isShipped && (
+          {currentSelectedStep.id === 3 && nextAction === 'verify_payment' && (
+            <span className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 font-semibold text-[11px] flex items-center gap-1 shrink-0 self-start sm:self-center">
+              <Clock className="w-3 h-3" />
+              <span>{language === 'en' ? 'Mark as paid first' : 'Tandai lunas dulu'}</span>
+            </span>
+          )}
+
+          {currentSelectedStep.id === 3 && nextAction === 'confirm_cod' && onConfirmCod && (
+            <button
+              type="button"
+              disabled={isConfirmingCod}
+              onClick={onConfirmCod}
+              className="px-3 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 self-start sm:self-center disabled:opacity-70"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>{language === 'en' ? 'Confirm Order' : 'Konfirmasi Pesanan'}</span>
+            </button>
+          )}
+
+          {currentSelectedStep.id === 3 && nextAction === 'ship' && (
             <button
               type="button"
               onClick={() => onProcessShipping(order)}

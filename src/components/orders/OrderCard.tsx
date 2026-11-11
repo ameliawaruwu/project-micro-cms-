@@ -9,8 +9,11 @@ import {
   CheckCircle2,
   Package,
   Eye,
+  Clock,
+  Loader2,
 } from 'lucide-react';
 import { Order } from '../../types';
+import { getMerchantOrderAction } from '../../utils/orderFlow';
 import { formatRupiah, formatDateIndo, generateTrackingLink } from '../../utils/formatters';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -19,6 +22,7 @@ interface OrderCardProps {
   onProcessShipping: (order: Order) => void;
   onPrintReceipt: (order: Order) => void;
   onMarkCompleted?: (orderId: string) => void;
+  onConfirmCodOrder?: (orderId: string) => Promise<void>;
   onSelectOrder?: (order: Order) => void;
   onShowNotification: (msg: string) => void;
 }
@@ -28,11 +32,24 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   onProcessShipping,
   onPrintReceipt,
   onMarkCompleted,
+  onConfirmCodOrder,
   onSelectOrder,
   onShowNotification,
 }) => {
   const { t, language } = useLanguage();
   const [copiedResi, setCopiedResi] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const nextAction = getMerchantOrderAction(order);
+
+  const handleConfirmCod = async () => {
+    if (!onConfirmCodOrder) return;
+    setIsConfirming(true);
+    try {
+      await onConfirmCodOrder(order.id);
+    } finally {
+      setIsConfirming(false);
+    }
+  };
 
   const isAwaitingPaymentCheck = order.paymentStatus !== 'Sudah Dibayar' && Boolean(order.paymentConfirmedAt);
   const paymentBadgeClass = isAwaitingPaymentCheck
@@ -305,7 +322,25 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           )}
 
           {/* Primary Action Button */}
-          {order.shippingStatus === 'Baru' || order.shippingStatus === 'Diproses' ? (
+          {nextAction === 'verify_payment' ? (
+            <button
+              onClick={() => onSelectOrder?.(order)}
+              title="Tandai lunas dulu sebelum mengatur pengiriman"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold text-xs transition cursor-pointer active:scale-98"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>{t('check_payment', 'Cek Pembayaran')}</span>
+            </button>
+          ) : nextAction === 'confirm_cod' && onConfirmCodOrder ? (
+            <button
+              onClick={handleConfirmCod}
+              disabled={isConfirming}
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98 disabled:opacity-70"
+            >
+              {isConfirming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+              <span>{t('confirm_order', 'Konfirmasi Pesanan')}</span>
+            </button>
+          ) : nextAction === 'ship' ? (
             <button
               onClick={() => onProcessShipping(order)}
               className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98"
@@ -313,7 +348,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <Send className="w-3.5 h-3.5" />
               <span>{t('arrange_shipping', 'Atur Pengiriman')}</span>
             </button>
-          ) : (order.shippingStatus === 'Dikirim' || order.shippingStatus === 'ready_to_ship') && onMarkCompleted ? (
+          ) : nextAction === 'complete' && onMarkCompleted ? (
             <button
               onClick={() => onMarkCompleted(order.id)}
               className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98"

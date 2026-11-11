@@ -11,6 +11,7 @@ interface OrderListPageProps {
   onProcessShipping: (order: Order) => void;
   onPrintReceipt: (order: Order) => void;
   onMarkCompleted: (orderId: string) => void;
+  onConfirmCodOrder?: (orderId: string) => Promise<void>;
   onSelectOrder: (order: Order) => void;
   onShowNotification: (msg: string) => void;
   onNavigateDashboard?: () => void;
@@ -21,6 +22,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
   onProcessShipping,
   onPrintReceipt,
   onMarkCompleted,
+  onConfirmCodOrder,
   onSelectOrder,
   onShowNotification,
   onNavigateDashboard,
@@ -156,6 +158,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
               onProcessShipping={onProcessShipping}
               onPrintReceipt={onPrintReceipt}
               onMarkCompleted={onMarkCompleted}
+              onConfirmCodOrder={onConfirmCodOrder}
               onSelectOrder={onSelectOrder}
               onShowNotification={onShowNotification}
             />

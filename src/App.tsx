@@ -53,6 +53,7 @@ import { cartService } from './services/cartService';
 import { formatRupiah } from './utils/formatters';
 import { getStoreSections } from './utils/layoutConstants';
 import { isPlatformHost, getStoreSlugFromHost } from './utils/domainRouting';
+import { getShippingBlockReason, isCodMethod } from './utils/orderFlow';
 
 // Layout & Common Components
 import { Sidebar } from './components/layout/Sidebar';
@@ -1195,6 +1196,11 @@ export default function App() {
 
   // Handlers for Orders
   const handleOpenProcessShipping = (order: Order) => {
+    const blockReason = getShippingBlockReason(order);
+    if (blockReason) {
+      addToast(blockReason, 'error');
+      return;
+    }
     setSelectedOrderDetail(null);
     setOrderToShip(order);
     setIsShippingModalOpen(true);
@@ -1212,17 +1218,40 @@ export default function App() {
     setIsReceiptModalOpen(true);
   };
 
+  const replaceOrder = (updated: Order) => {
+    setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+    setSelectedOrderDetail((prev) => (prev && prev.id === updated.id ? updated : prev));
+  };
+
+  // COD: merchant menyetujui pesanan sebelum diatur pengirimannya (Baru -> Diproses).
+  const handleConfirmCodOrder = async (orderId: string) => {
+    try {
+      const updated = await orderService.updateOrderStatus(orderId, 'Diproses', undefined, currentStore?.id);
+      replaceOrder(updated);
+      addToast(`Pesanan COD #${updated.orderNumber} dikonfirmasi. Silakan atur pengiriman.`);
+    } catch (err: any) {
+      addToast(err?.message || 'Gagal mengonfirmasi pesanan.', 'error');
+    }
+  };
+
   const handleMarkCompleted = async (orderId: string) => {
-    const updated = await orderService.updateOrderStatus(orderId, 'Selesai');
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
-    addToast(`Pesanan #${updated.orderNumber} telah ditandai Selesai.`);
+    try {
+      let updated = await orderService.updateOrderStatus(orderId, 'Selesai', undefined, currentStore?.id);
+      // Uang COD diterima saat barang tiba, jadi pembayarannya otomatis lunas.
+      if (isCodMethod(updated.paymentMethod) && updated.paymentStatus !== 'Sudah Dibayar') {
+        updated = await orderService.updatePaymentStatus(orderId, 'Sudah Dibayar', currentStore?.id);
+      }
+      replaceOrder(updated);
+      addToast(`Pesanan #${updated.orderNumber} telah ditandai Selesai.`);
+    } catch (err: any) {
+      addToast(err?.message || 'Gagal menandai pesanan selesai.', 'error');
+    }
   };
 
   const handleVerifyPayment = async (orderId: string) => {
     try {
       const updated = await orderService.updatePaymentStatus(orderId, 'Sudah Dibayar', currentStore?.id);
-      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
-      setSelectedOrderDetail((prev) => (prev && prev.id === orderId ? updated : prev));
+      replaceOrder(updated);
       addToast(`Pembayaran pesanan #${updated.orderNumber} ditandai lunas.`);
     } catch (err: any) {
       addToast(err?.message || 'Gagal menandai pembayaran lunas.', 'error');
@@ -2050,6 +2079,7 @@ export default function App() {
                   onProcessShipping={handleOpenProcessShipping}
                   onPrintReceipt={handlePrintReceipt}
                   onMarkCompleted={handleMarkCompleted}
+                  onConfirmCodOrder={handleConfirmCodOrder}
                   onSelectOrder={(ord) => setSelectedOrderDetail(ord)}
                   onShowNotification={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
@@ -2213,6 +2243,7 @@ export default function App() {
         onProcessShipping={handleOpenProcessShipping}
         onPrintReceipt={handlePrintReceipt}
         onMarkCompleted={handleMarkCompleted}
+        onConfirmCodOrder={handleConfirmCodOrder}
         onVerifyPayment={handleVerifyPayment}
         onShowNotification={addToast}
       />
