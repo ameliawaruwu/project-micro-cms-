@@ -13,3 +13,4 @@ export * from './CategoryPage';
 export * from './OrderDetailPage';
 export * from './AddressPage';
 export * from './WishlistPage';
+export * from './TrackOrderPage';

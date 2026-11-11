@@ -24,6 +24,7 @@ const resolveInitialPage = (store?: Store): string => {
   if (currentPath.includes('/product/') || currentPath.includes('/produk/')) return 'product';
   if (currentPath.includes('/cart') || currentPath.includes('/keranjang')) return 'cart';
   if (currentPath.includes('/checkout')) return 'checkout';
+  if (currentPath.includes('/lacak') || currentPath.includes('/track')) return 'track_order';
   if (currentPath.includes('/orders') || currentPath.includes('/pesanan')) return 'orders';
   if (currentPath.includes('/profile') || currentPath.includes('/profil')) return 'profile';
   if (currentPath.includes('/forgot-password') || currentPath.includes('/lupa-password')) return 'forgot_password';

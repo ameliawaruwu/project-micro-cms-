@@ -44,7 +44,7 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
         <div className="hidden md:flex items-center justify-between px-6 py-2 bg-gradient-to-r from-gray-900 to-black text-white/80 text-[11px] font-medium tracking-wide">
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"><Phone className="w-3.5 h-3.5" /> 0800-1234-567</span>
-            <span className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"><MapPin className="w-3.5 h-3.5" /> Lacak Pesanan</span>
+            <a href="/lacak" className="flex items-center gap-1.5 hover:text-white transition-colors"><MapPin className="w-3.5 h-3.5" /> Lacak Pesanan</a>
           </div>
           <div className="flex items-center gap-6">
             <span className="hover:text-white transition-colors cursor-pointer">Bantuan</span>

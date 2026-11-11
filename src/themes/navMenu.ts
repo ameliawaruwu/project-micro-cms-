@@ -102,6 +102,12 @@ const NAV_PAGE_RULES: NavPageRule[] = [
     matchesText: textHas('checkout', 'bayar'),
   },
   {
+    // Sebelum 'orders' agar label "Lacak Pesanan" tidak dianggap halaman riwayat pesanan.
+    page: 'track_order',
+    matchesHref: (href) => hrefHas('/lacak', '/track')(href) || hrefIs('#lacak', '#track')(href),
+    matchesText: textHas('lacak', 'track'),
+  },
+  {
     page: 'orders',
     matchesHref: (href) => hrefHas('/orders', '/pesanan')(href) || hrefIs('#orders', '#pesanan')(href),
     matchesText: textHas('orders', 'pesanan'),

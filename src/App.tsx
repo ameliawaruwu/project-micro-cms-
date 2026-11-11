@@ -264,6 +264,7 @@ export default function App() {
         'cart', 'keranjang',
         'checkout',
         'orders', 'pesanan',
+        'lacak', 'track',
         'profile', 'profil',
         'thank_you', 'terima-kasih'
       ];
@@ -615,6 +616,7 @@ export default function App() {
       'cart', 'keranjang',
       'checkout',
       'orders', 'pesanan',
+      'lacak', 'track',
       'profile', 'profil',
       'thank_you', 'terima-kasih'
     ];

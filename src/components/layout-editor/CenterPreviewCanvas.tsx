@@ -44,7 +44,7 @@ import { getThemeSectionComponent, resolveThemeForSections, HIDDEN_SECTION_IDS }
 import { ResponsivePreviewScope } from './ResponsivePreviewScope';
 import { getStorefrontThemeVars } from '../../themes/pages/storefrontTheme';
 import { StorefrontContext, StorefrontToast } from '../../themes/storefrontCart';
-import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage } from '../../themes/pages';
+import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage, TrackOrderPage } from '../../themes/pages';
 import { loadGoogleFont } from '../../utils/fontLoader';
 
 const hasThemeComponent = (themeId: any, sectionId: string) => !!getThemeSectionComponent(themeId, sectionId);
@@ -357,9 +357,20 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
       );
     }
 
+    if (pageId === 'track_order') {
+      return (
+        <TrackOrderPage
+          themeId={activeThemeId}
+          store={store}
+          onNavigate={(p) => onPageChange && onPageChange(p)}
+          deviceMode={childDeviceMode}
+        />
+      );
+    }
+
     if (pageId === 'profile') {
       return (
-        <ProfilePage 
+        <ProfilePage
           themeId={activeThemeId}
           store={store}
           onNavigate={(p) => onPageChange && onPageChange(p)}

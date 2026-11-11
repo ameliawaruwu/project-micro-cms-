@@ -1074,11 +1074,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <button
-                  onClick={() => (onNavigate ? onNavigate('orders') : null)}
+                  onClick={() => (onNavigate ? onNavigate('track_order') : null)}
                   className="w-full sm:w-1/2 py-3 px-4 bg-[var(--sf-primary)] hover:bg-[var(--sf-primary)] text-white font-bold rounded-[var(--sf-radius)] flex items-center justify-center gap-2 transition cursor-pointer shadow-xs text-xs"
                 >
-                  <Package className="w-4 h-4" />
-                  <span>Lihat Riwayat Pesanan</span>
+                  <MapPin className="w-4 h-4" />
+                  <span>Lacak Pesanan</span>
                 </button>
 
                 <button

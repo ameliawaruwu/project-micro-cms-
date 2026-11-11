@@ -1,6 +1,30 @@
 import { Order, ShippingStatus, CourierType, PaymentStatus, OrderItem } from '../types';
 import { supabase, getSessionToken } from './supabaseClient';
 
+/** Data pesanan yang boleh dilihat pembeli lewat halaman Lacak Pesanan (tanpa alamat / kontak). */
+export interface TrackedOrder {
+  orderNumber: string;
+  createdAt: string;
+  updatedAt?: string;
+  paymentMethod: string;
+  isPaid: boolean;
+  paymentConfirmedAt?: string;
+  paidAt?: string;
+  orderStatus: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  shippedAt?: string;
+  courier: string;
+  courierService?: string;
+  trackingNumber?: string;
+  shippingCity?: string;
+  shippingCost: number;
+  totalAmount: number;
+  items: Array<{ name: string; image?: string; variant?: string; price: number; quantity: number; subtotal: number }>;
+}
+
+export type TrackOrderResult =
+  | { status: 'found'; order: TrackedOrder }
+  | { status: 'not_found' | 'locked' | 'invalid' };
+
 // ============================================================
 // MERCHANT DATA ISOLATION: localStorage dipartisi per storeId
 // Key format: microcms_orders_v2_{storeId}
@@ -363,6 +387,89 @@ class OrderService {
       this.saveOrders(storeId, orders);
     }
     return confirmedAt;
+  }
+
+  /** Pesanan yang pernah dibuat dari perangkat ini (salinan lokal), terbaru lebih dulu. */
+  getLocalOrders(storeId: string): Order[] {
+    if (!storeId) return [];
+    return [...this.getStoredOrders(storeId)].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }
+
+  /**
+   * Lacak pesanan tanpa login: nomor pesanan + nomor WhatsApp saat checkout harus cocok.
+   * Server hanya mengembalikan status, kurir/resi, dan isi pesanan (tanpa alamat / kontak).
+   */
+  async trackOrder(storeId: string, orderNumber: string, phone: string): Promise<TrackOrderResult> {
+    const { data, error } = await supabase.rpc('track_order', {
+      p_store_id: storeId,
+      p_order_number: orderNumber,
+      p_phone: phone,
+    });
+    if (error) {
+      console.error('[Supabase Database] Gagal melacak pesanan:', error);
+      throw new Error('Gagal memuat status pesanan. Silakan coba lagi.');
+    }
+    const result = (data || {}) as { status?: string; order?: any };
+    if (result.status !== 'found' || !result.order) {
+      const status = result.status === 'locked' || result.status === 'invalid' ? result.status : 'not_found';
+      return { status };
+    }
+
+    const row = result.order;
+    const tracked: TrackedOrder = {
+      orderNumber: String(row.order_number || ''),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at || undefined,
+      paymentMethod: String(row.payment_method || ''),
+      isPaid: row.payment_status === 'paid',
+      paymentConfirmedAt: row.payment_confirmed_at || undefined,
+      paidAt: row.paid_at || undefined,
+      orderStatus: (row.order_status || 'pending') as TrackedOrder['orderStatus'],
+      shippedAt: row.shipped_at || undefined,
+      courier: String(row.shipping_courier || row.courier_code || ''),
+      courierService: row.courier_service || undefined,
+      trackingNumber: row.tracking_number || undefined,
+      shippingCity: row.shipping_city || undefined,
+      shippingCost: Number(row.shipping_cost) || 0,
+      totalAmount: Number(row.total_amount) || 0,
+      items: (Array.isArray(row.items) ? row.items : []).map((item: any) => ({
+        name: String(item.product_name || ''),
+        image: item.product_image || undefined,
+        variant: item.variant_info || undefined,
+        price: Number(item.price) || 0,
+        quantity: Number(item.quantity) || 0,
+        subtotal: Number(item.subtotal) || 0,
+      })),
+    };
+
+    this.syncLocalStatus(storeId, tracked);
+    return { status: 'found', order: tracked };
+  }
+
+  /** Perbarui salinan lokal pembeli agar halaman riwayat ikut menampilkan status terbaru. */
+  private syncLocalStatus(storeId: string, tracked: TrackedOrder) {
+    const orders = this.getStoredOrders(storeId);
+    const index = orders.findIndex((o) => o.orderNumber === tracked.orderNumber);
+    if (index === -1) return;
+    const shippingStatus: Record<TrackedOrder['orderStatus'], ShippingStatus> = {
+      pending: 'Baru',
+      processing: 'Diproses',
+      shipped: 'Dikirim',
+      delivered: 'Selesai',
+      cancelled: 'Dibatalkan',
+    };
+    orders[index] = {
+      ...orders[index],
+      paymentStatus: tracked.isPaid ? 'Sudah Dibayar' : orders[index].paymentStatus,
+      paymentConfirmedAt: tracked.paymentConfirmedAt || orders[index].paymentConfirmedAt,
+      shippingStatus: shippingStatus[tracked.orderStatus] || orders[index].shippingStatus,
+      resiNumber: tracked.trackingNumber || orders[index].resiNumber,
+      trackingNumber: tracked.trackingNumber || orders[index].trackingNumber,
+      shippedAt: tracked.shippedAt || orders[index].shippedAt,
+    };
+    this.saveOrders(storeId, orders);
   }
 
   async processShipment(orderId: string, courier: CourierType, resiNumber?: string, storeId?: string): Promise<Order> {
