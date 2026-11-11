@@ -15,6 +15,8 @@ interface DashboardPageProps {
   currentUser?: User | null;
   onShowNotification?: (msg: string, type?: 'success' | 'error' | 'info') => void;
   store: StoreType;
+  /** true selama data toko masih dimuat (mis. setelah hard refresh). */
+  isStoreLoading?: boolean;
   orders: Order[];
   products: Product[];
   onNavigateTab: (tab: MerchantTab) => void;
@@ -31,6 +33,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   currentUser,
   onShowNotification,
   store,
+  isStoreLoading = false,
   orders,
   products,
   onNavigateTab,
@@ -43,6 +46,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const { t, language } = useLanguage();
   const isEn = language === 'en';
   const { domain: storeBaseDomain } = useStoreBaseDomain(store);
+  // Toko kosong saat data masih dimuat belum berarti merchant tidak punya toko.
+  const isLoadingStore = isStoreLoading && !store.id;
+  const hasNoStore = !isStoreLoading && !store.id;
 
   // Coordinated Single Source of Truth Hook for Dashboard Metrics
   const {
@@ -77,7 +83,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <span>{t('dashboard_title', 'Dashboard')}</span>
             </h1>
             {/* Store Status Badge */}
-            {!store.id ? (
+            {isLoadingStore ? (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-500 text-[11px] font-medium shadow-2xs">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-300 animate-pulse"></span>
+                <span>{isEn ? 'Loading store...' : 'Memuat toko...'}</span>
+              </div>
+            ) : hasNoStore ? (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-medium shadow-2xs">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-400"></span>
                 <span>{isEn ? 'No Store Yet' : 'Belum Memiliki Toko'}</span>
@@ -125,7 +136,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       </div>
 
       {/* Onboarding Call-to-Action for new merchants without a store */}
-      {!store.id && (
+      {hasNoStore && (
         <div className="bg-gradient-to-r from-[#66000E] to-[#8A0013] rounded-2xl p-5 sm:p-6 text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">

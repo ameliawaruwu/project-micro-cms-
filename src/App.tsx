@@ -2000,6 +2000,7 @@ export default function App() {
                   currentUser={user}
                   onShowNotification={addToast}
                   store={currentStore}
+                  isStoreLoading={isStoreLoading}
                   orders={orders}
                   products={products}
                   onNavigateTab={setActiveTab}
