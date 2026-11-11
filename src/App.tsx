@@ -2016,6 +2016,7 @@ export default function App() {
               onCreateNewStore={() => setAuthView('register')}
               onLogout={handleLogout}
               onNavigateAuth={() => setAuthView('login')}
+              onShowToast={addToast}
             />
 
             {/* Main Content Area */}

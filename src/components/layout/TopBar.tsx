@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ChevronDown,
   Menu,
   User as UserIcon,
+  UserPen,
 } from 'lucide-react';
 import { Store as StoreType, ViewMode, User } from '../../types';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { ProfileSettingsModal } from '../common/ProfileSettingsModal';
 
 interface TopBarProps {
   stores?: StoreType[];
@@ -20,18 +24,41 @@ interface TopBarProps {
   onCreateNewStore?: () => void;
   onLogout?: () => void;
   onNavigateAuth?: () => void;
+  onShowToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
+
+/** Foto profil bila ada, selain itu ikon pengguna bawaan. */
+const UserAvatar: React.FC<{ user: User | null; className: string; iconClassName: string }> = ({
+  user,
+  className,
+  iconClassName,
+}) =>
+  user?.avatarUrl ? (
+    <img src={user.avatarUrl} alt="" className={`${className} object-cover`} />
+  ) : (
+    <div className={`${className} bg-[#66000E] text-white flex items-center justify-center`}>
+      <UserIcon className={`${iconClassName} text-white`} />
+    </div>
+  );
 
 export const TopBar: React.FC<TopBarProps> = ({
   user,
   onToggleSidebar,
+  onShowToast,
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const { t } = useLanguage();
+  const { updateUser } = useAuth();
+
+  const openProfileModal = () => {
+    setUserDropdownOpen(false);
+    setProfileModalOpen(true);
+  };
 
   return (
-    <header 
-      id="topbar-main" 
+    <header
+      id="topbar-main"
       className="sticky top-0 z-30 bg-white border-b border-[#E5E0DD] px-3.5 sm:px-6 py-2 flex items-center justify-between shadow-2xs font-poppins transition-all w-full max-w-full min-h-[48px]"
     >
       {/* Left side: Mobile Hamburger Toggle */}
@@ -58,9 +85,11 @@ export const TopBar: React.FC<TopBarProps> = ({
             className="flex items-center gap-1.5 px-2 py-1 rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] hover:bg-white hover:border-[#66000E]/40 transition text-left cursor-pointer min-h-[32px] shadow-2xs"
             aria-label={t('store_owner', 'Pemilik Toko')}
           >
-            <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-md bg-[#66000E] text-white flex items-center justify-center font-medium text-xs shrink-0 shadow-2xs">
-              <UserIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
-            </div>
+            <UserAvatar
+              user={user}
+              className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-md shrink-0 shadow-2xs"
+              iconClassName="w-3 h-3 sm:w-3.5 sm:h-3.5"
+            />
             <div className="hidden sm:flex flex-col text-left min-w-0 max-w-[120px]">
               <span className="font-medium text-[#241A1A] text-xs truncate leading-tight">
                 {user?.name || t('store_owner', 'Pemilik Toko')}
@@ -77,9 +106,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               <div className="fixed inset-0 z-40" onClick={() => setUserDropdownOpen(false)} />
               <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-[#E5E0DD] p-3 z-50 animate-in fade-in zoom-in-95 duration-150 text-left">
                 <div className="flex items-center gap-2.5 pb-2.5 border-b border-[#E5E0DD]">
-                  <div className="w-9 h-9 rounded-full bg-[#66000E] text-white flex items-center justify-center font-semibold text-xs shrink-0">
-                    <UserIcon className="w-4 h-4 text-white" />
-                  </div>
+                  <UserAvatar user={user} className="w-9 h-9 rounded-full shrink-0" iconClassName="w-4 h-4" />
                   <div className="truncate flex-1">
                     <div className="flex items-center justify-between gap-1">
                       <span className="font-medium text-xs text-[#241A1A] truncate">
@@ -103,11 +130,37 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <span className="font-medium text-emerald-700">{t('verified', 'Terverifikasi')}</span>
                   </div>
                 </div>
+
+                {user && (
+                  <button
+                    type="button"
+                    onClick={openProfileModal}
+                    className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#241A1A] hover:border-[#66000E]/40 hover:text-[#66000E] hover:bg-[#FAF7F7] transition cursor-pointer"
+                  >
+                    <UserPen className="w-3.5 h-3.5" />
+                    <span>{t('edit_profile', 'Edit Profil')}</span>
+                  </button>
+                )}
               </div>
             </>
           )}
         </div>
       </div>
+
+      {/* Dipasang hanya saat dibuka agar isian selalu berangkat dari data akun terbaru. */}
+      {/* Portal ke body: header sticky membuat stacking context sendiri (z-30). */}
+      {profileModalOpen &&
+        createPortal(
+          <ProfileSettingsModal
+            variant="merchant"
+            isOpen
+            onClose={() => setProfileModalOpen(false)}
+            currentUser={user}
+            onProfileUpdated={updateUser}
+            onShowToast={(msg, type) => onShowToast?.(msg, type)}
+          />,
+          document.body
+        )}
     </header>
   );
 };

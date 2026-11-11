@@ -1,29 +1,52 @@
 import React, { useState, useRef } from 'react';
 import { X, User, Upload, Trash2, Lock, Phone, Mail, Loader2, Check } from 'lucide-react';
-import { User as UserType } from '../../../types';
-import { authService } from '../../../services/authService';
-import { isDataImageUrl, mediaService } from '../../../services/mediaService';
-import { useLanguage } from '../../../contexts/LanguageContext';
+import { User as UserType } from '../../types';
+import { authService } from '../../services/authService';
+import { isDataImageUrl, mediaService } from '../../services/mediaService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
-interface AdminProfileModalProps {
+/** `admin` = super admin (dasbor admin), `merchant` = pemilik toko (dasbor CMS). */
+export type ProfileVariant = 'admin' | 'merchant';
+
+interface ProfileSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: UserType | null;
   onProfileUpdated: (updatedUser: UserType) => void;
   onShowToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  variant?: ProfileVariant;
 }
 
-export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
+const COPY = {
+  admin: {
+    title: { id: 'Pengaturan Profil Admin', en: 'Admin Profile Settings' },
+    nameLabel: { id: 'Nama Lengkap Admin', en: 'Admin Name' },
+    success: { id: 'Profil admin berhasil diperbarui!', en: 'Admin profile updated successfully!' },
+    defaultName: 'Super Admin LapakQ',
+  },
+  merchant: {
+    title: { id: 'Edit Profil', en: 'Edit Profile' },
+    nameLabel: { id: 'Nama Lengkap', en: 'Full Name' },
+    success: { id: 'Profil berhasil diperbarui!', en: 'Profile updated successfully!' },
+    defaultName: '',
+  },
+} as const;
+
+export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   isOpen,
   onClose,
   currentUser,
   onProfileUpdated,
   onShowToast,
+  variant = 'merchant',
 }) => {
   const { language } = useLanguage();
   const isEn = language === 'en';
+  const copy = COPY[variant];
+  const text = (entry: { id: string; en: string }) => (isEn ? entry.en : entry.id);
 
-  const [name, setName] = useState(currentUser?.name?.replace(/Kroomify/g, 'LapakQ') || 'Super Admin LapakQ');
+  const initialName = variant === 'admin' ? currentUser?.name?.replace(/Kroomify/g, 'LapakQ') : currentUser?.name;
+  const [name, setName] = useState(initialName || copy.defaultName);
   const [phone, setPhone] = useState(currentUser?.phoneWhatsApp || '');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(currentUser?.avatarUrl || null);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -91,7 +114,8 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
       setIsSaving(true);
       setError(null);
 
-      const userId = currentUser?.id || 'USR001';
+      const userId = currentUser?.id;
+      if (!userId) throw new Error(isEn ? 'Session expired. Please sign in again.' : 'Sesi tidak valid. Silakan masuk ulang.');
       // Foto baru masih berupa pratinjau data URL; unggah ke CDN dan simpan URL-nya saja.
       const savedAvatarUrl = isDataImageUrl(avatarUrl) ? await mediaService.uploadImage(avatarUrl, 'avatar') : avatarUrl;
       const updated = await authService.updateProfile(userId, {
@@ -103,10 +127,7 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
       });
 
       onProfileUpdated(updated);
-      onShowToast(
-        isEn ? 'Admin profile updated successfully!' : 'Profil admin berhasil diperbarui!',
-        'success'
-      );
+      onShowToast(text(copy.success), 'success');
       onClose();
     } catch (err: any) {
       setError(err?.message || (isEn ? 'Failed to update profile.' : 'Gagal memperbarui profil.'));
@@ -133,7 +154,7 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-semibold text-gray-900">
-                {isEn ? 'Admin Profile Settings' : 'Pengaturan Profil Admin'}
+                {text(copy.title)}
               </h2>
               <p className="text-[11px] text-gray-500">
                 {isEn ? 'Manage name, photo, and account security' : 'Kelola nama, foto profil, dan keamanan akun'}
@@ -223,7 +244,7 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
           {/* Nama Admin */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              {isEn ? 'Admin Name' : 'Nama Lengkap Admin'}
+              {text(copy.nameLabel)}
             </label>
             <div className="relative">
               <input
@@ -231,6 +252,8 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                maxLength={100}
+                autoComplete="name"
                 className="w-full h-10 px-3 pl-9 rounded-xl border border-gray-300 focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 text-xs text-gray-900 transition outline-none"
               />
               <User className="w-4 h-4 text-gray-400 absolute left-3 top-3 pointer-events-none" />
@@ -245,7 +268,7 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
             <div className="relative">
               <input
                 type="email"
-                value={currentUser?.email?.replace('kroomify.id', 'lapakq.com') || 'admin@lapakq.com'}
+                value={variant === 'admin' ? currentUser?.email?.replace('kroomify.id', 'lapakq.com') || 'admin@lapakq.com' : currentUser?.email || ''}
                 disabled
                 className="w-full h-10 px-3 pl-9 rounded-xl border border-gray-200 bg-gray-100 text-xs text-gray-500 cursor-not-allowed outline-none"
               />
@@ -262,8 +285,11 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(e.target.value.replace(/[^\d+\-\s]/g, ''))}
                 placeholder="081234567890"
+                maxLength={20}
+                inputMode="tel"
+                autoComplete="tel"
                 className="w-full h-10 px-3 pl-9 rounded-xl border border-gray-300 focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 text-xs text-gray-900 transition outline-none"
               />
               <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-3 pointer-events-none" />

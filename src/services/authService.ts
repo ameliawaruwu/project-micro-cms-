@@ -971,9 +971,27 @@ class AuthService {
       }
     }
 
+    // Simpan ke database lebih dulu (RLS: hanya baris milik sesi ini). Bila gagal, sesi lokal
+    // tidak diubah agar tampilan tidak menunjukkan profil yang sebenarnya tidak tersimpan.
+    const updatePayload: Record<string, string | null> = { updated_at: getWibIsoString() };
+    if (data.name !== undefined) updatePayload.name = data.name;
+    if (data.phoneWhatsApp !== undefined) updatePayload.phone = data.phoneWhatsApp;
+    if (data.avatarUrl !== undefined) updatePayload.avatar_url = data.avatarUrl || null;
+    const { data: savedRows, error: saveError } = await supabase
+      .from('users')
+      .update(updatePayload)
+      .eq('id', userId)
+      .select('id');
+    if (saveError || !savedRows?.length) {
+      if (saveError) console.warn('[authService] Error updating profile in Supabase:', saveError.message);
+      throw new Error(data.newPassword
+        ? 'Kata sandi sudah diganti, tetapi profil gagal disimpan. Coba lagi.'
+        : 'Profil gagal disimpan. Silakan masuk ulang lalu coba lagi.');
+    }
+
     const accounts = this.getStoredAccounts();
     const idx = accounts.findIndex(a => a.id === userId);
-    
+
     let updatedUser: User;
     if (idx >= 0) {
       const acc = accounts[idx];
@@ -998,19 +1016,6 @@ class AuthService {
 
     // Update active session in localStorage
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedUser));
-
-    // Update in Supabase
-    try {
-      const updatePayload: any = {};
-      if (data.name !== undefined) updatePayload.name = data.name;
-      if (data.phoneWhatsApp !== undefined) updatePayload.phone = data.phoneWhatsApp;
-      if (data.avatarUrl !== undefined) updatePayload.avatar_url = data.avatarUrl;
-      updatePayload.updated_at = getWibIsoString();
-
-      await supabase.from('users').update(updatePayload).eq('id', userId);
-    } catch (e) {
-      console.warn('[authService] Error updating profile in Supabase:', e);
-    }
 
     return updatedUser;
   }

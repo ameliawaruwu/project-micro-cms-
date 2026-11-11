@@ -24,7 +24,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { AdminTab, AdminNavItem, PlanFormState } from './types';
 import { AdminSidebar } from './components/AdminSidebar';
 import { AdminHeader } from './components/AdminHeader';
-import { AdminProfileModal } from './components/AdminProfileModal';
+import { ProfileSettingsModal } from '../../components/common/ProfileSettingsModal';
 import { AdminOrderDetailModal } from './components/AdminOrderDetailModal';
 import { AdminOverviewTab } from './tabs/AdminOverviewTab';
 import { AdminStoresTab } from './tabs/AdminStoresTab';
@@ -854,7 +854,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       </div>
 
       {/* MODAL PENGATURAN PROFIL ADMIN */}
-      <AdminProfileModal
+      <ProfileSettingsModal
+        variant="admin"
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
         currentUser={loggedInUser}
