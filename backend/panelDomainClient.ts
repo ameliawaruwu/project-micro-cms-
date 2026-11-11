@@ -67,6 +67,11 @@ export const panelDomainClient = {
     return result.status === 404 ? { ...result, ok: true } : result;
   },
 
+  // Parent domains the panel accepts hosts under for this site: { domains: [{ name, source }], customDomains, limits }.
+  async allowedDomains(): Promise<PanelResult> {
+    return callPanel('GET', '/custom-domains/allowed');
+  },
+
   // DNS status of a host: active / active_a / not_propagated.
   async hostStatus(host: string): Promise<PanelResult> {
     return callPanel('GET', `/custom-domains/${encodeURIComponent(host)}/verify`);

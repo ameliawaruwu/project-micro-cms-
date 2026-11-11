@@ -37,6 +37,7 @@ import { storeService } from '../../../services/storeService';
 import { adminService } from '../../../services/adminService';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { DEFAULT_BASE_DOMAIN } from '../../../utils/storeDomain';
+import { PanelDomainSelect } from '../../../components/admin/PanelDomainSelect';
 
 interface AdminCommunitiesTabProps {
   currentUser?: User | null;
@@ -1192,12 +1193,9 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                         <Globe className="w-3 h-3 text-blue-600" />
                         <span>Domain Induk (Opsional)</span>
                       </label>
-                      <input
-                        type="text"
-                        placeholder="Contoh: gmpsbandung.org"
+                      <PanelDomainSelect
                         value={createForm.baseDomain}
-                        onChange={(e) => setCreateForm({ ...createForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
-                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                        onChange={(baseDomain) => setCreateForm({ ...createForm, baseDomain })}
                       />
                     </div>
                   </div>
@@ -1558,12 +1556,10 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
                     <div>
                       <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Domain Induk (Opsional)</label>
-                      <input
-                        type="text"
-                        placeholder="Contoh: gmpsbandung.org"
+                      <PanelDomainSelect
                         value={editForm.baseDomain}
-                        onChange={(e) => setEditForm({ ...editForm, baseDomain: e.target.value.toLowerCase().replace(/https?:\/\//, '').replace(/\/+$/, '').trim() })}
-                        className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-[#66000E]"
+                        onChange={(baseDomain) => setEditForm({ ...editForm, baseDomain })}
+                        readOnly={isSubAdmin}
                       />
                     </div>
                   </div>
