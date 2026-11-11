@@ -9,6 +9,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { formatRupiah } from '../../utils/formatters';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { useStoreBaseDomain } from '../../utils/storeDomain';
+import { WALLET_ENABLED } from '../../config/features';
 
 interface DashboardPageProps {
   currentUser?: User | null;
@@ -147,7 +148,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       )}
 
-      {/* QUICK STORE WALLET BANNER (Saldo Toko Aktif) */}
+      {/* QUICK STORE WALLET BANNER (Saldo Toko Aktif) — disembunyikan selama Dompet nonaktif */}
+      {WALLET_ENABLED && (
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E5E0DD] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#66000E]/30 transition min-h-[90px]">
         <div className="flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-2xl bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] flex items-center justify-center font-semibold shadow-2xs shrink-0">
@@ -173,6 +175,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           )}
         </div>
       </div>
+      )}
 
       {/* 3. 4 Core Metric Cards (Unified Live Single Source of Truth) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

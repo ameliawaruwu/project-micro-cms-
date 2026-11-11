@@ -93,6 +93,7 @@ import { ShippingModal } from './components/shipping/ShippingModal';
 import { ReceiptModal } from './components/orders/ReceiptModal';
 import { OrderDetailModal } from './components/orders/OrderDetailModal';
 import { MerchantWalletModal } from './components/wallet/MerchantWalletModal';
+import { WALLET_ENABLED } from './config/features';
 import { UpgradePlanModal } from './components/billing/UpgradePlanModal';
 import { KroomifyLogo } from './components/common/KroomifyLogo';
 
@@ -2005,7 +2006,7 @@ export default function App() {
                   onOpenAddProduct={handleOpenAddProduct}
                   onOpenStorefront={() => setViewMode('storefront')}
                   onOpenShareStore={() => setIsShareModalOpen(true)}
-                  onOpenWithdraw={() => setWithdrawModalOpen(true)}
+                  onOpenWithdraw={WALLET_ENABLED ? () => setWithdrawModalOpen(true) : undefined}
                   onSelectOrder={(ord) => setSelectedOrderDetail(ord)}
                   onCreateStore={user && !activeStore?.id ? () => setActiveTab('pengaturan') : undefined}
                   onPublishStore={() => handlePublishStore(currentStore.id)}
@@ -2145,7 +2146,7 @@ export default function App() {
                   onUpdateStore={handleUpdateStore}
                   onCreateStore={user && !activeStore?.id ? handleCreateStoreFromSettings : undefined}
                   onPublishStore={() => handlePublishStore(currentStore.id)}
-                  onOpenWithdraw={() => setWithdrawModalOpen(true)}
+                  onOpenWithdraw={WALLET_ENABLED ? () => setWithdrawModalOpen(true) : undefined}
                   onOpenShareModal={() => setIsShareModalOpen(true)}
                   onNavigateBilling={() => setActiveTab('billing')}
                   onShowNotification={addToast}
@@ -2264,14 +2265,14 @@ export default function App() {
           setIsChatbotOpen(false);
         }}
         onOpenAddProduct={handleOpenAddProduct}
-        onOpenWithdraw={() => setWithdrawModalOpen(true)}
+        onOpenWithdraw={WALLET_ENABLED ? () => setWithdrawModalOpen(true) : undefined}
         onOpenShareStore={() => setIsShareModalOpen(true)}
         onOpenStorefront={() => setViewMode('storefront')}
       />
 
       {/* 9. Merchant Wallet & Payout Modal */}
       <MerchantWalletModal
-        isOpen={withdrawModalOpen}
+        isOpen={WALLET_ENABLED && withdrawModalOpen}
         onClose={() => setWithdrawModalOpen(false)}
         store={currentStore}
         onBalanceUpdated={() => loadData(currentStore.id)}

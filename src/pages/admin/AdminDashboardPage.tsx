@@ -30,6 +30,7 @@ import { AdminOverviewTab } from './tabs/AdminOverviewTab';
 import { AdminStoresTab } from './tabs/AdminStoresTab';
 import { AdminDomainRequestsTab } from './tabs/AdminDomainRequestsTab';
 import { AdminWithdrawalsTab } from './tabs/AdminWithdrawalsTab';
+import { WALLET_ENABLED } from '../../config/features';
 import { AdminPlansTab } from './tabs/AdminPlansTab';
 import { AdminOrdersShippingTab } from './tabs/AdminOrdersShippingTab';
 import { AdminTransactionsTab } from './tabs/AdminTransactionsTab';
@@ -620,12 +621,17 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           icon: Globe,
           badge: pendingDomainRequests.length > 0 ? pendingDomainRequests.length : undefined,
         },
-        {
-          id: 'withdrawals',
-          label: language === 'en' ? 'Payouts' : 'Pencairan Dana',
-          icon: Wallet,
-          badge: pendingWithdrawals.length > 0 ? pendingWithdrawals.length : undefined,
-        },
+        // Pencairan Dana disembunyikan selama Dompet toko nonaktif (config/features.ts).
+        ...(WALLET_ENABLED
+          ? [
+              {
+                id: 'withdrawals' as const,
+                label: language === 'en' ? 'Payouts' : 'Pencairan Dana',
+                icon: Wallet,
+                badge: pendingWithdrawals.length > 0 ? pendingWithdrawals.length : undefined,
+              },
+            ]
+          : []),
         {
           id: 'orders-shipping',
           label: language === 'en' ? 'Orders & Shipping' : 'Pesanan & Pengiriman',
@@ -762,7 +768,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             />
           )}
 
-          {activeTab === 'withdrawals' && (
+          {WALLET_ENABLED && activeTab === 'withdrawals' && (
             <AdminWithdrawalsTab
               withdrawals={activeWithdrawalsForAdmin}
               withdrawalTab={withdrawalTab}

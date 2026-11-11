@@ -19,6 +19,7 @@ import {
   Store,
 } from 'lucide-react';
 import { MerchantTab, Store as StoreType } from '../../types';
+import { WALLET_ENABLED } from '../../config/features';
 
 export interface SupportChatbotModalProps {
   isOpen: boolean;
@@ -46,7 +47,7 @@ interface ChatMessage {
 const INITIAL_QUICK_TOPICS = [
   '📦 Cara tambah produk baru?',
   '🚚 Bagaimana cara proses pesanan & resi?',
-  '💰 Cara tarik saldo penjualan?',
+  ...(WALLET_ENABLED ? ['💰 Cara tarik saldo penjualan?'] : []),
   '🔗 Cara bagikan link toko ke pembeli?',
   '⚙️ Cara ubah info toko & WhatsApp?',
   '💳 Metode pembayaran apa saja yang didukung?',
@@ -212,6 +213,14 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
 
     // 4. Tarik Saldo / Penarikan Uang
     if (q.includes('tarik saldo') || q.includes('pencairan') || q.includes('rekening') || q.includes('dompet') || q.includes('uang') || q.includes('withdraw')) {
+      if (!WALLET_ENABLED) {
+        return {
+          id,
+          sender: 'bot',
+          text: 'Fitur Dompet & Tarik Saldo sedang dinonaktifkan sementara. Pembayaran COD dan QRIS/Transfer Bank langsung masuk ke rekening Anda.',
+          timestamp: time,
+        };
+      }
       return {
         id,
         sender: 'bot',
@@ -320,7 +329,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
       quickSuggestions: [
         '📦 Cara tambah produk baru?',
         '🚚 Cara proses pesanan?',
-        '💰 Cara tarik saldo?',
+        ...(WALLET_ENABLED ? ['💰 Cara tarik saldo?'] : []),
         '⚙️ Buka Pengaturan Toko',
       ],
     };
