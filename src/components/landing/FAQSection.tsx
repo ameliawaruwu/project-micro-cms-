@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown, HelpCircle, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { adminWhatsAppLink } from '../../config/contact';
+import { Reveal, RevealGroup, RevealItem } from './landingMotion';
 
 export const FAQSection: React.FC = () => {
   const { t } = useLanguage();
@@ -31,8 +33,8 @@ export const FAQSection: React.FC = () => {
   };
 
   return (
-    <section 
-      id="faq" 
+    <section
+      id="faq"
       className="min-h-[calc(100svh-124px)] min-h-[calc(100dvh-124px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center py-6 sm:py-8 lg:py-4 xl:py-8 bg-white border-b border-[#E8DDDE] scroll-mt-16 sm:scroll-mt-20 font-sans relative"
     >
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -40,7 +42,7 @@ export const FAQSection: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start max-w-[1100px] xl:max-w-6xl mx-auto">
           
           {/* Left Column: Title, Subtitle, & WhatsApp Support Card */}
-          <div className="lg:col-span-5 space-y-3 sm:space-y-4 text-center lg:text-left">
+          <Reveal className="lg:col-span-5 space-y-3 sm:space-y-4 text-center lg:text-left">
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-medium shadow-2xs">
               <HelpCircle className="w-3.5 h-3.5 text-[#66000E]" />
               <span>{t('faq_section_badge', 'Tanya Jawab')}</span>
@@ -50,19 +52,12 @@ export const FAQSection: React.FC = () => {
               {t('faq_section_title', 'Pertanyaan Umum')}
             </h2>
 
-            <p className="text-[#5F5652] text-xs sm:text-sm leading-relaxed font-normal max-w-md mx-auto lg:mx-0">
-              {t('faq_section_desc', 'Jawaban untuk hal-hal yang sering ditanyakan seputar LapakQ.')}
-            </p>
-
             {/* WhatsApp Quick Help Card */}
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF7F7] border border-[#E8DDDE] text-left space-y-2 mt-2">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF7F7] border border-[#E8DDDE] text-left space-y-2.5 mt-2">
               <div className="flex items-center gap-2 text-xs font-bold text-[#241A1A]">
                 <MessageCircle className="w-4 h-4 text-emerald-600" />
                 <span>{t('faq_more_help', 'Butuh bantuan lebih lanjut?')}</span>
               </div>
-              <p className="text-[11px] sm:text-xs text-[#5F5652] leading-relaxed">
-                Tim CS LapakQ siap membantu panduan setting toko dan pertanyaan teknis Anda.
-              </p>
               <a
                 href={adminWhatsAppLink('Halo Admin LapakQ, saya ingin tanya seputar pembuatan toko online')}
                 target="_blank"
@@ -73,14 +68,14 @@ export const FAQSection: React.FC = () => {
                 <span>{t('faq_cs_whatsapp', 'Hubungi CS WhatsApp')}</span>
               </a>
             </div>
-          </div>
+          </Reveal>
 
           {/* Right Column: 4 Accordions */}
-          <div className="lg:col-span-7 space-y-2">
+          <RevealGroup className="lg:col-span-7 space-y-2">
             {faqs.map((faq, idx) => {
               const isOpen = openIdx === idx;
               return (
-                <div
+                <RevealItem
                   key={idx}
                   className={`rounded-xl sm:rounded-2xl border transition-all duration-200 overflow-hidden ${
                     isOpen
@@ -106,15 +101,26 @@ export const FAQSection: React.FC = () => {
                     </div>
                   </button>
 
-                  {isOpen && (
-                    <div className="px-3 pb-3 sm:px-3.5 sm:pb-3.5 text-[11px] sm:text-xs text-[#5F5652] leading-relaxed font-normal border-t border-[#E8DDDE] pt-2 animate-in fade-in duration-150">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        key="answer"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: 'easeOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-3 pb-3 sm:px-3.5 sm:pb-3.5 text-[11px] sm:text-xs text-[#5F5652] leading-relaxed font-normal border-t border-[#E8DDDE] pt-2">
+                          {faq.a}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </RevealItem>
               );
             })}
-          </div>
+          </RevealGroup>
 
         </div>
 

@@ -210,7 +210,8 @@
 
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-float-subtle {
+  .animate-float-subtle,
+  .animate-bounce-gentle {
     animation: none !important;
   }
 }

@@ -1,25 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  TrendingUp,
-  Package,
-  ShoppingBag,
-  Truck,
-  CheckCircle2,
-  Printer,
-  Share2,
-  Tag,
-  ArrowRight,
-  Sparkles,
-  Smartphone,
-  ExternalLink,
-  LayoutDashboard,
-  ClipboardList,
-  Plus,
-  X,
-  Image as ImageIcon,
-  Check,
-} from 'lucide-react';
+import { Package, ArrowRight, Plus, X, Image as ImageIcon, Check } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Reveal } from './landingMotion';
 
 interface ProductShowcaseProps {
   onNavigateRegister: () => void;
@@ -160,8 +143,8 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 xl:gap-12 items-center">
           
-          {/* Left Column: Heading, Description, Bullets & CTA */}
-          <div className="lg:col-span-5 space-y-3 sm:space-y-4 lg:space-y-5 text-center lg:text-left">
+          {/* Left Column: Heading, Description & CTA */}
+          <Reveal className="lg:col-span-5 space-y-3 sm:space-y-4 lg:space-y-5 text-center lg:text-left">
             
             {/* Small Badge */}
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-medium shadow-2xs">
@@ -178,28 +161,6 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             <p className="text-xs sm:text-sm text-[#5F5652] leading-relaxed font-normal max-w-lg mx-auto lg:mx-0">
               {t('product_section_desc', 'Upload foto produk, tentukan harga, dan atur stok barang langsung dari HP.')}
             </p>
-
-            {/* Feature Bullets */}
-            <ul className="space-y-2 text-xs sm:text-sm font-normal text-[#4A423F] text-left pt-0.5 max-w-md mx-auto lg:mx-0">
-              <li className="flex items-center gap-2.5">
-                <div className="w-4 h-4 rounded-full bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 text-[11px] font-medium border border-[#E8DDDE]">
-                  ✓
-                </div>
-                <span>{t('product_bullet_1', 'Upload foto produk langsung dari kamera HP')}</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <div className="w-4 h-4 rounded-full bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 text-[11px] font-medium border border-[#E8DDDE]">
-                  ✓
-                </div>
-                <span>{t('product_bullet_2', 'Atur varian warna, ukuran, dan harga promo')}</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <div className="w-4 h-4 rounded-full bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 text-[11px] font-medium border border-[#E8DDDE]">
-                  ✓
-                </div>
-                <span>{t('product_bullet_3', 'Stok otomatis berkurang saat pesanan dibayar')}</span>
-              </li>
-            </ul>
 
             {/* Action Buttons */}
             <div className="pt-1 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-2 sm:gap-2.5">
@@ -221,17 +182,24 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             </div>
 
             {/* Success toast alert */}
-            {justAddedAlert && (
-              <div className="p-2.5 sm:p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{t('product_modal_success', 'Produk baru berhasil ditambahkan ke etalase!')}</span>
-              </div>
-            )}
+            <AnimatePresence>
+              {justAddedAlert && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  className="p-2.5 sm:p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{t('product_modal_success', 'Produk baru berhasil ditambahkan ke etalase!')}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          </div>
+          </Reveal>
 
           {/* Right Column: Interactive Product Catalog Card */}
-          <div className="lg:col-span-7">
+          <Reveal className="lg:col-span-7" delay={0.15}>
             <div className="p-3.5 sm:p-5 lg:p-6 rounded-2xl bg-white border border-[#E8DDDE] shadow-lg text-[#241A1A] relative">
               
               {/* Card Header with Add Button */}
@@ -257,43 +225,51 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
               {/* Product List Items */}
               <div className="space-y-2 sm:space-y-2.5">
-                {products.slice(0, 3).map((prod, idx) => (
-                  <div
-                    key={prod.id}
-                    className={`p-2.5 sm:p-3 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] items-center justify-between gap-3 hover:border-[#66000E]/40 transition-colors ${
-                      idx === 2 ? 'hidden sm:flex' : 'flex'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                      <img
-                        src={prod.image}
-                        alt={prod.name}
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-[#E8DDDE] shrink-0 bg-white"
-                      />
-                      <div className="min-w-0">
-                        <p className="font-bold text-xs sm:text-sm text-[#241A1A] truncate">{prod.name}</p>
-                        <p className="text-[#66000E] font-bold text-xs mt-0.5">
-                          Rp {prod.price.toLocaleString('id-ID')}
+                {/* initial={false}: hanya produk yang baru ditambahkan yang beranimasi masuk */}
+                <AnimatePresence initial={false}>
+                  {products.slice(0, 3).map((prod, idx) => (
+                    <motion.div
+                      key={prod.id}
+                      layout
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.35, ease: 'easeOut' }}
+                      className={`p-2.5 sm:p-3 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] items-center justify-between gap-3 hover:border-[#66000E]/40 transition-colors ${
+                        idx === 2 ? 'hidden sm:flex' : 'flex'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                        <img
+                          src={prod.image}
+                          alt={prod.name}
+                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-[#E8DDDE] shrink-0 bg-white"
+                        />
+                        <div className="min-w-0">
+                          <p className="font-bold text-xs sm:text-sm text-[#241A1A] truncate">{prod.name}</p>
+                          <p className="text-[#66000E] font-bold text-xs mt-0.5">
+                            Rp {prod.price.toLocaleString('id-ID')}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span
+                          className={`inline-block px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border ${
+                            prod.status === 'Tersedia'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : 'bg-amber-50 text-amber-800 border-amber-200'
+                          }`}
+                        >
+                          {t('stock', 'Stok')}: {prod.stock} pcs
+                        </span>
+                        <p className="text-[9px] sm:text-[10px] text-[#857C76] mt-0.5">
+                          {prod.status === 'Tersedia' ? t('product_status_available', 'Tersedia') : t('product_status_low', 'Stok Menipis')}
                         </p>
                       </div>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <span
-                        className={`inline-block px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border ${
-                          prod.status === 'Tersedia'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-amber-50 text-amber-800 border-amber-200'
-                        }`}
-                      >
-                        {t('stock', 'Stok')}: {prod.stock} pcs
-                      </span>
-                      <p className="text-[9px] sm:text-[10px] text-[#857C76] mt-0.5">
-                        {prod.status === 'Tersedia' ? t('product_status_available', 'Tersedia') : t('product_status_low', 'Stok Menipis')}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
 
               {/* Bottom Card Summary */}
@@ -306,7 +282,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               </div>
 
             </div>
-          </div>
+          </Reveal>
 
         </div>
 

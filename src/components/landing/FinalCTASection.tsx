@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { motion } from 'motion/react';
 import {
   ArrowRight,
   Sparkles,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { adminWhatsAppLink } from '../../config/contact';
+import { CountUp, Reveal } from './landingMotion';
 
 interface FinalCTASectionProps {
   onNavigateRegister: () => void;
@@ -22,7 +24,6 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
   onNavigateRegister,
 }) => {
   const { t } = useLanguage();
-  const [activeMetricHover, setActiveMetricHover] = useState<'katalog' | 'pesanan' | null>(null);
 
   const trustPoints = [
     { label: t('cta_trust_no_cost', 'Tanpa biaya awal') },
@@ -31,19 +32,14 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
   ];
 
   return (
-    <section 
-      id="cta" 
+    <section
+      id="cta"
       className="min-h-[calc(100svh-124px)] min-h-[calc(100dvh-124px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center py-10 sm:py-14 lg:py-20 bg-white font-sans overflow-hidden scroll-mt-16 sm:scroll-mt-20 relative"
     >
       <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Floating Premium CTA Card with Subtle Shadow */}
-        <div 
-          className="rounded-[24px] bg-[#66000E] text-white p-7 sm:p-10 lg:p-14 xl:p-16 relative overflow-hidden transition-all duration-300"
-          style={{
-            boxShadow: '0 20px 50px rgba(102, 0, 14, 0.14)',
-          }}
-        >
+        <Reveal className="rounded-[24px] bg-[#66000E] text-white p-7 sm:p-10 lg:p-14 xl:p-16 relative overflow-hidden shadow-[0_20px_50px_rgba(102,0,14,0.14)]">
           {/* Subtle Background Depth Elements - Very Low Opacity */}
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/[0.04] rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-[#801010]/30 rounded-full blur-2xl pointer-events-none" />
@@ -67,23 +63,20 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
                 {t('cta_section_title_sub', 'Anda Sekarang')}
               </h2>
 
-              {/* Description */}
-              <p className="text-white/80 text-xs sm:text-sm leading-relaxed font-normal max-w-md">
-                {t('cta_section_desc', 'Jualan online praktis dan siap digunakan dalam hitungan menit.')}
-              </p>
-
               {/* Action Buttons */}
               <div className="w-full pt-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
                 
                 {/* Primary CTA Button */}
-                <button
+                <motion.button
                   type="button"
                   onClick={onNavigateRegister}
-                  className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-6 rounded-xl bg-white text-[#66000E] hover:bg-white/95 font-medium text-xs sm:text-sm shadow-xs active:scale-[0.98] transition-all duration-150 cursor-pointer"
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-6 rounded-xl bg-white text-[#66000E] hover:bg-white/95 font-medium text-xs sm:text-sm shadow-xs transition-colors duration-150 cursor-pointer"
                 >
                   <span>{t('cta_btn_open_free', 'Buka Toko Gratis')}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#66000E] group-hover:translate-x-0.5 transition-transform duration-150" />
-                </button>
+                </motion.button>
 
                 {/* WhatsApp Secondary Button */}
                 <a
@@ -160,8 +153,8 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
                         <TrendingUp className="w-3 h-3" /> +18.4%
                       </span>
                     </div>
-                    <p className="text-xl sm:text-2xl font-bold text-[#66000E] tracking-tight">
-                      Rp 8.638.000
+                    <p className="text-xl sm:text-2xl font-bold text-[#66000E] tracking-tight tabular-nums">
+                      Rp <CountUp value={8638000} />
                     </p>
                   </div>
 
@@ -169,11 +162,7 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
                   <div className="grid grid-cols-2 gap-2 pt-0.5">
                     
                     {/* 12 Produk */}
-                    <div
-                      className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E6DDDA] hover:border-[#66000E]/30 transition-colors text-left"
-                      onMouseEnter={() => setActiveMetricHover('katalog')}
-                      onMouseLeave={() => setActiveMetricHover(null)}
-                    >
+                    <div className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E6DDDA] hover:border-[#66000E]/30 transition-colors text-left">
                       <div className="flex items-center gap-1.5 text-[#6B6260] text-[10px] sm:text-[11px] mb-0.5">
                         <Package className="w-3.5 h-3.5 text-[#66000E]" />
                         <span>{t('cta_preview_catalog', 'Katalog')}</span>
@@ -182,11 +171,7 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
                     </div>
 
                     {/* 8 Pesanan */}
-                    <div
-                      className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E6DDDA] hover:border-[#66000E]/30 transition-colors text-left"
-                      onMouseEnter={() => setActiveMetricHover('pesanan')}
-                      onMouseLeave={() => setActiveMetricHover(null)}
-                    >
+                    <div className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E6DDDA] hover:border-[#66000E]/30 transition-colors text-left">
                       <div className="flex items-center gap-1.5 text-[#6B6260] text-[10px] sm:text-[11px] mb-0.5">
                         <ShoppingBag className="w-3.5 h-3.5 text-[#66000E]" />
                         <span>{t('cta_preview_orders', 'Pesanan')}</span>
@@ -213,7 +198,7 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
 
           </div>
 
-        </div>
+        </Reveal>
 
       </div>
     </section>

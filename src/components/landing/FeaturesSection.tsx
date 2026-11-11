@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   Package,
   ClipboardList,
   CreditCard,
   Store,
-  ArrowRight,
   Sparkles,
   CheckCircle2,
   Printer,
@@ -16,10 +16,20 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Reveal, swapPanel, useAutoAdvance } from './landingMotion';
+
+const FEATURE_IDS = ['produk', 'pesanan', 'pembayaran', 'toko'] as const;
+type FeatureId = (typeof FEATURE_IDS)[number];
 
 export const FeaturesSection: React.FC = () => {
   const { t } = useLanguage();
-  const [activeFeature, setActiveFeature] = useState<'produk' | 'pesanan' | 'pembayaran' | 'toko'>('produk');
+  const [activeFeature, setActiveFeature] = useState<FeatureId>('produk');
+  const autoplay = useAutoAdvance(FEATURE_IDS, activeFeature, setActiveFeature);
+
+  const pickFeature = (id: FeatureId) => {
+    autoplay.stop();
+    setActiveFeature(id);
+  };
 
   const featureTabs = [
     {
@@ -53,25 +63,23 @@ export const FeaturesSection: React.FC = () => {
   ];
 
   return (
-    <section 
-      id="fitur" 
+    <section
+      id="fitur"
+      ref={autoplay.ref}
       className="min-h-[calc(100svh-124px)] min-h-[calc(100dvh-124px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center py-6 sm:py-8 lg:py-4 xl:py-8 bg-[#FAF7F7] scroll-mt-16 sm:scroll-mt-20 border-b border-[#E8DDDE] font-sans relative"
     >
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-3 sm:mb-4 lg:mb-4">
+        <Reveal className="text-center max-w-2xl mx-auto mb-3 sm:mb-4 lg:mb-4">
           <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-medium mb-1.5 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-[#66000E]" />
             <span>{t('features_section_badge', 'Fitur Lengkap')}</span>
           </div>
-          <h2 className="text-lg sm:text-2xl lg:text-2xl font-semibold text-[#241A1A] tracking-tight leading-snug mb-1">
+          <h2 className="text-lg sm:text-2xl lg:text-2xl font-semibold text-[#241A1A] tracking-tight leading-snug">
             {t('features_section_title', 'Semua yang Dibutuhkan untuk Jualan')}
           </h2>
-          <p className="text-[#5F5652] text-xs sm:text-sm leading-relaxed font-normal max-w-md mx-auto">
-            {t('features_section_desc', 'Satu dashboard terpadu untuk mengelola seluruh operasional toko.')}
-          </p>
-        </div>
+        </Reveal>
 
         {/* Mobile Feature Selector Tabs (Only on Mobile < lg) */}
         <div className="lg:hidden grid grid-cols-2 gap-2 mb-3">
@@ -82,7 +90,7 @@ export const FeaturesSection: React.FC = () => {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setActiveFeature(item.id)}
+                onClick={() => pickFeature(item.id)}
                 className={`p-2 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
                   isActive
                     ? 'bg-[#66000E] text-white border-[#66000E] shadow-xs'
@@ -109,7 +117,7 @@ export const FeaturesSection: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-center max-w-[1100px] xl:max-w-6xl mx-auto">
           
           {/* Left Column: 4 Feature Switcher Cards (Desktop Only) */}
-          <div className="hidden lg:block lg:col-span-5 space-y-1.5 lg:space-y-2">
+          <Reveal className="hidden lg:block lg:col-span-5 space-y-1.5 lg:space-y-2">
             {featureTabs.map((item) => {
               const Icon = item.icon;
               const isActive = activeFeature === item.id;
@@ -117,8 +125,8 @@ export const FeaturesSection: React.FC = () => {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setActiveFeature(item.id)}
-                  className={`w-full p-2.5 sm:p-3 lg:p-2.5 xl:p-3 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 ${
+                  onClick={() => pickFeature(item.id)}
+                  className={`relative overflow-hidden w-full p-2.5 sm:p-3 lg:p-2.5 xl:p-3 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 ${
                     isActive
                       ? 'bg-white border-[#66000E] shadow-sm ring-1 ring-[#66000E]'
                       : 'bg-white/60 border-[#E8DDDE] hover:bg-white hover:border-[#66000E]/40'
@@ -136,14 +144,9 @@ export const FeaturesSection: React.FC = () => {
                     </div>
 
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-xs sm:text-sm lg:text-sm xl:text-base text-[#241A1A]">
-                          {item.title}
-                        </h3>
-                        <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-[#FAF7F7] text-[#66000E] border border-[#E8DDDE]">
-                          {item.badge}
-                        </span>
-                      </div>
+                      <h3 className="font-bold text-xs sm:text-sm lg:text-sm xl:text-base text-[#241A1A]">
+                        {item.title}
+                      </h3>
                       <p className="text-[11px] lg:text-xs text-[#5F5652] truncate mt-0.5">
                         {item.subtitle}
                       </p>
@@ -151,18 +154,30 @@ export const FeaturesSection: React.FC = () => {
                   </div>
 
                   <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${isActive ? 'text-[#66000E] translate-x-0.5' : 'text-[#857C76]'}`} />
+
+                  {/* Bilah waktu putar-otomatis pada fitur aktif */}
+                  {isActive && autoplay.running && (
+                    <motion.span
+                      key={`timer-${item.id}`}
+                      className="absolute bottom-0 left-0 h-0.5 bg-[#66000E]"
+                      initial={{ width: '0%' }}
+                      animate={{ width: '100%' }}
+                      transition={{ duration: 5, ease: 'linear' }}
+                    />
+                  )}
                 </button>
               );
             })}
-          </div>
+          </Reveal>
 
           {/* Right Column: Single Interactive Visual Display based on active feature */}
-          <div className="lg:col-span-7">
-            <div className="p-3.5 sm:p-4 lg:p-4.5 xl:p-5 rounded-2xl bg-white border border-[#E8DDDE] shadow-md min-h-[270px] sm:min-h-[290px] lg:min-h-[290px] flex flex-col justify-between text-[#241A1A]">
-              
+          <Reveal className="lg:col-span-7" delay={0.15}>
+            <div className="p-3.5 sm:p-4 lg:p-4.5 xl:p-5 rounded-2xl bg-white border border-[#E8DDDE] shadow-md min-h-[270px] sm:min-h-[290px] lg:min-h-[290px] flex flex-col justify-between text-[#241A1A] overflow-hidden">
+
+              <AnimatePresence mode="wait" initial={false}>
               {/* Feature 1: Produk */}
               {activeFeature === 'produk' && (
-                <div className="space-y-2.5 sm:space-y-3 animate-in fade-in duration-200">
+                <motion.div key="produk" {...swapPanel} className="space-y-2.5 sm:space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-[#E8DDDE]">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold text-xs">
@@ -193,23 +208,16 @@ export const FeaturesSection: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] space-y-1 text-[11px] sm:text-xs text-[#5F5652]">
-                    <p className="font-bold text-[#241A1A]">{t('features_prod_bullet_title', 'Keunggulan Manajemen Produk:')}</p>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
-                      <span>{t('features_prod_bullet_1', 'Atur variasi ukuran (S, M, L, XL), warna, dan diskon promo')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
-                      <span>{t('features_prod_bullet_2', 'Stok berkurang otomatis saat pembeli selesai membayar')}</span>
-                    </div>
+                  <div className="p-2 sm:p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] flex items-center gap-2 text-[11px] sm:text-xs text-[#241A1A]">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
+                    <span>{t('features_prod_bullet_2', 'Stok berkurang otomatis saat pembeli selesai membayar')}</span>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Feature 2: Pesanan */}
               {activeFeature === 'pesanan' && (
-                <div className="space-y-2.5 sm:space-y-3 animate-in fade-in duration-200">
+                <motion.div key="pesanan" {...swapPanel} className="space-y-2.5 sm:space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-[#E8DDDE]">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold text-xs">
@@ -246,12 +254,12 @@ export const FeaturesSection: React.FC = () => {
                       <span>{t('features_ord_auto_wa', 'Auto Kirim Resi ke WhatsApp')}</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Feature 3: Pembayaran */}
               {activeFeature === 'pembayaran' && (
-                <div className="space-y-2.5 sm:space-y-3 animate-in fade-in duration-200">
+                <motion.div key="pembayaran" {...swapPanel} className="space-y-2.5 sm:space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-[#E8DDDE]">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold text-xs">
@@ -284,12 +292,12 @@ export const FeaturesSection: React.FC = () => {
                     <span className="text-[#5F5652]">{t('features_pay_wallet_disb', 'Pencairan Dana Dompet:')}</span>
                     <span className="font-bold text-[#66000E]">{t('features_pay_disb_anytime', 'Tarik Kapan Saja ke Bank')}</span>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Feature 4: Toko Online */}
               {activeFeature === 'toko' && (
-                <div className="space-y-2.5 sm:space-y-3 animate-in fade-in duration-200">
+                <motion.div key="toko" {...swapPanel} className="space-y-2.5 sm:space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-[#E8DDDE]">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold text-xs">
@@ -323,8 +331,9 @@ export const FeaturesSection: React.FC = () => {
                     <Smartphone className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
                     <span>{t('features_store_mobile_note', 'Tampilan ringan dan cepat dibuka dari smartphone pembeli')}</span>
                   </div>
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
 
               {/* Bottom Feature Footer */}
               <div className="pt-2 mt-2 border-t border-[#E8DDDE] flex items-center justify-between text-[11px] sm:text-xs text-[#5F5652]">
@@ -333,7 +342,7 @@ export const FeaturesSection: React.FC = () => {
               </div>
 
             </div>
-          </div>
+          </Reveal>
 
         </div>
 
