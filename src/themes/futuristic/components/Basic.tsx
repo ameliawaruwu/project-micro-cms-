@@ -8,6 +8,7 @@ import { StoreLogo } from '../../StoreLogo';
 import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 
 export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
@@ -56,6 +57,7 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
         {header.showSearch && (
           <NavSearchButton className="p-2 text-gray-400 hover:text-white transition-colors" />
         )}
+        <NavTrackOrderButton className="p-2 text-gray-400 hover:text-white transition-colors" />
         {header.showCart && (
           <button
             type="button"

@@ -6,6 +6,7 @@ import { getNavMenuItems, getHeaderDisplay } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 
 export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -46,6 +47,7 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
           {header.showSearch && (
             <NavSearchButton className="w-9 h-9 rounded-full hover:bg-gray-50 flex items-center justify-center text-gray-500 transition-colors" />
           )}
+          <NavTrackOrderButton className="w-9 h-9 rounded-full hover:bg-gray-50 flex items-center justify-center text-gray-500 transition-colors" />
           {header.showCart && (
             <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="w-9 h-9 rounded-full text-white flex items-center justify-center relative transition-transform hover:scale-105 cursor-pointer" style={{ backgroundColor: accentColor }}>
               <ShoppingBag className="w-4 h-4" />

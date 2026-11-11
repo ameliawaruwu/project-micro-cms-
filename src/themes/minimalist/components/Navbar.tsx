@@ -7,6 +7,7 @@ import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navM
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { useCartCount, useStorefrontSlug } from '../../storefrontCart';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 
 export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -112,6 +113,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
               iconClassName="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.5]"
             />
           )}
+          <NavTrackOrderButton className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform p-1.5 rounded-lg focus:outline-none inline-flex items-center" iconClassName="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.5]" />
           {header.showCart && (
           <a 
             href="/cart"

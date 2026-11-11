@@ -7,6 +7,7 @@ import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 
 export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -99,6 +100,11 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
           )}
 
 
+          <NavTrackOrderButton
+            className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] hover:text-black transition-colors"
+            iconClassName="w-4 h-4 text-gray-700"
+            label={<span className="hidden lg:inline">Lacak</span>}
+          />
           {showCart && (
             <button
               type="button"

@@ -6,6 +6,7 @@ import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navM
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 
 export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore((state) => state.storeInfo);
@@ -44,6 +45,7 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
           ) : (
             <span className="w-9 h-9" aria-hidden="true" />
           )}
+          <NavTrackOrderButton className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm" iconClassName="w-5 h-5" />
           {header.showCart && (
             <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm relative cursor-pointer">
               <ShoppingBag className="w-5 h-5" />
@@ -90,6 +92,7 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
               iconClassName="w-5 h-5"
             />
           )}
+          <NavTrackOrderButton className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm" iconClassName="w-5 h-5" />
           {header.showCart && (
             <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm relative cursor-pointer">
               <ShoppingBag className="w-5 h-5" />

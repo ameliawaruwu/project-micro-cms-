@@ -9,6 +9,7 @@ import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 
 export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
@@ -61,6 +62,7 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
         {header.showSearch && (
           <NavSearchButton className="p-2 text-zinc-400 hover:text-white transition-colors" />
         )}
+        <NavTrackOrderButton className="p-2 text-zinc-400 hover:text-white transition-colors" />
         {header.showCart && (
           <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="cursor-pointer bg-white text-zinc-950 px-3 sm:px-5 py-2 sm:py-2.5 text-xs font-extrabold uppercase rounded-lg hover:bg-zinc-200 transition-all shadow-md hover:shadow-white/10 active:scale-95 flex items-center gap-2">
             <CartBagIcon className="w-4 h-4" />

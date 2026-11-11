@@ -4,6 +4,7 @@ import { ShoppingBag } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
 
@@ -43,6 +44,10 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
               label={<span className={`${showDesktopSearch} text-xs tracking-[0.15em] uppercase font-sans`}>Cari</span>}
             />
           )}
+          <NavTrackOrderButton
+            className="flex items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors"
+            label={<span className={`${showDesktopSearch} text-xs tracking-[0.15em] uppercase font-sans`}>Lacak</span>}
+          />
         </div>
 
         {/* Center: Logo */}

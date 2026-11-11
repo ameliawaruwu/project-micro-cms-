@@ -4,6 +4,7 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
@@ -27,6 +28,10 @@ export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
           iconClassName="w-5 h-5"
         />
       )}
+      <NavTrackOrderButton
+        className={`absolute ${header.showCart ? 'right-12 sm:right-16 md:right-24' : 'right-4 sm:right-8 md:right-16'} top-5 sm:top-7 p-1 text-[#8C531B] hover:text-[#5C4533] transition-colors`}
+        iconClassName="w-5 h-5"
+      />
       {header.showCart && (
         <NavCartButton
           className="absolute right-4 sm:right-8 md:right-16 top-5 sm:top-7 p-1 text-[#8C531B] hover:text-[#5C4533] transition-colors"

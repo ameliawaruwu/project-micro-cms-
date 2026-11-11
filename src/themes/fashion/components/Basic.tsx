@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCountBadge } from '../../storefrontCart';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
@@ -19,10 +20,11 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
   return (
     <nav className={`w-full bg-[#18181B] text-white border-b border-white/10 ${header.positionClass}`}>
       <div className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-5 flex items-center gap-3">
-        <div className="w-10 shrink-0 flex justify-start">
+        <div className="w-20 shrink-0 flex justify-start gap-1">
           {header.showSearch && (
             <NavSearchButton className="text-white hover:text-gray-400 transition-colors p-1" iconClassName="w-5 h-5" />
           )}
+          <NavTrackOrderButton className="text-white hover:text-gray-400 transition-colors p-1" iconClassName="w-5 h-5" />
         </div>
 
         <div className="flex-1 min-w-0 flex justify-center">
@@ -40,7 +42,7 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
           )}
         </div>
 
-        <div className="w-10 shrink-0 flex justify-end">
+        <div className="w-20 shrink-0 flex justify-end">
           {header.showCart && (
             <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-white hover:text-gray-400 transition-colors relative cursor-pointer p-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
