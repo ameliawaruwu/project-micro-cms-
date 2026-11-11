@@ -43,6 +43,33 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
   // ✅ Hooks MUST be called unconditionally at the top — before any early returns
   const [activePage, setActivePage] = React.useState<string>(() => resolveInitialPage(store));
 
+  // Setelah checkout, simpan nomor pesanan di URL agar halaman yang di-refresh langsung membuka
+  // Lacak Pesanan (status & instruksi bayar) alih-alih checkout dengan keranjang kosong.
+  React.useEffect(() => {
+    const handleOrderCreated = (event: Event) => {
+      const orderNumber = (event as CustomEvent<{ orderNumber?: string }>).detail?.orderNumber;
+      if (!orderNumber) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', 'track_order');
+      url.searchParams.set('no', orderNumber);
+      window.history.replaceState(window.history.state, '', url);
+    };
+    window.addEventListener('microcms_order_created', handleOrderCreated);
+    return () => window.removeEventListener('microcms_order_created', handleOrderCreated);
+  }, []);
+
+  // Navigasi internal tidak mengubah URL; buang parameter halaman lama agar refresh tidak
+  // kembali ke halaman yang sudah ditinggalkan.
+  const handlePageChange = React.useCallback((newPage: string) => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('page') && url.searchParams.get('page') !== newPage) {
+      url.searchParams.delete('page');
+      url.searchParams.delete('no');
+      window.history.replaceState(window.history.state, '', url);
+    }
+    setActivePage(newPage);
+  }, []);
+
   // Logo gambar toko (stores.logo_url) dipakai navbar tema bila header belum punya logo sendiri.
   React.useEffect(() => {
     useCmsStore.getState().updateStoreInfo({ logoUrl: store?.logoUrl || '' });
@@ -84,7 +111,7 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
       isLiveStorefront={true}
       activeThemeId={activeThemeId as any}
       activePage={activePage}
-      onPageChange={(newPage) => setActivePage(newPage)}
+      onPageChange={handlePageChange}
     />
   );
 };

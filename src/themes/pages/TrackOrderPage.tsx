@@ -9,6 +9,7 @@ import {
   MessageCircle,
   Package,
   Search,
+  ShieldCheck,
   Truck,
   XCircle,
 } from 'lucide-react';
@@ -20,7 +21,9 @@ import { whatsAppChatLink } from '../sectionContent';
 import { orderService, TrackedOrder } from '../../services/orderService';
 import { formatDateIndo, formatRupiah, generateTrackingLink } from '../../utils/formatters';
 import { isCodMethod } from '../../utils/orderFlow';
-import type { Order } from '../../types';
+import { isManualTransferMethod } from '../../utils/manualPayment';
+import { ManualPaymentDetails } from './ManualPaymentDetails';
+import type { Order, StorePaymentConfig } from '../../types';
 
 interface TrackOrderPageProps {
   themeData?: ThemeSchema;
@@ -112,15 +115,18 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [tracked, setTracked] = useState<TrackedOrder | null>(null);
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+  const [paymentConfirmError, setPaymentConfirmError] = useState('');
 
-  useEffect(() => {
-    setLocalOrders(orderService.getLocalOrders(storeId).slice(0, 5));
-  }, [storeId]);
+  /** Salinan lokal pesanan yang dibuat dari perangkat ini (berisi id untuk konfirmasi bayar). */
+  const findLocalOrder = (number: string): Order | undefined =>
+    orderService.getLocalOrders(storeId).find((o) => o.orderNumber === number);
 
   const runTrack = async (number: string, phoneNumber: string) => {
     if (!storeId) return;
     setIsLoading(true);
     setErrorMessage('');
+    setPaymentConfirmError('');
     setTracked(null);
     try {
       const result = await orderService.trackOrder(storeId, number, phoneNumber);
@@ -148,6 +154,32 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
     runTrack(order.orderNumber, order.customerPhone || '');
   };
 
+  // Dibuka dari tautan ?no= (mis. halaman checkout yang di-refresh): bila pesanan itu dibuat
+  // dari perangkat ini, langsung tampilkan statusnya tanpa perlu mengetik nomor WhatsApp.
+  useEffect(() => {
+    setLocalOrders(orderService.getLocalOrders(storeId).slice(0, 5));
+    const linked = orderNumber.trim() ? findLocalOrder(orderNumber.trim()) : undefined;
+    if (linked?.customerPhone) handlePickLocal(linked);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId]);
+
+  const handleConfirmPayment = async (order: TrackedOrder) => {
+    const local = findLocalOrder(order.orderNumber);
+    if (!local?.id) return;
+    setIsConfirmingPayment(true);
+    setPaymentConfirmError('');
+    try {
+      const confirmedAt = await orderService.confirmPaymentByBuyer(local.id, storeId, order.orderNumber);
+      setTracked((current) =>
+        current?.orderNumber === order.orderNumber ? { ...current, paymentConfirmedAt: confirmedAt } : current,
+      );
+    } catch (err: any) {
+      setPaymentConfirmError(err?.message || 'Gagal mengirim konfirmasi pembayaran. Silakan coba lagi.');
+    } finally {
+      setIsConfirmingPayment(false);
+    }
+  };
+
   const sellerChatLink = useMemo(() => {
     const base = whatsAppChatLink(store?.phoneWhatsApp);
     if (!base) return null;
@@ -161,6 +193,56 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
   const inputClass =
     'w-full px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] bg-[var(--sf-page)] text-sm text-[var(--sf-text)] placeholder:text-[var(--sf-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)]/30';
   const cardClass = 'rounded-[var(--sf-radius)] border border-[var(--sf-border)] bg-[var(--sf-subtle)] p-5';
+
+  /** Instruksi bayar & tombol "Saya Sudah Bayar" untuk pesanan QRIS/transfer yang belum lunas. */
+  const renderPaymentAction = (order: TrackedOrder) => {
+    if (order.isPaid || !isManualTransferMethod(order.paymentMethod)) return null;
+
+    if (order.paymentConfirmedAt) {
+      return (
+        <div className="p-4 rounded-[var(--sf-radius)] bg-emerald-50 border border-emerald-200 flex items-start gap-3">
+          <CheckCircle2 className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <p className="text-sm font-bold text-emerald-900">Konfirmasi pembayaran terkirim</p>
+            <p className="text-xs text-emerald-800 leading-relaxed">
+              Penjual akan memeriksa pembayaran Anda. Pesanan diproses setelah pembayaran dinyatakan lunas.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    const paymentConfig: StorePaymentConfig | undefined = store?.paymentConfig;
+    // Konfirmasi butuh id pesanan, yang hanya ada di perangkat tempat pesanan dibuat.
+    const canConfirm = Boolean(findLocalOrder(order.orderNumber)?.id);
+
+    return (
+      <div className="space-y-2.5">
+        {paymentConfig && <ManualPaymentDetails paymentConfig={paymentConfig} total={order.totalAmount} />}
+        {canConfirm ? (
+          <>
+            <button
+              type="button"
+              onClick={() => handleConfirmPayment(order)}
+              disabled={isConfirmingPayment}
+              className="w-full py-3 px-4 bg-[var(--sf-primary)] text-white font-bold rounded-[var(--sf-radius)] flex items-center justify-center gap-2 transition hover:opacity-90 cursor-pointer text-sm disabled:opacity-70 disabled:cursor-wait"
+            >
+              {isConfirmingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+              <span>{isConfirmingPayment ? 'Mengirim Konfirmasi...' : 'Saya Sudah Bayar'}</span>
+            </button>
+            <p className="text-[11px] text-center text-[var(--sf-muted)]">
+              Klik setelah Anda menyelesaikan transfer atau scan QRIS sebesar {formatRupiah(order.totalAmount)}.
+            </p>
+            {paymentConfirmError && <p className="text-xs font-semibold text-red-600">{paymentConfirmError}</p>}
+          </>
+        ) : (
+          <p className="text-xs text-[var(--sf-muted)]">
+            Sudah membayar? Hubungi penjual lewat tombol WhatsApp di bawah dan sebutkan nomor pesanan Anda.
+          </p>
+        )}
+      </div>
+    );
+  };
 
   const renderResult = (order: TrackedOrder) => {
     const steps = buildSteps(order);
@@ -214,6 +296,8 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
             </ol>
           )}
         </div>
+
+        {!isCancelled && renderPaymentAction(order)}
 
         <div className={`${cardClass} grid gap-4 sm:grid-cols-2`}>
           <div className="flex items-start gap-2.5">
