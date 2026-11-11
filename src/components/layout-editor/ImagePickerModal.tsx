@@ -13,6 +13,7 @@ import {
   Smartphone,
   Gem,
 } from 'lucide-react';
+import { mediaService } from '../../services/mediaService';
 
 export interface ImagePickerModalProps {
   isOpen: boolean;
@@ -121,6 +122,8 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
   const [activeTab, setActiveTab] = useState<'gallery' | 'url' | 'upload'>('gallery');
   const [customUrl, setCustomUrl] = useState(currentImageUrl);
   const [selectedCategory, setSelectedCategory] = useState(CURATED_GALLERIES[0].category);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   if (!isOpen) return null;
 
@@ -131,18 +134,21 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Gambar dari perangkat diunggah ke CDN dulu; layout hanya menyimpan URL-nya.
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (uploadEvent) => {
-        const result = uploadEvent.target?.result as string;
-        if (result) {
-          onSelectImage(result);
-          onClose();
-        }
-      };
-      reader.readAsDataURL(file);
+    e.target.value = '';
+    if (!file || isUploading) return;
+    setUploadError('');
+    setIsUploading(true);
+    try {
+      const url = await mediaService.uploadImage(file, 'layout');
+      onSelectImage(url);
+      onClose();
+    } catch (err: any) {
+      setUploadError(err?.message || 'Gagal mengupload gambar.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -255,6 +261,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                   <input
                     type="file"
                     accept="image/*"
+                    disabled={isUploading}
                     onChange={handleFileUpload}
                     className="hidden"
                   />
@@ -357,11 +364,12 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                   Pilih Berkas atau Tarik Gambar ke Sini
                 </h4>
                 <p className="text-[10px] text-[#706866] max-w-xs">
-                  Mendukung PNG, JPG, GIF hingga ukuran 5MB
+                  Mendukung PNG, JPG, WEBP, GIF hingga ukuran 5MB
                 </p>
                 <input
                   type="file"
                   accept="image/*"
+                  disabled={isUploading}
                   onChange={handleFileUpload}
                   className="hidden"
                 />
@@ -369,6 +377,15 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
             </div>
           )}
         </div>
+
+        {(isUploading || uploadError) && (
+          <div
+            className={`px-4 py-2 text-xs font-semibold border-t border-[#E5E0DD] ${uploadError ? 'text-red-600 bg-red-50' : 'text-[#66000E] bg-[#F5E8EA]'}`}
+            role={uploadError ? 'alert' : 'status'}
+          >
+            {uploadError || 'Mengupload gambar ke CDN...'}
+          </div>
+        )}
 
         {/* Footer actions */}
         <div className="p-4 border-t border-[#E5E0DD] bg-[#FAF7F7] flex items-center justify-between">

@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 import { withExtraMemberships } from '../utils/communityMembership';
 import { getWibIsoString } from '../utils/formatters';
 import { idService } from './idService';
+import { mediaService } from './mediaService';
 import { billingPlanService } from './billingPlanService';
 import { DEFAULT_MANUAL_INSTRUCTIONS } from '../utils/manualPayment';
 
@@ -533,31 +534,10 @@ class StoreService {
   }
 
   /**
-   * Upload gambar milik toko (QRIS, logo, dll.) ke Supabase Storage dan kembalikan URL publiknya.
+   * Upload gambar milik toko (QRIS, logo) ke CDN dan kembalikan URL-nya.
    */
   async uploadStoreImage(storeId: string, file: File, kind: 'qris' | 'logo'): Promise<string> {
-    if (!file.type.startsWith('image/')) {
-      throw new Error('File harus berupa gambar (JPG, PNG, WEBP, atau SVG).');
-    }
-    const extension = file.type.includes('png')
-      ? 'png'
-      : file.type.includes('webp')
-      ? 'webp'
-      : file.type.includes('svg')
-      ? 'svg'
-      : 'jpg';
-    const fileName = `${storeId}/${kind}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${extension}`;
-
-    const { data, error } = await supabase.storage
-      .from('product-images')
-      .upload(fileName, file, { contentType: file.type, upsert: true });
-    if (error || !data?.path) {
-      throw new Error(`Gagal mengupload gambar: ${error?.message || 'path tidak valid'}`);
-    }
-
-    const { data: pub } = supabase.storage.from('product-images').getPublicUrl(data.path);
-    if (!pub?.publicUrl) throw new Error('Gagal mendapatkan URL gambar.');
-    return pub.publicUrl;
+    return mediaService.uploadImage(file, kind, storeId);
   }
 
   /**

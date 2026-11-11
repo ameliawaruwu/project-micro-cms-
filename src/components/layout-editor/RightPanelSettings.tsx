@@ -40,6 +40,7 @@ import { GlobalThemeSettingsPanel } from './GlobalThemeSettingsPanel';
 import { SectionContentFields } from './SectionContentFields';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { storeService } from '../../services/storeService';
+import { mediaService } from '../../services/mediaService';
 
 /** Kolom media sosial footer (dibaca tema lewat getFooterSocialLinks). */
 const FOOTER_SOCIAL_FIELDS = [
@@ -102,6 +103,10 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   const [customImageUrlInput, setCustomImageUrlInput] = useState('');
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [logoError, setLogoError] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState('');
+  const [uploadingProductId, setUploadingProductId] = useState<string | null>(null);
+  const [productUploadError, setProductUploadError] = useState<{ id: string; message: string } | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [newMenuLabel, setNewMenuLabel] = useState('');
@@ -202,17 +207,19 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
     onUpdateSectionOptions(sectionKey, newOpts);
   };
 
-  const handleLocalFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLocalFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl) {
-          handleOptionChange({ imageUrl: dataUrl, bannerUrl: dataUrl });
-        }
-      };
-      reader.readAsDataURL(file);
+    e.target.value = '';
+    if (!file) return;
+    setImageUploadError('');
+    setIsUploadingImage(true);
+    try {
+      const url = await mediaService.uploadImage(file, 'layout', store?.id || undefined);
+      handleOptionChange({ imageUrl: url, bannerUrl: url });
+    } catch (err: any) {
+      setImageUploadError(err?.message || 'Gagal mengupload gambar.');
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -332,6 +339,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   onChange={handleLocalFileUpload}
                   className="hidden"
                 />
+                {imageUploadError && <p className="text-[11px] text-red-600">{imageUploadError}</p>}
 
                 <div className="grid grid-cols-3 gap-1.5 pt-1">
                   <button
@@ -339,9 +347,10 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     onClick={() => fileInputRef.current?.click()}
                     className="py-1.5 px-2 rounded-lg border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center justify-center gap-1 shrink-0"
                     title="Upload gambar dari galeri HP atau komputer"
+                    disabled={isUploadingImage}
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>Upload</span>
+                    <span>{isUploadingImage ? 'Mengupload...' : 'Upload'}</span>
                   </button>
                   <button
                     type="button"
@@ -1178,24 +1187,27 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                     className="py-1 px-2.5 rounded-lg border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center gap-1.5 shrink-0"
                                   >
                                     <Upload className="w-3.5 h-3.5" />
-                                    <span>Upload</span>
+                                    <span>{uploadingProductId === product.id ? 'Mengupload...' : 'Upload'}</span>
                                   </label>
                                   <input
                                     type="file"
                                     id={`full-product-upload-${product.id}`}
                                     accept="image/*"
                                     className="hidden"
-                                    onChange={(e) => {
+                                    disabled={uploadingProductId === product.id}
+                                    onChange={async (e) => {
                                       const file = e.target.files?.[0];
-                                      if (file) {
-                                        const reader = new FileReader();
-                                        reader.onload = (event) => {
-                                          const dataUrl = event.target?.result as string;
-                                          if (dataUrl) {
-                                            handleSaveProduct({ ...product, image: dataUrl, imageUrl: dataUrl });
-                                          }
-                                        };
-                                        reader.readAsDataURL(file);
+                                      e.target.value = '';
+                                      if (!file) return;
+                                      setProductUploadError(null);
+                                      setUploadingProductId(product.id);
+                                      try {
+                                        const url = await mediaService.uploadImage(file, 'product', store.id);
+                                        handleSaveProduct({ ...product, image: url, imageUrl: url });
+                                      } catch (err: any) {
+                                        setProductUploadError({ id: product.id, message: err?.message || 'Gagal mengupload foto.' });
+                                      } finally {
+                                        setUploadingProductId(null);
                                       }
                                     }}
                                   />
@@ -1207,6 +1219,9 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                     placeholder="Atau masukkan URL Foto"
                                   />
                                 </div>
+                                {productUploadError?.id === product.id && (
+                                  <p className="text-[11px] text-red-600">{productUploadError.message}</p>
+                                )}
                               </div>
                             </div>
                           )}

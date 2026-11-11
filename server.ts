@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import dns from 'dns';
 import { deployRouter } from './backend/deployController';
+import { mediaRouter } from './backend/mediaController';
 import { authRouter } from './backend/authController';
 import { readPlatformSettings } from './backend/platformSettings';
 import { pool } from './backend/publicApiController';
@@ -28,6 +29,8 @@ app.set('trust proxy', 'loopback');
 const PORT = process.env.PORT || 5055;
 
 app.use(cors());
+// Upload gambar ke CDN dipasang sebelum parser JSON global karena body-nya melebihi 1mb.
+app.use(['/media', '/api/media'], mediaRouter);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 

@@ -93,6 +93,7 @@ Aplikasi ini **tidak** menyentuh nginx, sudo, atau Cloudflare. Publikasi toko = 
 | `/api/midtrans/notification`| `POST` | Webhook pembayaran dengan validasi signature hash SHA-512 (`order_id + status_code + gross_amount + ServerKey`). |
 | `/api/shipping/rates` | `POST` | Proxy ongkir Biteship API. Melindungi `BITESHIP_API_KEY` agar tidak terlihat di browser. |
 | `/api/send-email` | `POST` | Pengiriman email transaksi/notifikasi via SMTP dengan rate limit (maks 10 email/menit/IP). |
+| `/api/media/upload` | `POST` | Upload gambar (produk, logo, QRIS, layout, avatar) ke CDNKroombox (`backend/mediaController.ts`). Wajib sesi login; gambar toko dicek hak kelolanya; tipe dicek dari isi file (JPG/PNG/WEBP/GIF, maks 5MB, SVG ditolak); 30 upload/menit/user. Butuh env server `CDN_API_KEY` (opsional `CDN_API_URL`). Frontend: `src/services/mediaService.ts`. |
 
 ---
 

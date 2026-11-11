@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X, User, Upload, Trash2, Lock, Phone, Mail, Loader2, Check } from 'lucide-react';
 import { User as UserType } from '../../../types';
 import { authService } from '../../../services/authService';
+import { isDataImageUrl, mediaService } from '../../../services/mediaService';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface AdminProfileModalProps {
@@ -91,10 +92,12 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
       setError(null);
 
       const userId = currentUser?.id || 'USR001';
+      // Foto baru masih berupa pratinjau data URL; unggah ke CDN dan simpan URL-nya saja.
+      const savedAvatarUrl = isDataImageUrl(avatarUrl) ? await mediaService.uploadImage(avatarUrl, 'avatar') : avatarUrl;
       const updated = await authService.updateProfile(userId, {
         name: name.trim(),
         phoneWhatsApp: phone.trim(),
-        avatarUrl: avatarUrl,
+        avatarUrl: savedAvatarUrl,
         newPassword: newPassword ? newPassword : undefined,
         currentPassword: newPassword ? currentPassword : undefined,
       });
