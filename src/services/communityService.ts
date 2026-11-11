@@ -35,7 +35,8 @@ async function fetchCommunityContacts(): Promise<Map<string, CommunityContact>> 
   }
   return map;
 }
-const INVOICES_KEY = 'microcms_community_invoices_v1';
+const INVOICE_COLUMNS =
+  'id, community_id, invoice_number, period, total_turnover, fee_percent, total_billed, status, due_date, paid_at, created_at';
 
 export const DEFAULT_COMMUNITIES: Community[] = [];
 
@@ -570,66 +571,67 @@ class CommunityService {
   }
 
   /**
-   * Mendapatkan daftar invoice tagihan omset berkala untuk komunitas
+   * Invoice tagihan omset komunitas (tabel community_invoices).
+   * RLS: super admin melihat semua; sub-admin hanya komunitasnya; merchant hanya komunitas tokonya.
    */
-  public getCommunityInvoices(communityId?: string): CommunityTurnoverInvoice[] {
-    const raw = localStorage.getItem(INVOICES_KEY);
-    let invoices: CommunityTurnoverInvoice[] = [];
-    if (raw) {
-      try {
-        invoices = JSON.parse(raw);
-        // Hapus invoice GMPS lama
-        invoices = invoices.filter((i) => i.communityId !== 'comm_gmps');
-      } catch {
-        invoices = [];
-      }
-    }
-
-    if (communityId) {
-      return invoices.filter((inv) => inv.communityId === communityId);
-    }
-    return invoices;
+  public async fetchCommunityInvoices(communityId?: string): Promise<CommunityTurnoverInvoice[]> {
+    let query = supabase.from('community_invoices').select(INVOICE_COLUMNS).order('created_at', { ascending: false });
+    if (communityId) query = query.eq('community_id', communityId);
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return (data || []).map((row) => this.mapInvoice(row));
   }
 
-  public markInvoicePaid(invoiceId: string): void {
-    const all = this.getCommunityInvoices();
-    const idx = all.findIndex((i) => i.id === invoiceId);
-    if (idx !== -1) {
-      all[idx].status = 'paid';
-      all[idx].paidAt = new Date().toISOString();
-      localStorage.setItem(INVOICES_KEY, JSON.stringify(all));
-    }
-  }
-
-  public createTurnoverInvoice(
+  /** Hanya super admin (dijaga RLS). Nominal tagihan dihitung database. */
+  public async createTurnoverInvoice(
     communityId: string,
     period: string,
     totalTurnover: number,
     feePercent: number
-  ): CommunityTurnoverInvoice {
-    const all = this.getCommunityInvoices();
-    const comm = this.getCommunityById(communityId);
-    const totalBilled = Math.round(totalTurnover * (feePercent / 100));
-    const nextSeq = all.length + 1;
-    const invId = idService.formatId('INV', nextSeq);
+  ): Promise<CommunityTurnoverInvoice> {
+    const { data, error } = await supabase
+      .from('community_invoices')
+      .insert({
+        community_id: communityId,
+        period: period.trim(),
+        total_turnover: Math.max(0, Math.round(totalTurnover)),
+        fee_percent: feePercent,
+      })
+      .select(INVOICE_COLUMNS)
+      .single();
+    if (error) {
+      if (error.code === '23505') throw new Error('Invoice untuk periode ini sudah diterbitkan.');
+      throw new Error(error.message);
+    }
+    return this.mapInvoice(data);
+  }
 
-    const newInv: CommunityTurnoverInvoice = {
-      id: invId,
-      communityId,
-      communityName: comm?.name || 'Komunitas',
-      invoiceNumber: invId,
-      period,
-      totalTurnover,
-      feePercent,
-      totalBilled,
-      status: 'unpaid',
-      dueDate: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
-      createdAt: new Date().toISOString(),
+  /** Hanya super admin (dijaga RLS). */
+  public async markInvoicePaid(invoiceId: string): Promise<void> {
+    const { data, error } = await supabase
+      .from('community_invoices')
+      .update({ status: 'paid', paid_at: new Date().toISOString() })
+      .eq('id', invoiceId)
+      .select('id');
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) throw new Error('Invoice tidak ditemukan atau Anda tidak berhak mengubahnya.');
+  }
+
+  private mapInvoice(row: any): CommunityTurnoverInvoice {
+    return {
+      id: row.id,
+      communityId: row.community_id,
+      communityName: this.getCommunityById(row.community_id)?.name || 'Komunitas',
+      invoiceNumber: row.invoice_number,
+      period: row.period,
+      totalTurnover: Number(row.total_turnover) || 0,
+      feePercent: Number(row.fee_percent) || 0,
+      totalBilled: Number(row.total_billed) || 0,
+      status: row.status === 'paid' ? 'paid' : 'unpaid',
+      dueDate: row.due_date,
+      paidAt: row.paid_at || undefined,
+      createdAt: row.created_at,
     };
-
-    all.unshift(newInv);
-    localStorage.setItem(INVOICES_KEY, JSON.stringify(all));
-    return newInv;
   }
 }
 

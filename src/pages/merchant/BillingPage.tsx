@@ -25,6 +25,7 @@ import { duitkuService } from '../../services/duitkuService';
 import { billingPlanService, resolvePlanSlug, ALLOWED_PLAN_SLUGS } from '../../services/billingPlanService';
 import { formatRupiah } from '../../utils/formatters';
 import { BillingInvoiceModal } from '../../components/billing/BillingInvoiceModal';
+import { CommunityInvoicesCard } from '../../components/billing/CommunityInvoicesCard';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -1355,6 +1356,8 @@ export const BillingPage: React.FC<BillingPageProps> = ({
           );
         })}
       </div>
+
+      <CommunityInvoicesCard store={store} />
 
       {/* Modal: Riwayat Berlangganan & Tagihan (Responsive, Constrained Height & Clean Layout) */}
       {isHistoryOpen && (

@@ -7,7 +7,6 @@ import {
   Banknote,
   QrCode,
   Building2,
-  Check,
   Save,
   Loader2,
   AlertCircle,
@@ -406,12 +405,9 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
         <div>
           <h1 className="text-lg sm:text-xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
             <CreditCard className="w-5 h-5 text-[#66000E]" />
-            <span>Pengaturan Metode Pembayaran Toko</span>
+            <span>Metode Pembayaran</span>
           </h1>
-          <p className="text-xs text-[#706866] mt-1">
-            Atur pilihan cara bayar pelanggan Anda di etalase: <strong>Bayar di Tempat (COD)</strong>,{' '}
-            <strong>QRIS &amp; Transfer Bank Langsung</strong>, atau <strong>Payment Gateway Otomatis</strong>.
-          </p>
+          <p className="text-xs text-[#706866] mt-1">Pilih cara bayar yang tersedia di toko Anda.</p>
         </div>
 
         <button
@@ -438,23 +434,6 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
         </button>
       </div>
 
-      {/* Info Banner: Penjelasan Sederhana untuk Merchant & UMKM Komunitas */}
-      <div className="bg-emerald-50/70 border border-emerald-200/90 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5 shadow-2xs">
-        <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 mt-0.5 font-bold">
-          <Check className="w-5 h-5 text-emerald-700" />
-        </div>
-        <div className="text-xs text-emerald-950 leading-relaxed">
-          <p className="font-bold text-emerald-900 text-sm">
-            Fleksibilitas Penuh: Toko Anda Bebas Melayani COD &amp; QRIS Manual
-          </p>
-          <p className="mt-0.5 text-emerald-800">
-            Anda dapat mengaktifkan <strong>COD</strong> dan <strong>QRIS / Rekening Pribadi</strong> tanpa biaya
-            gateway (0% fee). Pelanggan dapat memesan langsung dan Anda menerima uang secara tunai atau langsung masuk
-            ke rekening Anda.
-          </p>
-        </div>
-      </div>
-
       {/* ========================================================================= */}
       {/* KARTU 1: BAYAR DI TEMPAT (COD / CASH ON DELIVERY)                         */}
       {/* ========================================================================= */}
@@ -465,18 +444,8 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               <Banknote className="w-5 h-5 text-amber-700" />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">1. Bayar di Tempat (COD)</h2>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
-                  Semua Paket (Gratis)
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 font-bold text-[10px] border border-amber-200">
-                  0% Biaya Gateway
-                </span>
-              </div>
-              <p className="text-xs text-[#706866] mt-0.5">
-                Pelanggan membayar tunai kepada kurir atau penjual saat barang tiba di alamat pengantaran.
-              </p>
+              <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">Bayar di Tempat (COD)</h2>
+              <p className="text-xs text-[#706866] mt-0.5">Bayar tunai saat barang diterima.</p>
             </div>
           </div>
 
@@ -509,9 +478,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
         {/* Form Pengaturan COD jika aktif */}
         {enableCod && (
           <div className="p-4 sm:p-5 border-t border-[#E5E0DD] bg-[#FAF7F7] space-y-3">
-            <label className="block text-xs font-bold text-[#241A1A]">
-              Petunjuk / Catatan COD untuk Pembeli
-            </label>
+            <label className="block text-xs font-bold text-[#241A1A]">Catatan COD untuk Pembeli</label>
             <textarea
               rows={2}
               value={codInstructions}
@@ -519,12 +486,9 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                 setCodInstructions(e.target.value);
                 markDirty();
               }}
-              placeholder="Contoh: Siapkan uang pas saat barang diantar. Hanya melayani pengantaran area sekitar kampus / kota."
+              placeholder="Contoh: Siapkan uang pas saat barang diantar."
               className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs font-medium text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition resize-none"
             />
-            <p className="text-[11px] text-[#706866]">
-              Teks ini akan ditampilkan kepada pembeli saat memilih metode Bayar di Tempat (COD) di halaman checkout.
-            </p>
           </div>
         )}
       </div>
@@ -539,20 +503,8 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               <QrCode className="w-5 h-5 text-blue-700" />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">
-                  2. QRIS Statis &amp; Transfer Bank Langsung Toko
-                </h2>
-                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-[10px] border border-blue-200">
-                  Langsung Masuk Rekening Sendiri
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
-                  0% Komisi Gateway
-                </span>
-              </div>
-              <p className="text-xs text-[#706866] mt-0.5">
-                Pelanggan scan barcode QRIS toko Anda atau transfer ke nomor rekening toko, lalu klik tombol &quot;Saya Sudah Bayar&quot; untuk dicek oleh Anda.
-              </p>
+              <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">QRIS &amp; Transfer Bank</h2>
+              <p className="text-xs text-[#706866] mt-0.5">Dana langsung masuk ke rekening Anda.</p>
             </div>
           </div>
 
@@ -589,7 +541,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               {/* Nama Bank */}
               <div>
                 <label className="block text-xs font-bold text-[#241A1A] mb-1.5">
-                  Nama Bank / E-Wallet *
+                  Bank / E-Wallet *
                 </label>
                 <select
                   value={manualBankName}
@@ -610,7 +562,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               {/* Nomor Rekening */}
               <div>
                 <label className="block text-xs font-bold text-[#241A1A] mb-1.5">
-                  Nomor Rekening / No. HP E-Wallet *
+                  No. Rekening / HP *
                 </label>
                 <input
                   type="text"
@@ -627,7 +579,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               {/* Atas Nama Rekening */}
               <div>
                 <label className="block text-xs font-bold text-[#241A1A] mb-1.5">
-                  Atas Nama Pemilik Rekening *
+                  Atas Nama *
                 </label>
                 <input
                   type="text"
@@ -645,7 +597,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
             {/* Upload Foto QRIS Statis */}
             <div className="pt-2 border-t border-[#E5E0DD]/80">
               <label className="block text-xs font-bold text-[#241A1A] mb-1.5 flex items-center justify-between">
-                <span>Foto Barcode QRIS Toko (Opsional)</span>
+                <span>Foto QRIS (Opsional)</span>
                 <span className="text-[11px] text-[#706866] font-normal">
                   JPG, PNG, atau WEBP • maks. 2 MB
                 </span>
@@ -668,9 +620,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                   />
                   <div className="flex-1">
                     <span className="text-xs font-bold text-gray-900 block">Foto QRIS Toko</span>
-                    <span className="text-[11px] text-emerald-700 font-semibold">
-                      Barcode ini akan muncul saat pembeli checkout
-                    </span>
+                    <span className="text-[11px] text-emerald-700 font-semibold">Tampil saat checkout</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -710,7 +660,6 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                   <span className="text-xs font-bold text-[#241A1A]">
                     {isUploadingQris ? 'Mengupload foto QRIS...' : 'Upload Foto QRIS'}
                   </span>
-                  <span className="text-[11px]">Klik untuk memilih foto barcode QRIS dari perangkat Anda</span>
                 </button>
               )}
             </div>
@@ -718,7 +667,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
             {/* Petunjuk Tambahan */}
             <div>
               <label className="block text-xs font-bold text-[#241A1A] mb-1.5">
-                Petunjuk Pembayaran untuk Pembeli
+                Petunjuk Pembayaran
               </label>
               <textarea
                 rows={2}
@@ -745,22 +694,10 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               <CreditCard className="w-5 h-5 text-amber-800" />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-bold text-sm text-amber-950">
-                  Payment Gateway Otomatis Dinonaktifkan oleh Admin
-                </h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-200/90 text-amber-900 font-bold text-[10px] border border-amber-300">
-                  Mode QRIS Toko & COD Aktif
-                </span>
-              </div>
-              <p className="text-xs text-amber-800 mt-1 leading-relaxed max-w-2xl">
-                Super Admin sedang menonaktifkan jalur payment gateway otomatis (Virtual Account & E-Wallet). Seluruh transaksi toko Anda saat ini diarahkan ke <strong>QRIS Pribadi & Transfer Bank Toko</strong> (Kartu 2) serta <strong>Bayar di Tempat (COD)</strong> (Kartu 1).
-              </p>
+              <h3 className="font-bold text-sm text-amber-950">Payment Gateway Belum Tersedia</h3>
+              <p className="text-xs text-amber-800 mt-1">Untuk sementara gunakan COD atau QRIS &amp; Transfer Bank.</p>
             </div>
           </div>
-          <span className="text-xs font-semibold text-amber-900 bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-300 shrink-0">
-            0% Biaya Gateway
-          </span>
         </div>
       ) : (
       <div className="bg-white rounded-2xl border border-[#E5E0DD] shadow-2xs overflow-hidden transition">
@@ -771,16 +708,9 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               <CreditCard className="w-5 h-5 text-[#66000E]" />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">
-                  3. Payment Gateway Otomatis (Midtrans &amp; Duitku)
-                </h2>
-                <span className="px-2 py-0.5 rounded-full bg-[#66000E]/10 text-[#66000E] font-bold text-[10px] border border-[#66000E]/20">
-                  Verifikasi Real-Time 24 Jam
-                </span>
-              </div>
+              <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">Payment Gateway</h2>
               <p className="text-xs text-[#706866] mt-0.5">
-                {activeGatewayCount} / {channels.length} metode pembayaran gateway otomatis aktif di etalase toko Anda.
+                {activeGatewayCount} dari {channels.length} metode aktif
               </p>
             </div>
           </div>
@@ -824,8 +754,8 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                 type="text"
                 placeholder={
                   isEn
-                    ? 'Search payment channels (e.g. BCA, QRIS, GoPay, Mandiri)...'
-                    : 'Cari channel gateway (contoh: BCA, QRIS Dinamis, GoPay, Mandiri)...'
+                    ? 'Search (e.g. BCA, GoPay)...'
+                    : 'Cari (contoh: BCA, GoPay)...'
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

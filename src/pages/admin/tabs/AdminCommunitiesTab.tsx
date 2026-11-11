@@ -63,6 +63,8 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     currentUser?.email === 'admin2@gmps.com' ||
     currentUser?.email === 'subadmin2@gmail.com';
   const isSubAdmin = isSubAdminUmum || isSubAdminProduk || currentUser?.role === 'sub_admin';
+  // Hanya super admin yang menerbitkan & melunasi invoice (juga dijaga RLS community_invoices).
+  const canManageInvoices = currentUser?.role === 'admin';
 
   // Fallback targetCommunityId dari email jika belum tersimpan di currentUser.communityId
   const targetCommunityId = useMemo(() => {
@@ -89,9 +91,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   });
   const [stores, setStores] = useState<Store[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [invoices, setInvoices] = useState<CommunityTurnoverInvoice[]>(() =>
-    communityService.getCommunityInvoices(isSubAdmin && targetCommunityId ? targetCommunityId : undefined)
-  );
+  const [invoices, setInvoices] = useState<CommunityTurnoverInvoice[]>([]);
 
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'merchants' | 'invoices'>('overview');
   const [searchMerchant, setSearchMerchant] = useState('');
@@ -271,18 +271,39 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     });
   };
 
-  // Generate Turnover Invoice
-  const handleGenerateInvoice = () => {
+  const invoiceScopeId = canManageInvoices ? undefined : targetCommunityId;
+
+  const reloadInvoices = async () => {
+    // Staf tanpa komunitas tidak punya invoice untuk dilihat.
+    if (!canManageInvoices && !invoiceScopeId) {
+      setInvoices([]);
+      return;
+    }
+    try {
+      setInvoices(await communityService.fetchCommunityInvoices(invoiceScopeId));
+    } catch (err: any) {
+      onShowToast?.('❌ Gagal memuat invoice: ' + (err?.message || ''));
+    }
+  };
+
+  useEffect(() => {
+    reloadInvoices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canManageInvoices, invoiceScopeId]);
+
+  // Generate Turnover Invoice (super admin saja)
+  const handleGenerateInvoice = async () => {
+    if (!canManageInvoices || !activeCommunity) return;
     setIsGeneratingInvoice(true);
     try {
       const currentMonth = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(new Date());
-      communityService.createTurnoverInvoice(
+      await communityService.createTurnoverInvoice(
         activeCommunity.id,
         currentMonth,
         turnoverStats.totalTurnover,
         activeCommunity.turnoverFeePercent
       );
-      setInvoices(communityService.getCommunityInvoices(isSubAdmin ? targetCommunityId : undefined));
+      await reloadInvoices();
       if (onShowToast) {
         onShowToast(`Invoice tagihan omset periode ${currentMonth} berhasil diterbitkan!`);
       }
@@ -295,12 +316,15 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     }
   };
 
-  // Mark invoice paid
-  const handleMarkPaid = (invId: string) => {
-    communityService.markInvoicePaid(invId);
-    setInvoices(communityService.getCommunityInvoices(isSubAdmin ? targetCommunityId : undefined));
-    if (onShowToast) {
-      onShowToast('Status invoice diperbarui menjadi LUNAS.');
+  // Mark invoice paid (super admin saja)
+  const handleMarkPaid = async (invId: string) => {
+    if (!canManageInvoices) return;
+    try {
+      await communityService.markInvoicePaid(invId);
+      await reloadInvoices();
+      onShowToast?.('Status invoice diperbarui menjadi LUNAS.');
+    } catch (err: any) {
+      onShowToast?.('❌ Gagal memperbarui invoice: ' + (err?.message || ''));
     }
   };
 
@@ -1007,6 +1031,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               </p>
             </div>
 
+            {canManageInvoices && (
             <button
               type="button"
               disabled={isGeneratingInvoice}
@@ -1016,13 +1041,18 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               <Sparkles className="w-4 h-4 text-amber-300" />
               <span>Terbitkan Invoice Periode Ini</span>
             </button>
+            )}
           </div>
 
           {filteredInvoices.length === 0 ? (
             <div className="p-12 text-center text-gray-500">
               <Receipt className="w-10 h-10 text-gray-300 mx-auto mb-2" />
               <p className="text-sm font-bold text-gray-800">Belum Ada Tagihan Diterbitkan</p>
-              <p className="text-xs mt-1">Klik tombol &quot;Terbitkan Invoice Periode Ini&quot; untuk membuat tagihan baru.</p>
+              <p className="text-xs mt-1">
+                {canManageInvoices
+                  ? 'Klik "Terbitkan Invoice Periode Ini" untuk membuat tagihan baru.'
+                  : 'Tagihan diterbitkan oleh Super Admin.'}
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -1063,7 +1093,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       </span>
                     </div>
 
-                    {inv.status !== 'paid' && (
+                    {canManageInvoices && inv.status !== 'paid' && (
                       <div className="flex items-center gap-2">
                         {activeCommunity.coordinatorPhone && (
                           <a
