@@ -507,6 +507,8 @@ export interface Order {
   paymentStatus: PaymentStatus;
   /** Waktu pembeli menekan "Saya Sudah Bayar" (QRIS / transfer langsung), menunggu dicek merchant. */
   paymentConfirmedAt?: string;
+  /** URL CDN foto bukti transfer yang diunggah pembeli (QRIS / transfer langsung). */
+  paymentProofUrl?: string;
   courier: CourierType;
   courierCode?: string;
   courierService?: string;

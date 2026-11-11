@@ -25,12 +25,6 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
     desktop: 'flex',
     fallback: 'hidden md:flex',
   });
-  const showCartLabel = getDeviceClass(isMobile, isTablet, {
-    mobile: 'hidden',
-    tablet: 'hidden',
-    desktop: 'inline',
-    fallback: 'hidden md:inline',
-  });
 
   return (
     <header className={`w-full bg-[#FAF9F6]/90 backdrop-blur-sm border-b border-[#E8E6E1] py-5 px-8 md:px-16 ${header.positionClass} font-['Cormorant_Garamond',serif]`}>
@@ -66,7 +60,6 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
         <div className="flex-1 flex items-center justify-end gap-6">
           {header.showCart && (
             <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-[#6B6865] hover:text-[#2C2A29] transition-colors flex items-center gap-2 cursor-pointer">
-              <span className={`text-xs tracking-[0.15em] uppercase ${showCartLabel} font-sans`}>Keranjang</span>
               <div className="relative">
                 <ShoppingBag className="w-4 h-4" />
                 <span className="absolute -bottom-2 -right-2 text-[#2C2A29] text-[9px] font-sans"><CartCount /></span>

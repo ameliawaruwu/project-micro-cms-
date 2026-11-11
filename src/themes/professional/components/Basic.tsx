@@ -4,7 +4,7 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
-import { CartCount } from '../../storefrontCart';
+import { CartCountBadge } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
@@ -78,10 +78,9 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
           )}
           <NavTrackOrderButton className="p-2 text-blue-50 hover:text-white transition-colors" iconClassName="w-5 h-5" />
           {header.showCart && (
-            <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="flex items-center gap-2 px-3 sm:px-5 py-2 text-sm font-semibold bg-white text-[#1E40AF] rounded-md hover:bg-gray-100 transition-colors shadow-sm cursor-pointer whitespace-nowrap">
+            <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative flex items-center justify-center p-2.5 bg-white text-[#1E40AF] rounded-md hover:bg-gray-100 transition-colors shadow-sm cursor-pointer">
               <CartBagIcon className="w-4 h-4" />
-              <span className="hidden sm:inline">Keranjang</span>
-              <span>(<CartCount />)</span>
+              <CartCountBadge className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold leading-none flex items-center justify-center bg-[#1E40AF] text-white ring-2 ring-white" />
             </button>
           )}
         </div>

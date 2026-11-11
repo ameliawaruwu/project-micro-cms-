@@ -113,7 +113,6 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
               title="Keranjang Belanja"
             >
               <ShoppingBag className="w-4 h-4 text-gray-800" />
-              <span className="hidden lg:inline">Keranjang</span>
               <span className="w-4 h-4 rounded-full bg-black text-white text-[9px] font-bold flex items-center justify-center -ml-0.5">
                 <CartCount />
               </span>

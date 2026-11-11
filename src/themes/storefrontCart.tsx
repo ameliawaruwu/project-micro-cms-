@@ -152,8 +152,15 @@ export const CartCount: React.FC = () => {
 };
 
 /** Badge jumlah keranjang yang hanya tampil bila ada barang. */
-export const CartCountBadge: React.FC<{ className?: string }> = ({ className = '' }) => {
+export const CartCountBadge: React.FC<{ className?: string; style?: React.CSSProperties }> = ({
+  className = '',
+  style,
+}) => {
   const count = useCartCount(useStorefrontSlug());
   if (count <= 0) return null;
-  return <span className={className}>{count > 99 ? '99+' : count}</span>;
+  return (
+    <span className={className} style={style}>
+      {count > 99 ? '99+' : count}
+    </span>
+  );
 };

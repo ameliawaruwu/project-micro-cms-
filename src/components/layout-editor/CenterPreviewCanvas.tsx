@@ -493,7 +493,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
     return (
       <div
-        className="storefront-font-scope flex-1 w-full max-w-full overflow-x-hidden bg-white relative pb-0 box-border flex flex-col min-h-screen"
+        className="storefront-font-scope sf-desktop-density flex-1 w-full max-w-full overflow-x-hidden bg-white relative pb-0 box-border flex flex-col min-h-screen"
         style={{ fontFamily: `'${bodyFont}', sans-serif` }}
         onClickCapture={handleCanvasClick}
         onClick={handleCanvasClick}
@@ -1477,7 +1477,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
       <div
         className={`transition-all duration-300 w-full mx-auto device-${deviceMode} ${
           isDesktop
-            ? 'max-w-full'
+            ? 'max-w-full sf-desktop-density'
             : isTablet
             ? 'max-w-[768px]'
             : 'max-w-[390px]'

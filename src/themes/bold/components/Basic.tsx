@@ -5,7 +5,7 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
-import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
+import { CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
@@ -64,10 +64,9 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
         )}
         <NavTrackOrderButton className="p-2 text-zinc-400 hover:text-white transition-colors" />
         {header.showCart && (
-          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="cursor-pointer bg-white text-zinc-950 px-3 sm:px-5 py-2 sm:py-2.5 text-xs font-extrabold uppercase rounded-lg hover:bg-zinc-200 transition-all shadow-md hover:shadow-white/10 active:scale-95 flex items-center gap-2">
+          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative cursor-pointer bg-white text-zinc-950 p-2.5 rounded-lg hover:bg-zinc-200 transition-all shadow-md hover:shadow-white/10 active:scale-95 flex items-center justify-center">
             <CartBagIcon className="w-4 h-4" />
-            <span className="hidden sm:inline">KERANJANG</span>
-            <span>[<CartCount />]</span>
+            <CartCountBadge className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold leading-none flex items-center justify-center bg-zinc-950 text-white ring-2 ring-white" />
           </button>
         )}
       </div>

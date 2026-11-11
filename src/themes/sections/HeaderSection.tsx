@@ -87,7 +87,6 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
                   0
                 </span>
               </div>
-              <span className="hidden md:block text-[10px] font-bold">Keranjang</span>
             </button>
             <button className="lg:hidden text-gray-900 p-2 bg-gray-50 rounded-lg active:scale-95 transition-transform">
               <Menu className="w-5 h-5" />

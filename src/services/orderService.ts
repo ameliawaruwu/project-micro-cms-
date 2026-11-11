@@ -1,5 +1,6 @@
 import { Order, ShippingStatus, CourierType, PaymentStatus, OrderItem } from '../types';
 import { supabase, getSessionToken } from './supabaseClient';
+import { mediaService } from './mediaService';
 
 /** Data pesanan yang boleh dilihat pembeli lewat halaman Lacak Pesanan (tanpa alamat / kontak). */
 export interface TrackedOrder {
@@ -103,6 +104,7 @@ function mapSupabaseRowToOrder(row: any): Order {
     paymentMethod: row.payment_method || 'Manual',
     paymentStatus,
     paymentConfirmedAt: row.payment_confirmed_at || undefined,
+    paymentProofUrl: row.payment_proof_url || undefined,
     courier: (row.shipping_courier as CourierType) || 'J&T',
     courierCode: row.courier_code || undefined,
     courierService: row.shipping_service || row.courier_service || undefined,
@@ -366,27 +368,24 @@ class OrderService {
   }
 
   /**
-   * Dipanggil pembeli setelah membayar via QRIS / transfer langsung ke rekening toko.
-   * Hanya menandai "sudah konfirmasi"; status lunas tetap ditentukan merchant setelah cek mutasi.
+   * Pembeli mengunggah bukti transfer QRIS / rekening toko. Sekaligus menandai "sudah konfirmasi";
+   * status lunas tetap ditentukan merchant setelah mencocokkan bukti dengan mutasi.
    */
-  async confirmPaymentByBuyer(orderId: string, storeId: string, orderNumber: string): Promise<string> {
-    const { data, error } = await supabase.rpc('buyer_confirm_payment', {
-      p_order_id: orderId,
-      p_order_number: orderNumber,
-    });
-    if (error) {
-      console.error('[Supabase Database] Gagal menyimpan konfirmasi pembayaran:', error);
-      throw new Error('Gagal mengirim konfirmasi pembayaran. Silakan coba lagi.');
-    }
-    const confirmedAt = String(data || new Date().toISOString());
+  async submitPaymentProof(
+    orderId: string,
+    storeId: string,
+    orderNumber: string,
+    file: File,
+  ): Promise<{ url: string; paymentConfirmedAt: string }> {
+    const result = await mediaService.uploadPaymentProof(file, orderId, orderNumber);
 
     const orders = this.getStoredOrders(storeId);
     const index = orders.findIndex((o) => o.id === orderId);
     if (index !== -1) {
-      orders[index] = { ...orders[index], paymentConfirmedAt: confirmedAt };
+      orders[index] = { ...orders[index], paymentConfirmedAt: result.paymentConfirmedAt, paymentProofUrl: result.url };
       this.saveOrders(storeId, orders);
     }
-    return confirmedAt;
+    return result;
   }
 
   /** Pesanan yang pernah dibuat dari perangkat ini (salinan lokal), terbaru lebih dulu. */

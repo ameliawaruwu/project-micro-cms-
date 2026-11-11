@@ -28,6 +28,7 @@ import {
 import { orderService } from '../../services/orderService';
 import { DEFAULT_MANUAL_INSTRUCTIONS } from '../../utils/manualPayment';
 import { ManualPaymentDetails } from './ManualPaymentDetails';
+import { PaymentProofUpload } from './PaymentProofUpload';
 import { cartService } from '../../services/cartService';
 import { duitkuService } from '../../services/duitkuService';
 import { getDeviceClass } from '../../utils/responsivePreview';
@@ -147,22 +148,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
-  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
-  const [paymentConfirmError, setPaymentConfirmError] = useState<string | null>(null);
-
-  const handleConfirmPayment = async () => {
-    if (!createdOrder?.id || !createdOrder.storeId) return;
-    setIsConfirmingPayment(true);
-    setPaymentConfirmError(null);
-    try {
-      const confirmedAt = await orderService.confirmPaymentByBuyer(createdOrder.id, createdOrder.storeId, createdOrder.orderNumber);
-      setCreatedOrder({ ...createdOrder, paymentConfirmedAt: confirmedAt });
-    } catch (err: any) {
-      setPaymentConfirmError(err?.message || 'Gagal mengirim konfirmasi pembayaran. Silakan coba lagi.');
-    } finally {
-      setIsConfirmingPayment(false);
-    }
-  };
 
   // Cart / sample items
   const cartItemsFromStorage = store?.slug ? cartService.getCart(store.slug) : [];
@@ -956,34 +941,26 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   <div className="w-full p-4 rounded-[var(--sf-radius)] bg-emerald-50 border border-emerald-200 text-left flex items-start gap-3">
                     <Check className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                      <p className="text-sm font-bold text-emerald-900">Konfirmasi pembayaran terkirim</p>
+                      <p className="text-sm font-bold text-emerald-900">Bukti pembayaran terkirim</p>
                       <p className="text-xs text-emerald-800 leading-relaxed">
                         Penjual akan memeriksa pembayaran Anda. Pesanan diproses setelah pembayaran dinyatakan lunas.
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleConfirmPayment}
-                      disabled={isConfirmingPayment}
-                      className="w-full py-3.5 px-4 bg-[var(--sf-primary)] hover:bg-[var(--sf-primary)] text-white font-bold rounded-[var(--sf-radius)] flex items-center justify-center gap-2 transition cursor-pointer shadow-md text-sm disabled:opacity-70 disabled:cursor-wait"
-                    >
-                      {isConfirmingPayment ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <ShieldCheck className="w-4 h-4" />
-                      )}
-                      <span>{isConfirmingPayment ? 'Mengirim Konfirmasi...' : 'Saya Sudah Bayar'}</span>
-                    </button>
-                    <p className="text-[11px] text-[var(--sf-muted)]">
-                      Klik setelah Anda menyelesaikan transfer atau scan QRIS sebesar Rp {total.toLocaleString('id-ID')}.
-                    </p>
-                    {paymentConfirmError && (
-                      <p className="text-xs font-semibold text-red-600">{paymentConfirmError}</p>
-                    )}
-                  </>
+                  createdOrder?.id && createdOrder.storeId ? (
+                    <PaymentProofUpload
+                      orderId={createdOrder.id}
+                      orderNumber={createdOrder.orderNumber}
+                      storeId={createdOrder.storeId}
+                      total={total}
+                      onSubmitted={({ url, paymentConfirmedAt }) =>
+                        setCreatedOrder((current) =>
+                          current ? { ...current, paymentConfirmedAt, paymentProofUrl: url } : current,
+                        )
+                      }
+                    />
+                  ) : null
                 )
               ) : null}
 

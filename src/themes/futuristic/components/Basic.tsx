@@ -5,7 +5,7 @@ import { useThemeProductsSource } from '../../useSectionProducts';
 import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
-import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
+import { CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
@@ -62,14 +62,13 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
           <button
             type="button"
             data-href="/keranjang" aria-label="Buka keranjang belanja"
-            className="px-3 sm:px-5 py-2 bg-transparent border text-xs uppercase tracking-widest font-bold rounded transition-all duration-300 cursor-pointer flex items-center gap-2 whitespace-nowrap"
+            className="relative p-2.5 bg-transparent border rounded transition-all duration-300 cursor-pointer flex items-center justify-center"
             style={{ borderColor: accentColor, color: accentColor }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; e.currentTarget.style.color = '#fff'; e.currentTarget.style.boxShadow = `0 0 15px ${accentColor}`; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = accentColor; e.currentTarget.style.boxShadow = ''; }}
           >
             <CartBagIcon className="w-4 h-4" />
-            <span className="hidden sm:inline">Keranjang</span>
-            <span>[<CartCount />]</span>
+            <CartCountBadge className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold leading-none flex items-center justify-center text-white" style={{ backgroundColor: accentColor }} />
           </button>
         )}
       </div>

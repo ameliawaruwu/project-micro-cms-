@@ -7,6 +7,7 @@ import {
   Package,
   Clock,
   Loader2,
+  ExternalLink,
 } from 'lucide-react';
 import { isManualTransferMethod } from '../../utils/manualPayment';
 import { getMerchantOrderAction } from '../../utils/orderFlow';
@@ -55,6 +56,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
   // Determine current active step index (0 to 4)
   const isPaid = order?.paymentStatus === 'Sudah Dibayar';
+  // Bukti transfer hanya ditampilkan bila berupa URL https (diisi server dari CDN).
+  const proofUrl = order?.paymentProofUrl?.startsWith('https://') ? order.paymentProofUrl : null;
   const isProcessed = order?.shippingStatus !== 'Baru';
   const isShipped = order?.shippingStatus === 'Dikirim' || order?.shippingStatus === 'Selesai';
   const isCompleted = order?.shippingStatus === 'Selesai';
@@ -201,7 +204,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   <p className="text-xs text-[#706866] leading-relaxed">
                     {order.paymentConfirmedAt
                       ? `Dikonfirmasi ${formatDateIndo(order.paymentConfirmedAt)}. Cek mutasi rekening / QRIS Anda sebesar ${formatRupiah(order.grandTotal)}, lalu tandai lunas.`
-                      : `Pembeli belum menekan tombol "Saya Sudah Bayar". Anda tetap bisa menandai lunas jika dana ${formatRupiah(order.grandTotal)} sudah masuk.`}
+                      : `Pembeli belum mengirim bukti pembayaran. Anda tetap bisa menandai lunas jika dana ${formatRupiah(order.grandTotal)} sudah masuk.`}
                   </p>
                 </div>
               </div>
@@ -222,6 +225,35 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   {isVerifyingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   <span>Tandai Lunas</span>
                 </button>
+              )}
+            </div>
+          )}
+
+          {/* 0a. BUKTI TRANSFER DARI PEMBELI */}
+          {proofUrl && (
+            <div className="p-4 rounded-xl border bg-white border-[#E5E0DD] space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-bold text-[#241A1A]">Bukti Pembayaran dari Pembeli</p>
+                <a
+                  href={proofUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-[#7A1D1D] hover:underline flex items-center gap-1"
+                >
+                  Buka ukuran penuh <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+              <a href={proofUrl} target="_blank" rel="noopener noreferrer" className="block">
+                <img
+                  src={proofUrl}
+                  alt={`Bukti pembayaran ${order.orderNumber}`}
+                  className="max-h-80 w-full object-contain rounded-lg border border-[#E5E0DD] bg-[#FAF7F7]"
+                />
+              </a>
+              {!isPaid && (
+                <p className="text-xs text-[#706866]">
+                  Cocokkan nama pengirim, nominal {formatRupiah(order.grandTotal)}, dan waktu transfer dengan mutasi sebelum menandai lunas.
+                </p>
               )}
             </div>
           )}

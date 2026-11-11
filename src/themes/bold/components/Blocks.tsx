@@ -16,18 +16,18 @@ export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   return (
     <section className="py-20 sm:py-28 px-6 md:px-12 bg-zinc-950 text-white relative overflow-hidden border-b border-zinc-900">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12 md:gap-16 relative z-10">
-        <div className="w-full md:w-1/2 relative group">
+        <div className="w-full md:w-5/12 max-w-md mx-auto relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-red-600 to-rose-600 rounded-2xl blur-lg opacity-20 group-hover:opacity-40 transition duration-500"></div>
-          <div className="relative aspect-square md:aspect-[4/5] rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 shadow-2xl">
+          <div className="relative aspect-square rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 shadow-2xl">
             <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" />
           </div>
         </div>
-        <div className="w-full md:w-1/2 space-y-6">
+        <div className="w-full md:flex-1 space-y-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-red-600/10 border border-red-500/30 text-red-500 text-xs font-extrabold uppercase tracking-widest rounded-full">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
             FEATURED RELEASE
           </div>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-white leading-tight uppercase">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight uppercase">
             {product.name}
           </h2>
           <div className="text-2xl font-black text-white bg-zinc-900 border border-zinc-800 inline-block px-5 py-2.5 rounded-xl tracking-tight shadow-md">

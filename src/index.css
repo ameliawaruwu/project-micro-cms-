@@ -355,6 +355,34 @@
 }
 
 /* ========================================================================= */
+/* Storefront Desktop Density                                                 */
+/* Template toko dirancang besar; pada layar desktop 100% kartu, judul, dan   */
+/* jarak antar-section terasa terlalu lebar. Variabel Tailwind v4 di-scale    */
+/* hanya di dalam .sf-desktop-density (storefront live & kanvas desktop), jadi*/
+/* dashboard CMS, pratinjau mobile/tablet, dan layar kecil tidak berubah.     */
+/* ========================================================================= */
+
+@media (min-width: 1024px) {
+  .sf-desktop-density {
+    --spacing: 0.21rem;
+
+    --container-3xl: 44rem;
+    --container-4xl: 50rem;
+    --container-5xl: 56rem;
+    --container-6xl: 62rem;
+    --container-7xl: 68rem;
+
+    --text-3xl: 1.7rem;
+    --text-4xl: 1.95rem;
+    --text-5xl: 2.5rem;
+    --text-6xl: 3rem;
+    --text-7xl: 3.5rem;
+    --text-8xl: 4.5rem;
+    --text-9xl: 6rem;
+  }
+}
+
+/* ========================================================================= */
 /* Storefront Responsive Layout & Visual Hierarchy Preservation               */
 /* Principle: Maintain image/card dimensions & ratios while scaling typography*/
 /* ========================================================================= */
