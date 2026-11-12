@@ -147,7 +147,7 @@ export const StoreNameSetupModal: React.FC<StoreNameSetupModalProps> = ({
             <button
               type="submit"
               disabled={isSaving || !storeName.trim()}
-              className="flex-[2] py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-brand/20 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="flex-[2] py-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-[#66000E]/20 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSaving ? (
                 <span>Menyimpan...</span>

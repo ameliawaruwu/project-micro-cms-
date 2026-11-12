@@ -324,7 +324,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
               {currentTemplateId && (
                 <button
                   onClick={onCustomize}
-                  className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-brand hover:bg-brand-hover transition-colors cursor-pointer shadow-xs"
+                  className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-[#66000E] hover:bg-[#52000B] transition-colors cursor-pointer shadow-xs"
                 >
                   <Settings2 className="w-4 h-4" />
                   <span>{isEn ? 'Edit Active Template' : 'Edit Template Aktif'}</span>
@@ -477,7 +477,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
 
                         <button
                           onClick={() => onApplyTemplate?.(savedTmpl)}
-                          className="px-4 py-2 rounded-xl text-[13px] font-semibold bg-brand hover:bg-brand-hover text-white transition cursor-pointer shadow-xs"
+                          className="px-4 py-2 rounded-xl text-[13px] font-semibold bg-[#66000E] hover:bg-[#52000B] text-white transition cursor-pointer shadow-xs"
                         >
                           {isCurrentActive ? (isEn ? 'Customize' : 'Sesuaikan') : (isEn ? 'Customize draft' : 'Sesuaikan draf')}
                         </button>
@@ -536,7 +536,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
                 onClick={() => setActiveCategory(cat.id)}
                 className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold border transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-brand text-white border-[#66000E] shadow-xs'
+                    ? 'bg-[#66000E] text-white border-[#66000E] shadow-xs'
                     : 'bg-white text-[#706866] border-[#E5E0DD] hover:border-[#66000E] hover:text-[#66000E]'
                 }`}
               >
@@ -826,11 +826,11 @@ const TemplateCard: React.FC<{
           disabled={isLoading || isActive}
           className={`px-4 py-2 rounded-xl border text-[13px] font-semibold shadow-xs transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
             isActive
-              ? 'bg-brand text-white border-[#66000E]'
+              ? 'bg-[#66000E] text-white border-[#66000E]'
               : isLoading
               ? 'bg-[#FAF7F7] border-[#E5E0DD] text-[#706866] cursor-wait'
               : savedDraft
-              ? 'bg-brand hover:bg-brand-hover text-white border-[#66000E]'
+              ? 'bg-[#66000E] hover:bg-[#52000B] text-white border-[#66000E]'
               : 'bg-white border-[#E5E0DD] text-[#241A1A] hover:bg-[#FAF7F7] hover:border-[#66000E]'
           }`}
         >

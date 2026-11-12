@@ -416,7 +416,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                   href={googleMapsDirectionsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-white font-semibold text-[11px] flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-[11px] flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
                 >
                   <Navigation className="w-3.5 h-3.5" />
                   <span>Buka Rute di Google Maps</span>

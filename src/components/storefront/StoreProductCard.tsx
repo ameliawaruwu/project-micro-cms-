@@ -102,7 +102,7 @@ export const StoreProductCard: React.FC<StoreProductCardProps> = ({
           <button
             onClick={() => onBuyNow(product)}
             disabled={isOutOfStock}
-            className="w-full py-2.5 px-2 min-h-[40px] rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs flex items-center justify-center gap-1 transition shadow-xs disabled:opacity-40 cursor-pointer"
+            className="w-full py-2.5 px-2 min-h-[40px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs flex items-center justify-center gap-1 transition shadow-xs disabled:opacity-40 cursor-pointer"
           >
             <Zap className="w-3.5 h-3.5 fill-white" />
             <span>Beli</span>

@@ -180,7 +180,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           {onOpenWithdraw && (
             <button
               onClick={onOpenWithdraw}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-medium transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-medium transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
             >
               <ArrowUpRight className="w-4 h-4" />
               <span>{t('wallet_and_withdraw', 'Dompet & Tarik Dana')}</span>

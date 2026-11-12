@@ -100,7 +100,7 @@ export const MobileShowcase: React.FC = () => {
 
                 <div className="flex items-center justify-between pt-1">
                   <h3 className="text-xs font-bold text-[#241A1A]">Katalog Produk (18)</h3>
-                  <button className="px-2 py-0.5 rounded-md bg-brand text-white text-[9px] font-bold">
+                  <button className="px-2 py-0.5 rounded-md bg-[#66000E] text-white text-[9px] font-bold">
                     + Tambah
                   </button>
                 </div>

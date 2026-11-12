@@ -314,7 +314,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2.5 min-h-[40px] rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs transition cursor-pointer disabled:opacity-50 text-center"
+              className="px-5 py-2.5 min-h-[40px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs transition cursor-pointer disabled:opacity-50 text-center"
             >
               {isSubmitting
                 ? t('branch_form_saving', 'Menyimpan...')

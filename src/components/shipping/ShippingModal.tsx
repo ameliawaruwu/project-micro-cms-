@@ -329,7 +329,7 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
             <button
               onClick={handleConfirmShipping}
               disabled={isSubmitting}
-              className="flex-1 px-5 py-2.5 min-h-[40px] rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+              className="flex-1 px-5 py-2.5 min-h-[40px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>

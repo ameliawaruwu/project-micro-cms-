@@ -82,7 +82,7 @@ export const SalesSummary: React.FC<SalesSummaryProps> = ({
                     {order.shippingStatus === 'Baru' || order.shippingStatus === 'Diproses' ? (
                       <button
                         onClick={() => onProcessOrder(order)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-white text-xs font-semibold transition active:scale-95 shadow-xs cursor-pointer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-semibold transition active:scale-95 shadow-xs cursor-pointer"
                       >
                         <Send className="w-3.5 h-3.5" />
                         <span>Proses Kirim</span>

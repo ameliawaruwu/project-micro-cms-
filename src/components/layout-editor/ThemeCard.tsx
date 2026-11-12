@@ -195,7 +195,7 @@ export const TemplateCard: React.FC<{
           }}
           className={`shrink-0 px-3.5 py-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer ${
             isActive 
-              ? 'bg-brand text-white border-[#66000E] shadow-sm hover:bg-brand-hover' 
+              ? 'bg-[#66000E] text-white border-[#66000E] shadow-sm hover:bg-[#52000B]' 
               : 'bg-white border-[#E5E0DD] text-[#1F1F1F] hover:bg-[#F5E8EA] hover:text-[#66000E] hover:border-[#E8DDDE]'
           }`}
         >

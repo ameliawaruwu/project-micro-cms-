@@ -122,7 +122,7 @@ export const BillingInvoiceModal: React.FC<BillingInvoiceModalProps> = ({
               type="button"
               disabled={isDownloading}
               onClick={handleDownloadPdf}
-              className="px-3 py-1 rounded-lg bg-brand hover:bg-brand-hover text-white font-semibold text-[11px] flex items-center gap-1 shadow-2xs transition cursor-pointer disabled:opacity-50"
+              className="px-3 py-1 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-[11px] flex items-center gap-1 shadow-2xs transition cursor-pointer disabled:opacity-50"
             >
               {isDownloading ? (
                 <>

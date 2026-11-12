@@ -209,7 +209,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                 <button
                   type="button"
                   onClick={onNavigateLogin}
-                  className="w-full h-12 rounded-full bg-brand hover:bg-brand-hover text-white font-medium text-sm sm:text-base shadow-[0_8px_20px_rgba(102,0,14,0.25)] hover:shadow-[0_10px_25px_rgba(102,0,14,0.35)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-12 rounded-full bg-[#66000E] hover:bg-[#801010] text-white font-medium text-sm sm:text-base shadow-[0_8px_20px_rgba(102,0,14,0.25)] hover:shadow-[0_10px_25px_rgba(102,0,14,0.35)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>{t('auth_back_to_login', 'Kembali ke Halaman Masuk')}</span>
                   <ArrowRight className="w-4 h-4" />
@@ -285,7 +285,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="group w-full h-12 rounded-full bg-brand hover:bg-brand-hover text-white font-medium text-sm sm:text-base shadow-[0_8px_20px_rgba(102,0,14,0.25)] hover:shadow-[0_10px_25px_rgba(102,0,14,0.35)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                      className="group w-full h-12 rounded-full bg-[#66000E] hover:bg-[#801010] text-white font-medium text-sm sm:text-base shadow-[0_8px_20px_rgba(102,0,14,0.25)] hover:shadow-[0_10px_25px_rgba(102,0,14,0.35)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
                     >
                       {isLoading ? (
                         <>
@@ -338,7 +338,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                     <button
                       type="submit"
                       disabled={isLoading || token.length !== 6}
-                      className="group w-full h-12 rounded-full bg-brand hover:bg-brand-hover text-white font-medium text-sm sm:text-base shadow-[0_8px_20px_rgba(102,0,14,0.25)] hover:shadow-[0_10px_25px_rgba(102,0,14,0.35)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                      className="group w-full h-12 rounded-full bg-[#66000E] hover:bg-[#801010] text-white font-medium text-sm sm:text-base shadow-[0_8px_20px_rgba(102,0,14,0.25)] hover:shadow-[0_10px_25px_rgba(102,0,14,0.35)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
                     >
                       {isLoading ? (
                         <>
@@ -438,7 +438,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                     <button
                       type="submit"
                       disabled={isLoading || !isPasswordValid || !isPasswordMatch}
-                      className="group w-full h-12 rounded-full bg-brand hover:bg-brand-hover text-white font-medium text-sm sm:text-base shadow-[0_8px_20px_rgba(102,0,14,0.25)] hover:shadow-[0_10px_25px_rgba(102,0,14,0.35)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                      className="group w-full h-12 rounded-full bg-[#66000E] hover:bg-[#801010] text-white font-medium text-sm sm:text-base shadow-[0_8px_20px_rgba(102,0,14,0.25)] hover:shadow-[0_10px_25px_rgba(102,0,14,0.35)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
                     >
                       {isLoading ? (
                         <>

@@ -459,7 +459,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                 <button
                   onClick={() => setStep('checkout')}
-                  className="w-full py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-2"
                 >
                   <span>Lanjut ke Pengiriman & Pembayaran</span>
                   <ArrowRight className="w-4 h-4" />
@@ -687,7 +687,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           onClick={() => setChannelCategoryFilter(tab.id as any)}
                           className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap transition cursor-pointer ${
                             channelCategoryFilter === tab.id
-                              ? 'bg-brand text-white shadow-2xs'
+                              ? 'bg-[#66000E] text-white shadow-2xs'
                               : 'bg-[#FAF7F7] text-[#706866] hover:bg-[#EAE4E2] hover:text-[#241A1A]'
                           }`}
                         >
@@ -791,7 +791,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex-1 py-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <span>Bayar Sekarang ({formatRupiah(grandTotal)})</span>
                   <ArrowRight className="w-4 h-4" />
@@ -945,7 +945,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     type="button"
                     disabled={isSubmitting}
                     onClick={handleManualFinalizeOrder}
-                    className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <CheckCircle className="w-3.5 h-3.5" />
                     <span>{isSubmitting ? 'Memproses Pesanan...' : 'Konfirmasi Bayar Lunas (Selesai)'}</span>

@@ -133,7 +133,7 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onNavigate
             onClick={onNavigateRegister}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.97 }}
-            className="group inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-brand hover:bg-brand-hover text-white font-medium text-sm transition-colors cursor-pointer"
+            className="group inline-flex items-center justify-center gap-2 h-12 px-6 rounded-lg bg-[#66000E] hover:bg-[#800C19] text-white font-medium text-sm transition-colors cursor-pointer"
           >
             <span>{t('how_cta_register', 'Buat Toko Sekarang — Gratis')}</span>
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

@@ -376,7 +376,7 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
                 href={biteshipTrackingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-2.5 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-white font-semibold text-[11px] flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                className="px-2.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-[11px] flex items-center gap-1 transition cursor-pointer shadow-2xs"
               >
                 <span>{language === 'en' ? 'Track Courier' : 'Lacak Kurir'}</span>
                 <ExternalLink className="w-3 h-3" />
@@ -396,7 +396,7 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
               type="button"
               disabled={isConfirmingCod}
               onClick={onConfirmCod}
-              className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-white font-semibold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 self-start sm:self-center disabled:opacity-70"
+              className="px-3 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 self-start sm:self-center disabled:opacity-70"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{language === 'en' ? 'Confirm Order' : 'Konfirmasi Pesanan'}</span>
@@ -407,7 +407,7 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
             <button
               type="button"
               onClick={() => onProcessShipping(order)}
-              className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-white font-semibold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 self-start sm:self-center"
+              className="px-3 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 self-start sm:self-center"
             >
               <Truck className="w-3.5 h-3.5" />
               <span>{language === 'en' ? 'Process Shipping' : 'Atur Pengiriman'}</span>

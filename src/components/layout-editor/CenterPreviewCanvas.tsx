@@ -983,7 +983,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             isMobile ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1 text-xs'
                           } ${
                             activeCategoryFilter === cat
-                              ? 'bg-brand text-white shadow-2xs'
+                              ? 'bg-[#66000E] text-white shadow-2xs'
                               : 'bg-white border border-[#E5E0DD] text-[#5A5250] hover:bg-[#FAF7F7]'
                           }`}
                           style={{
@@ -1063,7 +1063,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           </div>
                           <button
                             type="button"
-                            className="w-full mt-1.5 sm:mt-2 py-1 sm:py-1.5 rounded-xl text-[9px] sm:text-[10px] font-bold bg-[#FAF7F7] hover:bg-brand text-[#66000E] hover:text-white border border-[#E6DDDA] transition cursor-pointer"
+                            className="w-full mt-1.5 sm:mt-2 py-1 sm:py-1.5 rounded-xl text-[9px] sm:text-[10px] font-bold bg-[#FAF7F7] hover:bg-[#66000E] text-[#66000E] hover:text-white border border-[#E6DDDA] transition cursor-pointer"
                           >
                             + Keranjang
                           </button>
@@ -1256,7 +1256,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               {opts.showAddToCart !== false && (
                                 <button
                                   type="button"
-                                  className="w-full mt-1.5 sm:mt-2 py-1.5 rounded-xl text-[10px] font-bold bg-brand text-white hover:bg-brand-hover transition cursor-pointer"
+                                  className="w-full mt-1.5 sm:mt-2 py-1.5 rounded-xl text-[10px] font-bold bg-[#66000E] text-white hover:bg-[#801010] transition cursor-pointer"
                                   style={{ backgroundColor: primaryAccent }}
                                 >
                                   + Beli Sekarang
@@ -2229,7 +2229,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                 isMobile ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1 text-xs'
                               } ${
                                 activeCategoryFilter === cat
-                                  ? 'bg-brand text-white shadow-2xs'
+                                  ? 'bg-[#66000E] text-white shadow-2xs'
                                   : 'bg-white border border-[#E5E0DD] text-[#5A5250] hover:bg-[#FAF7F7]'
                               }`}
                               style={{
@@ -2315,7 +2315,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
                               <button
                                 type="button"
-                                className="w-full mt-1.5 sm:mt-2 py-1 sm:py-1.5 rounded-xl text-[9px] sm:text-[10px] font-bold bg-[#FAF7F7] hover:bg-brand text-[#66000E] hover:text-white border border-[#E6DDDA] transition cursor-pointer"
+                                className="w-full mt-1.5 sm:mt-2 py-1 sm:py-1.5 rounded-xl text-[9px] sm:text-[10px] font-bold bg-[#FAF7F7] hover:bg-[#66000E] text-[#66000E] hover:text-white border border-[#E6DDDA] transition cursor-pointer"
                               >
                                 + Keranjang
                               </button>
@@ -2436,7 +2436,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
                                 <button
                                   type="button"
-                                  className="w-full mt-1.5 sm:mt-2 py-1.5 rounded-xl text-[10px] font-bold bg-brand text-white hover:bg-brand-hover transition cursor-pointer"
+                                  className="w-full mt-1.5 sm:mt-2 py-1.5 rounded-xl text-[10px] font-bold bg-[#66000E] text-white hover:bg-[#801010] transition cursor-pointer"
                                   style={{ backgroundColor: primaryAccent }}
                                 >
                                   Beli Sekarang

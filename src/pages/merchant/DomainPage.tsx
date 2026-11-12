@@ -584,7 +584,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                         type="button"
                         disabled={isPaying}
                         onClick={handlePayDomainInvoice}
-                        className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer disabled:opacity-50 active:scale-98"
+                        className="px-4 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer disabled:opacity-50 active:scale-98"
                       >
                         {isPaying ? (
                           <>
@@ -663,7 +663,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                     <button
                       type="submit"
                       disabled={isSubmitting || !domainPrefix.trim()}
-                      className="bg-brand hover:bg-brand-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-2xs disabled:opacity-50 flex items-center gap-2 cursor-pointer active:scale-98"
+                      className="bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-2xs disabled:opacity-50 flex items-center gap-2 cursor-pointer active:scale-98"
                     >
                       {isSubmitting ? (
                         <>

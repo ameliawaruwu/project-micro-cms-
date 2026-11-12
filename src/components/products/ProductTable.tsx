@@ -75,7 +75,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
         {/* Primary CTA */}
         <button
           onClick={onAddProduct}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs sm:text-sm shadow-2xs transition transform active:scale-95 shrink-0 cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs sm:text-sm shadow-2xs transition transform active:scale-95 shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>{t('add_product', 'Tambah Produk')}</span>

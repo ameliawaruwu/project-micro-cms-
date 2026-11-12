@@ -77,7 +77,7 @@ export const FAQSection: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => scrollToLandingSection('cara-kerja', 0)}
-                  className="group relative mt-6 inline-flex items-center gap-2 h-11 px-5 rounded-lg bg-brand hover:bg-brand-hover text-white text-sm font-medium transition-colors cursor-pointer"
+                  className="group relative mt-6 inline-flex items-center gap-2 h-11 px-5 rounded-lg bg-[#66000E] hover:bg-[#800C19] text-white text-sm font-medium transition-colors cursor-pointer"
                 >
                   {t('hero_cta_how', 'Lihat Cara Kerja')}
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

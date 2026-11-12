@@ -323,7 +323,7 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
           type="button"
           onClick={handleGetCurrentLocation}
           disabled={isLocating}
-          className="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0 shadow-2xs bg-brand hover:bg-brand-hover text-white active:scale-95 disabled:opacity-75"
+          className="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0 shadow-2xs bg-[#66000E] hover:bg-[#52000B] text-white active:scale-95 disabled:opacity-75"
         >
           {isLocating ? (
             <>

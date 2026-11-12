@@ -126,7 +126,7 @@ export const DemoPreviewModal: React.FC<DemoPreviewModalProps> = ({
               onClose();
               onNavigateRegister();
             }}
-            className="w-full sm:w-auto px-5 py-2.5 min-h-[46px] rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition cursor-pointer active:scale-95"
+            className="w-full sm:w-auto px-5 py-2.5 min-h-[46px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition cursor-pointer active:scale-95"
           >
             <span>Mulai Buka Toko Gratis</span>
             <ArrowRight className="w-4 h-4 text-white" />

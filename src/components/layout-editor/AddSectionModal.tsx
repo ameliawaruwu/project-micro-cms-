@@ -123,7 +123,7 @@ export const AddSectionModal: React.FC<AddSectionModalProps> = ({
                 onClick={() => setSelectedCategory(c.id)}
                 className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                   selectedCategory === c.id
-                    ? 'bg-brand text-white shadow-2xs'
+                    ? 'bg-[#66000E] text-white shadow-2xs'
                     : 'bg-[#FAF7F7] text-[#706866] hover:bg-[#E5E0DD] hover:text-[#241A1A]'
                 }`}
               >
@@ -177,7 +177,7 @@ export const AddSectionModal: React.FC<AddSectionModalProps> = ({
                       onAddSection(template);
                       onClose();
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-[#FAF7F7] hover:bg-brand text-[#66000E] hover:text-white font-bold text-xs border border-[#E6DDDA] hover:border-[#66000E] transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
+                    className="px-3.5 py-2 rounded-xl bg-[#FAF7F7] hover:bg-[#66000E] text-[#66000E] hover:text-white font-bold text-xs border border-[#E6DDDA] hover:border-[#66000E] transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Tambahkan</span>

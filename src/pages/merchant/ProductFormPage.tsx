@@ -347,7 +347,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl bg-brand hover:bg-brand-hover active:scale-95 text-white text-xs font-bold transition flex items-center gap-2 shadow-2xs cursor-pointer min-h-[38px]"
+              className="px-5 py-2 rounded-xl bg-[#66000E] hover:bg-[#52000B] active:scale-95 text-white text-xs font-bold transition flex items-center gap-2 shadow-2xs cursor-pointer min-h-[38px]"
             >
               {isSubmitting ? (
                 <>
@@ -682,7 +682,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex-1 py-2.5 rounded-xl bg-brand text-white text-xs font-bold text-center flex items-center justify-center gap-1.5 shadow-2xs"
+            className="flex-1 py-2.5 rounded-xl bg-[#66000E] text-white text-xs font-bold text-center flex items-center justify-center gap-1.5 shadow-2xs"
           >
             <Save className="w-3.5 h-3.5" />
             <span>{t('btn_save_product', 'Simpan Produk')}</span>

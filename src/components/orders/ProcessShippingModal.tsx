@@ -145,7 +145,7 @@ export const ProcessShippingModal: React.FC<ProcessShippingModalProps> = ({
           </button>
           <button
             onClick={handleConfirm}
-            className="flex-1 px-5 py-2.5 min-h-[40px] rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer"
+            className="flex-1 px-5 py-2.5 min-h-[40px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition cursor-pointer"
           >
             <Send className="w-4 h-4" />
             <span>{t('send_and_update_resi', 'Kirim & Update Resi')}</span>

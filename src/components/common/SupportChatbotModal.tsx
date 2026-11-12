@@ -460,7 +460,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
                   <div className="mt-3 pt-2.5 border-t border-[#E5E0DD]">
                     <button
                       onClick={() => handleActionClick(msg.actionButton!.actionType)}
-                      className="w-full py-2 px-3 rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition shadow-2xs active:scale-98 cursor-pointer"
+                      className="w-full py-2 px-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition shadow-2xs active:scale-98 cursor-pointer"
                     >
                       <span>{msg.actionButton.label}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -542,7 +542,7 @@ export const SupportChatbotModal: React.FC<SupportChatbotModalProps> = ({
             <button
               type="submit"
               disabled={!inputMessage.trim() || isTyping}
-              className="p-2.5 rounded-xl bg-brand hover:bg-brand-hover disabled:bg-[#E5E0DD] disabled:text-[#706866] text-white transition shadow-2xs cursor-pointer disabled:cursor-not-allowed shrink-0"
+              className="p-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] disabled:bg-[#E5E0DD] disabled:text-[#706866] text-white transition shadow-2xs cursor-pointer disabled:cursor-not-allowed shrink-0"
               title="Kirim Pesan"
             >
               <Send className="w-4 h-4" />

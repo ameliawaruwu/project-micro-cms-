@@ -159,7 +159,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
             <div className="pt-6">
               <button
                 onClick={onNavigateRegister}
-                className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white font-bold text-xs sm:text-sm shadow-sm transition cursor-pointer min-h-[44px]"
+                className="w-full py-2.5 rounded-xl bg-[#66000E] hover:bg-[#55000C] text-white font-bold text-xs sm:text-sm shadow-sm transition cursor-pointer min-h-[44px]"
               >
                 Pilih Personal Toko
               </button>

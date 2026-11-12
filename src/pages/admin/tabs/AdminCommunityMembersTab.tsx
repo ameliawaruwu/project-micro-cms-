@@ -112,7 +112,7 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
                 onClick={() => setView(t.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border whitespace-nowrap transition cursor-pointer ${
                   active
-                    ? 'bg-brand border-[#66000E] text-white'
+                    ? 'bg-[#66000E] border-[#66000E] text-white'
                     : 'bg-white border-[#E5E0DD] text-[#706866] hover:text-[#66000E] hover:border-[#E8DDDE]'
                 }`}
               >

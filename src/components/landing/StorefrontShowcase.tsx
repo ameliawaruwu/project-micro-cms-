@@ -140,7 +140,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
 
               <button
                 onClick={onViewStorefrontDemo}
-                className="px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-white font-semibold flex items-center gap-1.5 transition text-xs shadow-xs cursor-pointer min-h-[36px]"
+                className="px-3.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-semibold flex items-center gap-1.5 transition text-xs shadow-xs cursor-pointer min-h-[36px]"
               >
                 <span>Buka Toko Asli</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -185,7 +185,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
                 onClick={() => setActiveBranchTab('pusat')}
                 className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
                   activeBranchTab === 'pusat'
-                    ? 'bg-brand text-white shadow-2xs'
+                    ? 'bg-[#66000E] text-white shadow-2xs'
                     : 'text-[#5F5652] hover:bg-[#FAF7F7]'
                 }`}
               >
@@ -195,7 +195,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
                 onClick={() => setActiveBranchTab('bandung')}
                 className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
                   activeBranchTab === 'bandung'
-                    ? 'bg-brand text-white shadow-2xs'
+                    ? 'bg-[#66000E] text-white shadow-2xs'
                     : 'text-[#5F5652] hover:bg-[#FAF7F7]'
                 }`}
               >
@@ -205,7 +205,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
                 onClick={() => setActiveBranchTab('surabaya')}
                 className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
                   activeBranchTab === 'surabaya'
-                    ? 'bg-brand text-white shadow-2xs'
+                    ? 'bg-[#66000E] text-white shadow-2xs'
                     : 'text-[#5F5652] hover:bg-[#FAF7F7]'
                 }`}
               >
@@ -251,7 +251,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 150.000</span>
-                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-brand text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px] cursor-pointer">
+                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px] cursor-pointer">
                     <ShoppingBag className="w-3 h-3" />
                     <span>Beli</span>
                   </button>
@@ -274,7 +274,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 175.000</span>
-                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-brand text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px] cursor-pointer">
+                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px] cursor-pointer">
                     <ShoppingBag className="w-3 h-3" />
                     <span>Beli</span>
                   </button>
@@ -297,7 +297,7 @@ export const StorefrontShowcase: React.FC<StorefrontShowcaseProps> = ({
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-xs sm:text-sm font-bold text-[#66000E]">Rp 225.000</span>
-                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-brand text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px] cursor-pointer">
+                  <button className="px-3 py-1 rounded-lg bg-[#241A1A] hover:bg-[#66000E] text-white text-xs font-semibold flex items-center gap-1 transition min-h-[32px] cursor-pointer">
                     <ShoppingBag className="w-3 h-3" />
                     <span>Beli</span>
                   </button>

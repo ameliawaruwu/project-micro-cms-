@@ -21,7 +21,7 @@ export const QuickAction: React.FC<QuickActionProps> = ({
       {/* 1. Tambah Produk */}
       <button
         onClick={onAddProduct}
-        className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl bg-brand hover:bg-brand-hover text-white font-medium text-xs sm:text-sm shadow-2xs hover:shadow-xs transition text-left cursor-pointer min-h-[46px] min-w-0"
+        className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-medium text-xs sm:text-sm shadow-2xs hover:shadow-xs transition text-left cursor-pointer min-h-[46px] min-w-0"
       >
         <div className="w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-lg bg-white/15 text-white flex items-center justify-center shrink-0">
           <Plus className="w-3.5 h-3.5" />

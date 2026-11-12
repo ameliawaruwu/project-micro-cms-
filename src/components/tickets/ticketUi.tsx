@@ -73,7 +73,7 @@ export const TicketStatusFilter: React.FC<{
             onClick={() => onChange(it.id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium border whitespace-nowrap transition cursor-pointer ${
               active
-                ? 'bg-brand border-[#66000E] text-white'
+                ? 'bg-[#66000E] border-[#66000E] text-white'
                 : 'bg-white border-[#E5E0DD] text-[#706866] hover:text-[#66000E] hover:border-[#E8DDDE]'
             }`}
           >
@@ -118,6 +118,6 @@ export const fieldClass =
   'w-full px-3 py-2 rounded-lg border border-[#E5E0DD] bg-white text-sm text-[#1F1F1F] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10';
 export const labelClass = 'block text-xs font-medium text-[#706866] mb-1';
 export const primaryBtn =
-  'px-3.5 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5';
+  'px-3.5 py-2 rounded-lg bg-[#66000E] hover:bg-[#4d000a] text-white text-xs font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5';
 export const ghostBtn =
   'px-3.5 py-2 rounded-lg border border-[#E5E0DD] bg-white hover:bg-[#FAF7F7] text-[#1F1F1F] text-xs font-medium transition cursor-pointer inline-flex items-center gap-1.5';

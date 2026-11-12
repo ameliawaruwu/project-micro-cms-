@@ -281,7 +281,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
             <button
               type="submit"
               disabled={isSavingStore}
-              className="w-full py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-2xs active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full py-2.5 bg-[#66000E] hover:bg-[#7D0012] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-2xs active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSavingStore ? (
                 <>

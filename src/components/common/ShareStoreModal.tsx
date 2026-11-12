@@ -78,7 +78,7 @@ export const ShareStoreModal: React.FC<ShareStoreModalProps> = ({
             <span className="text-xs font-mono text-[#1F1F1F] font-semibold truncate pl-2">{storeUrl}</span>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white text-xs font-semibold transition shrink-0 cursor-pointer shadow-xs"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-semibold transition shrink-0 cursor-pointer shadow-xs"
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? t('copied', 'Tersalin') : t('copy', 'Salin')}</span>

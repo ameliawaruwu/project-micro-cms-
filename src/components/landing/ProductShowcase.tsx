@@ -208,7 +208,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   onClick={onNavigateRegister}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.97 }}
-                  className="group inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-brand hover:bg-brand-hover text-white font-medium text-sm transition-colors cursor-pointer"
+                  className="group inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-[#66000E] hover:bg-[#800C19] text-white font-medium text-sm transition-colors cursor-pointer"
                 >
                   <span>{t('product_cta_add', 'Mulai Tambah Produk')}</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -243,7 +243,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   type="button"
                   onClick={() => setIsAddModalOpen(true)}
                   whileTap={{ scale: 0.95 }}
-                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-brand hover:bg-brand-hover text-white text-xs font-medium transition-colors cursor-pointer"
+                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-[#66000E] hover:bg-[#800C19] text-white text-xs font-medium transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>{t('add_product', 'Tambah Produk')}</span>
@@ -454,7 +454,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>{t('product_modal_save', 'Simpan Produk')}</span>

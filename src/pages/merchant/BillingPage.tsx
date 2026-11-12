@@ -1174,7 +1174,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 type="button"
                 disabled={isVerifying}
                 onClick={() => handleCheckPaymentStatus(pendingSubscription)}
-                className="px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-white font-bold text-xs transition flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-60"
+                className="px-3.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs transition flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-60"
                 title={isEn ? 'Check latest payment status with Duitku' : 'Cek status pembayaran terbaru dengan Duitku'}
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? 'animate-spin' : ''}`} />
@@ -1339,7 +1339,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   className={`w-full py-2 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
                     isCurrent
                       ? 'bg-[#FAF7F7] text-[#706866] border border-[#E5E0DD] cursor-default'
-                      : 'bg-brand hover:bg-brand-hover text-white shadow-xs active:scale-95'
+                      : 'bg-[#66000E] hover:bg-[#801010] text-white shadow-xs active:scale-95'
                   }`}
                 >
                   {isCurrent ? (
@@ -1641,7 +1641,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 type="button"
                 disabled={isProcessing}
                 onClick={handleExecuteUpgrade}
-                className="w-full py-3 rounded-xl bg-brand hover:bg-brand-hover text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <span>
                   {isProcessing
@@ -1756,7 +1756,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                     setIsVerifying(false);
                   }
                 }}
-                className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white font-bold text-xs shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="w-full py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? 'animate-spin' : ''}`} />
                 <span>{isVerifying ? (isEn ? 'Checking...' : 'Memeriksa...') : (isEn ? 'Check Payment Status' : 'Cek Status Pembayaran')}</span>
@@ -1952,7 +1952,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                     setIsVerifying(false);
                   }
                 }}
-                className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white font-bold text-xs shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="w-full py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-bold text-xs shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isVerifying ? 'animate-spin' : ''}`} />
                 <span>
@@ -2065,7 +2065,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   setSuccessSubscription(null);
                   if (onNavigateDashboard) onNavigateDashboard();
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs shadow-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs shadow-xs transition flex items-center justify-center gap-1 cursor-pointer"
               >
                 <span>{isEn ? 'Close / Continue' : 'Lanjutkan'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
