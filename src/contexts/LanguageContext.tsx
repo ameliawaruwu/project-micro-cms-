@@ -332,6 +332,7 @@ export const translations: Translations = {
   landing_nav_how_it_works: { id: 'Cara Kerja', en: 'How It Works' },
   landing_nav_features: { id: 'Fitur', en: 'Features' },
   landing_nav_faq: { id: 'FAQ', en: 'FAQ' },
+  landing_mobile_nav_label: { id: 'Navigasi menu', en: 'Menu navigation' },
   landing_view_demo: { id: 'Lihat Demo', en: 'View Demo' },
   landing_start_free: { id: 'Mulai Gratis', en: 'Start for Free' },
   landing_login: { id: 'Masuk Akun', en: 'Log In' },

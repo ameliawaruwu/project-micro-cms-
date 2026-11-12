@@ -37,7 +37,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     // reducedMotion="user": gerak transform dimatikan bila OS meminta "kurangi animasi".
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen bg-white text-[#241A1A] font-sans selection:bg-[#F5E8EA] selection:text-[#66000E] pb-16 sm:pb-20 lg:pb-0 scroll-smooth">
+      <div className="min-h-screen bg-white text-[#241A1A] font-sans selection:bg-[#F5E8EA] selection:text-[#66000E] pb-24 lg:pb-0 scroll-smooth">
         {/* Sticky Navigation Bar */}
         <LandingNavbar
           onNavigateHome={() => scrollToLandingSection('hero', 0)}
@@ -77,13 +77,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* Footer */}
         <LandingFooter />
 
-        {/* Mobile Bottom Navigation with real-time scroll tracking and smooth jump */}
-        <LandingBottomNav
-          onNavigateLogin={onNavigateLogin}
-          onNavigateRegister={onNavigateRegister}
-          onLaunchDemo={onLaunchDemo}
-          isAuthenticated={isAuthenticated}
-        />
+        {/* Navigasi bawah melayang khusus HP */}
+        <LandingBottomNav />
       </div>
     </MotionConfig>
   );
