@@ -183,77 +183,6 @@ const RollingCoin: React.FC = () => (
   </motion.div>
 );
 
-/** Produk contoh beragam kategori agar etalase terasa seperti toko umum. */
-const SHOP_PRODUCTS = [
-  { image: 'blue_bottle', nameKey: 'hero_shop_item_bottle', name: 'Botol Minum', price: '45rb' },
-  { image: 'green_mug', nameKey: 'hero_shop_item_mug', name: 'Mug Keramik', price: '35rb' },
-  { image: 'kraft_pouch', nameKey: 'hero_shop_item_pouch', name: 'Kopi Bubuk', price: '28rb' },
-  { image: 'red_bags', nameKey: 'hero_shop_item_bag', name: 'Tas Belanja', price: '20rb' },
-] as const;
-
-/** Lengkung kanopi: setengah lingkaran berselang marun–putih di bawah atap. */
-const AWNING_SCALLOPS = 8;
-
-/**
- * Etalase toko online bergaya 3D (kanopi, papan nama, rak produk) dalam warna LapakQ.
- * Dibuat dari HTML/CSS agar bisa memakai produk umum, bukan ilustrasi toko satu jenis.
- */
-const ShopWindow: React.FC<{ t: (key: string, fallback: string) => string }> = ({ t }) => (
-  <div className="relative drop-shadow-[0_26px_30px_rgba(102,0,14,0.3)]">
-    {/* Atap */}
-    <div className="relative mx-[2%] h-[clamp(10px,2.4vw,18px)] rounded-t-[14px] bg-[#4D000A]" />
-    {/* Kanopi bergaris */}
-    <div
-      className="relative h-[clamp(22px,5vw,40px)]"
-      style={{ backgroundImage: 'repeating-linear-gradient(90deg, #800C19 0 12.5%, #FFFFFF 12.5% 25%)' }}
-    />
-    <div className="relative flex -mt-px">
-      {Array.from({ length: AWNING_SCALLOPS }, (_, i) => (
-        <span
-          key={i}
-          className={`flex-1 aspect-[2/1] rounded-b-full ${i % 2 === 0 ? 'bg-[#800C19]' : 'bg-white'}`}
-        />
-      ))}
-    </div>
-
-    {/* Badan toko */}
-    <div className="relative -mt-[clamp(6px,1.4vw,12px)] mx-[3%] rounded-b-[18px] bg-[#FFFDFB] border border-[#EBD9DC] shadow-[0_10px_0_#E7D3D6] px-[5%] pt-[clamp(14px,3.4vw,26px)] pb-[5%]">
-      {/* Papan nama */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="flex shrink-0 items-center justify-center w-[clamp(18px,3.6vw,28px)] aspect-square rounded-lg bg-[#66000E] text-white">
-            <Store className="w-[60%] h-[60%]" />
-          </span>
-          <span className="truncate text-[clamp(9px,1.7vw,14px)] font-semibold text-[#1A1414]">
-            {t('hero_shop_name', 'Tokomu')}
-          </span>
-        </div>
-        <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[clamp(7px,1.2vw,10px)] font-semibold text-emerald-600">
-          {t('hero_shop_open', 'Buka')}
-        </span>
-      </div>
-
-      {/* Rak produk */}
-      <div className="mt-[5%] grid grid-cols-2 gap-[clamp(5px,1.4vw,10px)]">
-        {SHOP_PRODUCTS.map((product) => (
-          <div key={product.image} className="rounded-xl bg-[#FAF4F5] p-[8%]">
-            <img
-              src={asset3d(product.image)}
-              alt=""
-              draggable={false}
-              className="mx-auto h-[clamp(30px,6.4vw,58px)] w-auto object-contain drop-shadow-[0_6px_6px_rgba(0,0,0,0.15)]"
-            />
-            <p className="mt-1 truncate text-[clamp(7px,1.25vw,11px)] font-medium text-[#1A1414]">
-              {t(product.nameKey, product.name)}
-            </p>
-            <p className="text-[clamp(7px,1.25vw,11px)] font-semibold text-[#800C19]">Rp {product.price}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
 const HeroScene: React.FC<PointerProps & { slug: string; t: (key: string, fallback: string) => string }> = ({
   slug,
   t,
@@ -279,10 +208,15 @@ const HeroScene: React.FC<PointerProps & { slug: string; t: (key: string, fallba
     </Parallax>
 
     {/* Toko utama */}
-    <Parallax {...pointer} depth={14} className="left-[27%] right-[9%] top-[17%]">
+    <Parallax {...pointer} depth={14} className="left-[26%] right-[8%] top-[18%]">
       <motion.div {...popIn(0.3)}>
         <Float duration={6} y={8}>
-          <ShopWindow t={t} />
+          <img
+            src={asset3d('mini_storefront')}
+            alt=""
+            draggable={false}
+            className="w-full object-contain drop-shadow-[0_26px_30px_rgba(102,0,14,0.3)]"
+          />
         </Float>
       </motion.div>
     </Parallax>
