@@ -7,7 +7,6 @@ import { ProductShowcase } from '../components/landing/ProductShowcase';
 import { HowItWorksSection } from '../components/landing/HowItWorksSection';
 import { FeaturesSection } from '../components/landing/FeaturesSection';
 import { FAQSection } from '../components/landing/FAQSection';
-import { FinalCTASection } from '../components/landing/FinalCTASection';
 import { LandingFooter } from '../components/landing/LandingFooter';
 import { scrollToLandingSection } from '../utils/scroll';
 
@@ -70,12 +69,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* 5. FAQ Section */}
         <FAQSection />
-
-        {/* 6. Final Call to Action Section */}
-        <FinalCTASection
-          onNavigateRegister={onNavigateRegister}
-          onLaunchDemo={onLaunchDemo}
-        />
 
         {/* Footer */}
         <LandingFooter

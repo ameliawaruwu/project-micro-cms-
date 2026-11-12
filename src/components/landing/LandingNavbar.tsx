@@ -100,6 +100,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
   };
 
   const navItems = [
+    { id: 'hero', label: t('landing_nav_home', 'Beranda') },
     { id: 'produk', label: t('landing_nav_product', 'Produk') },
     { id: 'cara-kerja', label: t('landing_nav_how_it_works', 'Cara Kerja') },
     { id: 'fitur', label: t('landing_nav_features', 'Fitur') },

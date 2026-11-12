@@ -147,7 +147,7 @@ export const FeaturesSection: React.FC = () => {
                   </div>
                 </div>
                 <motion.img
-                  src="/assets/3d/mini_storefront.png"
+                  src="/assets/3d/clean/mini_storefront.webp"
                   alt=""
                   aria-hidden="true"
                   loading="lazy"

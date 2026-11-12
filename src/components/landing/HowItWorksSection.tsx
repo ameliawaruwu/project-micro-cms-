@@ -108,7 +108,7 @@ export const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ onNavigate
 
                   {/* Objek 3D melayang */}
                   <motion.img
-                    src={`/assets/3d/${style.image}.png`}
+                    src={`/assets/3d/clean/${style.image}.webp`}
                     alt=""
                     aria-hidden="true"
                     loading="lazy"
