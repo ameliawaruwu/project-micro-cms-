@@ -8,6 +8,8 @@ import { CartCount } from '../../storefrontCart';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
+import { STORE_ROUTES } from '../../storefrontLinks';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo, navigation } = useCmsStore();
@@ -39,7 +41,7 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
   const rawTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeTitle = rawTitle;
-  const leftSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description ?? 'The Journal');
+  const leftSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
 
   const navItems = getNavMenuItems(sectionOptions);
 
@@ -60,7 +62,7 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-1.5 -ml-1 text-gray-900 hover:text-gray-600 rounded-lg transition-colors cursor-pointer"
-            aria-label="Toggle Menu"
+            aria-label={mobileMenuOpen ? 'Tutup menu' : 'Buka menu'}
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -139,7 +141,7 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && showMobileDrawer && (
-        <div className="border-t border-gray-200 bg-[#FAFAFA] px-6 py-5 space-y-4 font-sans animate-in slide-in-from-top-2 duration-200">
+        <div className="border-t border-gray-200 bg-[#FAFAFA] px-4 sm:px-6 py-5 space-y-4 font-sans animate-in slide-in-from-top-2 duration-200">
           <div className="text-[10px] tracking-[0.2em] uppercase text-gray-400 font-semibold border-b border-gray-200 pb-2">
             {leftSubtitle}
           </div>
@@ -162,38 +164,53 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
 };
 
 export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const heading = sectionOptions.heading || "Autumn / Winter";
+  const storeInfo = useCmsStore(state => state.storeInfo);
+  const products = useThemeProductsSource('editorial');
+  const heading = sectionOptions.heading || storeInfo?.name || 'Selamat Datang';
+  const subheading =
+    sectionOptions.subheading ||
+    sectionOptions.description ||
+    storeInfo?.description ||
+    'Temukan produk pilihan terbaik dari toko kami.';
   const hero = getHeroContent(sectionOptions, {
-    badge: sectionOptions.announcementText || 'The New Collection',
-    buttonLabel: 'Shop The Collection',
+    badge: sectionOptions.announcementText || 'Koleksi Terbaru',
+    buttonLabel: 'Lihat Koleksi',
+    buttonLink: STORE_ROUTES.catalog,
+    secondaryButtonLink: STORE_ROUTES.promo,
   });
-  const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1600&q=80";
+  // Tanpa banner dari merchant, pakai foto produk toko sendiri sebelum gambar bawaan tema.
+  const bgImage =
+    sectionOptions.imageUrl ||
+    sectionOptions.bannerUrl ||
+    (storeInfo as any)?.bannerUrl ||
+    products.find((p) => p.image)?.image ||
+    'https://images.unsplash.com/photo-1445205170230-053b83016050?w=1600&q=80';
 
   return (
-    <section className="relative w-full h-[85vh] flex flex-col items-center justify-center bg-[#fafafa] overflow-hidden">
+    <section className="relative w-full min-h-[70vh] sm:h-[85vh] flex flex-col items-center justify-center bg-[#fafafa] overflow-hidden">
       <div className="absolute inset-0 p-4 md:p-8">
         <div className="w-full h-full relative overflow-hidden bg-gray-200">
           <img
             src={bgImage}
-            alt="Editorial Campaign"
+            alt=""
             className="w-full h-full object-cover grayscale-[30%] hover:grayscale-0 transition-all duration-1000 scale-105"
           />
           <div className="absolute inset-0 bg-black/20"></div>
         </div>
       </div>
 
-      <div className="z-10 text-center text-white mix-blend-difference mt-auto mb-24 pointer-events-none px-4">
+      <div className="z-10 text-center text-white mix-blend-difference mt-auto mb-16 sm:mb-24 pt-24 pointer-events-none px-4 max-w-full">
         {hero.badge && (
           <p className="text-[10px] md:text-xs uppercase tracking-[0.4em] mb-6 md:mb-8 font-medium">
             {hero.badge}
           </p>
         )}
-        <h1 className="text-5xl md:text-8xl lg:text-[10rem] font-serif italic leading-none">
+        <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-[10rem] font-serif italic leading-none break-words">
           {heading}
         </h1>
-        {(sectionOptions.subheading || sectionOptions.description) && (
-          <p className="text-sm md:text-base lg:text-xl font-serif italic mt-6 max-w-xl mx-auto opacity-90 leading-relaxed">
-            {sectionOptions.subheading || sectionOptions.description}
+        {subheading && (
+          <p className="text-sm md:text-base lg:text-xl font-serif italic mt-6 max-w-xl mx-auto opacity-90 leading-relaxed line-clamp-4">
+            {subheading}
           </p>
         )}
         <div className="pointer-events-auto mt-8 flex flex-wrap gap-6 justify-center">
@@ -222,7 +239,7 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolea
   const footerNavItems = getNavMenuItems(sectionOptions);
   const footerSocials = getFooterSocialLinks(sectionOptions);
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle || ''}. Hak cipta dilindungi.`;
   const footerFlexClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',

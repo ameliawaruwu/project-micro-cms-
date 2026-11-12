@@ -9,6 +9,7 @@ import { CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
+import { STORE_ROUTES, formatRupiah, productHref } from '../../storefrontLinks';
 
 export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
@@ -85,39 +86,52 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
 
 export const FuturisticHero: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#A855F7' }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
-  const heading = sectionOptions.heading || "Next Gen Hardware";
-  const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content || storeInfo?.description || "Engineered for the future. Equip your battle station with uncompromising technology.";
-  const hero = getHeroContent(sectionOptions, { badge: 'SYS.v2.0_ONLINE', buttonLabel: 'Initialize Sequence' });
-  const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2000&q=80";
+  const products = useThemeProductsSource('futuristic');
+  const heading = sectionOptions.heading || storeInfo?.name || 'Teknologi Masa Depan';
+  const subheading =
+    sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content ||
+    storeInfo?.description || 'Temukan produk pilihan terbaik dengan teknologi terkini dari toko kami.';
+  const hero = getHeroContent(sectionOptions, {
+    badge: 'Koleksi Terbaru',
+    buttonLabel: 'Lihat Katalog',
+    buttonLink: STORE_ROUTES.catalog,
+  });
+  // Gambar latar: unggahan merchant → banner toko → foto produk pertama → gambar bawaan dekoratif.
+  const bgImage =
+    sectionOptions.imageUrl ||
+    sectionOptions.bannerUrl ||
+    (storeInfo as any)?.bannerUrl ||
+    products.find((p) => p.image)?.image ||
+    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2000&q=80';
 
   return (
-    <section className="relative w-full min-h-[90vh] flex items-center justify-center bg-[#050505] overflow-hidden">
+    <section className="relative w-full min-h-[75vh] sm:min-h-[90vh] py-16 flex items-center justify-center bg-[#050505] overflow-hidden">
       <div className="absolute inset-0 z-0 opacity-20 mix-blend-luminosity">
-        <img src={bgImage} alt="Hero" className="w-full h-full object-cover" />
+        <img src={bgImage} alt="" className="w-full h-full object-cover" />
       </div>
       <div className="absolute inset-0 bg-gradient-to-b to-transparent" style={{ backgroundImage: `linear-gradient(to bottom, ${accentColor}33, transparent)` }}></div>
       <div className="absolute w-[60vw] h-[60vw] rounded-full blur-[120px] -top-1/4 -left-1/4 animate-pulse" style={{ backgroundColor: `${accentColor}1A` }}></div>
       <div className="absolute w-[40vw] h-[40vw] bg-blue-600/10 rounded-full blur-[100px] bottom-0 right-0 animate-pulse" style={{ animationDelay: '2s' }}></div>
 
-      <div className="relative z-10 text-center text-white px-6 w-full max-w-5xl mx-auto">
+      <div className="relative z-10 text-center text-white px-4 sm:px-6 w-full max-w-5xl mx-auto min-w-0">
         {hero.badge && (
           <div
-            className="inline-block px-4 py-1.5 border rounded-full text-xs font-mono mb-8 uppercase tracking-widest backdrop-blur-sm"
+            className="inline-block px-4 py-1.5 border rounded-full text-xs font-mono mb-6 sm:mb-8 uppercase tracking-widest backdrop-blur-sm"
             style={{ borderColor: `${accentColor}4D`, backgroundColor: `${accentColor}33`, color: accentColor, boxShadow: `0 0 15px ${accentColor}33` }}
           >
             {hero.badge}
           </div>
         )}
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-8 uppercase leading-tight" style={{ filter: `drop-shadow(0 0 30px ${accentColor}4D)` }}>
+        <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-6 sm:mb-8 uppercase leading-tight break-words" style={{ filter: `drop-shadow(0 0 30px ${accentColor}4D)` }}>
           {heading}
         </h1>
-        <p className="text-gray-400 max-w-xl mx-auto mb-12 font-mono text-sm md:text-base leading-relaxed">
+        <p className="text-gray-400 max-w-xl mx-auto mb-10 sm:mb-12 font-mono text-sm md:text-base leading-relaxed">
           {subheading}
         </p>
-        <div className="flex flex-wrap gap-4 justify-center">
+        <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
           <HeroActionLink
             action={hero.primary}
-            className="inline-block px-10 py-5 text-white font-bold uppercase tracking-widest transition-all duration-300 rounded-sm"
+            className="inline-block px-6 sm:px-10 py-4 sm:py-5 text-sm sm:text-base text-white font-bold uppercase tracking-widest transition-all duration-300 rounded-sm"
             style={{ backgroundColor: accentColor }}
             onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 0 25px ${accentColor}`; }}
             onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ''; }}
@@ -125,7 +139,7 @@ export const FuturisticHero: React.FC<{ sectionOptions?: any; accentColor?: stri
           {hero.secondary && (
             <HeroActionLink
               action={hero.secondary}
-              className="inline-block px-10 py-5 font-bold uppercase tracking-widest transition-all duration-300 rounded-sm border bg-transparent"
+              className="inline-block px-6 sm:px-10 py-4 sm:py-5 text-sm sm:text-base font-bold uppercase tracking-widest transition-all duration-300 rounded-sm border bg-transparent"
               style={{ borderColor: accentColor, color: accentColor }}
             />
           )}
@@ -137,9 +151,11 @@ export const FuturisticHero: React.FC<{ sectionOptions?: any; accentColor?: stri
 
 export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
   const allProducts = useThemeProductsSource('futuristic');
-  const title = sectionOptions.featuredTitle || "Featured Hardware";
+  const title = sectionOptions.featuredTitle || sectionOptions.heading || 'Produk Unggulan';
   const desiredCols = [2, 3, 4].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 3;
-  const products = allProducts.filter(p => p.isFeatured).slice(0, 3); // match gridColumns default usually
+  // Produk unggulan toko; bila belum ada yang ditandai unggulan, tampilkan produk terbaru.
+  const featured = allProducts.filter((p) => p.isFeatured);
+  const products = (featured.length > 0 ? featured : allProducts).slice(0, desiredCols);
 
   const desktopColsMap: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' };
   const fallbackColsMap: Record<number, string> = {
@@ -154,33 +170,36 @@ export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accent
     fallback: fallbackColsMap[desiredCols],
   });
 
+  if (products.length === 0) return null;
+
   return (
-    <section className="py-32 px-6 md:px-12 bg-[#050505] text-white border-t" style={{ borderColor: `${accentColor}33` }}>
-      <h2 className="text-3xl font-black uppercase tracking-widest mb-16 text-center text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(to right, ${accentColor}, #60A5FA)` }}>
+    <section className="py-16 sm:py-24 md:py-32 px-4 sm:px-6 md:px-12 bg-[#050505] text-white border-t" style={{ borderColor: `${accentColor}33` }}>
+      <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-widest mb-10 sm:mb-16 text-center break-words text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(to right, ${accentColor}, #60A5FA)` }}>
         {title}
       </h2>
-      <div className={`grid ${gridColsClass} gap-8 max-w-7xl mx-auto`}>
+      <div className={`grid ${gridColsClass} gap-3 sm:gap-8 max-w-7xl mx-auto`}>
         {products.map((product, i) => (
-          <div
+          <a
             key={product.id}
-            className="group relative bg-[#0a0a0a] border border-gray-800 rounded-xl overflow-hidden transition-all duration-500"
+            href={productHref(product)}
+            className="block min-w-0 group relative bg-[#0a0a0a] border border-gray-800 rounded-xl overflow-hidden transition-all duration-500"
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${accentColor}80`; e.currentTarget.style.boxShadow = `0 0 30px ${accentColor}26`; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}
           >
             <div className="absolute top-0 left-0 w-full h-1 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left z-20" style={{ backgroundImage: `linear-gradient(to right, ${accentColor}, #2563EB)` }}></div>
-            <div className="h-[300px] overflow-hidden p-8 relative bg-gradient-to-b from-gray-900 to-[#0a0a0a]">
+            <div className="h-40 sm:h-[300px] overflow-hidden p-4 sm:p-8 relative bg-gradient-to-b from-gray-900 to-[#0a0a0a]">
               <div className="absolute inset-0 z-10 transition-colors" style={{ backgroundColor: `${accentColor}0D` }}></div>
-              <img src={product.image} alt={product.name} className="w-full h-full object-contain relative z-20 mix-blend-screen group-hover:scale-110 transition duration-700 ease-out drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
+              {product.image && <img src={product.image} alt={product.name} className="w-full h-full object-contain relative z-20 mix-blend-screen group-hover:scale-110 transition duration-700 ease-out drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />}
             </div>
-            <div className="p-8 relative z-20 border-t border-gray-800 bg-[#0a0a0a]/80 backdrop-blur-sm">
-              <div className="flex justify-between items-center mb-3">
-                <div className="text-[10px] font-mono uppercase tracking-wider" style={{ color: accentColor }}>{product.categoryName}</div>
+            <div className="p-3 sm:p-8 relative z-20 border-t border-gray-800 bg-[#0a0a0a]/80 backdrop-blur-sm">
+              <div className="flex justify-between items-center gap-2 mb-3">
+                <div className="text-[10px] font-mono uppercase tracking-wider truncate min-w-0" style={{ color: accentColor }}>{product.categoryName || 'Produk'}</div>
                 <div className="text-[10px] text-gray-500 font-mono">0{i+1}</div>
               </div>
-              <h3 className="font-bold text-xl mb-3 text-white truncate">{product.name}</h3>
-              <p className="font-mono text-gray-400 text-sm">Rp {product.price.toLocaleString('id-ID')}</p>
+              <h3 className="font-bold text-sm sm:text-xl mb-2 sm:mb-3 text-white line-clamp-2 break-words">{product.name}</h3>
+              <p className="font-mono text-gray-400 text-xs sm:text-sm">{formatRupiah(product.price)}</p>
             </div>
-          </div>
+          </a>
         ))}
       </div>
     </section>
@@ -189,13 +208,13 @@ export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accent
 
 export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#A855F7' }) => {
   const { storeInfo } = useCmsStore();
-  const copyrightText = sectionOptions.copyrightText || `SYS_CORE_TERMINATED. © ${new Date().getFullYear()} ${storeInfo.name}`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name}. Hak cipta dilindungi.`;
 
   return (
-    <footer className="w-full px-8 py-16 bg-[#020202] border-t text-center relative overflow-hidden" style={{ borderColor: `${accentColor}33` }}>
+    <footer className="w-full px-4 sm:px-8 py-12 sm:py-16 bg-[#020202] border-t text-center relative overflow-hidden" style={{ borderColor: `${accentColor}33` }}>
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[100px] blur-[80px]" style={{ backgroundColor: `${accentColor}33` }}></div>
       <div className="relative z-10">
-        <div className="text-3xl font-black tracking-[0.3em] mb-6 text-white uppercase"><span style={{ color: accentColor }}>/</span>{storeInfo.name}</div>
+        <div className="text-2xl sm:text-3xl font-black tracking-[0.15em] sm:tracking-[0.3em] mb-6 text-white uppercase break-words"><span style={{ color: accentColor }}>/</span>{storeInfo.name}</div>
         <p className="text-xs text-gray-600 font-mono tracking-widest">{copyrightText}</p>
       </div>
     </footer>

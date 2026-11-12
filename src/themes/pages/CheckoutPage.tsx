@@ -79,8 +79,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const { language } = useLanguage();
   const isEn = language === 'en';
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
-  const isMobile = deviceMode === 'mobile';
-  const isTablet = deviceMode === 'tablet';
+  const isMobile = deviceMode ? deviceMode === 'mobile' : undefined;
+  const isTablet = deviceMode ? deviceMode === 'tablet' : undefined;
   const formGridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-2',

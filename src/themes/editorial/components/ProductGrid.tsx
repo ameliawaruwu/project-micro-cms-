@@ -5,6 +5,7 @@ import { InlineEditableText } from '../../../components/layout-editor/InlineEdit
 import { Search, ShoppingBag } from 'lucide-react';
 import { cartService } from '../../../services/cartService';
 import { AddToCartButton, addProductToCart, useStorefrontSlug } from '../../storefrontCart';
+import { formatRupiah, productHref } from '../../storefrontLinks';
 
 interface EditorialProductGridProps {
   sectionOptions?: any;
@@ -28,8 +29,8 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
 
   // Options
-  const heading = sectionOptions.heading || 'The Catalogue';
-  const subheading = sectionOptions.subheading || 'Curated Collection';
+  const heading = sectionOptions.heading || 'Katalog Produk';
+  const subheading = sectionOptions.subheading || 'Koleksi Pilihan';
   const productCount = sectionOptions.productCount || 12;
   const gridColumns = sectionOptions.gridColumns || 3;
   const showPrice = sectionOptions.showPrice !== false;
@@ -83,8 +84,8 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
 
   const displayList = filtered.slice(0, productCount);
 
-  const isMobile = deviceMode === 'mobile';
-  const isTablet = deviceMode === 'tablet';
+  const isMobile = deviceMode ? deviceMode === 'mobile' : undefined;
+  const isTablet = deviceMode ? deviceMode === 'tablet' : undefined;
 
   const gridColsClass = isMobile
     ? sectionOptions.mobileColumns === 1
@@ -105,7 +106,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
   };
 
   return (
-    <section className="w-full py-16 md:py-24 px-6 md:px-12 bg-[#FAF7F7] text-[#241A1A] font-serif transition-colors">
+    <section className="w-full py-16 md:py-24 px-4 sm:px-6 md:px-12 bg-[#FAF7F7] text-[#241A1A] font-serif transition-colors">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12 md:mb-16">
@@ -173,38 +174,43 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
         ) : (
           <div className={`grid ${gridColsClass}`}>
             {displayList.map((product) => {
-              const pImage = (product as any).imageUrl || product.image || 'https://images.unsplash.com/photo-1539533113208-f6df8cc8b543?w=800&q=80';
+              const pImage = (product as any).imageUrl || product.image;
               const pPrice = product.price || 0;
               const pCategory = (product as any).category || product.categoryName;
 
               return (
-                <div key={product.id} className="group flex flex-col cursor-pointer">
-                  {/* Image container */}
-                  <div className="aspect-[3/4] min-h-[220px] sm:min-h-[260px] bg-white overflow-hidden mb-4 sm:mb-5 relative shadow-xs">
-                    <img
-                      src={pImage}
-                      alt={product.name}
-                      className="w-full h-full object-cover grayscale-[15%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
-                    />
+                <div key={product.id} className="group flex flex-col min-w-0">
+                  {/* Gambar produk: membuka halaman detail produk */}
+                  <a
+                    href={productHref(product)}
+                    className="block aspect-[3/4] min-h-[180px] sm:min-h-[260px] bg-white overflow-hidden mb-4 sm:mb-5 relative shadow-xs"
+                  >
+                    {pImage && (
+                      <img
+                        src={pImage}
+                        alt={product.name}
+                        className="w-full h-full object-cover grayscale-[15%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                      />
+                    )}
                     {product.isFeatured && (
                       <span className="absolute top-3 left-3 bg-[#241A1A] text-white text-[9px] uppercase tracking-widest px-2.5 py-1 font-sans">
-                        Editorial Pick
+                        Pilihan
                       </span>
                     )}
-                  </div>
+                  </a>
 
                   {/* Product Details */}
                   {pCategory && (
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#706866] mb-1 font-sans">
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#706866] mb-1 font-sans truncate">
                       {pCategory}
                     </span>
                   )}
-                  <h3 className="font-serif text-base sm:text-lg md:text-xl font-normal leading-snug mb-1 sm:mb-1.5 text-[#241A1A] group-hover:text-[#706866] transition-colors storefront-card-title">
-                    {product.name}
+                  <h3 className="font-serif text-sm sm:text-lg md:text-xl font-normal leading-snug mb-1 sm:mb-1.5 text-[#241A1A] group-hover:text-[#706866] transition-colors storefront-card-title line-clamp-2 break-words">
+                    <a href={productHref(product)}>{product.name}</a>
                   </h3>
                   {showPrice && (
                     <p className="font-serif italic text-xs sm:text-sm md:text-base text-[#706866] mb-3 storefront-card-price">
-                      Rp {pPrice.toLocaleString('id-ID')}
+                      {formatRupiah(pPrice)}
                     </p>
                   )}
 
@@ -217,9 +223,9 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
                       e.stopPropagation();
                       addProductToCart(storeSlug, product, 1);
                     }}
-                    className="mt-auto py-2.5 px-4 border border-[#241A1A] text-[#241A1A] text-[10px] uppercase tracking-[0.2em] font-sans hover:bg-[#241A1A] hover:text-white transition-colors duration-200 flex items-center justify-center gap-2"
+                    className="mt-auto w-full min-w-0 py-2.5 px-2 sm:px-4 border border-[#241A1A] text-[#241A1A] text-[9px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] font-sans whitespace-nowrap hover:bg-[#241A1A] hover:text-white transition-colors duration-200 flex items-center justify-center gap-1.5 sm:gap-2"
                   >
-                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
                     <span>+ Keranjang</span>
                   </button>
                 </div>

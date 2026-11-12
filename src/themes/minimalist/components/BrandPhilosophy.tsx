@@ -4,8 +4,12 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 export const MinimalistBrandPhilosophy: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
   
-  const heading = sectionOptions.heading || "Our Philosophy";
-  const content = sectionOptions.description || `"At ${storeInfo.name}, we believe in the beauty of simplicity. Our objects are designed not just to occupy space, but to enhance your daily rituals. Every curve, every material is thoughtfully chosen to bring calm and purpose to your living environment."`;
+  const heading = sectionOptions.heading || 'Tentang Kami';
+  // Bawaan: deskripsi toko; bila kosong, kalimat umum dengan nama toko.
+  const content =
+    sectionOptions.description ||
+    storeInfo?.description ||
+    `${storeInfo?.name || 'Kami'} menghadirkan produk pilihan yang sederhana, berkualitas, dan dibuat untuk menemani keseharian Anda.`;
   
   return (
     <section className="w-full max-w-full py-10 sm:py-16 md:py-28 px-4 sm:px-6 max-w-4xl mx-auto text-center bg-white box-border overflow-hidden">

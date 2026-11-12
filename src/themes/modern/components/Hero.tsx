@@ -3,15 +3,19 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
+import { useThemeProductsSource } from '../../useSectionProducts';
+import { STORE_ROUTES } from '../../storefrontLinks';
 
 export const ModernHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
-  const bgImage = sectionOptions?.imageUrl || sectionOptions?.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1200&q=80";
+  const products = useThemeProductsSource('modern');
+  // Gambar hero: unggahan merchant → banner toko → foto produk pertama → gambar dekoratif bawaan.
+  const bgImage = sectionOptions?.imageUrl || sectionOptions?.bannerUrl || (storeInfo as any)?.bannerUrl || products.find((p) => p.image)?.image || "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1200&q=80";
 
-  const title = sectionOptions.heading || storeInfo.name;
-  const subtitle = sectionOptions.subheading || sectionOptions.subtitle || "Koleksi Terbaru";
-  const description = sectionOptions.description || storeInfo.description;
-  const hero = getHeroContent(sectionOptions, { buttonLabel: 'Belanja Sekarang' });
+  const title = sectionOptions.heading || storeInfo?.name || 'Selamat Datang di Toko Kami';
+  const subtitle = sectionOptions.subheading || sectionOptions.subtitle || "Produk Pilihan";
+  const description = sectionOptions.description || storeInfo?.description || 'Temukan produk terbaik dari toko kami dengan harga bersahabat.';
+  const hero = getHeroContent(sectionOptions, { buttonLabel: 'Belanja Sekarang', buttonLink: STORE_ROUTES.catalog, secondaryButtonLink: STORE_ROUTES.promo });
 
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
@@ -25,7 +29,7 @@ export const ModernHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
       <div className={`max-w-7xl mx-auto rounded-[2rem] bg-gray-50 overflow-hidden flex ${flexDirClass} items-stretch`}>
 
         {/* Left: Content */}
-        <div className="flex-1 p-8 md:p-16 flex flex-col justify-center">
+        <div className="flex-1 min-w-0 p-6 sm:p-8 md:p-16 flex flex-col justify-center">
           {hero.badge && (
             <span className="inline-block w-fit text-[10px] font-black uppercase tracking-widest text-white px-2.5 py-1 rounded-md mb-3" style={{ backgroundColor: accentColor }}>
               {hero.badge}
@@ -43,7 +47,7 @@ export const ModernHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
             />
           </span>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 leading-[1.1] mb-5">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 leading-[1.1] mb-5 break-words">
             <InlineEditableText
               tagName="span"
               value={title}
@@ -86,10 +90,10 @@ export const ModernHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
         </div>
 
         {/* Right: Image */}
-        <div className="flex-1 min-h-[280px] md:min-h-[420px] relative">
+        <div className="flex-1 min-h-[240px] sm:min-h-[280px] md:min-h-[420px] relative">
           <img
             src={bgImage}
-            alt="Hero"
+            alt={title}
             className="w-full h-full object-cover absolute inset-0"
           />
         </div>

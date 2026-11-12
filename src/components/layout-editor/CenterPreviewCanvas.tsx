@@ -46,6 +46,7 @@ import { getStorefrontThemeVars } from '../../themes/pages/storefrontTheme';
 import { StorefrontContext, StorefrontToast } from '../../themes/storefrontCart';
 import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage, TrackOrderPage } from '../../themes/pages';
 import { loadGoogleFont } from '../../utils/fontLoader';
+import { stripDemoContactOptions } from '../../cms/useCmsStore';
 
 const hasThemeComponent = (themeId: any, sectionId: string) => !!getThemeSectionComponent(themeId, sectionId);
 
@@ -101,6 +102,11 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
   const [searchPreviewQuery, setSearchPreviewQuery] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+
+  const openProductDetail = (productId: string) => {
+    setSelectedProductId(productId);
+    if (onPageChange) onPageChange('product');
+  };
 
   const typography = store.layoutSettings?.globalThemeSettings?.typography;
   const headingFont = typography?.headingFont || store.layoutSettings?.fontFamily || 'Inter';
@@ -294,6 +300,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
               store={store}
               products={products}
               onNavigate={(p) => onPageChange && onPageChange(p)}
+              onOpenProduct={openProductDetail}
               deviceMode={childDeviceMode}
             />
           );
@@ -407,6 +414,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
               store={store}
               products={products}
               onNavigate={(p) => onPageChange && onPageChange(p)}
+              onOpenProduct={openProductDetail}
               deviceMode={childDeviceMode}
             />
           );
@@ -454,6 +462,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
               store={store}
               products={products}
               onNavigate={(p) => onPageChange && onPageChange(p)}
+              onOpenProduct={openProductDetail}
               deviceMode={childDeviceMode}
             />
           );
@@ -479,6 +488,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
               products={products}
               isWishlist={true}
               onNavigate={(p) => onPageChange && onPageChange(p)}
+              onOpenProduct={openProductDetail}
               deviceMode={childDeviceMode}
             />
           );
@@ -2735,7 +2745,16 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
  */
 export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = (props) => {
   // Ulasan pelanggan & newsletter belum punya fitur nyata: jangan dirender.
-  const visibleSections = (props.sections || []).filter((sec) => !HIDDEN_SECTION_IDS.has(sec.id));
+  const filteredSections = (props.sections || []).filter((sec) => !HIDDEN_SECTION_IDS.has(sec.id));
+  // Storefront publik: kontak contoh template di opsi section diganti kontak asli toko.
+  // Editor tetap menampilkan nilai apa adanya agar merchant melihat apa yang tersimpan.
+  const visibleSections = props.isLiveStorefront
+    ? filteredSections.map((sec) => {
+        if (!sec.options) return sec;
+        const options = stripDemoContactOptions(sec.options);
+        return options === sec.options ? sec : { ...sec, options };
+      })
+    : filteredSections;
   // Tema yang sesuai dengan bagian-bagian layout (koreksi tema aktif yang tidak sinkron).
   const effectiveThemeId = resolveThemeForSections(props.activeThemeId, visibleSections.map((sec) => sec.id));
   return (

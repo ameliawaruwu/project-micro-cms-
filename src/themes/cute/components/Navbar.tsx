@@ -35,7 +35,7 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
   });
 
   return (
-    <header className={`w-full bg-[#FFF5F7] border-b-4 border-[#FFD1DC] py-4 px-6 ${header.positionClass} font-['Outfit',sans-serif] rounded-b-3xl shadow-sm`}>
+    <header className={`w-full bg-[#FFF5F7] border-b-4 border-[#FFD1DC] py-4 px-4 sm:px-6 ${header.positionClass} font-['Outfit',sans-serif] rounded-b-3xl shadow-sm`}>
       <div className={`max-w-5xl mx-auto flex ${navFlexClass} items-center ${navGapClass} justify-between`}>
         
         {/* Mobile top bar */}
@@ -61,7 +61,7 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-2 group-hover:-translate-y-1 transition-transform">
             <Heart className="w-6 h-6 text-[#FF85A1] fill-[#FF85A1]" />
           </div>
-          <a href="/" className="text-2xl font-black text-[#FF85A1] tracking-tight">
+          <a href="/" className="text-xl sm:text-2xl font-black text-[#FF85A1] tracking-tight max-w-full break-words">
             <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
           </a>
           {storeSubtitle && (

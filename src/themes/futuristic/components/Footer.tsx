@@ -13,7 +13,7 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
   const socials = getFooterSocialLinks(sectionOptions);
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. All rights reserved.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. Hak cipta dilindungi.`;
 
   const mainGridClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',

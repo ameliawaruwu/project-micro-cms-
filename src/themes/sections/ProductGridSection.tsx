@@ -2,7 +2,7 @@ import React from 'react';
 import { ProductGridSettings, ThemeSettings } from '../schema';
 import { Product } from '../../types';
 import { ShoppingCart, Eye, Heart } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { STORE_ROUTES, formatRupiah, productHref } from '../storefrontLinks';
 
 interface Props {
   settings: ProductGridSettings;
@@ -13,7 +13,9 @@ interface Props {
 
 export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, products, themeId }) => {
   const displayProducts = (products || []).slice(0, settings.maxItems || 8);
-  const navigate = useNavigate();
+  // Navigasi memakai rute toko yang sama dengan navbar tema (/katalog, /produk/:slug).
+  const navigate = (href: string) => { window.location.assign(href); };
+  const openProduct = (product: Product) => navigate(productHref(product as any));
 
   if (displayProducts.length === 0) {
     return (
@@ -38,22 +40,19 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
           {settings.title && (
             <div className="flex items-end justify-between mb-10 border-b border-gray-200 pb-4">
               <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 uppercase tracking-tighter storefront-heading-section">{settings.title}</h2>
-              <Link to="/products" className="text-sm font-bold text-[#0055FF] hover:text-blue-700 transition-colors flex items-center gap-2 group">
+              <a href={STORE_ROUTES.catalog} className="text-sm font-bold text-[#0055FF] hover:text-blue-700 transition-colors flex items-center gap-2 group">
                 Lihat Semua 
                 <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-[#0055FF] group-hover:text-white transition-colors">
                   &rarr;
                 </span>
-              </Link>
+              </a>
             </div>
           )}
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
             {displayProducts.map((product, idx) => (
-              <div key={product.id || idx} className="bg-white rounded-2xl border border-gray-100 overflow-hidden group hover:border-[#0055FF]/50 hover:shadow-[0_20px_40px_-15px_rgba(0,85,255,0.15)] transition-all duration-300 relative flex flex-col cursor-pointer" onClick={() => navigate(`/product/${product.id}`)}>
-                <div className="absolute top-3 left-3 z-10 bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg shadow-red-500/30 tracking-wider">
-                  HOT
-                </div>
-                
+              <div key={product.id || idx} className="bg-white rounded-2xl border border-gray-100 overflow-hidden group hover:border-[#0055FF]/50 hover:shadow-[0_20px_40px_-15px_rgba(0,85,255,0.15)] transition-all duration-300 relative flex flex-col cursor-pointer" onClick={() => openProduct(product)}>
+                                
                 {/* Actions overlay */}
                 <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 translate-x-12 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
                   <button className="w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-600 hover:text-red-500 hover:bg-white shadow-sm" onClick={(e) => e.stopPropagation()}>
@@ -65,16 +64,16 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
                 </div>
 
                 <div className="aspect-square min-h-[160px] sm:min-h-[180px] overflow-hidden bg-gray-50/50 p-4 sm:p-6 relative">
-                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />
+                  {product.imageUrl && <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" />}
                 </div>
                 
                 <div className="p-3 sm:p-4 md:p-5 flex flex-col flex-1 bg-white">
                   <h3 className="text-xs sm:text-sm text-gray-600 font-semibold line-clamp-2 mb-2 group-hover:text-[#0055FF] transition-colors storefront-card-title">{product.name}</h3>
                   <div className="mt-auto">
                     {settings.showPrices && (
-                      <p className="text-[#0055FF] font-black text-sm sm:text-base md:text-lg storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
+                      <p className="text-[#0055FF] font-black text-sm sm:text-base md:text-lg storefront-card-price">{formatRupiah(product.price)}</p>
                     )}
-                    <button className="w-full mt-4 py-2.5 bg-gray-50 text-gray-900 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#0055FF] hover:text-white transition-colors flex items-center justify-center gap-2 group/btn" onClick={(e) => { e.stopPropagation(); navigate('/cart'); }}>
+                    <button className="w-full mt-4 py-2.5 bg-gray-50 text-gray-900 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#0055FF] hover:text-white transition-colors flex items-center justify-center gap-2 group/btn" onClick={(e) => { e.stopPropagation(); openProduct(product); }}>
                       <ShoppingCart className="w-4 h-4 group-hover/btn:scale-110 transition-transform" /> Beli
                     </button>
                   </div>
@@ -90,12 +89,12 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
   // --- 2. EDITORIAL / STORYTELLING THEME ---
   if (themeId && themeId.includes('editorial')) {
     return (
-      <section className="py-32 bg-[#FAF7F7]">
-        <div className="mx-auto px-6 lg:px-12 w-full max-w-7xl">
+      <section className="py-16 sm:py-24 md:py-32 bg-[#FAF7F7]">
+        <div className="mx-auto px-4 sm:px-6 lg:px-12 w-full max-w-7xl">
           {settings.title && (
-            <div className="text-center mb-24">
-              <span className="text-[#241A1A]/40 uppercase tracking-[0.3em] text-xs font-bold mb-4 block">Our Selection</span>
-              <h2 className="text-4xl md:text-6xl font-normal text-[#241A1A] leading-tight" style={{ fontFamily: themeSettings.fontFamily }}>
+            <div className="text-center mb-12 sm:mb-24">
+              <span className="text-[#241A1A]/40 uppercase tracking-[0.3em] text-xs font-bold mb-4 block">Pilihan Kami</span>
+              <h2 className="text-3xl sm:text-4xl md:text-6xl font-normal text-[#241A1A] leading-tight break-words" style={{ fontFamily: themeSettings.fontFamily }}>
                 {settings.title}
               </h2>
             </div>
@@ -108,33 +107,33 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
             }, []).map((row, rowIndex) => (
               <div key={rowIndex} className={`flex flex-col md:flex-row gap-12 lg:gap-24 items-center ${rowIndex % 2 !== 0 ? 'md:flex-row-reverse' : ''}`}>
                 {row[0] && (
-                  <div className="w-full md:w-7/12 group cursor-pointer relative" onClick={() => navigate(`/product/${row[0].id}`)}>
+                  <div className="w-full md:w-7/12 group cursor-pointer relative" onClick={() => openProduct(row[0])}>
                     <div className="absolute -inset-4 bg-[#241A1A]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10 blur-xl"></div>
                     <div className="aspect-[3/4] overflow-hidden mb-8 relative">
                       <div className="absolute inset-0 bg-[#241A1A]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 flex items-center justify-center">
-                        <span className="text-white text-sm uppercase tracking-[0.3em] font-light border border-white/30 px-8 py-3 backdrop-blur-sm">Discover</span>
+                        <span className="text-white text-sm uppercase tracking-[0.3em] font-light border border-white/30 px-8 py-3 backdrop-blur-sm">Lihat</span>
                       </div>
-                      <img src={row[0].imageUrl} alt={row[0].name} className="w-full h-full object-cover filter brightness-95 group-hover:brightness-100 group-hover:scale-105 transition-all duration-[2s] ease-out" />
+                      {row[0].imageUrl && <img src={row[0].imageUrl} alt={row[0].name} className="w-full h-full object-cover filter brightness-95 group-hover:brightness-100 group-hover:scale-105 transition-all duration-[2s] ease-out" />}
                     </div>
                     <div className="text-center md:text-left pr-8">
                       <h3 className="text-3xl text-[#241A1A] font-normal italic mb-3 group-hover:opacity-70 transition-opacity" style={{ fontFamily: themeSettings.fontFamily }}>{row[0].name}</h3>
-                      {settings.showPrices && <p className="text-[#706866] tracking-[0.15em] text-sm">Rp {row[0].price.toLocaleString('id-ID')}</p>}
+                      {settings.showPrices && <p className="text-[#706866] tracking-[0.15em] text-sm">{formatRupiah(row[0].price)}</p>}
                     </div>
                   </div>
                 )}
                 
                 {row[1] && (
-                  <div className="w-full md:w-5/12 group cursor-pointer mt-12 md:mt-48 relative" onClick={() => navigate(`/product/${row[1].id}`)}>
+                  <div className="w-full md:w-5/12 group cursor-pointer mt-12 md:mt-48 relative" onClick={() => openProduct(row[1])}>
                     <div className="absolute -inset-4 bg-[#241A1A]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10 blur-xl"></div>
                     <div className="aspect-square overflow-hidden mb-8 relative">
                       <div className="absolute inset-0 bg-[#241A1A]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 flex items-center justify-center">
-                        <span className="text-white text-sm uppercase tracking-[0.3em] font-light border border-white/30 px-8 py-3 backdrop-blur-sm">Discover</span>
+                        <span className="text-white text-sm uppercase tracking-[0.3em] font-light border border-white/30 px-8 py-3 backdrop-blur-sm">Lihat</span>
                       </div>
-                      <img src={row[1].imageUrl} alt={row[1].name} className="w-full h-full object-cover filter brightness-95 group-hover:brightness-100 group-hover:scale-105 transition-all duration-[2s] ease-out" />
+                      {row[1].imageUrl && <img src={row[1].imageUrl} alt={row[1].name} className="w-full h-full object-cover filter brightness-95 group-hover:brightness-100 group-hover:scale-105 transition-all duration-[2s] ease-out" />}
                     </div>
                     <div className="text-center md:text-left pr-8">
                       <h3 className="text-2xl text-[#241A1A] font-normal italic mb-3 group-hover:opacity-70 transition-opacity" style={{ fontFamily: themeSettings.fontFamily }}>{row[1].name}</h3>
-                      {settings.showPrices && <p className="text-[#706866] tracking-[0.15em] text-sm">Rp {row[1].price.toLocaleString('id-ID')}</p>}
+                      {settings.showPrices && <p className="text-[#706866] tracking-[0.15em] text-sm">{formatRupiah(row[1].price)}</p>}
                     </div>
                   </div>
                 )}
@@ -149,8 +148,8 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
   // --- 3. BOLD BRAND THEME ---
   if (themeId && themeId.includes('bold')) {
     return (
-      <section className="py-24 bg-black border-b-8 border-black">
-        <div className="mx-auto px-6 max-w-7xl">
+      <section className="py-14 sm:py-24 bg-black border-b-8 border-black">
+        <div className="mx-auto px-4 sm:px-6 max-w-7xl">
           {settings.title && (
             <div className="flex flex-col items-center mb-10 sm:mb-16 relative px-2">
               <h2 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 uppercase tracking-tighter leading-none z-10 break-words text-center storefront-heading-hero" style={{ fontFamily: themeSettings.fontFamily }}>
@@ -162,24 +161,24 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-10">
             {displayProducts.map((product, idx) => (
-              <div key={product.id || idx} className="bg-white relative group cursor-pointer shadow-[4px_4px_0_rgba(255,0,0,1)] sm:shadow-[8px_8px_0_rgba(255,0,0,1)] hover:shadow-[16px_16px_0_rgba(255,0,0,1)] hover:-translate-y-2 hover:-translate-x-2 transition-all duration-300 border-4 border-black" onClick={() => navigate(`/product/${product.id}`)}>
+              <div key={product.id || idx} className="bg-white relative group cursor-pointer shadow-[4px_4px_0_rgba(255,0,0,1)] sm:shadow-[8px_8px_0_rgba(255,0,0,1)] hover:shadow-[16px_16px_0_rgba(255,0,0,1)] hover:-translate-y-2 hover:-translate-x-2 transition-all duration-300 border-4 border-black" onClick={() => openProduct(product)}>
                 <div className="aspect-[4/5] min-h-[220px] sm:min-h-[260px] overflow-hidden border-b-4 border-black relative bg-gray-100">
                   {/* Glitch Effect Overlay on Hover */}
                   <div className="absolute inset-0 bg-[#FF0000] mix-blend-color-burn opacity-0 group-hover:opacity-40 transition-opacity duration-300 z-10"></div>
-                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 contrast-125 transition-all duration-500 scale-100 group-hover:scale-110" />
+                  {product.imageUrl && <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 contrast-125 transition-all duration-500 scale-100 group-hover:scale-110" />}
                 </div>
                 <div className="p-3.5 sm:p-5 relative overflow-hidden bg-white z-20 flex flex-col justify-between min-h-[130px] sm:min-h-[160px]">
                   <div>
                     <h3 className="text-sm sm:text-lg md:text-xl font-black text-black uppercase tracking-tighter mb-2 group-hover:text-[#FF0000] transition-colors line-clamp-2 leading-tight break-words storefront-card-title">{product.name}</h3>
                   </div>
                   {settings.showPrices && (
-                    <p className="text-lg sm:text-xl md:text-2xl font-black text-black tracking-tighter mt-auto storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
+                    <p className="text-lg sm:text-xl md:text-2xl font-black text-black tracking-tighter mt-auto storefront-card-price">{formatRupiah(product.price)}</p>
                   )}
                   
                   {/* Buy Button overlay */}
-                  <button className="absolute bottom-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-black text-white flex items-center justify-center group-hover:w-full group-hover:h-full group-hover:bg-[#FF0000] transition-all duration-300 z-30" onClick={(e) => { e.stopPropagation(); navigate('/cart'); }}>
+                  <button className="absolute bottom-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-black text-white flex items-center justify-center group-hover:w-full group-hover:h-full group-hover:bg-[#FF0000] transition-all duration-300 z-30" onClick={(e) => { e.stopPropagation(); openProduct(product); }}>
                     <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 group-hover:hidden" />
-                    <span className="hidden group-hover:block font-black text-xl sm:text-3xl uppercase tracking-widest text-white">BUY NOW</span>
+                    <span className="hidden group-hover:block font-black text-xl sm:text-3xl uppercase tracking-widest text-white">BELI</span>
                   </button>
                 </div>
               </div>
@@ -208,23 +207,23 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {displayProducts.map((product, idx) => (
-              <div key={product.id || idx} className="group cursor-pointer flex flex-col" onClick={() => navigate(`/product/${product.id}`)}>
+              <div key={product.id || idx} className="group cursor-pointer flex flex-col" onClick={() => openProduct(product)}>
                 <div className="aspect-[4/5] min-h-[200px] sm:min-h-[240px] rounded-2xl sm:rounded-[2rem] overflow-hidden mb-3 sm:mb-4 shadow-sm group-hover:shadow-[0_20px_40px_-15px_rgba(217,160,91,0.2)] transition-all duration-500 bg-white relative">
                   
                   {/* Hover Add to Cart Overlay */}
                   <div className="absolute inset-x-3 sm:inset-x-4 bottom-3 sm:bottom-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-20">
-                    <button className="w-full py-2.5 sm:py-3.5 bg-white/90 backdrop-blur-md text-[#3E3E3E] text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl shadow-lg hover:bg-[#D9A05B] hover:text-white transition-colors" onClick={(e) => { e.stopPropagation(); navigate('/cart'); }}>
-                      Add to Bag
+                    <button className="w-full py-2.5 sm:py-3.5 bg-white/90 backdrop-blur-md text-[#3E3E3E] text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl shadow-lg hover:bg-[#D9A05B] hover:text-white transition-colors" onClick={(e) => { e.stopPropagation(); openProduct(product); }}>
+                      Beli Sekarang
                     </button>
                   </div>
 
-                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-[2s] ease-out" />
+                  {product.imageUrl && <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-[2s] ease-out" />}
                 </div>
                 
                 <div className="flex flex-col text-center px-2 sm:px-4">
                   <h3 className="text-xs sm:text-sm font-medium text-[#3E3E3E] mb-1 sm:mb-2 group-hover:text-[#D9A05B] transition-colors break-words storefront-card-title">{product.name}</h3>
                   {settings.showPrices && (
-                    <p className="text-[#3E3E3E]/60 font-medium text-xs sm:text-sm storefront-card-price">Rp {product.price.toLocaleString('id-ID')}</p>
+                    <p className="text-[#3E3E3E]/60 font-medium text-xs sm:text-sm storefront-card-price">{formatRupiah(product.price)}</p>
                   )}
                 </div>
               </div>
@@ -249,14 +248,14 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 sm:gap-x-12 gap-y-10 sm:gap-y-20">
           {displayProducts.slice(0, settings.columns === 3 ? 3 : 6).map((product, idx) => (
-            <div key={product.id || idx} className="group cursor-pointer flex flex-col" onClick={() => navigate(`/product/${product.id}`)}>
+            <div key={product.id || idx} className="group cursor-pointer flex flex-col" onClick={() => openProduct(product)}>
               <div className="aspect-[3/4] min-h-[220px] sm:min-h-[260px] overflow-hidden mb-4 sm:mb-6 bg-[#F9F9F9] relative">
-                <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover object-center transform transition-transform duration-[3s] ease-out group-hover:scale-105" />
+                {product.imageUrl && <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover object-center transform transition-transform duration-[3s] ease-out group-hover:scale-105" />}
                 
                 {/* Minimalist Hover Overlay */}
                 <div className="absolute inset-0 bg-white/20 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center">
-                  <span className="px-6 sm:px-8 py-2.5 sm:py-3 bg-white text-[#1A1A1A] text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.25em] hover:bg-[#1A1A1A] hover:text-white transition-colors duration-300 shadow-xl" onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}>
-                    View Details
+                  <span className="px-6 sm:px-8 py-2.5 sm:py-3 bg-white text-[#1A1A1A] text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.25em] hover:bg-[#1A1A1A] hover:text-white transition-colors duration-300 shadow-xl" onClick={(e) => { e.stopPropagation(); openProduct(product); }}>
+                    Lihat Detail
                   </span>
                 </div>
               </div>
@@ -267,7 +266,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
                 </h3>
                 {settings.showPrices && (
                   <p className="text-xs sm:text-sm text-gray-500 font-light whitespace-nowrap storefront-card-price">
-                    Rp {product.price.toLocaleString('id-ID')}
+                    {formatRupiah(product.price)}
                   </p>
                 )}
               </div>
@@ -276,10 +275,10 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
         </div>
 
         <div className="mt-12 sm:mt-24 text-center">
-           <Link to="/products" className="inline-flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.3em] text-[#1A1A1A] group/link">
-              View All Products
+           <a href={STORE_ROUTES.catalog} className="inline-flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.3em] text-[#1A1A1A] group/link">
+              Lihat Semua Produk
               <span className="w-8 h-px bg-[#1A1A1A] transition-all duration-500 group-hover/link:w-16"></span>
-           </Link>
+           </a>
         </div>
       </div>
     </section>

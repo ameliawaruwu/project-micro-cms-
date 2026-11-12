@@ -8,6 +8,7 @@ import { StoreLogo } from '../../StoreLogo';
 import { CartCountBadge } from '../../storefrontCart';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
+import { STORE_ROUTES } from '../../storefrontLinks';
 
 export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
@@ -52,7 +53,7 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
         </div>
       </div>
       {showNav && (
-        <div className="w-full border-t border-white/10 px-6 py-3 flex flex-wrap justify-center gap-x-8 gap-y-2">
+        <div className="w-full border-t border-white/10 px-4 sm:px-6 py-3 flex flex-wrap justify-center gap-x-5 sm:gap-x-8 gap-y-2">
           {getNavMenuItems(sectionOptions).map((nav) => (
             <a
               key={nav.id}
@@ -69,28 +70,38 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
 };
 
 export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const { storeInfo } = useCmsStore();
-  const heading = sectionOptions.heading || "CHIC & URBAN";
-  const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content || storeInfo?.description;
-  const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1600&q=80";
-  const hero = getHeroContent(sectionOptions, { badge: 'New Season', buttonLabel: 'Shop The Collection' });
+  const { storeInfo, products } = useCmsStore();
+  const heading = sectionOptions.heading || storeInfo?.name || 'Gaya Terbaik untuk Anda';
+  const subheading =
+    sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content ||
+    storeInfo?.description || 'Temukan koleksi pilihan kami dan tampil percaya diri setiap hari.';
+  // Gambar latar: unggahan merchant → banner toko → foto produk pertama → gambar bawaan dekoratif.
+  const bgImage =
+    sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl ||
+    products.find((p) => p.image)?.image ||
+    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1600&q=80';
+  const hero = getHeroContent(sectionOptions, {
+    badge: 'Koleksi Pilihan',
+    buttonLabel: 'Lihat Koleksi',
+    buttonLink: STORE_ROUTES.catalog,
+  });
 
   return (
-    <section className="relative w-full h-[90vh] bg-[#18181B] flex items-center justify-center overflow-hidden">
+    <section className="relative w-full min-h-[75vh] sm:min-h-[90vh] bg-[#18181B] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0">
         <img
           src={bgImage}
-          alt="Fashion Campaign"
+          alt={heading}
           className="w-full h-full object-cover object-top opacity-70 grayscale-[20%] mix-blend-luminosity scale-105 hover:scale-100 transition-transform duration-[15s]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#18181B] via-transparent to-transparent"></div>
       </div>
 
-      <div className="z-10 text-center relative mt-32">
+      <div className="z-10 text-center relative mt-20 sm:mt-32 px-4 sm:px-6 py-12 max-w-5xl min-w-0">
         {hero.badge && (
-          <p className="text-[10px] md:text-xs uppercase tracking-[0.5em] text-gray-300 mb-6">{hero.badge}</p>
+          <p className="text-[10px] md:text-xs uppercase tracking-[0.3em] sm:tracking-[0.5em] text-gray-300 mb-6">{hero.badge}</p>
         )}
-        <h1 className="text-6xl md:text-9xl font-serif italic text-white drop-shadow-2xl mb-6">
+        <h1 className="text-4xl sm:text-6xl md:text-8xl font-serif italic text-white drop-shadow-2xl mb-6 break-words">
           {heading}
         </h1>
         {subheading && (
@@ -98,15 +109,15 @@ export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions
             {subheading}
           </p>
         )}
-        <div className="flex flex-wrap gap-4 justify-center">
+        <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
           <HeroActionLink
             action={hero.primary}
-            className="inline-block px-10 py-4 border border-white text-white text-xs uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-colors duration-500"
+            className="inline-block px-6 sm:px-10 py-4 border border-white text-white text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] hover:bg-white hover:text-black transition-colors duration-500"
           />
           {hero.secondary && (
             <HeroActionLink
               action={hero.secondary}
-              className="inline-block px-10 py-4 bg-white text-black text-xs uppercase tracking-[0.3em] hover:bg-transparent hover:text-white border border-white transition-colors duration-500"
+              className="inline-block px-6 sm:px-10 py-4 bg-white text-black text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] hover:bg-transparent hover:text-white border border-white transition-colors duration-500"
             />
           )}
         </div>

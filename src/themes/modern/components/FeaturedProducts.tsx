@@ -1,9 +1,9 @@
 import React from 'react';
-import { useCmsStore } from '../../../cms/useCmsStore';
 import { ModernProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
+import { STORE_ROUTES } from '../../storefrontLinks';
 
 export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, accentColor = '#2563EB', isMobile, isTablet }) => {
   const allProducts = useThemeProductsSource('modern');
@@ -62,8 +62,8 @@ export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSe
   return (
     <section className="w-full py-12 md:py-20 px-4 md:px-8 font-['Outfit',sans-serif] bg-white">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-10 gap-4">
+          <div className="min-w-0">
             <p className="text-sm font-semibold mb-1.5" style={{ color: accentColor }}>
               <InlineEditableText
                 tagName="span"
@@ -72,7 +72,7 @@ export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSe
                 readonly={!onUpdateSectionOptions}
               />
             </p>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 break-words">
               <InlineEditableText
                 tagName="span"
                 value={title}
@@ -83,7 +83,7 @@ export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSe
           </div>
 
           <a
-            href="/produk"
+            href={STORE_ROUTES.catalog}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-700 hover:border-gray-300 transition-colors w-fit"
             onClick={(e) => { if (onUpdateSectionOptions) e.preventDefault(); }}
           >

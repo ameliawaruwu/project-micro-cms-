@@ -10,6 +10,8 @@ import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
+import { useThemeProductsSource } from '../../useSectionProducts';
+import { STORE_ROUTES } from '../../storefrontLinks';
 
 export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {} }) => {
   const { storeInfo } = useCmsStore();
@@ -54,7 +56,7 @@ export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
       </div>
 
       {showNav && navItems.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-[#F0EBE1] flex flex-wrap justify-center gap-x-8 gap-y-2">
+        <div className="mt-4 pt-3 border-t border-[#F0EBE1] flex flex-wrap justify-center gap-x-5 sm:gap-x-8 gap-y-2">
           {navItems.map((nav) => (
             <a key={nav.id} href={nav.route} className="text-[10px] uppercase tracking-[0.25em] text-[#7D6E63] hover:text-[#8C531B] transition-colors duration-300">
               {nav.label}
@@ -68,7 +70,15 @@ export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
 
 export const LuxuryHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { isEn } = useLanguage();
-  const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&q=80";
+  const { storeInfo } = useCmsStore();
+  const products = useThemeProductsSource('luxury');
+  // Gambar latar: unggahan merchant → banner toko → foto produk pertama → gambar bawaan dekoratif.
+  const bgImage =
+    sectionOptions.imageUrl ||
+    sectionOptions.bannerUrl ||
+    (storeInfo as any)?.bannerUrl ||
+    products.find((p) => p.image)?.image ||
+    'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&q=80';
 
   const defaultHeading = isEn ? "Timeless Elegance" : "Elegansi Klasik";
   const defaultAnnouncement = isEn ? "Haute Creation" : "Koleksi Eksklusif";
@@ -80,7 +90,8 @@ export const LuxuryHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   const isDefaultHeading = !sectionOptions.heading
     || sectionOptions.heading === "Elegansi Klasik"
     || sectionOptions.heading === "Timeless Elegance";
-  const heading = isDefaultHeading ? defaultHeading : sectionOptions.heading;
+  // Judul bawaan template diganti nama toko agar hero menampilkan identitas toko sendiri.
+  const heading = isDefaultHeading ? storeInfo?.name || defaultHeading : sectionOptions.heading;
 
   const isDefaultAnnouncement = !sectionOptions.announcementText
     || sectionOptions.announcementText === "Collection Privée"
@@ -94,39 +105,39 @@ export const LuxuryHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
     || sectionOptions.buttonLabel === "Jelajahi Koleksi";
   const hero = getHeroContent(
     { ...sectionOptions, buttonLabel: isDefaultButton ? defaultButton : sectionOptions.buttonLabel },
-    { badge: announcementText, buttonLabel: defaultButton }
+    { badge: announcementText, buttonLabel: defaultButton, buttonLink: STORE_ROUTES.catalog }
   );
 
   const currentSub = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle;
   const isDefaultSub = !currentSub
     || currentSub === "The art of quiet luxury, timeless sophistication, and exquisite artisan craftsmanship."
     || currentSub === "Seni kemewahan abadi, keanggunan sejati, dan dedikasi pada kesempurnaan kreasi.";
-  const subheading = isDefaultSub ? defaultSubheading : currentSub;
+  const subheading = isDefaultSub ? storeInfo?.description || defaultSubheading : currentSub;
 
   return (
-    <section className="relative w-full h-[90vh] bg-white px-4 md:px-12 pb-12 pt-4">
+    <section className="relative w-full h-[80vh] sm:h-[90vh] min-h-[480px] bg-white px-3 sm:px-4 md:px-12 pb-8 sm:pb-12 pt-4">
       <div className="w-full h-full relative overflow-hidden group">
         <img
           src={bgImage}
-          alt="Luxury Collection"
+          alt={heading}
           className="w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-[20s] ease-out"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a]/80 via-[#1a1a1a]/20 to-transparent"></div>
-        <div className="absolute bottom-16 left-8 md:left-16 text-white max-w-2xl">
+        <div className="absolute bottom-10 sm:bottom-16 left-5 right-5 sm:left-8 sm:right-8 md:left-16 text-white max-w-2xl min-w-0">
           {hero.badge && (
-            <p className="text-[10px] md:text-[11px] uppercase tracking-[0.4em] mb-6 text-[#D4AF37] opacity-90">
+            <p className="text-[10px] md:text-[11px] uppercase tracking-[0.3em] sm:tracking-[0.4em] mb-4 sm:mb-6 text-[#D4AF37] opacity-90">
               {hero.badge}
             </p>
           )}
-          <h1 className="text-5xl md:text-7xl font-serif mb-4 leading-tight drop-shadow-md">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-serif mb-4 leading-tight drop-shadow-md break-words">
             {heading}
           </h1>
           {subheading && (
-            <p className="text-sm md:text-base font-light text-white/85 mb-8 max-w-xl leading-relaxed drop-shadow-sm">
+            <p className="text-sm md:text-base font-light text-white/85 mb-8 max-w-xl leading-relaxed drop-shadow-sm line-clamp-4">
               {subheading}
             </p>
           )}
-          <div className="flex flex-wrap items-center gap-8">
+          <div className="flex flex-wrap items-center gap-6 sm:gap-8">
             <HeroActionLink
               action={hero.primary}
               className="inline-block text-[10px] md:text-[11px] uppercase tracking-[0.3em] border-b border-[#D4AF37] pb-2 text-white hover:text-[#D4AF37] transition-colors duration-500"
@@ -166,7 +177,7 @@ export const LuxuryFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
         <p className="text-xs sm:text-sm font-light text-[#7D6E63] max-w-md mb-8 leading-relaxed font-sans">{storeDesc}</p>
       )}
 
-      <nav className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-[10px] uppercase tracking-[0.25em] mb-8 text-[#7D6E63] font-sans">
+      <nav className="flex flex-wrap justify-center gap-x-6 sm:gap-x-8 gap-y-3 text-[10px] uppercase tracking-[0.25em] mb-8 text-[#7D6E63] font-sans">
         {navItems.map((nav) => (
           <a key={nav.id} href={nav.route} className="hover:text-[#8C531B] transition-colors">{nav.label}</a>
         ))}

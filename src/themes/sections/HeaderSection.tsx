@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { HeaderSettings, ThemeSettings } from '../schema';
 import { Search, ShoppingBag, Menu, User, Phone, MapPin, ChevronDown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { sanitizeLinkHref } from '../navMenu';
+import { STORE_ROUTES } from '../storefrontLinks';
 
 interface Props {
   settings: HeaderSettings;
@@ -14,14 +16,14 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
   const isSticky = settings.style === 'sticky';
   const navigate = useNavigate();
   
-  const navLinks = settings.navLinks && settings.navLinks.length > 0 
-    ? settings.navLinks 
+  // Tautan menu merchant disanitasi; bawaan mengikuti rute toko yang sama dengan navbar tema.
+  const navLinks = settings.navLinks && settings.navLinks.length > 0
+    ? settings.navLinks.map((link) => ({ ...link, url: sanitizeLinkHref(link.url) || STORE_ROUTES.home }))
     : [
-        { label: 'Beranda', url: '#' },
-        { label: 'Katalog Produk', url: '#katalog' },
-        { label: 'Promo Spesial', url: '#promo' },
-        { label: 'Tentang Kami', url: '#tentang' },
-        { label: 'Kontak', url: '#kontak' },
+        { label: 'Beranda', url: STORE_ROUTES.home },
+        { label: 'Katalog Produk', url: STORE_ROUTES.catalog },
+        { label: 'Promo Spesial', url: STORE_ROUTES.promo },
+        { label: 'Kontak', url: STORE_ROUTES.contact },
       ];
 
   const [scrolled, setScrolled] = useState(false);
@@ -43,12 +45,12 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
         {/* Topbar */}
         <div className="hidden md:flex items-center justify-between px-6 py-2 bg-gradient-to-r from-gray-900 to-black text-white/80 text-[11px] font-medium tracking-wide">
           <div className="flex items-center gap-6">
-            <span className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"><Phone className="w-3.5 h-3.5" /> 0800-1234-567</span>
-            <a href="/lacak" className="flex items-center gap-1.5 hover:text-white transition-colors"><MapPin className="w-3.5 h-3.5" /> Lacak Pesanan</a>
+            <a href={STORE_ROUTES.contact} className="flex items-center gap-1.5 hover:text-white transition-colors"><Phone className="w-3.5 h-3.5" /> Hubungi Kami</a>
+            <a href={STORE_ROUTES.promo} className="flex items-center gap-1.5 hover:text-white transition-colors"><MapPin className="w-3.5 h-3.5" /> Promo</a>
           </div>
           <div className="flex items-center gap-6">
-            <span className="hover:text-white transition-colors cursor-pointer">Bantuan</span>
-            <span className="hover:text-white transition-colors cursor-pointer">Syarat & Ketentuan</span>
+            <a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Bantuan</a>
+            <a href={STORE_ROUTES.catalog} className="hover:text-white transition-colors">Katalog</a>
           </div>
         </div>
         

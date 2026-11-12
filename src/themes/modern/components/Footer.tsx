@@ -14,7 +14,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address;
   const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. Hak cipta dilindungi.`;
 
   const isDesktopPreview = !isMobile && !isTablet;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
@@ -35,11 +35,11 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
 
   return (
     <footer className="w-full px-4 md:px-8 py-6 font-['Outfit',sans-serif] bg-white">
-      <div className="max-w-7xl mx-auto rounded-[2rem] p-8 md:p-14" style={{ backgroundColor: `${accentColor}0D` }}>
+      <div className="max-w-7xl mx-auto rounded-[2rem] p-6 sm:p-8 md:p-14" style={{ backgroundColor: `${accentColor}0D` }}>
         <div className={`grid ${gridColsClass} gap-10 mb-10`}>
 
           <div className={colSpan5Class}>
-            <h3 className="text-xl font-extrabold text-gray-900 mb-3">{storeName}</h3>
+            <h3 className="text-xl font-extrabold text-gray-900 mb-3 break-words">{storeName}</h3>
             <p className="text-sm text-gray-500 leading-relaxed max-w-sm mb-5">{storeDesc}</p>
             {getFooterSocialLinks(sectionOptions).length > 0 && (
               <div className="flex flex-wrap items-center gap-4 text-sm font-semibold">
@@ -62,7 +62,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
           <div className={colSpan4Class}>
             <h4 className="text-xs font-bold uppercase tracking-wide text-gray-900 mb-4">Kontak</h4>
             <ul className="space-y-2.5 text-sm text-gray-600">
-              {address && <li className="flex items-center gap-2"><MapPin className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {address}</li>}
+              {address && <li className="flex items-start gap-2 break-words"><MapPin className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {address}</li>}
               {email && <li className="flex items-center gap-2"><Mail className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> <a href={`mailto:${email}`} className="hover:underline break-all">{email}</a></li>}
             </ul>
           </div>

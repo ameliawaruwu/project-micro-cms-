@@ -5,6 +5,9 @@ import { CenterPreviewCanvas } from '../components/layout-editor/CenterPreviewCa
 import { THEME_DATA_MAP } from './themeData';
 import { normalizeThemeId } from './ThemeRegistry';
 import { useCmsStore } from '../cms/useCmsStore';
+import { filterRealProducts } from '../utils/demoProducts';
+
+const NO_PRODUCTS: Product[] = [];
 
 interface ThemeRendererProps {
   store?: Store;
@@ -39,7 +42,7 @@ const resolveInitialPage = (store?: Store): string => {
   return 'homepage';
 };
 
-export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = [] }) => {
+export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = NO_PRODUCTS }) => {
   // ✅ Hooks MUST be called unconditionally at the top — before any early returns
   const [activePage, setActivePage] = React.useState<string>(() => resolveInitialPage(store));
 
@@ -70,10 +73,23 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
     setActivePage(newPage);
   }, []);
 
-  // Logo gambar toko (stores.logo_url) dipakai navbar tema bila header belum punya logo sendiri.
+  // Section tema membaca produk & info toko dari CMS store. Isi dengan data asli toko agar
+  // storefront tidak jatuh ke konten contoh template. setProductsFromMerchant juga mengisi ulang
+  // storeInfo dengan data tema, jadi info toko asli harus ditimpa setelahnya.
   React.useEffect(() => {
-    useCmsStore.getState().updateStoreInfo({ logoUrl: store?.logoUrl || '' });
-  }, [store?.logoUrl]);
+    const cms = useCmsStore.getState();
+    cms.setProductsFromMerchant(filterRealProducts(products));
+    cms.updateStoreInfo({
+      name: store?.name || '',
+      description: store?.description || '',
+      address: store?.address || '',
+      // Toko tidak menyimpan email publik; kosongkan agar email contoh tema tidak tampil.
+      email: '',
+      phone: store?.phoneWhatsApp || '',
+      // Logo gambar toko (stores.logo_url) dipakai navbar tema bila header belum punya logo sendiri.
+      logoUrl: store?.logoUrl || '',
+    });
+  }, [products, store?.name, store?.description, store?.address, store?.phoneWhatsApp, store?.logoUrl]);
 
   // Guard: if no store, render a fallback (after hooks)
   if (!store || !store.id) {

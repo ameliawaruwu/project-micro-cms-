@@ -14,7 +14,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
   const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
   const socials = getFooterSocialLinks(sectionOptions);
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. All rights reserved.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. Hak cipta dilindungi.`;
 
   const isDesktopPreview = !isMobile && !isTablet;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
@@ -40,7 +40,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
       <div className={`max-w-7xl mx-auto grid ${gridColsClass} gap-8 md:gap-12 mb-10 sm:mb-16 md:mb-20`}>
         
         <div className={colSpan5Class}>
-          <h3 className="text-xl sm:text-2xl font-light tracking-tight text-gray-900 mb-3 sm:mb-5">
+          <h3 className="text-xl sm:text-2xl font-light tracking-tight text-gray-900 mb-3 sm:mb-5 break-words">
             {storeName}
           </h3>
           {storeDesc && (
@@ -51,7 +51,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
         </div>
 
         <div className={colSpan3Class}>
-          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">Navigation</h4>
+          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">Navigasi</h4>
           <ul className="space-y-2.5 sm:space-y-3">
             {navList.map((nav: any) => (
               <li key={nav.id}>
@@ -64,7 +64,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
         </div>
 
         <div className={colSpan4Class}>
-          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">Connect</h4>
+          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">Kontak</h4>
           <ul className="space-y-2 text-xs sm:text-sm text-gray-600 font-light mb-6">
             {address && <li className="break-words">{address}</li>}
             {email && <li className="break-all"><a href={`mailto:${email}`} className="hover:text-black transition-colors">{email}</a></li>}

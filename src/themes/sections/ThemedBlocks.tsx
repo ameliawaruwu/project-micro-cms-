@@ -3,6 +3,8 @@ import { ShieldCheck, Truck, CreditCard, MapPin, Mail, Phone, Clock, MessageCirc
 import { useCmsStore } from '../../cms/useCmsStore';
 import { getStorefrontThemeVars } from '../pages/storefrontTheme';
 import { whatsAppChatLink } from '../sectionContent';
+import { sanitizeLinkHref } from '../navMenu';
+import { STORE_ROUTES } from '../storefrontLinks';
 
 /**
  * Bagian umum (Pengumuman, Banner Promo, Keunggulan Toko, Info Toko) yang bisa ditambahkan
@@ -28,7 +30,7 @@ const ThemeScope: React.FC<{ themeId?: string; accentColor?: string; className?:
 );
 
 export const ThemedAnnouncement: React.FC<ThemedBlockProps> = ({ sectionOptions = {}, themeId, accentColor }) => {
-  const text = sectionOptions.announcementText || 'Selamat datang di toko kami — pengiriman ke seluruh Indonesia';
+  const text = sectionOptions.announcementText || 'Selamat datang di toko kami';
   return (
     <ThemeScope themeId={themeId} accentColor={accentColor}>
       <div className="w-full px-4 py-2 text-center text-[11px] sm:text-xs font-medium tracking-wide bg-[var(--sf-primary)] text-[var(--sf-primary-contrast)]">
@@ -43,11 +45,13 @@ export const ThemedPromoBanner: React.FC<ThemedBlockProps> = ({ sectionOptions =
   const heading = sectionOptions.heading || 'Penawaran Spesial';
   const description = sectionOptions.description || '';
   const buttonLabel = sectionOptions.buttonLabel || 'Lihat Katalog';
-  const buttonLink = sectionOptions.buttonLink || '#katalog';
+  // Tautan merchant disanitasi; bawaan membuka halaman katalog seperti menu navbar.
+  const customLink = sanitizeLinkHref(sectionOptions.buttonLink);
+  const buttonLink = customLink && customLink !== '#' ? customLink : STORE_ROUTES.catalog;
   return (
     <ThemeScope themeId={themeId} accentColor={accentColor} className="bg-[var(--sf-page)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-        <div className="rounded-[var(--sf-radius)] bg-[var(--sf-primary-soft)] border border-[var(--sf-primary-border)] px-6 py-10 sm:px-12 sm:py-14 text-center flex flex-col items-center gap-3 sm:gap-4">
+        <div className="rounded-[var(--sf-radius)] bg-[var(--sf-primary-soft)] border border-[var(--sf-primary-border)] px-4 py-8 sm:px-12 sm:py-14 text-center flex flex-col items-center gap-3 sm:gap-4">
           {badge && (
             <span className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase bg-[var(--sf-primary)] text-[var(--sf-primary-contrast)]">
               {badge}

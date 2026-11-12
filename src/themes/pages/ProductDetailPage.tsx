@@ -35,8 +35,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const { id: paramId } = useParams<{ id: string }>();
   const id = propProductId || paramId;
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
-  const isMobile = deviceMode === 'mobile';
-  const isTablet = deviceMode === 'tablet';
+  const isMobile = deviceMode ? deviceMode === 'mobile' : undefined;
+  const isTablet = deviceMode ? deviceMode === 'tablet' : undefined;
   /** Simulasi breakpoint Tailwind sesuai device preview editor (no-op di storefront). */
   const rc = (cls: string) => resolveResponsiveClasses(cls, deviceMode);
   // Tablet (±730px) sudah cukup lebar untuk layout dua kolom seperti desktop.
@@ -140,7 +140,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </div>
             <div className={rc(`${halfWidthClass} mt-12 md:mt-0`)}>
               <span className="px-4 py-2 bg-[#FF0000] text-white font-black text-sm uppercase tracking-widest border-2 border-black inline-block mb-4 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
-                HOT DROP 🔥
+                {product.categoryName || 'Produk Pilihan'}
               </span>
               <h1 className={rc("text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-black uppercase tracking-tighter leading-none mb-4 sm:mb-6 storefront-heading-hero")}>
                 {product.name}

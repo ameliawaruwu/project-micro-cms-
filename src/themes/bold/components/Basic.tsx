@@ -10,6 +10,8 @@ import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
+import { STORE_ROUTES } from '../../storefrontLinks';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
@@ -36,7 +38,6 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
         {showLogo && (
           <div className="flex flex-col min-w-0">
             <a href="/" className="flex items-center gap-2 sm:gap-3 font-black tracking-tighter uppercase text-xl sm:text-2xl md:text-3xl text-white hover:text-red-500 transition-colors group min-w-0">
-              <span className="px-2 sm:px-2.5 py-1 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[10px] sm:text-xs font-black tracking-widest rounded-md group-hover:scale-105 transition-transform shadow-md shadow-red-600/20 shrink-0">RAW</span>
               <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11"><span className="font-extrabold tracking-tight truncate">{storeTitle}</span></StoreLogo>
             </a>
             {storeSubtitle && (
@@ -76,14 +77,27 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
 
 export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
-  const heading = sectionOptions.heading || "LOUD & CLEAR";
-  const subheading = sectionOptions.subheading || sectionOptions.description || "The New Standard in Streetwear & Modern Aesthetics";
+  const heading = sectionOptions.heading || storeInfo?.name || 'Selamat Datang';
+  const subheading =
+    sectionOptions.subheading ||
+    sectionOptions.description ||
+    storeInfo?.description ||
+    'Temukan produk pilihan terbaik dari toko kami.';
   const hero = getHeroContent(sectionOptions, {
-    badge: 'STREETWEAR COLLECTION 2026',
-    buttonLabel: 'Explore Collection',
-    secondaryButtonLabel: 'Lookbook',
+    badge: 'Koleksi Terbaru',
+    buttonLabel: 'Lihat Katalog',
+    buttonLink: STORE_ROUTES.catalog,
+    secondaryButtonLabel: 'Lihat Promo',
+    secondaryButtonLink: STORE_ROUTES.promo,
   });
-  const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1600&q=80";
+  const products = useThemeProductsSource('bold');
+  // Tanpa banner dari merchant, pakai foto produk toko sendiri sebelum gambar bawaan tema.
+  const bgImage =
+    sectionOptions.imageUrl ||
+    sectionOptions.bannerUrl ||
+    (storeInfo as any)?.bannerUrl ||
+    products.find((p) => p.image)?.image ||
+    'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1600&q=80';
 
   return (
     <section className="relative w-full min-h-[85vh] flex flex-col items-center justify-center bg-zinc-950 text-white overflow-hidden border-b border-zinc-800">
@@ -91,7 +105,7 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
       <div className="absolute inset-0">
         <img
           src={bgImage}
-          alt="Bold Market"
+          alt=""
           className="w-full h-full object-cover opacity-40 filter contrast-110 scale-105 animate-pulse-subtle"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/40"></div>
@@ -99,7 +113,7 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
       </div>
 
       {/* Hero Content */}
-      <div className="z-10 text-center relative w-full px-6 max-w-5xl mx-auto flex flex-col items-center justify-center flex-grow py-24">
+      <div className="z-10 text-center relative w-full px-4 sm:px-6 max-w-5xl mx-auto flex flex-col items-center justify-center flex-grow py-16 sm:py-24">
         {hero.badge && (
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-zinc-900/90 border border-zinc-700/80 rounded-full text-zinc-300 font-bold text-xs uppercase tracking-[0.25em] mb-8 backdrop-blur-md shadow-xl">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
@@ -107,7 +121,7 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
           </div>
         )}
 
-        <h1 className="text-6xl sm:text-8xl md:text-9xl font-black tracking-tighter uppercase text-white leading-none mb-8 text-center max-w-full drop-shadow-2xl">
+        <h1 className="text-4xl sm:text-7xl md:text-8xl font-black tracking-tighter uppercase text-white leading-none mb-8 text-center max-w-full break-words drop-shadow-2xl">
           <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent">
             <InlineEditableText
               tagName="span"
@@ -155,7 +169,7 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
           {[...Array(10)].map((_, i) => (
             <span key={i} className="mx-8 flex items-center gap-3">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-              {heading} — EXCLUSIVE DROP 2026
+              {heading} — {hero.badge || 'Koleksi Terbaru'}
             </span>
           ))}
         </div>
@@ -172,7 +186,7 @@ export const BoldFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
   const socials = getFooterSocialLinks(sectionOptions);
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle} ALL RIGHTS RESERVED`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle} Hak cipta dilindungi.`;
 
   return (
     <footer className="w-full px-5 sm:px-8 py-12 sm:py-16 bg-zinc-950 text-white text-center border-t border-zinc-800/80 relative overflow-hidden">

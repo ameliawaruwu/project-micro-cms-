@@ -3,14 +3,15 @@ import { useSectionProducts } from '../../useSectionProducts';
 import { MinimalistProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
+import { STORE_ROUTES } from '../../storefrontLinks';
 
 export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, isMobile, isTablet }) => {
   const inEditor = typeof isMobile === 'boolean' || typeof isTablet === 'boolean';
   const products = useSectionProducts('minimalist', sectionOptions, { defaultCount: 4, inEditor });
 
-  const title = sectionOptions.featuredTitle || sectionOptions.heading || "Featured Objects";
-  const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || "A selection of our finest pieces, crafted with purpose.";
-  const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || "Explore All";
+  const title = sectionOptions.featuredTitle || sectionOptions.heading || 'Produk Unggulan';
+  const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || 'Pilihan produk terbaik dari toko kami.';
+  const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || 'Lihat Semua';
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-2',
@@ -32,8 +33,8 @@ export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpda
     <section className="w-full max-w-full py-10 sm:py-16 md:py-28 px-3.5 sm:px-6 md:px-12 font-sans bg-[#f5f5f5] box-border overflow-hidden">
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 sm:mb-14 gap-4 sm:gap-8">
-          <div className="max-w-lg">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-light text-gray-900 tracking-tight mb-2 sm:mb-3">
+          <div className="max-w-lg min-w-0">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-light text-gray-900 tracking-tight mb-2 sm:mb-3 break-words">
               <InlineEditableText
                 tagName="span"
                 value={title}
@@ -51,7 +52,7 @@ export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpda
             </p>
           </div>
           <a 
-            href="/produk"
+            href={STORE_ROUTES.catalog}
             className="inline-flex items-center text-xs sm:text-sm font-medium uppercase tracking-widest text-gray-900 hover:text-gray-500 transition-colors shrink-0"
             onClick={(e) => { if (onUpdateSectionOptions) e.preventDefault(); }}
           >
@@ -64,9 +65,9 @@ export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpda
           </a>
         </div>
 
-        <div className={`grid ${gridColsClass} gap-6 sm:gap-8 md:gap-12`}>
+        <div className={`grid ${gridColsClass} gap-3 sm:gap-8 md:gap-12`}>
           {products.map(product => (
-            <div key={product.id} className="transform hover:-translate-y-1 sm:hover:-translate-y-2 transition-transform duration-300">
+            <div key={product.id} className="min-w-0 transform hover:-translate-y-1 sm:hover:-translate-y-2 transition-transform duration-300">
               <MinimalistProductCard product={product} />
             </div>
           ))}

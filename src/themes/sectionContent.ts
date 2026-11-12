@@ -3,8 +3,8 @@
  * dan editor agar yang tampil di panel sama dengan yang dirender sebelum merchant mengubahnya.
  */
 
-export const DEFAULT_INGREDIENT_EYEBROW = 'The Origin';
-export const DEFAULT_INGREDIENT_ITEMS = ['Wildcrafted Herbs', 'Cold-pressed Oils', 'Volcanic Clay', 'Distilled Floral Waters'];
+export const DEFAULT_INGREDIENT_EYEBROW = 'Bahan Pilihan';
+export const DEFAULT_INGREDIENT_ITEMS = ['Bahan Berkualitas', 'Proses Teliti', 'Kualitas Terjaga', 'Dikemas dengan Rapi'];
 
 export interface SustainabilityPillar {
   title: string;
@@ -12,9 +12,9 @@ export interface SustainabilityPillar {
 }
 
 export const DEFAULT_SUSTAINABILITY_PILLARS: SustainabilityPillar[] = [
-  { title: 'Zero Waste', desc: '100% recyclable glass and aluminum packaging.' },
-  { title: 'Ethical Harvest', desc: 'Working directly with local farmers.' },
-  { title: 'Carbon Neutral', desc: 'Offsetting our footprint on every shipment.' },
+  { title: 'Kemasan Aman', desc: 'Setiap pesanan dikemas rapi agar sampai dengan baik.' },
+  { title: 'Kualitas Terjaga', desc: 'Produk dipilih dan diperiksa sebelum dikirim.' },
+  { title: 'Pelayanan Ramah', desc: 'Kami siap membantu setiap pertanyaan Anda.' },
 ];
 
 /** Daftar teks yang tidak kosong (item kosong dari editor tidak ikut dirender). */

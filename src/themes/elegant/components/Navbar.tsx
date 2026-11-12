@@ -26,12 +26,19 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
     fallback: 'hidden md:flex',
   });
 
+  const showMobileNav = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex',
+    tablet: 'flex',
+    desktop: 'hidden',
+    fallback: 'flex md:hidden',
+  });
+
   return (
-    <header className={`w-full bg-[#FAF9F6]/90 backdrop-blur-sm border-b border-[#E8E6E1] py-5 px-8 md:px-16 ${header.positionClass} font-['Cormorant_Garamond',serif]`}>
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <header className={`w-full bg-[#FAF9F6]/90 backdrop-blur-sm border-b border-[#E8E6E1] py-4 sm:py-5 px-4 sm:px-8 md:px-16 ${header.positionClass} font-['Cormorant_Garamond',serif]`}>
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
         
         {/* Left: Search */}
-        <div className="flex-1 flex items-center gap-6">
+        <div className="flex-1 flex items-center gap-3 sm:gap-6">
           {header.showSearch && (
             <NavSearchButton
               className="flex items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors"
@@ -45,12 +52,12 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
         </div>
 
         {/* Center: Logo */}
-        <div className="flex-1 text-center flex flex-col items-center">
-          <a href="/" className="text-3xl md:text-4xl font-normal tracking-wide text-[#2C2A29]">
+        <div className="flex-[2] sm:flex-1 min-w-0 text-center flex flex-col items-center">
+          <a href="/" className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-wide text-[#2C2A29] max-w-full truncate">
             <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
           </a>
           {storeSubtitle && (
-            <span className="text-[11px] tracking-[0.2em] uppercase text-[#6B6865] mt-1 font-sans">
+            <span className="text-[10px] sm:text-[11px] tracking-[0.2em] uppercase text-[#6B6865] mt-1 font-sans max-w-full truncate">
               {storeSubtitle}
             </span>
           )}
@@ -77,6 +84,19 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
             key={nav.id}
             href={nav.route}
             className="text-xs tracking-[0.2em] uppercase text-[#6B6865] hover:text-[#2C2A29] transition-colors font-sans relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-[1px] after:bottom-0 after:left-0 after:bg-[#2C2A29] after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left pb-1"
+          >
+            {nav.label}
+          </a>
+        ))}
+      </nav>
+
+      {/* Baris menu mobile/tablet: menu navbar tetap bisa diakses di layar kecil */}
+      <nav className={`${showMobileNav} items-center justify-center flex-wrap gap-x-5 gap-y-2 mt-4`}>
+        {getNavMenuItems(sectionOptions).map((nav) => (
+          <a
+            key={nav.id}
+            href={nav.route}
+            className="text-[11px] tracking-[0.18em] uppercase text-[#6B6865] hover:text-[#2C2A29] transition-colors font-sans py-1"
           >
             {nav.label}
           </a>

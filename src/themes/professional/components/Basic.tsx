@@ -9,6 +9,8 @@ import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
+import { useThemeProductsSource } from '../../useSectionProducts';
+import { STORE_ROUTES } from '../../storefrontLinks';
 
 export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
@@ -26,14 +28,15 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
 
   return (
     <nav className={`w-full bg-[#1E40AF] text-white shadow-md ${header.positionClass}`}>
-      <div className="w-full bg-[#1e3a8a] py-2 px-6 md:px-16 hidden md:flex justify-between text-xs font-medium text-blue-200">
-        <div className="flex gap-6">
-          <span>Enterprise Solutions</span>
-          <span>Global Shipping</span>
+      {/* Bilah atas: kontak toko (bila diisi) dan tautan cepat yang sama dengan menu navbar. */}
+      <div className="w-full bg-[#1e3a8a] py-2 px-6 md:px-16 hidden md:flex justify-between gap-6 text-xs font-medium text-blue-200">
+        <div className="flex gap-6 min-w-0">
+          {storeInfo?.phone && <span className="truncate">{storeInfo.phone}</span>}
+          {storeInfo?.email && <span className="truncate">{storeInfo.email}</span>}
         </div>
-        <div className="flex gap-6">
-          <a href="#" className="hover:text-white transition-colors">Support</a>
-          <a href="#" className="hover:text-white transition-colors">Client Portal</a>
+        <div className="flex gap-6 shrink-0">
+          <a href={STORE_ROUTES.promo} className="hover:text-white transition-colors">Promo</a>
+          <a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Bantuan</a>
         </div>
       </div>
       <div className="w-full px-4 sm:px-6 md:px-16 py-4 md:py-5 flex justify-between items-center gap-4">
@@ -48,7 +51,7 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
                         {(storeTitle || 'P')[0]?.toUpperCase()}
                       </span>
                     </div>
-                    <span>{storeTitle}</span>
+                    <span className="truncate">{storeTitle}</span>
                   </>
                 </StoreLogo>
               </a>
@@ -70,7 +73,7 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
           )}
         </div>
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-          <a href="#kontak" className="hidden sm:inline-flex px-5 py-2 text-sm font-semibold text-white border border-blue-400 rounded-md hover:bg-blue-800 transition-colors">
+          <a href={STORE_ROUTES.contact} className="hidden sm:inline-flex px-5 py-2 text-sm font-semibold text-white border border-blue-400 rounded-md hover:bg-blue-800 transition-colors">
             Hubungi Kami
           </a>
           {header.showSearch && (
@@ -98,15 +101,17 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
 
 export const ProfessionalHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
-  const heading = sectionOptions.heading || "Professional B2B Solutions";
-  const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || storeInfo?.description || "Streamline your procurement process with our enterprise-grade supplies and dedicated account management.";
+  const products = useThemeProductsSource('professional');
+  const heading = sectionOptions.heading || storeInfo?.name || 'Solusi Kebutuhan Usaha Anda';
+  const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || storeInfo?.description || 'Produk berkualitas dengan layanan profesional. Hubungi kami untuk penawaran terbaik sesuai kebutuhan Anda.';
   const hero = getHeroContent(sectionOptions, {
-    badge: 'Enterprise Ready',
-    buttonLabel: 'Request a Quote',
-    buttonLink: '/kontak',
-    secondaryButtonLabel: 'View Catalog',
+    buttonLabel: 'Minta Penawaran',
+    buttonLink: STORE_ROUTES.contact,
+    secondaryButtonLabel: 'Lihat Katalog',
+    secondaryButtonLink: STORE_ROUTES.catalog,
   });
-  const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1600&q=80";
+  // Gambar hero: unggahan merchant → banner toko → foto produk pertama → gambar dekoratif bawaan.
+  const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || products.find((p) => p.image)?.image || "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1600&q=80";
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -114,21 +119,21 @@ export const ProfessionalHero: React.FC<{ sectionOptions?: any; isMobile?: boole
     fallback: 'flex-col md:flex-row',
   });
   const halfWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-1/2';
-  const ptClass = isMobile || isTablet ? 'pt-12' : 'pt-12 md:pt-0';
+  const ptClass = isMobile || isTablet ? 'pt-10' : 'pt-10 md:pt-0';
 
   return (
-    <section className="relative w-full min-h-[75vh] flex items-center bg-gray-50 border-b border-gray-200 overflow-hidden">
-      <div className={`w-full max-w-7xl mx-auto px-6 md:px-16 flex ${flexDirClass} items-center gap-12`}>
-        <div className={`${halfWidthClass} ${ptClass} z-10`}>
+    <section className="relative w-full min-h-[75vh] flex items-center pb-12 md:pb-0 bg-gray-50 border-b border-gray-200 overflow-hidden">
+      <div className={`w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-16 flex ${flexDirClass} items-center gap-10 md:gap-12`}>
+        <div className={`${halfWidthClass} ${ptClass} min-w-0 z-10`}>
           {hero.badge && (
             <div className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider rounded-full mb-6">
               {hero.badge}
             </div>
           )}
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-[1.1] mb-6 tracking-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-gray-900 leading-[1.1] mb-5 sm:mb-6 tracking-tight break-words">
             {heading}
           </h1>
-          <p className="text-lg text-gray-600 mb-10 leading-relaxed max-w-lg">
+          <p className="text-base sm:text-lg text-gray-600 mb-8 sm:mb-10 leading-relaxed max-w-lg">
             {subheading}
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -148,20 +153,9 @@ export const ProfessionalHero: React.FC<{ sectionOptions?: any; isMobile?: boole
           <div className="absolute inset-0 bg-blue-600 rounded-2xl transform translate-x-4 translate-y-4 opacity-10"></div>
           <img
             src={bgImage}
-            alt="Corporate"
+            alt={heading}
             className="w-full aspect-[4/3] object-cover rounded-2xl shadow-xl relative z-10"
           />
-          <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-lg z-20 border border-gray-100">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path></svg>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Satisfaction Rate</p>
-                <p className="text-2xl font-bold text-gray-900">99.8%</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -176,7 +170,7 @@ export const ProfessionalFooter: React.FC<{ sectionOptions?: any; isMobile?: boo
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
   const socials = getFooterSocialLinks(sectionOptions);
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. All rights reserved.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. Hak cipta dilindungi.`;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-2',

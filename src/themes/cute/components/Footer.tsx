@@ -26,7 +26,7 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
   const textAlignClass = isMobile || isTablet ? 'text-center' : 'text-center md:text-left';
 
   return (
-    <footer className="w-full bg-[#FFF5F7] pt-20 pb-10 px-6 mt-12 rounded-t-[3rem] font-['Outfit',sans-serif] border-t-8 border-[#FFD1DC]">
+    <footer className="w-full bg-[#FFF5F7] pt-14 sm:pt-20 pb-10 px-4 sm:px-6 mt-12 rounded-t-[2rem] sm:rounded-t-[3rem] font-['Outfit',sans-serif] border-t-8 border-[#FFD1DC]">
       <div className={`max-w-5xl mx-auto grid ${gridColsClass} gap-12 mb-12 ${textAlignClass}`}>
 
         {/* Brand */}
@@ -34,13 +34,13 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 border-4 border-[#FFD1DC]">
             <Heart className="w-8 h-8 text-[#FF85A1] fill-[#FF85A1]" />
           </div>
-          <h3 className="text-2xl font-black tracking-tight text-[#FF85A1] mb-4">
+          <h3 className="text-2xl font-black tracking-tight text-[#FF85A1] mb-4 break-words max-w-full">
             {storeName}
           </h3>
           <p className="text-gray-600 font-medium text-sm leading-relaxed mb-6">
             {storeDesc}
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap justify-center md:justify-start items-center gap-3">
             {getFooterSocialLinks(sectionOptions).map((s) => (
               <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="px-4 h-10 bg-white rounded-full flex items-center justify-center text-[#FF85A1] text-xs font-bold hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm border-2 border-[#FFD1DC]">
                 {s.label}
@@ -71,7 +71,7 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
             Sapa Kami! 💌
           </h4>
           <ul className="space-y-4 font-bold text-gray-600">
-            {address && <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full">{address}</li>}
+            {address && <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full break-words">{address}</li>}
             {email && <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full break-all"><a href={`mailto:${email}`} className="hover:underline">{email}</a></li>}
           </ul>
         </div>

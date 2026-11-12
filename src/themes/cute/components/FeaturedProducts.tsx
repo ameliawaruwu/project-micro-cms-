@@ -4,6 +4,7 @@ import { CuteProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
+import { STORE_ROUTES } from '../../storefrontLinks';
 
 export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, isMobile, isTablet }) => {
   const allProducts = useThemeProductsSource('cute');
@@ -50,16 +51,16 @@ export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSect
   if (products.length === 0) return null;
 
   return (
-    <section className="w-full py-20 px-6 font-['Outfit',sans-serif] bg-white relative overflow-hidden">
+    <section className="w-full py-14 sm:py-20 px-4 sm:px-6 font-['Outfit',sans-serif] bg-white relative overflow-hidden">
       {/* Decorative background circle */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-[#FFF5F7] rounded-full -translate-y-1/2 translate-x-1/3"></div>
+      <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-[#FFF5F7] rounded-full -translate-y-1/2 translate-x-1/3"></div>
 
       <div className="max-w-6xl mx-auto relative z-10">
         <div className="text-center mb-12">
           {sectionOptions.imageUrl && (
             <img 
               src={sectionOptions.imageUrl} 
-              alt="Featured Products Banner" 
+              alt="" 
               className="w-full h-48 md:h-64 object-cover rounded-3xl mb-8 border-4 border-[#FFF5F7] shadow-sm"
             />
           )}
@@ -71,7 +72,7 @@ export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSect
               readonly={!onUpdateSectionOptions}
             />
           </div>
-          <h2 className="text-4xl md:text-5xl font-black text-gray-800 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-800 tracking-tight break-words">
             <InlineEditableText
               tagName="span"
               value={title}
@@ -81,7 +82,7 @@ export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSect
           </h2>
         </div>
 
-        <div className={`grid ${gridColsClass} gap-4 md:gap-6`}>
+        <div className={`grid ${gridColsClass} gap-3 sm:gap-4 md:gap-6`}>
           {products.map(product => (
             <CuteProductCard key={product.id} product={product} options={sectionOptions} />
           ))}
@@ -89,8 +90,8 @@ export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSect
         
         <div className="mt-12 text-center">
           <a 
-            href="/produk" 
-            className="inline-flex items-center justify-center px-8 py-4 bg-[#FF85A1] text-white text-lg font-black hover:bg-[#FF6B8B] hover:scale-105 transition-all duration-300 rounded-full border-4 border-[#FFF5F7] shadow-sm"
+            href={STORE_ROUTES.catalog}
+            className="inline-flex items-center justify-center px-6 sm:px-8 py-3.5 sm:py-4 bg-[#FF85A1] text-white text-base sm:text-lg font-black hover:bg-[#FF6B8B] hover:scale-105 transition-all duration-300 rounded-full border-4 border-[#FFF5F7] shadow-sm"
             onClick={(e) => { if (onUpdateSectionOptions) e.preventDefault(); }}
           >
             <InlineEditableText

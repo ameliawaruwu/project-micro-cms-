@@ -9,6 +9,8 @@ import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
+import { STORE_ROUTES } from '../../storefrontLinks';
+import { useThemeProductsSource } from '../../useSectionProducts';
 
 export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { storeInfo } = useCmsStore();
@@ -80,10 +82,27 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean
 };
 
 export const CreativeHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const heading = sectionOptions.heading || "Where Art Meets Commerce";
-  const subheading = sectionOptions.heroSubtitle ?? sectionOptions.description ?? sectionOptions.subheading ?? sectionOptions.content ?? "Explore unique handcrafted art supplies, pigments, canvases, and creative tools crafted for visionary artists.";
-  const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1600&q=80";
-  const hero = getHeroContent(sectionOptions, { buttonLabel: 'View Gallery' });
+  const storeInfo = useCmsStore(state => state.storeInfo);
+  const products = useThemeProductsSource('creative');
+  const heading = sectionOptions.heading || storeInfo?.name || 'Selamat Datang';
+  const subheading =
+    sectionOptions.heroSubtitle ??
+    sectionOptions.description ??
+    sectionOptions.subheading ??
+    sectionOptions.content ??
+    (storeInfo?.description || 'Temukan produk pilihan terbaik dari toko kami.');
+  // Tanpa banner dari merchant, pakai foto produk toko sendiri sebelum gambar bawaan tema.
+  const bgImage =
+    sectionOptions.imageUrl ||
+    sectionOptions.bannerUrl ||
+    (storeInfo as any)?.bannerUrl ||
+    products.find((p) => p.image)?.image ||
+    'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1600&q=80';
+  const hero = getHeroContent(sectionOptions, {
+    buttonLabel: 'Lihat Katalog',
+    buttonLink: STORE_ROUTES.catalog,
+    secondaryButtonLink: STORE_ROUTES.promo,
+  });
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -95,30 +114,30 @@ export const CreativeHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
   const imgPositionClass = isMobile || isTablet ? 'absolute' : 'absolute md:relative';
 
   return (
-    <section className={`relative w-full h-[85vh] bg-[#E11D48] flex ${flexDirClass} items-center overflow-hidden`}>
-      <div className={`${halfWidthClass} ${halfHeightClass} relative z-10 flex flex-col justify-center px-12 md:px-24`}>
+    <section className={`relative w-full min-h-[85vh] md:h-[85vh] bg-[#E11D48] flex ${flexDirClass} items-center overflow-hidden`}>
+      <div className={`${halfWidthClass} ${halfHeightClass} relative z-10 flex flex-col justify-center px-4 sm:px-12 md:px-24 py-16 md:py-0 min-w-0`}>
         {hero.badge && (
           <span className="inline-block w-fit px-4 py-1.5 mb-6 bg-yellow-300 text-black text-xs font-black uppercase tracking-wider rounded-full z-20 transform rotate-1">
             {hero.badge}
           </span>
         )}
-        <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.9] mb-6 mix-blend-difference z-20 transform -rotate-2">
+        <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white leading-[0.9] mb-6 mix-blend-difference z-20 transform -rotate-2 break-words max-w-full">
           {heading}
         </h1>
         {subheading && (
-          <p className="text-lg md:text-xl font-medium text-pink-100 mb-8 max-w-lg z-20 leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl font-medium text-pink-100 mb-8 max-w-lg z-20 leading-relaxed">
             {subheading}
           </p>
         )}
         <div className="flex flex-wrap gap-4 z-20">
           <HeroActionLink
             action={hero.primary}
-            className="inline-block px-8 py-4 bg-yellow-300 text-black font-bold uppercase tracking-wider rounded-full hover:bg-white transition-colors transform hover:scale-105 shadow-xl"
+            className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base bg-yellow-300 text-black font-bold uppercase tracking-wider rounded-full hover:bg-white transition-colors transform hover:scale-105 shadow-xl"
           />
           {hero.secondary && (
             <HeroActionLink
               action={hero.secondary}
-              className="inline-block px-8 py-4 border-2 border-white text-white font-bold uppercase tracking-wider rounded-full hover:bg-white hover:text-black transition-colors transform hover:scale-105"
+              className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base border-2 border-white text-white font-bold uppercase tracking-wider rounded-full hover:bg-white hover:text-black transition-colors transform hover:scale-105"
             />
           )}
         </div>
@@ -128,7 +147,7 @@ export const CreativeHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
         <div className="absolute inset-0 bg-blue-600 mix-blend-color z-10 opacity-30"></div>
         <img
           src={bgImage}
-          alt="Creative Hero"
+          alt=""
           className="w-full h-full object-cover scale-110 rotate-3 opacity-90 rounded-bl-[100px]"
         />
         <div className="absolute top-1/2 -left-12 w-32 h-32 bg-yellow-300 rounded-full mix-blend-multiply blur-xl animate-pulse"></div>
@@ -146,7 +165,7 @@ export const CreativeFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
   const socials = getFooterSocialLinks(sectionOptions);
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle || ''}. Hak cipta dilindungi.`;
 
   return (
     <footer className="w-full px-5 sm:px-8 py-14 sm:py-20 bg-black text-white flex flex-col items-center text-center relative overflow-hidden">

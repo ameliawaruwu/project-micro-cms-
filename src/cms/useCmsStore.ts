@@ -101,6 +101,24 @@ const DEMO_CONTACTS = new Set(
 );
 const isDemoContact = (value?: string) => !value || DEMO_CONTACTS.has(value);
 
+const DEMO_CONTACT_OPTION_KEYS = ['email', 'phone', 'phoneWhatsApp', 'address'] as const;
+
+/**
+ * Buang email/telepon/alamat contoh template yang ikut tersimpan di opsi section, agar section
+ * (mis. footer) jatuh ke kontak asli toko. Nilai yang diisi merchant sendiri tidak disentuh.
+ */
+export function stripDemoContactOptions<T extends Record<string, any>>(options: T): T {
+  let cleaned: T | null = null;
+  for (const key of DEMO_CONTACT_OPTION_KEYS) {
+    const value = options[key];
+    if (typeof value === 'string' && value && DEMO_CONTACTS.has(value)) {
+      cleaned = cleaned || { ...options };
+      delete (cleaned as Record<string, any>)[key];
+    }
+  }
+  return cleaned || options;
+}
+
 const getInitialProducts = () => {
   if (typeof window !== 'undefined') {
     try {

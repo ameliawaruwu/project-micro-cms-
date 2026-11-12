@@ -1,22 +1,37 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
+import { useThemeProductsSource } from '../../useSectionProducts';
+import { STORE_ROUTES } from '../../storefrontLinks';
 
 export const MinimalistHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
 
-  const heading = sectionOptions.heading || storeInfo.name;
-  const subheading = sectionOptions.subheading || sectionOptions.description || storeInfo.description;
-  const hero = getHeroContent(sectionOptions, { badge: 'Curated Essentials', buttonLabel: 'View Collection' });
-  // Use imageUrl/bannerUrl from options if available, else a minimalist default
-  const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=2000&q=80";
+  const products = useThemeProductsSource('minimalist');
+
+  const heading = sectionOptions.heading || storeInfo?.name || 'Selamat Datang';
+  const subheading =
+    sectionOptions.subheading || sectionOptions.description || storeInfo?.description ||
+    'Temukan produk pilihan terbaik untuk kebutuhan sehari-hari Anda.';
+  const hero = getHeroContent(sectionOptions, {
+    badge: 'Koleksi Pilihan',
+    buttonLabel: 'Lihat Koleksi',
+    buttonLink: STORE_ROUTES.catalog,
+  });
+  // Gambar latar: unggahan merchant → banner toko → foto produk pertama → gambar bawaan dekoratif.
+  const bgImage =
+    sectionOptions.imageUrl ||
+    sectionOptions.bannerUrl ||
+    (storeInfo as any)?.bannerUrl ||
+    products.find((p) => p.image)?.image ||
+    'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=2000&q=80';
 
   return (
     <section className="relative w-full max-w-full min-h-[50vh] sm:min-h-[65vh] md:min-h-[85vh] py-8 sm:py-12 md:py-0 flex items-center justify-center overflow-hidden bg-[#fafafa] box-border">
       <div className="absolute inset-0">
         <img
           src={bgImage}
-          alt="Hero background"
+          alt=""
           className="w-full h-full object-cover opacity-90 scale-105 animate-[kenburns_20s_ease-out_forwards]"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/20"></div>

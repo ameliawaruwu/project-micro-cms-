@@ -1,5 +1,6 @@
 import React from 'react';
 import { CmsProduct } from '../../../cms/mockCmsData';
+import { formatRupiah, productHref } from '../../storefrontLinks';
 
 interface ProductCardProps {
   product: CmsProduct;
@@ -7,29 +8,31 @@ interface ProductCardProps {
 
 export const ElegantProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
-    <a href={`/produk/${product.slug}`} className="group block font-['Cormorant_Garamond',serif] text-center">
-      <div className="relative aspect-[2/3] overflow-hidden mb-6 bg-[#E8E6E1]">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-1000 ease-in-out"
-          loading="lazy"
-        />
+    <a href={productHref(product)} className="group block min-w-0 font-['Cormorant_Garamond',serif] text-center">
+      <div className="relative aspect-[2/3] overflow-hidden mb-4 sm:mb-6 bg-[#E8E6E1]">
+        {product.image && (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-1000 ease-in-out"
+            loading="lazy"
+          />
+        )}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500"></div>
         {product.isNew && (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-[#2C2A29] text-[#FAF9F6] text-[9px] font-sans uppercase tracking-[0.2em] px-4 py-1">
-            Nouveau
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-[#2C2A29] text-[#FAF9F6] text-[9px] font-sans uppercase tracking-[0.2em] px-3 sm:px-4 py-1 whitespace-nowrap">
+            Baru
           </div>
         )}
       </div>
       
-      <div className="px-4">
-        <h3 className="text-xl text-[#2C2A29] mb-2 font-normal italic">
+      <div className="px-1 sm:px-4">
+        <h3 className="text-base sm:text-xl text-[#2C2A29] mb-2 font-normal italic line-clamp-2 break-words">
           {product.name}
         </h3>
         <div className="flex flex-col items-center gap-1 font-sans">
-          <p className="text-sm tracking-widest text-[#6B6865]">
-            IDR {product.price.toLocaleString('id-ID')}
+          <p className="text-xs sm:text-sm tracking-wider sm:tracking-widest text-[#6B6865]">
+            {formatRupiah(product.price)}
           </p>
         </div>
       </div>

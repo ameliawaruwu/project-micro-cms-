@@ -36,6 +36,8 @@ interface ShopPageProps {
   deviceMode?: 'desktop' | 'tablet' | 'mobile';
   /** Warna aksen tema dari editor (primaryAccent). */
   accentColor?: string;
+  /** Membuka halaman detail untuk produk yang diklik. */
+  onOpenProduct?: (productId: string) => void;
 }
 
 export const ShopPage: React.FC<ShopPageProps> = ({ 
@@ -47,9 +49,10 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   onNavigate,
   deviceMode,
   accentColor,
+  onOpenProduct,
 }) => {
-  const isMobile = deviceMode === 'mobile';
-  const isTablet = deviceMode === 'tablet';
+  const isMobile = deviceMode ? deviceMode === 'mobile' : undefined;
+  const isTablet = deviceMode ? deviceMode === 'tablet' : undefined;
   /** Simulasi breakpoint Tailwind sesuai device preview editor (no-op di storefront). */
   const rc = (cls: string) => resolveResponsiveClasses(cls, deviceMode);
   const shopGridColsClass = getDeviceClass(isMobile, isTablet, {
@@ -174,6 +177,11 @@ export const ShopPage: React.FC<ShopPageProps> = ({
     addProductToCart(store?.slug || '', p, 1);
   };
 
+  const openProduct = (p: CatalogProduct) => {
+    if (onOpenProduct) onOpenProduct(p.id);
+    else if (onNavigate) onNavigate('product');
+  };
+
   const handleBuyNow = (e: React.MouseEvent, p: CatalogProduct) => {
     e.stopPropagation();
     if (store?.slug) {
@@ -208,9 +216,9 @@ export const ShopPage: React.FC<ShopPageProps> = ({
       return (
         <div className="pt-24 pb-24 bg-white text-black min-h-screen border-b-8 border-black">
           <div className={rc("max-w-7xl mx-auto px-4 sm:px-6")}>
-            <div className={rc("bg-[#FF0000] p-6 sm:p-10 md:p-12 border-8 border-black shadow-[12px_12px_0px_rgba(0,0,0,1)] mb-10")}>
+            <div className={rc("bg-[#FF0000] p-5 sm:p-10 md:p-12 border-4 sm:border-8 border-black shadow-[6px_6px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_rgba(0,0,0,1)] mb-8 sm:mb-10")}>
               <span className="px-3 py-1 bg-black text-white font-black text-xs uppercase tracking-widest inline-block mb-3">
-                KATALOG ETALASE RESMI
+                {storeName}
               </span>
               <h1 className={rc("text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-black text-white uppercase tracking-tighter mb-4 storefront-heading-hero")}>
                 KATALOG PRODUK
@@ -218,9 +226,6 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               <div className="flex flex-wrap gap-3 items-center">
                 <span className={rc("text-sm sm:text-lg font-black text-black bg-white inline-block px-4 py-2 border-4 border-black uppercase")}>
                   {filteredAndSortedProducts.length} PRODUK TERSEDIA
-                </span>
-                <span className={rc("text-xs sm:text-sm font-bold text-white bg-black px-3 py-1.5 uppercase border-2 border-white")}>
-                  GARANSI ORIGINAL 100%
                 </span>
               </div>
             </div>
@@ -231,7 +236,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-black" />
                 <input
                   type="text"
-                  placeholder="CARI NAMA, KATEGORI, ATAU BAHAN..."
+                  placeholder="CARI PRODUK..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-12 pr-10 py-3.5 bg-white border-4 border-black font-black uppercase text-sm focus:outline-none focus:bg-yellow-300 shadow-[5px_5px_0px_rgba(0,0,0,1)]"
@@ -248,12 +253,12 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
               {/* Sort Selector */}
               <div className="flex items-center gap-2">
-                <div className="relative">
+                <div className="relative w-full">
                   <select
                     value={sortBy}
                     onChange={(e: any) => setSortBy(e.target.value)}
                     aria-label="Urutkan Produk"
-                    className="appearance-none px-6 py-3.5 pr-10 bg-white border-4 border-black font-black uppercase text-xs shadow-[4px_4px_0px_rgba(0,0,0,1)] focus:outline-none cursor-pointer"
+                    className="w-full appearance-none px-4 sm:px-6 py-3.5 pr-10 bg-white border-4 border-black font-black uppercase text-xs shadow-[4px_4px_0px_rgba(0,0,0,1)] focus:outline-none cursor-pointer"
                   >
                     <option value="popular">URUTKAN: PALING POPULER</option>
                     <option value="price-asc">HARGA: TERMURAH</option>
@@ -284,16 +289,16 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             </div>
 
             {/* Grid */}
-            <div className={`grid ${shopGridColsClass} gap-6`}>
+            <div className={rc(`grid ${shopGridColsClass} gap-3 sm:gap-6`)}>
               {displayedProducts.map((p) => (
                 <div 
                   key={p.id} 
-                  onClick={() => onNavigate && onNavigate('product')}
-                  className="bg-white border-4 border-black p-4 shadow-[8px_8px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all flex flex-col justify-between group cursor-pointer"
+                  onClick={() => openProduct(p)}
+                  className={rc("min-w-0 bg-white border-[3px] sm:border-4 border-black p-2.5 sm:p-4 shadow-[4px_4px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all flex flex-col justify-between group cursor-pointer")}
                 >
                   <div>
                     {/* Image & Badges */}
-                    <div className={rc("aspect-square border-4 border-black overflow-hidden mb-3 bg-gray-100 relative")}>
+                    <div className={rc("aspect-square border-2 sm:border-4 border-black overflow-hidden mb-3 bg-gray-100 relative")}>
                       <img 
                         src={p.imageUrl} 
                         alt={p.name} 
@@ -350,21 +355,22 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="flex gap-1.5 sm:gap-2">
                       <button 
                         type="button"
                         onClick={(e) => handleAddToCart(e, p)}
-                        className="col-span-1 py-2.5 bg-yellow-300 hover:bg-yellow-400 text-black border-2 border-black flex items-center justify-center font-black transition cursor-pointer"
+                        className="shrink-0 w-9 sm:w-11 py-2.5 bg-yellow-300 hover:bg-yellow-400 text-black border-2 border-black flex items-center justify-center font-black transition cursor-pointer"
                         title="Tambah ke Keranjang"
+                        aria-label="Tambah ke Keranjang"
                       >
                         <ShoppingBag className="w-4 h-4" />
                       </button>
                       <button 
                         type="button"
                         onClick={(e) => handleBuyNow(e, p)}
-                        className="col-span-3 py-2.5 bg-black hover:bg-[#FF0000] text-white font-black uppercase text-xs border-2 border-black transition cursor-pointer"
+                        className={rc("flex-1 min-w-0 px-1 py-2.5 bg-black hover:bg-[#FF0000] text-white font-black uppercase text-[10px] sm:text-xs whitespace-nowrap truncate border-2 border-black transition cursor-pointer")}
                       >
-                        Beli Sekarang
+                        Beli<span className={rc("hidden sm:inline")}> Sekarang</span>
                       </button>
                     </div>
                   </div>
@@ -395,13 +401,13 @@ export const ShopPage: React.FC<ShopPageProps> = ({
           <div className={rc("max-w-7xl mx-auto px-4 sm:px-6 md:px-8")}>
             <div className="text-center mb-12">
               <span className="text-xs uppercase tracking-[0.3em] text-[#706866] block mb-2 font-sans font-semibold">
-                Curated Collection
+                Koleksi Pilihan
               </span>
               <h1 className={rc("text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-normal font-serif mb-4 tracking-wide storefront-heading-hero")}>
-                The Catalogue
+                {storeName}
               </h1>
               <p className="text-sm font-sans text-[#706866] max-w-xl mx-auto font-light leading-relaxed">
-                Menyajikan pilihan kurasi eksklusif dengan fokus pada keahlian siluet dan material premium terbaik.
+                {storeDesc}
               </p>
               <div className="w-20 h-px bg-[#241A1A]/30 mx-auto mt-6"></div>
             </div>
@@ -463,12 +469,12 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             </div>
 
             {/* Grid */}
-            <div className={rc(`grid ${shopGridColsClass} gap-8 sm:gap-10"`)}>
+            <div className={rc(`grid ${shopGridColsClass} gap-x-3 gap-y-8 sm:gap-10`)}>
               {displayedProducts.map((p) => (
                 <div 
                   key={p.id} 
-                  onClick={() => onNavigate && onNavigate('product')}
-                  className="group cursor-pointer flex flex-col justify-between"
+                  onClick={() => openProduct(p)}
+                  className="group cursor-pointer flex flex-col justify-between min-w-0"
                 >
                   <div>
                     {/* Image Container with Badges */}
@@ -523,17 +529,18 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleAddToCart(e, p)}
-                        className="px-3 py-2.5 border border-[#241A1A] hover:bg-[#241A1A] hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+                        className="shrink-0 px-2.5 sm:px-3 py-2.5 border border-[#241A1A] hover:bg-[#241A1A] hover:text-white transition-colors flex items-center justify-center cursor-pointer"
                         title="Tambah ke Keranjang"
+                        aria-label="Tambah ke Keranjang"
                       >
                         <ShoppingBag className="w-4 h-4" />
                       </button>
                       <button
                         type="button"
                         onClick={(e) => handleBuyNow(e, p)}
-                        className="flex-1 py-2.5 bg-[#241A1A] hover:bg-[#66000E] text-white font-sans text-xs uppercase tracking-[0.15em] transition-colors cursor-pointer"
+                        className="flex-1 min-w-0 py-2.5 px-2 bg-[#241A1A] hover:bg-[#66000E] text-white font-sans text-[10px] sm:text-xs uppercase tracking-[0.1em] sm:tracking-[0.15em] whitespace-nowrap truncate transition-colors cursor-pointer"
                       >
-                        Beli Sekarang
+                        Beli<span className={rc("hidden sm:inline")}> Sekarang</span>
                       </button>
                     </div>
                   </div>
@@ -548,7 +555,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   onClick={() => setVisibleCount(prev => prev + 8)}
                   className="px-10 py-3.5 border border-[#241A1A] hover:bg-[#241A1A] hover:text-white font-sans text-xs uppercase tracking-[0.2em] transition-all cursor-pointer"
                 >
-                  Lihat Lebih Banyak Koleksi ({displayedProducts.length} dari {filteredAndSortedProducts.length})
+                  Lihat Lebih Banyak ({displayedProducts.length} dari {filteredAndSortedProducts.length})
                 </button>
               </div>
             )}
@@ -567,12 +574,10 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 {isEn ? 'Exquisite Selection' : 'Pilihan Istimewa'}
               </span>
               <h1 className={rc("text-2xl sm:text-4xl lg:text-5xl font-serif text-[#36281D] font-normal tracking-tight mb-3 storefront-heading-hero")}>
-                {isEn ? 'Maison Collection' : 'Koleksi Maison'}
+                {storeName}
               </h1>
               <p className={rc("text-xs sm:text-sm font-sans text-[#7D6E63] max-w-lg mx-auto font-light leading-relaxed")}>
-                {isEn 
-                  ? 'High fashion garments and luxury accessories crafted with timeless elegance and world-class precision.'
-                  : 'Karya seni busana dan aksesori mewah dengan standar keanggunan abadi serta presisi kelas dunia.'}
+                {storeDesc}
               </p>
               <div className="w-20 h-px bg-gradient-to-r from-transparent via-[#C8A97E] to-transparent mx-auto mt-6"></div>
             </div>
@@ -590,7 +595,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 />
               </div>
 
-              <div className="flex items-center gap-3 font-sans text-xs">
+              <div className={rc("flex items-center justify-end gap-3 font-sans text-xs w-full md:w-auto")}>
                 <span className="text-[#7D6E63]">{isEn ? 'Sort:' : 'Urutkan:'}</span>
                 <select
                   value={sortBy}
@@ -607,7 +612,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             </div>
 
             {/* Category Tabs */}
-            <div className="flex flex-wrap justify-center gap-6 mb-12 border-b border-[#F0EBE1] pb-4">
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 sm:gap-6 mb-12 border-b border-[#F0EBE1] pb-4">
               {categoryStats.map((cat) => (
                 <button
                   key={cat.name}
@@ -624,12 +629,12 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             </div>
 
             {/* Grid */}
-            <div className={rc(`grid ${shopGridColsClass} gap-5 sm:gap-6"`)}>
+            <div className={rc(`grid ${shopGridColsClass} gap-3 sm:gap-6`)}>
               {displayedProducts.map((p) => (
                 <div 
                   key={p.id} 
-                  onClick={() => onNavigate && onNavigate('product')}
-                  className={rc("group cursor-pointer flex flex-col justify-between bg-white rounded-xl p-3 sm:p-3.5 border border-[#F0EBE1] hover:border-[#C8A97E] hover:shadow-md transition-all duration-300")}
+                  onClick={() => openProduct(p)}
+                  className={rc("group cursor-pointer flex flex-col justify-between min-w-0 bg-white rounded-xl p-2.5 sm:p-3.5 border border-[#F0EBE1] hover:border-[#C8A97E] hover:shadow-md transition-all duration-300")}
                 >
                   <div>
                     <div className={rc("aspect-[4/5] bg-[#FAF7F2] rounded-lg overflow-hidden mb-3 relative")}>
@@ -667,10 +672,10 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                     <button
                       type="button"
                       onClick={(e) => handleBuyNow(e, p)}
-                      className="w-full py-2 bg-[#8C531B] hover:bg-[#724113] text-[#FFFDF9] font-sans font-medium text-[11px] uppercase tracking-[0.15em] rounded-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                      className="w-full py-2 px-1.5 bg-[#8C531B] hover:bg-[#724113] text-[#FFFDF9] font-sans font-medium text-[10px] sm:text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.15em] whitespace-nowrap rounded-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
                     >
-                      <ShoppingBag className="w-3.5 h-3.5" />
-                      <span>{isEn ? 'Buy Now' : 'Beli Sekarang'}</span>
+                      <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{isEn ? 'Buy Now' : 'Beli Sekarang'}</span>
                     </button>
                   </div>
                 </div>
@@ -702,30 +707,16 @@ export const ShopPage: React.FC<ShopPageProps> = ({
       return (
         <div className="pt-24 pb-24 bg-gray-50 text-gray-900 min-h-screen font-sans">
           {/* B2B Header Banner */}
-          <div className={rc("bg-[#1e3a8a] text-white py-12 px-6 md:px-16 mb-0")}>
+          <div className={rc("bg-[#1e3a8a] text-white py-10 sm:py-12 px-4 sm:px-6 md:px-16 mb-0")}>
             <div className="max-w-7xl mx-auto">
               <div className="inline-flex items-center gap-2 bg-blue-600/30 border border-blue-400/40 text-blue-200 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-300 animate-pulse"></span>
-                Enterprise Catalog
+                Katalog Produk
               </div>
               <h1 className={rc("text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 storefront-heading-hero")}>
-                Product Catalog
+                {storeName}
               </h1>
               <p className="text-blue-200 max-w-2xl text-sm leading-relaxed">{storeDesc}</p>
-              <div className="mt-6 flex flex-wrap gap-6 text-sm text-blue-200">
-                <span className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  Verified Supplier
-                </span>
-                <span className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  Net-30 Payment Terms
-                </span>
-                <span className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16v2a2 2 0 002 2h14a2 2 0 002-2v-2M16 10l-4 4m0 0l-4-4m4 4V3"/></svg>
-                  Bulk Pricing Available
-                </span>
-              </div>
             </div>
           </div>
 
@@ -736,7 +727,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by product name, SKU, or category..."
+                  placeholder="Cari nama produk atau kategori..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-9 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/30 focus:border-[#1E40AF] transition"
@@ -747,18 +738,18 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <ArrowUpDown className="w-4 h-4 text-gray-400" />
-                <span className="text-xs font-medium text-gray-500">Sort:</span>
+                <span className="text-xs font-medium text-gray-500">Urutkan:</span>
                 <select
                   value={sortBy}
                   onChange={(e: any) => setSortBy(e.target.value)}
-                  aria-label="Sort Products"
+                  aria-label="Urutkan Produk"
                   className="py-2 px-3 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/20 focus:border-[#1E40AF] cursor-pointer"
                 >
-                  <option value="popular">Most Popular</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="discount">Highest Discount</option>
-                  <option value="newest">Newest</option>
+                  <option value="popular">Paling Populer</option>
+                  <option value="price-asc">Harga Terendah</option>
+                  <option value="price-desc">Harga Tertinggi</option>
+                  <option value="discount">Diskon Terbesar</option>
+                  <option value="newest">Terbaru</option>
                 </select>
               </div>
             </div>
@@ -785,18 +776,18 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
             {/* Count */}
             <div className="flex items-center justify-between text-xs text-gray-500 mb-5 px-1">
-              <span>Showing <strong>{displayedProducts.length}</strong> of <strong>{filteredAndSortedProducts.length}</strong> products
-                {selectedCategory !== 'Semua' && ` in "${selectedCategory}"`}
+              <span>Menampilkan <strong>{displayedProducts.length}</strong> dari <strong>{filteredAndSortedProducts.length}</strong> produk
+                {selectedCategory !== 'Semua' && ` di "${selectedCategory}"`}
               </span>
             </div>
 
             {/* Products Grid — B2B Corporate Card Style */}
-            <div className={`grid ${shopGridColsClass} gap-5"`}>
+            <div className={rc(`grid ${shopGridColsClass} gap-3 sm:gap-5`)}>
               {displayedProducts.map((p) => (
                 <div
                   key={p.id}
-                  onClick={() => onNavigate && onNavigate('product')}
-                  className="group cursor-pointer bg-white rounded-xl border border-gray-200 hover:border-[#1E40AF]/40 hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden"
+                  onClick={() => openProduct(p)}
+                  className="group cursor-pointer min-w-0 bg-white rounded-xl border border-gray-200 hover:border-[#1E40AF]/40 hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden"
                 >
                   <div className={rc("aspect-[4/3] bg-gray-100 overflow-hidden relative")}>
                     <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
@@ -805,12 +796,14 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                         -{p.discountPercent}%
                       </div>
                     )}
-                    <div className="absolute top-2.5 right-2.5 bg-green-100 text-green-700 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">
-                      In Stock
-                    </div>
+                    {p.stock > 0 && (
+                      <div className="absolute top-2.5 right-2.5 bg-green-100 text-green-700 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">
+                        Tersedia
+                      </div>
+                    )}
                   </div>
 
-                  <div className={rc("p-3.5 sm:p-4 flex flex-col flex-1")}>
+                  <div className={rc("p-2.5 sm:p-4 flex flex-col flex-1")}>
                     <p className="text-[10px] text-gray-400 font-mono mb-1 uppercase tracking-wider">{p.category}</p>
                     <h3 className={rc("font-bold text-gray-900 text-xs sm:text-sm line-clamp-2 mb-1 group-hover:text-[#1E40AF] transition-colors leading-snug storefront-card-title")}>{p.name}</h3>
                     <p className={rc("text-[11px] sm:text-xs text-gray-500 line-clamp-2 mb-3 leading-relaxed storefront-card-desc")}>{p.description}</p>
@@ -821,10 +814,10 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                     <button
                       type="button"
                       onClick={(e) => handleAddToCart(e, p)}
-                      className="mt-3 w-full py-2.5 bg-[#1E40AF] hover:bg-[#1e3a8a] text-white text-xs font-semibold rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                      className="mt-3 w-full py-2.5 px-1.5 bg-[#1E40AF] hover:bg-[#1e3a8a] text-white text-[11px] sm:text-xs font-semibold whitespace-nowrap rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
                     >
-                      <ShoppingBag className="w-3.5 h-3.5" />
-                      <span>Add to Quote</span>
+                      <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">+ Keranjang</span>
                     </button>
                   </div>
                 </div>
@@ -838,7 +831,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   onClick={() => setVisibleCount(prev => prev + 8)}
                   className="px-8 py-3 bg-white border border-gray-300 hover:border-[#1E40AF] text-gray-700 hover:text-[#1E40AF] font-semibold text-xs rounded-xl shadow-xs transition hover:bg-blue-50 cursor-pointer"
                 >
-                  Load More Products ({displayedProducts.length} of {filteredAndSortedProducts.length})
+                  Muat Lebih Banyak ({displayedProducts.length} dari {filteredAndSortedProducts.length})
                 </button>
               </div>
             )}
@@ -928,7 +921,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             {displayedProducts.map((p) => (
               <div
                 key={p.id}
-                onClick={() => onNavigate && onNavigate('product')}
+                onClick={() => openProduct(p)}
                 className={`cursor-pointer flex flex-col min-w-0 ${ts.card}`}
               >
                 <div className={`relative overflow-hidden mb-3 ${ts.imageWrap}`}>

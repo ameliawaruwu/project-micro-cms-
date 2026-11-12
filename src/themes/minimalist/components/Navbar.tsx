@@ -6,7 +6,7 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
-import { useCartCount, useStorefrontSlug } from '../../storefrontCart';
+import { NavCartButton } from '../../storefrontCart';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 
 export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -14,7 +14,6 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
   const header = getHeaderDisplay(sectionOptions);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  const cartCount = useCartCount(useStorefrontSlug());
   
   const showLogo = sectionOptions.showLogo ?? true;
   const showNav = sectionOptions.showNavMenu ?? true;
@@ -115,21 +114,13 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
           )}
           <NavTrackOrderButton className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform p-1.5 rounded-lg focus:outline-none inline-flex items-center" iconClassName="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.5]" />
           {header.showCart && (
-          <a 
-            href="/cart"
-            aria-label="Keranjang Belanja"
-            onClick={(e) => {
-              window.dispatchEvent(new CustomEvent('open_cart'));
-            }}
-            className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform relative p-1.5 rounded-lg focus:outline-none cursor-pointer inline-flex items-center"
+          // Tombol keranjang sama dengan tema lain (data-href="/keranjang" ditangani kanvas toko).
+          <NavCartButton
+            className="text-gray-900 hover:text-gray-500 active:scale-95 transition-transform p-1.5 rounded-lg focus:outline-none inline-flex items-center"
+            badgeClassName="absolute top-0 right-0 bg-gray-900 text-white text-[8px] font-bold min-w-[14px] h-3.5 px-0.5 rounded-full flex items-center justify-center"
           >
             <ShoppingBag className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.5]" />
-            {cartCount > 0 && (
-              <span className="absolute 0 top-0.5 right-0.5 bg-gray-900 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
-                {cartCount}
-              </span>
-            )}
-          </a>
+          </NavCartButton>
           )}
         </div>
 

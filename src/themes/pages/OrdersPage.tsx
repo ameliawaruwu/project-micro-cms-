@@ -38,8 +38,8 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({
   deviceMode,
 }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
-  const isMobile = deviceMode === 'mobile';
-  const isTablet = deviceMode === 'tablet';
+  const isMobile = deviceMode ? deviceMode === 'mobile' : undefined;
+  const isTablet = deviceMode ? deviceMode === 'tablet' : undefined;
   const flexRowHeaderClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
