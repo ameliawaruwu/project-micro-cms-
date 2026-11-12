@@ -12,6 +12,7 @@ import {
   Store,
   ChevronRight,
   LifeBuoy,
+  Users,
 } from 'lucide-react';
 import { MerchantTab } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -53,6 +54,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       icon: CreditCard,
     },
     {
+      id: 'komunitas' as MerchantTab,
+      label: t('nav_community', 'Komunitas'),
+      desc: t('bottomnav_community_desc', 'Keanggotaan & permintaan gabung'),
+      icon: Users,
+    },
+    {
       id: 'tiket' as MerchantTab,
       label: t('nav_tickets', 'Tiket Bantuan'),
       desc: t('bottomnav_tickets_desc', 'Ajukan & pantau tiket'),
@@ -66,7 +73,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     },
   ];
 
-  const isSecondaryActive = ['layout', 'pembayaran', 'tiket', 'pengaturan'].includes(activeTab);
+  const isSecondaryActive = ['layout', 'pembayaran', 'komunitas', 'tiket', 'pengaturan'].includes(activeTab);
 
   const handleSelectTab = (tab: MerchantTab) => {
     onTabChange(tab);

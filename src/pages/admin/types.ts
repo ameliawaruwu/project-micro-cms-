@@ -6,6 +6,7 @@ export type AdminTab =
   | 'stores'
   | 'products'
   | 'communities'
+  | 'community-members'
   | 'domain-requests'
   | 'withdrawals'
   | 'plans'

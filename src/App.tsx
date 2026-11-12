@@ -77,6 +77,7 @@ import { SettingsPage } from './pages/merchant/SettingsPage';
 import { LayoutPage } from './pages/merchant/LayoutPage';
 import { DomainPage } from './pages/merchant/DomainPage';
 import { TicketRequesterPanel } from './components/tickets/TicketRequesterPanel';
+import { KomunitasPage } from './pages/merchant/KomunitasPage';
 
 // Admin Pages
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
@@ -2163,6 +2164,13 @@ export default function App() {
               )}
 
               {/* TAB: TIKET BANTUAN */}
+              {activeTab === 'komunitas' && (
+                <KomunitasPage
+                  onShowToast={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
+                />
+              )}
+
               {activeTab === 'tiket' && (
                 <TicketRequesterPanel
                   user={user}

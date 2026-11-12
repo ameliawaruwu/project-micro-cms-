@@ -9,7 +9,6 @@ export const RESPONSIVE_SAFELIST = `
 -rotate-2
 aspect-[16/12]
 aspect-[21/9]
-aspect-[4/5]
 bg-black/10
 bg-transparent
 block
@@ -310,7 +309,6 @@ text-[10rem]
 text-[10vw]
 text-[11px]
 text-[13px]
-text-[15px]
 text-[16px]
 text-[20px]
 text-[52px]

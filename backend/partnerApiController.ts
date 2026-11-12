@@ -182,6 +182,14 @@ partnerApiRouter.post('/communities/:id/stores', async (req: Request, res: Respo
         );
       }
       joined = true;
+      // Permintaan gabung yang masih menunggu untuk toko & komunitas ini otomatis selesai (tabel baru bisa belum dimigrasi).
+      try {
+        await pool.query(
+          `UPDATE community_join_requests SET status = 'approved', decision_note = 'Otomatis: email portal cocok', decided_at = now(), updated_at = now()
+            WHERE store_id = $1 AND community_id = $2 AND status = 'pending'`,
+          [store.id, communityId]
+        );
+      } catch {}
       console.log(`[Partner API] Toko ${store.id} dimasukkan ke komunitas ${communityId} oleh ${req.apiAuth!.keyName}`);
     }
 

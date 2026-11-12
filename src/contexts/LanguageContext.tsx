@@ -22,6 +22,7 @@ export const translations: Translations = {
   nav_template_website: { id: 'Template Website', en: 'Website Templates' },
   nav_settings: { id: 'Pengaturan Toko', en: 'Store Settings' },
   nav_tickets: { id: 'Tiket Bantuan', en: 'Support Tickets' },
+  nav_community: { id: 'Komunitas', en: 'Community' },
   integrations_title: { id: 'Integrasi', en: 'Integrations' },
   payment_title: { id: 'Pembayaran', en: 'Payment' },
   nav_logout: { id: 'Keluar', en: 'Logout' },
@@ -695,6 +696,7 @@ export const translations: Translations = {
   bottomnav_payment_methods: { id: 'Metode Pembayaran', en: 'Payment Methods' },
   bottomnav_payment_methods_desc: { id: 'Kelola QRIS, VA, dan rekening pencairan', en: 'Manage QRIS, VA, and payout accounts' },
   bottomnav_store_settings: { id: 'Pengaturan Toko', en: 'Store Settings' },
+  bottomnav_community_desc: { id: 'Keanggotaan & permintaan gabung', en: 'Membership & join requests' },
   bottomnav_tickets_desc: { id: 'Ajukan & pantau tiket', en: 'Submit & track tickets' },
   bottomnav_store_settings_desc: { id: 'Nama toko, logo, kontak WA, & profil', en: 'Store name, logo, WhatsApp, & profile' },
 

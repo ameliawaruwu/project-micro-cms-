@@ -14,6 +14,7 @@ import { requireAdmin } from './backend/sessionAuth';
 import { sendMail, MailerNotConfiguredError } from './backend/mailer';
 import { publicApiRouter } from './backend/publicApiController';
 import { partnerApiRouter } from './backend/partnerApiController';
+import { communityMembershipRouter } from './backend/communityMembershipController';
 
 dotenv.config();
 
@@ -989,6 +990,9 @@ app.use('/api/deploy', deployRouter);
 
 // 5b. Reset kata sandi (token dibuat server lewat service_role, dikirim via email)
 app.use('/api/auth', authRouter);
+
+// Keanggotaan komunitas: minta gabung (pemilik toko) & persetujuan (sub-admin komunitas)
+app.use('/api/community', communityMembershipRouter);
 
 // 6a. Partner API v1 — key partner terikat komunitas (lookup akun, masukkan toko ke komunitas)
 app.use('/api/v1/partner', partnerApiRouter);

@@ -40,6 +40,7 @@ import { storeInCommunity } from '../../utils/communityMembership';
 import { AdminProductsTab } from './tabs/AdminProductsTab';
 import { AdminUsersTab } from './tabs/AdminUsersTab';
 import { AdminTicketsTab } from './tabs/AdminTicketsTab';
+import { AdminCommunityMembersTab } from './tabs/AdminCommunityMembersTab';
 import { TicketRequesterPanel } from '../../components/tickets/TicketRequesterPanel';
 import { ticketService } from '../../services/ticketService';
 import {
@@ -95,11 +96,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   // - Sub Admin Produk: Dashboard ('overview'), Toko Binaan ('stores'), dan Produk ('products')
   useEffect(() => {
     if (isSubAdminUmum) {
-      if (activeTab !== 'overview' && activeTab !== 'communities' && activeTab !== 'my-tickets') {
+      if (activeTab !== 'overview' && activeTab !== 'communities' && activeTab !== 'my-tickets' && activeTab !== 'community-members') {
         setActiveTab('overview');
       }
     } else if (isSubAdminProduk) {
-      if (activeTab !== 'overview' && activeTab !== 'stores' && activeTab !== 'products' && activeTab !== 'my-tickets') {
+      if (activeTab !== 'overview' && activeTab !== 'stores' && activeTab !== 'products' && activeTab !== 'my-tickets' && activeTab !== 'community-members') {
         setActiveTab('overview');
       }
     } else if (isSubAdmin) {
@@ -108,11 +109,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         activeTab !== 'communities' &&
         activeTab !== 'stores' &&
         activeTab !== 'products' &&
-        activeTab !== 'my-tickets'
+        activeTab !== 'my-tickets' && activeTab !== 'community-members'
       ) {
         setActiveTab('overview');
       }
-    } else if (activeTab === 'my-tickets') {
+    } else if (activeTab === 'my-tickets' || activeTab === 'community-members') {
       setActiveTab('overview');
     }
   }, [isSubAdminUmum, isSubAdminProduk, isSubAdmin, activeTab]);
@@ -545,6 +546,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           icon: Users,
         },
         {
+          id: 'community-members',
+          label: language === 'en' ? 'Community Members' : 'Anggota Komunitas',
+          icon: Users,
+        },
+        {
           id: 'my-tickets',
           label: language === 'en' ? 'Support Tickets' : 'Tiket Bantuan',
           icon: LifeBuoy,
@@ -567,6 +573,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           id: 'products',
           label: language === 'en' ? 'Store Products' : 'Produk Toko Binaan',
           icon: Package,
+        },
+        {
+          id: 'community-members',
+          label: language === 'en' ? 'Community Members' : 'Anggota Komunitas',
+          icon: Users,
         },
         {
           id: 'my-tickets',
@@ -595,6 +606,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         {
           id: 'communities',
           label: language === 'en' ? 'Communities' : 'Komunitas',
+          icon: Users,
+        },
+        {
+          id: 'community-members',
+          label: language === 'en' ? 'Community Members' : 'Anggota Komunitas',
           icon: Users,
         },
         {
@@ -721,6 +737,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               language={language}
               onShowToast={showToast}
               onTicketsChanged={refreshPendingTickets}
+              onNavigateOverview={() => setActiveTab('overview')}
+            />
+          )}
+
+          {activeTab === 'community-members' && isSubAdmin && (
+            <AdminCommunityMembersTab
+              language={language}
+              onShowToast={(msg) => showToast(msg)}
               onNavigateOverview={() => setActiveTab('overview')}
             />
           )}
