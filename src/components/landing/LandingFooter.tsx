@@ -1,353 +1,79 @@
-import React, { useState } from 'react';
-import { ChevronDown, MessageSquare } from 'lucide-react';
+import React from 'react';
+import { Mail } from 'lucide-react';
 import { scrollToLandingSection } from '../../utils/scroll';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { KroomifyLogo } from '../common/KroomifyLogo';
-import { adminWhatsAppLink } from '../../config/contact';
+import { SUPPORT_EMAIL, supportMailtoLink } from '../../config/contact';
 
-interface LandingFooterProps {
-  onNavigateLogin: () => void;
-  onNavigateRegister: () => void;
-}
-
-export const LandingFooter: React.FC<LandingFooterProps> = ({
-  onNavigateLogin,
-  onNavigateRegister,
-}) => {
+/** Footer landing page: hanya berisi menu yang memang ada di halaman ini. */
+export const LandingFooter: React.FC = () => {
   const { t } = useLanguage();
-  // Mobile accordion active state: only one open at a time
-  const [openMobileAccordion, setOpenMobileAccordion] = useState<string | null>(null);
 
-  const toggleAccordion = (section: string) => {
-    setOpenMobileAccordion((prev) => (prev === section ? null : section));
-  };
-
-  const scrollToSection = (id: string) => {
-    scrollToLandingSection(id, 0);
-  };
+  // Sama dengan menu di navbar agar setiap tautan selalu menuju bagian yang ada.
+  const menuItems = [
+    { id: 'hero', label: t('landing_nav_home', 'Beranda') },
+    { id: 'produk', label: t('landing_nav_product', 'Produk') },
+    { id: 'cara-kerja', label: t('landing_nav_how_it_works', 'Cara Kerja') },
+    { id: 'fitur', label: t('landing_nav_features', 'Fitur') },
+    { id: 'faq', label: t('landing_nav_faq', 'FAQ') },
+  ];
 
   return (
-    <footer className="bg-[#FAF7F6] border-t border-[#E6DDDA] pt-12 sm:pt-16 pb-12 text-[#241A1A] font-sans text-left">
-      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* DESKTOP 5-COLUMN / MOBILE ACCORDION GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10 pb-10 border-b border-[#E6DDDA]">
-          
-          {/* Brand Column (Col 1-4 on Desktop) */}
-          <div className="md:col-span-4 space-y-3.5 text-left">
+    <footer className="bg-[#FAF7F6] border-t border-[#E6DDDA] pt-12 sm:pt-16 pb-10 text-[#241A1A] font-sans">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 lg:gap-10 pb-10 border-b border-[#E6DDDA]">
+          {/* Logo & deskripsi singkat */}
+          <div className="sm:col-span-2 md:col-span-6 space-y-3.5">
             <button
               type="button"
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="flex items-center gap-2.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none"
-              title="Kembali ke Halaman Utama"
-              aria-label="Kembali ke Halaman Utama LapakQ"
+              onClick={() => scrollToLandingSection('hero', 0)}
+              className="flex items-center cursor-pointer bg-transparent border-0 p-0"
+              aria-label={t('footer_back_to_top', 'Kembali ke atas halaman LapakQ')}
             >
               <KroomifyLogo size="lg" />
             </button>
-
-            <p className="text-[#6B6260] leading-relaxed text-xs sm:text-[13px] max-w-sm">
+            <p className="text-[#6B6260] leading-relaxed text-[13px] max-w-sm">
               {t('footer_brand_desc', 'Kelola produk, pesanan, dan pembayaran tanpa ribet.')}
             </p>
-
-            <div className="pt-1">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 border border-[#E6DDDA] text-[11px] font-semibold text-[#241A1A] shadow-2xs">
-                {t('footer_nation_pride', '🇮🇩 100% Karya Anak Bangsa')}
-              </span>
-            </div>
           </div>
 
-          {/* DESKTOP COLUMNS (Visible on md and up) */}
-          <div className="hidden md:grid md:col-span-8 grid-cols-4 gap-6 lg:gap-8">
-            
-            {/* COLUMN 2: PRODUK */}
-            <div className="space-y-3">
-              <p className="font-bold text-[#241A1A] text-xs uppercase tracking-wider">
-                {t('footer_col_product', 'Produk')}
-              </p>
-              <ul className="space-y-2 text-[13px]">
-                <li>
+          {/* Menu halaman */}
+          <nav className="md:col-span-3 space-y-3" aria-label={t('footer_col_menu', 'Menu')}>
+            <p className="font-bold text-xs uppercase tracking-wider">{t('footer_col_menu', 'Menu')}</p>
+            <ul className="space-y-2 text-[13px]">
+              {menuItems.map((item) => (
+                <li key={item.id}>
                   <button
-                    onClick={() => scrollToSection('produk')}
-                    className="hover:text-[#66000E] transition-colors cursor-pointer text-left inline-block"
+                    type="button"
+                    onClick={() => scrollToLandingSection(item.id, 0)}
+                    className="text-left hover:text-[#66000E] transition-colors cursor-pointer"
                   >
-                    {t('footer_link_storefront', 'Beranda Toko')}
+                    {item.label}
                   </button>
                 </li>
-                <li>
-                  <button
-                    onClick={() => scrollToSection('fitur')}
-                    className="hover:text-[#66000E] transition-colors cursor-pointer text-left inline-block"
-                  >
-                    {t('footer_link_catalog', 'Katalog Produk')}
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => scrollToSection('produk')}
-                    className="hover:text-[#66000E] transition-colors cursor-pointer text-left inline-block"
-                  >
-                    {t('footer_link_order_mgmt', 'Manajemen Pesanan')}
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => scrollToSection('fitur')}
-                    className="hover:text-[#66000E] transition-colors cursor-pointer text-left inline-block"
-                  >
-                    {t('footer_link_shipping_qris', 'Integrasi Kurir & QRIS')}
-                  </button>
-                </li>
-              </ul>
-            </div>
+              ))}
+            </ul>
+          </nav>
 
-            {/* COLUMN 3: PERUSAHAAN */}
-            <div className="space-y-3">
-              <p className="font-bold text-[#241A1A] text-xs uppercase tracking-wider">
-                {t('footer_col_company', 'Perusahaan')}
-              </p>
-              <ul className="space-y-2 text-[13px]">
-                <li>
-                  <a href="#tentang" className="hover:text-[#66000E] transition-colors inline-block">
-                    {t('footer_link_about', 'Tentang Kami')}
-                  </a>
-                </li>
-                <li>
-                  <a href="#blog" className="hover:text-[#66000E] transition-colors inline-block">
-                    {t('footer_link_blog', 'Blog & Edukasi UMKM')}
-                  </a>
-                </li>
-                <li>
-                  <a href="#kontak" className="hover:text-[#66000E] transition-colors inline-block">
-                    {t('footer_link_partner_contact', 'Kontak Kemitraan')}
-                  </a>
-                </li>
-                <li>
-                  <a href="#karir" className="hover:text-[#66000E] transition-colors inline-block">
-                    {t('footer_link_career', 'Karier')}
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* COLUMN 4: BANTUAN */}
-            <div className="space-y-3">
-              <p className="font-bold text-[#241A1A] text-xs uppercase tracking-wider">
-                {t('footer_col_help', 'Bantuan')}
-              </p>
-              <ul className="space-y-2 text-[13px]">
-                <li>
-                  <button
-                    onClick={() => scrollToSection('faq')}
-                    className="hover:text-[#66000E] transition-colors cursor-pointer text-left inline-block"
-                  >
-                    {t('footer_link_faq', 'FAQ & Tanya Jawab')}
-                  </button>
-                </li>
-                <li>
-                  <a href="#panduan" className="hover:text-[#66000E] transition-colors inline-block">
-                    {t('footer_link_help_center', 'Pusat Bantuan')}
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href={adminWhatsAppLink('Halo Admin LapakQ, saya butuh bantuan')}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-[#801010] transition-colors inline-flex items-center gap-1.5 text-[#66000E] font-bold"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>{t('footer_link_whatsapp_cs', 'WhatsApp CS 24/7')}</span>
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* COLUMN 5: LEGAL */}
-            <div className="space-y-3">
-              <p className="font-bold text-[#241A1A] text-xs uppercase tracking-wider">
-                {t('footer_col_legal', 'Legal')}
-              </p>
-              <ul className="space-y-2 text-[13px]">
-                <li>
-                  <a href="#privasi" className="hover:text-[#66000E] transition-colors inline-block">
-                    {t('footer_link_privacy', 'Kebijakan Privasi')}
-                  </a>
-                </li>
-                <li>
-                  <a href="#syarat" className="hover:text-[#66000E] transition-colors inline-block">
-                    {t('footer_link_terms', 'Syarat & Ketentuan')}
-                  </a>
-                </li>
-                <li>
-                  <a href="#keamanan" className="hover:text-[#66000E] transition-colors inline-block">
-                    {t('footer_link_data_security', 'Keamanan Data')}
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-          </div>
-
-          {/* MOBILE ACCORDION GROUPS (Visible on mobile screens only) */}
-          <div className="block md:hidden space-y-2 pt-2 text-left">
-            
-            {/* Accordion 1: PRODUK */}
-            <div className="border border-[#E6DDDA] rounded-xl bg-white/70 overflow-hidden">
-              <button
-                type="button"
-                onClick={() => toggleAccordion('produk')}
-                className={`w-full flex items-center justify-between p-3.5 text-xs font-bold transition-colors ${
-                  openMobileAccordion === 'produk' ? 'text-[#66000E] bg-white' : 'text-[#241A1A]'
-                }`}
-              >
-                <span>{t('footer_col_product', 'PRODUK').toUpperCase()}</span>
-                <ChevronDown
-                  className={`w-4 h-4 text-[#6B6260] transition-transform duration-200 ${
-                    openMobileAccordion === 'produk' ? 'rotate-180 text-[#66000E]' : ''
-                  }`}
-                />
-              </button>
-              {openMobileAccordion === 'produk' && (
-                <div className="p-3.5 pt-1 bg-white border-t border-[#E6DDDA] space-y-2 text-xs">
-                  <button
-                    onClick={() => scrollToSection('produk')}
-                    className="block w-full text-left py-1 text-[#6B6260] hover:text-[#66000E]"
-                  >
-                    {t('footer_link_storefront', 'Beranda Toko')}
-                  </button>
-                  <button
-                    onClick={() => scrollToSection('fitur')}
-                    className="block w-full text-left py-1 text-[#6B6260] hover:text-[#66000E]"
-                  >
-                    {t('footer_link_catalog', 'Katalog Produk')}
-                  </button>
-                  <button
-                    onClick={() => scrollToSection('produk')}
-                    className="block w-full text-left py-1 text-[#6B6260] hover:text-[#66000E]"
-                  >
-                    {t('footer_link_order_mgmt', 'Manajemen Pesanan')}
-                  </button>
-                  <button
-                    onClick={() => scrollToSection('fitur')}
-                    className="block w-full text-left py-1 text-[#6B6260] hover:text-[#66000E]"
-                  >
-                    {t('footer_link_shipping_qris', 'Integrasi Kurir & QRIS')}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Accordion 2: PERUSAHAAN */}
-            <div className="border border-[#E6DDDA] rounded-xl bg-white/70 overflow-hidden">
-              <button
-                type="button"
-                onClick={() => toggleAccordion('perusahaan')}
-                className={`w-full flex items-center justify-between p-3.5 text-xs font-bold transition-colors ${
-                  openMobileAccordion === 'perusahaan' ? 'text-[#66000E] bg-white' : 'text-[#241A1A]'
-                }`}
-              >
-                <span>{t('footer_col_company', 'PERUSAHAAN').toUpperCase()}</span>
-                <ChevronDown
-                  className={`w-4 h-4 text-[#6B6260] transition-transform duration-200 ${
-                    openMobileAccordion === 'perusahaan' ? 'rotate-180 text-[#66000E]' : ''
-                  }`}
-                />
-              </button>
-              {openMobileAccordion === 'perusahaan' && (
-                <div className="p-3.5 pt-1 bg-white border-t border-[#E6DDDA] space-y-2 text-xs">
-                  <a href="#tentang" className="block py-1 text-[#6B6260] hover:text-[#66000E]">
-                    {t('footer_link_about', 'Tentang Kami')}
-                  </a>
-                  <a href="#blog" className="block py-1 text-[#6B6260] hover:text-[#66000E]">
-                    {t('footer_link_blog', 'Blog & Edukasi UMKM')}
-                  </a>
-                  <a href="#kontak" className="block py-1 text-[#6B6260] hover:text-[#66000E]">
-                    {t('footer_link_partner_contact', 'Kontak Kemitraan')}
-                  </a>
-                  <a href="#karir" className="block py-1 text-[#6B6260] hover:text-[#66000E]">
-                    {t('footer_link_career', 'Karier')}
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* Accordion 3: BANTUAN */}
-            <div className="border border-[#E6DDDA] rounded-xl bg-white/70 overflow-hidden">
-              <button
-                type="button"
-                onClick={() => toggleAccordion('bantuan')}
-                className={`w-full flex items-center justify-between p-3.5 text-xs font-bold transition-colors ${
-                  openMobileAccordion === 'bantuan' ? 'text-[#66000E] bg-white' : 'text-[#241A1A]'
-                }`}
-              >
-                <span>{t('footer_col_help', 'BANTUAN').toUpperCase()}</span>
-                <ChevronDown
-                  className={`w-4 h-4 text-[#6B6260] transition-transform duration-200 ${
-                    openMobileAccordion === 'bantuan' ? 'rotate-180 text-[#66000E]' : ''
-                  }`}
-                />
-              </button>
-              {openMobileAccordion === 'bantuan' && (
-                <div className="p-3.5 pt-1 bg-white border-t border-[#E6DDDA] space-y-2 text-xs">
-                  <button
-                    onClick={() => scrollToSection('faq')}
-                    className="block w-full text-left py-1 text-[#6B6260] hover:text-[#66000E]"
-                  >
-                    {t('footer_link_faq', 'FAQ & Tanya Jawab')}
-                  </button>
-                  <a href="#panduan" className="block py-1 text-[#6B6260] hover:text-[#66000E]">
-                    {t('footer_link_help_center', 'Pusat Bantuan')}
-                  </a>
-                  <a
-                    href={adminWhatsAppLink('Halo Admin LapakQ, saya butuh bantuan')}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block py-1 text-[#66000E] font-bold"
-                  >
-                    {t('footer_link_whatsapp_cs', 'WhatsApp CS 24/7')}
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* Accordion 4: LEGAL */}
-            <div className="border border-[#E6DDDA] rounded-xl bg-white/70 overflow-hidden">
-              <button
-                type="button"
-                onClick={() => toggleAccordion('legal')}
-                className="w-full p-4 flex items-center justify-between text-left font-bold text-sm text-[#241A1A] cursor-pointer"
-              >
-                <span>{t('footer_col_legal', 'Legal & Privasi')}</span>
-                <ChevronDown className={`w-4 h-4 text-[#706866] transition-transform duration-200 ${openMobileAccordion === 'legal' ? 'rotate-180' : ''}`} />
-              </button>
-              {openMobileAccordion === 'legal' && (
-                <div className="px-4 pb-4 space-y-2 text-xs text-[#5F5652] border-t border-[#E6DDDA]/60 pt-3">
-                  <a href="#syarat" className="block py-1 hover:text-[#66000E] transition-colors">{t('footer_link_terms', 'Syarat & Ketentuan')}</a>
-                  <a href="#privasi" className="block py-1 hover:text-[#66000E] transition-colors">{t('footer_link_privacy', 'Kebijakan Privasi')}</a>
-                  <a href="#sla" className="block py-1 hover:text-[#66000E] transition-colors">{t('footer_link_sla', 'Jaminan Layanan SLA')}</a>
-                  <a href="#keamanan" className="block py-1 hover:text-[#66000E] transition-colors">{t('footer_link_security', 'Keamanan Sistem')}</a>
-                </div>
-              )}
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* BOTTOM COPYRIGHT & DISCLAIMER ROW */}
-        <div className="pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] sm:text-xs text-[#6B6260] text-center sm:text-left">
-          <p>{t('footer_copyright', '© 2026 LapakQ. Dibuat untuk UMKM Indonesia.')}</p>
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[#6B6260]">
-            <span>{t('footer_privacy_secure', 'Privasi Terjaga')}</span>
-            <span>•</span>
-            <span>{t('footer_server_fast_safe', 'Server Cepat & Aman')}</span>
-            <span>•</span>
-            <span className="text-[#66000E] font-bold">LapakQ v2.4</span>
+          {/* Kontak bantuan */}
+          <div className="md:col-span-3 space-y-3">
+            <p className="font-bold text-xs uppercase tracking-wider">{t('footer_col_contact', 'Kontak')}</p>
+            <p className="text-[13px] text-[#6B6260]">
+              {t('footer_contact_desc', 'Ada pertanyaan? Kirim email ke kami.')}
+            </p>
+            <a
+              href={supportMailtoLink(t('footer_email_subject', 'Bantuan LapakQ'))}
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#66000E] hover:text-[#801010] transition-colors break-all"
+            >
+              <Mail className="w-3.5 h-3.5 shrink-0" />
+              <span>{SUPPORT_EMAIL}</span>
+            </a>
           </div>
         </div>
 
+        <p className="pt-6 sm:pt-8 text-xs text-[#6B6260] text-center sm:text-left">
+          {t('footer_copyright', '© 2026 LapakQ. Dibuat untuk UMKM Indonesia.')}
+        </p>
       </div>
     </footer>
   );

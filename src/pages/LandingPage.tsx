@@ -75,10 +75,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <FAQSection />
 
         {/* Footer */}
-        <LandingFooter
-          onNavigateLogin={onNavigateLogin}
-          onNavigateRegister={onNavigateRegister}
-        />
+        <LandingFooter />
 
         {/* Mobile Bottom Navigation with real-time scroll tracking and smooth jump */}
         <LandingBottomNav
