@@ -15,12 +15,15 @@ interface RegisterPageProps {
   onNavigateLogin: () => void;
   onNavigateLanding?: () => void;
   onSuccess: (registeredEmail?: string) => void;
+  /** Nama toko awal, misalnya yang sudah diketik pengunjung di hero landing page. */
+  initialStoreName?: string;
 }
 
 export const RegisterPage: React.FC<RegisterPageProps> = ({
   onNavigateLogin,
   onNavigateLanding,
   onSuccess,
+  initialStoreName = '',
 }) => {
   const { register, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
@@ -31,7 +34,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [storeName, setStoreName] = useState('');
+  const [storeName, setStoreName] = useState(initialStoreName);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);

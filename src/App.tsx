@@ -124,6 +124,8 @@ export default function App() {
 
   // State: Authentication View
   const [authView, setAuthView] = useState<'login' | 'register' | 'forgot_password' | null>(null);
+  // Nama toko yang diketik di hero landing, dipakai sebagai isian awal form daftar.
+  const [pendingStoreName, setPendingStoreName] = useState('');
   const [registeredEmailForLogin, setRegisteredEmailForLogin] = useState<string>('');
 
   useEffect(() => {
@@ -1481,6 +1483,11 @@ export default function App() {
             setAuthView('login');
           }}
           onNavigateRegister={() => {
+            setPendingStoreName('');
+            setAuthView('register');
+          }}
+          onRegisterWithStoreName={(storeName) => {
+            setPendingStoreName(storeName);
             setAuthView('register');
           }}
           onNavigateDashboard={() => {
@@ -1505,6 +1512,7 @@ export default function App() {
     return (
       <>
         <RegisterPage
+          initialStoreName={pendingStoreName}
           onSuccess={(registeredEmail) => {
             if (registeredEmail) {
               setRegisteredEmailForLogin(registeredEmail);

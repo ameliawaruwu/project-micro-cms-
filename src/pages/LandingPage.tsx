@@ -13,6 +13,8 @@ import { scrollToLandingSection } from '../utils/scroll';
 interface LandingPageProps {
   onNavigateLogin: () => void;
   onNavigateRegister: () => void;
+  /** Membuka halaman daftar dengan nama toko yang diketik di hero. */
+  onRegisterWithStoreName?: (storeName: string) => void;
   onNavigateDashboard?: () => void;
   onLaunchDemo: () => void;
   onViewStorefrontDemo: () => void;
@@ -22,6 +24,7 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({
   onNavigateLogin,
   onNavigateRegister,
+  onRegisterWithStoreName,
   onNavigateDashboard,
   onLaunchDemo,
   onViewStorefrontDemo,
@@ -49,6 +52,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* 1. Beranda / Hero Section */}
         <LandingHero
           onNavigateRegister={onNavigateRegister}
+          onRegisterWithStoreName={onRegisterWithStoreName}
           onNavigateLogin={onNavigateLogin}
           onLaunchDemo={onLaunchDemo}
           onScrollToHowItWorks={scrollToHowItWorks}
