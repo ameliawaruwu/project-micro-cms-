@@ -1,7 +1,8 @@
 import React, { useId, useRef, useState } from 'react';
 import { motion, useScroll, useTransform, type MotionValue } from 'motion/react';
-import { ArrowRight, Store } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { DEFAULT_LOGO_ICON_URL, usePlatformLogo } from '../../services/platformLogoService';
 import { EASE_SMOOTH, WordReveal, fadeUp, stagger, usePointerParallax } from './landingMotion';
 
 interface LandingHeroProps {
@@ -78,6 +79,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
   const inputId = useId();
   const hintId = useId();
   const pointer = usePointerParallax();
+  // Ikon LapakQ yang sama dengan logo navbar (bisa diganti super admin).
+  const logoIconSrc = usePlatformLogo().logoIconUrl || DEFAULT_LOGO_ICON_URL;
 
   const [storeName, setStoreName] = useState('');
   const slug = toStoreSlug(storeName);
@@ -115,7 +118,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             variants={fadeUp}
             className="inline-flex items-center gap-2 rounded-full bg-[#F5E8EA] px-3 py-1.5 text-xs font-semibold text-[#800C19]"
           >
-            <Store className="w-3.5 h-3.5" />
+            <img src={logoIconSrc} alt="" aria-hidden="true" className="w-4 h-4 object-contain" />
             {t('hero_umkm_badge', 'Solusi Toko Online UMKM')}
           </motion.span>
 
@@ -143,7 +146,12 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               {t('hero_store_input_label', 'Nama toko')}
             </label>
             <div className="flex items-center gap-2 rounded-full bg-white p-1.5 pl-5 border border-[#E4DCDC] shadow-[0_18px_40px_-20px_rgba(102,0,14,0.35)] focus-within:border-[#800C19] focus-within:ring-4 focus-within:ring-[#800C19]/10 transition-all">
-              <Store className="hidden sm:block w-4 h-4 shrink-0 text-[#B5A9A6]" aria-hidden="true" />
+              <img
+                src={logoIconSrc}
+                alt=""
+                aria-hidden="true"
+                className="hidden sm:block w-5 h-5 shrink-0 object-contain"
+              />
               <input
                 id={inputId}
                 type="text"
