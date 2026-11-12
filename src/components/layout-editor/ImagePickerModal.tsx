@@ -239,7 +239,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                       onClick={() => setSelectedCategory(cat.category)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer ${
                         isSelected
-                          ? 'bg-[#66000E] text-white shadow-2xs'
+                          ? 'bg-brand text-white shadow-2xs'
                           : 'bg-[#FAF7F7] border border-[#E5E0DD] text-[#5A5250] hover:bg-[#EBE5E1]'
                       }`}
                     >
@@ -322,7 +322,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                   <button
                     type="button"
                     onClick={handleApplyUrl}
-                    className="px-4 py-2 bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl transition cursor-pointer"
                   >
                     Gunakan
                   </button>

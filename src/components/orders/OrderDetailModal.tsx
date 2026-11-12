@@ -346,7 +346,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 type="button"
                 disabled={isConfirmingCod}
                 onClick={handleConfirmCod}
-                className="w-full sm:w-auto justify-center px-5 py-2.5 min-h-[42px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs flex items-center gap-1.5 transition cursor-pointer active:scale-98 disabled:opacity-70"
+                className="w-full sm:w-auto justify-center px-5 py-2.5 min-h-[42px] rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs shadow-2xs flex items-center gap-1.5 transition cursor-pointer active:scale-98 disabled:opacity-70"
               >
                 {isConfirmingCod ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                 <span>{t('confirm_order', 'Konfirmasi Pesanan')}</span>
@@ -357,7 +357,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   onClose();
                   onProcessShipping(order);
                 }}
-                className="w-full sm:w-auto justify-center px-5 py-2.5 min-h-[42px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs flex items-center gap-1.5 transition cursor-pointer active:scale-98"
+                className="w-full sm:w-auto justify-center px-5 py-2.5 min-h-[42px] rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs shadow-2xs flex items-center gap-1.5 transition cursor-pointer active:scale-98"
               >
                 <Send className="w-4 h-4" />
                 <span>{t('order_btn_process_shipping', 'Proses Pengiriman')}</span>

@@ -320,7 +320,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                 type="submit"
                 id="register-submit-button"
                 disabled={isSubmitting || isGoogleSubmitting}
-                className="w-full h-12 rounded-full bg-[#66000E] hover:bg-[#801010] text-white font-medium text-sm sm:text-base shadow-[0_8px_20px_rgba(102,0,14,0.25)] hover:shadow-[0_10px_25px_rgba(102,0,14,0.35)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                className="w-full h-12 rounded-full bg-brand hover:bg-brand-hover text-white font-medium text-sm sm:text-base shadow-[0_8px_20px_rgba(102,0,14,0.25)] hover:shadow-[0_10px_25px_rgba(102,0,14,0.35)] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
               >
                 {isSubmitting ? (
                   <>

@@ -365,7 +365,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
             <button
               type="submit"
               disabled={isSaving}
-              className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#800012] text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-75"
+              className="px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-75"
             >
               {isSaving ? (
                 <>

@@ -593,7 +593,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             href={store.customDomain ? `https://${store.customDomain}` : storeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-semibold shadow-xs transition cursor-pointer"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             <span>{t('open_store_browser', 'Buka Toko di Browser')}</span>
@@ -963,7 +963,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="pt-3.5 border-t border-[#EAEAEA] flex justify-end">
               <button
                 type="submit"
-                className="px-5 py-2 min-h-[38px] rounded-lg bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs flex items-center gap-2 shadow-xs transition cursor-pointer"
+                className="px-5 py-2 min-h-[38px] rounded-lg bg-brand hover:bg-brand-hover text-white font-semibold text-xs flex items-center gap-2 shadow-xs transition cursor-pointer"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>{isNewStore ? t('btn_create_store_now', 'Buat Toko Sekarang') : t('btn_save_settings', 'Simpan Pengaturan')}</span>

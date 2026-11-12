@@ -144,7 +144,7 @@ export const StoreDomainPanel: React.FC<StoreDomainPanelProps> = ({ store, curre
             type="button"
             onClick={() => save(hostname)}
             disabled={saving || !hostname || hostname === currentDomain}
-            className="h-8 px-3.5 rounded-md bg-[#66000E] hover:bg-[#4d000a] text-white font-semibold flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+            className="h-8 px-3.5 rounded-md bg-brand hover:bg-brand-hover text-white font-semibold flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
           >
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             {isEn ? 'Save' : 'Simpan'}

@@ -298,7 +298,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                           className={`w-full py-2 rounded-lg font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-1 ${isCurrent
                               ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-[#E5E0DD]'
                               : plan.highlight
-                                ? 'bg-[#66000E] hover:bg-[#52000B] text-white shadow-xs'
+                                ? 'bg-brand hover:bg-brand-hover text-white shadow-xs'
                                 : 'bg-white hover:bg-gray-50 text-gray-800 border border-[#E5E0DD]'
                             }`}
                         >
@@ -410,7 +410,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                   type="button"
                   disabled={isProcessing}
                   onClick={() => handleConfirmUpgrade(selectedPlan.id)}
-                  className="w-full py-2.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 rounded-lg bg-brand hover:bg-brand-hover text-white text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{isProcessing ? 'Memverifikasi Pembayaran...' : 'Konfirmasi Bayar Lunas (Midtrans)'}</span>

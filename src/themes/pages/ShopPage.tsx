@@ -540,7 +540,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleBuyNow(e, p)}
-                        className="flex-1 min-w-0 py-2.5 px-2 bg-[#241A1A] hover:bg-[#66000E] text-white font-sans text-[10px] sm:text-xs uppercase tracking-[0.1em] sm:tracking-[0.15em] whitespace-nowrap truncate transition-colors cursor-pointer"
+                        className="flex-1 min-w-0 py-2.5 px-2 bg-[#241A1A] hover:bg-brand text-white font-sans text-[10px] sm:text-xs uppercase tracking-[0.1em] sm:tracking-[0.15em] whitespace-nowrap truncate transition-colors cursor-pointer"
                       >
                         Beli<span className={rc("hidden sm:inline")}> Sekarang</span>
                       </button>

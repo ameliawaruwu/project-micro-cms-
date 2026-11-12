@@ -215,7 +215,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold text-xs shadow-2xs transition cursor-pointer relative ${
                 isBrandStyle
                   ? 'bg-white text-[#241A1A] hover:bg-white/90'
-                  : 'bg-[#66000E] text-white hover:bg-[#801010]'
+                  : 'bg-brand text-white hover:bg-brand-hover'
               }`}
               style={!isBrandStyle ? { backgroundColor: primaryAccent } : undefined}
               title="Buka Keranjang Belanja"
@@ -322,7 +322,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
               selectedCategory === 'all'
                 ? isBrandStyle
                   ? 'bg-white text-[#66000E] shadow-2xs font-bold'
-                  : 'bg-[#66000E] text-white shadow-2xs'
+                  : 'bg-brand text-white shadow-2xs'
                 : isBrandStyle
                 ? 'text-white/80 hover:bg-white/10'
                 : 'text-[#555555] hover:bg-[#F7F7F7] hover:text-[#1F1F1F]'
@@ -339,7 +339,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
                 selectedCategory === cat
                   ? isBrandStyle
                     ? 'bg-white text-[#66000E] shadow-2xs font-bold'
-                    : 'bg-[#66000E] text-white shadow-2xs'
+                    : 'bg-brand text-white shadow-2xs'
                   : isBrandStyle
                   ? 'text-white/80 hover:bg-white/10'
                   : 'text-[#555555] hover:bg-[#F7F7F7] hover:text-[#1F1F1F]'

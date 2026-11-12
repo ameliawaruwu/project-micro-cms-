@@ -553,7 +553,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             <button
               type="button"
               onClick={() => setIsCreateModalOpen(true)}
-              className="px-3.5 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <UserCheck className="w-4 h-4" />
               <span>Tambah Komunitas</span>
@@ -583,7 +583,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             <button
               type="button"
               onClick={() => setIsCreateModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
             >
               <UserCheck className="w-4 h-4" />
               <span>Tambah Komunitas</span>
@@ -676,7 +676,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           onClick={() => setActiveSubTab('overview')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
             activeSubTab === 'overview'
-              ? 'bg-[#66000E] text-white shadow-xs'
+              ? 'bg-brand text-white shadow-xs'
               : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
@@ -689,7 +689,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           onClick={() => setActiveSubTab('merchants')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
             activeSubTab === 'merchants'
-              ? 'bg-[#66000E] text-white shadow-xs'
+              ? 'bg-brand text-white shadow-xs'
               : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
@@ -702,7 +702,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           onClick={() => setActiveSubTab('invoices')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
             activeSubTab === 'invoices'
-              ? 'bg-[#66000E] text-white shadow-xs'
+              ? 'bg-brand text-white shadow-xs'
               : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
@@ -913,7 +913,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             <button
               type="button"
               onClick={() => setIsAssignModalOpen(true)}
-              className="px-4 py-2 bg-[#66000E] hover:bg-[#55000C] text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-xs shrink-0"
+              className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-xs shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span>Tautkan Toko ke {activeCommunity.name}</span>
@@ -1120,7 +1120,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                         <button
                           type="button"
                           onClick={() => handleMarkPaid(inv.id)}
-                          className="px-3 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
+                          className="px-3 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
                         >
                           Tandai Lunas
                         </button>
@@ -1390,7 +1390,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmittingCreate}
-                  className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <UserCheck className="w-4 h-4" />
                   <span>{isSubmittingCreate ? 'Menyimpan...' : 'Daftarkan Sub-Admin'}</span>
@@ -1457,7 +1457,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 type="button"
                 disabled={!selectedStoreToAssign}
                 onClick={handleAssignStore}
-                className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#55000C] text-white text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold transition cursor-pointer disabled:opacity-50"
               >
                 Tautkan Toko
               </button>
@@ -1759,7 +1759,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmittingEdit}
-                  className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
                   <span>{isSubmittingEdit ? 'Menyimpan...' : 'Simpan Perubahan'}</span>

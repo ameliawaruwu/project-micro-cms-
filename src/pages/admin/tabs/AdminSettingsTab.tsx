@@ -148,7 +148,7 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
         <button
           type="submit"
           disabled={isSaving}
-          className="px-3.5 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-medium text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+          className="px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-white font-medium text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5 shrink-0 disabled:opacity-50"
         >
           {isSaving ? (
             <>

@@ -157,7 +157,7 @@ export const StoreNotFoundPage: React.FC<StoreNotFoundPageProps> = ({
                   <button
                     type="button"
                     onClick={onGoToAdmin}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#66000E] hover:bg-[#55000C] text-white text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full px-4 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Home className="w-3.5 h-3.5 text-amber-200" />
                     <span>Kembali ke Admin Panel</span>

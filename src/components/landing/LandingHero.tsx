@@ -166,7 +166,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               <motion.button
                 type="submit"
                 whileTap={{ scale: 0.96 }}
-                className="group shrink-0 inline-flex items-center gap-1.5 h-11 px-4 sm:px-6 rounded-full bg-[#800C19] hover:bg-[#66000E] text-white text-sm font-medium transition-colors cursor-pointer"
+                className="group shrink-0 inline-flex items-center gap-1.5 h-11 px-4 sm:px-6 rounded-full bg-brand hover:bg-brand-hover text-white text-sm font-medium transition-colors cursor-pointer"
               >
                 <span className="hidden sm:inline">{t('hero_store_submit', 'Buat Toko')}</span>
                 <span className="sm:hidden">{t('hero_store_submit_short', 'Mulai')}</span>

@@ -63,7 +63,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
             </button>
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs shadow-xs transition cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Cetak Label Thermal</span>
@@ -141,7 +141,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
       <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
         <button
           onClick={handlePrintLabel}
-          className="w-full sm:flex-1 py-2.5 px-3.5 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+          className="w-full sm:flex-1 py-2.5 px-3.5 rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           <span>Cetak Label Pengiriman (PDF)</span>

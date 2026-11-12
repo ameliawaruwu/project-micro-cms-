@@ -105,7 +105,7 @@ export const AdminPlansTab: React.FC<AdminPlansTabProps> = ({
           <button
             type="button"
             onClick={handleOpenCreatePlan}
-            className="px-3 py-1.5 rounded-md bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+            className="px-3 py-1.5 rounded-md bg-brand hover:bg-brand-hover text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{isEn ? 'Add New Plan' : 'Tambah Paket Baru'}</span>

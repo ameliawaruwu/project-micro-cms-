@@ -229,7 +229,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                 role="switch"
                 aria-checked={isConnected}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  isConnected ? 'bg-[#66000E]' : 'bg-slate-200'
+                  isConnected ? 'bg-brand' : 'bg-slate-200'
                 } ${isLocked ? 'opacity-80' : ''}`}
                 title={isLocked ? (isEn ? 'Locked (Free Plan)' : 'Terkunci (Paket Free)') : undefined}
               >
@@ -434,7 +434,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                         role="switch"
                         aria-checked={autoInsurance}
                         className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          autoInsurance ? 'bg-[#66000E]' : 'bg-slate-200'
+                          autoInsurance ? 'bg-brand' : 'bg-slate-200'
                         }`}
                       >
                         <span
@@ -457,7 +457,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2.5 min-h-[40px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+                      className="px-5 py-2.5 min-h-[40px] rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-semibold shadow-xs transition cursor-pointer"
                     >
                       {t('btn_save_settings', 'Simpan Pengaturan')}
                     </button>
@@ -502,7 +502,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2.5 min-h-[40px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+                      className="px-5 py-2.5 min-h-[40px] rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-semibold shadow-xs transition cursor-pointer"
                     >
                       Simpan Kredensial
                     </button>

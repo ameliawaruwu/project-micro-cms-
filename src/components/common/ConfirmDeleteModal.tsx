@@ -86,7 +86,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
             type="button"
             onClick={onConfirm}
             disabled={isDeleting}
-            className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-[#66000E] hover:bg-[#52000B] active:scale-[0.98] text-white text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-60 min-h-[44px]"
+            className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-brand hover:bg-brand-hover active:scale-[0.98] text-white text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-60 min-h-[44px]"
           >
             {isDeleting ? (
               <>

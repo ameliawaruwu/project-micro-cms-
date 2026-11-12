@@ -51,7 +51,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             )}
             <button
               onClick={this.handleReload}
-              className="inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl bg-[#66000E] text-white font-medium text-sm hover:bg-[#801010] transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl bg-brand text-white font-medium text-sm hover:bg-brand-hover transition-colors cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" />
               <span>Muat Ulang Halaman</span>

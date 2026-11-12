@@ -232,7 +232,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               href={generateTrackingLink(order.courier, order.resiNumber)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-[10px] sm:text-[11px] transition cursor-pointer active:scale-98"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand hover:bg-brand-hover text-white font-semibold text-[10px] sm:text-[11px] transition cursor-pointer active:scale-98"
             >
               <ExternalLink className="w-3 h-3" />
               <span>{t('check_tracking', 'Lacak')}</span>
@@ -335,7 +335,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             <button
               onClick={handleConfirmCod}
               disabled={isConfirming}
-              className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98 disabled:opacity-70"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98 disabled:opacity-70"
             >
               {isConfirming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
               <span>{t('confirm_order', 'Konfirmasi Pesanan')}</span>
@@ -343,7 +343,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           ) : nextAction === 'ship' ? (
             <button
               onClick={() => onProcessShipping(order)}
-              className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{t('arrange_shipping', 'Atur Pengiriman')}</span>

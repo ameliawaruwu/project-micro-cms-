@@ -416,7 +416,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
           onClick={handleSaveAll}
           className={`shrink-0 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer shadow-sm ${
             hasUnsavedChanges
-              ? 'bg-[#66000E] hover:bg-[#55000C] text-white ring-2 ring-[#66000E]/30 animate-pulse'
+              ? 'bg-brand hover:bg-brand-hover text-white ring-2 ring-[#66000E]/30 animate-pulse'
               : 'bg-[#241A1A] hover:bg-black text-white'
           } disabled:opacity-50`}
         >
@@ -723,7 +723,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               role="switch"
               aria-checked={isMasterActive && activeGatewayCount > 0}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                isMasterActive && activeGatewayCount > 0 ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
+                isMasterActive && activeGatewayCount > 0 ? 'bg-brand' : 'bg-[#D1C9C5]'
               }`}
               title={
                 isMasterActive
@@ -819,7 +819,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                         role="switch"
                         aria-checked={isChannelActive}
                         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          isChannelActive ? 'bg-[#66000E]' : 'bg-[#D1C9C5]'
+                          isChannelActive ? 'bg-brand' : 'bg-[#D1C9C5]'
                         }`}
                       >
                           <span

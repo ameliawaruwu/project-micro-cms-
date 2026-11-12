@@ -167,7 +167,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
             {isAuthenticated ? (
               <button
                 onClick={onNavigateDashboard}
-                className="min-h-[42px] px-4 py-2 rounded-xl text-[14px] font-semibold text-white bg-[#66000E] hover:bg-[#801010] transition-colors cursor-pointer border border-[#66000E]"
+                className="min-h-[42px] px-4 py-2 rounded-xl text-[14px] font-semibold text-white bg-brand hover:bg-brand-hover transition-colors cursor-pointer border border-brand"
               >
                 {t('landing_dashboard', 'Ke Dashboard')}
               </button>
@@ -247,7 +247,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
                   setMobileMenuOpen(false);
                   onNavigateRegister();
                 }}
-                className="w-full h-[48px] py-2.5 px-4 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-medium text-[15px] shadow-sm flex items-center justify-center gap-2 transition cursor-pointer active:scale-[0.97]"
+                className="w-full h-[48px] py-2.5 px-4 rounded-xl bg-brand hover:bg-brand-hover text-white font-medium text-[15px] shadow-sm flex items-center justify-center gap-2 transition cursor-pointer active:scale-[0.97]"
               >
                 <span>{t('landing_start_free', 'Mulai Gratis')}</span>
                 <ArrowRight className="w-4 h-4 text-white" />
