@@ -23,7 +23,7 @@ export const LandingFooter: React.FC = () => {
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 lg:gap-10 pb-10 border-b border-[#E6DDDA]">
           {/* Logo & deskripsi singkat */}
-          <div className="sm:col-span-2 md:col-span-6 space-y-3.5">
+          <div className="sm:col-span-2 md:col-span-4 space-y-3.5">
             <button
               type="button"
               onClick={() => scrollToLandingSection('hero', 0)}
@@ -37,10 +37,10 @@ export const LandingFooter: React.FC = () => {
             </p>
           </div>
 
-          {/* Menu halaman */}
-          <nav className="md:col-span-3 space-y-3" aria-label={t('footer_col_menu', 'Menu')}>
+          {/* Menu halaman, dibagi beberapa kolom agar footer terisi penuh */}
+          <nav className="md:col-span-5 space-y-3" aria-label={t('footer_col_menu', 'Menu')}>
             <p className="font-bold text-xs uppercase tracking-wider">{t('footer_col_menu', 'Menu')}</p>
-            <ul className="space-y-2 text-[13px]">
+            <ul className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-[13px]">
               {menuItems.map((item) => (
                 <li key={item.id}>
                   <button
