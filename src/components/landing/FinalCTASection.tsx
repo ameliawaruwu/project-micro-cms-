@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Sparkles,
   CheckCircle2,
-  MessageCircle,
   Package,
   ShoppingBag,
   TrendingUp,
@@ -12,7 +11,6 @@ import {
   Check,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { adminWhatsAppLink } from '../../config/contact';
 import { CountUp, Reveal } from './landingMotion';
 
 interface FinalCTASectionProps {
@@ -78,16 +76,6 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
                   <ArrowRight className="w-3.5 h-3.5 text-[#66000E] group-hover:translate-x-0.5 transition-transform duration-150" />
                 </motion.button>
 
-                {/* WhatsApp Secondary Button */}
-                <a
-                  href={adminWhatsAppLink('Halo Admin LapakQ, saya tertarik buka toko online')}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-normal text-xs sm:text-sm border border-white/20 active:scale-[0.98] transition-all duration-150 cursor-pointer"
-                >
-                  <MessageCircle className="w-3.5 h-3.5 text-white/90 group-hover:text-emerald-300 transition-colors" />
-                  <span>{t('cta_btn_whatsapp_consult', 'Konsultasi WhatsApp')}</span>
-                </a>
 
               </div>
 
@@ -109,11 +97,11 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
             {/* RIGHT COLUMN: Interactive Product Preview Card */}
             <div className="lg:col-span-5 w-full flex flex-col items-center justify-center relative mt-2 lg:mt-0">
               
-              <div className="relative w-full max-w-[340px] sm:max-w-[360px]">
+              <div className="relative w-full max-w-[340px] sm:max-w-[360px] pt-10">
                 
                 {/* FLOATING NOTIFICATION (Top Right) */}
                 <div 
-                  className="absolute -top-3.5 -right-2 sm:-right-4 z-20 bg-white text-[#241A1A] rounded-xl px-3 py-2 shadow-lg border border-[#E6DDDA] flex items-center gap-2.5 text-xs animate-bounce-gentle"
+                  className="absolute top-0 right-2 sm:-right-3 z-20 bg-white text-[#241A1A] rounded-xl px-3 py-2 shadow-lg border border-[#E6DDDA] flex items-center gap-2.5 text-xs animate-bounce-gentle"
                 >
                   <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold shrink-0">
                     <Check className="w-3.5 h-3.5 stroke-[2.5]" />

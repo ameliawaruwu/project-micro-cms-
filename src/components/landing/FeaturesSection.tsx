@@ -1,355 +1,190 @@
-import React, { useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import React from 'react';
+import { motion } from 'motion/react';
 import {
   Package,
   ClipboardList,
   CreditCard,
   Store,
-  Sparkles,
-  CheckCircle2,
-  Printer,
-  Share2,
+  TrendingUp,
   Truck,
   QrCode,
   Smartphone,
   ExternalLink,
-  ChevronRight,
 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { Reveal, swapPanel, useAutoAdvance } from './landingMotion';
+import { EASE_SMOOTH, Reveal, RevealGroup, RevealItem } from './landingMotion';
 
-const FEATURE_IDS = ['produk', 'pesanan', 'pembayaran', 'toko'] as const;
-type FeatureId = (typeof FEATURE_IDS)[number];
+/** Tinggi batang grafik pesanan mingguan (persen), murni ilustrasi. */
+const ORDER_BARS = [38, 55, 46, 72, 60, 88, 100];
 
 export const FeaturesSection: React.FC = () => {
   const { t } = useLanguage();
-  const [activeFeature, setActiveFeature] = useState<FeatureId>('produk');
-  const autoplay = useAutoAdvance(FEATURE_IDS, activeFeature, setActiveFeature);
-
-  const pickFeature = (id: FeatureId) => {
-    autoplay.stop();
-    setActiveFeature(id);
-  };
-
-  const featureTabs = [
-    {
-      id: 'produk' as const,
-      title: t('features_tab_product_title', 'Produk'),
-      subtitle: t('features_tab_product_sub', 'Atur harga dan stok dengan mudah.'),
-      icon: Package,
-      badge: t('features_tab_product_badge', 'Katalog Cepat'),
-    },
-    {
-      id: 'pesanan' as const,
-      title: t('features_tab_order_title', 'Pesanan'),
-      subtitle: t('features_tab_order_sub', 'Proses order dan cetak resi otomatis.'),
-      icon: ClipboardList,
-      badge: t('features_tab_order_badge', 'Auto Resi'),
-    },
-    {
-      id: 'pembayaran' as const,
-      title: t('features_tab_pay_title', 'Pembayaran'),
-      subtitle: t('features_tab_pay_sub', 'Terima QRIS dan transfer bank langsung.'),
-      icon: CreditCard,
-      badge: t('features_tab_pay_badge', 'QRIS & Bank'),
-    },
-    {
-      id: 'toko' as const,
-      title: t('features_tab_store_title', 'Toko Online'),
-      subtitle: t('features_tab_store_sub', 'Etalase toko modern siap disebar ke WhatsApp.'),
-      icon: Store,
-      badge: t('features_tab_store_badge', 'Link Bio Siap'),
-    },
-  ];
 
   return (
     <section
       id="fitur"
-      ref={autoplay.ref}
-      className="min-h-[calc(100svh-124px)] min-h-[calc(100dvh-124px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center py-6 sm:py-8 lg:py-4 xl:py-8 bg-[#FAF7F7] scroll-mt-16 sm:scroll-mt-20 border-b border-[#E8DDDE] font-sans relative"
+      className="relative bg-[#FAF7F7] py-16 sm:py-20 lg:py-24 scroll-mt-16 sm:scroll-mt-20 font-sans"
     >
-      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        
-        {/* Section Header */}
-        <Reveal className="text-center max-w-2xl mx-auto mb-3 sm:mb-4 lg:mb-4">
-          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-medium mb-1.5 shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-[#66000E]" />
-            <span>{t('features_section_badge', 'Fitur Lengkap')}</span>
-          </div>
-          <h2 className="text-lg sm:text-2xl lg:text-2xl font-semibold text-[#241A1A] tracking-tight leading-snug">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+        <Reveal className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#800C19]">
+            {t('features_section_badge', 'Fitur Lengkap')}
+          </span>
+          <h2 className="mt-3 text-2xl sm:text-4xl lg:text-[44px] font-medium tracking-tight leading-[1.1] text-[#1A1414]">
             {t('features_section_title', 'Semua yang Dibutuhkan untuk Jualan')}
           </h2>
+          <p className="mt-3 text-sm sm:text-base text-[#5F5652]">
+            {t('features_section_desc', 'Satu dashboard terpadu untuk mengelola seluruh operasional toko.')}
+          </p>
         </Reveal>
 
-        {/* Mobile Feature Selector Tabs (Only on Mobile < lg) */}
-        <div className="lg:hidden grid grid-cols-2 gap-2 mb-3">
-          {featureTabs.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeFeature === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => pickFeature(item.id)}
-                className={`p-2 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
-                  isActive
-                    ? 'bg-[#66000E] text-white border-[#66000E] shadow-xs'
-                    : 'bg-white text-[#241A1A] border-[#E8DDDE]'
-                }`}
-              >
-                <div
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-[#F5E8EA] text-[#66000E]'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
+        <RevealGroup className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
+          {/* Produk: kotak statistik berwarna */}
+          <RevealItem className="lg:col-span-7">
+            <FeatureCard
+              icon={Package}
+              title={t('features_tab_products', 'Produk')}
+              desc={t('features_tab_products_sub', 'Atur harga dan stok dengan mudah.')}
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-[#F7C948] p-4 text-[#1A1414]">
+                  <p className="text-[11px] font-medium text-[#1A1414]/65">{t('features_top_seller', 'Produk Terlaris')}</p>
+                  <p className="mt-1 text-3xl sm:text-4xl font-semibold tracking-tight">+42</p>
+                  <p className="mt-1 text-xs text-[#1A1414]/70">{t('features_sold_count', 'terjual minggu ini')}</p>
                 </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-xs truncate leading-tight">{item.title}</p>
-                  <p className={`text-[10px] truncate ${isActive ? 'text-white/80' : 'text-[#857C76]'}`}>{item.badge}</p>
+                <div className="rounded-2xl bg-[#FFC2D1] p-4 text-[#1A1414]">
+                  <p className="text-[11px] font-medium text-[#1A1414]/65">{t('features_stock_warning', 'Peringatan Stok')}</p>
+                  <p className="mt-1 text-3xl sm:text-4xl font-semibold tracking-tight">3 pcs</p>
+                  <p className="mt-1 text-xs text-[#1A1414]/70">{t('features_restock_soon', 'Segera restok')}</p>
                 </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 2-Column: Left feature selector + Right live UI view */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-center max-w-[1100px] xl:max-w-6xl mx-auto">
-          
-          {/* Left Column: 4 Feature Switcher Cards (Desktop Only) */}
-          <Reveal className="hidden lg:block lg:col-span-5 space-y-1.5 lg:space-y-2">
-            {featureTabs.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeFeature === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => pickFeature(item.id)}
-                  className={`relative overflow-hidden w-full p-2.5 sm:p-3 lg:p-2.5 xl:p-3 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 ${
-                    isActive
-                      ? 'bg-white border-[#66000E] shadow-sm ring-1 ring-[#66000E]'
-                      : 'bg-white/60 border-[#E8DDDE] hover:bg-white hover:border-[#66000E]/40'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`w-8.5 h-8.5 lg:w-9 lg:h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                        isActive
-                          ? 'bg-[#66000E] text-white shadow-xs'
-                          : 'bg-[#F5E8EA] text-[#66000E]'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 lg:w-4.5 lg:h-4.5" />
-                    </div>
-
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-xs sm:text-sm lg:text-sm xl:text-base text-[#241A1A]">
-                        {item.title}
-                      </h3>
-                      <p className="text-[11px] lg:text-xs text-[#5F5652] truncate mt-0.5">
-                        {item.subtitle}
-                      </p>
-                    </div>
-                  </div>
-
-                  <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${isActive ? 'text-[#66000E] translate-x-0.5' : 'text-[#857C76]'}`} />
-
-                  {/* Bilah waktu putar-otomatis pada fitur aktif */}
-                  {isActive && autoplay.running && (
-                    <motion.span
-                      key={`timer-${item.id}`}
-                      className="absolute bottom-0 left-0 h-0.5 bg-[#66000E]"
-                      initial={{ width: '0%' }}
-                      animate={{ width: '100%' }}
-                      transition={{ duration: 5, ease: 'linear' }}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </Reveal>
-
-          {/* Right Column: Single Interactive Visual Display based on active feature */}
-          <Reveal className="lg:col-span-7" delay={0.15}>
-            <div className="p-3.5 sm:p-4 lg:p-4.5 xl:p-5 rounded-2xl bg-white border border-[#E8DDDE] shadow-md min-h-[270px] sm:min-h-[290px] lg:min-h-[290px] flex flex-col justify-between text-[#241A1A] overflow-hidden">
-
-              <AnimatePresence mode="wait" initial={false}>
-              {/* Feature 1: Produk */}
-              {activeFeature === 'produk' && (
-                <motion.div key="produk" {...swapPanel} className="space-y-2.5 sm:space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#E8DDDE]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold text-xs">
-                        <Package className="w-4 h-4" />
-                      </div>
-                      <span className="font-bold text-xs sm:text-sm">{t('features_prod_card_title', 'Katalog & Stok Otomatis')}</span>
-                    </div>
-                    <span className="text-[11px] sm:text-xs font-semibold text-[#66000E]">{t('features_prod_sync_tag', 'Sinkron Real-time')}</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE]">
-                      <span className="text-[9px] sm:text-[10px] text-[#857C76]">{t('features_prod_best_seller', 'Produk Terlaris')}</span>
-                      <p className="font-bold text-xs sm:text-sm text-[#241A1A] mt-0.5">Batik Parang Pekalongan</p>
-                      <p className="text-xs font-bold text-[#66000E] mt-0.5">Rp 350.000</p>
-                      <span className="text-[9px] text-emerald-800 font-semibold mt-0.5 inline-block">
-                        {t('features_prod_sold_week', '✓ 42 terjual minggu ini')}
-                      </span>
-                    </div>
-
-                    <div className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE]">
-                      <span className="text-[9px] sm:text-[10px] text-[#857C76]">{t('features_prod_stock_alert', 'Peringatan Stok')}</span>
-                      <p className="font-bold text-xs sm:text-sm text-[#241A1A] mt-0.5">Kemeja Tenun Solo</p>
-                      <p className="text-xs font-bold text-[#66000E] mt-0.5">Rp 225.000</p>
-                      <span className="text-[9px] text-amber-800 font-semibold mt-0.5 inline-block">
-                        {t('features_prod_stock_warning', '⚠️ Sisa 3 pcs (Segera restok)')}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-2 sm:p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] flex items-center gap-2 text-[11px] sm:text-xs text-[#241A1A]">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
-                    <span>{t('features_prod_bullet_2', 'Stok berkurang otomatis saat pembeli selesai membayar')}</span>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Feature 2: Pesanan */}
-              {activeFeature === 'pesanan' && (
-                <motion.div key="pesanan" {...swapPanel} className="space-y-2.5 sm:space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#E8DDDE]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold text-xs">
-                        <ClipboardList className="w-4 h-4" />
-                      </div>
-                      <span className="font-bold text-xs sm:text-sm">{t('features_ord_card_title', 'Pesanan & Resi Pengiriman')}</span>
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      {t('hero_dash_ready_ship', 'Siap Kirim')}
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 sm:p-3 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-mono font-bold text-[#857C76]">#ORD-9821</span>
-                        <p className="font-bold text-xs sm:text-sm text-[#241A1A]">Dina Rahayu (Batik Parang x2)</p>
-                      </div>
-                      <span className="font-bold text-xs sm:text-sm text-[#66000E]">Rp 350.000</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] text-[#5F5652] pt-0.5">
-                      <Truck className="w-3.5 h-3.5 text-[#66000E]" />
-                      <span>{t('courier', 'Kurir')}: JNE Regular (Resi: <span className="font-mono font-semibold text-[#241A1A]">JNE-88291039</span>)</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-2 rounded-xl bg-white border border-[#E8DDDE] flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold text-[#241A1A]">
-                      <Printer className="w-3.5 h-3.5 text-[#66000E]" />
-                      <span>{t('features_ord_print_label', 'Cetak Label Alamat 1-Klik')}</span>
-                    </div>
-                    <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold text-emerald-800">
-                      <Share2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{t('features_ord_auto_wa', 'Auto Kirim Resi ke WhatsApp')}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Feature 3: Pembayaran */}
-              {activeFeature === 'pembayaran' && (
-                <motion.div key="pembayaran" {...swapPanel} className="space-y-2.5 sm:space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#E8DDDE]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold text-xs">
-                        <CreditCard className="w-4 h-4" />
-                      </div>
-                      <span className="font-bold text-xs sm:text-sm">{t('features_pay_card_title', 'Pembayaran Otomatis & QRIS')}</span>
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-semibold text-emerald-800">{t('features_pay_instant_paid', 'Lunas Instan')}</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] text-center space-y-1">
-                      <div className="w-8 h-8 rounded-lg bg-white border border-[#E8DDDE] flex items-center justify-center mx-auto text-[#66000E]">
-                        <QrCode className="w-5 h-5" />
-                      </div>
-                      <p className="font-bold text-xs text-[#241A1A]">{t('features_pay_qris_nat', 'QRIS Nasional')}</p>
-                      <p className="text-[9px] sm:text-[10px] text-[#857C76]">BCA, Mandiri, GoPay, OVO</p>
-                    </div>
-
-                    <div className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] text-center space-y-1">
-                      <div className="w-8 h-8 rounded-lg bg-white border border-[#E8DDDE] flex items-center justify-center mx-auto text-[#66000E]">
-                        <CreditCard className="w-5 h-5" />
-                      </div>
-                      <p className="font-bold text-xs text-[#241A1A]">{t('features_pay_va', 'Virtual Account')}</p>
-                      <p className="text-[9px] sm:text-[10px] text-[#857C76]">{t('features_pay_va_desc', 'Transfer bank otomatis terverifikasi')}</p>
-                    </div>
-                  </div>
-
-                  <div className="p-2 sm:p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] flex items-center justify-between text-[11px] sm:text-xs">
-                    <span className="text-[#5F5652]">{t('features_pay_wallet_disb', 'Pencairan Dana Dompet:')}</span>
-                    <span className="font-bold text-[#66000E]">{t('features_pay_disb_anytime', 'Tarik Kapan Saja ke Bank')}</span>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Feature 4: Toko Online */}
-              {activeFeature === 'toko' && (
-                <motion.div key="toko" {...swapPanel} className="space-y-2.5 sm:space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#E8DDDE]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#F5E8EA] text-[#66000E] flex items-center justify-center font-bold text-xs">
-                        <Store className="w-4 h-4" />
-                      </div>
-                      <span className="font-bold text-xs sm:text-sm">{t('features_store_card_title', 'Etalase Toko Siap Pakai')}</span>
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-semibold text-emerald-800">{t('features_store_online_24', 'Online 24 Jam')}</span>
-                  </div>
-
-                  <div className="p-2.5 sm:p-3 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-[#66000E] text-white flex items-center justify-center font-bold text-xs">
-                          K
-                        </div>
-                        <span className="font-bold text-xs text-[#241A1A]">Toko Batik Nusantara</span>
-                      </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
-                        {t('features_store_open_badge', 'Buka')}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg bg-white border border-[#E8DDDE] text-[11px] sm:text-xs font-mono text-[#66000E]">
-                      <span>lapakq.com/tokobatik</span>
-                      <ExternalLink className="w-3.5 h-3.5 text-[#66000E]" />
-                    </div>
-                  </div>
-
-                  <div className="p-2 sm:p-2.5 rounded-xl bg-white border border-[#E8DDDE] flex items-center gap-2 text-[11px] sm:text-xs text-[#5F5652]">
-                    <Smartphone className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
-                    <span>{t('features_store_mobile_note', 'Tampilan ringan dan cepat dibuka dari smartphone pembeli')}</span>
-                  </div>
-                </motion.div>
-              )}
-              </AnimatePresence>
-
-              {/* Bottom Feature Footer */}
-              <div className="pt-2 mt-2 border-t border-[#E8DDDE] flex items-center justify-between text-[11px] sm:text-xs text-[#5F5652]">
-                <span>{t('features_integrated_footer', 'Fitur Terintegrasi LapakQ')}</span>
-                <span className="text-[#66000E] font-semibold">{t('features_free_plan_footer', 'Gratis Tanpa Biaya Langganan')}</span>
               </div>
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[#E4DCDC] p-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-[#1A1414] truncate">Batik Parang Pekalongan</p>
+                  <p className="text-xs text-[#5F5652]">{t('features_sync_realtime', 'Sinkron Real-time')}</p>
+                </div>
+                <span className="shrink-0 text-sm font-semibold text-[#800C19]">Rp 350.000</span>
+              </div>
+            </FeatureCard>
+          </RevealItem>
 
-            </div>
-          </Reveal>
+          {/* Pesanan: grafik batang mingguan */}
+          <RevealItem className="lg:col-span-5">
+            <FeatureCard
+              icon={ClipboardList}
+              title={t('features_tab_orders', 'Pesanan')}
+              desc={t('features_tab_orders_sub', 'Proses order dan cetak resi otomatis.')}
+            >
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1A1414]">128</p>
+                  <p className="text-xs text-[#5F5652]">{t('features_tab_orders', 'Pesanan')} / 7 hari</p>
+                </div>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                  <TrendingUp className="w-3 h-3" /> +62%
+                </span>
+              </div>
+              <div className="mt-4 flex h-24 items-end gap-2" aria-hidden="true">
+                {ORDER_BARS.map((height, i) => (
+                  <motion.span
+                    key={i}
+                    initial={{ height: 0 }}
+                    whileInView={{ height: `${height}%` }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7, delay: i * 0.06, ease: EASE_SMOOTH }}
+                    className={`flex-1 rounded-md ${i === ORDER_BARS.length - 1 ? 'bg-[#800C19]' : 'bg-[#F0E4E5]'}`}
+                  />
+                ))}
+              </div>
+              <div className="mt-3 flex items-center gap-2 text-xs text-[#5F5652]">
+                <Truck className="w-3.5 h-3.5 shrink-0 text-[#800C19]" />
+                <span>{t('features_whatsapp_tracking', 'Auto Kirim Resi ke WhatsApp')}</span>
+              </div>
+            </FeatureCard>
+          </RevealItem>
 
-        </div>
+          {/* Pembayaran */}
+          <RevealItem className="lg:col-span-5">
+            <FeatureCard
+              icon={CreditCard}
+              title={t('features_tab_payments', 'Pembayaran')}
+              desc={t('features_tab_payments_sub', 'Terima QRIS dan transfer bank langsung.')}
+            >
+              <div className="flex items-center gap-4 rounded-2xl bg-[#66000E] p-4 text-white">
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white text-[#66000E]">
+                  <QrCode className="w-8 h-8" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">QRIS &amp; Virtual Account</p>
+                  <p className="text-xs text-white/70">GoPay, OVO, Dana, BCA, Mandiri</p>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                <span className="text-[#5F5652]">{t('features_payout_label', 'Pencairan Dana Dompet:')}</span>
+                <span className="font-semibold text-[#800C19] text-right">
+                  {t('features_payout_anytime', 'Tarik Kapan Saja ke Rekening Bank')}
+                </span>
+              </div>
+            </FeatureCard>
+          </RevealItem>
 
+          {/* Toko Online */}
+          <RevealItem className="lg:col-span-7">
+            <FeatureCard
+              icon={Store}
+              title={t('features_tab_store', 'Toko Online')}
+              desc={t('features_tab_store_sub', 'Etalase toko modern siap disebar ke WhatsApp.')}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-center">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 rounded-xl border border-[#E4DCDC] px-3 py-2.5 font-mono text-xs text-[#800C19]">
+                    <span className="truncate">tokobatik.lapakq.com</span>
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                  </div>
+                  <div className="flex items-start gap-2 text-xs text-[#5F5652]">
+                    <Smartphone className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#800C19]" />
+                    <span>{t('features_mobile_optimized', 'Tampilan ringan dan cepat dibuka dari browser smartphone pembeli tanpa install aplikasi')}</span>
+                  </div>
+                </div>
+                <motion.img
+                  src="/assets/3d/mini_storefront.png"
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                  className="hidden sm:block w-28 h-24 object-contain drop-shadow-[0_14px_18px_rgba(0,0,0,0.2)]"
+                />
+              </div>
+            </FeatureCard>
+          </RevealItem>
+        </RevealGroup>
       </div>
     </section>
   );
 };
 
-
-
+/** Kartu fitur putih: ikon, judul, deskripsi singkat, lalu visual di bawahnya. */
+const FeatureCard: React.FC<{
+  icon: React.ElementType;
+  title: string;
+  desc: string;
+  children: React.ReactNode;
+}> = ({ icon: Icon, title, desc, children }) => (
+  <motion.article
+    whileHover={{ y: -4 }}
+    transition={{ duration: 0.3, ease: EASE_SMOOTH }}
+    className="h-full rounded-[28px] border border-[#E4DCDC] bg-white p-5 sm:p-6 flex flex-col gap-5"
+  >
+    <div className="flex items-start gap-3">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F5E8EA] text-[#800C19]">
+        <Icon className="w-5 h-5" />
+      </span>
+      <div className="min-w-0">
+        <h3 className="text-lg font-medium tracking-tight text-[#1A1414]">{title}</h3>
+        <p className="text-sm text-[#5F5652]">{desc}</p>
+      </div>
+    </div>
+    <div className="mt-auto">{children}</div>
+  </motion.article>
+);
