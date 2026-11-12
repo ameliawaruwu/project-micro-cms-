@@ -9,15 +9,15 @@ interface HowItWorksSectionProps {
 }
 
 /**
- * Tiga langkah mulai jualan dalam kartu bernomor berwarna (kuning, merah muda, marun),
+ * Tiga langkah mulai jualan dalam kartu bernomor berwarna (merah, merah muda, marun),
  * masing-masing dengan objek 3D yang melayang pelan.
  */
 const STEP_STYLES = [
   {
-    card: 'bg-[#F7C948] text-[#1A1414]',
-    num: 'text-[#1A1414]/15',
-    chip: 'bg-white/70 text-[#66000E]',
-    desc: 'text-[#1A1414]/70',
+    card: 'bg-[#800C19] text-white',
+    num: 'text-white/15',
+    chip: 'bg-white/15 text-white',
+    desc: 'text-white/75',
     image: 'mini_storefront',
     icon: Store,
   },

@@ -47,10 +47,10 @@ export const FeaturesSection: React.FC = () => {
               desc={t('features_tab_products_sub', 'Atur harga dan stok dengan mudah.')}
             >
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-[#F7C948] p-4 text-[#1A1414]">
-                  <p className="text-[11px] font-medium text-[#1A1414]/65">{t('features_top_seller', 'Produk Terlaris')}</p>
+                <div className="rounded-2xl bg-[#800C19] p-4 text-white">
+                  <p className="text-[11px] font-medium text-white/70">{t('features_top_seller', 'Produk Terlaris')}</p>
                   <p className="mt-1 text-3xl sm:text-4xl font-semibold tracking-tight">+42</p>
-                  <p className="mt-1 text-xs text-[#1A1414]/70">{t('features_sold_count', 'terjual minggu ini')}</p>
+                  <p className="mt-1 text-xs text-white/75">{t('features_sold_count', 'terjual minggu ini')}</p>
                 </div>
                 <div className="rounded-2xl bg-[#FFC2D1] p-4 text-[#1A1414]">
                   <p className="text-[11px] font-medium text-[#1A1414]/65">{t('features_stock_warning', 'Peringatan Stok')}</p>

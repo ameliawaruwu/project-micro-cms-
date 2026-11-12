@@ -171,9 +171,9 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         </Reveal>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
-          {/* Kartu kuning: poin utama & tombol aksi */}
+          {/* Kartu merah: poin utama & tombol aksi */}
           <Reveal className="lg:col-span-5">
-            <div className="relative h-full overflow-hidden rounded-[28px] bg-[#F7C948] p-6 sm:p-8 text-[#1A1414] flex flex-col">
+            <div className="relative h-full overflow-hidden rounded-[28px] bg-[#800C19] p-6 sm:p-8 text-white flex flex-col">
               <motion.img
                 src="/assets/3d/clean/kraft_pouch.webp"
                 alt=""
@@ -184,7 +184,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 className="pointer-events-none absolute right-3 top-4 w-24 sm:w-32 drop-shadow-[0_18px_22px_rgba(0,0,0,0.25)]"
               />
 
-              <span className="relative inline-flex w-10 h-10 items-center justify-center rounded-xl bg-white/70 text-[#66000E]">
+              <span className="relative inline-flex w-10 h-10 items-center justify-center rounded-xl bg-white/15 text-white">
                 <Package className="w-5 h-5" />
               </span>
               <h3 className="relative mt-4 max-w-[65%] text-xl sm:text-2xl font-medium tracking-tight leading-snug">
@@ -193,8 +193,8 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
               <ul className="relative mt-5 space-y-2.5">
                 {points.map(({ icon: Icon, text }) => (
-                  <li key={text} className="flex items-center gap-3 text-sm text-[#1A1414]/80">
-                    <span className="flex w-7 h-7 shrink-0 items-center justify-center rounded-full bg-[#1A1414] text-[#F7C948]">
+                  <li key={text} className="flex items-center gap-3 text-sm text-white/85">
+                    <span className="flex w-7 h-7 shrink-0 items-center justify-center rounded-full bg-white text-[#800C19]">
                       <Icon className="w-3.5 h-3.5" />
                     </span>
                     <span>{text}</span>
@@ -208,7 +208,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   onClick={onNavigateRegister}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.97 }}
-                  className="group inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-[#66000E] hover:bg-[#800C19] text-white font-medium text-sm transition-colors cursor-pointer"
+                  className="group inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-white hover:bg-[#FDF6F7] text-[#800C19] font-medium text-sm transition-colors cursor-pointer"
                 >
                   <span>{t('product_cta_add', 'Mulai Tambah Produk')}</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -218,7 +218,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   onClick={() => setIsAddModalOpen(true)}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-lg bg-white/80 hover:bg-white text-[#66000E] font-medium text-sm transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-lg border border-white/40 hover:bg-white/10 text-white font-medium text-sm transition-colors cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>{t('product_cta_simulate', 'Simulasi Produk')}</span>
