@@ -1,7 +1,7 @@
 import React from 'react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
-import { STORE_ROUTES, formatRupiah, productHref } from '../../storefrontLinks';
+import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
 
 /** Galeri foto produk toko bergaya masonry; tidak dirender bila belum ada foto produk. */
 export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -10,6 +10,11 @@ export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boole
   if (items.length === 0) return null;
 
   const heading = sectionOptions.heading || 'Galeri Produk';
+  const description = sectionOptions.description || sectionOptions.subheading;
+  const coverImage = resolveSectionImage(sectionOptions);
+  // Tombol hanya tampil bila merchant mengisi teks tombol di editor.
+  const hasCta = Boolean(sectionOptions.buttonLabel || sectionOptions.buttonText);
+  const cta = resolveSectionCta(sectionOptions, 'Lihat Koleksi', STORE_ROUTES.catalog);
   const columnsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'columns-1',
     tablet: 'columns-2',
@@ -25,6 +30,12 @@ export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boole
           <h2 className="text-3xl sm:text-5xl md:text-7xl font-black text-black tracking-tighter break-words min-w-0">{heading}</h2>
           <div className="h-2 flex-1 min-w-[2rem] bg-black rounded-full"></div>
         </div>
+        {description && (
+          <p className="max-w-2xl -mt-6 sm:-mt-12 mb-10 sm:mb-16 text-base sm:text-lg text-gray-600 font-medium leading-relaxed">{description}</p>
+        )}
+        {coverImage && (
+          <img src={coverImage} alt={heading} className="w-full max-h-[480px] object-cover rounded-3xl mb-8 sm:mb-12" />
+        )}
 
         <div className={`${columnsClass} gap-6 sm:gap-8 space-y-6 sm:space-y-8`}>
           {items.map((p, i) => (
@@ -44,6 +55,16 @@ export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boole
             </a>
           ))}
         </div>
+        {hasCta && (
+          <div className="mt-10 sm:mt-16 text-center">
+            <a
+              href={cta.href}
+              className="inline-block px-8 py-4 bg-black text-white rounded-full font-bold uppercase tracking-wider text-sm hover:bg-blue-600 transition-colors"
+            >
+              {cta.label}
+            </a>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -53,7 +74,7 @@ export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boole
 export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const products = useThemeProductsSource('creative');
   const product = products.find((p) => p.isFeatured && p.image) || products.find((p) => p.image) || products[0];
-  const image = sectionOptions.imageUrl || sectionOptions.bannerUrl || product?.image;
+  const image = resolveSectionImage(sectionOptions) || product?.image;
   if (!image && !product) return null;
 
   const heading = sectionOptions.heading || 'Sorotan Produk';
@@ -62,6 +83,11 @@ export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile
     sectionOptions.description ||
     product?.description ||
     'Setiap produk kami pilih dengan teliti agar tampil beda dan berkesan untuk Anda.';
+  const cta = resolveSectionCta(
+    sectionOptions,
+    product ? 'Lihat Produk' : 'Lihat Katalog',
+    product ? productHref(product) : STORE_ROUTES.catalog,
+  );
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-1',
@@ -91,10 +117,10 @@ export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile
             <p className="text-base sm:text-lg leading-relaxed font-medium opacity-90 mb-8 line-clamp-5">{description}</p>
             <div className="flex flex-wrap gap-3">
               <a
-                href={product ? productHref(product) : STORE_ROUTES.catalog}
+                href={cta.href}
                 className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 bg-yellow-300 text-black rounded-full font-bold uppercase tracking-wider text-sm hover:bg-white transition-colors"
               >
-                {product ? 'Lihat Produk' : 'Lihat Katalog'}
+                {cta.label}
               </a>
               <a
                 href={STORE_ROUTES.catalog}

@@ -7,7 +7,9 @@ import { STORE_ROUTES, formatRupiah, productHref } from '../../storefrontLinks';
 export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "Mengapa Belanja di Toko Kami?";
   
-  const benefits = sectionOptions.features || [
+  const description = sectionOptions.description || sectionOptions.subheading;
+  const customBenefits = Array.isArray(sectionOptions.features) && sectionOptions.features.length > 0 ? sectionOptions.features : null;
+  const benefits = customBenefits || [
     { title: "Produk Terjamin", desc: "Setiap produk dicek sebelum dikirim ke pelanggan." },
     { title: "Pengiriman Aman", desc: "Dikemas rapi dan dikirim ke seluruh Indonesia." },
     { title: "Pembayaran Mudah", desc: "Bayar lewat transfer, QRIS, atau COD." },
@@ -26,6 +28,7 @@ export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobil
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-16">
         <div className="text-center mb-10 sm:mb-14">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">{heading}</h2>
+          {description && <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">{description}</p>}
         </div>
         
         <div className={`grid ${gridColsClass} gap-5 sm:gap-8`}>

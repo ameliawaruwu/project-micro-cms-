@@ -75,6 +75,9 @@ interface RightPanelSettingsProps {
   onUpdateStore?: (updates: Partial<Store>) => void;
 }
 
+
+/** Bagian yang menampilkan label badge; isinya diatur lewat field "Label Badge" di editor. */
+const BADGE_SECTION_IDS = ['hero_banner', 'promo_banner', 'newsletter', 'latest_drop', 'limited_release', 'asymmetric_showcase', 'floating_showcase'];
 export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   store,
   products,
@@ -643,7 +646,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 </div>
               )}
 
-              {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter') && (
+              {BADGE_SECTION_IDS.includes(selectedSection.id) && (
                 <div className="space-y-1">
                   <label className="text-[12px] font-bold text-[#202223]">Label Badge</label>
                   <input
@@ -654,7 +657,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       else if (selectedSection.id === 'newsletter') handleOptionChange({ incentiveBadge: e.target.value });
                       else handleOptionChange({ badgeText: e.target.value });
                     }}
-                    placeholder={selectedSection.id === 'hero_banner' ? 'Kosongkan untuk label bawaan tema' : 'Contoh: PROMO SPESIAL'}
+                    placeholder={selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' ? 'Contoh: PROMO SPESIAL' : 'Kosongkan untuk label bawaan tema'}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                   />
                 </div>

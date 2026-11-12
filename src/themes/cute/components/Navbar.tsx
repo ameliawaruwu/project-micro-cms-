@@ -13,6 +13,9 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
   const header = getHeaderDisplay(sectionOptions);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
+  // Pengaturan header merchant: sembunyikan logo/nama toko atau menu navigasi bila dimatikan.
+  const showLogo = sectionOptions.showLogo ?? true;
+  const navItems = (sectionOptions.showNavMenu ?? true) ? getNavMenuItems(sectionOptions) : [];
   const navFlexClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -61,9 +64,11 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-2 group-hover:-translate-y-1 transition-transform">
             <Heart className="w-6 h-6 text-[#FF85A1] fill-[#FF85A1]" />
           </div>
-          <a href="/" className="text-xl sm:text-2xl font-black text-[#FF85A1] tracking-tight max-w-full break-words">
-            <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
-          </a>
+          {showLogo && (
+            <a href="/" className="text-xl sm:text-2xl font-black text-[#FF85A1] tracking-tight max-w-full break-words">
+              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
+            </a>
+          )}
           {storeSubtitle && (
             <span className="text-xs font-semibold text-[#FF85A1]/80 mt-0.5 max-w-[200px] truncate">
               {storeSubtitle}
@@ -73,7 +78,7 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
 
         {/* Center: Desktop Navigation */}
         <nav className={`${showDesktopNav} items-center justify-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm`}>
-          {getNavMenuItems(sectionOptions).map((nav) => (
+          {navItems.map((nav) => (
             <a
               key={nav.id}
               href={nav.route}
@@ -105,7 +110,7 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
 
       </div>
       <nav className={`${showMobileBar} flex-wrap justify-center gap-2 mt-3`}>
-        {getNavMenuItems(sectionOptions).map((nav) => (
+        {navItems.map((nav) => (
           <a key={nav.id} href={nav.route} className="px-3 py-1.5 rounded-xl bg-white text-xs font-bold text-[#FF85A1] shadow-sm">
             {nav.label}
           </a>

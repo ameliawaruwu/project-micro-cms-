@@ -78,3 +78,10 @@ export function useStoreBaseDomain(store?: Pick<Store, 'communityId' | 'communit
 
   return { ...state.info, loading: state.loading };
 }
+
+/** Alamat publik toko yang sudah terbit: domain kustom bila ada, selain itu `<slug>.<domain induk>`. */
+export function buildStoreLiveUrl(slug: string, baseDomain: string, customDomain?: string | null): string {
+  const custom = cleanDomain(customDomain);
+  if (custom) return `https://${custom}`;
+  return `https://${encodeURIComponent(slug)}.${cleanDomain(baseDomain) || DEFAULT_BASE_DOMAIN}`;
+}

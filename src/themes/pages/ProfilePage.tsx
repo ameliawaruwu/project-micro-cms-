@@ -3,6 +3,7 @@ import { ThemeSchema } from '../schema';
 import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
+import { useStoreChromeOptions } from './storeChrome';
 import { Mail, Phone, MapPin, LogOut, Pencil, UserRound } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { customerService, CustomerInfo } from '../../services/customerService';
@@ -152,7 +153,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
   const footerSection = Object.values(sections).find(s => s.type === 'Footer');
 
   // Sama seperti halaman Keranjang/Login agar navbar & footer konsisten di semua halaman toko.
-  const navbarOptions = {
+  const navbarBase = {
     heading: storeName,
     subheading: storeDesc,
     description: storeDesc,
@@ -161,13 +162,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
     ...((headerSection as any)?.options || (headerSection as any)?.settings)
   };
 
-  const footerOptions = {
+  const footerBase = {
     heading: storeName,
     subheading: storeDesc,
     description: storeDesc,
     subtitle: storeDesc,
     ...((footerSection as any)?.options || (footerSection as any)?.settings)
   };
+  const { navbarOptions, footerOptions, isStickyHeader } = useStoreChromeOptions(navbarBase, footerBase);
 
   const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
   const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
@@ -320,7 +322,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
   return (
     <div className="flex flex-col w-full min-h-screen bg-[var(--sf-page)] text-[var(--sf-text)]">
       {CustomNavbar ? (
-        <CustomNavbar sectionOptions={navbarOptions} />
+        <div className={isStickyHeader ? 'sticky top-0 z-50' : undefined}>
+          <CustomNavbar sectionOptions={navbarOptions} />
+        </div>
       ) : headerSection && (
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}

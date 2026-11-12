@@ -3,7 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
 import { sanitizeLinkHref } from '../../navMenu';
-import { STORE_ROUTES, formatRupiah, productHref } from '../../storefrontLinks';
+import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
 
 /** Sorotan produk unggulan toko; tidak dirender bila toko belum punya produk. */
 export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -20,6 +20,12 @@ export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobi
   const mtClass = isMobile || isTablet ? 'mt-12' : 'mt-12 md:mt-0';
   if (!product) return null;
 
+  // Teks, gambar & tombol dari editor; bila kosong memakai data produk yang disorot.
+  const heading = sectionOptions.heading || product.name;
+  const description = sectionOptions.description || product.description;
+  const image = resolveSectionImage(sectionOptions) || product.image;
+  const cta = resolveSectionCta(sectionOptions, 'Lihat Detail', productHref(product));
+
   return (
     <section className="py-16 sm:py-24 md:py-32 px-4 sm:px-6 md:px-12 bg-[#050505] text-white overflow-hidden relative border-t border-gray-900">
       <div className={`max-w-6xl mx-auto flex ${flexDirClass} items-center`}>
@@ -28,18 +34,18 @@ export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobi
             {sectionOptions.badgeText || 'Produk Unggulan'}
           </div>
           <h2 className="text-3xl sm:text-5xl lg:text-7xl font-black uppercase tracking-tighter mb-4 sm:mb-6 text-white drop-shadow-lg break-words">
-            {product.name}
+            {heading}
           </h2>
           <p className="text-xl sm:text-2xl font-mono font-bold text-purple-300 mb-4 sm:mb-6">{formatRupiah(product.price)}</p>
-          {product.description && (
-            <p className="text-gray-400 mb-8 sm:mb-10 font-mono leading-relaxed text-sm lg:text-base line-clamp-4">{product.description}</p>
+          {description && (
+            <p className="text-gray-400 mb-8 sm:mb-10 font-mono leading-relaxed text-sm lg:text-base line-clamp-4">{description}</p>
           )}
           <div className="flex flex-wrap gap-3">
             <a
-              href={productHref(product)}
+              href={cta.href}
               className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 bg-transparent border border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white text-sm sm:text-base font-bold uppercase tracking-widest transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
             >
-              Lihat Detail
+              {cta.label}
             </a>
             <a
               href={STORE_ROUTES.catalog}
@@ -49,12 +55,12 @@ export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobi
             </a>
           </div>
         </div>
-        {product.image && (
+        {image && (
           <a href={productHref(product)} className={`${halfWidthClass} relative block ${mtClass}`}>
             <div className="absolute w-64 h-64 sm:w-[400px] sm:h-[400px] bg-purple-600/20 rounded-full blur-[100px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
             <img
-              src={product.image}
-              alt={product.name}
+              src={image}
+              alt={heading}
               className="w-full h-72 sm:h-[500px] object-contain relative z-20 mix-blend-screen drop-shadow-[0_0_40px_rgba(168,85,247,0.4)] animate-[float_6s_ease-in-out_infinite]"
             />
           </a>
@@ -77,12 +83,23 @@ export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any; isMobile?:
     { title: 'Pengiriman Cepat', desc: 'Pesanan diproses segera dan dikirim ke seluruh Indonesia.' },
     { title: 'Pembayaran Aman', desc: 'Transaksi terlindungi dengan metode pembayaran tepercaya.' },
   ];
+  const description = sectionOptions.description || sectionOptions.subheading;
+  const image = resolveSectionImage(sectionOptions);
+  // Tombol hanya tampil bila merchant mengisi teks tombol di editor.
+  const hasCta = Boolean(sectionOptions.buttonLabel || sectionOptions.buttonText);
+  const cta = resolveSectionCta(sectionOptions, 'Belanja Sekarang', STORE_ROUTES.catalog);
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 md:px-12 bg-[#080808] text-white border-y border-gray-900 relative">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/10 via-[#080808] to-[#080808]"></div>
       <div className="max-w-6xl mx-auto relative z-10">
         {sectionOptions.heading && (
           <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-widest mb-10 sm:mb-14 text-center break-words">{sectionOptions.heading}</h2>
+        )}
+        {description && (
+          <p className="max-w-2xl mx-auto -mt-6 sm:-mt-8 mb-10 sm:mb-14 text-center text-gray-400 font-mono text-sm leading-relaxed">{description}</p>
+        )}
+        {image && (
+          <img src={image} alt={sectionOptions.heading || ''} className="w-full max-h-[420px] object-cover mb-10 sm:mb-14 border border-gray-900" />
         )}
         <div className={`grid ${gridColsClass} gap-10 sm:gap-16`}>
           {features.map((feature) => (
@@ -93,6 +110,16 @@ export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any; isMobile?:
             </div>
           ))}
         </div>
+        {hasCta && (
+          <div className="mt-12 text-center">
+            <a
+              href={cta.href}
+              className="inline-block px-8 py-4 border border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white text-sm font-bold uppercase tracking-widest transition-all duration-300"
+            >
+              {cta.label}
+            </a>
+          </div>
+        )}
       </div>
     </section>
   );

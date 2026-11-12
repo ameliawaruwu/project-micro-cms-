@@ -2,7 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { useThemeProductsSource } from '../../useSectionProducts';
+import { useSectionProducts, useThemeProductsSource } from '../../useSectionProducts';
 import { sanitizeLinkHref } from '../../navMenu';
 import { STORE_ROUTES, formatRupiah, productHref } from '../../storefrontLinks';
 
@@ -13,7 +13,7 @@ function resolveButtonLink(value: unknown, fallback: string): string {
 }
 
 export const LuxurySignatureCollection: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const products = useThemeProductsSource('luxury');
+  const products = useSectionProducts('luxury', sectionOptions, { defaultCount: sectionOptions.limit || 6 });
   const { isEn } = useLanguage();
 
   const defaultHeading = isEn ? "Signature Pieces" : "Koleksi Utama";
@@ -67,7 +67,7 @@ export const LuxurySignatureCollection: React.FC<{ sectionOptions?: any; isMobil
         </a>
       </div>
       <div className={`grid ${gridColsClass} gap-3 sm:gap-8`}>
-        {products.slice(0, sectionOptions.limit || 6).map((product) => (
+        {products.map((product) => (
           <a key={product.id} href={productHref(product)} className="group min-w-0 flex flex-col items-center bg-[#FAF7F2] p-3 sm:p-6 rounded-2xl border border-[#EADBCE] shadow-2xs hover:shadow-md transition-all duration-300">
             <div className="w-full aspect-[3/4] overflow-hidden mb-3 sm:mb-6 bg-white rounded-xl relative">
               {product.image && (

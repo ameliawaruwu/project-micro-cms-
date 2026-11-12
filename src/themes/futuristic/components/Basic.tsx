@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { useThemeProductsSource } from '../../useSectionProducts';
+import { useSectionProducts, useThemeProductsSource } from '../../useSectionProducts';
 import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
@@ -150,12 +150,11 @@ export const FuturisticHero: React.FC<{ sectionOptions?: any; accentColor?: stri
 };
 
 export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
-  const allProducts = useThemeProductsSource('futuristic');
   const title = sectionOptions.featuredTitle || sectionOptions.heading || 'Produk Unggulan';
   const desiredCols = [2, 3, 4].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 3;
-  // Produk unggulan toko; bila belum ada yang ditandai unggulan, tampilkan produk terbaru.
-  const featured = allProducts.filter((p) => p.isFeatured);
-  const products = (featured.length > 0 ? featured : allProducts).slice(0, desiredCols);
+  // Ikuti pengaturan editor (kategori, produk pilihan, urutan, jumlah); tanpa pilihan manual
+  // produk unggulan toko didahulukan.
+  const products = useSectionProducts('futuristic', sectionOptions, { defaultCount: desiredCols, preferFeatured: true });
 
   const desktopColsMap: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' };
   const fallbackColsMap: Record<number, string> = {

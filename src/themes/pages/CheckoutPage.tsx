@@ -4,6 +4,7 @@ import { Product, OrderItem, Order, BiteshipRateOption, StorePaymentConfig } fro
 import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
+import { useStoreChromeOptions } from './storeChrome';
 import {
   Check,
   CreditCard,
@@ -829,6 +830,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const sections = themeData?.sections || {};
   const headerSection = Object.values(sections).find((s) => s.type === 'Header');
   const footerSection = Object.values(sections).find((s) => s.type === 'Footer');
+  const { navbarOptions, footerOptions, isStickyHeader } = useStoreChromeOptions({}, {});
 
   const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
   const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
@@ -1505,13 +1507,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-[var(--sf-page)] text-[var(--sf-text)]">
-      {CustomNavbar ? <CustomNavbar /> : headerSection && (
+      {CustomNavbar ? (
+        <div className={isStickyHeader ? 'sticky top-0 z-50' : undefined}>
+          <CustomNavbar sectionOptions={navbarOptions} />
+        </div>
+      ) : headerSection && (
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
 
       <div className="flex-1">{renderContent()}</div>
 
-      {CustomFooter ? <CustomFooter /> : footerSection && (
+      {CustomFooter ? <CustomFooter sectionOptions={footerOptions} /> : footerSection && (
         <FooterSection settings={footerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
     </div>

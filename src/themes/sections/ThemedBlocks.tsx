@@ -3,8 +3,7 @@ import { ShieldCheck, Truck, CreditCard, MapPin, Mail, Phone, Clock, MessageCirc
 import { useCmsStore } from '../../cms/useCmsStore';
 import { getStorefrontThemeVars } from '../pages/storefrontTheme';
 import { whatsAppChatLink } from '../sectionContent';
-import { sanitizeLinkHref } from '../navMenu';
-import { STORE_ROUTES } from '../storefrontLinks';
+import { STORE_ROUTES, resolveSectionCta, resolveSectionImage } from '../storefrontLinks';
 
 /**
  * Bagian umum (Pengumuman, Banner Promo, Keunggulan Toko, Info Toko) yang bisa ditambahkan
@@ -44,26 +43,26 @@ export const ThemedPromoBanner: React.FC<ThemedBlockProps> = ({ sectionOptions =
   const badge = sectionOptions.discountBadge;
   const heading = sectionOptions.heading || 'Penawaran Spesial';
   const description = sectionOptions.description || '';
-  const buttonLabel = sectionOptions.buttonLabel || 'Lihat Katalog';
   // Tautan merchant disanitasi; bawaan membuka halaman katalog seperti menu navbar.
-  const customLink = sanitizeLinkHref(sectionOptions.buttonLink);
-  const buttonLink = customLink && customLink !== '#' ? customLink : STORE_ROUTES.catalog;
+  const cta = resolveSectionCta(sectionOptions, 'Lihat Katalog', STORE_ROUTES.catalog);
+  const image = resolveSectionImage(sectionOptions);
   return (
     <ThemeScope themeId={themeId} accentColor={accentColor} className="bg-[var(--sf-page)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-        <div className="rounded-[var(--sf-radius)] bg-[var(--sf-primary-soft)] border border-[var(--sf-primary-border)] px-4 py-8 sm:px-12 sm:py-14 text-center flex flex-col items-center gap-3 sm:gap-4">
+        <div className="relative overflow-hidden rounded-[var(--sf-radius)] bg-[var(--sf-primary-soft)] border border-[var(--sf-primary-border)] px-4 py-8 sm:px-12 sm:py-14 text-center flex flex-col items-center gap-3 sm:gap-4">
+          {image && <img src={image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none" />}
           {badge && (
-            <span className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase bg-[var(--sf-primary)] text-[var(--sf-primary-contrast)]">
+            <span className="relative inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase bg-[var(--sf-primary)] text-[var(--sf-primary-contrast)]">
               {badge}
             </span>
           )}
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[var(--sf-text)] max-w-2xl break-words">{heading}</h2>
-          {description && <p className="text-sm sm:text-base text-[var(--sf-text-soft)] max-w-xl">{description}</p>}
+          <h2 className="relative text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[var(--sf-text)] max-w-2xl break-words">{heading}</h2>
+          {description && <p className="relative text-sm sm:text-base text-[var(--sf-text-soft)] max-w-xl">{description}</p>}
           <a
-            href={buttonLink}
-            className="mt-2 inline-flex items-center justify-center px-6 py-3 rounded-[var(--sf-radius)] text-sm font-semibold bg-[var(--sf-primary)] text-[var(--sf-primary-contrast)] hover:opacity-90 transition-opacity w-full sm:w-auto"
+            href={cta.href}
+            className="relative mt-2 inline-flex items-center justify-center px-6 py-3 rounded-[var(--sf-radius)] text-sm font-semibold bg-[var(--sf-primary)] text-[var(--sf-primary-contrast)] hover:opacity-90 transition-opacity w-full sm:w-auto"
           >
-            {buttonLabel}
+            {cta.label}
           </a>
         </div>
       </div>

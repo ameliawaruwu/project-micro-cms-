@@ -13,12 +13,15 @@ import {
   Tag,
   CreditCard,
   Globe,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Store } from '../../../types';
 import { formatRupiah } from '../../../utils/formatters';
 
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
-import { StoreDomainModal } from '../../../components/admin/StoreDomainModal';
+import { StoreDomainPanel } from '../../../components/admin/StoreDomainPanel';
+import { buildStoreLiveUrl, useStoreBaseDomain } from '../../../utils/storeDomain';
 
 type PublishFilter = 'all' | 'published' | 'draft';
 
@@ -28,7 +31,6 @@ interface AdminStoresTabProps {
   filteredStores: Store[];
   suspendedIds: string[];
   handleToggleSuspend: (storeId: string, storeName: string) => void;
-  onOpenStorefront?: (slug: string) => void;
   language: string;
   isEn: boolean;
   onNavigateOverview?: () => void;
@@ -42,7 +44,6 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
   filteredStores,
   suspendedIds,
   handleToggleSuspend,
-  onOpenStorefront,
   language,
   isEn,
   onNavigateOverview,
@@ -51,7 +52,8 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 }) => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [copied, setCopied] = useState(false);
-  const [domainStore, setDomainStore] = useState<Store | null>(null);
+  // Toko yang baris pengaturan domainnya sedang terbuka di tabel.
+  const [domainStoreId, setDomainStoreId] = useState<string | null>(null);
   // WHY: daftar toko datang dari props; hasil penetapan domain disimpan lokal sampai data dimuat ulang.
   const [domainOverrides, setDomainOverrides] = useState<Record<string, string | null>>({});
   const domainOf = (s: Store) => (s.id in domainOverrides ? domainOverrides[s.id] : s.customDomain || null);
@@ -175,8 +177,10 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
               ) : (
                 visibleStores.map((store) => {
                 const isSuspended = suspendedIds.includes(store.id);
+                const isDomainOpen = domainStoreId === store.id;
                 return (
-                  <tr key={store.id} className="hover:bg-gray-50/60 transition">
+                  <React.Fragment key={store.id}>
+                  <tr className={`transition ${isDomainOpen ? 'bg-[#FBF7F7]' : 'hover:bg-gray-50/60'}`}>
                     {/* Store details */}
                     <td className="py-2.5 px-3.5">
                       <div className="flex items-center gap-2.5">
@@ -240,23 +244,28 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                         {!isSubAdmin && (
                           <button
-                            onClick={() => setDomainStore(store)}
-                            className="px-2 py-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-700 text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
+                            onClick={() => setDomainStoreId(isDomainOpen ? null : store.id)}
+                            aria-expanded={isDomainOpen}
+                            className={`px-2 py-1 rounded border text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer ${
+                              isDomainOpen ? 'border-[#E8DDDE] bg-[#F5E8EA] text-[#66000E]' : 'border-gray-200 hover:bg-gray-100 text-gray-700'
+                            }`}
                             title={isEn ? 'Assign custom domain' : 'Tetapkan domain kustom'}
                           >
                             <Globe className="w-3.5 h-3.5" />
                             <span>Domain</span>
+                            {isDomainOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                           </button>
                         )}
 
-                        {onOpenStorefront && store.isPublished && (
-                          <button
-                            onClick={() => onOpenStorefront(store.slug)}
-                            className="p-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-600 transition cursor-pointer"
-                            title={isEn ? 'View Storefront' : 'Lihat Storefront'}
+                        {store.isPublished && (
+                          <LiveStoreLink
+                            store={store}
+                            customDomain={domainOf(store)}
+                            title={isEn ? 'Open live website' : 'Buka website live'}
+                            className="p-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-600 transition"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
-                          </button>
+                          </LiveStoreLink>
                         )}
                         <button
                           onClick={() => handleToggleSuspend(store.id, store.name)}
@@ -271,6 +280,20 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                       </div>
                     </td>
                   </tr>
+                  {isDomainOpen && (
+                    <tr>
+                      <td colSpan={5} className="p-0">
+                        <StoreDomainPanel
+                          store={store}
+                          currentDomain={domainOf(store)}
+                          isEn={isEn}
+                          onClose={() => setDomainStoreId(null)}
+                          onSaved={(storeId, hostname) => setDomainOverrides((prev) => ({ ...prev, [storeId]: hostname }))}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 );
               }))}
             </tbody>
@@ -523,17 +546,15 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
             {/* Footer Modal */}
             <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-              {onOpenStorefront && selectedStore.isPublished ? (
-                <button
-                  onClick={() => {
-                    onOpenStorefront(selectedStore.slug);
-                    setSelectedStore(null);
-                  }}
-                  className="px-3.5 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              {selectedStore.isPublished ? (
+                <LiveStoreLink
+                  store={selectedStore}
+                  customDomain={domainOf(selectedStore)}
+                  className="px-3.5 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 text-xs font-semibold flex items-center gap-1.5 transition"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Buka Halaman Toko</span>
-                </button>
+                  <span>{isEn ? 'Open Live Website' : 'Buka Website Live'}</span>
+                </LiveStoreLink>
               ) : <div />}
 
               <button
@@ -547,16 +568,30 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
         </div>
       )}
 
-      {domainStore && (
-        <StoreDomainModal
-          store={domainStore}
-          currentDomain={domainOf(domainStore)}
-          isEn={isEn}
-          onClose={() => setDomainStore(null)}
-          onSaved={(storeId, hostname) => setDomainOverrides((prev) => ({ ...prev, [storeId]: hostname }))}
-        />
-      )}
     </div>
+  );
+};
+
+/** Tautan ke website toko yang sudah live (domain kustom atau subdomain toko), dibuka di tab baru. */
+const LiveStoreLink: React.FC<{
+  store: Store;
+  customDomain: string | null;
+  className: string;
+  title?: string;
+  children: React.ReactNode;
+}> = ({ store, customDomain, className, title, children }) => {
+  const { domain } = useStoreBaseDomain(store);
+  return (
+    <a
+      href={buildStoreLiveUrl(store.slug, domain, customDomain)}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={title}
+      aria-label={title}
+      className={className}
+    >
+      {children}
+    </a>
   );
 };
 

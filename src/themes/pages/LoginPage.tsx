@@ -3,6 +3,7 @@ import { ThemeSchema } from '../schema';
 import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
+import { useStoreChromeOptions } from './storeChrome';
 import { Key, Mail, Lock, User, ArrowRight, Sparkles, CheckCircle, ShieldCheck } from 'lucide-react';
 import { THEME_DATA_MAP } from '../themeData';
 import { useCmsStore } from '../../cms/useCmsStore';
@@ -44,7 +45,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const headerSection = Object.values(sections).find(s => s.type === 'Header');
   const footerSection = Object.values(sections).find(s => s.type === 'Footer');
 
-  const navbarOptions = {
+  const navbarBase = {
     heading: brandName,
     subheading: brandDesc,
     description: brandDesc,
@@ -53,13 +54,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     ...((headerSection as any)?.options || (headerSection as any)?.settings)
   };
 
-  const footerOptions = {
+  const footerBase = {
     heading: brandName,
     subheading: brandDesc,
     description: brandDesc,
     subtitle: brandDesc,
     ...((footerSection as any)?.options || (footerSection as any)?.settings)
   };
+  const { navbarOptions, footerOptions, isStickyHeader } = useStoreChromeOptions(navbarBase, footerBase);
 
   const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
   const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
@@ -486,7 +488,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   return (
     <div className="flex flex-col w-full min-h-screen bg-[var(--sf-page)] text-[var(--sf-text)]">
       {CustomNavbar ? (
-        <CustomNavbar sectionOptions={navbarOptions} />
+        <div className={isStickyHeader ? 'sticky top-0 z-50' : undefined}>
+          <CustomNavbar sectionOptions={navbarOptions} />
+        </div>
       ) : headerSection && (
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}

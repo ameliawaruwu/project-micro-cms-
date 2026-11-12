@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { Store, StoreSectionConfig, Product, StoreSectionOptions, NavMenuItem } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
-import { DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
+import { DEFAULT_LANDING_NAV_ITEMS, getStoreSectionsForPage } from '../../utils/layoutConstants';
 import { resolveNavPage } from '../../themes/navMenu';
 import { InlineEditableText } from './InlineEditableText';
 import { InlineEditableImage } from './InlineEditableImage';
@@ -44,6 +44,7 @@ import { getThemeSectionComponent, resolveThemeForSections, HIDDEN_SECTION_IDS }
 import { ResponsivePreviewScope } from './ResponsivePreviewScope';
 import { getStorefrontThemeVars } from '../../themes/pages/storefrontTheme';
 import { StorefrontContext, StorefrontToast } from '../../themes/storefrontCart';
+import { StoreChromeContext, buildStoreChromeOptions } from '../../themes/pages/storeChrome';
 import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage, TrackOrderPage } from '../../themes/pages';
 import { loadGoogleFont } from '../../utils/fontLoader';
 import { stripDemoContactOptions } from '../../cms/useCmsStore';
@@ -277,15 +278,24 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
     }
   };
 
+  // Header & footer dari section halaman ini; bila halaman tidak memilikinya, pakai milik beranda.
+  const storeChromeOptions = React.useMemo(() => {
+    const hasChrome = sections.some((s) => s.id === 'header' || s.id === 'footer');
+    return buildStoreChromeOptions(hasChrome ? sections : getStoreSectionsForPage(store?.layoutSettings, 'homepage'));
+  }, [sections, store?.layoutSettings]);
+
   // Halaman non-beranda dibungkus ResponsivePreviewScope agar breakpoint mengikuti device preview.
   const renderPageCustomContent = (pageId: string) => {
     const content = renderPageCustomContentRaw(pageId);
     if (!content) return null;
     // Variabel warna tema (--sf-*) agar Keranjang, Checkout, Detail Produk, dll. mengikuti tema toko.
+    // Navbar & footer halaman ini memakai pengaturan header/footer merchant (lihat storeChrome).
     return (
-      <div className="contents" style={getStorefrontThemeVars(activeThemeId, primaryAccent)}>
-        <ResponsivePreviewScope deviceMode={childDeviceMode}>{content}</ResponsivePreviewScope>
-      </div>
+      <StoreChromeContext.Provider value={storeChromeOptions}>
+        <div className="contents" style={getStorefrontThemeVars(activeThemeId, primaryAccent)}>
+          <ResponsivePreviewScope deviceMode={childDeviceMode}>{content}</ResponsivePreviewScope>
+        </div>
+      </StoreChromeContext.Provider>
     );
   };
 

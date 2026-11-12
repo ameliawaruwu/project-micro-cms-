@@ -13,6 +13,9 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
   const header = getHeaderDisplay(sectionOptions);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
+  // Pengaturan header merchant: sembunyikan logo/nama toko atau menu navigasi bila dimatikan.
+  const showLogo = sectionOptions.showLogo ?? true;
+  const navItems = (sectionOptions.showNavMenu ?? true) ? getNavMenuItems(sectionOptions) : [];
   const showDesktopSearch = getDeviceClass(isMobile, isTablet, {
     mobile: 'hidden',
     tablet: 'hidden',
@@ -53,9 +56,11 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
 
         {/* Center: Logo */}
         <div className="flex-[2] sm:flex-1 min-w-0 text-center flex flex-col items-center">
-          <a href="/" className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-wide text-[#2C2A29] max-w-full truncate">
-            <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
-          </a>
+          {showLogo && (
+            <a href="/" className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-wide text-[#2C2A29] max-w-full truncate">
+              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
+            </a>
+          )}
           {storeSubtitle && (
             <span className="text-[10px] sm:text-[11px] tracking-[0.2em] uppercase text-[#6B6865] mt-1 font-sans max-w-full truncate">
               {storeSubtitle}
@@ -79,7 +84,7 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
 
       {/* Second row: Desktop Navigation */}
       <nav className={`${showDesktopNav} items-center justify-center gap-12 mt-6`}>
-        {getNavMenuItems(sectionOptions).map((nav) => (
+        {navItems.map((nav) => (
           <a
             key={nav.id}
             href={nav.route}
@@ -92,7 +97,7 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
 
       {/* Baris menu mobile/tablet: menu navbar tetap bisa diakses di layar kecil */}
       <nav className={`${showMobileNav} items-center justify-center flex-wrap gap-x-5 gap-y-2 mt-4`}>
-        {getNavMenuItems(sectionOptions).map((nav) => (
+        {navItems.map((nav) => (
           <a
             key={nav.id}
             href={nav.route}

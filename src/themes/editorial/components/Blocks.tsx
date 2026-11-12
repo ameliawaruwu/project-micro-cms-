@@ -2,7 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
-import { STORE_ROUTES, formatRupiah, productHref } from '../../storefrontLinks';
+import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
 
 /** Lookbook dua foto produk toko; tidak dirender bila belum ada foto produk. */
 export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -30,6 +30,7 @@ export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: bool
   const desc =
     sectionOptions.description ||
     'Lihat lebih dekat produk pilihan kami, dirangkai untuk menemani gaya dan kebutuhan Anda sehari-hari.';
+  const cta = resolveSectionCta(sectionOptions, 'Lihat Koleksi', STORE_ROUTES.catalog);
 
   return (
     <section className="py-16 sm:py-32 px-4 sm:px-6 md:px-12 max-w-[1400px] mx-auto bg-[#fafafa]">
@@ -39,10 +40,10 @@ export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: bool
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-serif italic mb-6 sm:mb-8 text-gray-900 break-words">{heading}</h2>
           <p className="text-gray-600 leading-loose mb-8 sm:mb-12 font-light text-sm md:text-base">{desc}</p>
           <a
-            href={STORE_ROUTES.catalog}
+            href={cta.href}
             className="inline-block border-b border-gray-900 pb-1 uppercase tracking-[0.2em] text-[10px] font-medium hover:text-gray-500 hover:border-gray-500 transition-colors"
           >
-            Lihat Koleksi
+            {cta.label}
           </a>
         </div>
         <div className={`${colSpanImgClass} ${orderImgClass}`}>
@@ -114,28 +115,34 @@ export const EditorialAsymmetricShowcase: React.FC<{ sectionOptions?: any; isMob
   const textWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-5/12';
   if (!product) return null;
 
+  // Teks, gambar & tombol dari editor; bila kosong memakai data produk yang disorot.
+  const heading = sectionOptions.heading || product.name;
+  const description = sectionOptions.description || product.description;
+  const image = resolveSectionImage(sectionOptions) || product.image;
+  const cta = resolveSectionCta(sectionOptions, 'Lihat Detail', productHref(product));
+
   return (
     <section className={`py-16 sm:py-24 md:py-40 px-4 sm:px-6 md:px-12 max-w-[1400px] mx-auto flex ${flexDirClass} items-end gap-10 sm:gap-16 md:gap-24`}>
-      {product.image && (
+      {image && (
         <a href={productHref(product)} className={`${imgWidthClass} block relative overflow-hidden group`}>
           <div className="absolute inset-0 bg-gray-900/5 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-          <img src={product.image} alt={product.name} className="w-full aspect-[4/5] object-cover mix-blend-multiply" />
+          <img src={image} alt={heading} className="w-full aspect-[4/5] object-cover mix-blend-multiply" />
         </a>
       )}
       <div className={`${textWidthClass} min-w-0 pb-4 sm:pb-12 md:pb-24 md:pr-12`}>
         <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-6 sm:mb-8 font-medium">
           {sectionOptions.badgeText || 'Produk Unggulan'}
         </p>
-        <h3 className="text-3xl sm:text-4xl md:text-5xl font-serif mb-6 sm:mb-8 text-gray-900 leading-tight break-words">{product.name}</h3>
-        {product.description && (
-          <p className="text-sm text-gray-600 leading-loose mb-8 sm:mb-12 font-light line-clamp-5">{product.description}</p>
+        <h3 className="text-3xl sm:text-4xl md:text-5xl font-serif mb-6 sm:mb-8 text-gray-900 leading-tight break-words">{heading}</h3>
+        {description && (
+          <p className="text-sm text-gray-600 leading-loose mb-8 sm:mb-12 font-light line-clamp-5">{description}</p>
         )}
         <p className="font-medium tracking-widest text-gray-900">{formatRupiah(product.price)}</p>
         <a
-          href={productHref(product)}
+          href={cta.href}
           className="block text-center mt-8 sm:mt-12 w-full py-4 bg-gray-900 text-white text-[10px] uppercase tracking-[0.2em] hover:bg-gray-800 transition-colors"
         >
-          Lihat Detail
+          {cta.label}
         </a>
       </div>
     </section>
@@ -181,6 +188,7 @@ export const EditorialJournal: React.FC<{ sectionOptions?: any; isMobile?: boole
   if (items.length === 0) return null;
 
   const heading = sectionOptions.heading || 'Sorotan Produk';
+  const cta = resolveSectionCta(sectionOptions, 'Lihat Semua Produk', STORE_ROUTES.catalog);
 
   return (
     <section className="py-16 sm:py-32 bg-white px-4 sm:px-6 md:px-12 border-t border-gray-100">
@@ -207,10 +215,10 @@ export const EditorialJournal: React.FC<{ sectionOptions?: any; isMobile?: boole
       </div>
       <div className="flex justify-center mt-12 sm:mt-20">
         <a
-          href={STORE_ROUTES.catalog}
+          href={cta.href}
           className="inline-block border border-gray-900 px-8 sm:px-12 py-4 text-[10px] uppercase tracking-[0.2em] font-medium hover:bg-gray-900 hover:text-white transition-colors"
         >
-          Lihat Semua Produk
+          {cta.label}
         </a>
       </div>
     </section>

@@ -35,7 +35,11 @@ interface SectionProductOptions {
 export function useSectionProducts(
   themeId: string,
   options: SectionProductOptions = {},
-  { defaultCount = 4, inEditor = false }: { defaultCount?: number; inEditor?: boolean } = {}
+  {
+    defaultCount = 4,
+    inEditor = false,
+    preferFeatured = false,
+  }: { defaultCount?: number; inEditor?: boolean; preferFeatured?: boolean } = {}
 ): CmsProduct[] {
   const source = useThemeProductsSource(themeId, inEditor);
   let list = [...source];
@@ -43,9 +47,14 @@ export function useSectionProducts(
   if (options.selectedCategoryId && options.selectedCategoryId !== 'all') {
     list = list.filter((p) => ((p as any).category || p.categoryName) === options.selectedCategoryId);
   }
-  if (options.selectedProductIds && options.selectedProductIds.length > 0) {
+  const hasPickedProducts = !!options.selectedProductIds && options.selectedProductIds.length > 0;
+  if (hasPickedProducts) {
     const picked = list.filter((p) => options.selectedProductIds!.includes(p.id));
     if (picked.length > 0) list = picked;
+  } else if (preferFeatured) {
+    // Tanpa pilihan manual: utamakan produk yang ditandai unggulan, bila ada.
+    const featured = list.filter((p) => p.isFeatured);
+    if (featured.length > 0) list = featured;
   }
 
   if (options.sortOrder === 'price-asc') list.sort((a, b) => a.price - b.price);

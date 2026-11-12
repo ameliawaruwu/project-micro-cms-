@@ -774,7 +774,6 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               filteredStores={filteredStores}
               suspendedIds={suspendedIds}
               handleToggleSuspend={handleToggleSuspend}
-              onOpenStorefront={onOpenStorefront}
               language={language}
               isEn={isEn}
               onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}

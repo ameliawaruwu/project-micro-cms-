@@ -1,10 +1,9 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { useThemeProductsSource } from '../../useSectionProducts';
-import { sanitizeLinkHref } from '../../navMenu';
+import { useSectionProducts, useThemeProductsSource } from '../../useSectionProducts';
 import { AddToCartButton } from '../../storefrontCart';
-import { STORE_ROUTES, formatRupiah, productHref } from '../../storefrontLinks';
+import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
 
 /** Lookbook dari foto produk toko; tidak dirender bila belum ada produk bergambar. */
 export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -15,7 +14,8 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
   const heading = sectionOptions.heading || 'Lookbook';
   const [main, second] = items;
-  const mainImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || main.image;
+  const mainImage = resolveSectionImage(sectionOptions) || main.image;
+  const cta = resolveSectionCta(sectionOptions, 'Lihat Semua Produk', STORE_ROUTES.catalog);
   const stackCols = isMobile || isTablet;
   const mainGridClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
@@ -64,10 +64,10 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
                 {sectionOptions.description || storeInfo?.description || 'Temukan pilihan produk terbaik yang dirancang untuk gaya hidup Anda.'}
               </p>
               <a
-                href={STORE_ROUTES.catalog}
+                href={cta.href}
                 className="inline-block text-[10px] uppercase tracking-[0.2em] font-medium border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors"
               >
-                Lihat Semua Produk
+                {cta.label}
               </a>
             </div>
           </div>
@@ -79,7 +79,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
 /** Produk unggulan dari toko; tidak dirender bila toko belum punya produk. */
 export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const products = useThemeProductsSource('fashion');
+  const products = useSectionProducts('fashion', sectionOptions, { defaultCount: 4 });
   const heading = sectionOptions.heading || 'Produk Terlaris';
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
@@ -105,7 +105,7 @@ export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?
         </div>
 
         <div className={`grid ${gridColsClass} gap-4 sm:gap-8 md:gap-x-8 md:gap-y-16`}>
-          {products.slice(0, 4).map((p, i) => (
+          {products.map((p, i) => (
             <div key={p.id} className={`group min-w-0 ${i % 2 !== 0 ? 'md:mt-12 lg:mt-16' : ''}`}>
               <div className="relative overflow-hidden mb-4 sm:mb-6 aspect-[3/4] bg-gray-100">
                 <a href={productHref(p)} className="block w-full h-full">
@@ -138,13 +138,11 @@ export const FashionPromoBanner: React.FC<{ sectionOptions?: any }> = ({ section
   const desc = sectionOptions.description || 'Dapatkan penawaran terbaik untuk produk pilihan kami.';
   // Gambar latar dekoratif: unggahan merchant → foto produk toko → gambar bawaan.
   const bgImage =
-    sectionOptions.imageUrl ||
-    sectionOptions.bannerUrl ||
+    resolveSectionImage(sectionOptions) ||
     products.find((p) => p.image)?.image ||
     'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1600&q=80';
-  const buttonLabel = sectionOptions.buttonLabel || sectionOptions.buttonText || 'Lihat Promo';
-  const customHref = sanitizeLinkHref(sectionOptions.buttonLink);
-  const buttonHref = customHref && customHref !== '#' ? customHref : STORE_ROUTES.promo;
+  const cta = resolveSectionCta(sectionOptions, 'Lihat Promo', STORE_ROUTES.promo);
+  const badge = sectionOptions.discountBadge || sectionOptions.badgeText;
 
   return (
     <section className="w-full min-h-[50vh] sm:min-h-[60vh] relative flex items-center justify-center bg-[#18181B] text-white px-4 py-16">
@@ -152,15 +150,18 @@ export const FashionPromoBanner: React.FC<{ sectionOptions?: any }> = ({ section
         <img src={bgImage} alt="" className="w-full h-full object-cover opacity-40 grayscale" />
       </div>
       <div className="relative z-10 text-center p-6 sm:p-8 bg-black/40 backdrop-blur-sm border border-white/20 max-w-3xl min-w-0">
+        {badge && (
+          <span className="inline-block mb-4 sm:mb-6 px-4 py-1.5 border border-white/40 text-[10px] uppercase tracking-[0.3em]">{badge}</span>
+        )}
         <h2 className="text-3xl sm:text-5xl md:text-7xl font-serif italic mb-4 sm:mb-6 break-words">{heading}</h2>
         <p className="text-xs sm:text-sm md:text-base uppercase tracking-[0.2em] sm:tracking-[0.3em] mb-8 sm:mb-10 text-gray-300">
           {desc}
         </p>
         <a
-          href={buttonHref}
+          href={cta.href}
           className="inline-block px-8 sm:px-12 py-4 bg-white text-black text-[10px] uppercase tracking-[0.2em] hover:bg-transparent hover:text-white hover:border-white border border-transparent transition-all duration-300"
         >
-          {buttonLabel}
+          {cta.label}
         </a>
       </div>
     </section>

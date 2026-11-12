@@ -1,4 +1,5 @@
 import type { CmsProduct } from '../cms/mockCmsData';
+import { sanitizeLinkHref } from './navMenu';
 
 /**
  * Tujuan tombol section beranda. Sama dengan menu bawaan navbar (Beranda, Katalog, Promo,
@@ -44,4 +45,26 @@ export function getProductCategories(products: CmsProduct[], max = 4): ProductCa
 export function formatRupiah(value: unknown): string {
   const amount = Number(value);
   return `Rp ${(Number.isFinite(amount) ? amount : 0).toLocaleString('id-ID')}`;
+}
+
+/**
+ * Tombol aksi section dari panel editor ("Teks Tombol" & "Tautan Tombol"). Tautan kosong,
+ * "#"/"#all" (nilai lama template) atau tautan berbahaya memakai tujuan bawaan section.
+ */
+export function resolveSectionCta(
+  options: Record<string, any> | undefined,
+  fallbackLabel: string,
+  fallbackHref: string,
+): { label: string; href: string } {
+  const label = String(options?.buttonLabel || options?.buttonText || '').trim() || fallbackLabel;
+  const href = sanitizeLinkHref(options?.buttonLink);
+  return { label, href: href && href !== '#' && href !== '#all' ? href : fallbackHref };
+}
+
+/** Gambar section yang diunggah/dipilih merchant di editor; hanya URL http(s) atau path lokal. */
+export function resolveSectionImage(options: Record<string, any> | undefined): string {
+  const url = String(options?.imageUrl || options?.bannerUrl || '').trim();
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith('/') && !url.startsWith('//')) return url;
+  return '';
 }

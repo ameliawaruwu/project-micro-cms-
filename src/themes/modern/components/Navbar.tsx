@@ -2,7 +2,7 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { ShoppingBag } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getHeaderDisplay } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
@@ -12,6 +12,11 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const header = getHeaderDisplay(sectionOptions);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  // Modern tidak menampilkan deskripsi toko otomatis; subjudul hanya dari pengaturan header.
+  const storeSubtitle = getHeaderSubtitle(sectionOptions);
+  // Pengaturan header merchant: sembunyikan logo/nama toko atau menu navigasi bila dimatikan.
+  const showLogo = sectionOptions.showLogo ?? true;
+  const navItems = (sectionOptions.showNavMenu ?? true) ? getNavMenuItems(sectionOptions) : [];
 
   const showDesktopNav = getDeviceClass(isMobile, isTablet, {
     mobile: 'hidden',
@@ -25,13 +30,20 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 bg-white border border-gray-100 rounded-full px-5 py-2.5 shadow-sm">
         
         {/* Logo */}
-        <a href="/" className="text-lg font-bold text-gray-900 min-w-0 truncate">
-          <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
-        </a>
+        {showLogo ? (
+          <a href="/" className="min-w-0 flex flex-col">
+            <span className="text-lg font-bold text-gray-900 truncate">
+              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
+            </span>
+            {storeSubtitle && <span className="text-[11px] text-gray-500 truncate">{storeSubtitle}</span>}
+          </a>
+        ) : (
+          <span aria-hidden="true" />
+        )}
 
         {/* Desktop Navigation */}
         <nav className={`${showDesktopNav} items-center gap-7`}>
-          {getNavMenuItems(sectionOptions).map((nav) => (
+          {navItems.map((nav) => (
             <a
               key={nav.id}
               href={nav.route}
@@ -60,7 +72,7 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
 
       </div>
       <nav className="lg:hidden max-w-7xl mx-auto flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap px-5 pt-3">
-        {getNavMenuItems(sectionOptions).map((nav) => (
+        {navItems.map((nav) => (
           <a key={nav.id} href={nav.route} className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
             {nav.label}
           </a>

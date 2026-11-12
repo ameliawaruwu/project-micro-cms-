@@ -1,7 +1,14 @@
 import React from 'react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
-import { STORE_ROUTES, formatRupiah, getProductCategories, productHref } from '../../storefrontLinks';
+import {
+  STORE_ROUTES,
+  formatRupiah,
+  getProductCategories,
+  productHref,
+  resolveSectionCta,
+  resolveSectionImage,
+} from '../../storefrontLinks';
 
 /** Produk unggulan: produk pertama toko. Tidak dirender bila toko belum punya produk. */
 export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
@@ -9,7 +16,12 @@ export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   const product = products.find((p) => p.isFeatured) || products[0];
   if (!product) return null;
 
+  // Teks, gambar & tombol dari editor; bila kosong memakai data produk unggulan.
   const badge = sectionOptions.badgeText || 'Produk Unggulan';
+  const heading = sectionOptions.heading || product.name;
+  const description = sectionOptions.description || product.description;
+  const image = resolveSectionImage(sectionOptions) || product.image;
+  const cta = resolveSectionCta(sectionOptions, 'Beli Sekarang →', productHref(product));
 
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 md:px-12 bg-zinc-950 text-white relative overflow-hidden border-b border-zinc-900">
@@ -17,8 +29,8 @@ export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
         <a href={productHref(product)} className="w-full md:w-5/12 max-w-md mx-auto relative group block">
           <div className="absolute -inset-1 bg-gradient-to-r from-red-600 to-rose-600 rounded-2xl blur-lg opacity-20 group-hover:opacity-40 transition duration-500"></div>
           <div className="relative aspect-square rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 shadow-2xl">
-            {product.image && (
-              <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" />
+            {image && (
+              <img src={image} alt={heading} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" />
             )}
           </div>
         </a>
@@ -28,22 +40,22 @@ export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
             {badge}
           </div>
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight uppercase break-words">
-            {product.name}
+            {heading}
           </h2>
           <div className="text-xl sm:text-2xl font-black text-white bg-zinc-900 border border-zinc-800 inline-block px-5 py-2.5 rounded-xl tracking-tight shadow-md">
             {formatRupiah(product.price)}
           </div>
-          {product.description && (
+          {description && (
             <p className="text-sm font-medium text-zinc-400 leading-relaxed max-w-xl line-clamp-4">
-              {product.description}
+              {description}
             </p>
           )}
           <div className="pt-2 flex flex-wrap gap-3">
             <a
-              href={productHref(product)}
+              href={cta.href}
               className="inline-block px-7 sm:px-8 py-3.5 sm:py-4 bg-red-600 hover:bg-red-500 text-white font-extrabold uppercase tracking-widest text-xs sm:text-sm rounded-xl transition-all duration-300 shadow-lg shadow-red-600/25 hover:scale-105 active:scale-95"
             >
-              Beli Sekarang →
+              {cta.label}
             </a>
             <a
               href={STORE_ROUTES.catalog}
@@ -112,6 +124,8 @@ export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
   if (items.length === 0) return null;
 
   const heading = sectionOptions.heading || 'Galeri Produk';
+  const description = sectionOptions.description;
+  const cta = sectionOptions.buttonLabel || sectionOptions.buttonText ? resolveSectionCta(sectionOptions, '', STORE_ROUTES.catalog) : null;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-2',
@@ -121,9 +135,12 @@ export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 bg-zinc-950 text-white border-b border-zinc-900">
       <div className="max-w-6xl mx-auto text-center">
-        <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight mb-10 sm:mb-12 text-white break-words">
+        <h2 className={`text-3xl sm:text-5xl font-black uppercase tracking-tight text-white break-words ${description ? 'mb-4' : 'mb-10 sm:mb-12'}`}>
           {heading}
         </h2>
+        {description && (
+          <p className="text-sm font-medium text-zinc-400 max-w-2xl mx-auto leading-relaxed mb-10 sm:mb-12">{description}</p>
+        )}
         <div className={`grid ${gridColsClass} gap-5 sm:gap-8`}>
           {items.map((product) => (
             <a
@@ -148,6 +165,14 @@ export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
             </a>
           ))}
         </div>
+        {cta && (
+          <a
+            href={cta.href}
+            className="inline-block mt-10 sm:mt-12 px-7 py-3.5 bg-red-600 hover:bg-red-500 text-white font-extrabold uppercase tracking-widest text-xs rounded-xl transition-colors shadow-lg shadow-red-600/25"
+          >
+            {cta.label}
+          </a>
+        )}
       </div>
     </section>
   );
@@ -159,6 +184,7 @@ export const BoldLimitedRelease: React.FC<{ sectionOptions?: any }> = ({ section
   const desc =
     sectionOptions.description ||
     'Stok produk kami terbatas. Hubungi kami untuk info produk terbaru atau pemesanan khusus.';
+  const cta = resolveSectionCta(sectionOptions, 'Belanja Sekarang', STORE_ROUTES.catalog);
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 bg-zinc-950 text-white text-center border-b border-zinc-900 relative overflow-hidden">
       <div className="relative z-10 max-w-2xl mx-auto space-y-5 sm:space-y-6">
@@ -173,10 +199,10 @@ export const BoldLimitedRelease: React.FC<{ sectionOptions?: any }> = ({ section
         </p>
         <div className="flex flex-col sm:flex-row justify-center max-w-md mx-auto gap-3 pt-2">
           <a
-            href={STORE_ROUTES.catalog}
+            href={cta.href}
             className="bg-red-600 text-white px-7 py-3.5 font-extrabold uppercase text-xs tracking-wider rounded-xl hover:bg-red-500 transition-colors shadow-lg shadow-red-600/25"
           >
-            Belanja Sekarang
+            {cta.label}
           </a>
           <a
             href={STORE_ROUTES.contact}
@@ -197,6 +223,8 @@ export const BoldCommunityBoard: React.FC<{ sectionOptions?: any; isMobile?: boo
   if (items.length === 0) return null;
 
   const heading = sectionOptions.heading || 'Pilihan Pelanggan';
+  const description = sectionOptions.description;
+  const cta = sectionOptions.buttonLabel || sectionOptions.buttonText ? resolveSectionCta(sectionOptions, '', STORE_ROUTES.catalog) : null;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-2',
     tablet: 'grid-cols-2',
@@ -206,9 +234,12 @@ export const BoldCommunityBoard: React.FC<{ sectionOptions?: any; isMobile?: boo
   return (
     <section className="py-16 sm:py-20 px-4 sm:px-6 bg-zinc-950 text-white border-b border-zinc-900">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-center mb-8 sm:mb-10 text-white break-words">
+        <h2 className={`text-2xl sm:text-4xl font-black uppercase tracking-tight text-center text-white break-words ${description ? 'mb-4' : 'mb-8 sm:mb-10'}`}>
           {heading}
         </h2>
+        {description && (
+          <p className="text-sm font-medium text-zinc-400 text-center max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-10">{description}</p>
+        )}
         <div className={`grid ${gridColsClass} gap-3 sm:gap-4`}>
           {items.map((product) => (
             <a
@@ -225,6 +256,16 @@ export const BoldCommunityBoard: React.FC<{ sectionOptions?: any; isMobile?: boo
             </a>
           ))}
         </div>
+        {cta && (
+          <div className="text-center mt-8 sm:mt-10">
+            <a
+              href={cta.href}
+              className="inline-block px-7 py-3.5 bg-red-600 hover:bg-red-500 text-white font-extrabold uppercase tracking-widest text-xs rounded-xl transition-colors shadow-lg shadow-red-600/25"
+            >
+              {cta.label}
+            </a>
+          </div>
+        )}
       </div>
     </section>
   );
