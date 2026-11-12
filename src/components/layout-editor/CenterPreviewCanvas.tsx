@@ -503,7 +503,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
     return (
       <div
-        className="storefront-font-scope sf-desktop-density flex-1 w-full max-w-full overflow-x-hidden bg-white relative pb-0 box-border flex flex-col min-h-screen"
+        className="storefront-font-scope sf-desktop-density flex-1 w-full max-w-full overflow-x-clip bg-white relative pb-0 box-border flex flex-col min-h-screen"
         style={{ fontFamily: `'${bodyFont}', sans-serif` }}
         onClickCapture={handleCanvasClick}
         onClick={handleCanvasClick}
@@ -520,6 +520,9 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
             const sectionKey = section.key || `${section.id}-${idx}`;
             const opts = section.options || {};
             const isFooter = section.id === 'footer';
+            // Navbar tema menempel di atas saat halaman digulir (opsi stickyHeader, default aktif).
+            // Sticky dipasang di pembungkus section karena pembungkus setinggi navbar.
+            const isStickyHeader = section.id === 'header' && opts.stickyHeader !== false;
             
             const customPaddingStyle: React.CSSProperties = {
               paddingTop: opts.paddingTop !== undefined ? `${opts.paddingTop}px` : undefined,
@@ -557,7 +560,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                   e.stopPropagation();
                   onSelectSection(sectionKey);
                 }}
-                className={`relative w-full ${isFooter ? 'mt-auto' : ''} ${
+                className={`${isStickyHeader ? 'sticky top-0 z-50' : 'relative'} w-full ${isFooter ? 'mt-auto' : ''} ${
                   readonly
                     ? 'cursor-default'
                     : `cursor-pointer transition-all duration-150 ${

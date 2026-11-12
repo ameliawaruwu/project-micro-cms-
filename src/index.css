@@ -30,6 +30,9 @@
   body {
     max-width: 100vw;
     overflow-x: hidden;
+    /* clip (fallback: hidden) memotong overflow tanpa menjadikan body/#root scroll container,
+       sehingga navbar sticky toko tetap menempel saat digulir. */
+    overflow-x: clip;
     margin: 0;
     padding: 0;
     background-color: #FAFAFA;
@@ -40,6 +43,7 @@
   #root {
     max-width: 100vw;
     overflow-x: hidden;
+    overflow-x: clip;
     min-height: 100vh;
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
