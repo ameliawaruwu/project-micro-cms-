@@ -18,6 +18,7 @@ import {
   sendError,
   sendSuccess,
   sanitizeStore,
+  attachStoreBaseDomains,
   resolveCommunityId,
   safeIdentifier,
   storeInCommunity,
@@ -55,6 +56,8 @@ partnerApiRouter.use(requireApiKey, enforceRateLimit, requirePartnerKey);
 async function communitiesOfStores(rows: any[]): Promise<Map<string, { id: string; name: string }[]>> {
   const out = new Map<string, { id: string; name: string }[]>();
   if (rows.length === 0) return out;
+  // Every partner response that lists stores goes through here; storeUrl needs the community domain.
+  await attachStoreBaseDomains(rows);
   const ids = rows.map((r) => r.id);
   const res = await pool.query(
     `SELECT s.id AS store_id, c.id, c.name

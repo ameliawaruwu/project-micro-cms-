@@ -281,10 +281,46 @@ export function sanitizeStore(row: any) {
     communityMemberRef: row.community_member_ref || null,
     isPublished: Boolean(row.is_published),
     customDomain: row.custom_domain || null,
-    storeUrl: row.custom_domain ? `https://${row.custom_domain}` : `https://${row.slug}.lapakq.com`,
+    storeUrl: storeUrlOf(row),
     createdAt: row.created_at,
     updatedAt: row.updated_at || row.created_at,
   };
+}
+
+/**
+ * Alamat publik toko. Toko komunitas diterbitkan di subdomain domain komunitasnya (mis. fsl.gmpsbandung.org),
+ * bukan di lapakq.com, sehingga link ke <slug>.lapakq.com tidak terbuka. Domain komunitas diisi lebih dulu oleh
+ * attachStoreBaseDomains.
+ */
+export function storeUrlOf(row: any): string {
+  if (row.custom_domain) return `https://${row.custom_domain}`;
+  if (row.community_base_domain) return `https://${row.slug}.${row.community_base_domain}`;
+  return `https://${row.slug}.lapakq.com`;
+}
+
+/** Mengisi row.community_base_domain dari komunitas utama toko (stores.community_id) yang aktif dan punya domain. */
+export async function attachStoreBaseDomains<T extends Record<string, any>>(rows: T[]): Promise<T[]> {
+  const ids = [...new Set(rows.map((r) => r?.community_id).filter(Boolean).map(String))];
+  if (ids.length === 0) return rows;
+  const bases = new Map<string, string>();
+  try {
+    const res = await pool.query(
+      `SELECT id, lower(base_domain) AS base FROM communities
+        WHERE id = ANY($1) AND coalesce(base_domain, '') <> '' AND coalesce(status, 'active') <> 'inactive'`,
+      [ids]
+    );
+    for (const r of res.rows) bases.set(String(r.id), String(r.base));
+  } catch {
+    const { data } = await supabaseClient.from('communities').select('id, base_domain, status').in('id', ids);
+    for (const r of data || []) {
+      if (r.base_domain && r.status !== 'inactive') bases.set(String(r.id), String(r.base_domain).toLowerCase());
+    }
+  }
+  for (const r of rows) {
+    const base = r && bases.get(String(r.community_id));
+    if (base) (r as any).community_base_domain = base;
+  }
+  return rows;
 }
 
 /**
@@ -749,7 +785,7 @@ publicApiRouter.get('/communities/:id/stores', requireApiKey, enforceRateLimit, 
       totalCount = count || rows.length;
     }
 
-    const sanitized = rows.map(sanitizeStore);
+    const sanitized = (await attachStoreBaseDomains(rows)).map(sanitizeStore);
     return sendSuccess(
       res,
       200,
@@ -968,7 +1004,7 @@ publicApiRouter.get('/stores', requireApiKey, enforceRateLimit, async (req: Requ
       totalCount = count || rows.length;
     }
 
-    const sanitized = rows.map(sanitizeStore);
+    const sanitized = (await attachStoreBaseDomains(rows)).map(sanitizeStore);
 
     return sendSuccess(res, 200, 'STORES_FETCHED', 'Daftar toko berhasil diambil.', sanitized, {
       pagination: {
@@ -1031,6 +1067,7 @@ publicApiRouter.get('/stores/:id', requireApiKey, enforceRateLimit, async (req: 
       return sendError(res, 404, 'NOT_FOUND', 'Toko belum dipublikasikan.');
     }
 
+    await attachStoreBaseDomains([row]);
     const sanitized = sanitizeStore(row);
     return sendSuccess(res, 200, 'STORE_FETCHED', 'Detail toko berhasil diambil.', sanitized);
   } catch (err: any) {
