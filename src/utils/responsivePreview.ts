@@ -45,6 +45,30 @@ export function getDeviceClass(
 
 export type PreviewDeviceMode = 'desktop' | 'tablet' | 'mobile';
 
+/** Urutan device preview dari yang tersempit; dipakai untuk membandingkan lebarnya. */
+const DEVICE_ORDER: PreviewDeviceMode[] = ['mobile', 'tablet', 'desktop'];
+
+/**
+ * Device preview terlebar yang masih muat di jendela browser saat ini. Batasnya sama dengan
+ * breakpoint Tailwind `sm` (640px) dan `lg` (1024px) yang dipakai tombol pengalih device.
+ */
+export function getViewportDeviceMode(): PreviewDeviceMode {
+  if (typeof window === 'undefined') return 'desktop';
+  if (window.matchMedia('(max-width: 639.98px)').matches) return 'mobile';
+  if (window.matchMedia('(max-width: 1023.98px)').matches) return 'tablet';
+  return 'desktop';
+}
+
+/**
+ * Turunkan device preview bila lebih lebar dari layar. Contoh: editor dibuka di HP saat
+ * preview masih "Desktop" — tanpa ini kelas `md:`/`lg:` dipaksa aktif di kanvas selebar
+ * ±375px sehingga grid dan kolom template terhimpit.
+ */
+export function fitDeviceModeToViewport(mode: PreviewDeviceMode): PreviewDeviceMode {
+  const max = getViewportDeviceMode();
+  return DEVICE_ORDER.indexOf(mode) > DEVICE_ORDER.indexOf(max) ? max : mode;
+}
+
 /**
  * Breakpoint Tailwind yang "aktif" untuk tiap preview device di editor: Ponsel ±390px,
  * Tablet ±730px (isi frame 768px), Desktop = tampilan desktop (sm/md/lg aktif). Kanvas desktop

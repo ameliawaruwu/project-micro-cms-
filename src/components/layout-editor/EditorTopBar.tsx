@@ -133,10 +133,12 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
       (activePage === 'produk' && p.id === 'catalog')
   ) || pages[0];
 
+  // Tombol device yang lebih lebar dari layar disembunyikan: preview "Desktop" di HP
+  // hanya memaksa kelas md:/lg: ke kanvas sempit sehingga template terlihat rusak.
   const deviceModes = [
-    { mode: 'desktop' as const, icon: Monitor, label: 'Desktop' },
-    { mode: 'tablet' as const, icon: Tablet, label: 'Tablet' },
-    { mode: 'mobile' as const, icon: Smartphone, label: 'Ponsel' },
+    { mode: 'desktop' as const, icon: Monitor, label: 'Desktop', visibility: 'hidden lg:flex' },
+    { mode: 'tablet' as const, icon: Tablet, label: 'Tablet', visibility: 'hidden sm:flex' },
+    { mode: 'mobile' as const, icon: Smartphone, label: 'Ponsel', visibility: 'flex' },
   ];
 
   return (
@@ -268,12 +270,12 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
 
         {/* Device Mode Switcher */}
         <div className="bg-[#F6F6F7] p-0.5 rounded-xl border border-[#E1E3E5] flex items-center gap-0.5">
-          {deviceModes.map(({ mode, icon: Icon, label }) => (
+          {deviceModes.map(({ mode, icon: Icon, label, visibility }) => (
             <button
               key={mode}
               type="button"
               onClick={() => onDeviceModeChange(mode)}
-              className={`p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition cursor-pointer ${
+              className={`${visibility} p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium items-center gap-1 transition cursor-pointer ${
                 deviceMode === mode
                   ? 'bg-white text-[#202223] shadow-xs border border-[#E1E3E5]'
                   : 'text-[#8C9196] hover:text-[#202223]'

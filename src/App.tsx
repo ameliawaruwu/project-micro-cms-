@@ -1657,8 +1657,8 @@ export default function App() {
               </span>
             </div>
 
-            {/* Viewport device switcher */}
-            <div className="flex items-center gap-1 bg-white/10 p-0.5 rounded-xl border border-white/15">
+            {/* Viewport device switcher: tidak berguna di HP (layarnya sudah selebar ponsel), jadi disembunyikan. */}
+            <div className="hidden sm:flex items-center gap-1 bg-white/10 p-0.5 rounded-xl border border-white/15">
               <button
                 type="button"
                 onClick={() => setStorefrontDeviceMode('desktop')}

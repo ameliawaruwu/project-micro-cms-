@@ -30,6 +30,7 @@ import { normalizeThemeId } from '../../themes/ThemeRegistry';
 import { resolveThemeForSections, HIDDEN_SECTION_IDS } from '../../themes/sectionResolver';
 import { storeService } from '../../services/storeService';
 import { fetchStoreBaseDomain } from '../../utils/storeDomain';
+import { fitDeviceModeToViewport, getViewportDeviceMode, type PreviewDeviceMode } from '../../utils/responsivePreview';
 import { useAuth } from '../../contexts/AuthContext';
 import { sessionHeaders } from '../../services/supabaseClient';
 
@@ -75,7 +76,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const [selectedSectionKey, setSelectedSectionKey] = useState<string | null>(
     initialSections.length > 0 ? (initialSections[0].key || `${initialSections[0].id}-0`) : null
   );
-  const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  // Device preview awal mengikuti lebar layar: di HP langsung "Ponsel", bukan "Desktop".
+  const [deviceMode, setDeviceMode] = useState<PreviewDeviceMode>(getViewportDeviceMode);
   const [activePreset, setActivePreset] = useState<string>('standard');
   const [hasChanges, setHasChanges] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -102,7 +104,17 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   });
 
   const [previewTemplate, setPreviewTemplate] = useState<TemplateGalleryItem | null>(null);
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [previewDevice, setPreviewDevice] = useState<PreviewDeviceMode>(getViewportDeviceMode);
+
+  // Saat layar menyempit (HP diputar, jendela diperkecil), turunkan device preview yang tidak lagi muat.
+  useEffect(() => {
+    const fitToViewport = () => {
+      setDeviceMode(fitDeviceModeToViewport);
+      setPreviewDevice(fitDeviceModeToViewport);
+    };
+    window.addEventListener('resize', fitToViewport);
+    return () => window.removeEventListener('resize', fitToViewport);
+  }, []);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingTemplateName, setLoadingTemplateName] = useState('');
   const [activePage, setActivePage] = useState('homepage');
@@ -372,7 +384,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         useCmsStore.getState().loadThemeData(mappedThemeId);
         setActiveThemeId(mappedThemeId);
         
-        setPreviewDevice('desktop');
+        setPreviewDevice(getViewportDeviceMode());
         setPageMode('preview');
         // Clean up URL so it doesn't get stuck in preview mode on reload
         const newUrl = window.location.pathname + (currentStore.slug ? `?toko=${currentStore.slug}` : '');
@@ -1405,8 +1417,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         <div className="fixed inset-0 z-[60] bg-white flex flex-col font-sans animate-in fade-in duration-200">
           {/* Shopify Theme Store Top Bar */}
           {/* Preview Modal Header Bar */}
-          <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0 z-50">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-white border-b border-gray-200 shrink-0 z-50">
+            <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={() => { setPageMode('library'); setPreviewTemplate(null); }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer text-gray-500 hover:text-gray-900"
@@ -1415,23 +1427,23 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="w-px h-6 bg-gray-200"></div>
-              <div>
-                <h2 className="text-base font-bold text-gray-900 leading-none">{previewTemplate.name}</h2>
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-gray-900 leading-none truncate">{previewTemplate.name}</h2>
                 <span className="text-xs text-gray-500 font-medium">Gratis • Multi-Page</span>
               </div>
             </div>
 
-            {/* Device Switcher */}
-            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+            {/* Device Switcher: di HP hanya "Ponsel" yang muat, jadi pengalihnya disembunyikan. */}
+            <div className="hidden sm:flex items-center gap-1 bg-gray-100 p-1 rounded-lg shrink-0">
               {([
-                { mode: 'desktop' as const, icon: Monitor },
-                { mode: 'tablet' as const, icon: Tablet },
-                { mode: 'mobile' as const, icon: Smartphone },
-              ]).map(({ mode, icon: Icon }) => (
+                { mode: 'desktop' as const, icon: Monitor, visibility: 'hidden lg:block' },
+                { mode: 'tablet' as const, icon: Tablet, visibility: 'block' },
+                { mode: 'mobile' as const, icon: Smartphone, visibility: 'block' },
+              ]).map(({ mode, icon: Icon, visibility }) => (
                 <button
                   key={mode}
                   onClick={() => setPreviewDevice(mode)}
-                  className={`p-2 rounded-md transition cursor-pointer ${
+                  className={`${visibility} p-2 rounded-md transition cursor-pointer ${
                     previewDevice === mode
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-400 hover:text-gray-600'
@@ -1443,7 +1455,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             </div>
 
             {/* Empty right placeholder for balance */}
-            <div className="w-16"></div>
+            <div className="hidden sm:block w-16"></div>
           </div>
 
           {/* Preview Canvas */}
@@ -1511,10 +1523,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             </div>
 
             {/* Floating Compact Action Bar at Bottom */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 sm:gap-4 bg-white/95 backdrop-blur-xl px-5 py-2 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.15)] border border-gray-200/80 animate-in fade-in slide-in-from-bottom-4 max-w-fit">
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 sm:gap-4 bg-white/95 backdrop-blur-xl px-5 py-2 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.15)] border border-gray-200/80 animate-in fade-in slide-in-from-bottom-4 w-max max-w-[calc(100vw-2rem)]">
               {/* Template Title & Badge */}
-              <div className="flex items-center gap-2 px-1 shrink-0">
-                <span className="font-extrabold text-gray-900 text-sm tracking-tight">{previewTemplate.name}</span>
+              <div className="flex items-center gap-2 px-1 min-w-0">
+                <span className="font-extrabold text-gray-900 text-sm tracking-tight truncate">{previewTemplate.name}</span>
                 <span className="text-xs text-gray-500 font-medium">Gratis</span>
               </div>
 
