@@ -24,6 +24,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { AdminTab, AdminNavItem, PlanFormState } from './types';
 import { AdminSidebar } from './components/AdminSidebar';
 import { AdminHeader } from './components/AdminHeader';
+import { DashboardFooter } from '../../components/layout/DashboardFooter';
 import { ProfileSettingsModal } from '../../components/common/ProfileSettingsModal';
 import { AdminOrderDetailModal } from './components/AdminOrderDetailModal';
 import { AdminOverviewTab } from './tabs/AdminOverviewTab';
@@ -873,6 +874,19 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               isSaving={isSavingSettings}
             />
           )}
+
+          <DashboardFooter
+            language={language}
+            panelLabel={
+              isSubAdminUmum
+                ? (isEn ? 'General Admin Panel' : 'Panel Admin Umum')
+                : isSubAdminProduk
+                ? (isEn ? 'Product Admin Panel' : 'Panel Admin Produk')
+                : isSubAdmin
+                ? (isEn ? 'Sub Admin Panel' : 'Panel Sub Admin')
+                : (isEn ? 'Super Admin Panel' : 'Panel Super Admin')
+            }
+          />
         </main>
       </div>
 

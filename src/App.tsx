@@ -59,6 +59,7 @@ import { getShippingBlockReason, isCodMethod } from './utils/orderFlow';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { BottomNav } from './components/layout/BottomNav';
+import { DashboardFooter } from './components/layout/DashboardFooter';
 import { Toast, ToastMessage } from './components/common/Toast';
 import { ShareStoreModal } from './components/common/ShareStoreModal';
 import { SupportChatbotModal } from './components/common/SupportChatbotModal';
@@ -2200,6 +2201,9 @@ export default function App() {
                   onNavigateDashboard={() => setActiveTab('beranda')}
                 />
               )}
+
+              {/* Footer dasbor (tidak di editor layout yang memenuhi layar) */}
+              {activeTab !== 'layout' && <DashboardFooter panelLabel="Panel Merchant" />}
             </main>
 
             {/* Mobile Bottom Navigation */}
