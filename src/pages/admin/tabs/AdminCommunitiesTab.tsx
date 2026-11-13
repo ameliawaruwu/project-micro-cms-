@@ -96,6 +96,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'merchants' | 'invoices'>('overview');
   const [searchMerchant, setSearchMerchant] = useState('');
+  const [searchCommunity, setSearchCommunity] = useState('');
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedStoreToAssign, setSelectedStoreToAssign] = useState('');
   const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
@@ -505,6 +506,13 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     });
   };
 
+  const communityQuery = searchCommunity.trim().toLowerCase();
+  const filteredCommunities = communityQuery
+    ? communities.filter((c) =>
+        [c.name, c.id, c.slug].some((v) => (v || '').toLowerCase().includes(communityQuery))
+      )
+    : communities;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200 font-sans pb-16 text-left">
       {/* 1. Header Bar */}
@@ -533,23 +541,6 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         {/* Actions: Khusus Super Admin vs Sub Admin Komunitas */}
         {!isSubAdmin ? (
           <div className="shrink-0 flex items-center gap-2.5 flex-wrap">
-            {communities.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-600">Pilih Organisasi:</span>
-                <select
-                  value={selectedCommunityId}
-                  onChange={(e) => setSelectedCommunityId(e.target.value)}
-                  className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-[#66000E] cursor-pointer"
-                >
-                  {communities.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
             <button
               type="button"
               onClick={() => setIsCreateModalOpen(true)}
@@ -567,6 +558,76 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           </div>
         )}
       </div>
+
+      {/* Daftar Organisasi (Super Admin): pilih organisasi yang ingin dikelola */}
+      {!isSubAdmin && communities.length > 0 && (
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div>
+              <h2 className="text-sm font-bold text-gray-900">Daftar Organisasi ({communities.length})</h2>
+              <p className="text-[11px] text-gray-500">Klik salah satu organisasi untuk melihat dan mengelola detailnya.</p>
+            </div>
+            {communities.length > 4 && (
+              <div className="relative w-full sm:w-64">
+                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchCommunity}
+                  onChange={(e) => setSearchCommunity(e.target.value)}
+                  placeholder="Cari nama, ID, atau slug..."
+                  className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:border-[#66000E]"
+                />
+              </div>
+            )}
+          </div>
+
+          {filteredCommunities.length === 0 ? (
+            <p className="text-xs text-gray-500 py-4 text-center">Tidak ada organisasi yang cocok.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 max-h-72 overflow-y-auto pr-0.5">
+              {filteredCommunities.map((c) => {
+                const isSelected = c.id === selectedCommunityId;
+                const isInactive = c.status === 'inactive';
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSelectedCommunityId(c.id)}
+                    aria-pressed={isSelected}
+                    className={`flex items-center gap-3 p-3 rounded-xl border text-left transition cursor-pointer ${
+                      isSelected
+                        ? 'border-[#66000E] bg-[#F5E8EA] ring-1 ring-[#66000E]'
+                        : 'border-gray-200 bg-white hover:border-[#66000E]/40 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-extrabold shrink-0 ${
+                        isSelected ? 'bg-[#66000E] text-white' : 'bg-[#F5E8EA] text-[#66000E]'
+                      }`}
+                    >
+                      {c.name.slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-xs font-bold text-gray-900 truncate">{c.name}</span>
+                      <span className="block text-[10px] text-gray-500 truncate">
+                        {c.id} · /{c.slug}
+                      </span>
+                    </span>
+                    {isSelected ? (
+                      <Check className="w-4 h-4 text-[#66000E] shrink-0" />
+                    ) : (
+                      <span
+                        className={`w-2 h-2 rounded-full shrink-0 ${isInactive ? 'bg-gray-300' : 'bg-emerald-500'}`}
+                        title={isInactive ? 'Nonaktif' : 'Aktif'}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {!activeCommunity ? (
         <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center shadow-2xs space-y-4">
