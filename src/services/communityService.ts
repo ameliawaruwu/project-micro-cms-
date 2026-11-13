@@ -446,20 +446,27 @@ class CommunityService {
       throw e;
     }
 
-    // 2. Hapus akun user Sub-Admin yang terikat dengan komunitas ini
+    // 2. Hapus akun admin komunitas (sub admin / koordinator). Akun merchant anggota
+    //    TIDAK ikut dihapus, hanya dilepas dari komunitas.
+    const COMMUNITY_ADMIN_ROLES = ['sub_admin', 'sub_admin_umum', 'community_admin'];
     try {
       const { data: subAdminUsers } = await supabase
         .from('users')
         .select('id, email')
-        .eq('community_id', id);
+        .eq('community_id', id)
+        .in('role', COMMUNITY_ADMIN_ROLES);
 
       if (subAdminUsers && subAdminUsers.length > 0) {
         for (const u of subAdminUsers) {
           authService.purgeLocalAccount(u.email);
         }
-        await supabase.from('users').delete().eq('community_id', id);
-        console.log(`[communityService] Akun Sub-Admin terkait organisasi ${id} berhasil dihapus.`);
+        await supabase.from('users').delete().eq('community_id', id).in('role', COMMUNITY_ADMIN_ROLES);
+        console.log(`[communityService] Akun admin komunitas organisasi ${id} berhasil dihapus.`);
       }
+      await supabase
+        .from('users')
+        .update({ community_id: null, community_name: null, updated_at: getWibIsoString() })
+        .eq('community_id', id);
     } catch (e) {
       console.warn('[communityService] Warning cleaning up sub_admin user in Supabase:', e);
     }

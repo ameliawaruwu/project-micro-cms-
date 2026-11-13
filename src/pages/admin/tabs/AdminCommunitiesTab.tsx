@@ -472,10 +472,17 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
   // Trigger Alert Dialog untuk menghapus organisasi secara permanen (Delete CRUD)
   const promptDeleteCommunity = (commId: string, commName: string) => {
+    const target = communities.find((c) => c.id === commId);
+    const memberCount = stores.filter((s) =>
+      storeInCommunity(s, commId, (target?.name || commName).trim().toLowerCase())
+    ).length;
+    const adminEmails = [target?.subAdminEmail, target?.coordinatorEmail]
+      .filter((e, i, arr): e is string => !!e && arr.indexOf(e) === i)
+      .join(', ');
     setConfirmDialog({
       isOpen: true,
-      title: `Hapus Organisasi "${commName}"?`,
-      description: `Tindakan ini akan menghapus organisasi secara permanen dari database Supabase. Seluruh lapak binaan (${communityStores.length} toko) akan dilepas menjadi toko mandiri, dan akun Sub-Admin koordinator (${activeCommunity?.coordinatorEmail || ''}) akan dihapus.`,
+      title: `Hapus Organisasi "${commName}" (${commId})?`,
+      description: `Organisasi akan dihapus permanen dan tidak bisa dibatalkan. ${memberCount} lapak binaan dilepas menjadi toko mandiri (toko & akun merchant tetap ada)${adminEmails ? `, sedangkan akun admin komunitas (${adminEmails}) ikut dihapus` : ''}. Tagihan omset & permintaan gabung organisasi ini juga terhapus.`,
       confirmText: 'Ya, Hapus Organisasi',
       isDanger: true,
       onConfirm: async () => {
@@ -589,16 +596,19 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 const isSelected = c.id === selectedCommunityId;
                 const isInactive = c.status === 'inactive';
                 return (
-                  <button
+                  <div
                     key={c.id}
-                    type="button"
-                    onClick={() => setSelectedCommunityId(c.id)}
-                    aria-pressed={isSelected}
-                    className={`flex items-center gap-3 p-3 rounded-xl border text-left transition cursor-pointer ${
+                    className={`flex items-center rounded-xl border transition ${
                       isSelected
                         ? 'border-[#66000E] bg-[#F5E8EA] ring-1 ring-[#66000E]'
                         : 'border-gray-200 bg-white hover:border-[#66000E]/40 hover:bg-gray-50'
                     }`}
+                  >
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCommunityId(c.id)}
+                    aria-pressed={isSelected}
+                    className="flex-1 min-w-0 flex items-center gap-3 p-3 pr-1.5 text-left cursor-pointer"
                   >
                     <span
                       className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-extrabold shrink-0 ${
@@ -622,6 +632,16 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       />
                     )}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => promptDeleteCommunity(c.id, c.name)}
+                    title={`Hapus organisasi ${c.name}`}
+                    aria-label={`Hapus organisasi ${c.name}`}
+                    className="p-2 mr-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  </div>
                 );
               })}
             </div>

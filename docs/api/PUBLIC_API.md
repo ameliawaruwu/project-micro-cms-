@@ -112,7 +112,7 @@ curl -X GET "https://lapakq.com/api/v1/communities?status=active" \
   "message": "Daftar komunitas berhasil diambil.",
   "data": [
     {
-      "id": "comm_1793843915683",
+      "id": "COM001",
       "name": "GMPS",
       "slug": "gmps",
       "description": "GMPS adalah perkumpulan Organisasi Kepemudaan (OKP)...",
@@ -161,7 +161,7 @@ curl -X GET "https://lapakq.com/api/v1/communities/gmps"
   "code": "COMMUNITY_FETCHED",
   "message": "Detail komunitas berhasil diambil.",
   "data": {
-    "id": "comm_1793843915683",
+    "id": "COM001",
     "name": "GMPS",
     "slug": "gmps",
     "description": "GMPS adalah perkumpulan Organisasi Kepemudaan (OKP)...",
@@ -222,7 +222,7 @@ Mengambil daftar toko di platform dengan opsi filter komunitas, kategori, pencar
   | Parameter | Tipe | Default | Keterangan |
   |---|---|---|---|
   | `communitySlug` | string | `""` | Filter berdasarkan slug komunitas (contoh: `gmps`) |
-  | `communityId` | string | `""` | Filter berdasarkan ID komunitas (contoh: `comm_1793843915683`) |
+  | `communityId` | string | `""` | Filter berdasarkan ID komunitas (contoh: `COM001`) |
   | `category` | string | `""` | Filter kategori toko (contoh: `Kuliner`, `Fashion`, `Kerajinan`) |
   | `search` | string | `""` | Cari nama toko atau slug |
   | `isPublished` | boolean | `true` | Filter status toko yang telah dipublish |
@@ -253,7 +253,7 @@ curl -X GET "https://lapakq.com/api/v1/stores?communitySlug=gmps&isPublished=tru
       "phoneWhatsApp": "081234567890",
       "city": "Garut",
       "province": "Jawa Barat",
-      "communityId": "comm_1793843915683",
+      "communityId": "COM001",
       "communityName": "GMPS",
       "isPublished": true,
       "customDomain": null,
@@ -298,7 +298,7 @@ curl -X GET "https://lapakq.com/api/v1/stores/kopi-robusta-garut"
     "phoneWhatsApp": "6281234567890",
     "city": "Garut",
     "province": "Jawa Barat",
-    "communityId": "comm_1793843915683",
+    "communityId": "COM001",
     "communityName": "GMPS",
     "communityMemberRef": "GMPS-2026-0001",
     "isPublished": true,

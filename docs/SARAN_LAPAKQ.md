@@ -38,7 +38,7 @@ Selama ini `stores.community_id` diisi lewat `redeemReferral` (`src/services/ref
 
 1. Sub-admin GMPS bisa **membuat toko untuk anggota** langsung di komunitas GMPS dari dashboard.
 2. Sub-admin GMPS bisa **memasukkan toko yang sudah ada** ke komunitas GMPS, dan mengeluarkannya. `communityService.assignStoreToCommunity` sudah ada dan tinggal dibuka di UI sub-admin.
-3. Terbitkan **key partner GMPS** di `partner_api_keys` dengan `community_id` = id komunitas GMPS (`comm_1793843915683`). Kirim key-nya ke tim portal lewat jalur privat.
+3. Terbitkan **key partner GMPS** di `partner_api_keys` dengan `community_id` = id komunitas GMPS (`COM001`). Kirim key-nya ke tim portal lewat jalur privat.
 
 ### 1.3 Toko yang belum terbit ikut terbaca publik
 
@@ -76,7 +76,7 @@ Saat ini admin portal mencocokkan anggota dengan toko secara manual. Satu-satuny
 Usulan: tambahkan field "nomor anggota komunitas" pada toko. Field ini diisi sub-admin saat membuat atau memasukkan toko, lalu dibuka di API:
 
 ```json
-{ "id": "STR001", "communityId": "comm_1793843915683", "communityMemberRef": "GMPS-2026-0001" }
+{ "id": "STR001", "communityId": "COM001", "communityMemberRef": "GMPS-2026-0001" }
 ```
 
 Dengan field ini portal bisa menautkan anggota ke tokonya secara otomatis.
