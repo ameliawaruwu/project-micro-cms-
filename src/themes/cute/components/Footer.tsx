@@ -4,6 +4,7 @@ import { Heart } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 
 export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -35,9 +36,11 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 border-4 border-[#FFD1DC]">
             <Heart className="w-8 h-8 text-[#FF85A1] fill-[#FF85A1]" />
           </div>
-          <h3 className="text-2xl font-black tracking-tight text-[#FF85A1] mb-4 break-words max-w-full">
-            {storeName}
-          </h3>
+          <FooterBrand sectionOptions={sectionOptions} name={storeName} imgClassName="h-12 mb-4 mx-auto md:mx-0">
+            <h3 className="text-2xl font-black tracking-tight text-[#FF85A1] mb-4 break-words max-w-full">
+              {storeName}
+            </h3>
+          </FooterBrand>
           <p className="text-gray-600 font-medium text-sm leading-relaxed mb-6">
             {storeDesc}
           </p>

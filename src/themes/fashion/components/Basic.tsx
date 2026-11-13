@@ -7,6 +7,7 @@ import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCountBadge } from '../../storefrontCart';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { STORE_ROUTES } from '../../storefrontLinks';
@@ -153,7 +154,9 @@ export const FashionFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
       <div className="max-w-7xl mx-auto px-5 sm:px-6 md:px-12">
         <div className={`grid ${gridColsClass} gap-10 mb-12`}>
           <div className={brandSpanClass}>
-            <h2 className="text-3xl font-serif italic mb-4 break-words">{storeTitle}</h2>
+            <FooterBrand sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-12 mb-4">
+              <h2 className="text-3xl font-serif italic mb-4 break-words">{storeTitle}</h2>
+            </FooterBrand>
             {storeDesc && <p className="text-sm text-gray-400 leading-loose max-w-md">{storeDesc}</p>}
             <FooterSocialLinks sectionOptions={sectionOptions} className="mt-6" itemClassName="rounded-none border border-white/30 hover:border-white" />
           </div>

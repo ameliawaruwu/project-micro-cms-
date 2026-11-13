@@ -4,6 +4,7 @@ import { Mail, MapPin } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 
 export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
@@ -40,7 +41,9 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
         <div className={`grid ${gridColsClass} gap-10 mb-10`}>
 
           <div className={colSpan5Class}>
-            <h3 className="text-xl font-extrabold text-gray-900 mb-3 break-words">{storeName}</h3>
+            <FooterBrand sectionOptions={sectionOptions} name={storeName} imgClassName="h-11 mb-3">
+              <h3 className="text-xl font-extrabold text-gray-900 mb-3 break-words">{storeName}</h3>
+            </FooterBrand>
             <p className="text-sm text-gray-500 leading-relaxed max-w-sm mb-5">{storeDesc}</p>
             <FooterSocialLinks sectionOptions={sectionOptions} itemClassName="rounded-full bg-white/70 border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-400" />
           </div>

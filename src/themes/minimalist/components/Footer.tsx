@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 
 export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -68,9 +69,11 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
       <div className={`max-w-7xl mx-auto grid ${gridColsClass} ${gridMarginClass}`}>
 
         <div className={brandColClass}>
-          <h3 className="text-xl sm:text-2xl font-light tracking-tight text-gray-900 mb-2 sm:mb-4 break-words">
-            {storeName}
-          </h3>
+          <FooterBrand sectionOptions={sectionOptions} name={storeName} imgClassName="h-10 sm:h-12 mb-2 sm:mb-4">
+            <h3 className="text-xl sm:text-2xl font-light tracking-tight text-gray-900 mb-2 sm:mb-4 break-words">
+              {storeName}
+            </h3>
+          </FooterBrand>
           {storeDesc && (
             <p className="text-gray-500 text-xs sm:text-sm max-w-sm leading-relaxed font-light break-words">
               {storeDesc}

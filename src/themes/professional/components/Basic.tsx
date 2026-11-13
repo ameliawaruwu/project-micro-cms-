@@ -7,6 +7,7 @@ import { StoreLogo } from '../../StoreLogo';
 import { CartCountBadge } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
@@ -189,12 +190,14 @@ export const ProfessionalFooter: React.FC<{ sectionOptions?: any; isMobile?: boo
       <div className="max-w-7xl mx-auto px-5 sm:px-6 md:px-16">
         <div className={`grid ${gridColsClass} gap-10 mb-12`}>
           <div className={brandSpanClass}>
-            <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-3 min-w-0">
-              <span className="w-8 h-8 shrink-0 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl leading-none">
-                {(storeTitle || 'P')[0]?.toUpperCase()}
-              </span>
-              <span className="break-words min-w-0">{storeTitle}</span>
-            </h2>
+            <FooterBrand sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-11 mb-4">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-3 min-w-0">
+                <span className="w-8 h-8 shrink-0 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl leading-none">
+                  {(storeTitle || 'P')[0]?.toUpperCase()}
+                </span>
+                <span className="break-words min-w-0">{storeTitle}</span>
+              </h2>
+            </FooterBrand>
             {storeDesc && <p className="text-sm text-gray-400 leading-relaxed max-w-md">{storeDesc}</p>}
             <FooterSocialLinks sectionOptions={sectionOptions} className="mt-5" itemClassName="rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500" />
           </div>

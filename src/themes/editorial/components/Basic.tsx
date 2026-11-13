@@ -6,6 +6,7 @@ import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navM
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
@@ -249,7 +250,9 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
   return (
     <footer className="w-full px-5 sm:px-6 md:px-12 py-16 sm:py-24 bg-gray-900 text-white flex flex-col items-center">
-      <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif italic mb-4 text-center break-words max-w-full">{storeTitle}</h2>
+      <FooterBrand sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-14 sm:h-16 mx-auto mb-4">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif italic mb-4 text-center break-words max-w-full">{storeTitle}</h2>
+      </FooterBrand>
       {(sectionOptions.description || storeInfo?.description) && (
         <p className="text-xs md:text-sm font-serif italic text-gray-400 max-w-md text-center mb-10 leading-relaxed">
           {sectionOptions.description || storeInfo?.description}

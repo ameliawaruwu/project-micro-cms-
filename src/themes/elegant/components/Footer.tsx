@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 
 export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -30,9 +31,11 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
         
         {/* Brand */}
         <div className={`flex-1 min-w-0 ${maxWClass}`}>
-          <h3 className="text-2xl sm:text-3xl font-normal tracking-widest uppercase mb-6 sm:mb-8 break-words">
-            {storeName}
-          </h3>
+          <FooterBrand sectionOptions={sectionOptions} name={storeName} imgClassName="h-12 mb-6 sm:mb-8">
+            <h3 className="text-2xl sm:text-3xl font-normal tracking-widest uppercase mb-6 sm:mb-8 break-words">
+              {storeName}
+            </h3>
+          </FooterBrand>
           <p className="text-[#A39D98] text-lg italic leading-relaxed mb-8">
             {storeDesc}
           </p>

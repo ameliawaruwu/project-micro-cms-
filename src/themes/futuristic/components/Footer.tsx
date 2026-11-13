@@ -4,6 +4,7 @@ import { Cpu, Mail, MapPin } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 
 export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#8B5CF6', isMobile, isTablet }) => {
@@ -44,12 +45,14 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
         <div className={`grid ${mainGridClass} gap-10 mb-10`}>
           {/* Brand */}
           <div className={`${brandSpanClass} space-y-4 min-w-0`}>
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accentColor}33`, border: `1px solid ${accentColor}66`, color: accentColor }}>
-                <Cpu className="w-5 h-5" />
+            <FooterBrand sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-11">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accentColor}33`, border: `1px solid ${accentColor}66`, color: accentColor }}>
+                  <Cpu className="w-5 h-5" />
+                </div>
+                <h3 className="text-2xl font-extrabold tracking-wider uppercase text-white break-words min-w-0">{storeTitle}</h3>
               </div>
-              <h3 className="text-2xl font-extrabold tracking-wider uppercase text-white break-words min-w-0">{storeTitle}</h3>
-            </div>
+            </FooterBrand>
             {storeDesc && <p className="text-gray-400 text-xs leading-relaxed max-w-md">{storeDesc}</p>}
             <FooterSocialLinks sectionOptions={sectionOptions} className="pt-1" itemClassName="rounded-xl border border-white/15 text-gray-400 hover:text-white hover:border-white/40" />
           </div>

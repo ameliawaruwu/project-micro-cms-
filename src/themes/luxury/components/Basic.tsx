@@ -9,6 +9,7 @@ import { StoreLogo } from '../../StoreLogo';
 import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { useThemeProductsSource } from '../../useSectionProducts';
@@ -170,9 +171,11 @@ export const LuxuryFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
 
   return (
     <footer className="w-full px-5 sm:px-8 md:px-16 py-14 sm:py-20 bg-white text-[#36281D] flex flex-col items-center text-center border-t border-[#F0EBE1]">
-      <a href="/" className="text-3xl sm:text-4xl font-serif mb-3 text-[#8C531B] tracking-wider hover:opacity-85 transition-opacity break-words max-w-full">
-        {storeTitle}
-      </a>
+      <FooterBrand sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-14 mx-auto mb-3">
+        <a href="/" className="text-3xl sm:text-4xl font-serif mb-3 text-[#8C531B] tracking-wider hover:opacity-85 transition-opacity break-words max-w-full">
+          {storeTitle}
+        </a>
+      </FooterBrand>
       {storeDesc && (
         <p className="text-xs sm:text-sm font-light text-[#7D6E63] max-w-md mb-8 leading-relaxed font-sans">{storeDesc}</p>
       )}

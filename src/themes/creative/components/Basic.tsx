@@ -7,6 +7,7 @@ import { StoreLogo } from '../../StoreLogo';
 import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
@@ -171,9 +172,11 @@ export const CreativeFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
     <footer className="w-full px-5 sm:px-8 py-14 sm:py-20 bg-black text-white flex flex-col items-center text-center relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-[#E11D48] via-yellow-300 to-blue-500"></div>
 
-      <h2 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-[#E11D48] mb-4 break-words max-w-full">
-        {storeTitle}
-      </h2>
+      <FooterBrand sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-14 sm:h-16 mx-auto mb-4">
+        <h2 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-[#E11D48] mb-4 break-words max-w-full">
+          {storeTitle}
+        </h2>
+      </FooterBrand>
       {storeDesc && (
         <p className="text-sm md:text-base text-gray-300 max-w-md mb-8 font-medium leading-relaxed">{storeDesc}</p>
       )}

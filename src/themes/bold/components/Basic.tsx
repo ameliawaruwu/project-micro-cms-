@@ -8,6 +8,7 @@ import { StoreLogo } from '../../StoreLogo';
 import { CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
@@ -191,9 +192,11 @@ export const BoldFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   return (
     <footer className="w-full px-5 sm:px-8 py-12 sm:py-16 bg-zinc-950 text-white text-center border-t border-zinc-800/80 relative overflow-hidden">
       <div className="max-w-4xl mx-auto space-y-6">
-        <a href="/" className="inline-block text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter uppercase text-white hover:text-red-500 transition-colors break-words max-w-full">
-          {storeTitle}
-        </a>
+        <FooterBrand sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-14 sm:h-16 mx-auto">
+          <a href="/" className="inline-block text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter uppercase text-white hover:text-red-500 transition-colors break-words max-w-full">
+            {storeTitle}
+          </a>
+        </FooterBrand>
         {storeDesc && <p className="text-sm text-zinc-400 max-w-xl mx-auto leading-relaxed">{storeDesc}</p>}
         <nav className="flex flex-wrap justify-center gap-x-6 gap-y-3 font-semibold uppercase tracking-wider text-xs text-zinc-400">
           {navItems.map((nav) => (

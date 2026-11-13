@@ -41,6 +41,7 @@ import { SectionContentFields } from './SectionContentFields';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { storeService } from '../../services/storeService';
 import { mediaService } from '../../services/mediaService';
+import { getFooterLogoType } from '../../themes/FooterBrand';
 
 /** Kolom media sosial footer (dibaca tema lewat getFooterSocialLinks). */
 const FOOTER_SOCIAL_FIELDS = [
@@ -111,6 +112,9 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   const [uploadingProductId, setUploadingProductId] = useState<string | null>(null);
   const [productUploadError, setProductUploadError] = useState<{ id: string; message: string } | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const footerLogoInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingFooterLogo, setIsUploadingFooterLogo] = useState(false);
+  const [footerLogoError, setFooterLogoError] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [newMenuLabel, setNewMenuLabel] = useState('');
   const [newMenuHref, setNewMenuHref] = useState('');
@@ -440,6 +444,124 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     <StoreIcon className="w-3.5 h-3.5 text-[#2C6ECB]" />
                     <span className="text-[12px] font-bold text-[#202223]">Identitas Brand Footer</span>
                   </div>
+
+                  {/* Logo footer: teks (nama toko) atau gambar */}
+                  {(() => {
+                    const footerLogoType = getFooterLogoType(opts);
+                    const footerLogoPreview = (opts as any).footerLogoUrl || store.logoUrl || '';
+                    return (
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold text-gray-700">Logo Footer</label>
+                        <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-[#F1F2F3]" role="radiogroup" aria-label="Jenis logo footer">
+                          {([
+                            { value: 'text', label: 'Teks', Icon: Type },
+                            { value: 'image', label: 'Gambar', Icon: ImageIcon },
+                          ] as const).map(({ value, label, Icon }) => (
+                            <button
+                              key={value}
+                              type="button"
+                              role="radio"
+                              aria-checked={footerLogoType === value}
+                              onClick={() => handleOptionChange({ footerLogoType: value } as any)}
+                              className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[12px] font-semibold cursor-pointer transition-colors ${
+                                footerLogoType === value ? 'bg-white text-[#202223] shadow-sm' : 'text-[#6D7175] hover:text-[#202223]'
+                              }`}
+                            >
+                              <Icon className="w-3.5 h-3.5" />
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {footerLogoType === 'image' && (
+                          <div className="p-3 rounded-lg border border-[#E1E3E5] bg-white space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[12px] font-semibold text-[#202223]">Logo Gambar Footer</span>
+                              <span className="text-[10px] text-[#6D7175]">PNG/JPG/WEBP, maks. 2 MB</span>
+                            </div>
+                            <input
+                              ref={footerLogoInputRef}
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                e.target.value = '';
+                                if (!file) return;
+                                setFooterLogoError('');
+                                if (!file.type.startsWith('image/')) {
+                                  setFooterLogoError('File harus berupa gambar.');
+                                  return;
+                                }
+                                if (file.size > 2 * 1024 * 1024) {
+                                  setFooterLogoError('Ukuran logo maksimal 2 MB.');
+                                  return;
+                                }
+                                if (!store?.id) {
+                                  setFooterLogoError('Toko belum siap, coba lagi.');
+                                  return;
+                                }
+                                setIsUploadingFooterLogo(true);
+                                try {
+                                  const url = await storeService.uploadStoreImage(store.id, file, 'logo');
+                                  handleOptionChange({ footerLogoUrl: url } as any);
+                                } catch (err: any) {
+                                  setFooterLogoError(err?.message || 'Gagal mengupload logo.');
+                                } finally {
+                                  setIsUploadingFooterLogo(false);
+                                }
+                              }}
+                            />
+                            {footerLogoPreview ? (
+                              <div className="flex items-center gap-3">
+                                <div className="w-24 h-14 rounded-md border border-[#E1E3E5] bg-[repeating-conic-gradient(#F1F2F3_0%_25%,#FFFFFF_0%_50%)] [background-size:12px_12px] flex items-center justify-center overflow-hidden">
+                                  <img src={footerLogoPreview} alt="Logo footer" className="max-w-full max-h-full object-contain" />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <button
+                                    type="button"
+                                    disabled={isUploadingFooterLogo}
+                                    onClick={() => footerLogoInputRef.current?.click()}
+                                    className="px-2.5 py-1 rounded-md border border-[#E1E3E5] text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] disabled:opacity-60 cursor-pointer"
+                                  >
+                                    {isUploadingFooterLogo ? 'Mengupload...' : (opts as any).footerLogoUrl ? 'Ganti Logo' : 'Upload Logo Khusus'}
+                                  </button>
+                                  {(opts as any).footerLogoUrl && (
+                                    <button
+                                      type="button"
+                                      disabled={isUploadingFooterLogo}
+                                      onClick={() => handleOptionChange({ footerLogoUrl: '' } as any)}
+                                      className="px-2.5 py-1 rounded-md border border-red-200 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60 cursor-pointer"
+                                    >
+                                      Hapus Logo
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={isUploadingFooterLogo}
+                                onClick={() => footerLogoInputRef.current?.click()}
+                                className="w-full py-3 rounded-md border-2 border-dashed border-[#C9CCCF] text-[12px] font-semibold text-[#2C6ECB] hover:border-[#2C6ECB] hover:bg-[#F1F8FF] disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>{isUploadingFooterLogo ? 'Mengupload logo...' : 'Upload Logo'}</span>
+                              </button>
+                            )}
+                            <p className="text-[11px] text-[#6D7175]">
+                              {(opts as any).footerLogoUrl
+                                ? 'Logo ini hanya dipakai di footer.'
+                                : footerLogoPreview
+                                  ? 'Memakai logo header. Upload logo khusus bila footer butuh versi lain (mis. logo putih untuk footer gelap).'
+                                  : 'Belum ada logo: footer tetap menampilkan nama toko sampai logo diupload.'}
+                            </p>
+                            {footerLogoError && <p className="text-[11px] font-semibold text-red-600">{footerLogoError}</p>}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-gray-700">Nama Toko / Judul Footer</label>
