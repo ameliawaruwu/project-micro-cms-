@@ -80,6 +80,23 @@ function getBottomNavIcon(page: string | null, label: string): LucideIcon {
 /** Jumlah tombol maksimum di kapsul navigasi bawah ponsel (sama dengan landing page). */
 const BOTTOM_NAV_MAX_ITEMS = 5;
 
+/**
+ * Gaya kapsul navigasi bawah preview ponsel per template. Warna diambil dari variabel tema
+ * (--sf-*, lihat getStorefrontThemeVars) sehingga mengikuti palet & aksen toko; di sini hanya
+ * bentuknya: tema bersudut tajam (radius 0/2px) memakai bar persegi, tema lain kapsul bulat.
+ */
+type BottomNavVariant = { sharp: boolean; uppercase: boolean; brutal: boolean; glow: boolean };
+const BOTTOM_NAV_VARIANTS: Record<string, BottomNavVariant> = {
+  minimalist: { sharp: true, uppercase: true, brutal: false, glow: false },
+  fashion: { sharp: true, uppercase: true, brutal: false, glow: false },
+  editorial: { sharp: true, uppercase: true, brutal: false, glow: false },
+  bold: { sharp: true, uppercase: true, brutal: true, glow: false },
+  futuristic: { sharp: false, uppercase: true, brutal: false, glow: true },
+};
+const DEFAULT_BOTTOM_NAV_VARIANT: BottomNavVariant = { sharp: false, uppercase: false, brutal: false, glow: false };
+const getBottomNavVariant = (themeId: string): BottomNavVariant =>
+  BOTTOM_NAV_VARIANTS[normalizeThemeId(themeId)] || DEFAULT_BOTTOM_NAV_VARIANT;
+
 interface CenterPreviewCanvasProps {
   store: Store;
   products: any[];
@@ -2758,9 +2775,25 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
               (activePage === 'homepage' ? items[0]?.id : undefined);
 
             if (items.length === 0) return null;
+
+            // Warna, font & aksen mengikuti template aktif (variabel --sf-*); bentuk per varian.
+            const variant = getBottomNavVariant(activeThemeId);
+            const shapeClass = variant.sharp ? 'rounded-none' : 'rounded-full';
+            const barShadow = variant.brutal
+              ? '4px 4px 0 0 var(--sf-text)'
+              : variant.glow
+                ? '0 0 0 1px var(--sf-border), 0 12px 32px -8px color-mix(in srgb, var(--sf-primary) 45%, transparent)'
+                : '0 12px 32px -8px color-mix(in srgb, var(--sf-primary) 28%, transparent), 0 2px 6px rgba(0,0,0,0.06)';
             return (
-              <nav aria-label="Navigasi menu" className="relative h-0 shrink-0 z-30">
-                <ul className="absolute inset-x-3 bottom-3 flex items-center gap-1 rounded-full border border-white/70 bg-white/85 p-1.5 shadow-[0_12px_32px_-8px_rgba(102,0,14,0.28),0_2px_6px_rgba(36,26,26,0.08)] backdrop-blur-xl font-sans select-none">
+              <nav aria-label="Navigasi menu" className="relative h-0 shrink-0 z-30" style={getStorefrontThemeVars(activeThemeId, primaryAccent)}>
+                <ul
+                  className={`absolute inset-x-3 bottom-3 flex items-center gap-1 p-1.5 backdrop-blur-xl select-none ${shapeClass} ${variant.brutal ? 'border-2' : 'border'}`}
+                  style={{
+                    backgroundColor: 'color-mix(in srgb, var(--sf-card) 88%, transparent)',
+                    borderColor: variant.brutal ? 'var(--sf-text)' : 'var(--sf-border)',
+                    boxShadow: barShadow,
+                  }}
+                >
                   {items.map(({ id, label, route, Icon }) => {
                     const isActive = id === activeId;
                     return (
@@ -2769,14 +2802,27 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           type="button"
                           onClick={() => handleNavClick(route, label)}
                           aria-current={isActive ? 'page' : undefined}
-                          className={`relative flex w-full min-h-[52px] flex-col items-center justify-center gap-1 rounded-full px-1 cursor-pointer transition-colors duration-200 active:scale-95 ${
-                            isActive
-                              ? 'bg-[#66000E] text-white shadow-[0_6px_14px_-4px_rgba(102,0,14,0.55)]'
-                              : 'text-[#706866] hover:text-[#241A1A]'
+                          className={`relative flex w-full min-h-[52px] flex-col items-center justify-center gap-1 px-1 cursor-pointer transition-[color,background-color,opacity] duration-200 active:scale-95 ${shapeClass} ${
+                            isActive ? '' : 'opacity-80 hover:opacity-100'
                           }`}
+                          style={
+                            isActive
+                              ? {
+                                  backgroundColor: 'var(--sf-primary)',
+                                  color: 'var(--sf-primary-contrast)',
+                                  boxShadow: variant.brutal
+                                    ? 'none'
+                                    : '0 6px 14px -4px color-mix(in srgb, var(--sf-primary) 55%, transparent)',
+                                }
+                              : { color: 'var(--sf-text-soft)' }
+                          }
                         >
                           <Icon className="w-5 h-5" strokeWidth={isActive ? 2.2 : 1.8} aria-hidden="true" />
-                          <span className={`text-[10px] leading-none tracking-tight truncate max-w-full ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                          <span
+                            className={`leading-none truncate max-w-full ${
+                              variant.uppercase ? 'text-[9px] uppercase tracking-[0.08em]' : 'text-[10px] tracking-tight'
+                            } ${variant.brutal ? 'font-black' : isActive ? 'font-semibold' : 'font-medium'}`}
+                          >
                             {label}
                           </span>
                         </button>
