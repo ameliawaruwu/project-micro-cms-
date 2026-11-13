@@ -83,6 +83,26 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   );
   const isManualMode = !isGatewayEnabledOnPlatform;
 
+  // Pilihan manual mengikuti pengaturan pembayaran toko (transfer/QRIS toko & COD).
+  const payConfig = store.paymentConfig;
+  const manualOptions = (() => {
+    const list: { id: 'transfer_manual' | 'cod'; title: string; desc: string }[] = [];
+    if (!payConfig || payConfig.enableManualTransfer) {
+      list.push({
+        id: 'transfer_manual',
+        title: payConfig?.manualQrisImageUrl ? 'Transfer Bank / QRIS Toko' : 'Transfer Bank Manual',
+        desc: 'Bayar ke rekening/QRIS toko lalu kirim bukti bayar',
+      });
+    }
+    if (!payConfig || payConfig.enableCod) {
+      list.push({ id: 'cod', title: 'Bayar di Tempat (COD)', desc: 'Bayar tunai saat pesanan Anda tiba' });
+    }
+    if (list.length === 0) {
+      list.push({ id: 'cod', title: 'Bayar di Tempat (COD)', desc: 'Bayar tunai saat pesanan Anda tiba' });
+    }
+    return list;
+  })();
+
   // Dynamic Midtrans Channels from merchant configuration
   const [activeChannels, setActiveChannels] = useState<PaymentChannel[]>(() => {
     const channels = paymentChannelService.getChannels().filter((c) => c.isEnabled);
@@ -110,10 +130,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   // Mode manual hanya punya pilihan transfer_manual / cod.
   useEffect(() => {
-    if (isManualMode && selectedChannelId !== 'transfer_manual' && selectedChannelId !== 'cod') {
-      setSelectedChannelId('transfer_manual');
+    if (isManualMode && !manualOptions.some((m) => m.id === selectedChannelId)) {
+      setSelectedChannelId(manualOptions[0].id);
     }
-  }, [isManualMode, selectedChannelId]);
+  }, [isManualMode, selectedChannelId, manualOptions.map((m) => m.id).join(',')]);
 
   // Reload enabled channels when drawer opens
   useEffect(() => {
@@ -151,6 +171,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     setSelectedRate(match || null);
     if (match) setCourier(match.courier);
   }, [city, totalWeightGrams, store.city]);
+
+  const isCompletedPaid = completedOrder?.paymentStatus === 'Sudah Dibayar';
+  const isCompletedCod = /cod/i.test(completedOrder?.paymentMethod || '');
 
   if (!isOpen) return null;
 
@@ -674,10 +697,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-2.5 text-[11px] text-amber-900 leading-snug">
                       Pembayaran online sedang tidak aktif. Pesanan Anda disimpan langsung ke sistem toko, lalu selesaikan pembayaran secara manual.
                     </div>
-                    {[
-                      { id: 'transfer_manual', title: 'Transfer Bank Manual', desc: 'Transfer ke rekening toko & kirim bukti bayar' },
-                      { id: 'cod', title: 'Bayar di Tempat (COD)', desc: 'Bayar tunai saat pesanan Anda tiba' },
-                    ].map((m) => (
+                    {manualOptions.map((m) => (
                       <div
                         key={m.id}
                         onClick={() => setSelectedChannelId(m.id)}
@@ -1000,13 +1020,26 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
 
               <div>
-                <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold mb-1">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Lunas Otomatis via Duitku</span>
-                </div>
+                {isCompletedPaid ? (
+                  <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold mb-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Lunas Otomatis via Duitku</span>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold mb-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{isCompletedCod ? 'Bayar Saat Barang Tiba' : 'Menunggu Pembayaran'}</span>
+                  </div>
+                )}
                 <h4 className="font-extrabold text-lg text-[#241A1A]">Pesanan Berhasil Dibuat!</h4>
                 <p className="text-xs text-[#706866] mt-1">
-                  Terima kasih, pembayaran telah diterima dan pesanan telah diteruskan ke toko <strong>{store.name}</strong>.
+                  {isCompletedPaid ? (
+                    <>Terima kasih, pembayaran telah diterima dan pesanan telah diteruskan ke toko <strong>{store.name}</strong>.</>
+                  ) : isCompletedCod ? (
+                    <>Pesanan telah diteruskan ke toko <strong>{store.name}</strong>. Siapkan uang pas saat pesanan tiba.</>
+                  ) : (
+                    <>Pesanan telah diteruskan ke toko <strong>{store.name}</strong>. Selesaikan pembayaran lalu kirim bukti bayar ke penjual.</>
+                  )}
                 </p>
               </div>
 
@@ -1030,10 +1063,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
                 <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
                   <span className="text-[#706866]">Metode Pembayaran:</span>
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Lunas ({completedOrder.paymentMethod})</span>
-                  </span>
+                  {isCompletedPaid ? (
+                    <span className="text-emerald-700 font-bold flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Lunas ({completedOrder.paymentMethod})</span>
+                    </span>
+                  ) : (
+                    <span className="text-amber-800 font-bold text-right">{completedOrder.paymentMethod}</span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <span className="font-bold text-[#241A1A]">Total Pembayaran:</span>
@@ -1043,6 +1080,55 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
               </div>
 
+              {/* Instruksi bayar manual: rekening / QRIS toko + kirim bukti via WhatsApp */}
+              {!isCompletedPaid && !isCompletedCod && (
+                <div className="p-4 rounded-2xl bg-white border border-[#E5E0DD] text-left space-y-3 text-xs">
+                  <p className="font-bold text-[#241A1A] flex items-center gap-1.5">
+                    <Building2 className="w-4 h-4 text-[#66000E]" /> Cara Pembayaran
+                  </p>
+                  {payConfig?.manualBankAccountNumber ? (
+                    <div className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] space-y-0.5">
+                      <div className="text-[10px] text-[#706866]">{payConfig.manualBankName || 'Rekening Toko'}</div>
+                      <div className="font-mono font-black text-sm text-[#241A1A] break-all">{payConfig.manualBankAccountNumber}</div>
+                      <div className="text-[11px] text-[#241A1A]">a.n. {payConfig.manualBankAccountHolder || store.name}</div>
+                    </div>
+                  ) : null}
+                  {payConfig?.manualQrisImageUrl ? (
+                    <a
+                      href={payConfig.manualQrisImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-fit mx-auto p-2 bg-white rounded-xl border border-[#E5E0DD]"
+                      title="Buka QRIS ukuran penuh"
+                    >
+                      <img src={payConfig.manualQrisImageUrl} alt="QRIS toko" className="w-44 h-44 object-contain" />
+                    </a>
+                  ) : null}
+                  {!payConfig?.manualBankAccountNumber && !payConfig?.manualQrisImageUrl && (
+                    <p className="text-[11px] text-[#706866]">Hubungi penjual lewat WhatsApp untuk mendapatkan nomor rekening pembayaran.</p>
+                  )}
+                  {payConfig?.manualInstructions && (
+                    <p className="text-[11px] text-[#706866] whitespace-pre-line">{payConfig.manualInstructions}</p>
+                  )}
+                  <p className="text-[11px] text-[#241A1A]">
+                    Bayar tepat <strong>{formatRupiah(completedOrder.grandTotal)}</strong>, lalu kirim bukti bayar ke penjual.
+                  </p>
+                  {store.phoneWhatsApp && (
+                    <a
+                      href={generateWhatsAppLink(
+                        store.phoneWhatsApp,
+                        `Halo ${store.name}, saya sudah membayar pesanan ${completedOrder.orderNumber} sebesar ${formatRupiah(completedOrder.grandTotal)}. Berikut bukti pembayarannya.`
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>Kirim Bukti Bayar via WhatsApp</span>
+                    </a>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-2 pt-1">
                 <button
