@@ -31,6 +31,7 @@ import { orderService } from '../../services/orderService';
 import { cartService } from '../../services/cartService';
 import { shippingService, INDONESIAN_CITIES, ShippingRate } from '../../services/shippingService';
 import { duitkuService } from '../../services/duitkuService';
+import { adminService } from '../../services/adminService';
 import {
   paymentChannelService,
   PaymentChannel,
@@ -75,8 +76,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [isCopiedVa, setIsCopiedVa] = useState(false);
   const [isCopiedOrderNumber, setIsCopiedOrderNumber] = useState(false);
-  // Langganan di muka dinonaktifkan: Seluruh gateway pembayaran aktif
-  const isFreePlan = false;
+  // Mengikuti toggle "Payment Gateway" di Pengaturan Sistem super admin:
+  // nonaktif -> pembeli membayar manual (transfer bank / COD), tanpa Duitku.
+  const [isGatewayEnabledOnPlatform, setIsGatewayEnabledOnPlatform] = useState<boolean>(
+    () => adminService.getPlatformSettings().paymentGatewayEnabled ?? true
+  );
+  const isManualMode = !isGatewayEnabledOnPlatform;
 
   // Dynamic Midtrans Channels from merchant configuration
   const [activeChannels, setActiveChannels] = useState<PaymentChannel[]>(() => {
@@ -87,6 +92,28 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [channelCategoryFilter, setChannelCategoryFilter] = useState<
     'all' | 'qris_ewallet' | 'virtual_account' | 'credit_card' | 'retail_paylater'
   >('all');
+
+  // Ambil status gateway terbaru dari database setiap drawer dibuka.
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    adminService
+      .fetchPlatformSettingsFromDatabase()
+      .then((settings) => {
+        if (!cancelled) setIsGatewayEnabledOnPlatform(settings.paymentGatewayEnabled ?? true);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
+
+  // Mode manual hanya punya pilihan transfer_manual / cod.
+  useEffect(() => {
+    if (isManualMode && selectedChannelId !== 'transfer_manual' && selectedChannelId !== 'cod') {
+      setSelectedChannelId('transfer_manual');
+    }
+  }, [isManualMode, selectedChannelId]);
 
   // Reload enabled channels when drawer opens
   useEffect(() => {
@@ -301,8 +328,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       return;
     }
 
-    if (isFreePlan) {
-      // Toko dengan Paket Free memproses order manual (Transfer/WA/COD)
+    if (isManualMode) {
+      // Gateway platform nonaktif: pesanan diproses manual (Transfer/WA/COD)
       const selectedName = selectedChannelId === 'cod' ? 'COD (Bayar di Tempat)' : 'Transfer Bank Manual';
       createOrderRecord(selectedName)
         .then(showCompletedOrder)
@@ -624,13 +651,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <div>
                     <h4 className="text-xs font-bold text-[#241A1A] uppercase tracking-wider flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-[#66000E]" />
-                      <span>{isFreePlan ? 'Metode Pembayaran (Manual)' : 'Metode Pembayaran (Duitku)'}</span>
+                      <span>{isManualMode ? 'Metode Pembayaran (Manual)' : 'Metode Pembayaran (Duitku)'}</span>
                     </h4>
                     <p className="text-[10px] text-[#706866]">
-                      {isFreePlan ? 'Paket Free: Pembayaran via Transfer Bank, WA, atau COD' : `${activeChannels.length} metode pembayaran otomatis aktif`}
+                      {isManualMode ? 'Pembayaran via Transfer Bank, WA, atau COD' : `${activeChannels.length} metode pembayaran otomatis aktif`}
                     </p>
                   </div>
-                  {isFreePlan ? (
+                  {isManualMode ? (
                     <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                       Metode Manual
                     </span>
@@ -642,10 +669,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   )}
                 </div>
 
-                {isFreePlan ? (
+                {isManualMode ? (
                   <div className="space-y-2">
                     <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-2.5 text-[11px] text-amber-900 leading-snug">
-                      Gateway pembayaran online aktif pada paket Pro. Pesanan Anda akan disimpan langsung ke sistem toko kami.
+                      Pembayaran online sedang tidak aktif. Pesanan Anda disimpan langsung ke sistem toko, lalu selesaikan pembayaran secara manual.
                     </div>
                     {[
                       { id: 'transfer_manual', title: 'Transfer Bank Manual', desc: 'Transfer ke rekening toko & kirim bukti bayar' },

@@ -423,11 +423,12 @@ class AdminService {
         updatePayload.wa_gateway_api_key = settings.waGatewayApiKey.trim();
       }
       delete updatePayload.updated_at;
-      // Ditulis lewat RPC yang memverifikasi kredensial super admin (tabel tidak bisa diubah langsung).
-      const admin = authService.getAdminCredential();
+      // Ditulis lewat RPC yang memverifikasi super admin (tabel tidak bisa diubah langsung).
+      // Sesi login super admin sudah cukup; password di memori hanya cadangan dan hilang saat reload.
+      const admin = authService.peekAdminCredential();
       const { data: res, error } = await supabase.rpc('admin_update_platform_settings', {
-        p_admin_email: admin.email,
-        p_admin_password: admin.password,
+        p_admin_email: admin?.email || '',
+        p_admin_password: admin?.password || '',
         p_settings: updatePayload,
       });
 

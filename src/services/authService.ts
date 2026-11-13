@@ -112,6 +112,11 @@ class AuthService {
     return adminCredential;
   }
 
+  /** Seperti getAdminCredential, tetapi mengembalikan null bila password tidak ada di memori. */
+  peekAdminCredential(): { email: string; password: string } | null {
+    return adminCredential;
+  }
+
   purgeLocalAccount(email: string): void {
     const cleanEmail = email.toLowerCase().trim();
     if (cleanEmail === 'admin@lapakq.com' || cleanEmail === 'admin@kroomify.id') return;

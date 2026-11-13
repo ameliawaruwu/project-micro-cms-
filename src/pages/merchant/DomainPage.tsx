@@ -13,11 +13,15 @@ import {
   Sparkles,
   ShieldCheck,
   XCircle,
+  CreditCard,
   Lock,
   QrCode,
   Upload,
 } from 'lucide-react';
 import { domainService } from '../../services/domainService';
+import { midtransService } from '../../services/midtransService';
+import { adminService } from '../../services/adminService';
+import confetti from 'canvas-confetti';
 import { useStoreBaseDomain } from '../../utils/storeDomain';
 import {
   domainRequestService,
@@ -80,6 +84,9 @@ export const DomainPage: React.FC<DomainPageProps> = ({
   // Pembayaran manual: QRIS platform + bukti transfer diverifikasi super admin
   const [domainQrisUrl, setDomainQrisUrl] = useState('');
   const [isQrisLoaded, setIsQrisLoaded] = useState(false);
+  // Toggle "Payment Gateway" di Pengaturan Sistem: aktif -> Midtrans, nonaktif -> QRIS + bukti.
+  const [isGatewayEnabled, setIsGatewayEnabled] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState('');
   const [isUploadingProof, setIsUploadingProof] = useState(false);
@@ -108,8 +115,15 @@ export const DomainPage: React.FC<DomainPageProps> = ({
 
   useEffect(() => {
     if (activeRequest?.status !== 'approved' || isQrisLoaded) return;
-    domainRequestService.getDomainQrisUrl().then((url) => {
+    Promise.all([
+      domainRequestService.getDomainQrisUrl(),
+      adminService
+        .fetchPlatformSettingsFromDatabase()
+        .then((settings) => settings.paymentGatewayEnabled ?? true)
+        .catch(() => adminService.getPlatformSettings().paymentGatewayEnabled ?? true),
+    ]).then(([url, gatewayEnabled]) => {
       setDomainQrisUrl(url);
+      setIsGatewayEnabled(gatewayEnabled);
       setIsQrisLoaded(true);
     });
   }, [activeRequest?.status]);
@@ -269,6 +283,79 @@ export const DomainPage: React.FC<DomainPageProps> = ({
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Bayar invoice domain yang sudah di-approve Admin
+  const handlePayDomainInvoice = async () => {
+    if (!activeRequest || activeRequest.status !== 'approved') return;
+
+    setIsPaying(true);
+    // Server mencocokkan awalan DOM-<id permintaan>- lalu menanyakan status lunas ke gateway.
+    const orderId = `DOM-${activeRequest.id}-${Date.now().toString(36)}`;
+
+    try {
+      await midtransService.payWithSnap(
+        {
+          orderId,
+          grossAmount: activeRequest.price,
+          customerName: store.name,
+          customerPhone: store.phoneWhatsApp,
+        },
+        {
+          onSuccess: async () => {
+            const paid = await domainRequestService.confirmDomainPayment(activeRequest.id, orderId);
+            if (!paid) {
+              setIsPaying(false);
+              setAlert({
+                type: 'info',
+                message: isEn
+                  ? 'Payment received. The domain will be activated as soon as the payment gateway confirms it.'
+                  : 'Pembayaran diterima. Domain akan aktif segera setelah payment gateway mengonfirmasi pembayaran.',
+              });
+              await loadDomainRequest();
+              return;
+            }
+            await domainService.connectCustomDomain(store.id, activeRequest.fullDomain);
+            await loadDomainRequest();
+            setIsConnected(true);
+            setIsPaying(false);
+            setAlert({
+              type: 'success',
+              message: isEn
+                ? `Congratulations! Payment succeeded and ${activeRequest.fullDomain} is now officially active!`
+                : `Selamat! Pembayaran berhasil dan domain ${activeRequest.fullDomain} resmi aktif di toko Anda!`,
+            });
+            confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+          },
+          onPending: async () => {
+            setIsPaying(false);
+            setAlert({
+              type: 'info',
+              message: isEn
+                ? 'Domain payment is currently being verified by the system.'
+                : 'Pembayaran invoice domain sedang diverifikasi oleh sistem.',
+            });
+          },
+          onError: () => {
+            setIsPaying(false);
+            setAlert({
+              type: 'error',
+              message: isEn ? 'Payment was cancelled or failed.' : 'Pembayaran dibatalkan atau gagal.',
+            });
+          },
+          onClose: () => {
+            setIsPaying(false);
+          },
+        }
+      );
+    } catch (err: any) {
+      console.error('Payment error for domain invoice:', err);
+      setIsPaying(false);
+      setAlert({
+        type: 'error',
+        message: (isEn ? 'Failed to launch Midtrans checkout: ' : 'Gagal membuka pembayaran Midtrans: ') + (err?.message || ''),
+      });
     }
   };
 
@@ -580,7 +667,26 @@ export const DomainPage: React.FC<DomainPageProps> = ({
 
                       {!isQrisLoaded ? (
                         <div className="flex items-center gap-2 text-[11px] text-blue-800">
-                          <Loader2 className="w-4 h-4 animate-spin" /> {isEn ? 'Loading payment QRIS...' : 'Memuat QRIS pembayaran...'}
+                          <Loader2 className="w-4 h-4 animate-spin" /> {isEn ? 'Loading payment method...' : 'Memuat metode pembayaran...'}
+                        </div>
+                      ) : isGatewayEnabled ? (
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            disabled={isPaying}
+                            onClick={handlePayDomainInvoice}
+                            className="px-4 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer disabled:opacity-50 active:scale-98"
+                          >
+                            {isPaying ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" /> {isEn ? 'Processing...' : 'Memproses...'}
+                              </>
+                            ) : (
+                              <>
+                                <CreditCard className="w-4 h-4" /> {isEn ? 'Pay via Midtrans' : 'Bayar via Midtrans'}
+                              </>
+                            )}
+                          </button>
                         </div>
                       ) : !domainQrisUrl ? (
                         <div className="flex items-start gap-2 p-2.5 rounded-lg bg-white/80 border border-blue-200 text-[11px] text-blue-900">
@@ -618,7 +724,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                         </div>
                       )}
 
-                      {domainQrisUrl && (
+                      {isQrisLoaded && !isGatewayEnabled && domainQrisUrl && (
                         <div className="p-3 rounded-xl bg-white border border-blue-200 space-y-2.5">
                           <p className="text-[11px] font-bold text-blue-950">
                             {isEn ? 'Payment Proof' : 'Bukti Pembayaran'}

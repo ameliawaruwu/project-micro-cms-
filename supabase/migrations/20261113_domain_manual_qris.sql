@@ -35,10 +35,14 @@ DECLARE
   v_logo_icon text := nullif(btrim(s->>'logo_icon_url'), '');
   v_qris text := nullif(btrim(s->>'domain_qris_url'), '');
 BEGIN
-  v_admin := app_private.require_admin(p_admin_email, p_admin_password);
-  IF v_admin.id IS NULL THEN
-    -- RETURN (bukan RAISE) agar penghitung percobaan gagal tetap tersimpan.
-    RETURN jsonb_build_object('success', false, 'message', 'Verifikasi super admin gagal. Masuk ulang lalu coba lagi.');
+  -- Sesi login super admin (header x-lapakq-session) sudah cukup; password hanya dipakai
+  -- bila sesi tidak ada, karena password di memori browser hilang setiap halaman dimuat ulang.
+  IF NOT app_private.is_platform_admin() THEN
+    v_admin := app_private.require_admin(p_admin_email, p_admin_password);
+    IF v_admin.id IS NULL THEN
+      -- RETURN (bukan RAISE) agar penghitung percobaan gagal tetap tersimpan.
+      RETURN jsonb_build_object('success', false, 'message', 'Verifikasi super admin gagal. Masuk ulang lalu coba lagi.');
+    END IF;
   END IF;
   IF s ? 'midtrans_environment' AND s->>'midtrans_environment' NOT IN ('sandbox', 'production') THEN
     RAISE EXCEPTION 'Mode Midtrans tidak valid.' USING ERRCODE = '22023';
