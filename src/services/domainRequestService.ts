@@ -14,6 +14,9 @@ export interface DomainRequest {
   adminSuggestions?: string[];
   adminNotes?: string;
   invoiceNumber?: string;
+  /** Bukti transfer QRIS yang diunggah merchant (menunggu verifikasi super admin). */
+  paymentProofUrl?: string;
+  paymentProofSubmittedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -101,6 +104,8 @@ class DomainRequestService {
       adminSuggestions: suggestions,
       adminNotes: d.admin_notes || '',
       invoiceNumber: d.invoice_number || '',
+      paymentProofUrl: d.payment_proof_url || '',
+      paymentProofSubmittedAt: d.payment_proof_submitted_at || '',
       createdAt,
       updatedAt,
     };
@@ -567,6 +572,103 @@ class DomainRequestService {
       // ignore
     }
 
+    return true;
+  }
+
+  /**
+   * URL gambar QRIS platform untuk membayar invoice domain (diatur super admin).
+   * String kosong bila belum diatur atau kolom belum dimigrasi.
+   */
+  async getDomainQrisUrl(): Promise<string> {
+    try {
+      const { data, error } = await supabase
+        .from('platform_settings')
+        .select('domain_qris_url')
+        .limit(1)
+        .maybeSingle();
+      const url = !error && data ? String((data as any).domain_qris_url || '') : '';
+      return /^https:\/\//i.test(url) ? url : '';
+    } catch {
+      return '';
+    }
+  }
+
+  /**
+   * Merchant mengunggah bukti bayar QRIS. Gambar diunggah ke CDN (jenis gambar toko),
+   * lalu dicatat lewat RPC submit_domain_payment_proof (cek pemilik toko & status disetujui).
+   */
+  async submitPaymentProof(
+    request: DomainRequest,
+    file: File
+  ): Promise<{ success: boolean; message: string; proofUrl?: string }> {
+    let proofUrl = '';
+    try {
+      proofUrl = await storeService.uploadStoreImage(request.storeId, file, 'qris');
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Gagal mengunggah bukti pembayaran.' };
+    }
+
+    const { data, error } = await supabase.rpc('submit_domain_payment_proof', {
+      p_request_id: request.id,
+      p_proof_url: proofUrl,
+    });
+    if (error || !(data as any)?.success) {
+      return {
+        success: false,
+        message: (data as any)?.message || error?.message || 'Gagal mengirim bukti pembayaran.',
+      };
+    }
+
+    const now = new Date().toISOString();
+    const updated: DomainRequest = { ...request, paymentProofUrl: proofUrl, paymentProofSubmittedAt: now, updatedAt: now };
+    const storeCached = this.getStoredRequestsForStore(request.storeId);
+    const idx = storeCached.findIndex((r) => r.id === request.id);
+    if (idx !== -1) storeCached[idx] = updated; else storeCached.unshift(updated);
+    this.saveStoredRequestsForStore(request.storeId, storeCached);
+
+    return { success: true, message: 'Bukti pembayaran terkirim. Admin akan memverifikasinya.', proofUrl };
+  }
+
+  /**
+   * Super admin menolak bukti bayar (mis. nominal tidak sesuai). Bukti dikosongkan agar
+   * merchant bisa mengunggah ulang; status tetap 'approved' (menunggu pembayaran).
+   */
+  async rejectPaymentProof(requestId: string, reason: string): Promise<boolean> {
+    const now = new Date().toISOString();
+    const notes = reason.trim() || 'Bukti pembayaran tidak valid. Silakan unggah ulang bukti transfer yang benar.';
+    const { error } = await supabase
+      .from('domain_requests')
+      .update({
+        payment_proof_url: null,
+        payment_proof_submitted_at: null,
+        admin_notes: notes,
+        updated_at: now,
+      })
+      .eq('id', requestId);
+    if (error) {
+      console.error('Supabase reject payment proof error:', error);
+      return false;
+    }
+
+    const adminCached = this.getAdminStoredRequests();
+    const index = adminCached.findIndex((r) => r.id === requestId);
+    if (index !== -1) {
+      const updated: DomainRequest = {
+        ...adminCached[index],
+        paymentProofUrl: '',
+        paymentProofSubmittedAt: '',
+        adminNotes: notes,
+        updatedAt: now,
+      };
+      adminCached[index] = updated;
+      this.saveAdminStoredRequests(adminCached);
+      const storeCached = this.getStoredRequestsForStore(updated.storeId);
+      const storeIdx = storeCached.findIndex((r) => r.id === requestId);
+      if (storeIdx !== -1) {
+        storeCached[storeIdx] = updated;
+        this.saveStoredRequestsForStore(updated.storeId, storeCached);
+      }
+    }
     return true;
   }
 

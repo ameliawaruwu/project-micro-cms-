@@ -26,6 +26,9 @@ interface LogoFieldProps {
   previewClassName: string;
   disabled: boolean;
   onChange: (url: string) => void;
+  /** Teks status & tombol reset bila tidak ada gambar bawaan (mis. QRIS). */
+  emptyStatus?: string;
+  resetLabel?: string;
 }
 
 /** Satu slot logo: pratinjau, unggah ke CDN (khusus super admin), dan reset ke bawaan. */
@@ -38,6 +41,8 @@ const LogoField: React.FC<LogoFieldProps> = ({
   previewClassName,
   disabled,
   onChange,
+  emptyStatus,
+  resetLabel,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -63,11 +68,15 @@ const LogoField: React.FC<LogoFieldProps> = ({
       <div className="flex items-center justify-between gap-2">
         <span className="font-medium text-xs text-gray-800">{label}</span>
         <span className="text-[10px] text-gray-500">
-          {value ? (isEn ? 'Custom' : 'Kustom') : isEn ? 'Default' : 'Bawaan'}
+          {value ? (isEn ? 'Custom' : 'Kustom') : emptyStatus || (isEn ? 'Default' : 'Bawaan')}
         </span>
       </div>
       <div className="h-20 rounded-md bg-white border border-dashed border-gray-300 flex items-center justify-center p-2">
-        <img src={value || fallbackSrc} alt={label} className={`${previewClassName} object-contain`} />
+        {value || fallbackSrc ? (
+          <img src={value || fallbackSrc} alt={label} className={`${previewClassName} object-contain`} />
+        ) : (
+          <span className="text-[11px] text-gray-400">{isEn ? 'Not set yet' : 'Belum diatur'}</span>
+        )}
       </div>
       <p className="text-[10px] text-gray-500">{hint}</p>
       <div className="flex items-center gap-2">
@@ -88,7 +97,7 @@ const LogoField: React.FC<LogoFieldProps> = ({
             className="px-2.5 py-1 rounded text-gray-600 hover:text-gray-900 font-medium text-[11px] transition cursor-pointer disabled:opacity-50 flex items-center gap-1"
           >
             <RotateCcw className="w-3 h-3" />
-            <span>{isEn ? 'Use default' : 'Pakai bawaan'}</span>
+            <span>{resetLabel || (isEn ? 'Use default' : 'Pakai bawaan')}</span>
           </button>
         )}
       </div>
@@ -194,6 +203,32 @@ export const AdminSettingsTab: React.FC<AdminSettingsTabProps> = ({
             previewClassName="h-14 w-14"
             disabled={isSaving}
             onChange={(url) => setPlatformSettings((prev) => ({ ...prev, logoIconUrl: url }))}
+          />
+        </div>
+      </div>
+
+      {/* QRIS PEMBAYARAN DOMAIN */}
+      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-xs space-y-3">
+        <div className="pb-2 border-b border-gray-100">
+          <h3 className="font-semibold text-xs text-gray-900">{isEn ? 'Domain Payment QRIS' : 'QRIS Pembayaran Domain'}</h3>
+          <p className="text-[11px] text-gray-500 mt-0.5">
+            {isEn
+              ? 'Shown to merchants whose domain request is approved. They pay via this QRIS, upload the transfer proof, and you verify it in Domain Requests. Click Save Changes after uploading.'
+              : 'Ditampilkan ke merchant yang permintaan domainnya disetujui. Merchant membayar lewat QRIS ini, mengunggah bukti transfer, lalu Anda verifikasi di menu Permintaan Domain. Klik Simpan Perubahan setelah mengunggah.'}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <LogoField
+            isEn={isEn}
+            label={isEn ? 'QRIS Image' : 'Gambar QRIS'}
+            hint={isEn ? 'Upload the platform QRIS code (PNG/JPG/WEBP). Max 5MB.' : 'Unggah kode QRIS milik platform (PNG/JPG/WEBP). Maks. 5MB.'}
+            value={platformSettings.domainQrisUrl || ''}
+            fallbackSrc=""
+            previewClassName="h-16 w-16"
+            disabled={isSaving}
+            emptyStatus={isEn ? 'Not set' : 'Belum diatur'}
+            resetLabel={isEn ? 'Remove' : 'Hapus'}
+            onChange={(url) => setPlatformSettings((prev) => ({ ...prev, domainQrisUrl: url }))}
           />
         </div>
       </div>

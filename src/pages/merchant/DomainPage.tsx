@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Store } from '../../types';
 import {
   Globe,
@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   XCircle,
   Lock,
+  QrCode,
+  Upload,
 } from 'lucide-react';
 import { domainService } from '../../services/domainService';
 import { useStoreBaseDomain } from '../../utils/storeDomain';
@@ -79,6 +81,10 @@ export const DomainPage: React.FC<DomainPageProps> = ({
 
   // Domain Request Data
   const [activeRequest, setActiveRequest] = useState<DomainRequest | null>(null);
+  // Pembayaran manual: QRIS platform + bukti transfer diverifikasi super admin
+  const [domainQrisUrl, setDomainQrisUrl] = useState('');
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const proofInputRef = useRef<HTMLInputElement>(null);
   const [isConnected, setIsConnected] = useState(store.domainStatus === 'connected' && !!store.customDomain);
 
   const hasStoreName = !!(
@@ -98,6 +104,41 @@ export const DomainPage: React.FC<DomainPageProps> = ({
     setActiveRequest(req);
     if (req && req.status === 'active') {
       setIsConnected(true);
+    }
+  };
+
+  useEffect(() => {
+    if (activeRequest?.status !== 'approved' || domainQrisUrl) return;
+    domainRequestService.getDomainQrisUrl().then(setDomainQrisUrl);
+  }, [activeRequest?.status]);
+
+  const handleProofPicked = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !activeRequest) return;
+    if (!/^image\/(png|jpe?g|webp)$/i.test(file.type)) {
+      setAlert({ type: 'error', message: isEn ? 'Proof must be a PNG, JPG, or WEBP image.' : 'Bukti bayar harus berupa gambar PNG, JPG, atau WEBP.' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAlert({ type: 'error', message: isEn ? 'Maximum image size is 5MB.' : 'Ukuran gambar maksimal 5MB.' });
+      return;
+    }
+    setIsUploadingProof(true);
+    const result = await domainRequestService.submitPaymentProof(activeRequest, file);
+    setIsUploadingProof(false);
+    if (result.success) {
+      setActiveRequest((prev) =>
+        prev ? { ...prev, paymentProofUrl: result.proofUrl, paymentProofSubmittedAt: new Date().toISOString() } : prev
+      );
+      setAlert({
+        type: 'success',
+        message: isEn
+          ? 'Payment proof sent. The admin will verify it and activate your domain.'
+          : 'Bukti pembayaran terkirim. Admin akan memverifikasi lalu mengaktifkan domain Anda.',
+      });
+    } else {
+      setAlert({ type: 'error', message: result.message });
     }
   };
 
@@ -530,7 +571,9 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                       {activeRequest.status === 'pending'
                         ? (isEn ? 'Pending Review' : 'Menunggu Review Admin')
                         : activeRequest.status === 'approved'
-                        ? (isEn ? 'Approved' : 'Disetujui Admin')
+                        ? activeRequest.paymentProofUrl
+                          ? (isEn ? 'Verifying Payment' : 'Verifikasi Pembayaran')
+                          : (isEn ? 'Approved' : 'Disetujui Admin')
                         : activeRequest.status === 'rejected'
                         ? (isEn ? 'Unavailable' : 'Tidak Tersedia')
                         : (isEn ? 'Domain Active' : 'Domain Aktif')}
@@ -596,6 +639,83 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                           </>
                         )}
                       </button>
+                    </div>
+                  )}
+
+                  {/* KONDISI 2b: APPROVED - bayar manual via QRIS platform + unggah bukti */}
+                  {activeRequest.status === 'approved' && domainQrisUrl && (
+                    <div className="pt-3 border-t border-blue-200 flex flex-col sm:flex-row gap-3.5">
+                      <a
+                        href={domainQrisUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="self-center sm:self-start shrink-0 p-2 bg-white rounded-xl border border-blue-200 shadow-2xs"
+                        title={isEn ? 'Open QRIS in full size' : 'Buka QRIS ukuran penuh'}
+                      >
+                        <img src={domainQrisUrl} alt="QRIS" className="w-40 h-40 object-contain" />
+                      </a>
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <p className="font-bold text-blue-950 flex items-center gap-1.5">
+                          <QrCode className="w-4 h-4" /> {isEn ? 'Or pay via QRIS' : 'Atau bayar via QRIS'}
+                        </p>
+                        <ol className="list-decimal pl-4 space-y-0.5 text-[11px] text-blue-800 leading-relaxed">
+                          <li>
+                            {isEn ? 'Scan the QRIS and pay exactly ' : 'Pindai QRIS dan bayar tepat '}
+                            <span className="font-bold">{formatRupiah(activeRequest.price)}</span>.
+                          </li>
+                          <li>{isEn ? 'Upload a screenshot of the transfer proof.' : 'Unggah tangkapan layar bukti transfer.'}</li>
+                          <li>{isEn ? 'The admin verifies it and activates your domain.' : 'Admin memverifikasi lalu mengaktifkan domain Anda.'}</li>
+                        </ol>
+                        {activeRequest.invoiceNumber && (
+                          <p className="text-[11px] text-blue-700">
+                            {isEn ? 'Invoice:' : 'No. Invoice:'} <span className="font-mono font-semibold">{activeRequest.invoiceNumber}</span>
+                          </p>
+                        )}
+
+                        {activeRequest.paymentProofUrl ? (
+                          <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-white/80 border border-blue-200">
+                            <Clock className="w-4 h-4 text-blue-700 shrink-0" />
+                            <span className="text-[11px] font-semibold text-blue-900 flex-1 min-w-[140px]">
+                              {isEn ? 'Proof sent, waiting for admin verification.' : 'Bukti terkirim, menunggu verifikasi admin.'}
+                            </span>
+                            <a
+                              href={activeRequest.paymentProofUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-bold text-blue-800 underline"
+                            >
+                              {isEn ? 'View proof' : 'Lihat bukti'}
+                            </a>
+                            <button
+                              type="button"
+                              disabled={isUploadingProof}
+                              onClick={() => proofInputRef.current?.click()}
+                              className="text-[11px] font-bold text-[#66000E] underline cursor-pointer disabled:opacity-50"
+                            >
+                              {isEn ? 'Replace' : 'Ganti'}
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isUploadingProof}
+                            onClick={() => proofInputRef.current?.click()}
+                            className="px-4 py-2 bg-white hover:bg-blue-50 border border-blue-300 text-blue-900 rounded-xl font-bold text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer disabled:opacity-50"
+                          >
+                            {isUploadingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                            {isUploadingProof
+                              ? (isEn ? 'Uploading...' : 'Mengunggah...')
+                              : (isEn ? 'Upload Payment Proof' : 'Unggah Bukti Bayar')}
+                          </button>
+                        )}
+                        <input
+                          ref={proofInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          onChange={handleProofPicked}
+                          className="hidden"
+                        />
+                      </div>
                     </div>
                   )}
 

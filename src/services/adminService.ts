@@ -344,9 +344,16 @@ class AdminService {
 
       // Logo dibaca terpisah agar pengaturan lain tetap termuat walau kolom logo belum dimigrasi.
       const logo = await loadPlatformLogo(true);
+      // QRIS domain juga dibaca terpisah (kolom dari migrasi 20261113).
+      const { data: qrisRow } = await supabase
+        .from('platform_settings')
+        .select('domain_qris_url')
+        .limit(1)
+        .maybeSingle();
+      const domainQrisUrl = String((qrisRow as any)?.domain_qris_url || current.domainQrisUrl || '');
 
       if (error || !data) {
-        return { ...current, ...logo };
+        return { ...current, ...logo, domainQrisUrl };
       }
 
       const mapped: PlatformSettings = {
@@ -372,6 +379,7 @@ class AdminService {
         paymentGatewayEnabled: data.payment_gateway_enabled !== undefined ? Boolean(data.payment_gateway_enabled) : (current.paymentGatewayEnabled ?? true),
         logoUrl: logo.logoUrl,
         logoIconUrl: logo.logoIconUrl,
+        domainQrisUrl,
       };
 
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(mapped));
@@ -404,6 +412,7 @@ class AdminService {
         // String kosong = kembali ke logo bawaan.
         logo_url: settings.logoUrl || '',
         logo_icon_url: settings.logoIconUrl || '',
+        domain_qris_url: settings.domainQrisUrl || '',
         updated_at: new Date().toISOString(),
       };
       // Kunci rahasia hanya dikirim bila super admin mengisinya (untuk mengganti kunci).

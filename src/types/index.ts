@@ -659,6 +659,8 @@ export interface PlatformSettings {
   // Logo platform (URL CDN); kosong = logo bawaan
   logoUrl?: string;
   logoIconUrl?: string;
+  // Gambar QRIS platform untuk pembayaran invoice domain (URL CDN); kosong = belum diatur
+  domainQrisUrl?: string;
 }
 
 export interface BillingPlan {

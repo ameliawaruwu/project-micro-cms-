@@ -14,12 +14,15 @@ import {
   HelpCircle,
   ArrowRight,
   ShieldAlert,
+  Receipt,
+  Loader2,
 } from 'lucide-react';
 import {
   domainRequestService,
   DomainRequest,
   DOMAIN_TLD_PRICES,
 } from '../../../services/domainRequestService';
+import { domainService } from '../../../services/domainService';
 import { formatRupiah } from '../../../utils/formatters';
 
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
@@ -53,6 +56,12 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
 
   // Approve Modal State
   const [approvePrice, setApprovePrice] = useState<number>(250000);
+
+  // Verifikasi bukti bayar QRIS
+  const [selectedRequestForProof, setSelectedRequestForProof] = useState<DomainRequest | null>(null);
+  const [proofRejectReason, setProofRejectReason] = useState('');
+  const [isProcessingProof, setIsProcessingProof] = useState(false);
+  const [proofError, setProofError] = useState('');
 
   const loadRequests = async () => {
     const data = await domainRequestService.getAllRequests();
@@ -107,6 +116,54 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
     if (onRequestUpdated) onRequestUpdated();
     setSelectedRequestForReject(null);
     if (onShowToast) onShowToast(`Permintaan domain ${selectedRequestForReject.fullDomain} ditolak dengan saran.`);
+  };
+
+  const handleOpenProofModal = (req: DomainRequest) => {
+    setSelectedRequestForProof(req);
+    setProofRejectReason('');
+    setProofError('');
+  };
+
+  // Setujui bukti bayar: tandai lunas & aktif, lalu daftarkan domain ke panel lewat backend.
+  const handleApproveProof = async () => {
+    const req = selectedRequestForProof;
+    if (!req) return;
+    setIsProcessingProof(true);
+    setProofError('');
+    await domainRequestService.markAsPaidAndActivate(req.id);
+    const connect = await domainService.connectCustomDomain(req.storeId, req.fullDomain);
+    await loadRequests();
+    if (onRequestUpdated) onRequestUpdated();
+    setIsProcessingProof(false);
+    setSelectedRequestForProof(null);
+    if (onShowToast) {
+      onShowToast(
+        connect.success
+          ? `Pembayaran ${req.fullDomain} disetujui dan domain diaktifkan.`
+          : `Pembayaran ${req.fullDomain} disetujui, tetapi domain belum terhubung: ${connect.message}`
+      );
+    }
+  };
+
+  const handleRejectProof = async () => {
+    const req = selectedRequestForProof;
+    if (!req) return;
+    if (!proofRejectReason.trim()) {
+      setProofError('Tuliskan alasan penolakan agar merchant tahu apa yang harus diperbaiki.');
+      return;
+    }
+    setIsProcessingProof(true);
+    setProofError('');
+    const ok = await domainRequestService.rejectPaymentProof(req.id, proofRejectReason);
+    setIsProcessingProof(false);
+    if (!ok) {
+      setProofError('Gagal menolak bukti bayar. Coba lagi.');
+      return;
+    }
+    await loadRequests();
+    if (onRequestUpdated) onRequestUpdated();
+    setSelectedRequestForProof(null);
+    if (onShowToast) onShowToast(`Bukti bayar ${req.fullDomain} ditolak. Merchant diminta mengunggah ulang.`);
   };
 
   return (
@@ -278,7 +335,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                         {req.status === 'approved' && <CheckCircle2 className="w-3 h-3" />}
                         {req.status === 'rejected' && <XCircle className="w-3 h-3" />}
                         {req.status === 'active' && <Check className="w-3 h-3" />}
-                        <span>{req.status}</span>
+                        <span>{req.status === 'approved' && req.paymentProofUrl ? 'cek bayar' : req.status}</span>
                       </span>
                     </td>
 
@@ -311,7 +368,16 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                             Edit Saran
                           </button>
                         )}
-                        {req.status === 'approved' && (
+                        {req.status === 'approved' && req.paymentProofUrl && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenProofModal(req)}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                          >
+                            <Receipt className="w-3 h-3" /> Cek Bukti Bayar
+                          </button>
+                        )}
+                        {req.status === 'approved' && !req.paymentProofUrl && (
                           <span className="text-[11px] text-blue-700 font-semibold">
                             Menunggu Pembayaran Toko
                           </span>
@@ -382,6 +448,111 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-xs"
               >
                 Konfirmasi Setujui
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5b. VERIFIKASI BUKTI BAYAR QRIS */}
+      {selectedRequestForProof && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-4 shadow-xl border border-gray-100">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-emerald-600" />
+                Verifikasi Bukti Bayar Domain
+              </h3>
+              <button
+                type="button"
+                onClick={() => !isProcessingProof && setSelectedRequestForProof(null)}
+                className="text-gray-400 hover:text-gray-700 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+              <span className="text-gray-500">Toko</span>
+              <span className="font-bold text-gray-900 text-right truncate">{selectedRequestForProof.storeName}</span>
+              <span className="text-gray-500">Domain</span>
+              <span className="font-bold text-gray-900 text-right truncate">{selectedRequestForProof.fullDomain}</span>
+              <span className="text-gray-500">Tagihan</span>
+              <span className="font-black text-gray-900 text-right">{formatRupiah(selectedRequestForProof.price)}</span>
+              {selectedRequestForProof.invoiceNumber && (
+                <>
+                  <span className="text-gray-500">No. Invoice</span>
+                  <span className="font-mono font-semibold text-gray-900 text-right">{selectedRequestForProof.invoiceNumber}</span>
+                </>
+              )}
+              {selectedRequestForProof.paymentProofSubmittedAt && (
+                <>
+                  <span className="text-gray-500">Dikirim</span>
+                  <span className="text-gray-900 text-right">
+                    {new Date(selectedRequestForProof.paymentProofSubmittedAt).toLocaleString('id-ID', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </>
+              )}
+            </div>
+
+            <a
+              href={selectedRequestForProof.paymentProofUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-xl border border-gray-200 bg-gray-50 p-2"
+              title="Buka bukti ukuran penuh"
+            >
+              <img
+                src={selectedRequestForProof.paymentProofUrl}
+                alt="Bukti bayar"
+                className="w-full max-h-80 object-contain rounded-lg"
+              />
+            </a>
+            <p className="text-[11px] text-gray-500 leading-relaxed">
+              Cocokkan nominal dan waktu transfer dengan mutasi QRIS platform. Menyetujui akan menandai invoice lunas,
+              memasang domain ke toko, dan mendaftarkannya ke panel hosting.
+            </p>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Alasan penolakan (wajib bila menolak):</label>
+              <textarea
+                rows={2}
+                value={proofRejectReason}
+                onChange={(e) => setProofRejectReason(e.target.value)}
+                placeholder="Contoh: Nominal transfer tidak sesuai tagihan."
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
+              />
+            </div>
+
+            {proofError && (
+              <p className="text-[11px] font-medium text-red-600 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" /> {proofError}
+              </p>
+            )}
+
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isProcessingProof}
+                onClick={handleRejectProof}
+                className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
+              >
+                Tolak Bukti
+              </button>
+              <button
+                type="button"
+                disabled={isProcessingProof}
+                onClick={handleApproveProof}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {isProcessingProof ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                Setujui & Aktifkan Domain
               </button>
             </div>
           </div>
