@@ -20,12 +20,15 @@ import { useLanguage } from '../../contexts/LanguageContext';
 interface BottomNavProps {
   activeTab: MerchantTab;
   pendingOrdersCount: number;
+  /** Tampilkan menu Komunitas (hanya toko yang tergabung di komunitas). */
+  showCommunityMenu?: boolean;
   onTabChange: (tab: MerchantTab) => void;
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab,
   pendingOrdersCount,
+  showCommunityMenu = false,
   onTabChange,
 }) => {
   const { t } = useLanguage();
@@ -53,12 +56,16 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       desc: t('bottomnav_payment_methods_desc', 'Kelola QRIS, VA, dan rekening pencairan'),
       icon: CreditCard,
     },
-    {
-      id: 'komunitas' as MerchantTab,
-      label: t('nav_community', 'Komunitas'),
-      desc: t('bottomnav_community_desc', 'Keanggotaan & permintaan gabung'),
-      icon: Users,
-    },
+    ...(showCommunityMenu
+      ? [
+          {
+            id: 'komunitas' as MerchantTab,
+            label: t('nav_community', 'Komunitas'),
+            desc: t('bottomnav_community_desc', 'Keanggotaan & permintaan gabung'),
+            icon: Users,
+          },
+        ]
+      : []),
     {
       id: 'tiket' as MerchantTab,
       label: t('nav_tickets', 'Tiket Bantuan'),

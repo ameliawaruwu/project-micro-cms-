@@ -27,6 +27,8 @@ interface SidebarProps {
   activeTab: MerchantTab;
   pendingOrdersCount: number;
   activeStore?: StoreType;
+  /** Tampilkan menu Komunitas (hanya toko yang tergabung di komunitas). */
+  showCommunityMenu?: boolean;
   userName?: string;
   isCollapsed: boolean;
   isOpenMobile?: boolean;
@@ -43,6 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   pendingOrdersCount,
   activeStore,
+  showCommunityMenu = false,
   isCollapsed,
   isOpenMobile = false,
   onCloseMobile,
@@ -100,7 +103,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     { id: 'pembayaran' as MerchantTab, label: t('nav_payment', 'Pembayaran'), icon: CreditCard },
     { id: 'pengiriman' as MerchantTab, label: t('nav_shipping', 'Pengiriman'), icon: Truck },
-    { id: 'komunitas' as MerchantTab, label: t('nav_community', 'Komunitas'), icon: Users },
+    ...(showCommunityMenu
+      ? [{ id: 'komunitas' as MerchantTab, label: t('nav_community', 'Komunitas'), icon: Users }]
+      : []),
     { id: 'tiket' as MerchantTab, label: t('nav_tickets', 'Tiket Bantuan'), icon: LifeBuoy },
     { id: 'pengaturan' as MerchantTab, label: t('nav_settings', 'Pengaturan'), icon: Settings },
   ];

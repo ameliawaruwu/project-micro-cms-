@@ -80,6 +80,7 @@ import { LayoutPage } from './pages/merchant/LayoutPage';
 import { DomainPage } from './pages/merchant/DomainPage';
 import { TicketRequesterPanel } from './components/tickets/TicketRequesterPanel';
 import { KomunitasPage } from './pages/merchant/KomunitasPage';
+import { communityMembershipService } from './services/communityMembershipService';
 
 // Admin Pages
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
@@ -416,6 +417,33 @@ export default function App() {
   }), []);
 
   const currentStore = activeStore || EMPTY_STORE;
+
+  // Menu Komunitas hanya untuk toko yang sudah tergabung di komunitas (mis. ditambahkan sub-admin).
+  // Merchant mandiri tidak melihat halaman Komunitas.
+  const storeHasPrimaryCommunity = Boolean(
+    currentStore.communityId || currentStore.communityName || currentStore.extraCommunityIds?.length
+  );
+  const [hasCommunityMembership, setHasCommunityMembership] = useState(false);
+  useEffect(() => {
+    if (!user?.id || storeHasPrimaryCommunity) return;
+    let cancelled = false;
+    communityMembershipService
+      .getMine()
+      .then((data) => {
+        if (!cancelled) setHasCommunityMembership(data.memberships.length > 0);
+      })
+      .catch(() => {
+        if (!cancelled) setHasCommunityMembership(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, currentStore.id, storeHasPrimaryCommunity]);
+  const showCommunityMenu = storeHasPrimaryCommunity || hasCommunityMembership;
+
+  useEffect(() => {
+    if (activeTab === 'komunitas' && !showCommunityMenu) setActiveTab('beranda');
+  }, [activeTab, showCommunityMenu]);
 
   // Initial Data Loading
   const loadData = async (targetStoreId?: string) => {
@@ -1992,6 +2020,7 @@ export default function App() {
             activeTab={activeTab}
             pendingOrdersCount={pendingOrdersCount}
             activeStore={currentStore}
+            showCommunityMenu={showCommunityMenu}
             userName={user?.name || 'Pemilik Toko'}
             isCollapsed={isSidebarCollapsed}
             isOpenMobile={mobileSidebarOpen}
@@ -2170,7 +2199,7 @@ export default function App() {
               )}
 
               {/* TAB: TIKET BANTUAN */}
-              {activeTab === 'komunitas' && (
+              {activeTab === 'komunitas' && showCommunityMenu && (
                 <KomunitasPage
                   onShowToast={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
@@ -2210,6 +2239,7 @@ export default function App() {
             <BottomNav
               activeTab={activeTab}
               pendingOrdersCount={pendingOrdersCount}
+              showCommunityMenu={showCommunityMenu}
               onTabChange={(tab) => {
                 setActiveTab(tab);
                 if (tab !== 'produk') { setIsProductFormModalOpen(false); setProductToEdit(null); }
