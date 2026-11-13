@@ -97,6 +97,8 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'merchants' | 'invoices'>('overview');
   const [searchMerchant, setSearchMerchant] = useState('');
   const [searchCommunity, setSearchCommunity] = useState('');
+  const [communityStatusFilter, setCommunityStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [showAllCommunities, setShowAllCommunities] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedStoreToAssign, setSelectedStoreToAssign] = useState('');
   const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
@@ -513,12 +515,36 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     });
   };
 
+  // Daftar organisasi: cari, saring status, dan ringkas bila jumlahnya banyak
+  const COMMUNITY_PREVIEW_LIMIT = 8;
   const communityQuery = searchCommunity.trim().toLowerCase();
-  const filteredCommunities = communityQuery
-    ? communities.filter((c) =>
-        [c.name, c.id, c.slug].some((v) => (v || '').toLowerCase().includes(communityQuery))
-      )
-    : communities;
+  const memberCountByCommunity = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const c of communities) {
+      const cName = (c.name || '').trim().toLowerCase();
+      map.set(c.id, stores.filter((s) => storeInCommunity(s, c.id, cName)).length);
+    }
+    return map;
+  }, [communities, stores]);
+  const inactiveCommunityCount = communities.filter((c) => c.status === 'inactive').length;
+  const filteredCommunities = communities.filter((c) => {
+    if (communityStatusFilter === 'active' && c.status === 'inactive') return false;
+    if (communityStatusFilter === 'inactive' && c.status !== 'inactive') return false;
+    if (!communityQuery) return true;
+    return [c.name, c.id, c.slug].some((v) => (v || '').toLowerCase().includes(communityQuery));
+  });
+  const isCommunityListCollapsible =
+    !communityQuery && filteredCommunities.length > COMMUNITY_PREVIEW_LIMIT;
+  const visibleCommunities = (() => {
+    if (!isCommunityListCollapsible || showAllCommunities) return filteredCommunities;
+    const head = filteredCommunities.slice(0, COMMUNITY_PREVIEW_LIMIT);
+    const selected = filteredCommunities.find((c) => c.id === selectedCommunityId);
+    // Organisasi yang sedang dibuka selalu tampil walau berada di luar ringkasan
+    if (selected && !head.some((c) => c.id === selected.id)) {
+      return [selected, ...head.slice(0, COMMUNITY_PREVIEW_LIMIT - 1)];
+    }
+    return head;
+  })();
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200 font-sans pb-16 text-left">
@@ -575,6 +601,25 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               <p className="text-[11px] text-gray-500">Klik salah satu organisasi untuk melihat dan mengelola detailnya.</p>
             </div>
             {communities.length > 4 && (
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <div className="flex p-0.5 bg-gray-50 border border-gray-200 rounded-xl text-[11px] font-bold shrink-0">
+                {([
+                  ['all', `Semua (${communities.length})`],
+                  ['active', `Aktif (${communities.length - inactiveCommunityCount})`],
+                  ['inactive', `Nonaktif (${inactiveCommunityCount})`],
+                ] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setCommunityStatusFilter(key)}
+                    className={`flex-1 sm:flex-none px-2.5 py-1.5 rounded-lg transition cursor-pointer whitespace-nowrap ${
+                      communityStatusFilter === key ? 'bg-white text-[#66000E] shadow-2xs' : 'text-gray-500 hover:text-gray-800'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <div className="relative w-full sm:w-64">
                 <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -585,14 +630,15 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:border-[#66000E]"
                 />
               </div>
+              </div>
             )}
           </div>
 
           {filteredCommunities.length === 0 ? (
             <p className="text-xs text-gray-500 py-4 text-center">Tidak ada organisasi yang cocok.</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 max-h-72 overflow-y-auto pr-0.5">
-              {filteredCommunities.map((c) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+              {visibleCommunities.map((c) => {
                 const isSelected = c.id === selectedCommunityId;
                 const isInactive = c.status === 'inactive';
                 return (
@@ -622,6 +668,10 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       <span className="block text-[10px] text-gray-500 truncate">
                         {c.id} · /{c.slug}
                       </span>
+                      <span className="block text-[10px] text-gray-400 truncate">
+                        {memberCountByCommunity.get(c.id) || 0} lapak binaan
+                        {c.status === 'inactive' ? ' · Nonaktif' : ''}
+                      </span>
                     </span>
                     {isSelected ? (
                       <Check className="w-4 h-4 text-[#66000E] shrink-0" />
@@ -644,6 +694,21 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {isCommunityListCollapsible && (
+            <div className="flex items-center justify-between gap-2 pt-1 text-[11px]">
+              <span className="text-gray-500">
+                Menampilkan {visibleCommunities.length} dari {filteredCommunities.length} organisasi
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowAllCommunities((v) => !v)}
+                className="font-bold text-[#66000E] hover:underline cursor-pointer"
+              >
+                {showAllCommunities ? 'Ringkas daftar' : `Tampilkan semua (${filteredCommunities.length})`}
+              </button>
             </div>
           )}
         </div>

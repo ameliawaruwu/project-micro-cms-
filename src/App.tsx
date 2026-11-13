@@ -57,6 +57,7 @@ import { getShippingBlockReason, isCodMethod } from './utils/orderFlow';
 
 // Layout & Common Components
 import { Sidebar } from './components/layout/Sidebar';
+import { useStoreBaseDomain, buildStoreLiveUrl } from './utils/storeDomain';
 import { TopBar } from './components/layout/TopBar';
 import { BottomNav } from './components/layout/BottomNav';
 import { DashboardFooter } from './components/layout/DashboardFooter';
@@ -440,6 +441,12 @@ export default function App() {
     };
   }, [user?.id, currentStore.id, storeHasPrimaryCommunity]);
   const showCommunityMenu = storeHasPrimaryCommunity || hasCommunityMembership;
+  // Alamat website toko yang sudah terbit (menu "Lihat Website")
+  const { domain: liveBaseDomain } = useStoreBaseDomain(activeStore || null);
+  const liveStoreUrl =
+    activeStore?.isPublished && activeStore.slug
+      ? buildStoreLiveUrl(activeStore.slug, liveBaseDomain, activeStore.customDomain)
+      : undefined;
 
   useEffect(() => {
     if (activeTab === 'komunitas' && !showCommunityMenu) setActiveTab('beranda');
@@ -2021,6 +2028,7 @@ export default function App() {
             pendingOrdersCount={pendingOrdersCount}
             activeStore={currentStore}
             showCommunityMenu={showCommunityMenu}
+            liveStoreUrl={liveStoreUrl}
             userName={user?.name || 'Pemilik Toko'}
             isCollapsed={isSidebarCollapsed}
             isOpenMobile={mobileSidebarOpen}
@@ -2240,6 +2248,7 @@ export default function App() {
               activeTab={activeTab}
               pendingOrdersCount={pendingOrdersCount}
               showCommunityMenu={showCommunityMenu}
+              liveStoreUrl={liveStoreUrl}
               onTabChange={(tab) => {
                 setActiveTab(tab);
                 if (tab !== 'produk') { setIsProductFormModalOpen(false); setProductToEdit(null); }

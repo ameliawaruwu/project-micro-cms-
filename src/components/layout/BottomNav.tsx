@@ -13,6 +13,8 @@ import {
   ChevronRight,
   LifeBuoy,
   Users,
+  Globe,
+  ExternalLink,
 } from 'lucide-react';
 import { MerchantTab } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -22,6 +24,8 @@ interface BottomNavProps {
   pendingOrdersCount: number;
   /** Tampilkan menu Komunitas (hanya toko yang tergabung di komunitas). */
   showCommunityMenu?: boolean;
+  /** URL publik toko bila sudah terbit. */
+  liveStoreUrl?: string;
   onTabChange: (tab: MerchantTab) => void;
 }
 
@@ -29,6 +33,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab,
   pendingOrdersCount,
   showCommunityMenu = false,
+  liveStoreUrl,
   onTabChange,
 }) => {
   const { t } = useLanguage();
@@ -115,6 +120,26 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
             {/* List Menu Pendukung */}
             <div className="mt-3 space-y-2 font-poppins">
+              {liveStoreUrl && (
+                <a
+                  href={liveStoreUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMoreMenuOpen(false)}
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl transition text-left border bg-white hover:bg-[#FAF7F7] border-[#E5E0DD] text-[#241A1A]"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#FAF7F7] text-[#706866] shrink-0">
+                      <Globe className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-[#241A1A]">{t('nav_view_website', 'Lihat Website')}</p>
+                      <p className="text-[11px] text-[#706866] truncate font-normal">{liveStoreUrl.replace(/^https:\/\//, '')}</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-[#CCCCCC] shrink-0" />
+                </a>
+              )}
               {secondaryItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;

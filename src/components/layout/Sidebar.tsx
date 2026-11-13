@@ -16,6 +16,7 @@ import {
   Crown,
   LifeBuoy,
   Users,
+  ExternalLink,
 } from 'lucide-react';
 import { MerchantTab, Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -29,6 +30,8 @@ interface SidebarProps {
   activeStore?: StoreType;
   /** Tampilkan menu Komunitas (hanya toko yang tergabung di komunitas). */
   showCommunityMenu?: boolean;
+  /** URL publik toko bila sudah terbit; kosong = toko masih draf. */
+  liveStoreUrl?: string;
   userName?: string;
   isCollapsed: boolean;
   isOpenMobile?: boolean;
@@ -46,6 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   pendingOrdersCount,
   activeStore,
   showCommunityMenu = false,
+  liveStoreUrl,
   isCollapsed,
   isOpenMobile = false,
   onCloseMobile,
@@ -211,6 +215,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </button>
                       );
                     })}
+                    {liveStoreUrl ? (
+                      <a
+                        href={liveStoreUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => onCloseMobile?.()}
+                        title={liveStoreUrl.replace(/^https:\/\//, '')}
+                        className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium font-poppins transition-colors text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]"
+                      >
+                        <span className="flex-1 text-left truncate">{t('nav_view_website', 'Lihat Website')}</span>
+                        <ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                      </a>
+                    ) : (
+                      <div
+                        className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs font-poppins text-gray-400 cursor-not-allowed"
+                        title={t('nav_view_website_draft', 'Terbitkan toko dari Layout Toko agar website bisa diakses')}
+                      >
+                        <span className="flex-1 text-left truncate">{t('nav_view_website', 'Lihat Website')}</span>
+                        <span className="text-[9px] uppercase tracking-wide shrink-0">{t('nav_draft', 'Draf')}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
