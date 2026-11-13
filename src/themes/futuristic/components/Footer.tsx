@@ -2,8 +2,9 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Cpu, Mail, MapPin } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 
 export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#8B5CF6', isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -12,7 +13,6 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
-  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. Hak cipta dilindungi.`;
 
   const mainGridClass = getDeviceClass(isMobile, isTablet, {
@@ -51,13 +51,7 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
               <h3 className="text-2xl font-extrabold tracking-wider uppercase text-white break-words min-w-0">{storeTitle}</h3>
             </div>
             {storeDesc && <p className="text-gray-400 text-xs leading-relaxed max-w-md">{storeDesc}</p>}
-            {socials.length > 0 && (
-              <div className="flex flex-wrap gap-4 pt-1 text-xs uppercase tracking-widest">
-                {socials.map((s) => (
-                  <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">{s.label}</a>
-                ))}
-              </div>
-            )}
+            <FooterSocialLinks sectionOptions={sectionOptions} className="pt-1" itemClassName="rounded-xl border border-white/15 text-gray-400 hover:text-white hover:border-white/40" />
           </div>
 
           {/* Menu */}

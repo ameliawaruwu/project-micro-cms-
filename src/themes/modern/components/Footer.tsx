@@ -2,8 +2,9 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Mail, MapPin } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 
 export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -41,13 +42,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
           <div className={colSpan5Class}>
             <h3 className="text-xl font-extrabold text-gray-900 mb-3 break-words">{storeName}</h3>
             <p className="text-sm text-gray-500 leading-relaxed max-w-sm mb-5">{storeDesc}</p>
-            {getFooterSocialLinks(sectionOptions).length > 0 && (
-              <div className="flex flex-wrap items-center gap-4 text-sm font-semibold">
-                {getFooterSocialLinks(sectionOptions).map((s) => (
-                  <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors">{s.label}</a>
-                ))}
-              </div>
-            )}
+            <FooterSocialLinks sectionOptions={sectionOptions} itemClassName="rounded-full bg-white/70 border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-400" />
           </div>
 
           <div className={colSpan3Class}>

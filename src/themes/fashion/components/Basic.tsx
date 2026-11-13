@@ -1,12 +1,13 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCountBadge } from '../../storefrontCart';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { STORE_ROUTES } from '../../storefrontLinks';
 
@@ -133,7 +134,6 @@ export const FashionFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
-  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}`;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
@@ -155,13 +155,7 @@ export const FashionFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
           <div className={brandSpanClass}>
             <h2 className="text-3xl font-serif italic mb-4 break-words">{storeTitle}</h2>
             {storeDesc && <p className="text-sm text-gray-400 leading-loose max-w-md">{storeDesc}</p>}
-            {socials.length > 0 && (
-              <div className="flex flex-wrap gap-4 mt-6 text-[10px] uppercase tracking-[0.2em]">
-                {socials.map((s) => (
-                  <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="border-b border-white/30 pb-1 hover:border-white transition-colors">{s.label}</a>
-                ))}
-              </div>
-            )}
+            <FooterSocialLinks sectionOptions={sectionOptions} className="mt-6" itemClassName="rounded-none border border-white/30 hover:border-white" />
           </div>
 
           <div>

@@ -1,8 +1,9 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 
 export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -13,7 +14,6 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address;
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
   const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
-  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. Hak cipta dilindungi.`;
 
   // Ponsel & tablet: nama toko selebar penuh di atas, lalu Navigasi dan Kontak berdampingan
@@ -97,13 +97,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
             {address && <li className="break-words">{address}</li>}
             {email && <li className="break-all"><a href={`mailto:${email}`} className="hover:text-black transition-colors">{email}</a></li>}
           </ul>
-          {socials.length > 0 && (
-            <div className="flex flex-wrap items-center gap-5">
-              {socials.map((s) => (
-                <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-widest text-gray-900 hover:text-gray-500 transition-colors">{s.label}</a>
-              ))}
-            </div>
-          )}
+          <FooterSocialLinks sectionOptions={sectionOptions} itemClassName="rounded-none border border-gray-200 text-gray-900 hover:border-gray-900" />
         </div>
       </div>
 

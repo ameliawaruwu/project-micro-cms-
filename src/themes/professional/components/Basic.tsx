@@ -1,12 +1,13 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCountBadge } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { useThemeProductsSource } from '../../useSectionProducts';
@@ -169,7 +170,6 @@ export const ProfessionalFooter: React.FC<{ sectionOptions?: any; isMobile?: boo
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
-  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. Hak cipta dilindungi.`;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
@@ -196,13 +196,7 @@ export const ProfessionalFooter: React.FC<{ sectionOptions?: any; isMobile?: boo
               <span className="break-words min-w-0">{storeTitle}</span>
             </h2>
             {storeDesc && <p className="text-sm text-gray-400 leading-relaxed max-w-md">{storeDesc}</p>}
-            {socials.length > 0 && (
-              <div className="flex flex-wrap gap-4 mt-5 text-sm">
-                {socials.map((s) => (
-                  <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">{s.label}</a>
-                ))}
-              </div>
-            )}
+            <FooterSocialLinks sectionOptions={sectionOptions} className="mt-5" itemClassName="rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500" />
           </div>
 
           <div>

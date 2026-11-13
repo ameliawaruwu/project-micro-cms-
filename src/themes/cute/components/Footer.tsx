@@ -2,8 +2,9 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Heart } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 
 export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -40,13 +41,7 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
           <p className="text-gray-600 font-medium text-sm leading-relaxed mb-6">
             {storeDesc}
           </p>
-          <div className="flex flex-wrap justify-center md:justify-start items-center gap-3">
-            {getFooterSocialLinks(sectionOptions).map((s) => (
-              <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="px-4 h-10 bg-white rounded-full flex items-center justify-center text-[#FF85A1] text-xs font-bold hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm border-2 border-[#FFD1DC]">
-                {s.label}
-              </a>
-            ))}
-          </div>
+          <FooterSocialLinks sectionOptions={sectionOptions} className="justify-center md:justify-start" itemClassName="bg-white rounded-full text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white shadow-sm border-2 border-[#FFD1DC]" />
         </div>
 
         {/* Links */}

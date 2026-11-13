@@ -1,10 +1,11 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { useThemeProductsSource } from '../../useSectionProducts';
@@ -206,7 +207,6 @@ export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName.toUpperCase()}. HAK CIPTA DILINDUNGI.`;
 
   const footerLinks = getNavMenuItems(sectionOptions);
-  const socials = getFooterSocialLinks(sectionOptions);
 
   return (
     <footer className="w-full px-4 sm:px-8 md:px-16 py-16 sm:py-24 bg-[#2C3B2D] text-[#E8E4DB] rounded-t-[40px] mt-12 flex flex-col items-center shadow-inner font-serif">
@@ -230,15 +230,7 @@ export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
           ))}
         </div>
 
-        {socials.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-6 mb-10 text-xs font-sans uppercase tracking-widest opacity-80">
-            {socials.map((s) => (
-              <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-white hover:opacity-100 transition-opacity">
-                {s.label}
-              </a>
-            ))}
-          </div>
-        )}
+        <FooterSocialLinks sectionOptions={sectionOptions} className="justify-center mb-10" itemClassName="rounded-full border border-[#E8E4DB]/30 text-[#E8E4DB]/80 hover:text-white hover:border-white/60" />
 
         <div className="w-full h-px bg-[#E8E4DB]/20 mb-8"></div>
         {footerAddress && <p className="text-sm opacity-80 mb-2 font-sans break-words">{footerAddress}</p>}

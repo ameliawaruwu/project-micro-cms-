@@ -1,12 +1,13 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { STORE_ROUTES } from '../../storefrontLinks';
@@ -164,7 +165,6 @@ export const CreativeFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
-  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle || ''}. Hak cipta dilindungi.`;
 
   return (
@@ -184,13 +184,7 @@ export const CreativeFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
         ))}
       </nav>
 
-      {socials.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-6 mb-8 text-xs font-bold uppercase tracking-widest text-gray-400">
-          {socials.map((s) => (
-            <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-pink-400 transition-colors">{s.label}</a>
-          ))}
-        </div>
-      )}
+      <FooterSocialLinks sectionOptions={sectionOptions} className="justify-center mb-8" itemClassName="rounded-full border border-gray-200 text-gray-400 hover:text-pink-400 hover:border-pink-300" />
 
       {(email || address) && (
         <div className="space-y-1 mb-6 text-sm text-gray-300">

@@ -2,12 +2,13 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { STORE_ROUTES } from '../../storefrontLinks';
@@ -185,7 +186,6 @@ export const BoldFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
-  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle} Hak cipta dilindungi.`;
 
   return (
@@ -206,13 +206,7 @@ export const BoldFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
             {email && <a href={`mailto:${email}`} className="block font-black uppercase tracking-widest text-white hover:underline break-all">{email}</a>}
           </div>
         )}
-        {socials.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-6 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            {socials.map((s) => (
-              <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{s.label}</a>
-            ))}
-          </div>
-        )}
+        <FooterSocialLinks sectionOptions={sectionOptions} className="justify-center" itemClassName="rounded-none border-2 border-zinc-700 text-zinc-400 hover:text-white hover:border-white" />
         <div className="pt-6 border-t border-zinc-900 text-xs font-medium text-zinc-500 tracking-wider">
           {copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} />
         </div>

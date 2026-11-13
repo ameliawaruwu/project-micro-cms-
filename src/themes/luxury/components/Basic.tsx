@@ -2,13 +2,14 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { NavSearchButton } from '../../NavSearchButton';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount, CartCountBadge, NavCartButton } from '../../storefrontCart';
 import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { useThemeProductsSource } from '../../useSectionProducts';
 import { STORE_ROUTES } from '../../storefrontLinks';
@@ -163,7 +164,6 @@ export const LuxuryFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
-  const socials = getFooterSocialLinks(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || (isEn
     ? `© ${new Date().getFullYear()} ${storeTitle}. All rights reserved.`
     : `© ${new Date().getFullYear()} ${storeTitle}. Seluruh hak cipta dilindungi.`);
@@ -191,13 +191,7 @@ export const LuxuryFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
           {email && <a href={`mailto:${email}`} className="block hover:underline break-all">{email}</a>}
         </div>
       )}
-      {socials.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-6 mb-6 text-[10px] uppercase tracking-[0.25em] text-[#7D6E63] font-sans">
-          {socials.map((s) => (
-            <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-[#8C531B] transition-colors">{s.label}</a>
-          ))}
-        </div>
-      )}
+      <FooterSocialLinks sectionOptions={sectionOptions} className="justify-center mb-6" itemClassName="rounded-lg border border-[#EADBCE] text-[#7D6E63] hover:text-[#8C531B] hover:border-[#8C531B]" />
       <p className="text-[9px] uppercase tracking-[0.35em] text-[#9E8E81] font-mono">{copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} /></p>
     </footer>
   );

@@ -1,8 +1,9 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks } from '../../navMenu';
+import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 
 export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const storeInfo = useCmsStore(state => state.storeInfo);
@@ -58,11 +59,7 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
               {address && <li className="break-words">{address}</li>}
               {email && <li className="break-all"><a href={`mailto:${email}`} className="hover:underline">{email}</a></li>}
             </ul>
-            <div className="mt-8 flex flex-wrap gap-6">
-              {getFooterSocialLinks(sectionOptions).map((s) => (
-                <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="font-sans text-[10px] tracking-[0.2em] uppercase hover:text-[#A39D98] transition-colors">{s.label}</a>
-              ))}
-            </div>
+            <FooterSocialLinks sectionOptions={sectionOptions} className="mt-8" itemClassName="rounded-none border border-[#A39D98]/40 hover:text-[#A39D98] hover:border-[#A39D98]" />
           </div>
         </div>
 

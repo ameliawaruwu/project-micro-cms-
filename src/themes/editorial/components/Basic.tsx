@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { Search, ShoppingBag, MessageCircle, Menu, X } from 'lucide-react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { getNavMenuItems, getFooterSocialLinks, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { STORE_ROUTES } from '../../storefrontLinks';
@@ -237,7 +238,6 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolea
   const storeDesc = sectionOptions.description !== undefined ? sectionOptions.description : (sectionOptions.tagline || storeInfo?.description);
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const footerNavItems = getNavMenuItems(sectionOptions);
-  const footerSocials = getFooterSocialLinks(sectionOptions);
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle || ''}. Hak cipta dilindungi.`;
   const footerFlexClass = getDeviceClass(isMobile, isTablet, {
@@ -276,13 +276,7 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolea
           )}
         </div>
       )}
-      {footerSocials.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-6 mb-10 text-[10px] uppercase tracking-[0.3em] text-gray-400">
-          {footerSocials.map((s) => (
-            <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{s.label}</a>
-          ))}
-        </div>
-      )}
+      <FooterSocialLinks sectionOptions={sectionOptions} className="justify-center mb-10" itemClassName="rounded-none border border-gray-700 text-gray-400 hover:text-white hover:border-gray-400" />
       <div className="w-full max-w-lg h-[1px] bg-gray-800 mb-8"></div>
       <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} /></p>
     </footer>
