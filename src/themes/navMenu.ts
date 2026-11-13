@@ -159,9 +159,13 @@ export interface FooterLegalLink {
   href: string;
 }
 
+/** Tujuan tautan legal yang teksnya diisi tetapi link-nya kosong/tidak valid: Beranda toko. */
+export const FOOTER_LEGAL_FALLBACK_HREF = '/';
+
 /**
  * Tautan Kebijakan Privasi & Syarat Ketentuan dari pengaturan footer.
- * Hanya tampil bila merchant mengisi URL yang valid (tidak ada tautan mati).
+ * Tampil bila merchant mengisi teks atau link-nya. Link kosong/tidak valid diarahkan ke
+ * Beranda (bukan tautan mati); teks kosong memakai label bawaan. Keduanya kosong = disembunyikan.
  */
 export function getFooterLegalLinks(sectionOptions: any = {}): FooterLegalLink[] {
   const entries: Array<[FooterLegalLink['key'], string, string, string]> = [
@@ -169,10 +173,11 @@ export function getFooterLegalLinks(sectionOptions: any = {}): FooterLegalLink[]
     ['terms', 'termsOfServiceText', 'termsOfServiceUrl', 'Syarat & Ketentuan'],
   ];
   return entries.flatMap(([key, textKey, urlKey, fallbackLabel]) => {
-    const href = sanitizeLinkHref(sectionOptions?.[urlKey]);
-    if (!href) return [];
-    const label = String(sectionOptions?.[textKey] ?? '').trim() || fallbackLabel;
-    return [{ key, label, href }];
+    const text = String(sectionOptions?.[textKey] ?? '').trim();
+    const rawUrl = String(sectionOptions?.[urlKey] ?? '').trim();
+    if (!text && !rawUrl) return [];
+    const href = sanitizeLinkHref(rawUrl) || FOOTER_LEGAL_FALLBACK_HREF;
+    return [{ key, label: text || fallbackLabel, href }];
   });
 }
 

@@ -586,7 +586,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       </div>
                     </div>
                   ))}
-                  <p className="text-[11px] text-gray-500">Tautan legal tampil di footer setelah link diisi (https://, /halaman, atau #bagian).</p>
+                  <p className="text-[11px] text-gray-500">Tautan legal tampil di samping hak cipta footer bila teks atau link-nya diisi. Link boleh https://, /halaman, atau #bagian; bila link kosong, tautan diarahkan ke Beranda. Kosongkan keduanya untuk menyembunyikan.</p>
                 </div>
               </div>
             ) : (
