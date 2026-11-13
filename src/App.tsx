@@ -2030,7 +2030,7 @@ export default function App() {
             <main
               className={`flex-1 ${activeTab === 'layout'
                   ? 'w-full h-full p-0 m-0 overflow-hidden'
-                  : 'p-3 sm:p-5 lg:p-6 pb-16 lg:pb-6 max-w-6xl w-full mx-auto space-y-3.5 sm:space-y-4 overflow-y-auto custom-scrollbar'
+                  : 'flex flex-col *:shrink-0 p-3 sm:p-5 lg:p-6 pb-16 lg:pb-6 max-w-6xl w-full mx-auto space-y-3.5 sm:space-y-4 overflow-y-auto custom-scrollbar'
                 }`}
             >
               {/* TAB 1: BERANDA / DASHBOARD */}

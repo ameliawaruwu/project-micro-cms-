@@ -697,7 +697,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         />
 
         {/* Dynamic Content (Scrollable) */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 w-full">
+        <main className="flex-1 flex flex-col *:shrink-0 overflow-y-auto p-4 sm:p-6 space-y-4 w-full">
           {activeTab === 'overview' && (
             <AdminOverviewTab
               stats={isSubAdmin ? activeStatsForAdmin : stats}
