@@ -2,6 +2,7 @@ import React from 'react';
 import { ShieldCheck, Truck, CreditCard, MapPin, Mail, Phone, Clock, MessageCircle } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { getStorefrontThemeVars } from '../pages/storefrontTheme';
+import { getThemeContainer } from '../themeContainer';
 import { whatsAppChatLink } from '../sectionContent';
 import { STORE_ROUTES, resolveSectionCta, resolveSectionImage } from '../storefrontLinks';
 
@@ -46,9 +47,10 @@ export const ThemedPromoBanner: React.FC<ThemedBlockProps> = ({ sectionOptions =
   // Tautan merchant disanitasi; bawaan membuka halaman katalog seperti menu navbar.
   const cta = resolveSectionCta(sectionOptions, 'Lihat Katalog', STORE_ROUTES.catalog);
   const image = resolveSectionImage(sectionOptions);
+  const container = getThemeContainer(themeId);
   return (
-    <ThemeScope themeId={themeId} accentColor={accentColor} className="bg-[var(--sf-page)]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+    <ThemeScope themeId={themeId} accentColor={accentColor} className={`bg-[var(--sf-page)] ${container.outer}`}>
+      <div className={`${container.inner} py-10 sm:py-14`}>
         <div className="relative overflow-hidden rounded-[var(--sf-radius)] bg-[var(--sf-primary-soft)] border border-[var(--sf-primary-border)] px-4 py-8 sm:px-12 sm:py-14 text-center flex flex-col items-center gap-3 sm:gap-4">
           {image && <img src={image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none" />}
           {badge && (
@@ -78,9 +80,10 @@ const BENEFITS = [
 
 export const ThemedStoreBenefits: React.FC<ThemedBlockProps> = ({ sectionOptions = {}, themeId, accentColor }) => {
   const heading = sectionOptions.heading || 'Mengapa Belanja di Toko Kami?';
+  const container = getThemeContainer(themeId);
   return (
-    <ThemeScope themeId={themeId} accentColor={accentColor} className="bg-[var(--sf-page)]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+    <ThemeScope themeId={themeId} accentColor={accentColor} className={`bg-[var(--sf-page)] ${container.outer}`}>
+      <div className={`${container.inner} py-10 sm:py-14`}>
         {heading && (
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-center text-[var(--sf-text)] mb-6 sm:mb-10">{heading}</h2>
         )}

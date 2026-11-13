@@ -49,6 +49,7 @@ import { ThemeId, ThemeRegistry, normalizeThemeId } from '../../themes/ThemeRegi
 import { ThemeSectionRenderer } from './ThemeSectionRenderer';
 import { getThemeSectionComponent, resolveThemeForSections, HIDDEN_SECTION_IDS } from '../../themes/sectionResolver';
 import { ResponsivePreviewScope } from './ResponsivePreviewScope';
+import { getThemeContainer } from '../../themes/themeContainer';
 import { ScaledDeviceFrame, DEVICE_DESIGN_WIDTH } from './ScaledDeviceFrame';
 import { getStorefrontThemeVars } from '../../themes/pages/storefrontTheme';
 import { StorefrontContext, StorefrontToast } from '../../themes/storefrontCart';
@@ -182,6 +183,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
   const isMobile = deviceMode === 'mobile';
   const isTablet = deviceMode === 'tablet';
   const isDesktop = deviceMode === 'desktop';
+  // Bilah pencarian mengikuti lebar & jarak tepi konten template (sejajar navbar/grid produk).
+  const searchContainer = getThemeContainer(activeThemeId);
 
   const visibleSections = sections.filter((s) => s.isVisible);
 
@@ -1003,45 +1006,49 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
                 {/* 4. SEARCH & CATEGORIES */}
                 {section.id === 'search_category' && (
-                  <div className={`bg-[#FAF7F7] border-b border-[#E5E0DD] space-y-2.5 ${isMobile ? 'p-3' : 'p-4 sm:p-5'}`}>
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-1">
-                        <Search className="w-4 h-4 text-[#706866] absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input
-                          type="text"
-                          value={searchPreviewQuery}
-                          onChange={(e) => setSearchPreviewQuery(e.target.value)}
-                          placeholder="Cari produk pilihan Anda..."
-                          className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-[#E5E0DD] text-xs text-[#241A1A] placeholder-[#A8A09E] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
-                        />
+                  <ResponsivePreviewScope deviceMode={childDeviceMode}>
+                    <div className={`bg-[#FAF7F7] border-b border-[#E5E0DD] ${isMobile ? 'py-3' : 'py-4 sm:py-5'} ${searchContainer.outer}`}>
+                      <div className={`${searchContainer.inner} space-y-2.5`}>
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <Search className="w-4 h-4 text-[#706866] absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              value={searchPreviewQuery}
+                              onChange={(e) => setSearchPreviewQuery(e.target.value)}
+                              placeholder="Cari produk pilihan Anda..."
+                              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-[#E5E0DD] text-xs text-[#241A1A] placeholder-[#A8A09E] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
+                            />
+                          </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+                        {categories.map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveCategoryFilter(cat);
+                            }}
+                            className={`rounded-xl font-semibold whitespace-nowrap transition cursor-pointer ${
+                              isMobile ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1 text-xs'
+                            } ${
+                              activeCategoryFilter === cat
+                                ? 'bg-[#66000E] text-white shadow-2xs'
+                                : 'bg-white border border-[#E5E0DD] text-[#5A5250] hover:bg-[#FAF7F7]'
+                            }`}
+                            style={{
+                              backgroundColor:
+                                activeCategoryFilter === cat ? primaryAccent : undefined,
+                            }}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
-                      {categories.map((cat) => (
-                        <button
-                          key={cat}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveCategoryFilter(cat);
-                          }}
-                          className={`rounded-xl font-semibold whitespace-nowrap transition cursor-pointer ${
-                            isMobile ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1 text-xs'
-                          } ${
-                            activeCategoryFilter === cat
-                              ? 'bg-[#66000E] text-white shadow-2xs'
-                              : 'bg-white border border-[#E5E0DD] text-[#5A5250] hover:bg-[#FAF7F7]'
-                          }`}
-                          style={{
-                            backgroundColor:
-                              activeCategoryFilter === cat ? primaryAccent : undefined,
-                          }}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  </ResponsivePreviewScope>
                 )}
 
                 {/* 5. FEATURED PRODUCTS */}
@@ -2245,46 +2252,50 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
                     {/* 4. SEARCH & CATEGORIES (RESPONSIVE) */}
                     {section.id === 'search_category' && (
-                      <div className={`bg-[#FAF7F7] border-b border-[#E5E0DD] space-y-2.5 ${isMobile ? 'p-3' : 'p-4 sm:p-5'}`}>
-                        <div className="flex items-center gap-2">
-                          <div className="relative flex-1">
-                            <Search className="w-4 h-4 text-[#706866] absolute left-3 top-1/2 -translate-y-1/2" />
-                            <input
-                              type="text"
-                              value={searchPreviewQuery}
-                              onChange={(e) => setSearchPreviewQuery(e.target.value)}
-                              placeholder="Cari produk pilihan Anda..."
-                              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-[#E5E0DD] text-xs text-[#241A1A] placeholder-[#A8A09E] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
-                            />
+                      <ResponsivePreviewScope deviceMode={childDeviceMode}>
+                        <div className={`bg-[#FAF7F7] border-b border-[#E5E0DD] ${isMobile ? 'py-3' : 'py-4 sm:py-5'} ${searchContainer.outer}`}>
+                          <div className={`${searchContainer.inner} space-y-2.5`}>
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <Search className="w-4 h-4 text-[#706866] absolute left-3 top-1/2 -translate-y-1/2" />
+                                <input
+                                  type="text"
+                                  value={searchPreviewQuery}
+                                  onChange={(e) => setSearchPreviewQuery(e.target.value)}
+                                  placeholder="Cari produk pilihan Anda..."
+                                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-[#E5E0DD] text-xs text-[#241A1A] placeholder-[#A8A09E] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+                              {categories.map((cat) => (
+                                <button
+                                  key={cat}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveCategoryFilter(cat);
+                                  }}
+                                  className={`rounded-xl font-semibold whitespace-nowrap transition cursor-pointer ${
+                                    isMobile ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1 text-xs'
+                                  } ${
+                                    activeCategoryFilter === cat
+                                      ? 'bg-[#66000E] text-white shadow-2xs'
+                                      : 'bg-white border border-[#E5E0DD] text-[#5A5250] hover:bg-[#FAF7F7]'
+                                  }`}
+                                  style={{
+                                    backgroundColor:
+                                      activeCategoryFilter === cat ? primaryAccent : undefined,
+                                  }}
+                                >
+                                  {cat}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
-                          {categories.map((cat) => (
-                            <button
-                              key={cat}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveCategoryFilter(cat);
-                              }}
-                              className={`rounded-xl font-semibold whitespace-nowrap transition cursor-pointer ${
-                                isMobile ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1 text-xs'
-                              } ${
-                                activeCategoryFilter === cat
-                                  ? 'bg-[#66000E] text-white shadow-2xs'
-                                  : 'bg-white border border-[#E5E0DD] text-[#5A5250] hover:bg-[#FAF7F7]'
-                              }`}
-                              style={{
-                                backgroundColor:
-                                  activeCategoryFilter === cat ? primaryAccent : undefined,
-                              }}
-                            >
-                              {cat}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                      </ResponsivePreviewScope>
                     )}
 
                     {/* 5. FEATURED PRODUCTS (RESPONSIVE GRID) */}
