@@ -1502,11 +1502,12 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
         designWidth={DEVICE_DESIGN_WIDTH[deviceMode]}
         fillWhenWider={isDesktop}
         className={`device-${deviceMode} ${isDesktop ? 'sf-desktop-density' : ''}`}
-        data-theme={store.layoutSettings?.themeStyle || 'minimalist-01'}
         data-device-mode={deviceMode}
       >
-        {/* Device Outer Frame */}
+        {/* Device Outer Frame. data-theme dipasang di sini (bukan di pembungkus) karena CSS tema
+            memberi latar `!important`; di dalam bingkai bulat latar itu ikut terpotong rapi. */}
         <div
+          data-theme={store.layoutSettings?.themeStyle || 'minimalist-01'}
           className={`bg-white transition-all overflow-hidden flex flex-col ${
             isMobile
               ? 'rounded-[44px] border-[10px] border-slate-900 ring-1 ring-slate-800 shadow-slate-900/30'

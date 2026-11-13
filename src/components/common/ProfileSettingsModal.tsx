@@ -330,14 +330,6 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
               </button>
             </div>
 
-            {!changePassword && (
-              <p className="text-[11px] text-gray-500">
-                {isEn
-                  ? 'Your password stays the same. Profile changes can be saved without it.'
-                  : 'Kata sandi tidak berubah. Perubahan profil bisa disimpan tanpa kata sandi.'}
-              </p>
-            )}
-
             {changePassword && (
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">

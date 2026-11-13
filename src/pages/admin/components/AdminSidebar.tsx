@@ -54,11 +54,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           {/* Brand Header */}
           <div className={`flex items-center pb-3.5 border-b border-gray-100 ${isSidebarOpen ? 'justify-between' : 'justify-center flex-col gap-2'}`}>
             <div className={`flex items-center gap-2.5 ${!isSidebarOpen ? 'justify-center' : ''}`}>
-              <KroomifyLogo
-                size="sm"
-                showText={isSidebarOpen}
-                badge={isSubAdmin ? (subAdminTitle || 'SUB-ADMIN') : 'SUPER ADMIN'}
-              />
+              <KroomifyLogo size="sm" showText={isSidebarOpen} />
             </div>
 
             <button

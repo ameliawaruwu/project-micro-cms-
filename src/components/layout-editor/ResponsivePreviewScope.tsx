@@ -48,10 +48,14 @@ export const ResponsivePreviewScope: React.FC<{ deviceMode?: PreviewDeviceMode; 
     const root = ref.current;
     if (!root || !deviceMode) return;
 
-    // Device berganti: hitung ulang dari class asli.
+    // Device berganti: hitung ulang dari class asli. Bila React sudah memasang class baru
+    // (mis. getDeviceClass untuk device baru), class itu yang dipakai — memulihkan class lama
+    // di sini membuat tablet/ponsel tetap memakai kelas desktop (grid-cols-12, nav desktop).
     root.querySelectorAll(`[${SRC_ATTR}]`).forEach((el) => {
       const src = el.getAttribute(SRC_ATTR) || '';
-      el.setAttribute('class', src);
+      const lastOut = el.getAttribute(OUT_ATTR);
+      if (lastOut !== null && el.getAttribute('class') === lastOut) el.setAttribute('class', src);
+      el.removeAttribute(SRC_ATTR);
       el.removeAttribute(OUT_ATTR);
     });
     applyToTree(root, deviceMode);
