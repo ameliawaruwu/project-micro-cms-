@@ -824,7 +824,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                   </span>
                 </div>
               ) : (
-                <div className="flex flex-col sm:flex-row gap-3.5">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
                   <a
                     href={domainQrisUrl}
                     target="_blank"
@@ -832,9 +832,9 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                     className="self-center sm:self-start shrink-0 p-2 bg-white rounded-xl border border-blue-200 shadow-2xs"
                     title={isEn ? 'Open QRIS in full size' : 'Buka QRIS ukuran penuh'}
                   >
-                    <img src={domainQrisUrl} alt="QRIS" className="w-40 h-40 object-contain" />
+                    <img src={domainQrisUrl} alt="QRIS" className="w-56 h-56 sm:w-64 sm:h-64 object-contain" />
                   </a>
-                  <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex-1 min-w-0 space-y-3">
                     <p className="font-bold text-blue-950 flex items-center gap-1.5">
                       <QrCode className="w-4 h-4" /> {isEn ? 'Pay via QRIS' : 'Bayar via QRIS'}
                     </p>
@@ -846,90 +846,88 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                       <li>{isEn ? 'Upload a screenshot of the transfer proof below.' : 'Unggah tangkapan layar bukti transfer di bawah.'}</li>
                       <li>{isEn ? 'The admin verifies it and activates your domain.' : 'Admin memverifikasi lalu mengaktifkan domain Anda.'}</li>
                     </ol>
+                      <div className="max-w-md p-3 rounded-xl bg-white border border-blue-200 space-y-2.5">
+                        <p className="text-[11px] font-bold text-blue-950">
+                          {isEn ? 'Payment Proof' : 'Bukti Pembayaran'}
+                        </p>
+
+                        {activeRequest.paymentProofUrl && !proofFile && (
+                          <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-blue-50 border border-blue-200">
+                            <Clock className="w-4 h-4 text-blue-700 shrink-0" />
+                            <span className="text-[11px] font-semibold text-blue-900 flex-1 min-w-[140px]">
+                              {isEn ? 'Proof sent, waiting for admin verification.' : 'Bukti terkirim, menunggu verifikasi admin.'}
+                            </span>
+                            <a
+                              href={activeRequest.paymentProofUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-bold text-blue-800 underline"
+                            >
+                              {isEn ? 'View proof' : 'Lihat bukti'}
+                            </a>
+                          </div>
+                        )}
+
+                        {proofFile ? (
+                          <div className="flex items-center gap-3 p-2 rounded-lg border border-gray-200 bg-gray-50">
+                            <img src={proofPreview} alt="" className="w-14 h-14 rounded-md object-cover border border-gray-200 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-semibold text-gray-900 truncate">{proofFile.name}</p>
+                              <p className="text-[10px] text-gray-500">{(proofFile.size / 1024).toFixed(0)} KB</p>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={isUploadingProof}
+                              onClick={clearProofSelection}
+                              className="text-gray-400 hover:text-gray-700 cursor-pointer disabled:opacity-50"
+                              title={isEn ? 'Remove' : 'Hapus'}
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => proofInputRef.current?.click()}
+                            className="w-full flex flex-col items-center justify-center gap-1 px-3 py-4 rounded-lg border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50/60 text-blue-900 transition cursor-pointer"
+                          >
+                            <Upload className="w-5 h-5" />
+                            <span className="text-xs font-bold">
+                              {activeRequest.paymentProofUrl
+                                ? (isEn ? 'Choose a new proof image' : 'Pilih gambar bukti baru')
+                                : (isEn ? 'Choose proof image' : 'Pilih gambar bukti transfer')}
+                            </span>
+                            <span className="text-[10px] text-blue-700/80">PNG, JPG, WEBP · {isEn ? 'max' : 'maks.'} 5MB</span>
+                          </button>
+                        )}
+                        <input
+                          ref={proofInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          onChange={handleProofPicked}
+                          className="hidden"
+                        />
+
+                        {proofFile && (
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              disabled={isUploadingProof}
+                              onClick={handleSubmitProof}
+                              className="px-4 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer disabled:opacity-50 active:scale-98"
+                            >
+                              {isUploadingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                              {isUploadingProof
+                                ? (isEn ? 'Sending...' : 'Mengirim...')
+                                : (isEn ? 'Send Payment Proof' : 'Kirim Bukti Bayar')}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                   </div>
                 </div>
               )}
 
-              {isQrisLoaded && !isGatewayEnabled && domainQrisUrl && (
-                <div className="p-3 rounded-xl bg-white border border-blue-200 space-y-2.5">
-                  <p className="text-[11px] font-bold text-blue-950">
-                    {isEn ? 'Payment Proof' : 'Bukti Pembayaran'}
-                  </p>
-
-                  {activeRequest.paymentProofUrl && !proofFile && (
-                    <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-blue-50 border border-blue-200">
-                      <Clock className="w-4 h-4 text-blue-700 shrink-0" />
-                      <span className="text-[11px] font-semibold text-blue-900 flex-1 min-w-[140px]">
-                        {isEn ? 'Proof sent, waiting for admin verification.' : 'Bukti terkirim, menunggu verifikasi admin.'}
-                      </span>
-                      <a
-                        href={activeRequest.paymentProofUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-blue-800 underline"
-                      >
-                        {isEn ? 'View proof' : 'Lihat bukti'}
-                      </a>
-                    </div>
-                  )}
-
-                  {proofFile ? (
-                    <div className="flex items-center gap-3 p-2 rounded-lg border border-gray-200 bg-gray-50">
-                      <img src={proofPreview} alt="" className="w-14 h-14 rounded-md object-cover border border-gray-200 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-semibold text-gray-900 truncate">{proofFile.name}</p>
-                        <p className="text-[10px] text-gray-500">{(proofFile.size / 1024).toFixed(0)} KB</p>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={isUploadingProof}
-                        onClick={clearProofSelection}
-                        className="text-gray-400 hover:text-gray-700 cursor-pointer disabled:opacity-50"
-                        title={isEn ? 'Remove' : 'Hapus'}
-                      >
-                        <XCircle className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => proofInputRef.current?.click()}
-                      className="w-full flex flex-col items-center justify-center gap-1 px-3 py-4 rounded-lg border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50/60 text-blue-900 transition cursor-pointer"
-                    >
-                      <Upload className="w-5 h-5" />
-                      <span className="text-xs font-bold">
-                        {activeRequest.paymentProofUrl
-                          ? (isEn ? 'Choose a new proof image' : 'Pilih gambar bukti baru')
-                          : (isEn ? 'Choose proof image' : 'Pilih gambar bukti transfer')}
-                      </span>
-                      <span className="text-[10px] text-blue-700/80">PNG, JPG, WEBP · {isEn ? 'max' : 'maks.'} 5MB</span>
-                    </button>
-                  )}
-                  <input
-                    ref={proofInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={handleProofPicked}
-                    className="hidden"
-                  />
-
-                  {proofFile && (
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        disabled={isUploadingProof}
-                        onClick={handleSubmitProof}
-                        className="px-4 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer disabled:opacity-50 active:scale-98"
-                      >
-                        {isUploadingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                        {isUploadingProof
-                          ? (isEn ? 'Sending...' : 'Mengirim...')
-                          : (isEn ? 'Send Payment Proof' : 'Kirim Bukti Bayar')}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
 
