@@ -846,7 +846,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                       <li>{isEn ? 'Upload a screenshot of the transfer proof below.' : 'Unggah tangkapan layar bukti transfer di bawah.'}</li>
                       <li>{isEn ? 'The admin verifies it and activates your domain.' : 'Admin memverifikasi lalu mengaktifkan domain Anda.'}</li>
                     </ol>
-                      <div className="max-w-md p-3 rounded-xl bg-white border border-blue-200 space-y-2.5">
+                      <div className="p-3 rounded-xl bg-white border border-blue-200 space-y-2.5">
                         <p className="text-[11px] font-bold text-blue-950">
                           {isEn ? 'Payment Proof' : 'Bukti Pembayaran'}
                         </p>
