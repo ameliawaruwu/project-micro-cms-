@@ -390,6 +390,49 @@ export const DomainPage: React.FC<DomainPageProps> = ({
     }
   };
 
+  const requestStatusLabel = !activeRequest
+    ? ''
+    : activeRequest.status === 'pending'
+    ? (isEn ? 'Pending Review' : 'Menunggu Review Admin')
+    : activeRequest.status === 'approved'
+    ? activeRequest.paymentProofUrl
+      ? (isEn ? 'Verifying Payment' : 'Verifikasi Pembayaran')
+      : (isEn ? 'Awaiting Payment' : 'Menunggu Pembayaran')
+    : activeRequest.status === 'rejected'
+    ? (isEn ? 'Unavailable' : 'Tidak Tersedia')
+    : (isEn ? 'Domain Active' : 'Domain Aktif');
+  const requestBadgeClass = !activeRequest
+    ? ''
+    : activeRequest.status === 'pending'
+    ? 'bg-amber-100 text-amber-800 border-amber-200'
+    : activeRequest.status === 'approved'
+    ? 'bg-blue-100 text-blue-800 border-blue-200'
+    : activeRequest.status === 'rejected'
+    ? 'bg-[#F5E8EA] text-[#66000E] border-[#E8DDDE]'
+    : 'bg-emerald-100 text-emerald-800 border-emerald-200';
+  const requestTextClass = !activeRequest
+    ? ''
+    : activeRequest.status === 'pending'
+    ? 'text-amber-900'
+    : activeRequest.status === 'approved'
+    ? 'text-blue-900'
+    : activeRequest.status === 'rejected'
+    ? 'text-[#66000E]'
+    : 'text-emerald-900';
+  const requestDate = activeRequest?.createdAt
+    ? new Date(activeRequest.createdAt).toLocaleDateString(isEn ? 'en-GB' : 'id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '-';
+  const hasRequestDetail =
+    !!activeRequest &&
+    (!!activeRequest.adminNotes ||
+      activeRequest.status === 'approved' ||
+      activeRequest.status === 'active' ||
+      (activeRequest.status === 'rejected' && !!activeRequest.adminSuggestions?.length));
+
   return (
     <div className="space-y-4 animate-in fade-in duration-200 font-sans pb-24 lg:pb-8 w-full text-left">
       {/* Breadcrumb Navigation */}
@@ -575,256 +618,6 @@ export const DomainPage: React.FC<DomainPageProps> = ({
 
           {domainType === 'custom' ? (
             <div className="space-y-4">
-              {/* STATUS TRACKER CARD JIKA SUDAH ADA REQUEST */}
-              {activeRequest && (
-                <div
-                  className={`p-4 rounded-xl border text-xs space-y-2.5 ${
-                    activeRequest.status === 'pending'
-                      ? 'bg-amber-50/80 border-amber-200 text-amber-900'
-                      : activeRequest.status === 'approved'
-                      ? 'bg-blue-50/80 border-blue-200 text-blue-900'
-                      : activeRequest.status === 'rejected'
-                      ? 'bg-[#F5E8EA] border-[#E8DDDE] text-[#66000E]'
-                      : 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
-                  }`}
-                >
-                  <div className="flex items-center justify-between font-bold">
-                    <span className="flex items-center gap-1.5 text-xs sm:text-sm">
-                      <Globe className="w-4 h-4" /> {activeRequest.fullDomain}
-                    </span>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-extrabold ${
-                        activeRequest.status === 'pending'
-                          ? 'bg-amber-200 text-amber-800'
-                          : activeRequest.status === 'approved'
-                          ? 'bg-blue-200 text-blue-800'
-                          : activeRequest.status === 'rejected'
-                          ? 'bg-[#F5E8EA] text-[#66000E]'
-                          : 'bg-emerald-200 text-emerald-800'
-                      }`}
-                    >
-                      {activeRequest.status === 'pending'
-                        ? (isEn ? 'Pending Review' : 'Menunggu Review Admin')
-                        : activeRequest.status === 'approved'
-                        ? activeRequest.paymentProofUrl
-                          ? (isEn ? 'Verifying Payment' : 'Verifikasi Pembayaran')
-                          : (isEn ? 'Approved' : 'Disetujui Admin')
-                        : activeRequest.status === 'rejected'
-                        ? (isEn ? 'Unavailable' : 'Tidak Tersedia')
-                        : (isEn ? 'Domain Active' : 'Domain Aktif')}
-                    </span>
-                  </div>
-
-                  {activeRequest.adminNotes && (
-                    <p className="leading-relaxed opacity-90">{activeRequest.adminNotes}</p>
-                  )}
-
-                  {/* KONDISI 1: REJECTED (Tampilkan Saran Domain Alternatif dari Admin) */}
-                  {activeRequest.status === 'rejected' && activeRequest.adminSuggestions && activeRequest.adminSuggestions.length > 0 && (
-                    <div className="pt-2 border-t border-[#E5E0DD]">
-                      <p className="font-semibold mb-1.5 text-[#66000E]">
-                        {isEn ? 'Suggested Available Domains:' : 'Saran Domain yang Tersedia:'}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {activeRequest.adminSuggestions.map((sug, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                              const parts = sug.split('.');
-                              if (parts.length >= 2) {
-                                setDomainPrefix(parts[0]);
-                                setSelectedTld(`.${parts.slice(1).join('.')}`);
-                              }
-                            }}
-                            className="px-2.5 py-1 bg-white hover:bg-[#F5E8EA] border border-[#E5E0DD] rounded-lg text-[#66000E] font-bold text-[11px] transition cursor-pointer flex items-center gap-1"
-                          >
-                            <span>{sug}</span>
-                            <ArrowRight className="w-3 h-3 text-[#66000E]" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* KONDISI 2: APPROVED - tagihan dibayar via QRIS platform, lalu unggah bukti */}
-                  {activeRequest.status === 'approved' && (
-                    <div className="pt-2 border-t border-blue-200 space-y-3">
-                      <div className="flex flex-wrap items-end justify-between gap-2">
-                        <div>
-                          <span className="text-[11px] text-blue-700 block">
-                            {isEn ? 'Total Domain Invoice (1 Year):' : 'Total Tagihan Domain (1 Tahun):'}
-                          </span>
-                          <span className="text-base font-black text-blue-950">{formatRupiah(activeRequest.price)}</span>
-                        </div>
-                        {activeRequest.invoiceNumber && (
-                          <span className="text-[11px] text-blue-700">
-                            {isEn ? 'Invoice:' : 'No. Invoice:'}{' '}
-                            <span className="font-mono font-semibold">{activeRequest.invoiceNumber}</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {!isQrisLoaded ? (
-                        <div className="flex items-center gap-2 text-[11px] text-blue-800">
-                          <Loader2 className="w-4 h-4 animate-spin" /> {isEn ? 'Loading payment method...' : 'Memuat metode pembayaran...'}
-                        </div>
-                      ) : isGatewayEnabled ? (
-                        <div className="flex justify-end">
-                          <button
-                            type="button"
-                            disabled={isPaying}
-                            onClick={handlePayDomainInvoice}
-                            className="px-4 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer disabled:opacity-50 active:scale-98"
-                          >
-                            {isPaying ? (
-                              <>
-                                <Loader2 className="w-4 h-4 animate-spin" /> {isEn ? 'Processing...' : 'Memproses...'}
-                              </>
-                            ) : (
-                              <>
-                                <CreditCard className="w-4 h-4" /> {isEn ? 'Pay via Midtrans' : 'Bayar via Midtrans'}
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      ) : !domainQrisUrl ? (
-                        <div className="flex items-start gap-2 p-2.5 rounded-lg bg-white/80 border border-blue-200 text-[11px] text-blue-900">
-                          <AlertCircle className="w-4 h-4 shrink-0 mt-px" />
-                          <span>
-                            {isEn
-                              ? 'The payment QRIS has not been set by the admin yet. Please contact the admin to complete the payment.'
-                              : 'QRIS pembayaran belum diatur admin. Hubungi admin untuk menyelesaikan pembayaran.'}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col sm:flex-row gap-3.5">
-                          <a
-                            href={domainQrisUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="self-center sm:self-start shrink-0 p-2 bg-white rounded-xl border border-blue-200 shadow-2xs"
-                            title={isEn ? 'Open QRIS in full size' : 'Buka QRIS ukuran penuh'}
-                          >
-                            <img src={domainQrisUrl} alt="QRIS" className="w-40 h-40 object-contain" />
-                          </a>
-                          <div className="flex-1 min-w-0 space-y-2">
-                            <p className="font-bold text-blue-950 flex items-center gap-1.5">
-                              <QrCode className="w-4 h-4" /> {isEn ? 'Pay via QRIS' : 'Bayar via QRIS'}
-                            </p>
-                            <ol className="list-decimal pl-4 space-y-0.5 text-[11px] text-blue-800 leading-relaxed">
-                              <li>
-                                {isEn ? 'Scan the QRIS and pay exactly ' : 'Pindai QRIS dan bayar tepat '}
-                                <span className="font-bold">{formatRupiah(activeRequest.price)}</span>.
-                              </li>
-                              <li>{isEn ? 'Upload a screenshot of the transfer proof below.' : 'Unggah tangkapan layar bukti transfer di bawah.'}</li>
-                              <li>{isEn ? 'The admin verifies it and activates your domain.' : 'Admin memverifikasi lalu mengaktifkan domain Anda.'}</li>
-                            </ol>
-                          </div>
-                        </div>
-                      )}
-
-                      {isQrisLoaded && !isGatewayEnabled && domainQrisUrl && (
-                        <div className="p-3 rounded-xl bg-white border border-blue-200 space-y-2.5">
-                          <p className="text-[11px] font-bold text-blue-950">
-                            {isEn ? 'Payment Proof' : 'Bukti Pembayaran'}
-                          </p>
-
-                          {activeRequest.paymentProofUrl && !proofFile && (
-                            <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-blue-50 border border-blue-200">
-                              <Clock className="w-4 h-4 text-blue-700 shrink-0" />
-                              <span className="text-[11px] font-semibold text-blue-900 flex-1 min-w-[140px]">
-                                {isEn ? 'Proof sent, waiting for admin verification.' : 'Bukti terkirim, menunggu verifikasi admin.'}
-                              </span>
-                              <a
-                                href={activeRequest.paymentProofUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[11px] font-bold text-blue-800 underline"
-                              >
-                                {isEn ? 'View proof' : 'Lihat bukti'}
-                              </a>
-                            </div>
-                          )}
-
-                          {proofFile ? (
-                            <div className="flex items-center gap-3 p-2 rounded-lg border border-gray-200 bg-gray-50">
-                              <img src={proofPreview} alt="" className="w-14 h-14 rounded-md object-cover border border-gray-200 shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-semibold text-gray-900 truncate">{proofFile.name}</p>
-                                <p className="text-[10px] text-gray-500">{(proofFile.size / 1024).toFixed(0)} KB</p>
-                              </div>
-                              <button
-                                type="button"
-                                disabled={isUploadingProof}
-                                onClick={clearProofSelection}
-                                className="text-gray-400 hover:text-gray-700 cursor-pointer disabled:opacity-50"
-                                title={isEn ? 'Remove' : 'Hapus'}
-                              >
-                                <XCircle className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => proofInputRef.current?.click()}
-                              className="w-full flex flex-col items-center justify-center gap-1 px-3 py-4 rounded-lg border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50/60 text-blue-900 transition cursor-pointer"
-                            >
-                              <Upload className="w-5 h-5" />
-                              <span className="text-xs font-bold">
-                                {activeRequest.paymentProofUrl
-                                  ? (isEn ? 'Choose a new proof image' : 'Pilih gambar bukti baru')
-                                  : (isEn ? 'Choose proof image' : 'Pilih gambar bukti transfer')}
-                              </span>
-                              <span className="text-[10px] text-blue-700/80">PNG, JPG, WEBP · {isEn ? 'max' : 'maks.'} 5MB</span>
-                            </button>
-                          )}
-                          <input
-                            ref={proofInputRef}
-                            type="file"
-                            accept="image/png,image/jpeg,image/webp"
-                            onChange={handleProofPicked}
-                            className="hidden"
-                          />
-
-                          {proofFile && (
-                            <div className="flex justify-end">
-                              <button
-                                type="button"
-                                disabled={isUploadingProof}
-                                onClick={handleSubmitProof}
-                                className="px-4 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer disabled:opacity-50 active:scale-98"
-                              >
-                                {isUploadingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                {isUploadingProof
-                                  ? (isEn ? 'Sending...' : 'Mengirim...')
-                                  : (isEn ? 'Send Payment Proof' : 'Kirim Bukti Bayar')}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* KONDISI 3: ACTIVE */}
-                  {activeRequest.status === 'active' && (
-                    <div className="pt-2 border-t border-emerald-200 flex justify-between items-center">
-                      <span className="text-emerald-800 font-semibold text-[11px]">
-                        {isEn ? 'Connected to LapakQ Cloudflare Tunnel' : 'Terhubung ke Cloudflare Tunnel LapakQ'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleDisconnectDomain}
-                        className="text-xs text-[#66000E] hover:text-[#52000B] font-bold underline cursor-pointer"
-                      >
-                        {isEn ? 'Disconnect' : 'Putuskan'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
               <form onSubmit={handleRequestDomain} className="space-y-3.5">
                   <div>
                     <label className="block text-xs font-bold text-[#241A1A] mb-1">
@@ -895,6 +688,270 @@ export const DomainPage: React.FC<DomainPageProps> = ({
           )}
         </div>
       </div>
+
+      {/* PERMINTAAN CUSTOM DOMAIN: dipisah dari form pengajuan */}
+      {activeRequest && (
+        <div className="bg-white rounded-2xl border border-[#E5E0DD] shadow-2xs overflow-hidden">
+          <div className="px-5 sm:px-6 py-4 border-b border-[#E5E0DD] flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-[#F5E8EA] text-[#66000E]">
+              <Globe className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-[#241A1A] text-sm">{isEn ? 'Custom Domain Request' : 'Permintaan Custom Domain'}</h3>
+              <p className="text-[11px] text-[#706866]">
+                {isEn ? 'Status, invoice, and payment of your domain request.' : 'Status, tagihan, dan pembayaran domain yang Anda ajukan.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Tabel (tablet & desktop) */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-[#FAF7F7] text-[#706866] uppercase tracking-wider text-[10px]">
+                <tr>
+                  <th className="px-5 sm:px-6 py-2.5 font-bold">Domain</th>
+                  <th className="px-4 py-2.5 font-bold">{isEn ? 'Requested' : 'Diajukan'}</th>
+                  <th className="px-4 py-2.5 font-bold">{isEn ? 'Invoice (1 Year)' : 'Tagihan (1 Tahun)'}</th>
+                  <th className="px-4 py-2.5 font-bold">{isEn ? 'Invoice No.' : 'No. Invoice'}</th>
+                  <th className="px-5 sm:px-6 py-2.5 font-bold text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t border-[#E5E0DD]">
+                  <td className="px-5 sm:px-6 py-3 font-bold text-[#241A1A]">{activeRequest.fullDomain}</td>
+                  <td className="px-4 py-3 text-[#706866] whitespace-nowrap">{requestDate}</td>
+                  <td className="px-4 py-3 font-bold text-[#241A1A] whitespace-nowrap">{formatRupiah(activeRequest.price)}</td>
+                  <td className="px-4 py-3 font-mono text-[#241A1A] whitespace-nowrap">{activeRequest.invoiceNumber || '-'}</td>
+                  <td className="px-5 sm:px-6 py-3 text-right">
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full border text-[10px] uppercase tracking-wider font-extrabold whitespace-nowrap ${requestBadgeClass}`}>
+                      {requestStatusLabel}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Ringkasan (mobile) */}
+          <div className="sm:hidden px-5 py-4 space-y-2 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <span className="font-bold text-[#241A1A] break-all">{activeRequest.fullDomain}</span>
+              <span className={`shrink-0 px-2 py-0.5 rounded-full border text-[10px] uppercase tracking-wider font-extrabold ${requestBadgeClass}`}>
+                {requestStatusLabel}
+              </span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-[#706866]">{isEn ? 'Requested' : 'Diajukan'}</span>
+              <span className="text-[#241A1A]">{requestDate}</span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-[#706866]">{isEn ? 'Invoice (1 Year)' : 'Tagihan (1 Tahun)'}</span>
+              <span className="font-bold text-[#241A1A]">{formatRupiah(activeRequest.price)}</span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-[#706866]">{isEn ? 'Invoice No.' : 'No. Invoice'}</span>
+              <span className="font-mono text-[#241A1A]">{activeRequest.invoiceNumber || '-'}</span>
+            </div>
+          </div>
+
+          {hasRequestDetail && (
+            <div className={`px-5 sm:px-6 py-4 border-t border-[#E5E0DD] text-xs space-y-3 ${requestTextClass}`}>
+          {activeRequest.adminNotes && (
+            <p className="leading-relaxed p-2.5 rounded-lg bg-[#FAF7F7] border border-[#E5E0DD]">{activeRequest.adminNotes}</p>
+          )}
+
+          {/* KONDISI 1: REJECTED (Tampilkan Saran Domain Alternatif dari Admin) */}
+          {activeRequest.status === 'rejected' && activeRequest.adminSuggestions && activeRequest.adminSuggestions.length > 0 && (
+            <div>
+              <p className="font-semibold mb-1.5 text-[#66000E]">
+                {isEn ? 'Suggested Available Domains:' : 'Saran Domain yang Tersedia:'}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {activeRequest.adminSuggestions.map((sug, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      const parts = sug.split('.');
+                      if (parts.length >= 2) {
+                        setDomainPrefix(parts[0]);
+                        setSelectedTld(`.${parts.slice(1).join('.')}`);
+                      }
+                    }}
+                    className="px-2.5 py-1 bg-white hover:bg-[#F5E8EA] border border-[#E5E0DD] rounded-lg text-[#66000E] font-bold text-[11px] transition cursor-pointer flex items-center gap-1"
+                  >
+                    <span>{sug}</span>
+                    <ArrowRight className="w-3 h-3 text-[#66000E]" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* KONDISI 2: APPROVED - tagihan dibayar via QRIS platform, lalu unggah bukti */}
+          {activeRequest.status === 'approved' && (
+            <div className="space-y-3">
+              {!isQrisLoaded ? (
+                <div className="flex items-center gap-2 text-[11px] text-blue-800">
+                  <Loader2 className="w-4 h-4 animate-spin" /> {isEn ? 'Loading payment method...' : 'Memuat metode pembayaran...'}
+                </div>
+              ) : isGatewayEnabled ? (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={isPaying}
+                    onClick={handlePayDomainInvoice}
+                    className="px-4 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer disabled:opacity-50 active:scale-98"
+                  >
+                    {isPaying ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> {isEn ? 'Processing...' : 'Memproses...'}
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4" /> {isEn ? 'Pay via Midtrans' : 'Bayar via Midtrans'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : !domainQrisUrl ? (
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-white/80 border border-blue-200 text-[11px] text-blue-900">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-px" />
+                  <span>
+                    {isEn
+                      ? 'The payment QRIS has not been set by the admin yet. Please contact the admin to complete the payment.'
+                      : 'QRIS pembayaran belum diatur admin. Hubungi admin untuk menyelesaikan pembayaran.'}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3.5">
+                  <a
+                    href={domainQrisUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="self-center sm:self-start shrink-0 p-2 bg-white rounded-xl border border-blue-200 shadow-2xs"
+                    title={isEn ? 'Open QRIS in full size' : 'Buka QRIS ukuran penuh'}
+                  >
+                    <img src={domainQrisUrl} alt="QRIS" className="w-40 h-40 object-contain" />
+                  </a>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <p className="font-bold text-blue-950 flex items-center gap-1.5">
+                      <QrCode className="w-4 h-4" /> {isEn ? 'Pay via QRIS' : 'Bayar via QRIS'}
+                    </p>
+                    <ol className="list-decimal pl-4 space-y-0.5 text-[11px] text-blue-800 leading-relaxed">
+                      <li>
+                        {isEn ? 'Scan the QRIS and pay exactly ' : 'Pindai QRIS dan bayar tepat '}
+                        <span className="font-bold">{formatRupiah(activeRequest.price)}</span>.
+                      </li>
+                      <li>{isEn ? 'Upload a screenshot of the transfer proof below.' : 'Unggah tangkapan layar bukti transfer di bawah.'}</li>
+                      <li>{isEn ? 'The admin verifies it and activates your domain.' : 'Admin memverifikasi lalu mengaktifkan domain Anda.'}</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+
+              {isQrisLoaded && !isGatewayEnabled && domainQrisUrl && (
+                <div className="p-3 rounded-xl bg-white border border-blue-200 space-y-2.5">
+                  <p className="text-[11px] font-bold text-blue-950">
+                    {isEn ? 'Payment Proof' : 'Bukti Pembayaran'}
+                  </p>
+
+                  {activeRequest.paymentProofUrl && !proofFile && (
+                    <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-blue-50 border border-blue-200">
+                      <Clock className="w-4 h-4 text-blue-700 shrink-0" />
+                      <span className="text-[11px] font-semibold text-blue-900 flex-1 min-w-[140px]">
+                        {isEn ? 'Proof sent, waiting for admin verification.' : 'Bukti terkirim, menunggu verifikasi admin.'}
+                      </span>
+                      <a
+                        href={activeRequest.paymentProofUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-bold text-blue-800 underline"
+                      >
+                        {isEn ? 'View proof' : 'Lihat bukti'}
+                      </a>
+                    </div>
+                  )}
+
+                  {proofFile ? (
+                    <div className="flex items-center gap-3 p-2 rounded-lg border border-gray-200 bg-gray-50">
+                      <img src={proofPreview} alt="" className="w-14 h-14 rounded-md object-cover border border-gray-200 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-semibold text-gray-900 truncate">{proofFile.name}</p>
+                        <p className="text-[10px] text-gray-500">{(proofFile.size / 1024).toFixed(0)} KB</p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={isUploadingProof}
+                        onClick={clearProofSelection}
+                        className="text-gray-400 hover:text-gray-700 cursor-pointer disabled:opacity-50"
+                        title={isEn ? 'Remove' : 'Hapus'}
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => proofInputRef.current?.click()}
+                      className="w-full flex flex-col items-center justify-center gap-1 px-3 py-4 rounded-lg border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50/60 text-blue-900 transition cursor-pointer"
+                    >
+                      <Upload className="w-5 h-5" />
+                      <span className="text-xs font-bold">
+                        {activeRequest.paymentProofUrl
+                          ? (isEn ? 'Choose a new proof image' : 'Pilih gambar bukti baru')
+                          : (isEn ? 'Choose proof image' : 'Pilih gambar bukti transfer')}
+                      </span>
+                      <span className="text-[10px] text-blue-700/80">PNG, JPG, WEBP · {isEn ? 'max' : 'maks.'} 5MB</span>
+                    </button>
+                  )}
+                  <input
+                    ref={proofInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handleProofPicked}
+                    className="hidden"
+                  />
+
+                  {proofFile && (
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        disabled={isUploadingProof}
+                        onClick={handleSubmitProof}
+                        className="px-4 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-2xs transition cursor-pointer disabled:opacity-50 active:scale-98"
+                      >
+                        {isUploadingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                        {isUploadingProof
+                          ? (isEn ? 'Sending...' : 'Mengirim...')
+                          : (isEn ? 'Send Payment Proof' : 'Kirim Bukti Bayar')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* KONDISI 3: ACTIVE */}
+          {activeRequest.status === 'active' && (
+            <div className="flex flex-wrap gap-2 justify-between items-center">
+              <span className="text-emerald-800 font-semibold text-[11px]">
+                {isEn ? 'Connected to LapakQ Cloudflare Tunnel' : 'Terhubung ke Cloudflare Tunnel LapakQ'}
+              </span>
+              <button
+                type="button"
+                onClick={handleDisconnectDomain}
+                className="text-xs text-[#66000E] hover:text-[#52000B] font-bold underline cursor-pointer"
+              >
+                {isEn ? 'Disconnect' : 'Putuskan'}
+              </button>
+            </div>
+          )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
