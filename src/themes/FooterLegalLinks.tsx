@@ -7,19 +7,17 @@ interface FooterLegalLinksProps {
 }
 
 /**
- * Tautan footer yang ditempel di samping teks hak cipta footer tema: "Lacak Pesanan" (selalu ada,
- * agar pembeli tanpa akun bisa memantau pesanannya di semua template) lalu tautan legal
- * (Kebijakan Privasi, Syarat & Ketentuan). Dirender sebagai <span> agar aman diletakkan di dalam
- * <p>, dan mewarisi gaya teksnya.
+ * Tautan legal (Kebijakan Privasi, Syarat & Ketentuan) yang ditempel di samping teks hak cipta
+ * footer tema. "Lacak Pesanan" tidak di sini lagi karena sudah ada di menu navbar tema
+ * (NavTrackOrderButton). Dirender sebagai <span> agar aman diletakkan di dalam <p>, dan
+ * mewarisi gaya teksnya.
  */
 export const FooterLegalLinks: React.FC<FooterLegalLinksProps> = ({ sectionOptions = {}, className = '' }) => {
   const links = getFooterLegalLinks(sectionOptions);
+  if (links.length === 0) return null;
 
   return (
     <span className={`inline-flex flex-wrap justify-center gap-x-3 ml-3 ${className}`}>
-      <a href="/lacak" className="underline underline-offset-2 hover:opacity-80 transition-opacity">
-        Lacak Pesanan
-      </a>
       {links.map((link) => {
         const isExternal = /^https?:\/\//i.test(link.href);
         return (
