@@ -42,6 +42,7 @@ import { ThemeId, ThemeRegistry, normalizeThemeId } from '../../themes/ThemeRegi
 import { ThemeSectionRenderer } from './ThemeSectionRenderer';
 import { getThemeSectionComponent, resolveThemeForSections, HIDDEN_SECTION_IDS } from '../../themes/sectionResolver';
 import { ResponsivePreviewScope } from './ResponsivePreviewScope';
+import { ScaledDeviceFrame, DEVICE_DESIGN_WIDTH } from './ScaledDeviceFrame';
 import { getStorefrontThemeVars } from '../../themes/pages/storefrontTheme';
 import { StorefrontContext, StorefrontToast } from '../../themes/storefrontCart';
 import { StoreChromeContext, buildStoreChromeOptions } from '../../themes/pages/storeChrome';
@@ -1497,14 +1498,10 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
   return (
     <main className={`flex-1 bg-[#EBE5E1] ${isDesktop ? 'p-1.5 sm:p-2.5 md:p-3' : 'p-2 sm:p-4 md:p-5'} overflow-y-auto overflow-x-hidden custom-scrollbar flex flex-col items-center justify-start min-h-0 font-sans select-none`}>
       {/* Realistic Device Canvas Frame */}
-      <div
-        className={`transition-all duration-300 w-full mx-auto device-${deviceMode} ${
-          isDesktop
-            ? 'max-w-full sf-desktop-density'
-            : isTablet
-            ? 'max-w-[768px]'
-            : 'max-w-[390px]'
-        }`}
+      <ScaledDeviceFrame
+        designWidth={DEVICE_DESIGN_WIDTH[deviceMode]}
+        fillWhenWider={isDesktop}
+        className={`device-${deviceMode} ${isDesktop ? 'sf-desktop-density' : ''}`}
         data-theme={store.layoutSettings?.themeStyle || 'minimalist-01'}
         data-device-mode={deviceMode}
       >
@@ -1550,7 +1547,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
           {/* STOREFRONT PREVIEW SCROLLABLE CONTENT */}
           <div
-            className="storefront-font-scope bg-white w-full max-w-full min-h-[620px] max-h-[calc(100vh-130px)] overflow-y-auto overflow-x-hidden custom-scrollbar relative selection:bg-[#F5E8EA] box-border"
+            className="storefront-font-scope bg-white w-full max-w-full min-h-[620px] max-h-[calc((100vh-130px)/var(--preview-scale,1))] overflow-y-auto overflow-x-hidden custom-scrollbar relative selection:bg-[#F5E8EA] box-border"
             style={{ fontFamily: `'${bodyFont}', sans-serif` }}
             onClickCapture={handleCanvasClick}
             onClick={handleCanvasClick}
@@ -2747,7 +2744,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
             </div>
           )}
         </div>
-      </div>
+      </ScaledDeviceFrame>
     </main>
   );
 };

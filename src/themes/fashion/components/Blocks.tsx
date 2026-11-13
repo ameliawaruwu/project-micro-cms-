@@ -36,7 +36,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
         <div className={`grid ${mainGridClass} gap-4 md:gap-8`}>
           <div className={col7Class}>
-            <a href={productHref(main)} className="relative group overflow-hidden h-[50vh] md:h-[80vh] block">
+            <a href={productHref(main)} className={`relative group overflow-hidden block ${stackCols ? 'aspect-[4/5] sm:aspect-[4/3]' : 'aspect-[4/5] sm:aspect-[4/3] md:aspect-auto md:h-full md:min-h-[420px]'}`}>
               <img src={mainImage} alt={main.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
               <div className="absolute bottom-6 left-6 right-6 sm:bottom-8 sm:left-8 text-white min-w-0">
@@ -47,7 +47,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
           </div>
           <div className={`${col5Class} flex flex-col gap-4 md:gap-8`}>
             {second && (
-              <a href={productHref(second)} className="relative group overflow-hidden h-[40vh] block">
+              <a href={productHref(second)} className="relative group overflow-hidden aspect-[4/3] block">
                 <img src={second.image} alt={second.name} className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-1000" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
                 <div className="absolute bottom-6 left-6 right-6 sm:bottom-8 sm:left-8 text-white min-w-0">
@@ -56,7 +56,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
                 </div>
               </a>
             )}
-            <div className="relative overflow-hidden min-h-[30vh] md:h-[40vh] bg-gray-100 p-6 sm:p-8 flex flex-col justify-center items-center text-center">
+            <div className="relative overflow-hidden min-h-[220px] flex-1 bg-gray-100 p-6 sm:p-8 flex flex-col justify-center items-center text-center">
               <h3 className="text-2xl sm:text-3xl font-serif italic mb-4 sm:mb-6 text-gray-900 break-words">
                 {sectionOptions.subheading || storeInfo?.name || 'Koleksi Kami'}
               </h3>

@@ -16,40 +16,40 @@ export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boole
   const hasCta = Boolean(sectionOptions.buttonLabel || sectionOptions.buttonText);
   const cta = resolveSectionCta(sectionOptions, 'Lihat Koleksi', STORE_ROUTES.catalog);
   const columnsClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'columns-1',
-    tablet: 'columns-2',
+    mobile: 'columns-2',
+    tablet: 'columns-3',
     desktop: 'columns-3',
-    fallback: 'columns-1 sm:columns-2 md:columns-3',
+    fallback: 'columns-2 md:columns-3',
   });
 
   return (
-    <section className="py-16 sm:py-32 px-4 sm:px-6 md:px-12 bg-white relative overflow-hidden">
+    <section className="py-12 sm:py-20 md:py-24 px-4 sm:px-6 md:px-12 bg-white relative overflow-hidden">
       <div className="absolute top-0 left-0 w-20 h-20 sm:w-32 sm:h-32 bg-yellow-300 rounded-br-[100px] z-0"></div>
-      <div className="relative z-10 max-w-7xl mx-auto">
-        <div className="flex items-center gap-4 sm:gap-8 mb-10 sm:mb-20">
-          <h2 className="text-3xl sm:text-5xl md:text-7xl font-black text-black tracking-tighter break-words min-w-0">{heading}</h2>
+      <div className="relative z-10 max-w-5xl mx-auto">
+        <div className="flex items-center gap-4 sm:gap-8 mb-8 sm:mb-14">
+          <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-black tracking-tighter break-words min-w-0">{heading}</h2>
           <div className="h-2 flex-1 min-w-[2rem] bg-black rounded-full"></div>
         </div>
         {description && (
           <p className="max-w-2xl -mt-6 sm:-mt-12 mb-10 sm:mb-16 text-base sm:text-lg text-gray-600 font-medium leading-relaxed">{description}</p>
         )}
         {coverImage && (
-          <img src={coverImage} alt={heading} className="w-full max-h-[480px] object-cover rounded-3xl mb-8 sm:mb-12" />
+          <img src={coverImage} alt={heading} className="w-full aspect-[16/9] max-h-[360px] object-cover rounded-2xl sm:rounded-3xl mb-6 sm:mb-10" />
         )}
 
-        <div className={`${columnsClass} gap-6 sm:gap-8 space-y-6 sm:space-y-8`}>
+        <div className={`${columnsClass} gap-3 sm:gap-5 space-y-3 sm:space-y-5`}>
           {items.map((p, i) => (
             <a key={p.id} href={productHref(p)} className="block break-inside-avoid group">
-              <div className="relative overflow-hidden rounded-3xl mb-4">
+              <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl">
                 <div className="absolute inset-0 bg-gradient-to-br from-black/0 to-black/60 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <img
                   src={p.image}
                   alt={p.name}
                   className={`w-full ${i % 2 === 0 ? 'aspect-square' : 'aspect-[3/4]'} object-cover transform group-hover:scale-110 transition-transform duration-700`}
                 />
-                <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 text-white">
-                  <p className="font-bold text-lg sm:text-xl mb-1 line-clamp-2 break-words">{p.name}</p>
-                  <p className="text-yellow-300 font-bold">{formatRupiah(p.price)}</p>
+                <div className="absolute bottom-3 sm:bottom-5 left-3 sm:left-5 right-3 sm:right-5 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 text-white">
+                  <p className="font-bold text-sm sm:text-lg mb-1 line-clamp-2 break-words">{p.name}</p>
+                  <p className="text-yellow-300 font-bold text-xs sm:text-base">{formatRupiah(p.price)}</p>
                 </div>
               </div>
             </a>

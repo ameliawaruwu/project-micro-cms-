@@ -52,6 +52,9 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  // Kolom sandi hanya aktif bila pengguna memang memilih ganti sandi, agar isian otomatis
+  // browser (sandi tersimpan) tidak membuat simpan profil biasa meminta konfirmasi sandi.
+  const [changePassword, setChangePassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,17 +98,24 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       return;
     }
 
-    if (newPassword && newPassword.length < 8) {
+    const wantsPasswordChange = changePassword && newPassword.length > 0;
+
+    if (changePassword && !newPassword) {
+      setError(isEn ? 'Enter a new password, or cancel the password change.' : 'Isi kata sandi baru, atau batalkan ganti kata sandi.');
+      return;
+    }
+
+    if (wantsPasswordChange && newPassword.length < 8) {
       setError(isEn ? 'Password must be at least 8 characters.' : 'Kata sandi minimal 8 karakter.');
       return;
     }
 
-    if (newPassword && !currentPassword) {
+    if (wantsPasswordChange && !currentPassword) {
       setError(isEn ? 'Enter your current password to change it.' : 'Masukkan kata sandi saat ini untuk mengganti kata sandi.');
       return;
     }
 
-    if (newPassword && newPassword !== confirmPassword) {
+    if (wantsPasswordChange && newPassword !== confirmPassword) {
       setError(isEn ? 'Password confirmation does not match.' : 'Konfirmasi kata sandi tidak cocok.');
       return;
     }
@@ -122,8 +132,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         name: name.trim(),
         phoneWhatsApp: phone.trim(),
         avatarUrl: savedAvatarUrl,
-        newPassword: newPassword ? newPassword : undefined,
-        currentPassword: newPassword ? currentPassword : undefined,
+        newPassword: wantsPasswordChange ? newPassword : undefined,
+        currentPassword: wantsPasswordChange ? currentPassword : undefined,
       });
 
       onProfileUpdated(updated);
@@ -145,7 +155,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-md overflow-hidden text-left">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-md max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden text-left">
         {/* Header */}
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-linear-to-r from-gray-50 to-white">
           <div className="flex items-center gap-2.5">
@@ -170,7 +180,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSave} className="p-5 space-y-4">
+        <form onSubmit={handleSave} className="p-5 space-y-4 overflow-y-auto">
           {error && (
             <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
               {error}
@@ -298,23 +308,37 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 
           {/* Password Section */}
           <div className="pt-2 border-t border-gray-100 space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                {isEn ? 'New Password (Optional)' : 'Ubah Kata Sandi Baru (Opsional)'}
-              </label>
-              <div className="relative">
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder={isEn ? 'Leave blank to keep current' : 'Kosongkan jika tidak ingin mengubah'}
-                  className="w-full h-10 px-3 pl-9 rounded-xl border border-gray-300 focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 text-xs text-gray-900 transition outline-none"
-                />
-                <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3 pointer-events-none" />
-              </div>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium text-gray-700 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-gray-400" />
+                {isEn ? 'Password' : 'Kata Sandi'}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setChangePassword((v) => !v);
+                  setCurrentPassword('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                  setError(null);
+                }}
+                className="text-xs font-medium text-[#66000E] hover:underline cursor-pointer"
+              >
+                {changePassword
+                  ? (isEn ? 'Cancel password change' : 'Batal ganti kata sandi')
+                  : (isEn ? 'Change password' : 'Ganti kata sandi')}
+              </button>
             </div>
 
-            {newPassword && (
+            {!changePassword && (
+              <p className="text-[11px] text-gray-500">
+                {isEn
+                  ? 'Your password stays the same. Profile changes can be saved without it.'
+                  : 'Kata sandi tidak berubah. Perubahan profil bisa disimpan tanpa kata sandi.'}
+              </p>
+            )}
+
+            {changePassword && (
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   {isEn ? 'Current Password' : 'Kata Sandi Saat Ini'}
@@ -333,7 +357,26 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
               </div>
             )}
 
-            {newPassword && (
+            {changePassword && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  {isEn ? 'New Password' : 'Kata Sandi Baru'}
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder={isEn ? 'Minimum 8 characters' : 'Minimal 8 karakter'}
+                    className="w-full h-10 px-3 pl-9 rounded-xl border border-gray-300 focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15 text-xs text-gray-900 transition outline-none"
+                  />
+                  <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3 pointer-events-none" />
+                </div>
+              </div>
+            )}
+
+            {changePassword && (
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   {isEn ? 'Confirm New Password' : 'Ulangi Kata Sandi Baru'}
@@ -341,6 +384,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 <div className="relative">
                   <input
                     type="password"
+                    autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder={isEn ? 'Re-type new password' : 'Ketik ulang kata sandi baru'}

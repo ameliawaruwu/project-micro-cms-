@@ -31,6 +31,7 @@ import { resolveThemeForSections, HIDDEN_SECTION_IDS } from '../../themes/sectio
 import { storeService } from '../../services/storeService';
 import { fetchStoreBaseDomain } from '../../utils/storeDomain';
 import { fitDeviceModeToViewport, getViewportDeviceMode, type PreviewDeviceMode } from '../../utils/responsivePreview';
+import { ScaledDeviceFrame, DEVICE_DESIGN_WIDTH } from '../../components/layout-editor/ScaledDeviceFrame';
 import { useAuth } from '../../contexts/AuthContext';
 import { sessionHeaders } from '../../services/supabaseClient';
 
@@ -1460,17 +1461,15 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
           {/* Preview Canvas */}
           <div className="flex-1 overflow-y-auto bg-gray-100 flex justify-center py-4 sm:py-8 px-4 relative">
-            <div
-              className={`transition-all duration-300 pb-20 ${
-                previewDevice === 'desktop'
-                  ? 'w-full max-w-6xl'
-                  : 'max-w-[390px] w-full'
-              }`}
-            >
-              <div
+            <div className={`w-full pb-20 ${previewDevice === 'desktop' ? 'max-w-6xl' : ''}`}>
+              <ScaledDeviceFrame
+                designWidth={DEVICE_DESIGN_WIDTH[previewDevice]}
+                fillWhenWider={previewDevice === 'desktop'}
                 className={`bg-white overflow-hidden shadow-2xl ${
                   previewDevice === 'mobile'
                     ? 'rounded-[40px] border-[6px] border-gray-800'
+                    : previewDevice === 'tablet'
+                    ? 'rounded-[28px] border-[8px] border-gray-800'
                     : 'rounded-t-xl border border-gray-300'
                 }`}
               >
@@ -1519,7 +1518,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     <div className="w-28 h-1 bg-white/40 rounded-full"></div>
                   </div>
                 )}
-              </div>
+              </ScaledDeviceFrame>
             </div>
 
             {/* Floating Compact Action Bar at Bottom */}

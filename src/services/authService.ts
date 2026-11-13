@@ -977,11 +977,21 @@ class AuthService {
     if (data.name !== undefined) updatePayload.name = data.name;
     if (data.phoneWhatsApp !== undefined) updatePayload.phone = data.phoneWhatsApp;
     if (data.avatarUrl !== undefined) updatePayload.avatar_url = data.avatarUrl || null;
-    const { data: savedRows, error: saveError } = await supabase
+    let { data: savedRows, error: saveError } = await supabase
       .from('users')
       .update(updatePayload)
       .eq('id', userId)
       .select('id');
+    // ID sesi lokal bisa usang (ID akun pernah dimigrasikan); cocokkan lewat email sesi.
+    // RLS tetap membatasi ke baris milik sesi ini, jadi tidak bisa mengubah akun lain.
+    const sessionEmail = this.getCurrentUser().user?.email?.toLowerCase();
+    if (!saveError && !savedRows?.length && sessionEmail) {
+      ({ data: savedRows, error: saveError } = await supabase
+        .from('users')
+        .update(updatePayload)
+        .eq('email', sessionEmail)
+        .select('id'));
+    }
     if (saveError || !savedRows?.length) {
       if (saveError) console.warn('[authService] Error updating profile in Supabase:', saveError.message);
       throw new Error(data.newPassword

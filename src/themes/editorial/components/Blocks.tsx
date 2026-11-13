@@ -33,11 +33,11 @@ export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: bool
   const cta = resolveSectionCta(sectionOptions, 'Lihat Koleksi', STORE_ROUTES.catalog);
 
   return (
-    <section className="py-16 sm:py-32 px-4 sm:px-6 md:px-12 max-w-[1400px] mx-auto bg-[#fafafa]">
-      <div className={`grid ${mainGridClass} gap-10 md:gap-24 items-center`}>
+    <section className="py-12 sm:py-20 md:py-24 px-4 sm:px-6 md:px-12 max-w-[1400px] mx-auto bg-[#fafafa]">
+      <div className={`grid ${mainGridClass} gap-8 md:gap-16 items-center`}>
         <div className={`${colSpanTextClass} ${orderTextClass} min-w-0`}>
           <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-6">Pilihan Kami</p>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-serif italic mb-6 sm:mb-8 text-gray-900 break-words">{heading}</h2>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif italic mb-6 sm:mb-8 text-gray-900 break-words">{heading}</h2>
           <p className="text-gray-600 leading-loose mb-8 sm:mb-12 font-light text-sm md:text-base">{desc}</p>
           <a
             href={cta.href}
@@ -47,13 +47,13 @@ export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: bool
           </a>
         </div>
         <div className={`${colSpanImgClass} ${orderImgClass}`}>
-          <div className={`grid ${imgPairGridClass} gap-4 md:gap-8`}>
+          <div className={`grid ${imgPairGridClass} gap-3 sm:gap-4 md:gap-6 max-w-2xl mx-auto`}>
             {items.map((p, i) => (
-              <a key={p.id} href={productHref(p)} className={`block overflow-hidden ${i === 1 ? 'mt-10 sm:mt-16 md:mt-24' : ''}`}>
+              <a key={p.id} href={productHref(p)} className={`block overflow-hidden ${i === 1 ? 'mt-6 sm:mt-10 md:mt-12' : ''}`}>
                 <img
                   src={p.image}
                   alt={p.name}
-                  className="w-full aspect-[3/4] object-cover grayscale-[20%] hover:grayscale-0 hover:scale-105 transition-all duration-1000"
+                  className="w-full aspect-[4/5] object-cover grayscale-[20%] hover:grayscale-0 hover:scale-105 transition-all duration-1000"
                 />
               </a>
             ))}

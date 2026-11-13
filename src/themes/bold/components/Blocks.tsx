@@ -132,6 +132,13 @@ export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
     desktop: 'grid-cols-3',
     fallback: 'grid-cols-1 sm:grid-cols-3',
   });
+  // Satu kolom di ponsel memakai rasio landscape agar foto tidak setinggi layar.
+  const imageAspectClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'aspect-[4/3]',
+    tablet: 'aspect-[4/5]',
+    desktop: 'aspect-[4/5]',
+    fallback: 'aspect-[4/3] sm:aspect-[4/5]',
+  });
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 bg-zinc-950 text-white border-b border-zinc-900">
       <div className="max-w-6xl mx-auto text-center">
@@ -151,7 +158,7 @@ export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
               <img
                 src={product.image}
                 alt={product.name}
-                className="w-full aspect-[3/4] object-cover group-hover:scale-105 transition-transform duration-700"
+                className={`w-full ${imageAspectClass} object-cover group-hover:scale-105 transition-transform duration-700`}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
               <div className="absolute bottom-5 left-5 right-5 text-left">

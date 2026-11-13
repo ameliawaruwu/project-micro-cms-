@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Image as ImageIcon,
@@ -154,7 +155,8 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
 
   const activeGallery = CURATED_GALLERIES.find((g) => g.category === selectedCategory);
 
-  return (
+  // Dirender ke <body> agar tidak ikut diperkecil/terkurung frame preview (ScaledDeviceFrame).
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div
         className="bg-white rounded-2xl border border-[#E5E0DD] shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
@@ -413,6 +415,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

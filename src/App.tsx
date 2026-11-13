@@ -63,6 +63,7 @@ import { Toast, ToastMessage } from './components/common/Toast';
 import { ShareStoreModal } from './components/common/ShareStoreModal';
 import { SupportChatbotModal } from './components/common/SupportChatbotModal';
 import { DeviceSimulatorFrame } from './components/common/DeviceSimulatorFrame';
+import { ScaledDeviceFrame, DEVICE_DESIGN_WIDTH } from './components/layout-editor/ScaledDeviceFrame';
 
 // Merchant Pages
 import { DashboardPage } from './pages/merchant/DashboardPage';
@@ -1730,13 +1731,9 @@ export default function App() {
                 : 'p-3 sm:p-6 bg-[#0D1520]'
               }`}
           >
-            <div
-              className={`w-full transition-all duration-300 mx-auto ${storefrontDeviceMode === 'desktop'
-                  ? 'w-full max-w-none'
-                  : storefrontDeviceMode === 'tablet'
-                    ? 'max-w-[768px]'
-                    : 'max-w-[390px]'
-                }`}
+            <ScaledDeviceFrame
+              designWidth={DEVICE_DESIGN_WIDTH[storefrontDeviceMode]}
+              fillWhenWider={storefrontDeviceMode === 'desktop'}
             >
               <div
                 className={`bg-white transition-all overflow-hidden flex flex-col ${storefrontDeviceMode === 'mobile'
@@ -1774,7 +1771,7 @@ export default function App() {
                   </div>
                 )}
               </div>
-            </div>
+            </ScaledDeviceFrame>
           </div>
         </div>
       )}
