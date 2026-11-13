@@ -1548,7 +1548,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
           {/* STOREFRONT PREVIEW SCROLLABLE CONTENT */}
           <div
-            className="storefront-font-scope bg-white w-full max-w-full min-h-[620px] max-h-[calc((100vh-130px)/var(--preview-scale,1))] overflow-y-auto overflow-x-hidden custom-scrollbar relative selection:bg-[#F5E8EA] box-border"
+            className={`storefront-font-scope bg-white w-full max-w-full min-h-[620px] max-h-[calc((100vh-130px)/var(--preview-scale,1))] overflow-y-auto overflow-x-hidden custom-scrollbar relative selection:bg-[#F5E8EA] box-border ${isMobile ? 'pb-24' : ''}`}
             style={{ fontFamily: `'${bodyFont}', sans-serif` }}
             onClickCapture={handleCanvasClick}
             onClick={handleCanvasClick}
@@ -2710,31 +2710,40 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
           </div>
 
           {/* Mobile Bottom Navigation Bar (Shown on Mobile device mode) */}
+          {/* Kapsul melayang, gaya sama dengan navigasi bawah landing page di HP. */}
           {isMobile && (
-            <div className="bg-white border-t border-[#EAEAEA] px-3 py-1.5 flex items-center justify-around text-[#706866] shrink-0 shadow-xs z-30">
-              <div className="flex flex-col items-center gap-0.5 text-[#66000E] cursor-pointer">
-                <Home className="w-4 h-4 stroke-[2.5]" />
-                <span className="text-[9px] font-bold">Beranda</span>
-              </div>
-              <div className="flex flex-col items-center gap-0.5 hover:text-[#241A1A] transition cursor-pointer">
-                <Grid className="w-4 h-4" />
-                <span className="text-[9px] font-medium">Katalog</span>
-              </div>
-              <div className="flex flex-col items-center gap-0.5 hover:text-[#241A1A] transition cursor-pointer">
-                <Search className="w-4 h-4" />
-                <span className="text-[9px] font-medium">Cari</span>
-              </div>
-              <div className="flex flex-col items-center gap-0.5 hover:text-[#241A1A] transition cursor-pointer relative">
-                <ShoppingBag className="w-4 h-4" />
-                <span className="text-[9px] font-medium">Keranjang</span>
-                <span className="absolute -top-1 right-2 w-3.5 h-3.5 rounded-full bg-[#66000E] text-white text-[8px] font-bold flex items-center justify-center">
-                  0
-                </span>
-              </div>
-              <div className="flex flex-col items-center gap-0.5 text-emerald-600 hover:text-emerald-700 transition cursor-pointer">
-                <MessageCircle className="w-4 h-4" />
-                <span className="text-[9px] font-medium">Chat WA</span>
-              </div>
+            <div className="relative h-0 shrink-0 z-30">
+              <ul className="absolute inset-x-3 bottom-3 flex items-center gap-1 rounded-full border border-white/70 bg-white/85 p-1.5 shadow-[0_12px_32px_-8px_rgba(102,0,14,0.28),0_2px_6px_rgba(36,26,26,0.08)] backdrop-blur-xl font-sans select-none">
+                {[
+                  { label: 'Beranda', icon: Home, active: true },
+                  { label: 'Katalog', icon: Grid },
+                  { label: 'Cari', icon: Search },
+                  { label: 'Keranjang', icon: ShoppingBag, badge: true },
+                  { label: 'Chat WA', icon: MessageCircle },
+                ].map(({ label, icon: Icon, active, badge }) => (
+                  <li key={label} className="flex-1 min-w-0">
+                    <div
+                      className={`relative flex w-full min-h-[52px] flex-col items-center justify-center gap-1 rounded-full px-1 cursor-pointer transition-colors duration-200 ${
+                        active
+                          ? 'bg-[#66000E] text-white shadow-[0_6px_14px_-4px_rgba(102,0,14,0.55)]'
+                          : 'text-[#706866] hover:text-[#241A1A]'
+                      }`}
+                    >
+                      <span className="relative">
+                        <Icon className="w-5 h-5" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
+                        {badge && (
+                          <span className="absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-0.5 rounded-full bg-[#66000E] text-white text-[8px] font-bold flex items-center justify-center">
+                            0
+                          </span>
+                        )}
+                      </span>
+                      <span className={`text-[10px] leading-none tracking-tight truncate max-w-full ${active ? 'font-semibold' : 'font-medium'}`}>
+                        {label}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
