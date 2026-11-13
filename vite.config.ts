@@ -1420,6 +1420,16 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      // Endpoint /api yang tidak ditangani plugin dev di atas (mis. /api/media/upload,
+      // /api/deploy/*, /api/auth/*) diteruskan ke backend Express. Tanpa ini Vite membalas 404.
+      // Ganti target lewat DEV_API_PROXY_TARGET (mis. http://localhost:5055 untuk server lokal).
+      proxy: {
+        '/api': {
+          target: (process.env.DEV_API_PROXY_TARGET || 'https://lapakq.com').trim(),
+          changeOrigin: true,
+          secure: true,
+        },
+      },
     },
   };
 });
