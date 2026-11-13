@@ -30,11 +30,18 @@ import {
   Minimize2,
   ShoppingCart,
   Check,
+  House,
+  LayoutGrid,
+  Tag,
+  Phone,
+  Info,
+  Link2,
+  type LucideIcon,
 } from 'lucide-react';
 import { Store, StoreSectionConfig, Product, StoreSectionOptions, NavMenuItem } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
 import { DEFAULT_LANDING_NAV_ITEMS, getStoreSectionsForPage } from '../../utils/layoutConstants';
-import { resolveNavPage } from '../../themes/navMenu';
+import { resolveNavPage, getNavMenuItems, getHeaderDisplay } from '../../themes/navMenu';
 import { InlineEditableText } from './InlineEditableText';
 import { InlineEditableImage } from './InlineEditableImage';
 import { InlineEditableButton } from './InlineEditableButton';
@@ -51,6 +58,27 @@ import { loadGoogleFont } from '../../utils/fontLoader';
 import { stripDemoContactOptions } from '../../cms/useCmsStore';
 
 const hasThemeComponent = (themeId: any, sectionId: string) => !!getThemeSectionComponent(themeId, sectionId);
+
+/** Ikon navigasi bawah ponsel untuk satu menu navbar, ditebak dari halaman tujuan / labelnya. */
+const NAV_PAGE_ICONS: Record<string, LucideIcon> = {
+  homepage: House,
+  katalog: LayoutGrid,
+  about: Info,
+  contact: Phone,
+  cart: ShoppingBag,
+  track_order: Truck,
+  orders: ShoppingBag,
+};
+function getBottomNavIcon(page: string | null, label: string): LucideIcon {
+  if (page && NAV_PAGE_ICONS[page]) return NAV_PAGE_ICONS[page];
+  const text = label.toLowerCase();
+  if (/promo|diskon|sale|deal/.test(text)) return Tag;
+  if (/kontak|contact|hubungi/.test(text)) return Phone;
+  return Link2;
+}
+
+/** Jumlah tombol maksimum di kapsul navigasi bawah ponsel (sama dengan landing page). */
+const BOTTOM_NAV_MAX_ITEMS = 5;
 
 interface CenterPreviewCanvasProps {
   store: Store;
@@ -2710,42 +2738,55 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
           </div>
 
           {/* Mobile Bottom Navigation Bar (Shown on Mobile device mode) */}
-          {/* Kapsul melayang, gaya sama dengan navigasi bawah landing page di HP. */}
-          {isMobile && (
-            <div className="relative h-0 shrink-0 z-30">
-              <ul className="absolute inset-x-3 bottom-3 flex items-center gap-1 rounded-full border border-white/70 bg-white/85 p-1.5 shadow-[0_12px_32px_-8px_rgba(102,0,14,0.28),0_2px_6px_rgba(36,26,26,0.08)] backdrop-blur-xl font-sans select-none">
-                {[
-                  { label: 'Beranda', icon: Home, active: true },
-                  { label: 'Katalog', icon: Grid },
-                  { label: 'Cari', icon: Search },
-                  { label: 'Keranjang', icon: ShoppingBag, badge: true },
-                  { label: 'Chat WA', icon: MessageCircle },
-                ].map(({ label, icon: Icon, active, badge }) => (
-                  <li key={label} className="flex-1 min-w-0">
-                    <div
-                      className={`relative flex w-full min-h-[52px] flex-col items-center justify-center gap-1 rounded-full px-1 cursor-pointer transition-colors duration-200 ${
-                        active
-                          ? 'bg-[#66000E] text-white shadow-[0_6px_14px_-4px_rgba(102,0,14,0.55)]'
-                          : 'text-[#706866] hover:text-[#241A1A]'
-                      }`}
-                    >
-                      <span className="relative">
-                        <Icon className="w-5 h-5" strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
-                        {badge && (
-                          <span className="absolute -top-1.5 -right-2 min-w-[14px] h-3.5 px-0.5 rounded-full bg-[#66000E] text-white text-[8px] font-bold flex items-center justify-center">
-                            0
+          {/* Kapsul melayang bergaya navigasi bawah landing page. Isinya = Menu Navigasi
+              header template (panel kanan) + Keranjang bila ikon keranjang header aktif. */}
+          {isMobile && (() => {
+            const headerOpts = sections.find((s) => s.id === 'header')?.options || {};
+            const navItems = getNavMenuItems(headerOpts).map((item) => {
+              const page = resolveNavPage(item.route, item.label);
+              return { id: item.id, label: item.label, route: item.route, page, Icon: getBottomNavIcon(page, item.label) };
+            });
+            const hasCartMenu = navItems.some((item) => item.page === 'cart');
+            const showCart = getHeaderDisplay(headerOpts).showCart && !hasCartMenu;
+            const menuItems = navItems.slice(0, showCart ? BOTTOM_NAV_MAX_ITEMS - 1 : BOTTOM_NAV_MAX_ITEMS);
+            const items = showCart
+              ? [...menuItems, { id: 'bottom-nav-cart', label: 'Keranjang', route: '/keranjang', page: 'cart', Icon: ShoppingBag }]
+              : menuItems;
+            // Menu aktif = yang menuju halaman yang sedang dipratinjau; beranda bila tidak ada.
+            const activeId =
+              items.find((item) => item.page === activePage)?.id ??
+              (activePage === 'homepage' ? items[0]?.id : undefined);
+
+            if (items.length === 0) return null;
+            return (
+              <nav aria-label="Navigasi menu" className="relative h-0 shrink-0 z-30">
+                <ul className="absolute inset-x-3 bottom-3 flex items-center gap-1 rounded-full border border-white/70 bg-white/85 p-1.5 shadow-[0_12px_32px_-8px_rgba(102,0,14,0.28),0_2px_6px_rgba(36,26,26,0.08)] backdrop-blur-xl font-sans select-none">
+                  {items.map(({ id, label, route, Icon }) => {
+                    const isActive = id === activeId;
+                    return (
+                      <li key={id} className="flex-1 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => handleNavClick(route, label)}
+                          aria-current={isActive ? 'page' : undefined}
+                          className={`relative flex w-full min-h-[52px] flex-col items-center justify-center gap-1 rounded-full px-1 cursor-pointer transition-colors duration-200 active:scale-95 ${
+                            isActive
+                              ? 'bg-[#66000E] text-white shadow-[0_6px_14px_-4px_rgba(102,0,14,0.55)]'
+                              : 'text-[#706866] hover:text-[#241A1A]'
+                          }`}
+                        >
+                          <Icon className="w-5 h-5" strokeWidth={isActive ? 2.2 : 1.8} aria-hidden="true" />
+                          <span className={`text-[10px] leading-none tracking-tight truncate max-w-full ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                            {label}
                           </span>
-                        )}
-                      </span>
-                      <span className={`text-[10px] leading-none tracking-tight truncate max-w-full ${active ? 'font-semibold' : 'font-medium'}`}>
-                        {label}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+            );
+          })()}
 
           {/* Mobile Bottom Home Bar Indicator */}
           {isMobile && (
