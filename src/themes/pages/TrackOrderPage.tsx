@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -6,7 +6,6 @@ import {
   CreditCard,
   ExternalLink,
   Loader2,
-  MessageCircle,
   Package,
   Search,
   Truck,
@@ -17,7 +16,6 @@ import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
 import { useStoreChromeOptions } from './storeChrome';
-import { whatsAppChatLink } from '../sectionContent';
 import { orderService, TrackedOrder } from '../../services/orderService';
 import { formatDateIndo, formatRupiah, generateTrackingLink } from '../../utils/formatters';
 import { isCodMethod } from '../../utils/orderFlow';
@@ -168,16 +166,6 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
     );
   };
 
-  const sellerChatLink = useMemo(() => {
-    const base = whatsAppChatLink(store?.phoneWhatsApp);
-    if (!base) return null;
-    const subject = tracked?.orderNumber || orderNumber.trim();
-    const message = subject
-      ? `Halo ${store?.name || 'kak'}, saya ingin menanyakan pesanan ${subject}.`
-      : `Halo ${store?.name || 'kak'}, saya ingin menanyakan pesanan saya.`;
-    return `${base}?text=${encodeURIComponent(message)}`;
-  }, [store?.phoneWhatsApp, store?.name, tracked?.orderNumber, orderNumber]);
-
   const inputClass =
     'w-full px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] bg-[var(--sf-page)] text-sm text-[var(--sf-text)] placeholder:text-[var(--sf-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)]/30';
   const cardClass = 'rounded-[var(--sf-radius)] border border-[var(--sf-border)] bg-[var(--sf-subtle)] p-5';
@@ -217,7 +205,7 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
           />
         ) : (
           <p className="text-xs text-[var(--sf-muted)]">
-            Sudah membayar? Hubungi penjual lewat tombol WhatsApp di bawah dan sebutkan nomor pesanan Anda.
+            Bukti pembayaran hanya bisa dikirim dari perangkat yang dipakai saat checkout.
           </p>
         )}
       </div>
@@ -430,17 +418,6 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
           </div>
         )}
 
-        {sellerChatLink && (
-          <a
-            href={sellerChatLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm font-semibold text-[var(--sf-text)] hover:bg-[var(--sf-subtle)] transition"
-          >
-            <MessageCircle className="w-4 h-4 text-green-600" />
-            <span>Hubungi Penjual via WhatsApp</span>
-          </a>
-        )}
       </div>
     </div>
   );
