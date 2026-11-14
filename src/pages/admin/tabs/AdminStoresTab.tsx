@@ -81,7 +81,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
       s.province,
       s.postalCode ? `Kode Pos ${s.postalCode}` : null,
     ].filter(Boolean);
-    return parts.length > 0 ? parts.join(', ') : 'Belum ada alamat toko tersimpan';
+    return parts.length > 0 ? parts.join(', ') : (isEn ? 'No store address saved yet' : 'Belum ada alamat toko tersimpan');
   };
 
   const handleCopyAddress = (s: Store) => {
@@ -107,7 +107,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
             <StoreIcon className="w-5 h-5 text-[#66000E]" />
             <span>
               {isSubAdmin
-                ? (communityName ? `Kelola Lapak Binaan — ${communityName}` : (isEn ? 'Manage Member Stores' : 'Kelola Toko Binaan'))
+                ? (communityName ? (isEn ? `Manage Member Stores — ${communityName}` : `Kelola Lapak Binaan — ${communityName}`) : (isEn ? 'Manage Member Stores' : 'Kelola Toko Binaan'))
                 : (isEn ? 'Manage Stores' : 'Kelola Toko')}
             </span>
           </h1>
@@ -340,38 +340,38 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
               {/* Ringkasan Profil & Status */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-xs">
                 <div>
-                  <span className="text-[11px] text-gray-500 block">Nomor WhatsApp</span>
+                  <span className="text-[11px] text-gray-500 block">{isEn ? 'WhatsApp Number' : 'Nomor WhatsApp'}</span>
                   <div className="font-semibold text-gray-900 flex items-center gap-1 mt-0.5">
                     <Phone className="w-3.5 h-3.5 text-emerald-600" />
                     <span>{selectedStore.phoneWhatsApp || '-'}</span>
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-gray-500 block">Saldo Aktif</span>
+                  <span className="text-[11px] text-gray-500 block">{isEn ? 'Active Balance' : 'Saldo Aktif'}</span>
                   <div className="font-bold text-[#66000E] mt-0.5">
                     {formatRupiah(selectedStore.balance || 0)}
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-gray-500 block">Status Operasional</span>
+                  <span className="text-[11px] text-gray-500 block">{isEn ? 'Operational Status' : 'Status Operasional'}</span>
                   <div className="font-semibold mt-0.5">
                     {suspendedIds.includes(selectedStore.id) ? (
-                      <span className="text-red-600 font-medium">Disuspend</span>
+                      <span className="text-red-600 font-medium">{isEn ? 'Suspended' : 'Disuspend'}</span>
                     ) : (
-                      <span className="text-emerald-600 font-medium">Aktif / Normal</span>
+                      <span className="text-emerald-600 font-medium">{isEn ? 'Active / Normal' : 'Aktif / Normal'}</span>
                     )}
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-gray-500 block">Status Website</span>
+                  <span className="text-[11px] text-gray-500 block">{isEn ? 'Website Status' : 'Status Website'}</span>
                   <div className="mt-0.5">
                     <PublishStatusBadge isPublished={Boolean(selectedStore.isPublished)} isEn={isEn} />
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-gray-500 block">Kategori</span>
+                  <span className="text-[11px] text-gray-500 block">{isEn ? 'Category' : 'Kategori'}</span>
                   <div className="font-medium text-gray-800 mt-0.5 truncate">
-                    {selectedStore.category || 'UMKM'}
+                    {selectedStore.category || (isEn ? 'MSME' : 'UMKM')}
                   </div>
                 </div>
               </div>
@@ -393,7 +393,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
                     <MapPin className="w-4 h-4 text-[#66000E]" />
-                    <span>Hierarki Alamat Lengkap Toko</span>
+                    <span>{isEn ? 'Full Store Address Hierarchy' : 'Hierarki Alamat Lengkap Toko'}</span>
                   </h4>
                   <button
                     onClick={() => handleCopyAddress(selectedStore)}
@@ -402,12 +402,12 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                     {copied ? (
                       <>
                         <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-emerald-600">Tersalin!</span>
+                        <span className="text-emerald-600">{isEn ? 'Copied!' : 'Tersalin!'}</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-3.5 h-3.5" />
-                        <span>Salin Alamat</span>
+                        <span>{isEn ? 'Copy Address' : 'Salin Alamat'}</span>
                       </>
                     )}
                   </button>
@@ -416,25 +416,25 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200 col-span-1 sm:col-span-2">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Alamat Jalan / No. Bangunan / RT-RW
+                      {isEn ? 'Street Address / Building No. / RT-RW' : 'Alamat Jalan / No. Bangunan / RT-RW'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
-                      {selectedStore.address || <span className="text-gray-400 italic">Belum diisi</span>}
+                      {selectedStore.address || <span className="text-gray-400 italic">{isEn ? 'Not filled in' : 'Belum diisi'}</span>}
                     </p>
                   </div>
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200 col-span-1 sm:col-span-2">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Detail Alamat (Patokan / Blok / Unit)
+                      {isEn ? 'Address Details (Landmark / Block / Unit)' : 'Detail Alamat (Patokan / Blok / Unit)'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
-                      {selectedStore.addressDetail || <span className="text-gray-400 italic">Belum diisi</span>}
+                      {selectedStore.addressDetail || <span className="text-gray-400 italic">{isEn ? 'Not filled in' : 'Belum diisi'}</span>}
                     </p>
                   </div>
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Desa
+                      {isEn ? 'Village' : 'Desa'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.village || <span className="text-gray-400 italic">-</span>}
@@ -443,7 +443,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Kelurahan
+                      {isEn ? 'Urban Village' : 'Kelurahan'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.subdistrict || <span className="text-gray-400 italic">-</span>}
@@ -452,7 +452,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Kecamatan
+                      {isEn ? 'District' : 'Kecamatan'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.district || <span className="text-gray-400 italic">-</span>}
@@ -461,7 +461,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Kabupaten / Kota
+                      {isEn ? 'Regency / City' : 'Kabupaten / Kota'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.city || <span className="text-gray-400 italic">-</span>}
@@ -470,7 +470,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Provinsi
+                      {isEn ? 'Province' : 'Provinsi'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.province || <span className="text-gray-400 italic">-</span>}
@@ -479,7 +479,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Kode Pos
+                      {isEn ? 'Postal Code' : 'Kode Pos'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.postalCode || <span className="text-gray-400 italic">-</span>}
@@ -490,7 +490,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                 {/* Format Alamat Gabungan Pengiriman */}
                 <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-200/60 text-xs">
                   <span className="text-[10px] font-bold text-[#66000E] uppercase tracking-wider block">
-                    Alamat Lengkap Terformat (Standar Ekspedisi & Kurir)
+                    {isEn ? 'Formatted Full Address (Courier Standard)' : 'Alamat Lengkap Terformat (Standar Ekspedisi & Kurir)'}
                   </span>
                   <p className="text-gray-800 mt-1 font-medium leading-relaxed">
                     {getFullFormattedAddress(selectedStore)}
@@ -502,7 +502,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-gray-900 flex items-center gap-1.5 uppercase text-[11px]">
                       <MapPin className="w-3.5 h-3.5 text-[#66000E]" />
-                      <span>Titik Lokasi Toko (Maps & Koordinat)</span>
+                      <span>{isEn ? 'Store Location Pin (Maps & Coordinates)' : 'Titik Lokasi Toko (Maps & Koordinat)'}</span>
                     </span>
                     <a
                       href={
@@ -515,7 +515,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                       className="text-[11px] font-semibold text-[#66000E] hover:underline flex items-center gap-1"
                     >
                       <ExternalLink className="w-3 h-3" />
-                      <span>Buka Google Maps</span>
+                      <span>{isEn ? 'Open Google Maps' : 'Buka Google Maps'}</span>
                     </a>
                   </div>
 
@@ -530,7 +530,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="h-40 w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
                     <iframe
-                      title="Lokasi Toko"
+                      title={isEn ? 'Store Location' : 'Lokasi Toko'}
                       src={`https://maps.google.com/maps?q=${
                         selectedStore.latitude && selectedStore.longitude
                           ? `${selectedStore.latitude},${selectedStore.longitude}`
@@ -561,7 +561,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                 onClick={() => setSelectedStore(null)}
                 className="px-5 py-1.5 rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold transition cursor-pointer"
               >
-                Tutup
+                {isEn ? 'Close' : 'Tutup'}
               </button>
             </div>
           </div>

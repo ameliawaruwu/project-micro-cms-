@@ -11,6 +11,7 @@ import {
   ShippingMethod,
   AvailableCourier,
 } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ShipmentFulfillmentFormProps {
   order: Order;
@@ -45,6 +46,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
   setPickupTimeSlot,
   dynamicCourierName,
 }) => {
+  const { isEn } = useLanguage();
   return (
     <>
       {/* 1. Alamat Asal Penjemputan (Gudang Cabang) */}
@@ -52,11 +54,11 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
         <div className="flex items-center justify-between">
           <span className="font-semibold text-xs text-[#1F1F1F] flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-[#66000E]" />
-            <span>Alamat Asal Penjemputan (Shipper Origin)</span>
+            <span>{isEn ? 'Pickup Origin Address (Shipper Origin)' : 'Alamat Asal Penjemputan (Shipper Origin)'}</span>
           </span>
           {selectedBranch?.isDefault && (
             <span className="text-[10px] font-semibold text-[#66000E] bg-[#F5E8EA] px-1.5 py-0.2 rounded border border-[#E8DDDE]">
-              Cabang Utama
+              {isEn ? 'Main Branch' : 'Cabang Utama'}
             </span>
           )}
         </div>
@@ -82,10 +84,10 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
 
         <div className="text-[11px] text-[#555555] space-y-0.5 pl-1">
           <p className="font-medium text-[#1F1F1F]">
-            PIC: {selectedBranch?.picName} • Telp: {selectedBranch?.picPhone}
+            PIC: {selectedBranch?.picName} • {isEn ? 'Phone' : 'Telp'}: {selectedBranch?.picPhone}
           </p>
           <p>{selectedBranch?.address}, {selectedBranch?.city}, {selectedBranch?.province}</p>
-          <p className="text-[#777777]">Kode Pos Origin: {selectedBranch?.postalCode}</p>
+          <p className="text-[#777777]">{isEn ? 'Origin Postal Code' : 'Kode Pos Origin'}: {selectedBranch?.postalCode}</p>
         </div>
       </div>
 
@@ -94,10 +96,10 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-[#1F1F1F] flex items-center gap-1.5">
             <Truck className="w-3.5 h-3.5 text-[#66000E]" />
-            <span>Ekspedisi Pengiriman</span>
+            <span>{isEn ? 'Shipping Courier' : 'Ekspedisi Pengiriman'}</span>
           </label>
           <span className="text-[11px] text-[#777777]">
-            Kurir Pilihan: <strong className="text-[#1F1F1F]">{dynamicCourierName}</strong>
+            {isEn ? 'Selected Courier' : 'Kurir Pilihan'}: <strong className="text-[#1F1F1F]">{dynamicCourierName}</strong>
           </span>
         </div>
 
@@ -112,7 +114,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
         >
           {availableCouriers.map((c) => (
             <option key={`${c.courier_code}-${c.courier_service_code}`} value={c.courier_code}>
-              {c.courier_name} - {c.courier_service_name} ({c.available_for_drop_off && c.available_for_pickup ? 'Drop-off & Pick-up' : c.available_for_drop_off ? 'Hanya Drop-off' : 'Hanya Pick-up'})
+              {c.courier_name} - {c.courier_service_name} ({c.available_for_drop_off && c.available_for_pickup ? 'Drop-off & Pick-up' : c.available_for_drop_off ? (isEn ? 'Drop-off only' : 'Hanya Drop-off') : (isEn ? 'Pick-up only' : 'Hanya Pick-up')})
             </option>
           ))}
         </select>
@@ -143,7 +145,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
       <div className="p-3 bg-white rounded-xl border border-[#E5E0DD] flex items-start gap-2.5">
         <MapPin className="w-4 h-4 text-[#66000E] shrink-0 mt-0.5" />
         <div className="min-w-0">
-          <span className="text-[10px] font-bold text-[#777777] uppercase">Tujuan Pengiriman</span>
+          <span className="text-[10px] font-bold text-[#777777] uppercase">{isEn ? 'Shipping Destination' : 'Tujuan Pengiriman'}</span>
           <p className="font-semibold text-xs text-[#1F1F1F]">{order.customerName} ({order.customerPhone})</p>
           <p className="text-[11px] text-[#555555] line-clamp-1">{order.customerAddress}, {order.customerCity}</p>
         </div>
@@ -152,7 +154,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
       {/* 4. Pilihan Tab Metode: Drop-off vs Pick-up (Dinamis Sesuai Kurir) */}
       <div>
         <label className="block text-xs font-bold text-[#1F1F1F] mb-2">
-          Metode Penyerahan Paket
+          {isEn ? 'Parcel Handover Method' : 'Metode Penyerahan Paket'}
         </label>
 
         <div className="grid grid-cols-2 gap-2.5">
@@ -174,7 +176,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
               >
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-xs text-[#1F1F1F]">Antar ke Counter</span>
+                    <span className="font-bold text-xs text-[#1F1F1F]">{isEn ? 'Drop at Counter' : 'Antar ke Counter'}</span>
                     <div
                       className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
                         deliveryType === 'drop_off' && isDropOffAllowed
@@ -192,8 +194,8 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
                   </span>
                   <p className="text-[11px] text-[#555555] leading-snug">
                     {isDropOffAllowed
-                      ? `Antar paket langsung ke gerai ${dynamicCourierName} terdekat tanpa perlu menunggu kurir.`
-                      : `Layanan ${dynamicCourierName} tidak mendukung drop-off counter.`}
+                      ? (isEn ? `Drop the parcel at the nearest ${dynamicCourierName} outlet without waiting for a courier.` : `Antar paket langsung ke gerai ${dynamicCourierName} terdekat tanpa perlu menunggu kurir.`)
+                      : (isEn ? `${dynamicCourierName} does not support counter drop-off.` : `Layanan ${dynamicCourierName} tidak mendukung drop-off counter.`)}
                   </p>
                 </div>
               </div>
@@ -218,7 +220,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
               >
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-xs text-[#1F1F1F]">Pick-up (Kurir Jemput)</span>
+                    <span className="font-bold text-xs text-[#1F1F1F]">{isEn ? 'Pick-up (Courier Collects)' : 'Pick-up (Kurir Jemput)'}</span>
                     <div
                       className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
                         deliveryType === 'pickup' && isPickupAllowed
@@ -232,12 +234,12 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
                     </div>
                   </div>
                   <span className="text-[10px] font-semibold text-[#027A48] bg-[#ECFDF3] px-1.5 py-0.2 rounded border border-[#ABEFC6] inline-block mb-1">
-                    Kurir Datang ke Gudang
+                    {isEn ? 'Courier Comes to Warehouse' : 'Kurir Datang ke Gudang'}
                   </span>
                   <p className="text-[11px] text-[#555555] leading-snug">
                     {isPickupAllowed
-                      ? `Kurir ${dynamicCourierName} akan datang menjemput paket ke alamat gudang Anda.`
-                      : `Layanan ${dynamicCourierName} tidak mendukung penjemputan paket.`}
+                      ? (isEn ? `A ${dynamicCourierName} courier will collect the parcel from your warehouse address.` : `Kurir ${dynamicCourierName} akan datang menjemput paket ke alamat gudang Anda.`)
+                      : (isEn ? `${dynamicCourierName} does not support parcel pickup.` : `Layanan ${dynamicCourierName} tidak mendukung penjemputan paket.`)}
                   </p>
                 </div>
               </div>
@@ -251,13 +253,13 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
         <div className="p-3.5 bg-[#F5E8EA] rounded-2xl border border-[#E8DDDE] space-y-3 animate-in fade-in duration-200">
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#1F1F1F]">
             <Calendar className="w-4 h-4 text-[#66000E]" />
-            <span>Jadwal Penjemputan Kurir ({dynamicCourierName})</span>
+            <span>{isEn ? 'Courier Pickup Schedule' : 'Jadwal Penjemputan Kurir'} ({dynamicCourierName})</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
               <label className="block text-[10px] font-semibold uppercase text-[#777777] mb-1">
-                Pilih Tanggal *
+                {isEn ? 'Select Date *' : 'Pilih Tanggal *'}
               </label>
               <input
                 type="date"
@@ -270,22 +272,24 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
 
             <div>
               <label className="block text-[10px] font-semibold uppercase text-[#777777] mb-1">
-                Slot Waktu Penjemputan *
+                {isEn ? 'Pickup Time Slot *' : 'Slot Waktu Penjemputan *'}
               </label>
               <select
                 value={pickupTimeSlot}
                 onChange={(e) => setPickupTimeSlot(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:border-[#66000E]"
               >
-                <option value="09:00 - 12:00">Pagi (09:00 - 12:00 WIB)</option>
-                <option value="13:00 - 16:00">Siang (13:00 - 16:00 WIB)</option>
-                <option value="16:00 - 19:00">Sore (16:00 - 19:00 WIB)</option>
+                <option value="09:00 - 12:00">{isEn ? 'Morning (09:00 - 12:00 WIB)' : 'Pagi (09:00 - 12:00 WIB)'}</option>
+                <option value="13:00 - 16:00">{isEn ? 'Afternoon (13:00 - 16:00 WIB)' : 'Siang (13:00 - 16:00 WIB)'}</option>
+                <option value="16:00 - 19:00">{isEn ? 'Evening (16:00 - 19:00 WIB)' : 'Sore (16:00 - 19:00 WIB)'}</option>
               </select>
             </div>
           </div>
 
           <p className="text-[11px] text-[#706866]">
-            * Pastikan paket sudah selesai dikemas dan siap diserahkan saat kurir {dynamicCourierName} tiba.
+            {isEn
+              ? `* Make sure the parcel is packed and ready to hand over when the ${dynamicCourierName} courier arrives.`
+              : `* Pastikan paket sudah selesai dikemas dan siap diserahkan saat kurir ${dynamicCourierName} tiba.`}
           </p>
         </div>
       )}

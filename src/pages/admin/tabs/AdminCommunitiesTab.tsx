@@ -237,11 +237,15 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       setIsAssignModalOpen(false);
       setSelectedStoreToAssign('');
       if (onShowToast) {
-        onShowToast(`Toko berhasil ditambahkan ke naungan ${activeCommunity.name}. Komunitas lain toko ini tidak berubah.`);
+        onShowToast(
+          isEn
+            ? `Store added to ${activeCommunity.name}. The store's other communities are unchanged.`
+            : `Toko berhasil ditambahkan ke naungan ${activeCommunity.name}. Komunitas lain toko ini tidak berubah.`
+        );
       }
     } catch (err: any) {
       if (onShowToast) {
-        onShowToast('❌ Gagal mengaitkan toko: ' + (err?.message || ''));
+        onShowToast((isEn ? '❌ Failed to link store: ' : '❌ Gagal mengaitkan toko: ') + (err?.message || ''));
       }
     }
   };
@@ -250,9 +254,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const promptRemoveStore = (storeId: string, storeName: string) => {
     setConfirmDialog({
       isOpen: true,
-      title: `Lepas Toko "${storeName}"?`,
-      description: `Toko ini akan dikeluarkan dari naungan ${activeCommunity?.name || ''}. Keanggotaan di komunitas lain tidak berubah; bila tidak ada, toko menjadi toko mandiri.`,
-      confirmText: 'Ya, Lepas Toko',
+      title: isEn ? `Remove Store "${storeName}"?` : `Lepas Toko "${storeName}"?`,
+      description: isEn
+        ? `This store will be removed from ${activeCommunity?.name || ''}. Memberships in other communities are unchanged; if there are none, it becomes an independent store.`
+        : `Toko ini akan dikeluarkan dari naungan ${activeCommunity?.name || ''}. Keanggotaan di komunitas lain tidak berubah; bila tidak ada, toko menjadi toko mandiri.`,
+      confirmText: isEn ? 'Yes, Remove Store' : 'Ya, Lepas Toko',
       isDanger: true,
       onConfirm: async () => {
         setIsConfirmLoading(true);
@@ -262,11 +268,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           setStores(refreshedStores);
           setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
           if (onShowToast) {
-            onShowToast(`Toko "${storeName}" berhasil dilepas dari organisasi.`);
+            onShowToast(isEn ? `Store "${storeName}" removed from the organization.` : `Toko "${storeName}" berhasil dilepas dari organisasi.`);
           }
         } catch (err: any) {
           if (onShowToast) {
-            onShowToast('❌ Gagal melepas toko: ' + (err?.message || ''));
+            onShowToast((isEn ? '❌ Failed to remove store: ' : '❌ Gagal melepas toko: ') + (err?.message || ''));
           }
         } finally {
           setIsConfirmLoading(false);
@@ -286,7 +292,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     try {
       setInvoices(await communityService.fetchCommunityInvoices(invoiceScopeId));
     } catch (err: any) {
-      onShowToast?.('❌ Gagal memuat invoice: ' + (err?.message || ''));
+      onShowToast?.((isEn ? '❌ Failed to load invoices: ' : '❌ Gagal memuat invoice: ') + (err?.message || ''));
     }
   };
 
@@ -309,11 +315,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       );
       await reloadInvoices();
       if (onShowToast) {
-        onShowToast(`Invoice tagihan omset periode ${currentMonth} berhasil diterbitkan!`);
+        onShowToast(isEn ? `Turnover invoice for period ${currentMonth} issued successfully!` : `Invoice tagihan omset periode ${currentMonth} berhasil diterbitkan!`);
       }
     } catch (err: any) {
       if (onShowToast) {
-        onShowToast('❌ Gagal menerbitkan invoice: ' + (err?.message || ''));
+        onShowToast((isEn ? '❌ Failed to issue invoice: ' : '❌ Gagal menerbitkan invoice: ') + (err?.message || ''));
       }
     } finally {
       setIsGeneratingInvoice(false);
@@ -326,9 +332,9 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
     try {
       await communityService.markInvoicePaid(invId);
       await reloadInvoices();
-      onShowToast?.('Status invoice diperbarui menjadi LUNAS.');
+      onShowToast?.(isEn ? 'Invoice status updated to PAID.' : 'Status invoice diperbarui menjadi LUNAS.');
     } catch (err: any) {
-      onShowToast?.('❌ Gagal memperbarui invoice: ' + (err?.message || ''));
+      onShowToast?.((isEn ? '❌ Failed to update invoice: ' : '❌ Gagal memperbarui invoice: ') + (err?.message || ''));
     }
   };
 
@@ -336,13 +342,13 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const handleCreateOrganization = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.name.trim() || !createForm.subAdminEmail.trim()) {
-      if (onShowToast) onShowToast('⚠️ Nama komunitas dan email login Sub-Admin Umum wajib diisi.');
+      if (onShowToast) onShowToast(isEn ? '⚠️ Community name and General Sub-Admin login email are required.' : '⚠️ Nama komunitas dan email login Sub-Admin Umum wajib diisi.');
       return;
     }
 
     const finalCoordEmail = createForm.sameAsSubAdmin ? createForm.subAdminEmail : createForm.coordinatorEmail;
     if (!createForm.sameAsSubAdmin && !finalCoordEmail.trim()) {
-      if (onShowToast) onShowToast('⚠️ Email login Koordinator Toko wajib diisi.');
+      if (onShowToast) onShowToast(isEn ? '⚠️ Store Coordinator login email is required.' : '⚠️ Email login Koordinator Toko wajib diisi.');
       return;
     }
 
@@ -393,7 +399,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       });
 
       if (onShowToast) {
-        onShowToast(`Komunitas "${res.community.name}" beserta akun Sub-Admin berhasil didaftarkan!`);
+        onShowToast(isEn ? `Community "${res.community.name}" and its Sub-Admin accounts registered successfully!` : `Komunitas "${res.community.name}" beserta akun Sub-Admin berhasil didaftarkan!`);
       }
 
       // Sinkronisasi data dari Supabase di latar belakang
@@ -404,7 +410,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       });
     } catch (err: any) {
       if (onShowToast) {
-        onShowToast('❌ Gagal mendaftarkan komunitas: ' + (err?.message || ''));
+        onShowToast((isEn ? '❌ Failed to register community: ' : '❌ Gagal mendaftarkan komunitas: ') + (err?.message || ''));
       }
     } finally {
       setIsSubmittingCreate(false);
@@ -433,7 +439,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editForm.name.trim()) {
-      if (onShowToast) onShowToast('⚠️ Nama komunitas tidak boleh kosong.');
+      if (onShowToast) onShowToast(isEn ? '⚠️ Community name cannot be empty.' : '⚠️ Nama komunitas tidak boleh kosong.');
       return;
     }
     setIsSubmittingEdit(true);
@@ -461,11 +467,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       setIsEditModalOpen(false);
 
       if (onShowToast) {
-        onShowToast(`Komunitas "${editForm.name}" berhasil diperbarui di database!`);
+        onShowToast(isEn ? `Community "${editForm.name}" updated in the database!` : `Komunitas "${editForm.name}" berhasil diperbarui di database!`);
       }
     } catch (err: any) {
       if (onShowToast) {
-        onShowToast('❌ Gagal memperbarui komunitas: ' + (err?.message || ''));
+        onShowToast((isEn ? '❌ Failed to update community: ' : '❌ Gagal memperbarui komunitas: ') + (err?.message || ''));
       }
     } finally {
       setIsSubmittingEdit(false);
@@ -483,9 +489,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       .join(', ');
     setConfirmDialog({
       isOpen: true,
-      title: `Hapus Organisasi "${commName}" (${commId})?`,
-      description: `Organisasi akan dihapus permanen dan tidak bisa dibatalkan. ${memberCount} lapak binaan dilepas menjadi toko mandiri (toko & akun merchant tetap ada)${adminEmails ? `, sedangkan akun admin komunitas (${adminEmails}) ikut dihapus` : ''}. Tagihan omset & permintaan gabung organisasi ini juga terhapus.`,
-      confirmText: 'Ya, Hapus Organisasi',
+      title: isEn ? `Delete Organization "${commName}" (${commId})?` : `Hapus Organisasi "${commName}" (${commId})?`,
+      description: isEn
+        ? `The organization will be permanently deleted and this cannot be undone. ${memberCount} member stores become independent stores (stores & merchant accounts are kept)${adminEmails ? `, while the community admin accounts (${adminEmails}) are deleted too` : ''}. This organization's turnover invoices & join requests are also deleted.`
+        : `Organisasi akan dihapus permanen dan tidak bisa dibatalkan. ${memberCount} lapak binaan dilepas menjadi toko mandiri (toko & akun merchant tetap ada)${adminEmails ? `, sedangkan akun admin komunitas (${adminEmails}) ikut dihapus` : ''}. Tagihan omset & permintaan gabung organisasi ini juga terhapus.`,
+      confirmText: isEn ? 'Yes, Delete Organization' : 'Ya, Hapus Organisasi',
       isDanger: true,
       onConfirm: async () => {
         setIsConfirmLoading(true);
@@ -502,11 +510,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           setStores(refreshedStores);
           setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
           if (onShowToast) {
-            onShowToast(`Organisasi "${commName}" berhasil dihapus dari database.`);
+            onShowToast(isEn ? `Organization "${commName}" deleted from the database.` : `Organisasi "${commName}" berhasil dihapus dari database.`);
           }
         } catch (e: any) {
           if (onShowToast) {
-            onShowToast('❌ Gagal menghapus organisasi: ' + (e?.message || ''));
+            onShowToast((isEn ? '❌ Failed to delete organization: ' : '❌ Gagal menghapus organisasi: ') + (e?.message || ''));
           }
         } finally {
           setIsConfirmLoading(false);
@@ -557,16 +565,20 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
-                {isSubAdmin ? `Portal Koordinator Lapak — ${activeCommunity?.name || ''}` : 'Kelola Komunitas & Organisasi Sub-Admin'}
+                {isSubAdmin
+                  ? (isEn ? `Store Coordinator Portal — ${activeCommunity?.name || ''}` : `Portal Koordinator Lapak — ${activeCommunity?.name || ''}`)
+                  : (isEn ? 'Manage Communities & Sub-Admin Organizations' : 'Kelola Komunitas & Organisasi Sub-Admin')}
               </h1>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[11px] border border-emerald-200">
-                {isSubAdmin ? 'Delegasi Sub-Admin' : 'Multi-Tenant Komunitas'}
+                {isSubAdmin ? (isEn ? 'Sub-Admin Delegation' : 'Delegasi Sub-Admin') : (isEn ? 'Multi-Tenant Community' : 'Multi-Tenant Komunitas')}
               </span>
             </div>
             <p className="text-xs text-gray-500 mt-1 max-w-2xl leading-relaxed">
               {isSubAdmin
-                ? (activeCommunity ? `Pusat koordinasi toko binaan ${activeCommunity.name}.` : 'Pusat koordinasi toko binaan organisasi Anda.')
-                : 'Kelola data komunitas mitra dan akun koordinator Sub-Admin.'}
+                ? (activeCommunity
+                    ? (isEn ? `Coordination hub for ${activeCommunity.name} member stores.` : `Pusat koordinasi toko binaan ${activeCommunity.name}.`)
+                    : (isEn ? 'Coordination hub for your organization\'s member stores.' : 'Pusat koordinasi toko binaan organisasi Anda.'))
+                : (isEn ? 'Manage partner community data and Sub-Admin coordinator accounts.' : 'Kelola data komunitas mitra dan akun koordinator Sub-Admin.')}
             </p>
           </div>
         </div>
@@ -580,13 +592,13 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               className="px-3.5 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <UserCheck className="w-4 h-4" />
-              <span>Tambah Komunitas</span>
+              <span>{isEn ? 'Add Community' : 'Tambah Komunitas'}</span>
             </button>
           </div>
         ) : (
           <div className="shrink-0 flex items-center gap-2">
             <span className="px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700">
-              Komunitas Naungan: <strong className="text-gray-900">{activeCommunity?.name}</strong>
+              {isEn ? 'Parent Community:' : 'Komunitas Naungan:'} <strong className="text-gray-900">{activeCommunity?.name}</strong>
             </span>
           </div>
         )}
@@ -597,16 +609,16 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div>
-              <h2 className="text-sm font-bold text-gray-900">Daftar Organisasi ({communities.length})</h2>
-              <p className="text-[11px] text-gray-500">Klik salah satu organisasi untuk melihat dan mengelola detailnya.</p>
+              <h2 className="text-sm font-bold text-gray-900">{isEn ? `Organization List (${communities.length})` : `Daftar Organisasi (${communities.length})`}</h2>
+              <p className="text-[11px] text-gray-500">{isEn ? 'Click an organization to view and manage its details.' : 'Klik salah satu organisasi untuk melihat dan mengelola detailnya.'}</p>
             </div>
             {communities.length > 4 && (
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <div className="flex p-0.5 bg-gray-50 border border-gray-200 rounded-xl text-[11px] font-bold shrink-0">
                 {([
-                  ['all', `Semua (${communities.length})`],
-                  ['active', `Aktif (${communities.length - inactiveCommunityCount})`],
-                  ['inactive', `Nonaktif (${inactiveCommunityCount})`],
+                  ['all', isEn ? `All (${communities.length})` : `Semua (${communities.length})`],
+                  ['active', isEn ? `Active (${communities.length - inactiveCommunityCount})` : `Aktif (${communities.length - inactiveCommunityCount})`],
+                  ['inactive', isEn ? `Inactive (${inactiveCommunityCount})` : `Nonaktif (${inactiveCommunityCount})`],
                 ] as const).map(([key, label]) => (
                   <button
                     key={key}
@@ -626,7 +638,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   type="text"
                   value={searchCommunity}
                   onChange={(e) => setSearchCommunity(e.target.value)}
-                  placeholder="Cari nama, ID, atau slug..."
+                  placeholder={isEn ? 'Search name, ID, or slug...' : 'Cari nama, ID, atau slug...'}
                   className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:border-[#66000E]"
                 />
               </div>
@@ -635,7 +647,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           </div>
 
           {filteredCommunities.length === 0 ? (
-            <p className="text-xs text-gray-500 py-4 text-center">Tidak ada organisasi yang cocok.</p>
+            <p className="text-xs text-gray-500 py-4 text-center">{isEn ? 'No matching organizations.' : 'Tidak ada organisasi yang cocok.'}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
               {visibleCommunities.map((c) => {
@@ -669,8 +681,8 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                         {c.id} · /{c.slug}
                       </span>
                       <span className="block text-[10px] text-gray-400 truncate">
-                        {memberCountByCommunity.get(c.id) || 0} lapak binaan
-                        {c.status === 'inactive' ? ' · Nonaktif' : ''}
+                        {memberCountByCommunity.get(c.id) || 0} {isEn ? 'member stores' : 'lapak binaan'}
+                        {c.status === 'inactive' ? (isEn ? ' · Inactive' : ' · Nonaktif') : ''}
                       </span>
                     </span>
                     {isSelected ? (
@@ -678,15 +690,15 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     ) : (
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${isInactive ? 'bg-gray-300' : 'bg-emerald-500'}`}
-                        title={isInactive ? 'Nonaktif' : 'Aktif'}
+                        title={isInactive ? (isEn ? 'Inactive' : 'Nonaktif') : (isEn ? 'Active' : 'Aktif')}
                       />
                     )}
                   </button>
                   <button
                     type="button"
                     onClick={() => promptDeleteCommunity(c.id, c.name)}
-                    title={`Hapus organisasi ${c.name}`}
-                    aria-label={`Hapus organisasi ${c.name}`}
+                    title={isEn ? `Delete organization ${c.name}` : `Hapus organisasi ${c.name}`}
+                    aria-label={isEn ? `Delete organization ${c.name}` : `Hapus organisasi ${c.name}`}
                     className="p-2 mr-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -700,14 +712,18 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           {isCommunityListCollapsible && (
             <div className="flex items-center justify-between gap-2 pt-1 text-[11px]">
               <span className="text-gray-500">
-                Menampilkan {visibleCommunities.length} dari {filteredCommunities.length} organisasi
+                {isEn
+                  ? `Showing ${visibleCommunities.length} of ${filteredCommunities.length} organizations`
+                  : `Menampilkan ${visibleCommunities.length} dari ${filteredCommunities.length} organisasi`}
               </span>
               <button
                 type="button"
                 onClick={() => setShowAllCommunities((v) => !v)}
                 className="font-bold text-[#66000E] hover:underline cursor-pointer"
               >
-                {showAllCommunities ? 'Ringkas daftar' : `Tampilkan semua (${filteredCommunities.length})`}
+                {showAllCommunities
+                  ? (isEn ? 'Collapse list' : 'Ringkas daftar')
+                  : (isEn ? `Show all (${filteredCommunities.length})` : `Tampilkan semua (${filteredCommunities.length})`)}
               </button>
             </div>
           )}
@@ -720,9 +736,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             <Building2 className="w-8 h-8 text-[#66000E]" />
           </div>
           <div className="max-w-md mx-auto space-y-1.5">
-            <h3 className="text-base font-bold text-gray-900">Belum Ada Organisasi &amp; Sub-Admin</h3>
+            <h3 className="text-base font-bold text-gray-900">{isEn ? 'No Organizations & Sub-Admins Yet' : 'Belum Ada Organisasi & Sub-Admin'}</h3>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Belum ada organisasi mitra atau komunitas yang terdaftar di sistem. Daftarkan organisasi baru untuk memberikan akses Sub-Admin dalam mengelola toko binaan mereka.
+              {isEn
+                ? 'No partner organizations or communities are registered in the system yet. Register a new organization to give Sub-Admins access to manage their member stores.'
+                : 'Belum ada organisasi mitra atau komunitas yang terdaftar di sistem. Daftarkan organisasi baru untuk memberikan akses Sub-Admin dalam mengelola toko binaan mereka.'}
             </p>
           </div>
           {Boolean(true) && (
@@ -732,7 +750,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
             >
               <UserCheck className="w-4 h-4" />
-              <span>Tambah Komunitas</span>
+              <span>{isEn ? 'Add Community' : 'Tambah Komunitas'}</span>
             </button>
           )}
         </div>
@@ -743,24 +761,26 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
         {/* Card 1: Total Lapak / Merchant */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
           <div className="flex items-center justify-between text-gray-500 mb-2">
-            <span className="text-xs font-semibold">Total Lapak Anggota</span>
+            <span className="text-xs font-semibold">{isEn ? 'Total Member Stores' : 'Total Lapak Anggota'}</span>
             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <StoreIcon className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-gray-900">{communityStores.length}</span>
-            <span className="text-xs font-medium text-gray-500">toko binaan</span>
+            <span className="text-xs font-medium text-gray-500">{isEn ? 'member stores' : 'toko binaan'}</span>
           </div>
           <p className="text-[11px] text-gray-500 mt-1">
-            {communityStores.filter((s) => s.isPublished).length} toko aktif tayang
+            {isEn
+              ? `${communityStores.filter((s) => s.isPublished).length} stores live`
+              : `${communityStores.filter((s) => s.isPublished).length} toko aktif tayang`}
           </p>
         </div>
 
         {/* Card 2: Total Omset Penjualan */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
           <div className="flex items-center justify-between text-gray-500 mb-2">
-            <span className="text-xs font-semibold">Total Omset Anggota</span>
+            <span className="text-xs font-semibold">{isEn ? 'Total Member Turnover' : 'Total Omset Anggota'}</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
@@ -771,14 +791,16 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             </span>
           </div>
           <p className="text-[11px] text-gray-500 mt-1">
-            Dari {turnoverStats.completedOrdersCount} transaksi berhasil
+            {isEn
+              ? `From ${turnoverStats.completedOrdersCount} successful transactions`
+              : `Dari ${turnoverStats.completedOrdersCount} transaksi berhasil`}
           </p>
         </div>
 
         {/* Card 3: Skema Komisi / Tagihan Omset */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
           <div className="flex items-center justify-between text-gray-500 mb-2">
-            <span className="text-xs font-semibold">Skema Tagihan Platform</span>
+            <span className="text-xs font-semibold">{isEn ? 'Platform Billing Scheme' : 'Skema Tagihan Platform'}</span>
             <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
               <Percent className="w-4 h-4" />
             </div>
@@ -788,18 +810,18 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               {activeCommunity.turnoverFeePercent}%
             </span>
             <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md font-bold">
-              Bagi Hasil Omset
+              {isEn ? 'Turnover Share' : 'Bagi Hasil Omset'}
             </span>
           </div>
           <p className="text-[11px] text-gray-500 mt-1">
-            Ditagihkan di akhir periode omset
+            {isEn ? 'Billed at the end of the turnover period' : 'Ditagihkan di akhir periode omset'}
           </p>
         </div>
 
         {/* Card 4: Estimasi Tagihan Berjalan */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
           <div className="flex items-center justify-between text-gray-500 mb-2">
-            <span className="text-xs font-semibold">Estimasi Tagihan Berjalan</span>
+            <span className="text-xs font-semibold">{isEn ? 'Estimated Current Bill' : 'Estimasi Tagihan Berjalan'}</span>
             <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
               <Receipt className="w-4 h-4" />
             </div>
@@ -810,7 +832,9 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             </span>
           </div>
           <p className="text-[11px] text-gray-500 mt-1">
-            {turnoverStats.totalTurnover > 0 ? 'Siap diterbitkan invoice' : 'Belum ada transaksi'}
+            {turnoverStats.totalTurnover > 0
+              ? (isEn ? 'Ready to invoice' : 'Siap diterbitkan invoice')
+              : (isEn ? 'No transactions yet' : 'Belum ada transaksi')}
           </p>
         </div>
       </div>
@@ -827,7 +851,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>Profil Organisasi &amp; Sub-Admin</span>
+          <span>{isEn ? 'Organization & Sub-Admin Profile' : 'Profil Organisasi & Sub-Admin'}</span>
         </button>
 
         <button
@@ -840,7 +864,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           }`}
         >
           <StoreIcon className="w-4 h-4" />
-          <span>Daftar Lapak Binaan ({communityStores.length})</span>
+          <span>{isEn ? `Member Stores (${communityStores.length})` : `Daftar Lapak Binaan (${communityStores.length})`}</span>
         </button>
 
         <button
@@ -853,7 +877,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           }`}
         >
           <Receipt className="w-4 h-4" />
-          <span>Tagihan &amp; Invoice Omset ({filteredInvoices.length})</span>
+          <span>{isEn ? `Turnover Bills & Invoices (${filteredInvoices.length})` : `Tagihan & Invoice Omset (${filteredInvoices.length})`}</span>
         </button>
       </div>
 
@@ -895,7 +919,9 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               </div>
             </div>
             <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200 self-start">
-              {activeCommunity.status === 'inactive' ? 'Organisasi Nonaktif' : 'Organisasi Aktif'}
+              {activeCommunity.status === 'inactive'
+                ? (isEn ? 'Inactive Organization' : 'Organisasi Nonaktif')
+                : (isEn ? 'Active Organization' : 'Organisasi Aktif')}
             </span>
           </div>
 
@@ -911,9 +937,9 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             <div className="p-4 rounded-xl border border-purple-200/80 space-y-2 bg-purple-50/30 flex flex-col justify-between">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 font-semibold block">Sub-Admin Umum:</span>
+                  <span className="text-gray-500 font-semibold block">{isEn ? 'General Sub-Admin:' : 'Sub-Admin Umum:'}</span>
                   <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold">
-                    Halaman Komunitas
+                    {isEn ? 'Community Page' : 'Halaman Komunitas'}
                   </span>
                 </div>
                 <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
@@ -932,7 +958,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 )}
               </div>
               <p className="text-[11px] text-purple-700/80 bg-purple-100/50 p-2 rounded-lg mt-2">
-                Mengatur profil, identitas &amp; tampilan halaman komunitas.
+                {isEn ? 'Manages the community page profile, identity & appearance.' : 'Mengatur profil, identitas & tampilan halaman komunitas.'}
               </p>
             </div>
 
@@ -940,9 +966,9 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
             <div className="p-4 rounded-xl border border-blue-200/80 space-y-2 bg-blue-50/30 flex flex-col justify-between">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 font-semibold block">Sub-Admin Produk:</span>
+                  <span className="text-gray-500 font-semibold block">{isEn ? 'Product Sub-Admin:' : 'Sub-Admin Produk:'}</span>
                   <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
-                    Toko &amp; Produk
+                    {isEn ? 'Stores & Products' : 'Toko & Produk'}
                   </span>
                 </div>
                 <p className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
@@ -961,27 +987,27 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 )}
               </div>
               <p className="text-[11px] text-blue-700/80 bg-blue-100/50 p-2 rounded-lg mt-2">
-                Menaungi toko anggota binaan &amp; katalog produk binaan.
+                {isEn ? 'Oversees member stores & their product catalogs.' : 'Menaungi toko anggota binaan & katalog produk binaan.'}
               </p>
             </div>
 
             {/* Card 3: Status & Keanggotaan */}
             <div className="p-4 rounded-xl border border-gray-200 space-y-2 bg-gray-50/50 flex flex-col justify-between">
               <div>
-                <span className="text-gray-500 font-semibold block mb-2">Status &amp; Keanggotaan:</span>
+                <span className="text-gray-500 font-semibold block mb-2">{isEn ? 'Status & Membership:' : 'Status & Keanggotaan:'}</span>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600">Total Lapak Binaan:</span>
-                    <span className="font-bold text-gray-900">{communityStores.length} Toko</span>
+                    <span className="text-gray-600">{isEn ? 'Total Member Stores:' : 'Total Lapak Binaan:'}</span>
+                    <span className="font-bold text-gray-900">{communityStores.length} {isEn ? 'Stores' : 'Toko'}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600">Lapak Aktif Tayang:</span>
-                    <span className="font-bold text-emerald-700">{communityStores.filter((s) => s.isPublished).length} Toko</span>
+                    <span className="text-gray-600">{isEn ? 'Live Stores:' : 'Lapak Aktif Tayang:'}</span>
+                    <span className="font-bold text-emerald-700">{communityStores.filter((s) => s.isPublished).length} {isEn ? 'Stores' : 'Toko'}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600">Terdaftar Sejak:</span>
+                    <span className="text-gray-600">{isEn ? 'Registered Since:' : 'Terdaftar Sejak:'}</span>
                     <span className="font-medium text-gray-700">
-                      {new Date(activeCommunity.createdAt).toLocaleDateString('id-ID', {
+                      {new Date(activeCommunity.createdAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',
@@ -991,9 +1017,9 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 </div>
               </div>
               <div className="pt-2 border-t border-gray-200/60 flex items-center justify-between text-[11px] text-gray-500">
-                <span>Skema Bagi Hasil:</span>
+                <span>{isEn ? 'Revenue Share Scheme:' : 'Skema Bagi Hasil:'}</span>
                 <span className="font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                  {activeCommunity.turnoverFeePercent}% Omset
+                  {activeCommunity.turnoverFeePercent}% {isEn ? 'Turnover' : 'Omset'}
                 </span>
               </div>
             </div>
@@ -1009,7 +1035,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Tautkan Toko</span>
+                  <span>{isEn ? 'Link Store' : 'Tautkan Toko'}</span>
                 </button>
 
                 <button
@@ -1018,7 +1044,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   className="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
                   <Edit3 className="w-4 h-4 text-gray-600" />
-                  <span>Edit Organisasi</span>
+                  <span>{isEn ? 'Edit Organization' : 'Edit Organisasi'}</span>
                 </button>
               </div>
 
@@ -1030,7 +1056,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   className="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-rose-200"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span>Hapus Organisasi</span>
+                  <span>{isEn ? 'Delete Organization' : 'Hapus Organisasi'}</span>
                 </button>
               )}
             </div>
@@ -1049,7 +1075,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Cari lapak anggota (nama toko, slug, whatsapp)..."
+                placeholder={isEn ? 'Search member stores (store name, slug, WhatsApp)...' : 'Cari lapak anggota (nama toko, slug, whatsapp)...'}
                 value={searchMerchant}
                 onChange={(e) => setSearchMerchant(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 bg-white text-xs text-gray-900 focus:outline-none focus:border-[#66000E]"
@@ -1062,7 +1088,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               className="px-4 py-2 bg-[#66000E] hover:bg-[#55000C] text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-xs shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>Tautkan Toko ke {activeCommunity.name}</span>
+              <span>{isEn ? `Link Store to ${activeCommunity.name}` : `Tautkan Toko ke ${activeCommunity.name}`}</span>
             </button>
           </div>
 
@@ -1070,9 +1096,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           {filteredCommunityStores.length === 0 ? (
             <div className="p-12 text-center text-gray-500">
               <StoreIcon className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm font-bold text-gray-800">Belum Ada Lapak Anggota</p>
+              <p className="text-sm font-bold text-gray-800">{isEn ? 'No Member Stores Yet' : 'Belum Ada Lapak Anggota'}</p>
               <p className="text-xs mt-1">
-                Gunakan tombol &quot;Tautkan Toko&quot; di atas untuk memasukkan merchant binaan ke dalam organisasi ini.
+                {isEn
+                  ? 'Use the "Link Store" button above to add member merchants to this organization.'
+                  : 'Gunakan tombol "Tautkan Toko" di atas untuk memasukkan merchant binaan ke dalam organisasi ini.'}
               </p>
             </div>
           ) : (
@@ -1080,12 +1108,12 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               <table className="w-full text-left text-xs text-gray-700">
                 <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase text-[10px] tracking-wider">
                   <tr>
-                    <th className="py-3 px-4">Nama Toko &amp; Lapak</th>
+                    <th className="py-3 px-4">{isEn ? 'Store Name' : 'Nama Toko & Lapak'}</th>
                     <th className="py-3 px-4">Subdomain / URL</th>
-                    <th className="py-3 px-4">Kontak WhatsApp</th>
-                    <th className="py-3 px-4">Status Tayang</th>
-                    <th className="py-3 px-4 text-right">Saldo / Omset</th>
-                    <th className="py-3 px-4 text-center">Aksi</th>
+                    <th className="py-3 px-4">{isEn ? 'WhatsApp Contact' : 'Kontak WhatsApp'}</th>
+                    <th className="py-3 px-4">{isEn ? 'Publish Status' : 'Status Tayang'}</th>
+                    <th className="py-3 px-4 text-right">{isEn ? 'Balance / Turnover' : 'Saldo / Omset'}</th>
+                    <th className="py-3 px-4 text-center">{isEn ? 'Actions' : 'Aksi'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -1106,7 +1134,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                           )}
                           <div>
                             <span className="font-bold text-gray-900 block">{st.name}</span>
-                            <span className="text-[11px] text-gray-500">{st.category || 'UMKM Retail'}</span>
+                            <span className="text-[11px] text-gray-500">{st.category || (isEn ? 'MSME Retail' : 'UMKM Retail')}</span>
                           </div>
                         </div>
                       </td>
@@ -1124,7 +1152,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                               : 'bg-amber-50 text-amber-800 border-amber-200'
                           }`}
                         >
-                          {st.isPublished ? 'Tayang (Published)' : 'Draft'}
+                          {st.isPublished ? (isEn ? 'Published' : 'Tayang (Published)') : 'Draft'}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right font-extrabold text-gray-900">
@@ -1136,7 +1164,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                             <button
                               type="button"
                               onClick={() => onOpenStorefront && onOpenStorefront(st.slug)}
-                              title="Buka Toko Online"
+                              title={isEn ? 'Open Online Store' : 'Buka Toko Online'}
                               className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition cursor-pointer"
                             >
                               <ExternalLink className="w-4 h-4" />
@@ -1146,7 +1174,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                           <button
                             type="button"
                             onClick={() => promptRemoveStore(st.id, st.name)}
-                            title="Lepas dari Organisasi"
+                            title={isEn ? 'Remove from Organization' : 'Lepas dari Organisasi'}
                             className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1170,10 +1198,12 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
             <div>
               <h3 className="text-base font-bold text-gray-900">
-                Faktur &amp; Tagihan Biaya Omset — {activeCommunity.name}
+                {isEn ? `Turnover Fee Invoices & Bills — ${activeCommunity.name}` : `Faktur & Tagihan Biaya Omset — ${activeCommunity.name}`}
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                Tagihan otomatis dihitung dari omset penjualan riil toko binaan sebesar{' '}
+                {isEn
+                  ? 'Bills are automatically calculated from member stores\' actual sales turnover at '
+                  : 'Tagihan otomatis dihitung dari omset penjualan riil toko binaan sebesar '}
                 <strong>{activeCommunity.turnoverFeePercent}%</strong>.
               </p>
             </div>
@@ -1186,7 +1216,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
               className="px-4 py-2 bg-linear-to-r from-[#66000E] to-[#990014] text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shadow-xs shrink-0 disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Terbitkan Invoice Periode Ini</span>
+              <span>{isEn ? 'Issue Invoice for This Period' : 'Terbitkan Invoice Periode Ini'}</span>
             </button>
             )}
           </div>
@@ -1194,11 +1224,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
           {filteredInvoices.length === 0 ? (
             <div className="p-12 text-center text-gray-500">
               <Receipt className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm font-bold text-gray-800">Belum Ada Tagihan Diterbitkan</p>
+              <p className="text-sm font-bold text-gray-800">{isEn ? 'No Invoices Issued Yet' : 'Belum Ada Tagihan Diterbitkan'}</p>
               <p className="text-xs mt-1">
                 {canManageInvoices
-                  ? 'Klik "Terbitkan Invoice Periode Ini" untuk membuat tagihan baru.'
-                  : 'Tagihan diterbitkan oleh Super Admin.'}
+                  ? (isEn ? 'Click "Issue Invoice for This Period" to create a new bill.' : 'Klik "Terbitkan Invoice Periode Ini" untuk membuat tagihan baru.')
+                  : (isEn ? 'Invoices are issued by the Super Admin.' : 'Tagihan diterbitkan oleh Super Admin.')}
               </p>
             </div>
           ) : (
@@ -1212,7 +1242,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <span className="font-mono font-bold text-sm text-gray-900">{inv.invoiceNumber}</span>
                       <span className="text-xs font-semibold text-gray-600 bg-white px-2.5 py-0.5 rounded-lg border border-gray-200">
-                        Periode: {inv.period}
+                        {isEn ? 'Period:' : 'Periode:'} {inv.period}
                       </span>
                       <span
                         className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
@@ -1221,20 +1251,20 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                             : 'bg-rose-50 text-rose-800 border-rose-200'
                         }`}
                       >
-                        {inv.status === 'paid' ? 'LUNAS (PAID)' : 'MENUNGGU PEMBAYARAN'}
+                        {inv.status === 'paid' ? (isEn ? 'PAID' : 'LUNAS (PAID)') : (isEn ? 'AWAITING PAYMENT' : 'MENUNGGU PEMBAYARAN')}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
-                      <span>Total Omset Toko: <strong>Rp {inv.totalTurnover.toLocaleString('id-ID')}</strong></span>
-                      <span>Tarif Komisi: <strong>{inv.feePercent}%</strong></span>
-                      {inv.dueDate && <span>Jatuh Tempo: {new Date(inv.dueDate).toLocaleDateString('id-ID')}</span>}
+                      <span>{isEn ? 'Total Store Turnover:' : 'Total Omset Toko:'} <strong>Rp {inv.totalTurnover.toLocaleString('id-ID')}</strong></span>
+                      <span>{isEn ? 'Commission Rate:' : 'Tarif Komisi:'} <strong>{inv.feePercent}%</strong></span>
+                      {inv.dueDate && <span>{isEn ? 'Due Date:' : 'Jatuh Tempo:'} {new Date(inv.dueDate).toLocaleDateString(isEn ? 'en-US' : 'id-ID')}</span>}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
-                      <span className="text-[11px] text-gray-500 block">Total Ditagihkan</span>
+                      <span className="text-[11px] text-gray-500 block">{isEn ? 'Total Billed' : 'Total Ditagihkan'}</span>
                       <span className="text-base font-extrabold text-[#66000E]">
                         Rp {inv.totalBilled.toLocaleString('id-ID')}
                       </span>
@@ -1259,7 +1289,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                             className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                           >
                             <Phone className="w-3.5 h-3.5 text-emerald-700" />
-                            <span>Kirim ke WhatsApp</span>
+                            <span>{isEn ? 'Send via WhatsApp' : 'Kirim ke WhatsApp'}</span>
                           </a>
                         )}
 
@@ -1268,7 +1298,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                           onClick={() => handleMarkPaid(inv.id)}
                           className="px-3 py-2 bg-[#66000E] hover:bg-[#52000B] text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
                         >
-                          Tandai Lunas
+                          {isEn ? 'Mark as Paid' : 'Tandai Lunas'}
                         </button>
                       </div>
                     )}
@@ -1295,9 +1325,9 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   <Building2 className="w-4 h-4 text-[#66000E]" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">Daftarkan Sub-Admin Organisasi</h3>
+                  <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">{isEn ? 'Register Organization Sub-Admins' : 'Daftarkan Sub-Admin Organisasi'}</h3>
                   <p className="text-[11px] text-gray-500">
-                    Kelola komunitas mitra dan akun sub-admin penanggung jawab.
+                    {isEn ? 'Manage the partner community and its responsible sub-admin accounts.' : 'Kelola komunitas mitra dan akun sub-admin penanggung jawab.'}
                   </p>
                 </div>
               </div>
@@ -1305,7 +1335,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
-                title="Tutup"
+                title={isEn ? 'Close' : 'Tutup'}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1318,16 +1348,16 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200/80 space-y-2.5">
                   <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
                     <Building2 className="w-3.5 h-3.5 text-[#66000E]" />
-                    <span>1. Detail Komunitas Mitra</span>
+                    <span>{isEn ? '1. Partner Community Details' : '1. Detail Komunitas Mitra'}</span>
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Komunitas *</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Community Name *' : 'Nama Komunitas *'}</label>
                       <input
                         type="text"
                         required
-                        placeholder="Contoh: Paguyuban Kulit Garut"
+                        placeholder={isEn ? 'Example: Paguyuban Kulit Garut' : 'Contoh: Paguyuban Kulit Garut'}
                         value={createForm.name}
                         onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                         className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
@@ -1337,7 +1367,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     <div>
                       <label className="block font-semibold text-gray-700 mb-1 text-[11px] flex items-center gap-1">
                         <Globe className="w-3 h-3 text-blue-600" />
-                        <span>Domain Induk (Opsional)</span>
+                        <span>{isEn ? 'Parent Domain (Optional)' : 'Domain Induk (Opsional)'}</span>
                       </label>
                       <PanelDomainSelect
                         value={createForm.baseDomain}
@@ -1347,10 +1377,10 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Deskripsi Singkat (Opsional)</label>
+                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Short Description (Optional)' : 'Deskripsi Singkat (Opsional)'}</label>
                     <textarea
                       rows={2}
-                      placeholder="Wadah paguyuban dan pembinaan lapak UMKM..."
+                      placeholder={isEn ? 'A community for supporting and mentoring MSME stores...' : 'Wadah paguyuban dan pembinaan lapak UMKM...'}
                       value={createForm.description}
                       onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
                       className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
@@ -1363,23 +1393,23 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   <div className="flex items-center justify-between">
                     <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
                       <Shield className="w-3.5 h-3.5 text-purple-600" />
-                      <span>2. Akun Sub-Admin Umum</span>
+                      <span>{isEn ? '2. General Sub-Admin Account' : '2. Akun Sub-Admin Umum'}</span>
                     </h4>
                     <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
-                      Akses Halaman Komunitas
+                      {isEn ? 'Community Page Access' : 'Akses Halaman Komunitas'}
                     </span>
                   </div>
                   <p className="text-[11px] text-gray-500 -mt-1">
-                    Khusus untuk mengelola informasi profil dan tampilan halaman komunitas.
+                    {isEn ? 'Only for managing the community page profile information and appearance.' : 'Khusus untuk mengelola informasi profil dan tampilan halaman komunitas.'}
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Lengkap *</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Full Name *' : 'Nama Lengkap *'}</label>
                       <input
                         type="text"
                         required
-                        placeholder="Contoh: Admin 1"
+                        placeholder={isEn ? 'Example: Admin 1' : 'Contoh: Admin 1'}
                         value={createForm.subAdminName}
                         onChange={(e) => setCreateForm({ ...createForm, subAdminName: e.target.value })}
                         className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-purple-600"
@@ -1387,7 +1417,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">No. WhatsApp</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'WhatsApp No.' : 'No. WhatsApp'}</label>
                       <input
                         type="tel"
                         inputMode="numeric"
@@ -1405,7 +1435,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login *</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Login Email *' : 'Email Login *'}</label>
                       <input
                         type="email"
                         required
@@ -1417,12 +1447,12 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Kata Sandi *</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Password *' : 'Kata Sandi *'}</label>
                       <input
                         type="password"
                         autoComplete="new-password"
                         required
-                        placeholder="Minimal 8 karakter"
+                        placeholder={isEn ? 'At least 8 characters' : 'Minimal 8 karakter'}
                         minLength={8}
                         value={createForm.subAdminPassword}
                         onChange={(e) => setCreateForm({ ...createForm, subAdminPassword: e.target.value })}
@@ -1437,14 +1467,14 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   <div className="flex items-center justify-between">
                     <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
                       <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                      <span>3. Akun Sub-Admin Produk (Koordinator Toko)</span>
+                      <span>{isEn ? '3. Product Sub-Admin Account (Store Coordinator)' : '3. Akun Sub-Admin Produk (Koordinator Toko)'}</span>
                     </h4>
                     <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">
-                      Akses Toko &amp; Produk
+                      {isEn ? 'Store & Product Access' : 'Akses Toko & Produk'}
                     </span>
                   </div>
                   <p className="text-[11px] text-gray-500 -mt-1">
-                    Khusus untuk menaungi toko binaan dan mengelola katalog produk binaannya.
+                    {isEn ? 'Only for overseeing member stores and managing their product catalogs.' : 'Khusus untuk menaungi toko binaan dan mengelola katalog produk binaannya.'}
                   </p>
 
                   {/* Checkbox Samakan Akun */}
@@ -1456,7 +1486,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                     />
                     <span className="text-xs font-semibold text-gray-800">
-                      Samakan dengan akun Sub-Admin Umum (merangkap tugas)
+                      {isEn ? 'Same as the General Sub-Admin account (dual role)' : 'Samakan dengan akun Sub-Admin Umum (merangkap tugas)'}
                     </span>
                   </label>
 
@@ -1464,11 +1494,11 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     <div className="space-y-2.5 pt-1 animate-in fade-in duration-150">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div>
-                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Sub-Admin Produk *</label>
+                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Product Sub-Admin Name *' : 'Nama Sub-Admin Produk *'}</label>
                           <input
                             type="text"
                             required={!createForm.sameAsSubAdmin}
-                            placeholder="Contoh: Admin 2"
+                            placeholder={isEn ? 'Example: Admin 2' : 'Contoh: Admin 2'}
                             value={createForm.coordinatorName}
                             onChange={(e) => setCreateForm({ ...createForm, coordinatorName: e.target.value })}
                             className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-blue-600"
@@ -1476,7 +1506,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                         </div>
 
                         <div>
-                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">No. WhatsApp</label>
+                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'WhatsApp No.' : 'No. WhatsApp'}</label>
                           <input
                             type="tel"
                             inputMode="numeric"
@@ -1494,7 +1524,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div>
-                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Email Login *</label>
+                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Login Email *' : 'Email Login *'}</label>
                           <input
                             type="email"
                             required={!createForm.sameAsSubAdmin}
@@ -1506,13 +1536,13 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                         </div>
 
                         <div>
-                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Kata Sandi *</label>
+                          <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Password *' : 'Kata Sandi *'}</label>
                           <input
                             type="password"
                             autoComplete="new-password"
                             required={!createForm.sameAsSubAdmin}
                             minLength={8}
-                            placeholder="Minimal 8 karakter"
+                            placeholder={isEn ? 'At least 8 characters' : 'Minimal 8 karakter'}
                             value={createForm.coordinatorPassword}
                             onChange={(e) => setCreateForm({ ...createForm, coordinatorPassword: e.target.value })}
                             className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-mono focus:outline-none focus:border-blue-600"
@@ -1531,7 +1561,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   onClick={() => setIsCreateModalOpen(false)}
                   className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-100 cursor-pointer transition"
                 >
-                  Batal
+                  {isEn ? 'Cancel' : 'Batal'}
                 </button>
                 <button
                   type="submit"
@@ -1539,7 +1569,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <UserCheck className="w-4 h-4" />
-                  <span>{isSubmittingCreate ? 'Menyimpan...' : 'Daftarkan Sub-Admin'}</span>
+                  <span>{isSubmittingCreate ? (isEn ? 'Saving...' : 'Menyimpan...') : (isEn ? 'Register Sub-Admins' : 'Daftarkan Sub-Admin')}</span>
                 </button>
               </div>
             </form>
@@ -1559,33 +1589,33 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   <StoreIcon className="w-4 h-4 text-[#66000E]" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Tautkan Lapak</h3>
-                  <p className="text-[11px] text-gray-500">Naungan: {activeCommunity.name}</p>
+                  <h3 className="text-sm font-bold text-gray-900">{isEn ? 'Link Store' : 'Tautkan Lapak'}</h3>
+                  <p className="text-[11px] text-gray-500">{isEn ? 'Under:' : 'Naungan:'} {activeCommunity.name}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsAssignModalOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
-                title="Tutup"
+                title={isEn ? 'Close' : 'Tutup'}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Pilih Toko / Lapak *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">{isEn ? 'Select Store *' : 'Pilih Toko / Lapak *'}</label>
               <select
                 value={selectedStoreToAssign}
                 onChange={(e) => setSelectedStoreToAssign(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-xs font-medium text-gray-900 focus:outline-none focus:border-[#66000E] cursor-pointer"
               >
-                <option value="">-- Pilih Toko --</option>
+                <option value="">{isEn ? '-- Select Store --' : '-- Pilih Toko --'}</option>
                 {stores
                   .filter((s) => !storeInCommunity(s, activeCommunity.id))
                   .map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.slug}.lapakq.com) {s.communityName ? `[Juga di: ${s.communityName}]` : '[Toko Mandiri]'}
+                      {s.name} ({s.slug}.lapakq.com) {s.communityName ? (isEn ? `[Also in: ${s.communityName}]` : `[Juga di: ${s.communityName}]`) : (isEn ? '[Independent Store]' : '[Toko Mandiri]')}
                     </option>
                   ))}
               </select>
@@ -1597,7 +1627,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 onClick={() => setIsAssignModalOpen(false)}
                 className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
               >
-                Batal
+                {isEn ? 'Cancel' : 'Batal'}
               </button>
               <button
                 type="button"
@@ -1605,7 +1635,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 onClick={handleAssignStore}
                 className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#55000C] text-white text-xs font-bold transition cursor-pointer disabled:opacity-50"
               >
-                Tautkan Toko
+                {isEn ? 'Link Store' : 'Tautkan Toko'}
               </button>
             </div>
           </div>
@@ -1634,7 +1664,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 onClick={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
                 className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition cursor-pointer disabled:opacity-50"
               >
-                Batal
+                {isEn ? 'Cancel' : 'Batal'}
               </button>
               <button
                 type="button"
@@ -1643,7 +1673,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>{isConfirmLoading ? 'Memproses...' : confirmDialog.confirmText}</span>
+                <span>{isConfirmLoading ? (isEn ? 'Processing...' : 'Memproses...') : confirmDialog.confirmText}</span>
               </button>
             </div>
           </div>
@@ -1663,9 +1693,9 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   <Edit3 className="w-4 h-4 text-[#66000E]" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">Edit Komunitas</h3>
+                  <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">{isEn ? 'Edit Community' : 'Edit Komunitas'}</h3>
                   <p className="text-[11px] text-gray-500">
-                    Perbarui profil komunitas &amp; kontak penanggung jawab.
+                    {isEn ? 'Update the community profile & responsible contacts.' : 'Perbarui profil komunitas & kontak penanggung jawab.'}
                   </p>
                 </div>
               </div>
@@ -1673,7 +1703,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
-                title="Tutup"
+                title={isEn ? 'Close' : 'Tutup'}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1685,12 +1715,12 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                 <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200/80 space-y-2.5">
                   <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
                     <Building2 className="w-3.5 h-3.5 text-[#66000E]" />
-                    <span>Detail Komunitas</span>
+                    <span>{isEn ? 'Community Details' : 'Detail Komunitas'}</span>
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Komunitas *</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Community Name *' : 'Nama Komunitas *'}</label>
                       <input
                         type="text"
                         required
@@ -1701,7 +1731,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Domain Induk (Opsional)</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Parent Domain (Optional)' : 'Domain Induk (Opsional)'}</label>
                       <PanelDomainSelect
                         value={editForm.baseDomain}
                         onChange={(baseDomain) => setEditForm({ ...editForm, baseDomain })}
@@ -1711,10 +1741,10 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Deskripsi (Opsional)</label>
+                    <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Description (Optional)' : 'Deskripsi (Opsional)'}</label>
                     <textarea
                       rows={2}
-                      placeholder="Deskripsi singkat komunitas..."
+                      placeholder={isEn ? 'Short community description...' : 'Deskripsi singkat komunitas...'}
                       value={editForm.description}
                       onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                       className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
@@ -1724,19 +1754,19 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block font-semibold text-gray-700 text-[11px]">Status Komunitas</label>
+                        <label className="block font-semibold text-gray-700 text-[11px]">{isEn ? 'Community Status' : 'Status Komunitas'}</label>
                         {isSubAdmin && (
                           <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
                             <Lock className="w-2.5 h-2.5" />
-                            Khusus Super Admin
+                            {isEn ? 'Super Admin Only' : 'Khusus Super Admin'}
                           </span>
                         )}
                       </div>
                       {isSubAdmin ? (
                         <div className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-600 text-xs flex items-center justify-between cursor-not-allowed">
-                          <span className="font-semibold">{editForm.status === 'active' ? 'Aktif' : 'Nonaktif'}</span>
+                          <span className="font-semibold">{editForm.status === 'active' ? (isEn ? 'Active' : 'Aktif') : (isEn ? 'Inactive' : 'Nonaktif')}</span>
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${editForm.status === 'active' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
-                            {editForm.status === 'active' ? 'Organisasi Aktif' : 'Organisasi Nonaktif'}
+                            {editForm.status === 'active' ? (isEn ? 'Organization Active' : 'Organisasi Aktif') : (isEn ? 'Organization Inactive' : 'Organisasi Nonaktif')}
                           </span>
                         </div>
                       ) : (
@@ -1745,27 +1775,27 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                           onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
                           className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
                         >
-                          <option value="active">Aktif</option>
-                          <option value="inactive">Nonaktif</option>
+                          <option value="active">{isEn ? 'Active' : 'Aktif'}</option>
+                          <option value="inactive">{isEn ? 'Inactive' : 'Nonaktif'}</option>
                         </select>
                       )}
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block font-semibold text-gray-700 text-[11px]">Fee Omset (%)</label>
+                        <label className="block font-semibold text-gray-700 text-[11px]">{isEn ? 'Turnover Fee (%)' : 'Fee Omset (%)'}</label>
                         {isSubAdmin && (
                           <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
                             <Lock className="w-2.5 h-2.5" />
-                            Khusus Super Admin
+                            {isEn ? 'Super Admin Only' : 'Khusus Super Admin'}
                           </span>
                         )}
                       </div>
                       {isSubAdmin ? (
                         <div className="w-full px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-600 text-xs flex items-center justify-between cursor-not-allowed">
-                          <span className="font-semibold">{editForm.turnoverFeePercent}% Omset</span>
+                          <span className="font-semibold">{editForm.turnoverFeePercent}% {isEn ? 'Turnover' : 'Omset'}</span>
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                            Ditetapkan Platform
+                            {isEn ? 'Set by Platform' : 'Ditetapkan Platform'}
                           </span>
                         </div>
                       ) : (
@@ -1788,16 +1818,16 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   <div className="flex items-center justify-between">
                     <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
                       <Shield className="w-3.5 h-3.5 text-purple-600" />
-                      <span>Kontak Sub-Admin Umum</span>
+                      <span>{isEn ? 'General Sub-Admin Contact' : 'Kontak Sub-Admin Umum'}</span>
                     </h4>
                     <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
-                      Akses Halaman Komunitas
+                      {isEn ? 'Community Page Access' : 'Akses Halaman Komunitas'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Sub-Admin Umum</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'General Sub-Admin Name' : 'Nama Sub-Admin Umum'}</label>
                       <input
                         type="text"
                         value={editForm.subAdminName}
@@ -1806,7 +1836,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">No. WhatsApp Sub-Admin</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Sub-Admin WhatsApp No.' : 'No. WhatsApp Sub-Admin'}</label>
                       <input
                         type="tel"
                         inputMode="numeric"
@@ -1821,10 +1851,10 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block font-semibold text-gray-700 text-[11px]">Email Login Sub-Admin Umum</label>
+                      <label className="block font-semibold text-gray-700 text-[11px]">{isEn ? 'General Sub-Admin Login Email' : 'Email Login Sub-Admin Umum'}</label>
                       <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
                         <Lock className="w-2.5 h-2.5" />
-                        Permanen (Tidak dapat diubah)
+                        {isEn ? 'Permanent (cannot be changed)' : 'Permanen (Tidak dapat diubah)'}
                       </span>
                     </div>
                     <input
@@ -1842,16 +1872,16 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   <div className="flex items-center justify-between">
                     <h4 className="font-bold text-gray-900 flex items-center gap-1.5 text-xs">
                       <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Kontak Sub-Admin Produk (Koordinator Toko)</span>
+                      <span>{isEn ? 'Product Sub-Admin Contact (Store Coordinator)' : 'Kontak Sub-Admin Produk (Koordinator Toko)'}</span>
                     </h4>
                     <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">
-                      Akses Toko &amp; Produk
+                      {isEn ? 'Store & Product Access' : 'Akses Toko & Produk'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">Nama Sub-Admin Produk *</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Product Sub-Admin Name *' : 'Nama Sub-Admin Produk *'}</label>
                       <input
                         type="text"
                         required
@@ -1861,7 +1891,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">No. WhatsApp Sub-Admin Produk</label>
+                      <label className="block font-semibold text-gray-700 mb-1 text-[11px]">{isEn ? 'Product Sub-Admin WhatsApp No.' : 'No. WhatsApp Sub-Admin Produk'}</label>
                       <input
                         type="tel"
                         inputMode="numeric"
@@ -1876,10 +1906,10 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block font-semibold text-gray-700 text-[11px]">Email Login Sub-Admin Produk</label>
+                      <label className="block font-semibold text-gray-700 text-[11px]">{isEn ? 'Product Sub-Admin Login Email' : 'Email Login Sub-Admin Produk'}</label>
                       <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
                         <Lock className="w-2.5 h-2.5" />
-                        Permanen (Tidak dapat diubah)
+                        {isEn ? 'Permanent (cannot be changed)' : 'Permanen (Tidak dapat diubah)'}
                       </span>
                     </div>
                     <input
@@ -1900,7 +1930,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   onClick={() => setIsEditModalOpen(false)}
                   className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-100 cursor-pointer transition"
                 >
-                  Batal
+                  {isEn ? 'Cancel' : 'Batal'}
                 </button>
                 <button
                   type="submit"
@@ -1908,7 +1938,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                   className="px-4 py-2 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{isSubmittingEdit ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
+                  <span>{isSubmittingEdit ? (isEn ? 'Saving...' : 'Menyimpan...') : (isEn ? 'Save Changes' : 'Simpan Perubahan')}</span>
                 </button>
               </div>
             </form>

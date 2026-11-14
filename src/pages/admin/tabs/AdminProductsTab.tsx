@@ -154,12 +154,12 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
             <div>
               <h1 className="text-lg font-bold text-gray-900">
                 {isSubAdmin && currentUser?.communityName
-                  ? `Kelola Produk — Komunitas ${currentUser.communityName}`
+                  ? (isEn ? `Product Management — ${currentUser.communityName} Community` : `Kelola Produk — Komunitas ${currentUser.communityName}`)
                   : (isEn ? 'Product Management' : 'Kelola Produk')}
               </h1>
               <p className="text-xs text-gray-500">
                 {isSubAdmin && currentUser?.communityName
-                  ? `Katalog produk khusus toko binaan naungan ${currentUser.communityName}`
+                  ? (isEn ? `Product catalog of member stores under ${currentUser.communityName}` : `Katalog produk khusus toko binaan naungan ${currentUser.communityName}`)
                   : (isEn ? 'Master catalog of all merchant products on LapakQ' : 'Katalog master seluruh produk toko UMKM di LapakQ')}
               </p>
             </div>

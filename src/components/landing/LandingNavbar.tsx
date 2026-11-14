@@ -33,7 +33,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
   onNavigateDashboard,
   isAuthenticated = false,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>(activeTab);
@@ -169,7 +169,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
                 onClick={onNavigateDashboard}
                 className="min-h-[42px] px-4 py-2 rounded-xl text-[14px] font-semibold text-white bg-[#66000E] hover:bg-[#801010] transition-colors cursor-pointer border border-[#66000E]"
               >
-                {t('landing_dashboard', 'Ke Dashboard')}
+                {isEn ? 'Go to Dashboard' : 'Ke Dashboard'}
               </button>
             ) : (
               <button
@@ -191,7 +191,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-[#241A1A] hover:bg-[#FAF7F7] border border-[#E5E0DD] flex items-center justify-center transition-colors cursor-pointer"
-              aria-label="Toggle menu"
+              aria-label={isEn ? 'Toggle menu' : 'Buka/tutup menu'}
             >
               {mobileMenuOpen ? <X className="w-5 h-5 text-[#241A1A]" /> : <Menu className="w-5 h-5 text-[#241A1A]" />}
             </button>

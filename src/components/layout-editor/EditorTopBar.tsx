@@ -61,6 +61,32 @@ export const DEFAULT_EDITOR_PAGES: EditorPage[] = [
   { id: 'profile', label: 'Profil Saya', category: 'Akun pelanggan', icon: User },
 ];
 
+// Label English untuk halaman & kategori bawaan (label Indonesia tetap dari data).
+const PAGE_LABELS_EN: Record<string, string> = {
+  homepage: 'Home',
+  catalog: 'Product Catalog',
+  product: 'Product Details',
+  about: 'About Store',
+  promo: 'Special Promo',
+  contact: 'Contact',
+  cart: 'Shopping Cart',
+  checkout: 'Checkout',
+  thank_you: 'Thank You / Success',
+  login: 'Sign In (Login)',
+  register: 'Sign Up (Register)',
+  forgot_password: 'Forgot Password',
+  orders: 'Order History',
+  order_detail: 'Order Details',
+  profile: 'My Profile',
+};
+
+const PAGE_CATEGORY_EN: Record<EditorPage['category'], string> = {
+  'Toko online': 'Online store',
+  'Akun pelanggan': 'Customer account',
+  Checkout: 'Checkout',
+  'Pasca-pembelian': 'Post-purchase',
+};
+
 interface EditorTopBarProps {
   store: Store;
   hasChanges: boolean;
@@ -110,7 +136,8 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   onUnpublish,
   isUnpublishing = false,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
+  const pageLabel = (page: EditorPage) => (isEn ? PAGE_LABELS_EN[page.id] ?? page.label : page.label);
   const [isPageDropdownOpen, setIsPageDropdownOpen] = useState(false);
   const pageDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -138,7 +165,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   const deviceModes = [
     { mode: 'desktop' as const, icon: Monitor, label: 'Desktop', visibility: 'hidden lg:flex' },
     { mode: 'tablet' as const, icon: Tablet, label: 'Tablet', visibility: 'hidden sm:flex' },
-    { mode: 'mobile' as const, icon: Smartphone, label: 'Ponsel', visibility: 'flex' },
+    { mode: 'mobile' as const, icon: Smartphone, label: isEn ? 'Mobile' : 'Ponsel', visibility: 'flex' },
   ];
 
   return (
@@ -158,17 +185,17 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
 
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="font-semibold text-xs sm:text-[13px] text-[#202223] truncate max-w-[68px] min-[360px]:max-w-[90px] min-[420px]:max-w-[130px] sm:max-w-[180px] md:max-w-[220px]">
-            {store.name || 'Toko UMKM'}
+            {store.name || (isEn ? 'MSME Store' : 'Toko UMKM')}
           </span>
           {hasChanges ? (
-            <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0" title="Ada perubahan belum disimpan">
+            <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0" title={isEn ? 'There are unsaved changes' : 'Ada perubahan belum disimpan'}>
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
               <span className="hidden min-[480px]:inline">Draft</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0" title="Semua perubahan tersimpan">
+            <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0" title={isEn ? 'All changes saved' : 'Semua perubahan tersimpan'}>
               <Check className="w-2.5 h-2.5" />
-              <span className="hidden min-[480px]:inline">Tersimpan</span>
+              <span className="hidden min-[480px]:inline">{isEn ? 'Saved' : 'Tersimpan'}</span>
             </span>
           )}
         </div>
@@ -212,7 +239,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
             className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[#E1E3E5] hover:bg-[#F6F6F7] transition cursor-pointer text-xs sm:text-[13px] font-medium text-[#202223]"
           >
             <FileText className="w-3.5 h-3.5 text-[#8C9196]" />
-            <span className="truncate max-w-[120px]">{currentPage?.label || 'Halaman Utama'}</span>
+            <span className="truncate max-w-[120px]">{currentPage ? pageLabel(currentPage) : (isEn ? 'Main Page' : 'Halaman Utama')}</span>
             <ChevronDown className={`w-3.5 h-3.5 text-[#8C9196] transition-transform duration-200 ${isPageDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
@@ -225,7 +252,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
                 return (
                   <div key={catName} className="mb-2 last:mb-0">
                     <div className="px-3.5 py-1 text-[11px] font-bold text-[#8C9196] uppercase tracking-wider">
-                      {catName}
+                      {isEn ? PAGE_CATEGORY_EN[catName] : catName}
                     </div>
                     <div className="mt-0.5 space-y-0.5 px-1.5">
                       {catPages.map((page) => {
@@ -251,7 +278,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
                           >
                             <div className="flex items-center gap-2.5">
                               <Icon className={`w-4 h-4 ${isActive ? 'text-[#2C6ECB]' : 'text-[#6D7175]'}`} />
-                              <span>{page.label}</span>
+                              <span>{pageLabel(page)}</span>
                             </div>
                             {isActive && <Check className="w-3.5 h-3.5 text-[#2C6ECB]" />}
                           </button>
@@ -303,7 +330,7 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
             className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border transition flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${
               isFullscreen ? 'bg-[#202223] text-white border-[#202223]' : 'border-[#E1E3E5] text-[#5C5F62] hover:bg-[#F6F6F7]'
             }`}
-            title={isFullscreen ? 'Keluar Layar Penuh (Esc)' : 'Layar Penuh Canvas'}
+            title={isFullscreen ? (isEn ? 'Exit Full Screen (Esc)' : 'Keluar Layar Penuh (Esc)') : (isEn ? 'Full Screen Canvas' : 'Layar Penuh Canvas')}
           >
             {isFullscreen ? (
               <Minimize2 className="w-3.5 h-3.5" />
@@ -318,10 +345,10 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
           type="button"
           onClick={onOpenStorefront}
           className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg border border-[#E1E3E5] text-[#202223] hover:bg-[#F6F6F7] transition flex items-center gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs"
-          title="Buka Pratinjau Website Toko (Tab Baru)"
+          title={isEn ? 'Open Store Website Preview (New Tab)' : 'Buka Pratinjau Website Toko (Tab Baru)'}
         >
           <Eye className="w-3.5 h-3.5 text-[#5C5F62]" />
-          <span className="hidden sm:inline">Pratinjau</span>
+          <span className="hidden sm:inline">{isEn ? 'Preview' : 'Pratinjau'}</span>
           <ExternalLink className="w-3 h-3 text-[#8C9196] hidden md:inline ml-0.5" />
         </button>
 
@@ -332,20 +359,20 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
             onClick={onUnpublish}
             disabled={isUnpublishing}
             className="p-1.5 sm:px-3.5 sm:py-1.5 rounded-lg text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
-            title="Tarik publikasi website toko (kembalikan ke mode draf)"
+            title={isEn ? 'Unpublish the store website (back to draft mode)' : 'Tarik publikasi website toko (kembalikan ke mode draf)'}
           >
             <EyeOff className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{isUnpublishing ? 'Memproses...' : 'Unpublish'}</span>
+            <span className="hidden sm:inline">{isUnpublishing ? (isEn ? 'Processing...' : 'Memproses...') : 'Unpublish'}</span>
           </button>
         ) : (
           <button
             type="button"
             onClick={onPublish}
             className="p-1.5 sm:px-3.5 sm:py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
-            title="Publikasikan website toko ke publik"
+            title={isEn ? 'Publish the store website to the public' : 'Publikasikan website toko ke publik'}
           >
             <Globe className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Publikasikan</span>
+            <span className="hidden sm:inline">{isEn ? 'Publish' : 'Publikasikan'}</span>
           </button>
         )}
 
@@ -359,10 +386,10 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
               ? 'bg-[#008060] hover:bg-[#006e52] shadow-sm ring-1 ring-[#008060]/20'
               : 'bg-[#008060] hover:bg-[#006e52]'
           } ${isSaving ? 'opacity-70 cursor-wait' : ''}`}
-          title="Simpan Perubahan Layout"
+          title={isEn ? 'Save Layout Changes' : 'Simpan Perubahan Layout'}
         >
           <Save className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{isSaving ? 'Menyimpan...' : 'Simpan'}</span>
+          <span className="hidden sm:inline">{isSaving ? (isEn ? 'Saving...' : 'Menyimpan...') : (isEn ? 'Save' : 'Simpan')}</span>
         </button>
       </div>
     </header>

@@ -3,6 +3,7 @@ import { ProductGridSettings, ThemeSettings } from '../schema';
 import { Product } from '../../types';
 import { ShoppingCart, Eye, Heart } from 'lucide-react';
 import { STORE_ROUTES, formatRupiah, productHref } from '../storefrontLinks';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface Props {
   settings: ProductGridSettings;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, products, themeId }) => {
+  const { isEn } = useLanguage();
   const displayProducts = (products || []).slice(0, settings.maxItems || 8);
   // Navigasi memakai rute toko yang sama dengan navbar tema (/katalog, /produk/:slug).
   const navigate = (href: string) => { window.location.assign(href); };
@@ -25,7 +27,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">{settings.title}</h2>
           )}
           <div className="py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-            <p className="text-gray-400 text-sm font-medium">Belum ada produk yang ditampilkan.</p>
+            <p className="text-gray-400 text-sm font-medium">{isEn ? 'No products to display yet.' : 'Belum ada produk yang ditampilkan.'}</p>
           </div>
         </div>
       </section>
@@ -41,7 +43,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
             <div className="flex items-end justify-between mb-10 border-b border-gray-200 pb-4">
               <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 uppercase tracking-tighter storefront-heading-section">{settings.title}</h2>
               <a href={STORE_ROUTES.catalog} className="text-sm font-bold text-[#0055FF] hover:text-blue-700 transition-colors flex items-center gap-2 group">
-                Lihat Semua 
+                {isEn ? 'View All' : 'Lihat Semua'} 
                 <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-[#0055FF] group-hover:text-white transition-colors">
                   &rarr;
                 </span>
@@ -74,7 +76,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
                       <p className="text-[#0055FF] font-black text-sm sm:text-base md:text-lg storefront-card-price">{formatRupiah(product.price)}</p>
                     )}
                     <button className="w-full mt-4 py-2.5 bg-gray-50 text-gray-900 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#0055FF] hover:text-white transition-colors flex items-center justify-center gap-2 group/btn" onClick={(e) => { e.stopPropagation(); openProduct(product); }}>
-                      <ShoppingCart className="w-4 h-4 group-hover/btn:scale-110 transition-transform" /> Beli
+                      <ShoppingCart className="w-4 h-4 group-hover/btn:scale-110 transition-transform" /> {isEn ? 'Buy' : 'Beli'}
                     </button>
                   </div>
                 </div>
@@ -111,7 +113,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
                     <div className="absolute -inset-4 bg-[#241A1A]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10 blur-xl"></div>
                     <div className="aspect-[3/4] overflow-hidden mb-8 relative">
                       <div className="absolute inset-0 bg-[#241A1A]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 flex items-center justify-center">
-                        <span className="text-white text-sm uppercase tracking-[0.3em] font-light border border-white/30 px-8 py-3 backdrop-blur-sm">Lihat</span>
+                        <span className="text-white text-sm uppercase tracking-[0.3em] font-light border border-white/30 px-8 py-3 backdrop-blur-sm">{isEn ? 'View' : 'Lihat'}</span>
                       </div>
                       {row[0].imageUrl && <img src={row[0].imageUrl} alt={row[0].name} className="w-full h-full object-cover filter brightness-95 group-hover:brightness-100 group-hover:scale-105 transition-all duration-[2s] ease-out" />}
                     </div>
@@ -127,7 +129,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
                     <div className="absolute -inset-4 bg-[#241A1A]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10 blur-xl"></div>
                     <div className="aspect-square overflow-hidden mb-8 relative">
                       <div className="absolute inset-0 bg-[#241A1A]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 flex items-center justify-center">
-                        <span className="text-white text-sm uppercase tracking-[0.3em] font-light border border-white/30 px-8 py-3 backdrop-blur-sm">Lihat</span>
+                        <span className="text-white text-sm uppercase tracking-[0.3em] font-light border border-white/30 px-8 py-3 backdrop-blur-sm">{isEn ? 'View' : 'Lihat'}</span>
                       </div>
                       {row[1].imageUrl && <img src={row[1].imageUrl} alt={row[1].name} className="w-full h-full object-cover filter brightness-95 group-hover:brightness-100 group-hover:scale-105 transition-all duration-[2s] ease-out" />}
                     </div>
@@ -213,7 +215,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
                   {/* Hover Add to Cart Overlay */}
                   <div className="absolute inset-x-3 sm:inset-x-4 bottom-3 sm:bottom-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-20">
                     <button className="w-full py-2.5 sm:py-3.5 bg-white/90 backdrop-blur-md text-[#3E3E3E] text-xs sm:text-sm font-semibold rounded-xl sm:rounded-2xl shadow-lg hover:bg-[#D9A05B] hover:text-white transition-colors" onClick={(e) => { e.stopPropagation(); openProduct(product); }}>
-                      Beli Sekarang
+                      {isEn ? 'Buy Now' : 'Beli Sekarang'}
                     </button>
                   </div>
 
@@ -255,7 +257,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
                 {/* Minimalist Hover Overlay */}
                 <div className="absolute inset-0 bg-white/20 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center">
                   <span className="px-6 sm:px-8 py-2.5 sm:py-3 bg-white text-[#1A1A1A] text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.25em] hover:bg-[#1A1A1A] hover:text-white transition-colors duration-300 shadow-xl" onClick={(e) => { e.stopPropagation(); openProduct(product); }}>
-                    Lihat Detail
+                    {isEn ? 'View Details' : 'Lihat Detail'}
                   </span>
                 </div>
               </div>
@@ -276,7 +278,7 @@ export const ProductGridSection: React.FC<Props> = ({ settings, themeSettings, p
 
         <div className="mt-12 sm:mt-24 text-center">
            <a href={STORE_ROUTES.catalog} className="inline-flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.3em] text-[#1A1A1A] group/link">
-              Lihat Semua Produk
+              {isEn ? 'View All Products' : 'Lihat Semua Produk'}
               <span className="w-8 h-px bg-[#1A1A1A] transition-all duration-500 group-hover/link:w-16"></span>
            </a>
         </div>

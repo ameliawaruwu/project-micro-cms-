@@ -18,7 +18,7 @@ import { EASE_SMOOTH, Reveal, RevealGroup, RevealItem } from './landingMotion';
 const ORDER_BARS = [38, 55, 46, 72, 60, 88, 100];
 
 export const FeaturesSection: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
 
   return (
     <section
@@ -78,7 +78,7 @@ export const FeaturesSection: React.FC = () => {
               <div className="flex items-end justify-between gap-3">
                 <div>
                   <p className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1A1414]">128</p>
-                  <p className="text-xs text-[#5F5652]">{t('features_tab_orders', 'Pesanan')} / 7 hari</p>
+                  <p className="text-xs text-[#5F5652]">{t('features_tab_orders', 'Pesanan')} / {isEn ? '7 days' : '7 hari'}</p>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
                   <TrendingUp className="w-3 h-3" /> +62%

@@ -4,6 +4,7 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
 import { sanitizeLinkHref } from '../../navMenu';
 import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Sorotan produk unggulan toko; tidak dirender bila toko belum punya produk. */
 export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -72,6 +73,7 @@ export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobi
 
 /** Keunggulan belanja di toko (teks umum, dapat diganti lewat judul/deskripsi section). */
 export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-1',
@@ -79,9 +81,9 @@ export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any; isMobile?:
     fallback: 'grid-cols-1 md:grid-cols-3',
   });
   const features = [
-    { title: 'Produk Berkualitas', desc: 'Setiap produk dipilih dan diperiksa sebelum dikirim.' },
-    { title: 'Pengiriman Cepat', desc: 'Pesanan diproses segera dan dikirim ke seluruh Indonesia.' },
-    { title: 'Pembayaran Aman', desc: 'Transaksi terlindungi dengan metode pembayaran tepercaya.' },
+    isEn ? { title: 'Quality Products', desc: 'Every product is selected and checked before shipping.' } : { title: 'Produk Berkualitas', desc: 'Setiap produk dipilih dan diperiksa sebelum dikirim.' },
+    isEn ? { title: 'Fast Shipping', desc: 'Orders are processed promptly and shipped across Indonesia.' } : { title: 'Pengiriman Cepat', desc: 'Pesanan diproses segera dan dikirim ke seluruh Indonesia.' },
+    isEn ? { title: 'Secure Payment', desc: 'Transactions are protected with trusted payment methods.' } : { title: 'Pembayaran Aman', desc: 'Transaksi terlindungi dengan metode pembayaran tepercaya.' },
   ];
   const description = sectionOptions.description || sectionOptions.subheading;
   const image = resolveSectionImage(sectionOptions);
@@ -127,13 +129,14 @@ export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any; isMobile?:
 
 /** Perbandingan produk toko (kategori & harga); butuh minimal dua produk. */
 export const FuturisticProductComparison: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const products = useThemeProductsSource('futuristic').slice(0, 3);
   if (products.length < 2) return null;
 
   const colsClass = products.length === 3 ? 'grid-cols-4' : 'grid-cols-3';
   const rows: { label: string; value: (p: (typeof products)[number]) => string }[] = [
-    { label: 'Kategori', value: (p) => p.categoryName || '-' },
-    { label: 'Harga', value: (p) => formatRupiah(p.price) },
+    { label: isEn ? 'Category' : 'Kategori', value: (p) => p.categoryName || '-' },
+    { label: isEn ? 'Price' : 'Harga', value: (p) => formatRupiah(p.price) },
   ];
 
   return (
@@ -146,7 +149,7 @@ export const FuturisticProductComparison: React.FC<{ sectionOptions?: any }> = (
       </p>
       <div className="max-w-4xl mx-auto bg-[#0a0a0a] border border-gray-800 rounded-lg p-4 sm:p-8 shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-x-auto">
         <div className={`grid ${colsClass} gap-2 sm:gap-4 font-mono text-[11px] sm:text-sm uppercase text-purple-400 mb-4 sm:mb-6 border-b border-gray-800 pb-4 tracking-wider min-w-[320px]`}>
-          <div className="text-left">Produk</div>
+          <div className="text-left">{isEn ? 'Product' : 'Produk'}</div>
           {products.map((p) => (
             <a key={p.id} href={productHref(p)} className="min-w-0 line-clamp-2 break-words hover:text-white transition-colors">
               {p.name}

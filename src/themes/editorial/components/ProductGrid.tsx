@@ -6,6 +6,7 @@ import { Search, ShoppingBag } from 'lucide-react';
 import { cartService } from '../../../services/cartService';
 import { AddToCartButton, addProductToCart, useStorefrontSlug } from '../../storefrontCart';
 import { formatRupiah, productHref } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface EditorialProductGridProps {
   sectionOptions?: any;
@@ -22,6 +23,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
   deviceMode = 'desktop',
   readonly = false,
 }) => {
+  const { isEn } = useLanguage();
   const rawProducts = useThemeProductsSource('editorial');
   const storeSlug = useStorefrontSlug();
 
@@ -156,7 +158,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
                 <Search className="w-4 h-4 text-[#706866] absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Cari item..."
+                  placeholder={isEn ? 'Search items...' : 'Cari item...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-transparent border-b border-[#241A1A]/30 py-2 pr-6 text-xs md:text-sm font-serif italic text-[#241A1A] focus:outline-none focus:border-[#241A1A] placeholder:text-[#706866]/60"
@@ -169,7 +171,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
         {/* Products Grid */}
         {displayList.length === 0 ? (
           <div className="py-20 text-center text-sm italic text-[#706866] font-serif">
-            Tidak ada produk yang sesuai dengan kriteria kurasi ini.
+            {isEn ? 'No products match these curation criteria.' : 'Tidak ada produk yang sesuai dengan kriteria kurasi ini.'}
           </div>
         ) : (
           <div className={`grid ${gridColsClass}`}>
@@ -226,7 +228,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
                     className="mt-auto w-full min-w-0 py-2.5 px-2 sm:px-4 border border-[#241A1A] text-[#241A1A] text-[9px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] font-sans whitespace-nowrap hover:bg-[#241A1A] hover:text-white transition-colors duration-200 flex items-center justify-center gap-1.5 sm:gap-2"
                   >
                     <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
-                    <span>+ Keranjang</span>
+                    <span>{isEn ? '+ Cart' : '+ Keranjang'}</span>
                   </button>
                 </div>
               );

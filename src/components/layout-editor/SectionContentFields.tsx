@@ -7,6 +7,7 @@ import {
   DEFAULT_SUSTAINABILITY_PILLARS,
   SustainabilityPillar,
 } from '../../themes/sectionContent';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * Isian konten khusus untuk bagian yang memiliki daftar/field sendiri (di luar Judul &
@@ -49,35 +50,36 @@ const RemoveItemButton: React.FC<{ onClick: () => void; label: string }> = ({ on
 const IngredientStoryFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId'>> = ({ opts, onChange }) => {
   const items: string[] = Array.isArray(opts.ingredients) ? opts.ingredients : DEFAULT_INGREDIENT_ITEMS;
   const setItems = (next: string[]) => onChange({ ingredients: next });
+  const { isEn } = useLanguage();
 
   return (
     <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
       <div className="space-y-1">
-        <label className={labelClass}>Label Kecil di Atas Judul</label>
+        <label className={labelClass}>{isEn ? 'Small Label Above Title' : 'Label Kecil di Atas Judul'}</label>
         <input
           type="text"
           value={opts.eyebrowText ?? DEFAULT_INGREDIENT_EYEBROW}
           onChange={(e) => onChange({ eyebrowText: e.target.value })}
-          placeholder="Kosongkan untuk menyembunyikan"
+          placeholder={isEn ? 'Leave empty to hide' : 'Kosongkan untuk menyembunyikan'}
           className={inputClass}
         />
       </div>
       <div className="space-y-2">
-        <label className={labelClass}>Daftar Bahan</label>
+        <label className={labelClass}>{isEn ? 'Ingredient List' : 'Daftar Bahan'}</label>
         {items.map((item, index) => (
           <div key={index} className="flex items-center gap-1.5">
             <input
               type="text"
               value={item}
               onChange={(e) => setItems(items.map((it, i) => (i === index ? e.target.value : it)))}
-              placeholder={`Bahan ${index + 1}`}
+              placeholder={isEn ? `Ingredient ${index + 1}` : `Bahan ${index + 1}`}
               className={inputClass}
             />
-            <RemoveItemButton label={`Hapus bahan ${index + 1}`} onClick={() => setItems(items.filter((_, i) => i !== index))} />
+            <RemoveItemButton label={isEn ? `Remove ingredient ${index + 1}` : `Hapus bahan ${index + 1}`} onClick={() => setItems(items.filter((_, i) => i !== index))} />
           </div>
         ))}
         <AddItemButton onClick={() => setItems([...items, ''])} disabled={items.length >= MAX_LIST_ITEMS}>
-          Tambah Bahan
+          {isEn ? 'Add Ingredient' : 'Tambah Bahan'}
         </AddItemButton>
       </div>
     </div>
@@ -89,10 +91,11 @@ const SustainabilityFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId'
   const setPillars = (next: SustainabilityPillar[]) => onChange({ features: next });
   const updatePillar = (index: number, patch: Partial<SustainabilityPillar>) =>
     setPillars(pillars.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+  const { isEn } = useLanguage();
 
   return (
     <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
-      <label className={labelClass}>Poin Komitmen</label>
+      <label className={labelClass}>{isEn ? 'Commitment Points' : 'Poin Komitmen'}</label>
       {pillars.map((pillar, index) => (
         <div key={index} className="p-2.5 rounded-lg bg-[#F6F6F7] border border-[#E1E3E5] space-y-1.5">
           <div className="flex items-center gap-1.5">
@@ -100,38 +103,40 @@ const SustainabilityFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId'
               type="text"
               value={pillar.title || ''}
               onChange={(e) => updatePillar(index, { title: e.target.value })}
-              placeholder={`Judul poin ${index + 1}`}
+              placeholder={isEn ? `Point title ${index + 1}` : `Judul poin ${index + 1}`}
               className={inputClass}
             />
-            <RemoveItemButton label={`Hapus poin ${index + 1}`} onClick={() => setPillars(pillars.filter((_, i) => i !== index))} />
+            <RemoveItemButton label={isEn ? `Remove point ${index + 1}` : `Hapus poin ${index + 1}`} onClick={() => setPillars(pillars.filter((_, i) => i !== index))} />
           </div>
           <textarea
             rows={2}
             value={pillar.desc || ''}
             onChange={(e) => updatePillar(index, { desc: e.target.value })}
-            placeholder="Penjelasan singkat"
+            placeholder={isEn ? 'Short description' : 'Penjelasan singkat'}
             className={inputClass}
           />
         </div>
       ))}
       <AddItemButton onClick={() => setPillars([...pillars, { title: '', desc: '' }])} disabled={pillars.length >= MAX_LIST_ITEMS}>
-        Tambah Poin
+        {isEn ? 'Add Point' : 'Tambah Poin'}
       </AddItemButton>
     </div>
   );
 };
 
-const STORE_INFO_FIELDS: Array<{ key: string; label: string; placeholder: string; multiline?: boolean }> = [
-  { key: 'address', label: 'Alamat', placeholder: 'Kosongkan untuk memakai alamat di Pengaturan Toko', multiline: true },
-  { key: 'email', label: 'Email', placeholder: 'Kosongkan untuk memakai email toko' },
-  { key: 'phone', label: 'Nomor WhatsApp / Telepon', placeholder: 'Contoh: 081234567890' },
-  { key: 'openingHours', label: 'Jam Operasional', placeholder: 'Contoh: Setiap hari, 08:00 - 20:00 WIB' },
+const getStoreInfoFields = (isEn: boolean): Array<{ key: string; label: string; placeholder: string; multiline?: boolean }> => [
+  { key: 'address', label: isEn ? 'Address' : 'Alamat', placeholder: isEn ? 'Leave empty to use the address in Store Settings' : 'Kosongkan untuk memakai alamat di Pengaturan Toko', multiline: true },
+  { key: 'email', label: 'Email', placeholder: isEn ? 'Leave empty to use the store email' : 'Kosongkan untuk memakai email toko' },
+  { key: 'phone', label: isEn ? 'WhatsApp / Phone Number' : 'Nomor WhatsApp / Telepon', placeholder: isEn ? 'Example: 081234567890' : 'Contoh: 081234567890' },
+  { key: 'openingHours', label: isEn ? 'Opening Hours' : 'Jam Operasional', placeholder: isEn ? 'Example: Every day, 08:00 - 20:00 WIB' : 'Contoh: Setiap hari, 08:00 - 20:00 WIB' },
 ];
 
-const StoreInfoFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId'>> = ({ opts, onChange }) => (
+const StoreInfoFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId'>> = ({ opts, onChange }) => {
+  const { isEn } = useLanguage();
+  return (
   <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
-    <label className={labelClass}>Detail Kontak</label>
-    {STORE_INFO_FIELDS.map(({ key, label, placeholder, multiline }) => (
+    <label className={labelClass}>{isEn ? 'Contact Details' : 'Detail Kontak'}</label>
+    {getStoreInfoFields(isEn).map(({ key, label, placeholder, multiline }) => (
       <div key={key} className="space-y-1">
         <label className="text-[11px] font-bold text-gray-700">{label}</label>
         {multiline ? (
@@ -142,7 +147,7 @@ const StoreInfoFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId'>> = 
       </div>
     ))}
     <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
-      <span className="text-[12px] text-[#202223]">Tampilkan Tombol Chat WhatsApp</span>
+      <span className="text-[12px] text-[#202223]">{isEn ? 'Show WhatsApp Chat Button' : 'Tampilkan Tombol Chat WhatsApp'}</span>
       <input
         type="checkbox"
         checked={opts.showWhatsAppButton !== false}
@@ -151,7 +156,8 @@ const StoreInfoFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId'>> = 
       />
     </label>
   </div>
-);
+  );
+};
 
 export const SectionContentFields: React.FC<SectionContentFieldsProps> = ({ sectionId, ...rest }) => {
   switch (sectionId) {

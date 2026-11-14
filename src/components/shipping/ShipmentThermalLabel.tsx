@@ -1,6 +1,6 @@
 import React from 'react';
 import { Order, ShippingBranch } from '../../types';
-import { formatDateIndo } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ShipmentThermalLabelProps {
   order: Order;
@@ -19,6 +19,21 @@ export const ShipmentThermalLabel: React.FC<ShipmentThermalLabelProps> = ({
   trackingNumber,
   selectedBranch,
 }) => {
+  const { isEn } = useLanguage();
+  const labelDate = (() => {
+    const raw = order.createdAt || new Date().toISOString();
+    try {
+      return new Intl.DateTimeFormat(isEn ? 'en-US' : 'id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(raw));
+    } catch {
+      return raw;
+    }
+  })();
   return (
     <div
       id="printable-shipping-label"
@@ -39,7 +54,7 @@ export const ShipmentThermalLabel: React.FC<ShipmentThermalLabelProps> = ({
             {deliveryType === 'pickup' ? 'PICK-UP' : 'DROP-OFF'}
           </span>
           <p className="text-[9px] text-zinc-500 font-mono mt-0.5">
-            {formatDateIndo(order.createdAt || new Date().toISOString())}
+            {labelDate}
           </p>
         </div>
       </div>
@@ -62,7 +77,7 @@ export const ShipmentThermalLabel: React.FC<ShipmentThermalLabelProps> = ({
           {trackingNumber}
         </div>
         <div className="text-[10px] text-zinc-500 font-mono">
-          No. Pesanan: #{order.orderNumber}
+          {isEn ? 'Order No.' : 'No. Pesanan'}: #{order.orderNumber}
         </div>
       </div>
 
@@ -71,16 +86,16 @@ export const ShipmentThermalLabel: React.FC<ShipmentThermalLabelProps> = ({
         {/* Shipper */}
         <div className="pr-2 border-r border-zinc-300 space-y-1">
           <div className="font-bold uppercase text-[9px] tracking-wider text-zinc-500">
-            Pengirim (Shipper):
+            {isEn ? 'Shipper:' : 'Pengirim (Shipper):'}
           </div>
           <div className="font-bold text-zinc-900 text-xs">
-            {selectedBranch?.branchName || 'Gudang Utama'}
+            {selectedBranch?.branchName || (isEn ? 'Main Warehouse' : 'Gudang Utama')}
           </div>
           <div className="text-zinc-700">
-            {selectedBranch?.picName || 'Admin Gudang'} • {selectedBranch?.picPhone || '-'}
+            {selectedBranch?.picName || (isEn ? 'Warehouse Admin' : 'Admin Gudang')} • {selectedBranch?.picPhone || '-'}
           </div>
           <div className="text-zinc-600 text-[10px]">
-            {selectedBranch?.address || 'Alamat Asal Gudang'}
+            {selectedBranch?.address || (isEn ? 'Warehouse Origin Address' : 'Alamat Asal Gudang')}
           </div>
           <div className="font-semibold text-zinc-800 text-[10px]">
             {selectedBranch?.city} {selectedBranch?.postalCode || ''}
@@ -90,7 +105,7 @@ export const ShipmentThermalLabel: React.FC<ShipmentThermalLabelProps> = ({
         {/* Consignee */}
         <div className="pl-1 space-y-1">
           <div className="font-bold uppercase text-[9px] tracking-wider text-zinc-500">
-            Penerima (Consignee):
+            {isEn ? 'Consignee:' : 'Penerima (Consignee):'}
           </div>
           <div className="font-bold text-zinc-900 text-xs">
             {order.customerName}
@@ -110,18 +125,20 @@ export const ShipmentThermalLabel: React.FC<ShipmentThermalLabelProps> = ({
       {/* Spesifikasi Paket & Barang */}
       <div className="space-y-1.5 text-[11px] leading-tight border-b-2 border-zinc-900 pb-2.5">
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-zinc-600">Berat Paket:</span>
-          <span className="font-bold font-mono text-zinc-900">1.0 Kg (Standar)</span>
+          <span className="font-semibold text-zinc-600">{isEn ? 'Parcel Weight:' : 'Berat Paket:'}</span>
+          <span className="font-bold font-mono text-zinc-900">{isEn ? '1.0 Kg (Standard)' : '1.0 Kg (Standar)'}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-zinc-600">Metode Bayar:</span>
+          <span className="font-semibold text-zinc-600">{isEn ? 'Payment Method:' : 'Metode Bayar:'}</span>
           <span className="font-bold text-zinc-900">
-            {order.paymentMethod === 'COD' ? 'COD (Bayar di Tempat)' : 'NON-COD (Lunas)'}
+            {order.paymentMethod === 'COD'
+              ? (isEn ? 'COD (Cash on Delivery)' : 'COD (Bayar di Tempat)')
+              : (isEn ? 'NON-COD (Paid)' : 'NON-COD (Lunas)')}
           </span>
         </div>
         {order.items && order.items.length > 0 && (
           <div className="pt-1">
-            <span className="font-semibold text-[10px] text-zinc-500 block">Rincian Barang:</span>
+            <span className="font-semibold text-[10px] text-zinc-500 block">{isEn ? 'Item Details:' : 'Rincian Barang:'}</span>
             <p className="text-[10px] text-zinc-800 line-clamp-2">
               {order.items.map((it) => `${it.productName} (x${it.quantity})`).join(', ')}
             </p>
@@ -129,7 +146,7 @@ export const ShipmentThermalLabel: React.FC<ShipmentThermalLabelProps> = ({
         )}
         {order.notes && (
           <div className="text-[10px] text-zinc-500 italic">
-            Catatan: {order.notes}
+            {isEn ? 'Notes' : 'Catatan'}: {order.notes}
           </div>
         )}
       </div>
@@ -137,7 +154,7 @@ export const ShipmentThermalLabel: React.FC<ShipmentThermalLabelProps> = ({
       {/* Footer Label Thermal */}
       <div className="flex items-center justify-between text-[9px] text-zinc-500 pt-0.5 font-mono">
         <span>Biteship Logistics Aggregator</span>
-        <span>Format Thermal A6 (10x15 cm)</span>
+        <span>{isEn ? 'A6 Thermal Format (10x15 cm)' : 'Format Thermal A6 (10x15 cm)'}</span>
       </div>
     </div>
   );

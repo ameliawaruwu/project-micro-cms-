@@ -106,6 +106,9 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   const [sortBy, setSortBy] = useState<'popular' | 'price-asc' | 'price-desc' | 'discount' | 'newest'>('popular');
   const [visibleCount, setVisibleCount] = useState(12);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  /** Nama kategori sistem ('Semua'/'Lainnya') diterjemahkan; kategori merchant apa adanya. */
+  const catLabel = (name: string) =>
+    isEn ? (name === 'Semua' ? 'All' : name === 'Lainnya' ? 'Others' : name) : name;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -223,11 +226,11 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 {storeName}
               </span>
               <h1 className={rc("text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-black text-white uppercase tracking-tighter mb-4 storefront-heading-hero")}>
-                KATALOG PRODUK
+                {isEn ? 'PRODUCT CATALOG' : 'KATALOG PRODUK'}
               </h1>
               <div className="flex flex-wrap gap-3 items-center">
                 <span className={rc("text-sm sm:text-lg font-black text-black bg-white inline-block px-4 py-2 border-4 border-black uppercase")}>
-                  {filteredAndSortedProducts.length} PRODUK TERSEDIA
+                  {filteredAndSortedProducts.length} {isEn ? 'PRODUCTS AVAILABLE' : 'PRODUK TERSEDIA'}
                 </span>
               </div>
             </div>
@@ -238,7 +241,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-black" />
                 <input
                   type="text"
-                  placeholder="CARI PRODUK..."
+                  placeholder={isEn ? 'SEARCH PRODUCTS...' : 'CARI PRODUK...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-12 pr-10 py-3.5 bg-white border-4 border-black font-black uppercase text-sm focus:outline-none focus:bg-yellow-300 shadow-[5px_5px_0px_rgba(0,0,0,1)]"
@@ -259,14 +262,14 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   <select
                     value={sortBy}
                     onChange={(e: any) => setSortBy(e.target.value)}
-                    aria-label="Urutkan Produk"
+                    aria-label={isEn ? 'Sort Products' : 'Urutkan Produk'}
                     className="w-full appearance-none px-4 sm:px-6 py-3.5 pr-10 bg-white border-4 border-black font-black uppercase text-xs shadow-[4px_4px_0px_rgba(0,0,0,1)] focus:outline-none cursor-pointer"
                   >
-                    <option value="popular">URUTKAN: PALING POPULER</option>
-                    <option value="price-asc">HARGA: TERMURAH</option>
-                    <option value="price-desc">HARGA: TERMAHAL</option>
-                    <option value="discount">DISKON TERBESAR</option>
-                    <option value="newest">PRODUK TERBARU</option>
+                    <option value="popular">{isEn ? 'SORT: MOST POPULAR' : 'URUTKAN: PALING POPULER'}</option>
+                    <option value="price-asc">{isEn ? 'PRICE: LOWEST' : 'HARGA: TERMURAH'}</option>
+                    <option value="price-desc">{isEn ? 'PRICE: HIGHEST' : 'HARGA: TERMAHAL'}</option>
+                    <option value="discount">{isEn ? 'BIGGEST DISCOUNT' : 'DISKON TERBESAR'}</option>
+                    <option value="newest">{isEn ? 'NEWEST PRODUCTS' : 'PRODUK TERBARU'}</option>
                   </select>
                   <ChevronDown className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -285,7 +288,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                       : 'bg-white text-black hover:bg-yellow-300 shadow-[3px_3px_0px_rgba(0,0,0,1)]'
                   }`}
                 >
-                  {cat.name} ({cat.count})
+                  {catLabel(cat.name)} ({cat.count})
                 </button>
               ))}
             </div>
@@ -338,7 +341,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                     {/* Stok */}
                     <div className="flex items-center justify-end text-xs font-black mb-2 pt-2 border-t-2 border-black">
                       <span className="text-emerald-700 bg-emerald-100 px-1.5 py-0.5 text-[10px] border border-black">
-                        Stok: {p.stock}
+                        {isEn ? 'Stock' : 'Stok'}: {p.stock}
                       </span>
                     </div>
 
@@ -362,8 +365,8 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                         type="button"
                         onClick={(e) => handleAddToCart(e, p)}
                         className="shrink-0 w-9 sm:w-11 py-2.5 bg-yellow-300 hover:bg-yellow-400 text-black border-2 border-black flex items-center justify-center font-black transition cursor-pointer"
-                        title="Tambah ke Keranjang"
-                        aria-label="Tambah ke Keranjang"
+                        title={isEn ? 'Add to Cart' : 'Tambah ke Keranjang'}
+                        aria-label={isEn ? 'Add to Cart' : 'Tambah ke Keranjang'}
                       >
                         <ShoppingBag className="w-4 h-4" />
                       </button>
@@ -372,7 +375,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                         onClick={(e) => handleBuyNow(e, p)}
                         className={rc("flex-1 min-w-0 px-1 py-2.5 bg-black hover:bg-[#FF0000] text-white font-black uppercase text-[10px] sm:text-xs whitespace-nowrap truncate border-2 border-black transition cursor-pointer")}
                       >
-                        Beli<span className={rc("hidden sm:inline")}> Sekarang</span>
+                        {isEn ? 'Buy' : 'Beli'}<span className={rc("hidden sm:inline")}>{isEn ? ' Now' : ' Sekarang'}</span>
                       </button>
                     </div>
                   </div>
@@ -387,7 +390,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   onClick={() => setVisibleCount(prev => prev + 8)}
                   className="px-8 py-4 bg-black text-white font-black text-sm uppercase tracking-wider border-4 border-black hover:bg-yellow-300 hover:text-black transition shadow-[6px_6px_0px_rgba(255,0,0,1)] cursor-pointer"
                 >
-                  MUAT LEBIH BANYAK PRODUK ({displayedProducts.length} DARI {filteredAndSortedProducts.length})
+                  {isEn ? 'LOAD MORE PRODUCTS' : 'MUAT LEBIH BANYAK PRODUK'} ({displayedProducts.length} {isEn ? 'OF' : 'DARI'} {filteredAndSortedProducts.length})
                 </button>
               </div>
             )}
@@ -403,7 +406,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
           <div className={rc("max-w-7xl mx-auto px-4 sm:px-6 md:px-8")}>
             <div className="text-center mb-12">
               <span className="text-xs uppercase tracking-[0.3em] text-[#706866] block mb-2 font-sans font-semibold">
-                Koleksi Pilihan
+                {isEn ? 'Curated Collection' : 'Koleksi Pilihan'}
               </span>
               <h1 className={rc("text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-normal font-serif mb-4 tracking-wide storefront-heading-hero")}>
                 {storeName}
@@ -420,7 +423,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#706866]" />
                 <input
                   type="text"
-                  placeholder="Cari koleksi katalog..."
+                  placeholder={isEn ? 'Search the catalog...' : 'Cari koleksi katalog...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white/70 border border-[#241A1A]/20 pl-9 pr-8 py-2 rounded-full text-xs font-sans text-[#241A1A] focus:outline-none focus:border-[#241A1A]"
@@ -437,18 +440,18 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
               {/* Sort Selector */}
               <div className={rc("flex items-center gap-3 w-full md:w-auto justify-end font-sans text-xs")}>
-                <span className={rc("text-gray-500 hidden sm:inline")}>Urutkan:</span>
+                <span className={rc("text-gray-500 hidden sm:inline")}>{isEn ? 'Sort:' : 'Urutkan:'}</span>
                 <select
                   value={sortBy}
                   onChange={(e: any) => setSortBy(e.target.value)}
-                  aria-label="Urutkan Koleksi"
+                  aria-label={isEn ? 'Sort Collection' : 'Urutkan Koleksi'}
                   className="bg-transparent border-b border-[#241A1A]/30 py-1.5 font-sans text-xs text-[#241A1A] focus:outline-none cursor-pointer"
                 >
-                  <option value="popular">Kurasi Pilihan</option>
-                  <option value="price-asc">Harga: Rendah ke Tinggi</option>
-                  <option value="price-desc">Harga: Tinggi ke Rendah</option>
-                  <option value="discount">Promo & Diskon</option>
-                  <option value="newest">Koleksi Terbaru</option>
+                  <option value="popular">{isEn ? 'Curated Picks' : 'Kurasi Pilihan'}</option>
+                  <option value="price-asc">{isEn ? 'Price: Low to High' : 'Harga: Rendah ke Tinggi'}</option>
+                  <option value="price-desc">{isEn ? 'Price: High to Low' : 'Harga: Tinggi ke Rendah'}</option>
+                  <option value="discount">{isEn ? 'Promos & Discounts' : 'Promo & Diskon'}</option>
+                  <option value="newest">{isEn ? 'Newest Collection' : 'Koleksi Terbaru'}</option>
                 </select>
               </div>
             </div>
@@ -465,7 +468,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                       : 'text-[#706866] hover:text-[#241A1A]'
                   }`)}
                 >
-                  {cat.name} <span className="text-[11px] opacity-70">({cat.count})</span>
+                  {catLabel(cat.name)} <span className="text-[11px] opacity-70">({cat.count})</span>
                 </button>
               ))}
             </div>
@@ -512,7 +515,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   <div>
                     <div className="flex items-center justify-end font-sans text-xs text-gray-500 mb-2">
                       <span className="text-[11px] text-emerald-800 font-medium">
-                        Stok {p.stock} unit
+                        {isEn ? `Stock ${p.stock} units` : `Stok ${p.stock} unit`}
                       </span>
                     </div>
 
@@ -532,8 +535,8 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                         type="button"
                         onClick={(e) => handleAddToCart(e, p)}
                         className="shrink-0 px-2.5 sm:px-3 py-2.5 border border-[#241A1A] hover:bg-[#241A1A] hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                        title="Tambah ke Keranjang"
-                        aria-label="Tambah ke Keranjang"
+                        title={isEn ? 'Add to Cart' : 'Tambah ke Keranjang'}
+                        aria-label={isEn ? 'Add to Cart' : 'Tambah ke Keranjang'}
                       >
                         <ShoppingBag className="w-4 h-4" />
                       </button>
@@ -542,7 +545,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                         onClick={(e) => handleBuyNow(e, p)}
                         className="flex-1 min-w-0 py-2.5 px-2 bg-[#241A1A] hover:bg-[#66000E] text-white font-sans text-[10px] sm:text-xs uppercase tracking-[0.1em] sm:tracking-[0.15em] whitespace-nowrap truncate transition-colors cursor-pointer"
                       >
-                        Beli<span className={rc("hidden sm:inline")}> Sekarang</span>
+                        {isEn ? 'Buy' : 'Beli'}<span className={rc("hidden sm:inline")}>{isEn ? ' Now' : ' Sekarang'}</span>
                       </button>
                     </div>
                   </div>
@@ -557,7 +560,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   onClick={() => setVisibleCount(prev => prev + 8)}
                   className="px-10 py-3.5 border border-[#241A1A] hover:bg-[#241A1A] hover:text-white font-sans text-xs uppercase tracking-[0.2em] transition-all cursor-pointer"
                 >
-                  Lihat Lebih Banyak ({displayedProducts.length} dari {filteredAndSortedProducts.length})
+                  {isEn ? 'View More' : 'Lihat Lebih Banyak'} ({displayedProducts.length} {isEn ? 'of' : 'dari'} {filteredAndSortedProducts.length})
                 </button>
               </div>
             )}
@@ -625,7 +628,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                       : 'text-[#827367] hover:text-[#9A6027]'
                   }`}
                 >
-                  {cat.name} ({cat.count})
+                  {catLabel(cat.name)} ({cat.count})
                 </button>
               ))}
             </div>
@@ -713,7 +716,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             <div className="max-w-7xl mx-auto">
               <div className="inline-flex items-center gap-2 bg-blue-600/30 border border-blue-400/40 text-blue-200 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-300 animate-pulse"></span>
-                Katalog Produk
+                {isEn ? 'Product Catalog' : 'Katalog Produk'}
               </div>
               <h1 className={rc("text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 storefront-heading-hero")}>
                 {storeName}
@@ -729,7 +732,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Cari nama produk atau kategori..."
+                  placeholder={isEn ? 'Search product name or category...' : 'Cari nama produk atau kategori...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-9 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/30 focus:border-[#1E40AF] transition"
@@ -740,18 +743,18 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <ArrowUpDown className="w-4 h-4 text-gray-400" />
-                <span className="text-xs font-medium text-gray-500">Urutkan:</span>
+                <span className="text-xs font-medium text-gray-500">{isEn ? 'Sort:' : 'Urutkan:'}</span>
                 <select
                   value={sortBy}
                   onChange={(e: any) => setSortBy(e.target.value)}
-                  aria-label="Urutkan Produk"
+                  aria-label={isEn ? 'Sort Products' : 'Urutkan Produk'}
                   className="py-2 px-3 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/20 focus:border-[#1E40AF] cursor-pointer"
                 >
-                  <option value="popular">Paling Populer</option>
-                  <option value="price-asc">Harga Terendah</option>
-                  <option value="price-desc">Harga Tertinggi</option>
-                  <option value="discount">Diskon Terbesar</option>
-                  <option value="newest">Terbaru</option>
+                  <option value="popular">{isEn ? 'Most Popular' : 'Paling Populer'}</option>
+                  <option value="price-asc">{isEn ? 'Lowest Price' : 'Harga Terendah'}</option>
+                  <option value="price-desc">{isEn ? 'Highest Price' : 'Harga Tertinggi'}</option>
+                  <option value="discount">{isEn ? 'Biggest Discount' : 'Diskon Terbesar'}</option>
+                  <option value="newest">{isEn ? 'Newest' : 'Terbaru'}</option>
                 </select>
               </div>
             </div>
@@ -768,7 +771,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                       : 'bg-white text-gray-700 hover:bg-blue-50 hover:border-[#1E40AF]/50 border-gray-200'
                   }`}
                 >
-                  <span>{cat.name}</span>
+                  <span>{catLabel(cat.name)}</span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedCategory === cat.name ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>
                     {cat.count}
                   </span>
@@ -778,8 +781,8 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
             {/* Count */}
             <div className="flex items-center justify-between text-xs text-gray-500 mb-5 px-1">
-              <span>Menampilkan <strong>{displayedProducts.length}</strong> dari <strong>{filteredAndSortedProducts.length}</strong> produk
-                {selectedCategory !== 'Semua' && ` di "${selectedCategory}"`}
+              <span>{isEn ? 'Showing' : 'Menampilkan'} <strong>{displayedProducts.length}</strong> {isEn ? 'of' : 'dari'} <strong>{filteredAndSortedProducts.length}</strong> {isEn ? 'products' : 'produk'}
+                {selectedCategory !== 'Semua' && (isEn ? ` in "${catLabel(selectedCategory)}"` : ` di "${selectedCategory}"`)}
               </span>
             </div>
 
@@ -800,7 +803,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                     )}
                     {p.stock > 0 && (
                       <div className="absolute top-2.5 right-2.5 bg-green-100 text-green-700 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">
-                        Tersedia
+                        {isEn ? 'Available' : 'Tersedia'}
                       </div>
                     )}
                   </div>
@@ -819,7 +822,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                       className="mt-3 w-full py-2.5 px-1.5 bg-[#1E40AF] hover:bg-[#1e3a8a] text-white text-[11px] sm:text-xs font-semibold whitespace-nowrap rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
                     >
                       <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">+ Keranjang</span>
+                      <span className="truncate">{isEn ? '+ Cart' : '+ Keranjang'}</span>
                     </button>
                   </div>
                 </div>
@@ -833,7 +836,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   onClick={() => setVisibleCount(prev => prev + 8)}
                   className="px-8 py-3 bg-white border border-gray-300 hover:border-[#1E40AF] text-gray-700 hover:text-[#1E40AF] font-semibold text-xs rounded-xl shadow-xs transition hover:bg-blue-50 cursor-pointer"
                 >
-                  Muat Lebih Banyak ({displayedProducts.length} dari {filteredAndSortedProducts.length})
+                  {isEn ? 'Load More' : 'Muat Lebih Banyak'} ({displayedProducts.length} {isEn ? 'of' : 'dari'} {filteredAndSortedProducts.length})
                 </button>
               </div>
             )}
@@ -886,7 +889,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             <select
               value={sortBy}
               onChange={(e: any) => setSortBy(e.target.value)}
-              aria-label="Urutkan Produk Toko"
+              aria-label={isEn ? 'Sort Store Products' : 'Urutkan Produk Toko'}
               className={`py-2.5 px-3 text-xs focus:outline-none cursor-pointer shrink-0 ${ts.select}`}
             >
               <option value="popular">{isEn ? 'Most Popular' : 'Paling Populer'}</option>
@@ -907,7 +910,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   selectedCategory === cat.name ? ts.pillActive : ts.pillInactive
                 }`}
               >
-                {cat.name} <span className="opacity-60">({cat.count})</span>
+                {catLabel(cat.name)} <span className="opacity-60">({cat.count})</span>
               </button>
             ))}
           </div>

@@ -1,4 +1,5 @@
 import { DEFAULT_LANDING_NAV_ITEMS } from '../utils/layoutConstants';
+import { isEnglishPreferred } from '../contexts/LanguageContext';
 
 export interface ResolvedNavItem {
   id: string;
@@ -173,11 +174,12 @@ export function getFooterLegalLinks(sectionOptions: any = {}): FooterLegalLink[]
     ['terms', 'termsOfServiceText', 'termsOfServiceUrl', 'Syarat & Ketentuan'],
   ];
   return entries.flatMap(([key, textKey, urlKey, fallbackLabel]) => {
+    const isEnglish = isEnglishPreferred();
     const text = String(sectionOptions?.[textKey] ?? '').trim();
     const rawUrl = String(sectionOptions?.[urlKey] ?? '').trim();
     if (!text && !rawUrl) return [];
     const href = sanitizeLinkHref(rawUrl) || FOOTER_LEGAL_FALLBACK_HREF;
-    return [{ key, label: text || fallbackLabel, href }];
+    return [{ key, label: text || (isEnglish ? (key === 'privacy' ? 'Privacy Policy' : 'Terms & Conditions') : fallbackLabel), href }];
   });
 }
 

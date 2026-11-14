@@ -17,7 +17,7 @@ export const ShareStoreModal: React.FC<ShareStoreModalProps> = ({
   onClose,
   onShowNotification,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [copied, setCopied] = useState(false);
   const { domain: baseDomain } = useStoreBaseDomain(store);
 
@@ -28,12 +28,14 @@ export const ShareStoreModal: React.FC<ShareStoreModalProps> = ({
   const handleCopy = () => {
     navigator.clipboard.writeText(storeUrl);
     setCopied(true);
-    onShowNotification(t('link_copied_success', 'Link toko berhasil disalin ke clipboard!'));
+    onShowNotification(isEn ? 'Store link copied to clipboard!' : 'Link toko berhasil disalin ke clipboard!');
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleWhatsAppShare = () => {
-    const text = `Halo! Kunjungi katalog toko online resmi ${store.name} di: ${storeUrl}\n\nBelanja praktis, aman, dan langsung diproses.`;
+    const text = isEn
+      ? `Hi! Visit the official online store catalog of ${store.name} at: ${storeUrl}\n\nShop easily and securely, with orders processed right away.`
+      : `Halo! Kunjungi katalog toko online resmi ${store.name} di: ${storeUrl}\n\nBelanja praktis, aman, dan langsung diproses.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -59,14 +61,14 @@ export const ShareStoreModal: React.FC<ShareStoreModalProps> = ({
             <div className="w-40 h-40 bg-[#F7F7F7] rounded-xl p-2 flex items-center justify-center relative overflow-hidden">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(storeUrl)}&color=66000e`}
-                alt="QR Code Toko"
+                alt={isEn ? 'Store QR Code' : 'QR Code Toko'}
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
             <div className="flex items-center gap-1.5 mt-2.5 text-xs font-semibold text-[#66000E]">
               <QrCode className="w-3.5 h-3.5" />
-              <span>{t('scan_to_open_mobile', 'Scan untuk Buka di HP')}</span>
+              <span>{isEn ? 'Scan to Open on Your Phone' : 'Scan untuk Buka di HP'}</span>
             </div>
           </div>
 
@@ -81,7 +83,7 @@ export const ShareStoreModal: React.FC<ShareStoreModalProps> = ({
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-semibold transition shrink-0 cursor-pointer shadow-xs"
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? t('copied', 'Tersalin') : t('copy', 'Salin')}</span>
+              <span>{copied ? t('copied', 'Tersalin') : (isEn ? 'Copy' : 'Salin')}</span>
             </button>
           </div>
         </div>
@@ -92,7 +94,7 @@ export const ShareStoreModal: React.FC<ShareStoreModalProps> = ({
             className="flex items-center justify-center gap-2 py-2.5 min-h-[44px] px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold text-xs transition shadow-xs cursor-pointer"
           >
             <MessageCircle className="w-4 h-4 fill-white" />
-            <span>{t('send_whatsapp', 'Kirim WhatsApp')}</span>
+            <span>{isEn ? 'Send via WhatsApp' : 'Kirim WhatsApp'}</span>
           </button>
           <a
             href={storeUrl}
@@ -100,12 +102,12 @@ export const ShareStoreModal: React.FC<ShareStoreModalProps> = ({
             rel="noopener noreferrer"
             onClick={() => {
               onClose();
-              onShowNotification(t('opening_online_store', 'Membuka toko online...'));
+              onShowNotification(isEn ? 'Opening online store...' : 'Membuka toko online...');
             }}
             className="flex items-center justify-center gap-2 py-2.5 min-h-[44px] px-4 rounded-xl bg-[#1F1F1F] hover:bg-black text-white font-semibold text-xs transition shadow-xs cursor-pointer"
           >
             <ExternalLink className="w-4 h-4" />
-            <span>{t('visit_store', 'Kunjungi Toko')}</span>
+            <span>{isEn ? 'Visit Store' : 'Kunjungi Toko'}</span>
           </a>
         </div>
       </div>

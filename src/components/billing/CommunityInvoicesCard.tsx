@@ -4,6 +4,7 @@ import { CommunityTurnoverInvoice, Store } from '../../types';
 import { communityService } from '../../services/communityService';
 import { storeInCommunity, withExtraMemberships } from '../../utils/communityMembership';
 import { formatRupiah } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * Daftar tagihan omset komunitas untuk merchant (hanya baca).
@@ -11,6 +12,7 @@ import { formatRupiah } from '../../utils/formatters';
  * invoice komunitas tempat toko merchant terdaftar.
  */
 export const CommunityInvoicesCard: React.FC<{ store: Store }> = ({ store }) => {
+  const { isEn } = useLanguage();
   const [invoices, setInvoices] = useState<CommunityTurnoverInvoice[]>([]);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export const CommunityInvoicesCard: React.FC<{ store: Store }> = ({ store }) => 
     <div className="bg-white rounded-2xl border border-[#E5E0DD] shadow-2xs p-4 sm:p-5 space-y-3">
       <h2 className="text-sm sm:text-base font-bold text-[#241A1A] flex items-center gap-2">
         <Receipt className="w-4 h-4 text-[#66000E]" />
-        <span>Tagihan Komunitas</span>
+        <span>{isEn ? 'Community Invoices' : 'Tagihan Komunitas'}</span>
       </h2>
 
       <div className="space-y-2">
@@ -53,13 +55,15 @@ export const CommunityInvoicesCard: React.FC<{ store: Store }> = ({ store }) => 
                       : 'bg-rose-50 text-rose-800 border-rose-200'
                   }`}
                 >
-                  {inv.status === 'paid' ? 'Lunas' : 'Belum Dibayar'}
+                  {inv.status === 'paid' ? (isEn ? 'Paid' : 'Lunas') : (isEn ? 'Unpaid' : 'Belum Dibayar')}
                 </span>
               </div>
               <p className="text-[11px] text-[#706866] mt-0.5">
-                {inv.period} · Fee {inv.feePercent}% dari {formatRupiah(inv.totalTurnover)}
+                {inv.period} · Fee {inv.feePercent}% {isEn ? 'of' : 'dari'} {formatRupiah(inv.totalTurnover)}
                 {inv.status !== 'paid' && inv.dueDate
-                  ? ` · Jatuh tempo ${new Date(inv.dueDate).toLocaleDateString('id-ID')}`
+                  ? (isEn
+                    ? ` · Due ${new Date(inv.dueDate).toLocaleDateString('en-US')}`
+                    : ` · Jatuh tempo ${new Date(inv.dueDate).toLocaleDateString('id-ID')}`)
                   : ''}
               </p>
             </div>

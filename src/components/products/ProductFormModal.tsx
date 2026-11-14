@@ -448,7 +448,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       <>
                         <img
                           src={imageUrl}
-                          alt="Preview Produk"
+                          alt={isEn ? 'Product preview' : 'Preview Produk'}
                           className="w-full h-full object-cover transition group-hover:scale-105 duration-200"
                           referrerPolicy="no-referrer"
                         />
@@ -499,7 +499,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     </button>
 
                     <p className="text-[10px] text-[#706866] text-center font-medium">
-                      JPG, PNG, atau WEBP • Maksimal <strong>10 MB</strong>
+                      {isEn ? 'JPG, PNG, or WEBP • Max' : 'JPG, PNG, atau WEBP • Maksimal'} <strong>10 MB</strong>
                     </p>
 
                     {photoError && (
@@ -597,7 +597,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       </label>
                       {discountPercent && Number(discountPercent) > 0 && (
                         <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-semibold">
-                          Hemat {discountPercent}%
+                          {isEn ? 'Save' : 'Hemat'} {discountPercent}%
                         </span>
                       )}
                     </div>

@@ -128,11 +128,11 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
     if (!file || !store?.id) return;
 
     if (!file.type.startsWith('image/')) {
-      onShowNotification?.('File harus berupa gambar (JPG, PNG, atau WEBP).', 'error');
+      onShowNotification?.(isEn ? 'File must be an image (JPG, PNG, or WEBP).' : 'File harus berupa gambar (JPG, PNG, atau WEBP).', 'error');
       return;
     }
     if (file.size > QRIS_MAX_FILE_BYTES) {
-      onShowNotification?.('Ukuran foto QRIS maksimal 2 MB.', 'error');
+      onShowNotification?.(isEn ? 'QRIS photo must be 2 MB or smaller.' : 'Ukuran foto QRIS maksimal 2 MB.', 'error');
       return;
     }
 
@@ -141,10 +141,10 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
       const url = await storeService.uploadQrisImage(store.id, file);
       setManualQrisImageUrl(url);
       markDirty();
-      onShowNotification?.('Foto QRIS berhasil diupload. Klik Simpan untuk menerapkan.', 'success');
+      onShowNotification?.(isEn ? 'QRIS photo uploaded. Click Save to apply.' : 'Foto QRIS berhasil diupload. Klik Simpan untuk menerapkan.', 'success');
     } catch (err: any) {
       console.error('Upload QRIS gagal:', err);
-      onShowNotification?.(err?.message || 'Gagal mengupload foto QRIS.', 'error');
+      onShowNotification?.(err?.message || (isEn ? 'Failed to upload QRIS photo.' : 'Gagal mengupload foto QRIS.'), 'error');
     } finally {
       setIsUploadingQris(false);
     }
@@ -405,9 +405,9 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
         <div>
           <h1 className="text-lg sm:text-xl font-bold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
             <CreditCard className="w-5 h-5 text-[#66000E]" />
-            <span>Metode Pembayaran</span>
+            <span>{isEn ? 'Payment Methods' : 'Metode Pembayaran'}</span>
           </h1>
-          <p className="text-xs text-[#706866] mt-1">Pilih cara bayar yang tersedia di toko Anda.</p>
+          <p className="text-xs text-[#706866] mt-1">{isEn ? 'Choose the payment options available in your store.' : 'Pilih cara bayar yang tersedia di toko Anda.'}</p>
         </div>
 
         <button
@@ -423,12 +423,12 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
           {isSaving ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
-              <span>Menyimpan...</span>
+              <span>{isEn ? 'Saving...' : 'Menyimpan...'}</span>
             </>
           ) : (
             <>
               <Save className="w-4 h-4" />
-              <span>{hasUnsavedChanges ? 'Simpan Perubahan *' : 'Simpan Pengaturan'}</span>
+              <span>{hasUnsavedChanges ? (isEn ? 'Save Changes *' : 'Simpan Perubahan *') : (isEn ? 'Save Settings' : 'Simpan Pengaturan')}</span>
             </>
           )}
         </button>
@@ -444,15 +444,15 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               <Banknote className="w-5 h-5 text-amber-700" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">Bayar di Tempat (COD)</h2>
-              <p className="text-xs text-[#706866] mt-0.5">Bayar tunai saat barang diterima.</p>
+              <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">{isEn ? 'Cash on Delivery (COD)' : 'Bayar di Tempat (COD)'}</h2>
+              <p className="text-xs text-[#706866] mt-0.5">{isEn ? 'Pay in cash when the item is received.' : 'Bayar tunai saat barang diterima.'}</p>
             </div>
           </div>
 
           {/* Toggle Switch COD */}
           <div className="flex items-center justify-end gap-2 shrink-0">
             <span className="text-xs font-semibold text-[#706866] hidden sm:inline">
-              {enableCod ? 'Aktif' : 'Nonaktif'}
+              {enableCod ? (isEn ? 'Active' : 'Aktif') : (isEn ? 'Inactive' : 'Nonaktif')}
             </span>
             <button
               type="button"
@@ -478,7 +478,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
         {/* Form Pengaturan COD jika aktif */}
         {enableCod && (
           <div className="p-4 sm:p-5 border-t border-[#E5E0DD] bg-[#FAF7F7] space-y-3">
-            <label className="block text-xs font-bold text-[#241A1A]">Catatan COD untuk Pembeli</label>
+            <label className="block text-xs font-bold text-[#241A1A]">{isEn ? 'COD Note for Buyers' : 'Catatan COD untuk Pembeli'}</label>
             <textarea
               rows={2}
               value={codInstructions}
@@ -486,7 +486,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                 setCodInstructions(e.target.value);
                 markDirty();
               }}
-              placeholder="Contoh: Siapkan uang pas saat barang diantar."
+              placeholder={isEn ? 'Example: Please prepare exact change upon delivery.' : 'Contoh: Siapkan uang pas saat barang diantar.'}
               className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs font-medium text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition resize-none"
             />
           </div>
@@ -503,15 +503,15 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               <QrCode className="w-5 h-5 text-blue-700" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">QRIS &amp; Transfer Bank</h2>
-              <p className="text-xs text-[#706866] mt-0.5">Dana langsung masuk ke rekening Anda.</p>
+              <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">{isEn ? 'QRIS & Bank Transfer' : 'QRIS & Transfer Bank'}</h2>
+              <p className="text-xs text-[#706866] mt-0.5">{isEn ? 'Funds go directly to your account.' : 'Dana langsung masuk ke rekening Anda.'}</p>
             </div>
           </div>
 
           {/* Toggle Switch Manual Transfer */}
           <div className="flex items-center justify-end gap-2 shrink-0">
             <span className="text-xs font-semibold text-[#706866] hidden sm:inline">
-              {enableManualTransfer ? 'Aktif' : 'Nonaktif'}
+              {enableManualTransfer ? (isEn ? 'Active' : 'Aktif') : (isEn ? 'Inactive' : 'Nonaktif')}
             </span>
             <button
               type="button"
@@ -553,7 +553,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                 >
                   {COMMON_BANKS.map((b) => (
                     <option key={b} value={b}>
-                      {b}
+                      {isEn && b === 'Lainnya / Bank Daerah' ? 'Other / Regional Bank' : b}
                     </option>
                   ))}
                 </select>
@@ -562,7 +562,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               {/* Nomor Rekening */}
               <div>
                 <label className="block text-xs font-bold text-[#241A1A] mb-1.5">
-                  No. Rekening / HP *
+                  {isEn ? 'Account / Phone No. *' : 'No. Rekening / HP *'}
                 </label>
                 <input
                   type="text"
@@ -571,7 +571,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                     setManualBankAccountNumber(e.target.value);
                     markDirty();
                   }}
-                  placeholder="Contoh: 1234567890 atau 08123456789"
+                  placeholder={isEn ? 'Example: 1234567890 or 08123456789' : 'Contoh: 1234567890 atau 08123456789'}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
                 />
               </div>
@@ -579,7 +579,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               {/* Atas Nama Rekening */}
               <div>
                 <label className="block text-xs font-bold text-[#241A1A] mb-1.5">
-                  Atas Nama *
+                  {isEn ? 'Account Holder *' : 'Atas Nama *'}
                 </label>
                 <input
                   type="text"
@@ -588,7 +588,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                     setManualBankAccountHolder(e.target.value);
                     markDirty();
                   }}
-                  placeholder="Contoh: Budi Santoso / Toko Komunitas"
+                  placeholder={isEn ? 'Example: Budi Santoso / Community Store' : 'Contoh: Budi Santoso / Toko Komunitas'}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] placeholder:text-[#706866] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
                 />
               </div>
@@ -597,9 +597,9 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
             {/* Upload Foto QRIS Statis */}
             <div className="pt-2 border-t border-[#E5E0DD]/80">
               <label className="block text-xs font-bold text-[#241A1A] mb-1.5 flex items-center justify-between">
-                <span>Foto QRIS (Opsional)</span>
+                <span>{isEn ? 'QRIS Photo (Optional)' : 'Foto QRIS (Opsional)'}</span>
                 <span className="text-[11px] text-[#706866] font-normal">
-                  JPG, PNG, atau WEBP • maks. 2 MB
+                  {isEn ? 'JPG, PNG, or WEBP • max. 2 MB' : 'JPG, PNG, atau WEBP • maks. 2 MB'}
                 </span>
               </label>
 
@@ -615,12 +615,12 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                 <div className="p-3 bg-white rounded-xl border border-[#E5E0DD] flex flex-col sm:flex-row sm:items-center gap-3">
                   <img
                     src={manualQrisImageUrl}
-                    alt="Foto Barcode QRIS"
+                    alt={isEn ? 'QRIS barcode photo' : 'Foto Barcode QRIS'}
                     className="w-24 h-24 object-contain rounded-lg border border-gray-100 bg-white"
                   />
                   <div className="flex-1">
-                    <span className="text-xs font-bold text-gray-900 block">Foto QRIS Toko</span>
-                    <span className="text-[11px] text-emerald-700 font-semibold">Tampil saat checkout</span>
+                    <span className="text-xs font-bold text-gray-900 block">{isEn ? 'Store QRIS Photo' : 'Foto QRIS Toko'}</span>
+                    <span className="text-[11px] text-emerald-700 font-semibold">{isEn ? 'Shown at checkout' : 'Tampil saat checkout'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -630,7 +630,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                       className="px-3 py-2 rounded-lg border border-[#E5E0DD] text-xs font-semibold text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
                     >
                       {isUploadingQris ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
-                      <span>{isUploadingQris ? 'Mengupload...' : 'Ganti Foto'}</span>
+                      <span>{isUploadingQris ? (isEn ? 'Uploading...' : 'Mengupload...') : (isEn ? 'Change Photo' : 'Ganti Foto')}</span>
                     </button>
                     <button
                       type="button"
@@ -641,7 +641,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                       }}
                       className="px-3 py-2 rounded-lg border border-red-200 text-xs font-semibold text-red-700 hover:bg-red-50 transition cursor-pointer disabled:opacity-60"
                     >
-                      Hapus
+                      {isEn ? 'Remove' : 'Hapus'}
                     </button>
                   </div>
                 </div>
@@ -658,7 +658,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                     <ImageIcon className="w-6 h-6 text-blue-600" />
                   )}
                   <span className="text-xs font-bold text-[#241A1A]">
-                    {isUploadingQris ? 'Mengupload foto QRIS...' : 'Upload Foto QRIS'}
+                    {isUploadingQris ? (isEn ? 'Uploading QRIS photo...' : 'Mengupload foto QRIS...') : (isEn ? 'Upload QRIS Photo' : 'Upload Foto QRIS')}
                   </span>
                 </button>
               )}
@@ -667,7 +667,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
             {/* Petunjuk Tambahan */}
             <div>
               <label className="block text-xs font-bold text-[#241A1A] mb-1.5">
-                Petunjuk Pembayaran
+                {isEn ? 'Payment Instructions' : 'Petunjuk Pembayaran'}
               </label>
               <textarea
                 rows={2}
@@ -694,8 +694,8 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               <CreditCard className="w-5 h-5 text-amber-800" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-amber-950">Payment Gateway Belum Tersedia</h3>
-              <p className="text-xs text-amber-800 mt-1">Untuk sementara gunakan COD atau QRIS &amp; Transfer Bank.</p>
+              <h3 className="font-bold text-sm text-amber-950">{isEn ? 'Payment Gateway Not Yet Available' : 'Payment Gateway Belum Tersedia'}</h3>
+              <p className="text-xs text-amber-800 mt-1">{isEn ? 'For now, use COD or QRIS & Bank Transfer.' : 'Untuk sementara gunakan COD atau QRIS & Transfer Bank.'}</p>
             </div>
           </div>
         </div>
@@ -710,7 +710,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
             <div>
               <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">Payment Gateway</h2>
               <p className="text-xs text-[#706866] mt-0.5">
-                {activeGatewayCount} dari {channels.length} metode aktif
+                {isEn ? `${activeGatewayCount} of ${channels.length} methods active` : `${activeGatewayCount} dari ${channels.length} metode aktif`}
               </p>
             </div>
           </div>
@@ -772,7 +772,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                 {isEn ? `All Categories (${channels.length})` : `Semua Kategori (${channels.length})`}
               </option>
               <option value="virtual_account">Virtual Account (Bank)</option>
-              <option value="qris_ewallet">QRIS Dinamis &amp; E-Wallet</option>
+              <option value="qris_ewallet">{isEn ? 'Dynamic QRIS & E-Wallet' : 'QRIS Dinamis & E-Wallet'}</option>
               <option value="credit_card">{isEn ? 'Credit Card' : 'Kartu Kredit'}</option>
               <option value="retail_paylater">{isEn ? 'Retail & PayLater' : 'Gerai Retail & PayLater'}</option>
             </select>

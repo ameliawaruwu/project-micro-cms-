@@ -57,7 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
   onLogout,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
 
   const [unreadDomainCount, setUnreadDomainCount] = useState<number>(0);
 
@@ -224,16 +224,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         title={liveStoreUrl.replace(/^https:\/\//, '')}
                         className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium font-poppins transition-colors text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]"
                       >
-                        <span className="flex-1 text-left truncate">{t('nav_view_website', 'Lihat Website')}</span>
+                        <span className="flex-1 text-left truncate">{isEn ? 'View Website' : 'Lihat Website'}</span>
                         <ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
                       </a>
                     ) : (
                       <div
                         className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs font-poppins text-gray-400 cursor-not-allowed"
-                        title={t('nav_view_website_draft', 'Terbitkan toko dari Layout Toko agar website bisa diakses')}
+                        title={isEn ? 'Publish your store from Store Layout to make the website accessible' : 'Terbitkan toko dari Layout Toko agar website bisa diakses'}
                       >
-                        <span className="flex-1 text-left truncate">{t('nav_view_website', 'Lihat Website')}</span>
-                        <span className="text-[9px] uppercase tracking-wide shrink-0">{t('nav_draft', 'Draf')}</span>
+                        <span className="flex-1 text-left truncate">{isEn ? 'View Website' : 'Lihat Website'}</span>
+                        <span className="text-[9px] uppercase tracking-wide shrink-0">{isEn ? 'Draft' : 'Draf'}</span>
                       </div>
                     )}
                   </div>
@@ -324,7 +324,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           type="button"
           onClick={onToggleCollapse}
           className="absolute -right-3 top-1/2 -translate-y-1/2 w-5.5 h-5.5 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 shadow-xs hover:shadow-sm flex items-center justify-center transition-all cursor-pointer z-40 focus:outline-none hover:scale-105"
-          title={isCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
+          title={isCollapsed ? (isEn ? 'Expand Sidebar' : 'Perluas Sidebar') : (isEn ? 'Collapse Sidebar' : 'Ciutkan Sidebar')}
         >
           {isCollapsed ? (
             <ChevronRight className="w-3 h-3" />

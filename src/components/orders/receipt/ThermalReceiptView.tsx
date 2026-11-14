@@ -1,6 +1,7 @@
 import React from 'react';
 import { Order, Store as StoreType } from '../../../types';
-import { formatRupiah, formatDateIndo } from '../../../utils/formatters';
+import { formatRupiah } from '../../../utils/formatters';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { useStoreBaseDomain } from '../../../utils/storeDomain';
 
 interface ThermalReceiptViewProps {
@@ -17,6 +18,15 @@ export const ThermalReceiptView: React.FC<ThermalReceiptViewProps> = ({
   resiNumber,
 }) => {
   const { domain: storeBaseDomain } = useStoreBaseDomain(store);
+  const { isEn } = useLanguage();
+  const orderDate = (() => {
+    if (!order.createdAt) return '';
+    try {
+      return new Intl.DateTimeFormat(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(order.createdAt));
+    } catch {
+      return order.createdAt;
+    }
+  })();
   return (
     <div
       id="printable-receipt"
@@ -33,10 +43,10 @@ export const ThermalReceiptView: React.FC<ThermalReceiptViewProps> = ({
       <div className="text-[10px] space-y-0.5 py-1 border-b border-dashed border-black">
         <div className="flex justify-between">
           <span>No: #{order.orderNumber}</span>
-          <span>{formatDateIndo(order.createdAt).slice(0, 11)}</span>
+          <span>{orderDate}</span>
         </div>
-        <div>Plg: {order.customerName} ({order.customerPhone})</div>
-        <div>Kurir: {courierName} - {resiNumber}</div>
+        <div>{isEn ? 'Cust' : 'Plg'}: {order.customerName} ({order.customerPhone})</div>
+        <div>{isEn ? 'Courier' : 'Kurir'}: {courierName} - {resiNumber}</div>
       </div>
 
       {/* Items */}
@@ -59,12 +69,12 @@ export const ThermalReceiptView: React.FC<ThermalReceiptViewProps> = ({
           <span>{formatRupiah(order.subtotal)}</span>
         </div>
         <div className="flex justify-between">
-          <span>Ongkir</span>
+          <span>{isEn ? 'Shipping' : 'Ongkir'}</span>
           <span>{formatRupiah(order.shippingCost)}</span>
         </div>
         {order.discount > 0 && (
           <div className="flex justify-between text-green-700">
-            <span>Diskon</span>
+            <span>{isEn ? 'Discount' : 'Diskon'}</span>
             <span>-{formatRupiah(order.discount)}</span>
           </div>
         )}
@@ -73,13 +83,13 @@ export const ThermalReceiptView: React.FC<ThermalReceiptViewProps> = ({
           <span>{formatRupiah(order.grandTotal)}</span>
         </div>
         <div className="text-center text-[9px] font-bold text-green-700 pt-0.5">
-          LUNAS ({order.paymentMethod})
+          {isEn ? 'PAID' : 'LUNAS'} ({order.paymentMethod})
         </div>
       </div>
 
       {/* Footer */}
       <div className="text-center pt-2 text-[9px] text-gray-500 space-y-0.5">
-        <p>Terima kasih telah berbelanja!</p>
+        <p>{isEn ? 'Thank you for shopping!' : 'Terima kasih telah berbelanja!'}</p>
         <p>{store.customDomain || `${store.slug}.${storeBaseDomain}`}</p>
       </div>
     </div>

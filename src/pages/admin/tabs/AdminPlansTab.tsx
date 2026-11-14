@@ -276,14 +276,14 @@ export const AdminPlansTab: React.FC<AdminPlansTabProps> = ({
           <div className="p-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
               <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
-                Log Riwayat Langganan Toko
+                {isEn ? 'Store Subscription History Log' : 'Log Riwayat Langganan Toko'}
               </h3>
               <p className="text-[11px] text-gray-500">
-                Catatan transaksi langganan merchant yang telah diproses platform
+                {isEn ? 'Merchant subscription transactions processed by the platform' : 'Catatan transaksi langganan merchant yang telah diproses platform'}
               </p>
             </div>
             <span className="text-xs font-semibold text-gray-700">
-              {billingSubscriptions.length} Transaksi Tercatat
+              {billingSubscriptions.length} {isEn ? 'Recorded Transactions' : 'Transaksi Tercatat'}
             </span>
           </div>
 
@@ -292,13 +292,13 @@ export const AdminPlansTab: React.FC<AdminPlansTabProps> = ({
               <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-600 font-semibold">
                 <tr>
                   <th className="py-2.5 px-3.5">Invoice</th>
-                  <th className="py-2.5 px-3.5">Nama Toko</th>
-                  <th className="py-2.5 px-3.5">Paket</th>
-                  <th className="py-2.5 px-3.5">Siklus</th>
-                  <th className="py-2.5 px-3.5">Nominal</th>
-                  <th className="py-2.5 px-3.5">Metode</th>
+                  <th className="py-2.5 px-3.5">{isEn ? 'Store Name' : 'Nama Toko'}</th>
+                  <th className="py-2.5 px-3.5">{isEn ? 'Plan' : 'Paket'}</th>
+                  <th className="py-2.5 px-3.5">{isEn ? 'Cycle' : 'Siklus'}</th>
+                  <th className="py-2.5 px-3.5">{isEn ? 'Amount' : 'Nominal'}</th>
+                  <th className="py-2.5 px-3.5">{isEn ? 'Method' : 'Metode'}</th>
                   <th className="py-2.5 px-3.5">Status</th>
-                  <th className="py-2.5 px-3.5">Tanggal</th>
+                  <th className="py-2.5 px-3.5">{isEn ? 'Date' : 'Tanggal'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -325,10 +325,10 @@ export const AdminPlansTab: React.FC<AdminPlansTabProps> = ({
                       {sub.planName}
                     </td>
                     <td className="py-2.5 px-3.5 text-gray-600 capitalize">
-                      {sub.cycle === 'yearly' ? 'Tahunan' : 'Bulanan'}
+                      {sub.cycle === 'yearly' ? (isEn ? 'Yearly' : 'Tahunan') : (isEn ? 'Monthly' : 'Bulanan')}
                     </td>
                     <td className="py-2.5 px-3.5 font-bold text-gray-900">
-                      {sub.amount === 0 ? 'Gratis' : formatRupiah(sub.amount)}
+                      {sub.amount === 0 ? (isEn ? 'Free' : 'Gratis') : formatRupiah(sub.amount)}
                     </td>
                     <td className="py-2.5 px-3.5 text-gray-600">
                       {sub.paymentMethod}
@@ -339,7 +339,7 @@ export const AdminPlansTab: React.FC<AdminPlansTabProps> = ({
                       </span>
                     </td>
                     <td className="py-2.5 px-3.5 text-gray-500 text-[11px]">
-                      {new Date(sub.paidAt).toLocaleDateString('id-ID', {
+                      {new Date(sub.paidAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',

@@ -29,7 +29,7 @@ export const OrderFilterTabs: React.FC<OrderFilterTabsProps> = ({
   counts,
   onSelectStatus,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const tabs: {
@@ -154,7 +154,7 @@ export const OrderFilterTabs: React.FC<OrderFilterTabsProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={(e) => handleTabClick(tab.id, e)}
-                title={`Filter pesanan: ${tab.label} (${tab.count})`}
+                title={isEn ? `Filter orders: ${tab.label} (${tab.count})` : `Filter pesanan: ${tab.label} (${tab.count})`}
                 className={`group relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 ease-out shrink-0 cursor-pointer select-none active:scale-[0.97] ${
                   isActive
                     ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-xs font-bold z-10`
@@ -207,7 +207,7 @@ export const OrderFilterTabs: React.FC<OrderFilterTabsProps> = ({
               type="button"
               onClick={() => onSelectStatus('Semua')}
               className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 min-h-[36px] sm:min-h-[42px] rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold text-[#706866] hover:text-[#66000E] hover:bg-white border border-dashed border-[#E5E0DD] hover:border-[#66000E]/50 whitespace-nowrap transition-all duration-200 shrink-0 cursor-pointer ml-auto active:scale-95 group"
-              title="Reset ke Semua Pesanan"
+              title={isEn ? 'Reset to All Orders' : 'Reset ke Semua Pesanan'}
             >
               <RotateCcw className="w-3 h-3 text-[#706866] group-hover:text-[#66000E] group-hover:-rotate-90 transition-transform duration-300" />
               <span>Reset</span>

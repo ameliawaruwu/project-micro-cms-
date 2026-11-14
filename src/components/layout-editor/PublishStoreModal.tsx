@@ -29,6 +29,7 @@ import { storeService } from '../../services/storeService';
 import { useStoreBaseDomain } from '../../utils/storeDomain';
 import confetti from 'canvas-confetti';
 import { sessionHeaders } from '../../services/supabaseClient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface PublishStoreModalProps {
   isOpen: boolean;
@@ -61,6 +62,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
   onPublish,
   onUnpublish,
 }) => {
+  const { isEn } = useLanguage();
   const [step, setStep] = useState<PublishModalStep>('choose_domain');
   const [copied, setCopied] = useState(false);
   const [domainRequest, setDomainRequest] = useState<DomainRequest | null>(null);
@@ -165,14 +167,18 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
     // Only real steps are shown: the server reports each one, nothing is ticked on a timer.
     // WHY: a timer marked Nginx/Tunnel/smoke test "done" while the store host had no DNS yet.
     setDeployStages([
-      { id: '1', name: 'Mendaftarkan alamat toko', detail: targetHost, status: 'running' },
-      { id: '2', name: 'DNS publik', detail: 'Menunggu domain ter-resolve', status: 'pending' },
-      { id: '3', name: 'Uji akses HTTPS', detail: `https://${primaryDomain}`, status: 'pending' },
+      { id: '1', name: isEn ? 'Registering store address' : 'Mendaftarkan alamat toko', detail: targetHost, status: 'running' },
+      { id: '2', name: isEn ? 'Public DNS' : 'DNS publik', detail: isEn ? 'Waiting for the domain to resolve' : 'Menunggu domain ter-resolve', status: 'pending' },
+      { id: '3', name: isEn ? 'HTTPS access test' : 'Uji akses HTTPS', detail: `https://${primaryDomain}`, status: 'pending' },
     ]);
-    const now = () => new Date().toLocaleTimeString('id-ID');
+    const now = () => new Date().toLocaleTimeString(isEn ? 'en-US' : 'id-ID');
     setTerminalLogs([
-      `[${now()}] Mendaftarkan ${primaryDomain}${cleanCustomDomain ? ` + ${cleanCustomDomain}` : ''} ke server...`,
-      `[${now()}] Server memeriksa DNS publik dan akses HTTPS (maks. ±45 detik).`,
+      isEn
+        ? `[${now()}] Registering ${primaryDomain}${cleanCustomDomain ? ` + ${cleanCustomDomain}` : ''} with the server...`
+        : `[${now()}] Mendaftarkan ${primaryDomain}${cleanCustomDomain ? ` + ${cleanCustomDomain}` : ''} ke server...`,
+      isEn
+        ? `[${now()}] The server is checking public DNS and HTTPS access (max. ±45 seconds).`
+        : `[${now()}] Server memeriksa DNS publik dan akses HTTPS (maks. ±45 detik).`,
     ]);
     setDeployProgress(30);
 
@@ -210,7 +216,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
         if (!reported.length) {
           setDeployStages((prev) => prev.map((s) => (s.status === 'running' ? { ...s, status: 'failed' } : s)));
         }
-        throw new Error(resData.error || resData.message || 'Gagal mempublikasikan toko');
+        throw new Error(resData.error || resData.message || (isEn ? 'Failed to publish the store' : 'Gagal mempublikasikan toko'));
       }
 
       setDeployProgress(90);
@@ -242,7 +248,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
         setStep('published');
       }, 500);
     } catch (err: any) {
-      const errMsg = err?.message || 'Terjadi kesalahan saat memproses publikasi';
+      const errMsg = err?.message || (isEn ? 'An error occurred while publishing' : 'Terjadi kesalahan saat memproses publikasi');
       setDeployError(errMsg);
       setTerminalLogs((prev) => [
         ...prev,
@@ -301,26 +307,27 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
             <div>
               <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">
                 {step === 'choose_domain'
-                  ? 'Pilih Alamat Domain Toko'
+                  ? (isEn ? 'Choose Store Domain Address' : 'Pilih Alamat Domain Toko')
                   : step === 'confirm_subdomain'
-                  ? 'Konfirmasi Pemilihan Subdomain'
+                  ? (isEn ? 'Confirm Subdomain Choice' : 'Konfirmasi Pemilihan Subdomain')
                   : step === 'auto_deploy'
-                  ? 'Auto Deploying ke API Eksternal...'
-                  : 'Toko Berhasil Dipublikasikan'}
+                  ? (isEn ? 'Auto Deploying to External API...' : 'Auto Deploying ke API Eksternal...')
+                  : (isEn ? 'Store Published Successfully' : 'Toko Berhasil Dipublikasikan')}
               </h2>
               <p className="text-[11px] text-[#706866]">
                 {step === 'choose_domain'
-                  ? 'Tentukan jenis alamat yang ingin digunakan untuk toko online Anda'
+                  ? (isEn ? 'Choose the type of address for your online store' : 'Tentukan jenis alamat yang ingin digunakan untuk toko online Anda')
                   : step === 'confirm_subdomain'
-                  ? 'Periksa subdomain otomatis atau acak ulang untuk kombinasi baru'
+                  ? (isEn ? 'Check the automatic subdomain or shuffle for a new combination' : 'Periksa subdomain otomatis atau acak ulang untuk kombinasi baru')
                   : step === 'auto_deploy'
-                  ? 'Mendaftarkan alamat lalu memastikan toko benar-benar bisa dibuka'
-                  : 'Website toko Anda kini online dan dapat diakses pembeli'}
+                  ? (isEn ? 'Registering the address, then making sure the store actually opens' : 'Mendaftarkan alamat lalu memastikan toko benar-benar bisa dibuka')
+                  : (isEn ? 'Your store website is now online and accessible to buyers' : 'Website toko Anda kini online dan dapat diakses pembeli')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
+            aria-label={isEn ? 'Close' : 'Tutup'}
             className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -354,15 +361,15 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-xs sm:text-sm font-bold text-gray-900">
-                      Domain Random
+                      {isEn ? 'Random Domain' : 'Domain Random'}
                     </h4>
                     <p className="text-[11px] text-gray-500 truncate mt-0.5 font-mono">
                       {randomSubdomain || store.slug
                         ? `https://${randomSubdomain || store.slug}.${selectedBaseDomain}`
-                        : `https://[nama-toko].${selectedBaseDomain}`}
+                        : (isEn ? `https://[store-name].${selectedBaseDomain}` : `https://[nama-toko].${selectedBaseDomain}`)}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-1">
-                      Bisa diacak ulang di tahap konfirmasi berikutnya.
+                      {isEn ? 'You can shuffle it again in the next confirmation step.' : 'Bisa diacak ulang di tahap konfirmasi berikutnya.'}
                     </p>
                   </div>
                 </div>
@@ -397,11 +404,11 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                     <Globe className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-xs sm:text-sm font-bold text-gray-900">Custom Domain Pribadi</h4>
+                    <h4 className="text-xs sm:text-sm font-bold text-gray-900">{isEn ? 'Personal Custom Domain' : 'Custom Domain Pribadi'}</h4>
                     <p className="text-[11px] text-gray-500 truncate mt-0.5">
                       {hasActiveCustomDomain
                         ? `https://${activeCustomDomainName}`
-                        : 'Gunakan nama domain brand bisnis Anda sendiri'}
+                        : (isEn ? 'Use your own business brand domain name' : 'Gunakan nama domain brand bisnis Anda sendiri')}
                     </p>
                   </div>
                 </div>
@@ -419,7 +426,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
               {/* Tautan Atur Domain jika belum terhubung */}
               {selectedDomainType === 'custom' && !hasActiveCustomDomain && onNavigateDomain && (
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between gap-3 text-xs animate-in fade-in duration-200">
-                  <span className="text-gray-600 text-[11px]">Belum memiliki domain sendiri terhubung?</span>
+                  <span className="text-gray-600 text-[11px]">{isEn ? "Don't have your own domain connected yet?" : 'Belum memiliki domain sendiri terhubung?'}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -428,7 +435,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                     }}
                     className="font-bold text-[#66000E] hover:underline flex items-center gap-1 cursor-pointer shrink-0 text-xs"
                   >
-                    <span>Atur di Menu Domain</span>
+                    <span>{isEn ? 'Set Up in Domain Menu' : 'Atur di Menu Domain'}</span>
                     <ArrowRight className="w-3 h-3" />
                   </button>
                 </div>
@@ -444,7 +451,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-[#706866] uppercase tracking-wider flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-[#66000E]" />
-                    <span>Subdomain Toko Terpilih</span>
+                    <span>{isEn ? 'Selected Store Subdomain' : 'Subdomain Toko Terpilih'}</span>
                   </span>
                   <div className="flex items-center gap-1.5">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
@@ -468,7 +475,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                           )
                         }
                         className="w-full min-w-0 text-xs font-bold text-gray-900 outline-none px-1.5 font-mono"
-                        placeholder="nama-subdomain"
+                        placeholder={isEn ? 'subdomain-name' : 'nama-subdomain'}
                       />
                       <span className="text-xs font-medium text-gray-500 select-none shrink-0">
                         .{selectedBaseDomain}
@@ -480,37 +487,41 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                       type="button"
                       onClick={handleRegenerateSubdomain}
                       disabled={isRegenerating}
-                      title="Acak ulang subdomain"
+                      title={isEn ? 'Shuffle subdomain' : 'Acak ulang subdomain'}
                       className="px-3 py-2 rounded-xl bg-white hover:bg-rose-50 border border-gray-200 hover:border-[#66000E] text-[#66000E] text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
                     >
                       <RotateCcw
                         className={`w-3.5 h-3.5 shrink-0 ${isRegenerating ? 'animate-spin' : ''}`}
                       />
-                      <span className="whitespace-nowrap">Acak Ulang</span>
+                      <span className="whitespace-nowrap">{isEn ? 'Shuffle' : 'Acak Ulang'}</span>
                     </button>
                   </div>
                   <p className="text-[10px] text-gray-500">
-                    Klik <strong>Acak Ulang</strong> untuk mendapatkan variasi nama acak baru, atau sesuaikan langsung kata di atas.
+                    {isEn ? (
+                      <>Click <strong>Shuffle</strong> to get a new random name variation, or edit the word above directly.</>
+                    ) : (
+                      <>Klik <strong>Acak Ulang</strong> untuk mendapatkan variasi nama acak baru, atau sesuaikan langsung kata di atas.</>
+                    )}
                   </p>
                 </div>
 
                 {/* Domain Jaringan */}
                 <div className="space-y-1.5 pt-1">
-                  <label className="text-[11px] font-bold text-gray-700">Domain Jaringan:</label>
+                  <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Network Domain:' : 'Domain Jaringan:'}</label>
                   <div className="p-2.5 rounded-xl border border-[#66000E] bg-white shadow-xs ring-1 ring-[#66000E] flex items-center justify-between gap-2">
                     <div className="text-xs font-bold text-gray-900 font-mono truncate">
-                      {isBaseDomainLoading ? 'Memeriksa domain komunitas…' : `.${selectedBaseDomain}`}
+                      {isBaseDomainLoading ? (isEn ? 'Checking community domain…' : 'Memeriksa domain komunitas…') : `.${selectedBaseDomain}`}
                     </div>
                     {!isBaseDomainLoading && (
                       <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F5E8EA] text-[#66000E]">
-                        {domainCommunityName ? `Domain komunitas ${domainCommunityName}` : 'Domain default'}
+                        {domainCommunityName ? (isEn ? `${domainCommunityName} community domain` : `Domain komunitas ${domainCommunityName}`) : (isEn ? 'Default domain' : 'Domain default')}
                       </span>
                     )}
                   </div>
                   <p className="text-[10px] text-gray-500">
                     {domainCommunityName
-                      ? 'Toko anggota komunitas otomatis memakai domain komunitasnya.'
-                      : 'Toko tanpa komunitas memakai domain default lapakq.com.'}
+                      ? (isEn ? "Community member stores automatically use their community's domain." : 'Toko anggota komunitas otomatis memakai domain komunitasnya.')
+                      : (isEn ? 'Stores without a community use the default domain lapakq.com.' : 'Toko tanpa komunitas memakai domain default lapakq.com.')}
                   </p>
                 </div>
               </div>
@@ -564,10 +575,10 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                       </div>
                     </div>
                     <span className="text-[10px] uppercase font-bold shrink-0">
-                      {stage.status === 'success' && <span className="text-emerald-600">Done</span>}
-                      {stage.status === 'running' && <span className="text-blue-600">Running</span>}
-                      {stage.status === 'failed' && <span className="text-rose-600">Error</span>}
-                      {stage.status === 'pending' && <span className="text-gray-400">Wait</span>}
+                      {stage.status === 'success' && <span className="text-emerald-600">{isEn ? 'Done' : 'Selesai'}</span>}
+                      {stage.status === 'running' && <span className="text-blue-600">{isEn ? 'Running' : 'Berjalan'}</span>}
+                      {stage.status === 'failed' && <span className="text-rose-600">{isEn ? 'Error' : 'Gagal'}</span>}
+                      {stage.status === 'pending' && <span className="text-gray-400">{isEn ? 'Wait' : 'Tunggu'}</span>}
                     </span>
                   </div>
                 ))}
@@ -604,11 +615,20 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
               <div className="space-y-1">
                 <h3 className="text-base sm:text-lg font-bold text-[#241A1A]">
-                  Selamat! Toko Online Anda Resmi Live
+                  {isEn ? 'Congratulations! Your Online Store Is Officially Live' : 'Selamat! Toko Online Anda Resmi Live'}
                 </h3>
                 <p className="text-xs text-[#706866] max-w-sm mx-auto leading-relaxed">
-                  Subdomain terkonfirmasi dan seluruh katalog untuk{' '}
-                  <span className="font-bold text-[#241A1A]">{store.name}</span> telah selesai dideploy ke jaringan cloud publik.
+                  {isEn ? (
+                    <>
+                      The subdomain is confirmed and the full catalog for{' '}
+                      <span className="font-bold text-[#241A1A]">{store.name}</span> has been deployed to the public cloud network.
+                    </>
+                  ) : (
+                    <>
+                      Subdomain terkonfirmasi dan seluruh katalog untuk{' '}
+                      <span className="font-bold text-[#241A1A]">{store.name}</span> telah selesai dideploy ke jaringan cloud publik.
+                    </>
+                  )}
                 </p>
               </div>
 
@@ -616,7 +636,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
               <div className="bg-[#FAF7F7] rounded-xl p-4 border border-[#EBE5E2] text-left space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-[#706866] uppercase tracking-wider">
-                    Alamat Website Resmi
+                    {isEn ? 'Official Website Address' : 'Alamat Website Resmi'}
                   </span>
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                     <ShieldCheck className="w-3 h-3" />
@@ -636,17 +656,17 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                         ? 'bg-emerald-600 text-white'
                         : 'bg-gray-100 hover:bg-gray-200 text-[#241A1A]'
                     }`}
-                    title="Salin Tautan"
+                    title={isEn ? 'Copy Link' : 'Salin Tautan'}
                   >
                     {copied ? (
                       <>
                         <Check className="w-3.5 h-3.5" />
-                        <span>Tersalin!</span>
+                        <span>{isEn ? 'Copied!' : 'Tersalin!'}</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-3.5 h-3.5" />
-                        <span>Salin</span>
+                        <span>{isEn ? 'Copy' : 'Salin'}</span>
                       </>
                     )}
                   </button>
@@ -661,7 +681,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#706866] hover:text-[#241A1A] hover:bg-[#F2EDEA] border border-[#E5E0DD] transition cursor-pointer flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Atur Ulang Domain / Deploy</span>
+                  <span>{isEn ? 'Reconfigure Domain / Deploy' : 'Atur Ulang Domain / Deploy'}</span>
                 </button>
                 {onUnpublish && (
                   <button
@@ -671,10 +691,10 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                       onClose();
                     }}
                     className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 hover:bg-rose-50 border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
-                    title="Tarik publikasi toko dan kembalikan ke status draf"
+                    title={isEn ? 'Unpublish the store and return it to draft status' : 'Tarik publikasi toko dan kembalikan ke status draf'}
                   >
                     <EyeOff className="w-3.5 h-3.5 text-rose-600" />
-                    <span>Tarik Publikasi (Unpublish)</span>
+                    <span>{isEn ? 'Unpublish Store' : 'Tarik Publikasi (Unpublish)'}</span>
                   </button>
                 )}
               </div>
@@ -693,7 +713,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 text-xs font-semibold text-[#706866] hover:text-[#241A1A] hover:bg-white rounded-xl transition cursor-pointer"
               >
-                Batal
+                {isEn ? 'Cancel' : 'Batal'}
               </button>
 
               {selectedDomainType === 'random' ? (
@@ -702,7 +722,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                   onClick={() => setStep('confirm_subdomain')}
                   className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-lg shadow-2xs transition active:scale-[0.98] cursor-pointer"
                 >
-                  <span>Lanjutkan</span>
+                  <span>{isEn ? 'Continue' : 'Lanjutkan'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               ) : (
@@ -712,7 +732,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                   className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-lg shadow-2xs transition active:scale-[0.98] cursor-pointer"
                 >
                   <Rocket className="w-3.5 h-3.5" />
-                  <span>Publikasikan Toko</span>
+                  <span>{isEn ? 'Publish Store' : 'Publikasikan Toko'}</span>
                 </button>
               )}
             </div>
@@ -727,7 +747,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 className="px-3 py-2 text-xs font-medium text-[#706866] hover:text-[#241A1A] hover:bg-white rounded-lg transition cursor-pointer flex items-center gap-1.5"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Kembali</span>
+                <span>{isEn ? 'Back' : 'Kembali'}</span>
               </button>
 
               <button
@@ -737,7 +757,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-lg shadow-2xs transition active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-wait"
               >
                 <Rocket className="w-3.5 h-3.5" />
-                <span>Konfirmasi &amp; Mulai Deploy</span>
+                <span>{isEn ? 'Confirm & Start Deploy' : 'Konfirmasi & Mulai Deploy'}</span>
               </button>
             </div>
           )}
@@ -756,7 +776,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                     onClick={() => startAutoDeploySimulation()}
                     className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition cursor-pointer shrink-0"
                   >
-                    Coba lagi
+                    {isEn ? 'Try again' : 'Coba lagi'}
                   </button>
                   <button
                     type="button"
@@ -766,14 +786,14 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                     }}
                     className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition cursor-pointer"
                   >
-                    Kembali
+                    {isEn ? 'Back' : 'Kembali'}
                   </button>
                 </>
               ) : (
                 <div className="flex items-center justify-center py-1 w-full">
                   <span className="text-xs text-gray-500 font-medium flex items-center gap-2">
                     <Wifi className="w-3.5 h-3.5 text-blue-500 animate-pulse" />
-                    <span>Memeriksa DNS dan akses toko, harap tunggu (maks. ±1 menit)...</span>
+                    <span>{isEn ? 'Checking DNS and store access, please wait (max. ±1 minute)...' : 'Memeriksa DNS dan akses toko, harap tunggu (maks. ±1 menit)...'}</span>
                   </span>
                 </div>
               )}
@@ -788,7 +808,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2.5 text-xs font-semibold text-[#706866] hover:text-[#241A1A] hover:bg-white rounded-xl transition cursor-pointer"
               >
-                Selesai
+                {isEn ? 'Done' : 'Selesai'}
               </button>
               <a
                 href={liveStoreUrl}
@@ -798,7 +818,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-xl shadow-2xs transition cursor-pointer"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span>Kunjungi Toko</span>
+                <span>{isEn ? 'Visit Store' : 'Kunjungi Toko'}</span>
               </a>
             </div>
           )}

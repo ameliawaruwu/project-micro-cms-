@@ -9,6 +9,7 @@ import {
   resolveSectionCta,
   resolveSectionImage,
 } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Produk unggulan: produk pertama toko. Tidak dirender bila toko belum punya produk. */
 export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
@@ -72,6 +73,7 @@ export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
 
 /** Kategori dari produk toko; setiap kartu membuka katalog. */
 export const BoldCategoryTiles: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const products = useThemeProductsSource('bold');
   const categories = getProductCategories(products, 4);
   if (categories.length === 0) return null;
@@ -87,7 +89,7 @@ export const BoldCategoryTiles: React.FC<{ sectionOptions?: any; isMobile?: bool
     <section className="bg-zinc-950 py-14 sm:py-16 px-4 sm:px-6 border-b border-zinc-900">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8 sm:mb-10">
-          <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-2">Koleksi</h2>
+          <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-2">{isEn ? 'Collection' : 'Koleksi'}</h2>
           <p className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
             {sectionOptions.heading || 'Belanja per Kategori'}
           </p>
@@ -119,6 +121,7 @@ export const BoldCategoryTiles: React.FC<{ sectionOptions?: any; isMobile?: bool
 
 /** Galeri foto dari produk toko (atau banner yang diunggah merchant). */
 export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const products = useThemeProductsSource('bold');
   const items = products.filter((p) => p.image).slice(0, 3);
   if (items.length === 0) return null;
@@ -163,7 +166,7 @@ export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
               <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
               <div className="absolute bottom-5 left-5 right-5 text-left">
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-1 rounded-full inline-block mb-2">
-                  {product.categoryName || 'Produk'}
+                  {product.categoryName || (isEn ? 'Product' : 'Produk')}
                 </span>
                 <h3 className="text-lg font-black uppercase tracking-tight text-white line-clamp-2">
                   {product.name}
@@ -187,6 +190,7 @@ export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
 
 /** Ajakan menghubungi toko untuk info produk terbaru. */
 export const BoldLimitedRelease: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const heading = sectionOptions.heading || 'Jangan Sampai Kehabisan';
   const desc =
     sectionOptions.description ||
@@ -215,7 +219,7 @@ export const BoldLimitedRelease: React.FC<{ sectionOptions?: any }> = ({ section
             href={STORE_ROUTES.contact}
             className="border border-zinc-700 hover:border-red-500 text-white px-7 py-3.5 font-extrabold uppercase text-xs tracking-wider rounded-xl transition-colors"
           >
-            Hubungi Kami
+            {isEn ? 'Contact Us' : 'Hubungi Kami'}
           </a>
         </div>
       </div>

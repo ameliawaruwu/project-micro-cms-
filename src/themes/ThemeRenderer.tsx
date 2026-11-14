@@ -6,6 +6,7 @@ import { THEME_DATA_MAP } from './themeData';
 import { normalizeThemeId } from './ThemeRegistry';
 import { useCmsStore } from '../cms/useCmsStore';
 import { filterRealProducts } from '../utils/demoProducts';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const NO_PRODUCTS: Product[] = [];
 
@@ -43,6 +44,7 @@ const resolveInitialPage = (store?: Store): string => {
 };
 
 export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = NO_PRODUCTS }) => {
+  const { isEn } = useLanguage();
   // ✅ Hooks MUST be called unconditionally at the top — before any early returns
   const [activePage, setActivePage] = React.useState<string>(() => resolveInitialPage(store));
 
@@ -97,7 +99,7 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="flex flex-col items-center gap-3 text-gray-400">
           <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm font-medium">Memuat pratinjau...</span>
+          <span className="text-sm font-medium">{isEn ? 'Loading preview...' : 'Memuat pratinjau...'}</span>
         </div>
       </div>
     );

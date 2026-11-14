@@ -50,18 +50,22 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
             <span>
               {isSubAdmin
                 ? (isSubAdminUmum
-                    ? (communityName ? `Dashboard Admin Umum — ${communityName}` : 'Dashboard Admin Umum')
+                    ? (isEn
+                        ? (communityName ? `General Admin Dashboard — ${communityName}` : 'General Admin Dashboard')
+                        : (communityName ? `Dashboard Admin Umum — ${communityName}` : 'Dashboard Admin Umum'))
                     : isSubAdminProduk
-                    ? (communityName ? `Dashboard Toko & Produk — ${communityName}` : 'Dashboard Toko & Produk')
-                    : (communityName ? `Dashboard — ${communityName}` : 'Dashboard Komunitas'))
+                    ? (isEn
+                        ? (communityName ? `Stores & Products Dashboard — ${communityName}` : 'Stores & Products Dashboard')
+                        : (communityName ? `Dashboard Toko & Produk — ${communityName}` : 'Dashboard Toko & Produk'))
+                    : (communityName ? `Dashboard — ${communityName}` : (isEn ? 'Community Dashboard' : 'Dashboard Komunitas')))
                 : (isEn ? 'Platform Dashboard' : 'Dashboard Ringkasan Platform')}
             </span>
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
             {isSubAdmin
               ? (isSubAdminUmum
-                  ? 'Ringkasan performa dan keanggotaan toko binaan naungan komunitas Anda.'
-                  : 'Ringkasan operasional toko binaan, pesanan GMV, dan katalog produk.')
+                  ? (isEn ? 'Performance and membership summary of your community member stores.' : 'Ringkasan performa dan keanggotaan toko binaan naungan komunitas Anda.')
+                  : (isEn ? 'Operational summary of member stores, GMV orders, and product catalogs.' : 'Ringkasan operasional toko binaan, pesanan GMV, dan katalog produk.'))
               : (isEn ? 'High-level platform metrics, stores, GMV, and payouts.' : 'Ringkasan metrik platform, toko, transaksi GMV, dan pencairan dana.')}
           </p>
         </div>
@@ -189,7 +193,7 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
                   <div>
                     <p className="font-semibold text-xs text-gray-900 leading-tight">{w.storeName}</p>
                     <span className="text-[10px] text-gray-400">
-                      {w.accountNumber} a.n {w.accountHolder}
+                      {w.accountNumber} {isEn ? 'held by' : 'a.n'} {w.accountHolder}
                     </span>
                   </div>
                 </div>

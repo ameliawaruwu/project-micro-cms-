@@ -1,12 +1,14 @@
 import React from 'react';
 import { CmsProduct } from '../../../cms/mockCmsData';
 import { formatRupiah, productHref } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface ProductCardProps {
   product: CmsProduct;
 }
 
 export const FuturisticProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  const { isEn } = useLanguage();
   return (
     <a href={productHref(product)} className="group block min-w-0 relative font-['Space_Grotesk',sans-serif]">
       {/* Glow background effect on hover */}
@@ -34,7 +36,7 @@ export const FuturisticProductCard: React.FC<ProductCardProps> = ({ product }) =
 
         <div className="p-3 sm:p-5 flex-1 flex flex-col justify-between min-w-0">
           <div>
-            <p className="text-[10px] text-red-600 uppercase tracking-widest mb-2 font-bold truncate">{product.categoryName || 'Produk'}</p>
+            <p className="text-[10px] text-red-600 uppercase tracking-widest mb-2 font-bold truncate">{product.categoryName || (isEn ? 'Product' : 'Produk')}</p>
             <h3 className="text-xs sm:text-sm font-medium text-gray-900 mb-3 sm:mb-4 line-clamp-2 leading-relaxed break-words">
               {product.name}
             </h3>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { adminDomainService } from '../../services/adminDomainService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface PanelDomainSelectProps {
   value: string;
@@ -15,6 +16,7 @@ interface PanelDomainSelectProps {
  * Nilai kosong = domain bawaan (lapakq.com).
  */
 export const PanelDomainSelect: React.FC<PanelDomainSelectProps> = ({ value, onChange, readOnly = false }) => {
+  const { isEn } = useLanguage();
   const [domains, setDomains] = useState<string[]>([]);
   const [defaultDomain, setDefaultDomain] = useState('lapakq.com');
   const [loading, setLoading] = useState(!readOnly);
@@ -49,11 +51,11 @@ export const PanelDomainSelect: React.FC<PanelDomainSelectProps> = ({ value, onC
   return (
     <div className="space-y-1">
       <select value={value} onChange={(e) => onChange(e.target.value)} disabled={loading} className={className}>
-        <option value="">{loading ? 'Memuat domain panel…' : `${defaultDomain} (bawaan)`}</option>
+        <option value="">{loading ? (isEn ? 'Loading panel domains…' : 'Memuat domain panel…') : (isEn ? `${defaultDomain} (default)` : `${defaultDomain} (bawaan)`)}</option>
         {domains.map((d) => (
           <option key={d} value={d}>{d}</option>
         ))}
-        {unknownCurrent && <option value={value}>{value} (tidak terdaftar di panel)</option>}
+        {unknownCurrent && <option value={value}>{value} {isEn ? '(not registered in panel)' : '(tidak terdaftar di panel)'}</option>}
       </select>
       {error && (
         <p className="flex items-start gap-1 text-[11px] text-red-600"><AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" /> {error}</p>
@@ -61,7 +63,9 @@ export const PanelDomainSelect: React.FC<PanelDomainSelectProps> = ({ value, onC
       {unknownCurrent && (
         <p className="flex items-start gap-1 text-[11px] text-amber-700">
           <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
-          Domain ini belum diizinkan untuk LapakQ di Kroombox Panel; toko komunitas ini tidak bisa dipublikasikan sampai domainnya ditambahkan di panel.
+          {isEn
+            ? 'This domain is not yet allowed for LapakQ in Kroombox Panel; this community’s stores cannot be published until the domain is added in the panel.'
+            : 'Domain ini belum diizinkan untuk LapakQ di Kroombox Panel; toko komunitas ini tidak bisa dipublikasikan sampai domainnya ditambahkan di panel.'}
         </p>
       )}
     </div>

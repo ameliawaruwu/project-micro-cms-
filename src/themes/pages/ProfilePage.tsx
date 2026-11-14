@@ -7,6 +7,7 @@ import { useStoreChromeOptions } from './storeChrome';
 import { Mail, Phone, MapPin, LogOut, Pencil, UserRound } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { customerService, CustomerInfo } from '../../services/customerService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ProfilePageProps {
   themeData?: ThemeSchema;
@@ -36,28 +37,28 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type FieldKey = keyof Omit<CustomerInfo, 'notes'>;
 
-const PROFILE_FIELDS: Array<{ key: FieldKey; label: string; maxLength: number; type?: string; multiline?: boolean; wide?: boolean }> = [
-  { key: 'name', label: 'Nama Lengkap', maxLength: 100, wide: true },
-  { key: 'phoneWhatsApp', label: 'Nomor WhatsApp', maxLength: 20, type: 'tel' },
-  { key: 'email', label: 'Email', maxLength: 120, type: 'email' },
-  { key: 'address', label: 'Alamat Lengkap', maxLength: 300, multiline: true, wide: true },
-  { key: 'district', label: 'Kecamatan', maxLength: 80 },
-  { key: 'city', label: 'Kota / Kabupaten', maxLength: 80 },
-  { key: 'province', label: 'Provinsi', maxLength: 80 },
-  { key: 'postalCode', label: 'Kode Pos', maxLength: 10 },
+const PROFILE_FIELDS: Array<{ key: FieldKey; label: string; labelEn: string; maxLength: number; type?: string; multiline?: boolean; wide?: boolean }> = [
+  { key: 'name', label: 'Nama Lengkap', labelEn: 'Full Name', maxLength: 100, wide: true },
+  { key: 'phoneWhatsApp', label: 'Nomor WhatsApp', labelEn: 'WhatsApp Number', maxLength: 20, type: 'tel' },
+  { key: 'email', label: 'Email', labelEn: 'Email', maxLength: 120, type: 'email' },
+  { key: 'address', label: 'Alamat Lengkap', labelEn: 'Full Address', maxLength: 300, multiline: true, wide: true },
+  { key: 'district', label: 'Kecamatan', labelEn: 'District', maxLength: 80 },
+  { key: 'city', label: 'Kota / Kabupaten', labelEn: 'City / Regency', maxLength: 80 },
+  { key: 'province', label: 'Provinsi', labelEn: 'Province', maxLength: 80 },
+  { key: 'postalCode', label: 'Kode Pos', labelEn: 'Postal Code', maxLength: 10 },
 ];
 
 /** Rapikan isian (trim) dan kembalikan pesan error pertama bila tidak valid. */
-function normalizeProfile(draft: CustomerInfo): { profile: CustomerInfo; error: string | null } {
+function normalizeProfile(draft: CustomerInfo, isEn = false): { profile: CustomerInfo; error: string | null } {
   const profile = Object.fromEntries(
     Object.entries({ ...EMPTY_PROFILE, ...draft }).map(([key, value]) => [key, String(value ?? '').trim()]),
   ) as unknown as CustomerInfo;
 
   const phoneDigits = profile.phoneWhatsApp.replace(/\D/g, '');
-  if (!profile.name) return { profile, error: 'Nama lengkap wajib diisi.' };
-  if (phoneDigits.length < 8 || phoneDigits.length > 15) return { profile, error: 'Nomor WhatsApp harus berisi 8–15 digit.' };
-  if (profile.email && !EMAIL_PATTERN.test(profile.email)) return { profile, error: 'Format email tidak valid.' };
-  if (profile.postalCode && !/^\d{5}$/.test(profile.postalCode)) return { profile, error: 'Kode pos harus 5 digit angka.' };
+  if (!profile.name) return { profile, error: isEn ? 'Full name is required.' : 'Nama lengkap wajib diisi.' };
+  if (phoneDigits.length < 8 || phoneDigits.length > 15) return { profile, error: isEn ? 'WhatsApp number must be 8–15 digits.' : 'Nomor WhatsApp harus berisi 8–15 digit.' };
+  if (profile.email && !EMAIL_PATTERN.test(profile.email)) return { profile, error: isEn ? 'Invalid email format.' : 'Format email tidak valid.' };
+  if (profile.postalCode && !/^\d{5}$/.test(profile.postalCode)) return { profile, error: isEn ? 'Postal code must be 5 digits.' : 'Kode pos harus 5 digit angka.' };
   return { profile, error: null };
 }
 
@@ -137,6 +138,7 @@ const THEME_SKINS: Record<string, Partial<ProfileSkin>> = {
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: propThemeId, store, tab, onNavigate }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
+  const { isEn } = useLanguage();
   const liveStoreInfo = useCmsStore((state) => state.storeInfo);
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',
@@ -197,7 +199,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const { profile: next, error: validationError } = normalizeProfile(draft);
+    const { profile: next, error: validationError } = normalizeProfile(draft, isEn);
     if (validationError) {
       setError(validationError);
       return;
@@ -205,13 +207,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
     try {
       customerService.saveInfo({ ...next, notes: profile?.notes });
     } catch {
-      setError('Profil gagal disimpan. Pastikan penyimpanan browser tidak diblokir.');
+      setError(isEn ? 'Failed to save profile. Make sure browser storage is not blocked.' : 'Profil gagal disimpan. Pastikan penyimpanan browser tidak diblokir.');
       return;
     }
     setProfile(next);
     setIsEditing(false);
     setError(null);
-    setNotice('Profil berhasil disimpan.');
+    setNotice(isEn ? 'Profile saved successfully.' : 'Profil berhasil disimpan.');
   };
 
   const handleLogout = () => {
@@ -223,14 +225,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
     onNavigate?.('home');
   };
 
-  const title = tab === 'address' ? 'Alamat Saya' : 'Profil Saya';
+  const title = tab === 'address' ? (isEn ? 'My Address' : 'Alamat Saya') : (isEn ? 'My Profile' : 'Profil Saya');
 
   const renderForm = () => (
     <form onSubmit={handleSave} className={skin.card} noValidate>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {PROFILE_FIELDS.map(({ key, label, maxLength, type, multiline, wide }) => (
+        {PROFILE_FIELDS.map(({ key, label, labelEn, maxLength, type, multiline, wide }) => (
           <label key={key} className={`space-y-1.5 ${wide ? 'sm:col-span-2' : ''}`}>
-            <span className={skin.label}>{label}</span>
+            <span className={skin.label}>{isEn ? labelEn : label}</span>
             {multiline ? (
               <textarea
                 rows={3}
@@ -253,10 +255,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
       </div>
       {error && <p role="alert" className={skin.error}>{error}</p>}
       <div className="flex flex-wrap gap-3">
-        <button type="submit" className={skin.primaryButton}>Simpan Profil</button>
+        <button type="submit" className={skin.primaryButton}>{isEn ? 'Save Profile' : 'Simpan Profil'}</button>
         {profile && (
           <button type="button" onClick={() => { setIsEditing(false); setError(null); }} className={skin.secondaryButton}>
-            Batal
+            {isEn ? 'Cancel' : 'Batal'}
           </button>
         )}
       </div>
@@ -267,13 +269,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
     <div className={`${skin.card} text-center`}>
       <div className={`${skin.avatar} mx-auto`}><UserRound className="w-7 h-7" /></div>
       <div className="space-y-2">
-        <p className={`text-lg ${skin.strong}`}>Belum ada data profil</p>
+        <p className={`text-lg ${skin.strong}`}>{isEn ? 'No profile data yet' : 'Belum ada data profil'}</p>
         <p className={`text-sm ${skin.muted}`}>
-          Lengkapi nama, nomor WhatsApp, dan alamat agar checkout berikutnya lebih cepat. Data hanya disimpan di perangkat ini.
+          {isEn
+            ? 'Fill in your name, WhatsApp number, and address to make your next checkout faster. Data is only stored on this device.'
+            : 'Lengkapi nama, nomor WhatsApp, dan alamat agar checkout berikutnya lebih cepat. Data hanya disimpan di perangkat ini.'}
         </p>
       </div>
       <button type="button" onClick={startEditing} className={skin.primaryButton}>
-        <Pencil className="w-4 h-4" /> Lengkapi Profil
+        <Pencil className="w-4 h-4" /> {isEn ? 'Complete Profile' : 'Lengkapi Profil'}
       </button>
     </div>
   );
@@ -286,7 +290,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
           <div className={skin.avatar}>{initialsOf(data.name)}</div>
           <div className="min-w-0">
             <h2 className={`text-xl break-words ${skin.strong}`}>{data.name}</h2>
-            <p className={`text-xs ${skin.muted}`}>Pelanggan {storeName}</p>
+            <p className={`text-xs ${skin.muted}`}>{isEn ? 'Customer of' : 'Pelanggan'} {storeName}</p>
           </div>
         </div>
         <div className={`space-y-3 text-sm ${skin.muted}`}>
@@ -294,16 +298,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ themeData, themeId: pr
           {data.email && <div className="flex items-start gap-3"><Mail className="w-4 h-4 mt-0.5 shrink-0" /> <span className="break-all">{data.email}</span></div>}
           <div className="flex items-start gap-3">
             <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-            <span className="break-words">{fullAddress || 'Alamat belum diisi.'}</span>
+            <span className="break-words">{fullAddress || (isEn ? 'Address not filled in yet.' : 'Alamat belum diisi.')}</span>
           </div>
         </div>
         {notice && <p role="status" className={skin.success}>{notice}</p>}
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={startEditing} className={skin.primaryButton}>
-            <Pencil className="w-4 h-4" /> Edit Profil
+            <Pencil className="w-4 h-4" /> {isEn ? 'Edit Profile' : 'Edit Profil'}
           </button>
           <button type="button" onClick={handleLogout} className={skin.secondaryButton}>
-            <LogOut className="w-4 h-4" /> Keluar
+            <LogOut className="w-4 h-4" /> {isEn ? 'Sign Out' : 'Keluar'}
           </button>
         </div>
       </div>

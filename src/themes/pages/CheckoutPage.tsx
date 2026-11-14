@@ -295,13 +295,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       } else if (result.rates && result.rates.length > 0) {
         setAvailableRates(result.rates);
       } else {
-        setRatesError('Tidak ada layanan kurir yang tersedia untuk area ini.');
+        setRatesError(isEn ? 'No courier services are available for this area.' : 'Tidak ada layanan kurir yang tersedia untuk area ini.');
         setAvailableRates([]);
         setSelectedRate(null);
       }
     } catch (err: any) {
       console.warn('[Checkout] Failed to fetch rates:', err);
-      setRatesError('Gagal memuat tarif kurir otomatis.');
+      setRatesError(isEn ? 'Failed to load automatic courier rates.' : 'Gagal memuat tarif kurir otomatis.');
       setAvailableRates([]);
       setSelectedRate(null);
     } finally {
@@ -385,14 +385,16 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     // 2. QRIS Statis & Transfer Bank Langsung Milik Toko
     if (paymentConfig.enableManualTransfer) {
       const bankDetails = paymentConfig.manualBankAccountNumber
-        ? `${paymentConfig.manualBankName || 'Bank'} (${paymentConfig.manualBankAccountNumber} a.n ${paymentConfig.manualBankAccountHolder || store?.name || 'Toko'})`
-        : 'Rekening Toko / Barcode QRIS';
+        ? `${paymentConfig.manualBankName || 'Bank'} (${paymentConfig.manualBankAccountNumber} ${isEn ? 'held by' : 'a.n'} ${paymentConfig.manualBankAccountHolder || store?.name || (isEn ? 'Store' : 'Toko')})`
+        : (isEn ? 'Store Account / QRIS Code' : 'Rekening Toko / Barcode QRIS');
 
       options.push({
         id: 'manual_transfer',
         name: isEn ? 'Direct Bank Transfer / QRIS' : 'QRIS & Transfer Bank Langsung Milik Toko',
-        description: `Transfer langsung ke ${bankDetails} atau scan QRIS toko, lalu klik "Saya Sudah Bayar" agar penjual memeriksa pembayaran Anda.`,
-        badge: '0% Biaya Gateway',
+        description: isEn
+          ? `Transfer directly to ${bankDetails} or scan the store QRIS, then click "I Have Paid" so the seller can check your payment.`
+          : `Transfer langsung ke ${bankDetails} atau scan QRIS toko, lalu klik "Saya Sudah Bayar" agar penjual memeriksa pembayaran Anda.`,
+        badge: isEn ? '0% Gateway Fee' : '0% Biaya Gateway',
         type: 'manual',
       });
     }
@@ -417,7 +419,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           options.push({
             id: 'qris',
             name: isEn ? 'QRIS Real-Time (Instant Scan GoPay, OVO, DANA, ShopeePay)' : 'QRIS Real-Time (Scan Otomatis GoPay, OVO, DANA, ShopeePay)',
-            description: localizedDesc || 'Bayar instan via scan kode QRIS otomatis dari aplikasi m-Banking atau E-Wallet mana pun.',
+            description: localizedDesc || (isEn ? 'Pay instantly by scanning the automatic QRIS code from any m-Banking or E-Wallet app.' : 'Bayar instan via scan kode QRIS otomatis dari aplikasi m-Banking atau E-Wallet mana pun.'),
             badge: isEn ? 'Instant' : 'Instan Otomatis',
             type: 'gateway',
           });
@@ -430,14 +432,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             id: channel.id,
             name: localizedName,
             description: localizedDesc || (isEn ? 'Automatic transfer with instant 24/7 verification.' : 'Transfer otomatis dengan verifikasi instan 24 jam tanpa perlu upload bukti transfer.'),
-            badge: 'Otomatis 24 Jam',
+            badge: isEn ? 'Automatic 24/7' : 'Otomatis 24 Jam',
             type: 'gateway',
           });
         } else if (channel.id === 'credit_card') {
           options.push({
             id: 'credit_card',
             name: isEn ? 'Credit / Debit Card Online (Visa, Mastercard, JCB)' : 'Kartu Kredit / Debit Online (Visa, Mastercard, JCB)',
-            description: localizedDesc || 'Pembayaran online terenkripsi dengan proteksi 3D Secure OTP.',
+            description: localizedDesc || (isEn ? 'Encrypted online payment protected by 3D Secure OTP.' : 'Pembayaran online terenkripsi dengan proteksi 3D Secure OTP.'),
             badge: '3D Secure',
             type: 'gateway',
           });
@@ -445,8 +447,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           options.push({
             id: channel.id,
             name: localizedName,
-            description: localizedDesc || 'Pembayaran resmi melalui gerbang Duitku.',
-            badge: 'Otomatis',
+            description: localizedDesc || (isEn ? 'Official payment via the Duitku gateway.' : 'Pembayaran resmi melalui gerbang Duitku.'),
+            badge: isEn ? 'Automatic' : 'Otomatis',
             type: 'gateway',
           });
         }
@@ -456,9 +458,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     if (options.length === 0) {
       options.push({
         id: 'cod',
-        name: 'Bayar di Tempat (COD)',
-        description: 'Bayar secara tunai langsung kepada kurir saat barang tiba.',
-        badge: 'COD Tunai',
+        name: isEn ? 'Cash on Delivery (COD)' : 'Bayar di Tempat (COD)',
+        description: isEn ? 'Pay with cash directly to the courier when the package arrives.' : 'Bayar secara tunai langsung kepada kurir saat barang tiba.',
+        badge: isEn ? 'COD Cash' : 'COD Tunai',
         type: 'cod',
       });
     }
@@ -700,32 +702,32 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
   const handleProcessCheckout = async () => {
     if (!customerName.trim() || !customerPhone.trim()) {
-      alert('Silakan lengkapi Nama Lengkap dan Nomor WhatsApp penerima.');
+      alert(isEn ? "Please fill in the recipient's Full Name and WhatsApp Number." : 'Silakan lengkapi Nama Lengkap dan Nomor WhatsApp penerima.');
       return;
     }
 
     if (!/^\d{9,15}$/.test(customerPhone.trim())) {
-      alert('Nomor WhatsApp harus berupa angka 9–15 digit, contoh: 081234567890.');
+      alert(isEn ? 'The WhatsApp number must be 9–15 digits, e.g. 081234567890.' : 'Nomor WhatsApp harus berupa angka 9–15 digit, contoh: 081234567890.');
       return;
     }
 
     if (!selectedProvinceId || !selectedRegencyId || !selectedDistrictId || !selectedVillageId || !selectedPostalCode) {
-      alert('Silakan lengkapi pemilihan alamat bertingkat (Provinsi → Kota → Kecamatan → Kelurahan → Kode Pos).');
+      alert(isEn ? 'Please complete the address selection (Province → City → District → Village → Postal Code).' : 'Silakan lengkapi pemilihan alamat bertingkat (Provinsi → Kota → Kecamatan → Kelurahan → Kode Pos).');
       return;
     }
 
     if (!detailedAddress.trim()) {
-      alert('Silakan isi Detail Alamat (nama jalan, nomor rumah/gedung, RT/RW).');
+      alert(isEn ? 'Please fill in the Address Details (street name, house/building number, RT/RW).' : 'Silakan isi Detail Alamat (nama jalan, nomor rumah/gedung, RT/RW).');
       return;
     }
 
     if (!selectedRate && displayedRates.length > 0) {
-      alert('Silakan pilih salah satu opsi pengiriman kurir.');
+      alert(isEn ? 'Please choose one of the courier shipping options.' : 'Silakan pilih salah satu opsi pengiriman kurir.');
       return;
     }
 
     if (paymentOptions.length === 0) {
-      alert('Tidak ada metode pembayaran yang aktif di toko ini.');
+      alert(isEn ? 'There are no active payment methods at this store.' : 'Tidak ada metode pembayaran yang aktif di toko ini.');
       return;
     }
 
@@ -738,7 +740,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         completeOrder(await createOrderRecord('Bayar di Tempat (COD)'));
       } catch (err: any) {
         console.error('COD checkout error:', err);
-        alert('Gagal memproses pesanan COD: ' + (err?.message || 'Silakan coba lagi.'));
+        alert((isEn ? 'Failed to process COD order: ' : 'Gagal memproses pesanan COD: ') + (err?.message || (isEn ? 'Please try again.' : 'Silakan coba lagi.')));
       } finally {
         setIsSubmitting(false);
       }
@@ -753,7 +755,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         completeOrder(await createOrderRecord(title));
       } catch (err: any) {
         console.error('Manual transfer checkout error:', err);
-        alert('Gagal memproses pesanan: ' + (err?.message || 'Silakan coba lagi.'));
+        alert((isEn ? 'Failed to process order: ' : 'Gagal memproses pesanan: ') + (err?.message || (isEn ? 'Please try again.' : 'Silakan coba lagi.')));
       } finally {
         setIsSubmitting(false);
       }
@@ -820,7 +822,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           onError: (err) => {
             console.error('Duitku payment notice:', err);
             setIsSubmitting(false);
-            alert('Kendala pembayaran: ' + (err?.statusMessage || 'Pembayaran dibatalkan atau terjadi kendala. Silakan coba lagi.'));
+            alert((isEn ? 'Payment issue: ' : 'Kendala pembayaran: ') + (err?.statusMessage || (isEn ? 'The payment was cancelled or ran into a problem. Please try again.' : 'Pembayaran dibatalkan atau terjadi kendala. Silakan coba lagi.')));
           },
           onClose: () => {
             setIsSubmitting(false);
@@ -829,7 +831,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       );
     } catch (err: any) {
       console.error('Checkout error:', err);
-      alert('Terjadi kendala saat memproses pesanan: ' + (err?.message || 'Silakan coba kembali.'));
+      alert((isEn ? 'A problem occurred while processing the order: ' : 'Terjadi kendala saat memproses pesanan: ') + (err?.message || (isEn ? 'Please try again.' : 'Silakan coba kembali.')));
     } finally {
       setIsSubmitting(false);
     }
@@ -851,9 +853,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       const orderNum = createdOrder?.orderNumber || '#ORD-88231';
       const courierInfo = selectedRate
         ? `${selectedRate.courier_name} (${selectedRate.courier_service_name})`
-        : 'Pengiriman Standar';
+        : (isEn ? 'Standard Shipping' : 'Pengiriman Standar');
       const selectedPaymentName =
-        paymentOptions.find((p) => p.id === selectedPaymentId)?.name || 'Metode Pembayaran';
+        paymentOptions.find((p) => p.id === selectedPaymentId)?.name || (isEn ? 'Payment Method' : 'Metode Pembayaran');
 
       const isCodOrder = createdOrder?.paymentMethod?.includes('COD') || selectedPaymentId === 'cod';
       const isManualTransfer =
@@ -884,13 +886,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             <div className="space-y-1">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--sf-text)] tracking-tight">
                 {isCodOrder
-                  ? 'Pesanan COD Berhasil Diterima!'
+                  ? (isEn ? 'COD Order Received Successfully!' : 'Pesanan COD Berhasil Diterima!')
                   : isManualTransfer
-                  ? 'Pesanan Diterima! Selesaikan Pembayaran'
-                  : 'Pesanan Berhasil Diproses!'}
+                  ? (isEn ? 'Order Received! Complete Your Payment' : 'Pesanan Diterima! Selesaikan Pembayaran')
+                  : (isEn ? 'Order Processed Successfully!' : 'Pesanan Berhasil Diproses!')}
               </h1>
               <p className="text-sm font-medium text-[var(--sf-muted)]">
-                Nomor Pesanan: <span className="font-bold font-mono text-[var(--sf-text)]">{orderNum}</span>
+                {isEn ? 'Order Number:' : 'Nomor Pesanan:'} <span className="font-bold font-mono text-[var(--sf-text)]">{orderNum}</span>
               </p>
             </div>
 
@@ -899,13 +901,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               <div className="p-4 rounded-[var(--sf-radius)] bg-amber-50/80 border border-amber-200/80 text-left text-xs text-amber-900 space-y-1.5">
                 <div className="flex items-center gap-2 font-bold text-amber-950">
                   <Banknote className="w-4 h-4 text-amber-700" />
-                  <span>Petunjuk Pembayaran Tunai (COD)</span>
+                  <span>{isEn ? 'Cash Payment Instructions (COD)' : 'Petunjuk Pembayaran Tunai (COD)'}</span>
                 </div>
                 <p className="leading-relaxed">
-                  {paymentConfig.codInstructions || 'Siapkan uang tunai pas saat barang diantar oleh kurir atau penjual.'}
+                  {paymentConfig.codInstructions || (isEn ? 'Prepare the exact cash amount when the courier or seller delivers your order.' : 'Siapkan uang tunai pas saat barang diantar oleh kurir atau penjual.')}
                 </p>
                 <p className="text-[11px] text-amber-800 font-medium pt-1">
-                  Total yang harus dibayarkan:{' '}
+                  {isEn ? 'Amount to pay:' : 'Total yang harus dibayarkan:'}{' '}
                   <strong className="text-amber-950 text-sm">Rp {total.toLocaleString('id-ID')}</strong>
                 </p>
               </div>
@@ -917,7 +919,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             {/* General Manifest Details */}
             <div className="p-5 bg-[var(--sf-subtle)] rounded-[var(--sf-radius)] text-left text-xs text-[var(--sf-text-soft)] space-y-2.5 border border-[var(--sf-border)]">
               <div className="flex justify-between items-center pb-2 border-b border-[var(--sf-border)]">
-                <span className="font-semibold text-[var(--sf-text-soft)]">Status Transaksi:</span>
+                <span className="font-semibold text-[var(--sf-text-soft)]">{isEn ? 'Transaction Status:' : 'Status Transaksi:'}</span>
                 <span className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] ${
                   isCodOrder
                     ? 'bg-amber-100 text-amber-800'
@@ -926,20 +928,20 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     : 'bg-emerald-100 text-emerald-800'
                 }`}>
                   {isCodOrder
-                    ? 'Menunggu Pengantaran (COD)'
+                    ? (isEn ? 'Awaiting Delivery (COD)' : 'Menunggu Pengantaran (COD)')
                     : isManualTransfer
                     ? createdOrder?.paymentConfirmedAt
-                      ? 'Menunggu Pengecekan Penjual'
-                      : 'Menunggu Pembayaran'
-                    : 'Terkonfirmasi Otomatis'}
+                      ? (isEn ? 'Awaiting Seller Review' : 'Menunggu Pengecekan Penjual')
+                      : (isEn ? 'Awaiting Payment' : 'Menunggu Pembayaran')
+                    : (isEn ? 'Automatically Confirmed' : 'Terkonfirmasi Otomatis')}
                 </span>
               </div>
-              <p><span className="text-[var(--sf-muted)]">Metode Pembayaran:</span> <span className="font-semibold text-[var(--sf-text)]">{selectedPaymentName}</span></p>
-              <p><span className="text-[var(--sf-muted)]">Penerima:</span> <span className="font-semibold text-[var(--sf-text)]">{customerName} ({customerPhone})</span></p>
-              <p><span className="text-[var(--sf-muted)]">Alamat Pengiriman:</span> <span className="font-semibold text-[var(--sf-text)]">{createdOrder?.customerAddress || detailedAddress}</span></p>
-              <p><span className="text-[var(--sf-muted)]">Kurir:</span> <span className="font-semibold text-[var(--sf-text)]">{courierInfo} • Rp {shippingFee.toLocaleString('id-ID')}</span></p>
+              <p><span className="text-[var(--sf-muted)]">{isEn ? 'Payment Method:' : 'Metode Pembayaran:'}</span> <span className="font-semibold text-[var(--sf-text)]">{selectedPaymentName}</span></p>
+              <p><span className="text-[var(--sf-muted)]">{isEn ? 'Recipient:' : 'Penerima:'}</span> <span className="font-semibold text-[var(--sf-text)]">{customerName} ({customerPhone})</span></p>
+              <p><span className="text-[var(--sf-muted)]">{isEn ? 'Shipping Address:' : 'Alamat Pengiriman:'}</span> <span className="font-semibold text-[var(--sf-text)]">{createdOrder?.customerAddress || detailedAddress}</span></p>
+              <p><span className="text-[var(--sf-muted)]">{isEn ? 'Courier:' : 'Kurir:'}</span> <span className="font-semibold text-[var(--sf-text)]">{courierInfo} • Rp {shippingFee.toLocaleString('id-ID')}</span></p>
               <div className="pt-2.5 border-t border-[var(--sf-border)] flex justify-between items-center text-sm font-extrabold text-[var(--sf-text)]">
-                <span>Total Tagihan</span>
+                <span>{isEn ? 'Total Bill' : 'Total Tagihan'}</span>
                 <span className="text-[var(--sf-primary)] text-base">Rp {total.toLocaleString('id-ID')}</span>
               </div>
             </div>
@@ -951,9 +953,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   <div className="w-full p-4 rounded-[var(--sf-radius)] bg-emerald-50 border border-emerald-200 text-left flex items-start gap-3">
                     <Check className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                      <p className="text-sm font-bold text-emerald-900">Bukti pembayaran terkirim</p>
+                      <p className="text-sm font-bold text-emerald-900">{isEn ? 'Payment proof sent' : 'Bukti pembayaran terkirim'}</p>
                       <p className="text-xs text-emerald-800 leading-relaxed">
-                        Penjual akan memeriksa pembayaran Anda. Pesanan diproses setelah pembayaran dinyatakan lunas.
+                        {isEn
+                          ? 'The seller will check your payment. Your order will be processed once the payment is confirmed.'
+                          : 'Penjual akan memeriksa pembayaran Anda. Pesanan diproses setelah pembayaran dinyatakan lunas.'}
                       </p>
                     </div>
                   </div>
@@ -980,14 +984,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   className="w-full sm:w-1/2 py-3 px-4 bg-[var(--sf-primary)] hover:bg-[var(--sf-primary)] text-white font-bold rounded-[var(--sf-radius)] flex items-center justify-center gap-2 transition cursor-pointer shadow-xs text-xs"
                 >
                   <MapPin className="w-4 h-4" />
-                  <span>Lacak Pesanan</span>
+                  <span>{isEn ? 'Track Order' : 'Lacak Pesanan'}</span>
                 </button>
 
                 <button
                   onClick={() => (onNavigate ? onNavigate('homepage') : null)}
                   className="w-full sm:w-1/2 py-3 px-4 bg-[var(--sf-subtle)] hover:brightness-95 text-[var(--sf-text)] font-bold rounded-[var(--sf-radius)] transition cursor-pointer text-xs"
                 >
-                  Kembali Belanja
+                  {isEn ? 'Continue Shopping' : 'Kembali Belanja'}
                 </button>
               </div>
             </div>
@@ -1001,14 +1005,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       return (
         <div className="pt-24 pb-24 min-h-[60vh] flex items-center justify-center px-6 text-center font-sans">
           <div className="max-w-sm space-y-3">
-            <h1 className="text-xl font-semibold text-[var(--sf-text)]">Keranjang belanja kosong</h1>
-            <p className="text-sm text-[var(--sf-muted)]">Tambahkan produk ke keranjang terlebih dahulu sebelum checkout.</p>
+            <h1 className="text-xl font-semibold text-[var(--sf-text)]">{isEn ? 'Your shopping cart is empty' : 'Keranjang belanja kosong'}</h1>
+            <p className="text-sm text-[var(--sf-muted)]">{isEn ? 'Add products to your cart before checking out.' : 'Tambahkan produk ke keranjang terlebih dahulu sebelum checkout.'}</p>
             <button
               type="button"
               onClick={() => onNavigate && onNavigate('katalog')}
               className="px-5 py-2.5 rounded-[var(--sf-radius)] bg-[var(--sf-primary)] text-white text-xs font-semibold hover:bg-[var(--sf-primary)] transition cursor-pointer"
             >
-              Lihat Katalog
+              {isEn ? 'View Catalog' : 'Lihat Katalog'}
             </button>
           </div>
         </div>
@@ -1026,7 +1030,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--sf-muted)] hover:text-[var(--sf-primary)] transition cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Kembali ke Katalog Belanja</span>
+              <span>{isEn ? 'Back to Shopping Catalog' : 'Kembali ke Katalog Belanja'}</span>
             </button>
           </div>
 
@@ -1040,26 +1044,26 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     1
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-[var(--sf-text)]">Informasi Kontak Penerima</h2>
-                    <p className="text-[11px] text-[var(--sf-muted)]">Data penerima paket pesanan dan konfirmasi pembayaran</p>
+                    <h2 className="text-sm font-bold text-[var(--sf-text)]">{isEn ? 'Recipient Contact Information' : 'Informasi Kontak Penerima'}</h2>
+                    <p className="text-[11px] text-[var(--sf-muted)]">{isEn ? 'Package recipient details and payment confirmation' : 'Data penerima paket pesanan dan konfirmasi pembayaran'}</p>
                   </div>
                 </div>
 
                 <div className={`grid ${formGridColsClass} gap-3.5`}>
                   <div>
-                    <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">Nama Lengkap *</label>
+                    <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">{isEn ? 'Full Name *' : 'Nama Lengkap *'}</label>
                     <input
                       type="text"
                       required
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="Nama lengkap penerima"
+                      placeholder={isEn ? "Recipient's full name" : 'Nama lengkap penerima'}
                       className="w-full px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-medium text-[var(--sf-text)] placeholder:text-[var(--sf-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition bg-[var(--sf-card)] shadow-2xs"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">Nomor WhatsApp *</label>
+                    <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">{isEn ? 'WhatsApp Number *' : 'Nomor WhatsApp *'}</label>
                     <input
                       type="tel"
                       inputMode="numeric"
@@ -1077,7 +1081,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <div>
                   <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">
-                    Alamat Email <span className="text-[var(--sf-muted)] font-normal">(Untuk invoice &amp; tanda terima pesanan)</span>
+                    {isEn ? 'Email Address' : 'Alamat Email'} <span className="text-[var(--sf-muted)] font-normal">{isEn ? '(For invoices & order receipts)' : '(Untuk invoice & tanda terima pesanan)'}</span>
                   </label>
                   <input
                     type="email"
@@ -1096,8 +1100,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     2
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-[var(--sf-text)]">Alamat Pengiriman Bertingkat</h2>
-                    <p className="text-[11px] text-[var(--sf-muted)]">Provinsi → Kota/Kabupaten → Kecamatan → Kelurahan/Desa → Kode Pos</p>
+                    <h2 className="text-sm font-bold text-[var(--sf-text)]">{isEn ? 'Shipping Address' : 'Alamat Pengiriman Bertingkat'}</h2>
+                    <p className="text-[11px] text-[var(--sf-muted)]">{isEn ? 'Province → City/Regency → District → Village → Postal Code' : 'Provinsi → Kota/Kabupaten → Kecamatan → Kelurahan/Desa → Kode Pos'}</p>
                   </div>
                 </div>
 
@@ -1106,7 +1110,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   <div className={`grid ${formGridColsClass} gap-3.5`}>
                     <div>
                       <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5 flex items-center justify-between">
-                        <span>1. Provinsi *</span>
+                        <span>{isEn ? '1. Province *' : '1. Provinsi *'}</span>
                         {isLoadingProvinces && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
@@ -1115,7 +1119,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                           onChange={(e) => handleProvinceChange(e.target.value)}
                           className="w-full appearance-none px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-medium text-[var(--sf-text)] bg-[var(--sf-card)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition cursor-pointer pr-9 shadow-2xs"
                         >
-                          <option value="">-- Pilih Provinsi --</option>
+                          <option value="">{isEn ? '-- Select Province --' : '-- Pilih Provinsi --'}</option>
                           {provinces.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.name}
@@ -1128,7 +1132,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                     <div>
                       <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5 flex items-center justify-between">
-                        <span>2. Kota / Kabupaten *</span>
+                        <span>{isEn ? '2. City / Regency *' : '2. Kota / Kabupaten *'}</span>
                         {isLoadingRegencies && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
@@ -1144,10 +1148,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         >
                           <option value="">
                             {isLoadingRegencies
-                              ? 'Memuat Kota / Kabupaten...'
+                              ? (isEn ? 'Loading Cities / Regencies...' : 'Memuat Kota / Kabupaten...')
                               : !selectedProvinceId
-                              ? '-- Pilih Provinsi Terlebih Dahulu --'
-                              : '-- Pilih Kota / Kabupaten --'}
+                              ? (isEn ? '-- Select a Province First --' : '-- Pilih Provinsi Terlebih Dahulu --')
+                              : (isEn ? '-- Select City / Regency --' : '-- Pilih Kota / Kabupaten --')}
                           </option>
                           {regencies.map((r) => (
                             <option key={r.id} value={r.id}>
@@ -1164,7 +1168,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   <div className={`grid ${formGridColsClass} gap-3.5`}>
                     <div>
                       <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5 flex items-center justify-between">
-                        <span>3. Kecamatan *</span>
+                        <span>{isEn ? '3. District *' : '3. Kecamatan *'}</span>
                         {isLoadingDistricts && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
@@ -1180,10 +1184,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         >
                           <option value="">
                             {isLoadingDistricts
-                              ? 'Memuat Kecamatan...'
+                              ? (isEn ? 'Loading Districts...' : 'Memuat Kecamatan...')
                               : !selectedRegencyId
-                              ? '-- Pilih Kota Terlebih Dahulu --'
-                              : '-- Pilih Kecamatan --'}
+                              ? (isEn ? '-- Select a City First --' : '-- Pilih Kota Terlebih Dahulu --')
+                              : (isEn ? '-- Select District --' : '-- Pilih Kecamatan --')}
                           </option>
                           {districts.map((d) => (
                             <option key={d.id} value={d.id}>
@@ -1197,7 +1201,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                     <div>
                       <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5 flex items-center justify-between">
-                        <span>4. Kelurahan / Desa *</span>
+                        <span>{isEn ? '4. Village *' : '4. Kelurahan / Desa *'}</span>
                         {isLoadingVillages && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
@@ -1213,10 +1217,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         >
                           <option value="">
                             {isLoadingVillages
-                              ? 'Memuat Kelurahan...'
+                              ? (isEn ? 'Loading Villages...' : 'Memuat Kelurahan...')
                               : !selectedDistrictId
-                              ? '-- Pilih Kecamatan Terlebih Dahulu --'
-                              : '-- Pilih Kelurahan / Desa --'}
+                              ? (isEn ? '-- Select a District First --' : '-- Pilih Kecamatan Terlebih Dahulu --')
+                              : (isEn ? '-- Select Village --' : '-- Pilih Kelurahan / Desa --')}
                           </option>
                           {villages.map((v) => (
                             <option key={v.id} value={v.id}>
@@ -1232,7 +1236,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   {/* Level 5: Kode Pos (Dropdown selection, NOT free-text input) */}
                   <div>
                     <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5 flex items-center justify-between">
-                      <span>5. Kode Pos * (Pilihan Wilayah Valid)</span>
+                      <span>{isEn ? '5. Postal Code * (Valid Area Options)' : '5. Kode Pos * (Pilihan Wilayah Valid)'}</span>
                       {isLoadingPostalCodes && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                     </label>
                     <div className="relative">
@@ -1248,12 +1252,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       >
                         <option value="">
                           {isLoadingPostalCodes
-                            ? 'Memuat daftar kode pos...'
+                            ? (isEn ? 'Loading postal codes...' : 'Memuat daftar kode pos...')
                             : !selectedVillageId
-                            ? '-- Pilih Kelurahan / Desa Terlebih Dahulu --'
+                            ? (isEn ? '-- Select a Village First --' : '-- Pilih Kelurahan / Desa Terlebih Dahulu --')
                             : postalCodes.length === 0
-                            ? '-- Kode Pos Tidak Ditemukan --'
-                            : '-- Pilih Kode Pos Valid --'}
+                            ? (isEn ? '-- Postal Code Not Found --' : '-- Kode Pos Tidak Ditemukan --')
+                            : (isEn ? '-- Select a Valid Postal Code --' : '-- Pilih Kode Pos Valid --')}
                         </option>
                         {postalCodes.map((item) => (
                           <option key={item.code} value={item.code}>
@@ -1268,14 +1272,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   {/* Detailed Address (Street name, building number, unit, floor) */}
                   <div className="pt-1">
                     <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">
-                      Alamat Lengkap &amp; Nomor Bangunan *
+                      {isEn ? 'Full Address & Building Number *' : 'Alamat Lengkap & Nomor Bangunan *'}
                     </label>
                     <textarea
                       rows={2}
                       required
                       value={detailedAddress}
                       onChange={(e) => setDetailedAddress(e.target.value)}
-                      placeholder="Nama jalan, nomor rumah/gedung, RT/RW, lantai, unit, atau detail spesifik lainnya"
+                      placeholder={isEn ? 'Street name, house/building number, RT/RW, floor, unit, or other specific details' : 'Nama jalan, nomor rumah/gedung, RT/RW, lantai, unit, atau detail spesifik lainnya'}
                       className="w-full px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-medium text-[var(--sf-text)] placeholder:text-[var(--sf-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition resize-none bg-[var(--sf-card)] shadow-2xs"
                     />
                   </div>
@@ -1283,13 +1287,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   {/* Address Notes (Patokan / Catatan Pengiriman) */}
                   <div>
                     <label className="block text-xs font-semibold text-[var(--sf-text-soft)] mb-1.5">
-                      Catatan Alamat / Patokan <span className="text-[var(--sf-muted)] font-normal">(Opsional)</span>
+                      {isEn ? 'Address Notes / Landmark' : 'Catatan Alamat / Patokan'} <span className="text-[var(--sf-muted)] font-normal">{isEn ? '(Optional)' : '(Opsional)'}</span>
                     </label>
                     <input
                       type="text"
                       value={addressNotes}
                       onChange={(e) => setAddressNotes(e.target.value)}
-                      placeholder="Contoh: Rumah cat putih pagar hitam depan musholla, titip di pos sekuriti"
+                      placeholder={isEn ? 'Example: White house with a black fence across from the prayer room, leave at the security post' : 'Contoh: Rumah cat putih pagar hitam depan musholla, titip di pos sekuriti'}
                       className="w-full px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-medium text-[var(--sf-text)] placeholder:text-[var(--sf-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition bg-[var(--sf-card)] shadow-2xs"
                     />
                   </div>
@@ -1306,7 +1310,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   <div className="flex items-center justify-between pb-3 border-b border-[var(--sf-border)] mb-3.5">
                     <div className="flex items-center gap-2">
                       <Truck className="w-4 h-4 text-[var(--sf-primary)]" />
-                      <h3 className="text-sm font-bold text-[var(--sf-text)]">1. Pilihan Ekspedisi</h3>
+                      <h3 className="text-sm font-bold text-[var(--sf-text)]">{isEn ? '1. Courier Options' : '1. Pilihan Ekspedisi'}</h3>
                     </div>
                     {selectedRate && (
                       <span className="text-[11px] font-semibold text-[var(--sf-primary)] bg-[var(--sf-primary-soft)] px-2 py-0.5 rounded-full border border-[var(--sf-primary-border)]">
@@ -1318,17 +1322,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   {!selectedPostalCode ? (
                     <div className="p-3.5 rounded-[var(--sf-radius)] bg-[var(--sf-subtle)] border border-dashed border-[var(--sf-border)] text-xs text-[var(--sf-muted)] flex items-start gap-2.5">
                       <Info className="w-4 h-4 text-[var(--sf-muted)] shrink-0 mt-0.5" />
-                      <span>Pilih wilayah pengiriman bertingkat dan kode pos di formulir sebelah kiri untuk melihat pilihan kurir dan tarif ongkir otomatis.</span>
+                      <span>{isEn ? 'Select the shipping area and postal code in the form on the left to see courier options and automatic shipping rates.' : 'Pilih wilayah pengiriman bertingkat dan kode pos di formulir sebelah kiri untuk melihat pilihan kurir dan tarif ongkir otomatis.'}</span>
                     </div>
                   ) : isLoadingRates ? (
                     <div className="p-4 rounded-[var(--sf-radius)] bg-[var(--sf-subtle)] border border-[var(--sf-border)] flex items-center justify-center gap-2.5 text-xs text-[var(--sf-text-soft)] font-medium">
                       <Loader2 className="w-4 h-4 animate-spin text-[var(--sf-primary)]" />
-                      <span>Menghitung tarif ongkir resmi...</span>
+                      <span>{isEn ? 'Calculating official shipping rates...' : 'Menghitung tarif ongkir resmi...'}</span>
                     </div>
                   ) : displayedRates.length === 0 ? (
                     <div className="p-3.5 rounded-[var(--sf-radius)] bg-amber-50 border border-amber-200/80 text-xs text-amber-800 flex items-start gap-2">
                       <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <span>{ratesError || 'Tidak ada kurir yang tersedia untuk kode pos ini.'}</span>
+                      <span>{ratesError || (isEn ? 'No couriers are available for this postal code.' : 'Tidak ada kurir yang tersedia untuk kode pos ini.')}</span>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -1363,7 +1367,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                                 <span className="block text-xs font-bold text-[var(--sf-text)] truncate">
                                   {rate.courier_name} · {rate.courier_service_name}
                                 </span>
-                                <span className="block text-[11px] text-[var(--sf-muted)] mt-0.5">Estimasi tiba {rate.etd}</span>
+                                <span className="block text-[11px] text-[var(--sf-muted)] mt-0.5">{isEn ? 'Estimated arrival' : 'Estimasi tiba'} {rate.etd}</span>
                               </span>
                               <span className="text-xs font-bold text-[var(--sf-text)] whitespace-nowrap">
                                 Rp {rate.price.toLocaleString('id-ID')}
@@ -1373,7 +1377,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         })}
                       </div>
                       <p className="text-[11px] text-[var(--sf-muted)] leading-relaxed">
-                        Ongkir dihitung otomatis dari kode pos toko ke kode pos tujuan dan berat total paket ({(totalWeightGrams / 1000).toLocaleString('id-ID')} kg).
+                        {isEn
+                      ? 'Shipping is calculated automatically from the store postal code to the destination postal code and the total package weight'
+                      : 'Ongkir dihitung otomatis dari kode pos toko ke kode pos tujuan dan berat total paket'}{' '}
+                    ({(totalWeightGrams / 1000).toLocaleString(isEn ? 'en-US' : 'id-ID')} kg).
                       </p>
                     </div>
                   )}
@@ -1384,10 +1391,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   <div className="flex items-center justify-between pb-3 border-b border-[var(--sf-border)] mb-3.5">
                     <div className="flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-emerald-600" />
-                      <h3 className="text-sm font-bold text-[var(--sf-text)]">2. Metode Pembayaran</h3>
+                      <h3 className="text-sm font-bold text-[var(--sf-text)]">{isEn ? '2. Payment Method' : '2. Metode Pembayaran'}</h3>
                     </div>
                     <span className="text-[10px] font-bold text-[var(--sf-primary)] bg-[var(--sf-primary-soft)] px-2 py-0.5 rounded-full border border-[var(--sf-primary-border)] uppercase tracking-wider">
-                      {paymentOptions.find((p) => p.id === selectedPaymentId)?.badge || 'Pilihan Toko'}
+                      {paymentOptions.find((p) => p.id === selectedPaymentId)?.badge || (isEn ? 'Store Choice' : 'Pilihan Toko')}
                     </span>
                   </div>
 
@@ -1411,7 +1418,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                       <span className="leading-relaxed">
                         {paymentOptions.find((p) => p.id === selectedPaymentId)?.description ||
-                          'Pembayaran resmi terhubung langsung ke gerbang Duitku dengan verifikasi instan.'}
+                          (isEn ? 'Official payment connected directly to the Duitku gateway with instant verification.' : 'Pembayaran resmi terhubung langsung ke gerbang Duitku dengan verifikasi instan.')}
                       </span>
                     </div>
                   </div>
@@ -1420,7 +1427,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 {/* 3. ORDER ITEMS MANIFEST */}
                 <div>
                   <div className="flex items-center justify-between pb-2.5 border-b border-[var(--sf-border)] mb-3">
-                    <h4 className="text-xs font-bold text-[var(--sf-text-soft)] uppercase tracking-wider">Daftar Produk ({sampleItems.length})</h4>
+                    <h4 className="text-xs font-bold text-[var(--sf-text-soft)] uppercase tracking-wider">{isEn ? 'Product List' : 'Daftar Produk'} ({sampleItems.length})</h4>
                   </div>
                   <div className="space-y-2.5 max-h-40 overflow-y-auto pr-1">
                     {sampleItems.map((p) => (
@@ -1448,17 +1455,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 {/* 4. ORDER TOTAL BREAKDOWN */}
                 <div className="pt-3 border-t border-[var(--sf-border)] space-y-2 text-xs text-[var(--sf-text-soft)]">
                   <div className="flex justify-between">
-                    <span>Subtotal Produk</span>
+                    <span>{isEn ? 'Product Subtotal' : 'Subtotal Produk'}</span>
                     <span className="font-semibold text-[var(--sf-text)]">Rp {subtotal.toLocaleString('id-ID')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Biaya Pengiriman</span>
+                    <span>{isEn ? 'Shipping Cost' : 'Biaya Pengiriman'}</span>
                     <span className="font-semibold text-[var(--sf-text)]">
-                      {shippingFee > 0 ? `Rp ${shippingFee.toLocaleString('id-ID')}` : selectedRate ? 'Gratis' : 'Menunggu alamat'}
+                      {shippingFee > 0 ? `Rp ${shippingFee.toLocaleString('id-ID')}` : selectedRate ? (isEn ? 'Free' : 'Gratis') : (isEn ? 'Awaiting address' : 'Menunggu alamat')}
                     </span>
                   </div>
                   <div className="flex justify-between items-baseline font-extrabold text-[var(--sf-text)] text-base pt-2.5 border-t border-[var(--sf-border)]">
-                    <span>Total Tagihan</span>
+                    <span>{isEn ? 'Total Bill' : 'Total Tagihan'}</span>
                     <span className="text-[var(--sf-primary)] text-lg">Rp {total.toLocaleString('id-ID')}</span>
                   </div>
                 </div>
@@ -1474,22 +1481,22 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     {isSubmitting ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Memproses Pesanan...</span>
+                        <span>{isEn ? 'Processing Order...' : 'Memproses Pesanan...'}</span>
                       </>
                     ) : selectedPaymentId === 'cod' ? (
                       <>
                         <Banknote className="w-4 h-4" />
-                        <span>Pesan Sekarang (Bayar COD) • Rp {total.toLocaleString('id-ID')}</span>
+                        <span>{isEn ? 'Order Now (Pay COD)' : 'Pesan Sekarang (Bayar COD)'} • Rp {total.toLocaleString('id-ID')}</span>
                       </>
                     ) : selectedPaymentId === 'manual_transfer' ? (
                       <>
                         <QrCode className="w-4 h-4" />
-                        <span>Lanjut Pembayaran Transfer • Rp {total.toLocaleString('id-ID')}</span>
+                        <span>{isEn ? 'Continue to Transfer Payment' : 'Lanjut Pembayaran Transfer'} • Rp {total.toLocaleString('id-ID')}</span>
                       </>
                     ) : (
                       <>
                         <Lock className="w-4 h-4" />
-                        <span>Bayar Sekarang (Otomatis) • Rp {total.toLocaleString('id-ID')}</span>
+                        <span>{isEn ? 'Pay Now (Automatic)' : 'Bayar Sekarang (Otomatis)'} • Rp {total.toLocaleString('id-ID')}</span>
                       </>
                     )}
                   </button>
@@ -1498,10 +1505,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                     <span>
                       {selectedPaymentId === 'cod'
-                        ? 'Transaksi Aman Bayar di Tempat (COD)'
+                        ? (isEn ? 'Secure Cash on Delivery (COD) Transaction' : 'Transaksi Aman Bayar di Tempat (COD)')
                         : selectedPaymentId === 'manual_transfer'
-                        ? 'Transfer Langsung ke Rekening Resmi Toko'
-                        : 'Gerbang Pembayaran Otomatis Resmi & Terenkripsi'}
+                        ? (isEn ? "Direct Transfer to the Store's Official Account" : 'Transfer Langsung ke Rekening Resmi Toko')
+                        : (isEn ? 'Official & Encrypted Automatic Payment Gateway' : 'Gerbang Pembayaran Otomatis Resmi & Terenkripsi')}
                     </span>
                   </div>
                 </div>

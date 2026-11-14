@@ -66,7 +66,7 @@ export const ReferralCard: React.FC<ReferralCardProps> = ({
 
   const handleShareWhatsApp = () => {
     if (!stats.referralCode) return;
-    const inviter = storeName || userName || 'Saya';
+    const inviter = storeName || userName || (isEn ? 'Me' : 'Saya');
     const text = isEn
       ? `Hi! Start your free online store on LapakQ using my referral code: *${stats.referralCode}*. Register here: https://lapakq.com/auth`
       : `Halo! Yuk buka toko online UMKM gratis di LapakQ menggunakan kode referal saya: *${stats.referralCode}*. Daftar sekarang di: https://lapakq.com/auth`;
@@ -182,7 +182,7 @@ export const ReferralCard: React.FC<ReferralCardProps> = ({
                   <p className="text-[10px] text-slate-500 truncate">{ref.refereeEmail}</p>
                 </div>
                 <span className="text-[9px] text-slate-400 shrink-0 ml-2">
-                  {new Date(ref.redeemedAt).toLocaleDateString('id-ID', {
+                  {new Date(ref.redeemedAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', {
                     day: 'numeric',
                     month: 'short',
                     year: 'numeric',

@@ -7,8 +7,10 @@ import { NavSearchButton } from '../../NavSearchButton';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { StoreLogo } from '../../StoreLogo';
 import { CartCount } from '../../storefrontCart';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const header = getHeaderDisplay(sectionOptions);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
@@ -45,12 +47,12 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
           {header.showSearch && (
             <NavSearchButton
               className="flex items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors"
-              label={<span className={`${showDesktopSearch} text-xs tracking-[0.15em] uppercase font-sans`}>Cari</span>}
+              label={<span className={`${showDesktopSearch} text-xs tracking-[0.15em] uppercase font-sans`}>{isEn ? 'Search' : 'Cari'}</span>}
             />
           )}
           <NavTrackOrderButton
             className="flex items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors"
-            label={<span className={`${showDesktopSearch} text-xs tracking-[0.15em] uppercase font-sans`}>Lacak</span>}
+            label={<span className={`${showDesktopSearch} text-xs tracking-[0.15em] uppercase font-sans`}>{isEn ? 'Track' : 'Lacak'}</span>}
           />
         </div>
 
@@ -71,7 +73,7 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
         {/* Right: Actions */}
         <div className="flex-1 flex items-center justify-end gap-6">
           {header.showCart && (
-            <button data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-[#6B6865] hover:text-[#2C2A29] transition-colors flex items-center gap-2 cursor-pointer">
+            <button data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'} className="text-[#6B6865] hover:text-[#2C2A29] transition-colors flex items-center gap-2 cursor-pointer">
               <div className="relative">
                 <ShoppingBag className="w-4 h-4" />
                 <span className="absolute -bottom-2 -right-2 text-[#2C2A29] text-[9px] font-sans"><CartCount /></span>

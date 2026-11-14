@@ -6,8 +6,10 @@ import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#2563EB', isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
 
@@ -16,7 +18,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address;
   const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. Hak cipta dilindungi.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. ${isEn ? 'All rights reserved.' : 'Hak cipta dilindungi.'}`;
 
   const isDesktopPreview = !isMobile && !isTablet;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
@@ -49,7 +51,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
           </div>
 
           <div className={colSpan3Class}>
-            <h4 className="text-xs font-bold uppercase tracking-wide text-gray-900 mb-4">Navigasi</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wide text-gray-900 mb-4">{isEn ? 'Navigation' : 'Navigasi'}</h4>
             <ul className="space-y-2.5 text-sm text-gray-600">
               {getNavMenuItems(sectionOptions).map(nav => (
                 <li key={nav.id}><a href={nav.route} className="hover:text-gray-900 transition-colors">{nav.label}</a></li>
@@ -58,7 +60,7 @@ export const ModernFooter: React.FC<{ sectionOptions?: any; accentColor?: string
           </div>
 
           <div className={colSpan4Class}>
-            <h4 className="text-xs font-bold uppercase tracking-wide text-gray-900 mb-4">Kontak</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wide text-gray-900 mb-4">{isEn ? 'Contact' : 'Kontak'}</h4>
             <ul className="space-y-2.5 text-sm text-gray-600">
               {address && <li className="flex items-start gap-2 break-words"><MapPin className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> {address}</li>}
               {email && <li className="flex items-center gap-2"><Mail className="w-4 h-4 shrink-0" style={{ color: accentColor }} /> <a href={`mailto:${email}`} className="hover:underline break-all">{email}</a></li>}

@@ -121,9 +121,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   }, [isSubAdminUmum, isSubAdminProduk, isSubAdmin, activeTab]);
 
   const subAdminTitle = isSubAdminUmum
-    ? 'ADMIN UMUM'
+    ? (isEn ? 'GENERAL ADMIN' : 'ADMIN UMUM')
     : isSubAdminProduk
-    ? 'ADMIN PRODUK'
+    ? (isEn ? 'PRODUCT ADMIN' : 'ADMIN PRODUK')
     : isSubAdmin
     ? 'SUB-ADMIN'
     : 'SUPER ADMIN';
@@ -133,9 +133,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const activeAdminName =
     loggedInUser?.name?.replace(/Kroomify/g, 'LapakQ') ||
     (isSubAdminUmum
-      ? 'Admin Umum Komunitas'
+      ? (isEn ? 'Community General Admin' : 'Admin Umum Komunitas')
       : isSubAdminProduk
-      ? 'Admin Produk Komunitas'
+      ? (isEn ? 'Community Product Admin' : 'Admin Produk Komunitas')
       : isSubAdmin
       ? 'Sub Admin'
       : 'Super Admin LapakQ');
@@ -193,7 +193,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   const handleCopyResi = (resi: string) => {
     navigator.clipboard.writeText(resi);
-    showToast(`No. Resi ${resi} disalin ke clipboard`);
+    showToast(isEn ? `Tracking No. ${resi} copied to clipboard` : `No. Resi ${resi} disalin ke clipboard`);
   };
 
   const handleTestApi = async (service: 'midtrans' | 'duitku' | 'biteship' | 'wa') => {
@@ -203,12 +203,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         const res = await fetch('/api/duitku/test-connection', { method: 'POST', headers: sessionHeaders() });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.success) {
-          showToast(`✅ ${data.message} (${data.channelCount} saluran pembayaran aktif)`);
+          showToast(isEn ? `✅ ${data.message} (${data.channelCount} active payment channels)` : `✅ ${data.message} (${data.channelCount} saluran pembayaran aktif)`);
         } else {
-          showToast(`❌ ${data.message || 'Kredensial Duitku ditolak atau belum diatur'}`);
+          showToast(`❌ ${data.message || (isEn ? 'Duitku credentials rejected or not configured' : 'Kredensial Duitku ditolak atau belum diatur')}`);
         }
       } catch (err: any) {
-        showToast(`❌ Gagal menghubungi endpoint Duitku: ${err?.message || err}`);
+        showToast(isEn ? `❌ Failed to reach the Duitku endpoint: ${err?.message || err}` : `❌ Gagal menghubungi endpoint Duitku: ${err?.message || err}`);
       } finally {
         setTestingService(null);
       }
@@ -222,10 +222,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         if (res.ok && data.success) {
           showToast(`✅ ${data.message}`);
         } else {
-          showToast(`❌ ${data.message || 'Server Key Midtrans tidak valid (401 Unauthorized)'}`);
+          showToast(`❌ ${data.message || (isEn ? 'Invalid Midtrans Server Key (401 Unauthorized)' : 'Server Key Midtrans tidak valid (401 Unauthorized)')}`);
         }
       } catch (err: any) {
-        showToast(`❌ Gagal menghubungi server: ${err?.message || err}`);
+        showToast(isEn ? `❌ Failed to reach the server: ${err?.message || err}` : `❌ Gagal menghubungi server: ${err?.message || err}`);
       } finally {
         setTestingService(null);
       }
@@ -235,7 +235,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     setTimeout(() => {
       setTestingService(null);
       if (service === 'biteship') {
-        showToast('Koneksi Biteship Shipping API (.env): Aktif');
+        showToast(isEn ? 'Biteship Shipping API connection (.env): Active' : 'Koneksi Biteship Shipping API (.env): Aktif');
       } else {
         showToast('WhatsApp Gateway API Token (.env): Valid');
       }
@@ -298,9 +298,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     const suspend = !suspendedIds.includes(storeId);
     try {
       await adminService.setStoreSuspension(storeId, suspend);
-      showToast(suspend ? `${storeName} berhasil disuspend` : `${storeName} diaktifkan kembali`);
+      showToast(
+        isEn
+          ? (suspend ? `${storeName} suspended successfully` : `${storeName} reactivated`)
+          : (suspend ? `${storeName} berhasil disuspend` : `${storeName} diaktifkan kembali`)
+      );
     } catch (err: any) {
-      showToast(err?.message || 'Gagal memperbarui status toko.');
+      showToast(err?.message || (isEn ? 'Failed to update store status.' : 'Gagal memperbarui status toko.'));
     }
     await loadData();
   };
@@ -308,20 +312,24 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const handleApproveWithdrawal = async (id: string, storeName?: string) => {
     try {
       await adminService.approveWithdrawal(id);
-      showToast(storeName ? `Pencairan dana ${storeName} berhasil disetujui & dipindahkan ke Paid` : 'Pencairan dana berhasil disetujui & dipindahkan ke Paid');
+      showToast(
+        isEn
+          ? (storeName ? `Payout for ${storeName} approved & moved to Paid` : 'Payout approved & moved to Paid')
+          : (storeName ? `Pencairan dana ${storeName} berhasil disetujui & dipindahkan ke Paid` : 'Pencairan dana berhasil disetujui & dipindahkan ke Paid')
+      );
     } catch (err: any) {
-      showToast(err?.message || 'Gagal menyetujui pencairan dana.');
+      showToast(err?.message || (isEn ? 'Failed to approve payout.' : 'Gagal menyetujui pencairan dana.'));
     }
     await loadData();
   };
 
   const handleRejectWithdrawal = async (id: string, storeName?: string) => {
-    if (window.confirm(`Tolak pengajuan penarikan dana ${storeName || ''}? Saldo akan dikembalikan ke dompet toko.`)) {
+    if (window.confirm(isEn ? `Reject the payout request ${storeName || ''}? The balance will be returned to the store wallet.` : `Tolak pengajuan penarikan dana ${storeName || ''}? Saldo akan dikembalikan ke dompet toko.`)) {
       try {
         await adminService.rejectWithdrawal(id);
-        showToast('Pencairan dana ditolak & saldo toko dikembalikan');
+        showToast(isEn ? 'Payout rejected & store balance returned' : 'Pencairan dana ditolak & saldo toko dikembalikan');
       } catch (err: any) {
-        showToast(err?.message || 'Gagal menolak pencairan dana.');
+        showToast(err?.message || (isEn ? 'Failed to reject payout.' : 'Gagal menolak pencairan dana.'));
       }
       await loadData();
     }
@@ -330,7 +338,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const handleChangePlan = async (storeId: string, plan: 'free' | 'starter' | 'premium') => {
     await adminService.updateStorePlan(storeId, plan);
     await loadData();
-    showToast(`Paket toko diperbarui ke ${plan.toUpperCase()}`);
+    showToast(isEn ? `Store plan updated to ${plan.toUpperCase()}` : `Paket toko diperbarui ke ${plan.toUpperCase()}`);
   };
 
   // Plan CRUD Handlers
@@ -367,7 +375,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const handleSavePlan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!planForm.name.trim() || !planForm.slug.trim()) {
-      showToast('Nama paket dan slug kode wajib diisi!');
+      showToast(isEn ? 'Plan name and slug code are required!' : 'Nama paket dan slug kode wajib diisi!');
       return;
     }
 
@@ -388,7 +396,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           sortOrder: Number(planForm.sortOrder),
           isActive: planForm.isActive,
         });
-        showToast(`Paket "${planForm.name}" berhasil diperbarui`);
+        showToast(isEn ? `Plan "${planForm.name}" updated successfully` : `Paket "${planForm.name}" berhasil diperbarui`);
       } else {
         await billingPlanService.createPlan({
           name: planForm.name.trim(),
@@ -400,26 +408,26 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           sortOrder: Number(planForm.sortOrder),
           isActive: planForm.isActive,
         });
-        showToast(`Paket baru "${planForm.name}" berhasil ditambahkan`);
+        showToast(isEn ? `New plan "${planForm.name}" added successfully` : `Paket baru "${planForm.name}" berhasil ditambahkan`);
       }
 
       await loadData();
       setIsPlanModalOpen(false);
     } catch (err: any) {
       console.error('Error saving plan:', err);
-      showToast(`Gagal menyimpan paket: ${err?.message || err}`);
+      showToast(isEn ? `Failed to save plan: ${err?.message || err}` : `Gagal menyimpan paket: ${err?.message || err}`);
     }
   };
 
   const handleDeletePlan = async (id: string, name: string) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus paket "${name}"?`)) {
+    if (window.confirm(isEn ? `Are you sure you want to delete the plan "${name}"?` : `Apakah Anda yakin ingin menghapus paket "${name}"?`)) {
       try {
         await billingPlanService.deletePlan(id);
         await loadData();
-        showToast(`Paket "${name}" berhasil dihapus`);
+        showToast(isEn ? `Plan "${name}" deleted successfully` : `Paket "${name}" berhasil dihapus`);
       } catch (err: any) {
         console.error('Error deleting plan:', err);
-        showToast(`Gagal menghapus paket: ${err?.message || err}`);
+        showToast(isEn ? `Failed to delete plan: ${err?.message || err}` : `Gagal menghapus paket: ${err?.message || err}`);
       }
     }
   };
@@ -429,11 +437,15 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       const updated = await billingPlanService.togglePlanStatus(id);
       if (updated) {
         await loadData();
-        showToast(`Status paket ${updated.name} diubah menjadi ${updated.isActive ? 'Aktif' : 'Nonaktif'}`);
+        showToast(
+          isEn
+            ? `Plan ${updated.name} status changed to ${updated.isActive ? 'Active' : 'Inactive'}`
+            : `Status paket ${updated.name} diubah menjadi ${updated.isActive ? 'Aktif' : 'Nonaktif'}`
+        );
       }
     } catch (err: any) {
       console.error('Error toggling plan:', err);
-      showToast(`Gagal mengubah status paket: ${err?.message || err}`);
+      showToast(isEn ? `Failed to change plan status: ${err?.message || err}` : `Gagal mengubah status paket: ${err?.message || err}`);
     }
   };
 

@@ -294,7 +294,11 @@ export const AdminWithdrawalsTab: React.FC<AdminWithdrawalsTabProps> = ({
         {currentList.length > 0 && (
           <div className="p-3 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-gray-600">
             <div>
-              Menampilkan <strong className="text-gray-900">{startIndex + 1}</strong> - <strong className="text-gray-900">{endIndex}</strong> dari <strong className="text-gray-900">{currentList.length}</strong> data
+              {isEn ? (
+                <>Showing <strong className="text-gray-900">{startIndex + 1}</strong> - <strong className="text-gray-900">{endIndex}</strong> of <strong className="text-gray-900">{currentList.length}</strong> entries</>
+              ) : (
+                <>Menampilkan <strong className="text-gray-900">{startIndex + 1}</strong> - <strong className="text-gray-900">{endIndex}</strong> dari <strong className="text-gray-900">{currentList.length}</strong> data</>
+              )}
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -305,7 +309,7 @@ export const AdminWithdrawalsTab: React.FC<AdminWithdrawalsTabProps> = ({
                 className="px-2.5 py-1 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer font-medium"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
-                <span>Sebelumnya</span>
+                <span>{isEn ? 'Previous' : 'Sebelumnya'}</span>
               </button>
 
               <span className="px-2.5 py-1 font-semibold text-gray-800">
@@ -318,7 +322,7 @@ export const AdminWithdrawalsTab: React.FC<AdminWithdrawalsTabProps> = ({
                 onClick={() => setWithdrawalPage((p) => Math.min(totalPages, p + 1))}
                 className="px-2.5 py-1 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer font-medium"
               >
-                <span>Berikutnya</span>
+                <span>{isEn ? 'Next' : 'Berikutnya'}</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>

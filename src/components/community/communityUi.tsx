@@ -1,5 +1,6 @@
 import React from 'react';
 import { JoinRequestStatus } from '../../services/communityMembershipService';
+import { isEnglishPreferred } from '../../contexts/LanguageContext';
 
 export const REQUEST_STATUS_META: Record<JoinRequestStatus, { id: string; en: string; className: string; dot: string }> = {
   pending: { id: 'Menunggu', en: 'Pending', className: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
@@ -18,10 +19,10 @@ export const RequestStatusBadge: React.FC<{ status: JoinRequestStatus; isEn: boo
   );
 };
 
-export const formatDate = (iso?: string | null) => {
+export const formatDate = (iso?: string | null, isEn: boolean = isEnglishPreferred()) => {
   if (!iso) return '-';
   try {
-    return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' }).format(new Date(iso));
+    return new Intl.DateTimeFormat(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' }).format(new Date(iso));
   } catch {
     return iso;
   }

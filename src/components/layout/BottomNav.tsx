@@ -36,7 +36,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   liveStoreUrl,
   onTabChange,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   // 4 Menu Utama Paling Penting untuk Operasional Sehari-hari
@@ -133,7 +133,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                       <Globe className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-[#241A1A]">{t('nav_view_website', 'Lihat Website')}</p>
+                      <p className="text-xs font-medium text-[#241A1A]">{isEn ? 'View Website' : 'Lihat Website'}</p>
                       <p className="text-[11px] text-[#706866] truncate font-normal">{liveStoreUrl.replace(/^https:\/\//, '')}</p>
                     </div>
                   </div>

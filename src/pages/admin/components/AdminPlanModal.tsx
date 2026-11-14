@@ -2,6 +2,7 @@ import React from 'react';
 import { Crown, X } from 'lucide-react';
 import { BillingPlan } from '../../../types';
 import { PlanFormState } from '../types';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface AdminPlanModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const AdminPlanModal: React.FC<AdminPlanModalProps> = ({
   setPlanForm,
   handleSavePlan,
 }) => {
+  const { isEn } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -29,7 +31,9 @@ export const AdminPlanModal: React.FC<AdminPlanModalProps> = ({
           <div className="flex items-center gap-2">
             <Crown className="w-5 h-5 text-red-600" />
             <h3 className="font-bold text-base text-gray-900">
-              {editingPlan ? 'Edit Paket Langganan' : 'Tambah Paket Langganan Baru'}
+              {editingPlan
+                ? (isEn ? 'Edit Subscription Plan' : 'Edit Paket Langganan')
+                : (isEn ? 'Add New Subscription Plan' : 'Tambah Paket Langganan Baru')}
             </h3>
           </div>
           <button
@@ -44,11 +48,11 @@ export const AdminPlanModal: React.FC<AdminPlanModalProps> = ({
         <form onSubmit={handleSavePlan} className="space-y-3.5 text-xs">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">Nama Paket *</label>
+              <label className="block font-semibold text-gray-700 mb-1">{isEn ? 'Plan Name *' : 'Nama Paket *'}</label>
               <input
                 type="text"
                 required
-                placeholder="Contoh: Pro UMKM"
+                placeholder={isEn ? 'Example: Pro UMKM' : 'Contoh: Pro UMKM'}
                 value={planForm.name}
                 onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-red-600 text-xs"
@@ -56,11 +60,11 @@ export const AdminPlanModal: React.FC<AdminPlanModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">Slug / Kode Paket *</label>
+              <label className="block font-semibold text-gray-700 mb-1">{isEn ? 'Slug / Plan Code *' : 'Slug / Kode Paket *'}</label>
               <input
                 type="text"
                 required
-                placeholder="Contoh: premium / pro"
+                placeholder={isEn ? 'Example: premium / pro' : 'Contoh: premium / pro'}
                 value={planForm.slug}
                 onChange={(e) => setPlanForm({ ...planForm, slug: e.target.value })}
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-red-600 text-xs font-mono"
@@ -69,10 +73,10 @@ export const AdminPlanModal: React.FC<AdminPlanModalProps> = ({
           </div>
 
           <div>
-            <label className="block font-semibold text-gray-700 mb-1">Tagline / Deskripsi</label>
+            <label className="block font-semibold text-gray-700 mb-1">{isEn ? 'Tagline / Description' : 'Tagline / Deskripsi'}</label>
             <input
               type="text"
-              placeholder="Deskripsi singkat target pengguna paket"
+              placeholder={isEn ? 'Short description of the plan target users' : 'Deskripsi singkat target pengguna paket'}
               value={planForm.tagline}
               onChange={(e) => setPlanForm({ ...planForm, tagline: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-red-600 text-xs"
@@ -81,7 +85,7 @@ export const AdminPlanModal: React.FC<AdminPlanModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">Harga Bulanan (Rp) *</label>
+              <label className="block font-semibold text-gray-700 mb-1">{isEn ? 'Monthly Price (Rp) *' : 'Harga Bulanan (Rp) *'}</label>
               <input
                 type="number"
                 min="0"
@@ -94,7 +98,7 @@ export const AdminPlanModal: React.FC<AdminPlanModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">Harga Tahunan (Rp) *</label>
+              <label className="block font-semibold text-gray-700 mb-1">{isEn ? 'Yearly Price (Rp) *' : 'Harga Tahunan (Rp) *'}</label>
               <input
                 type="number"
                 min="0"
@@ -109,7 +113,7 @@ export const AdminPlanModal: React.FC<AdminPlanModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">Urutan Tampil</label>
+              <label className="block font-semibold text-gray-700 mb-1">{isEn ? 'Display Order' : 'Urutan Tampil'}</label>
               <input
                 type="number"
                 min="1"
@@ -128,18 +132,18 @@ export const AdminPlanModal: React.FC<AdminPlanModalProps> = ({
                 className="w-4 h-4 accent-red-600 cursor-pointer"
               />
               <label htmlFor="isActivePlan" className="font-semibold text-gray-800 cursor-pointer">
-                Paket Aktif & Tampil
+                {isEn ? 'Plan Active & Visible' : 'Paket Aktif & Tampil'}
               </label>
             </div>
           </div>
 
           <div>
             <label className="block font-semibold text-gray-700 mb-1">
-              Daftar Fitur (1 baris = 1 fitur)
+              {isEn ? 'Feature List (1 line = 1 feature)' : 'Daftar Fitur (1 baris = 1 fitur)'}
             </label>
             <textarea
               rows={4}
-              placeholder="Katalog produk hingga 100 item&#10;Metode pembayaran Midtrans&#10;Bebas watermark"
+              placeholder={isEn ? 'Product catalog up to 100 items\nMidtrans payment methods\nNo watermark' : 'Katalog produk hingga 100 item\nMetode pembayaran Midtrans\nBebas watermark'}
               value={planForm.featuresText}
               onChange={(e) => setPlanForm({ ...planForm, featuresText: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-red-600 text-xs font-sans leading-relaxed"
@@ -152,13 +156,13 @@ export const AdminPlanModal: React.FC<AdminPlanModalProps> = ({
               onClick={onClose}
               className="px-3.5 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition cursor-pointer"
             >
-              Batal
+              {isEn ? 'Cancel' : 'Batal'}
             </button>
             <button
               type="submit"
               className="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold transition shadow-xs cursor-pointer"
             >
-              {editingPlan ? 'Simpan Perubahan' : 'Tambah Paket'}
+              {editingPlan ? (isEn ? 'Save Changes' : 'Simpan Perubahan') : (isEn ? 'Add Plan' : 'Tambah Paket')}
             </button>
           </div>
         </form>

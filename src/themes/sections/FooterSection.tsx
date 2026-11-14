@@ -1,6 +1,7 @@
 import React from 'react';
 import { FooterSettings, ThemeSettings } from '../schema';
 import { STORE_ROUTES } from '../storefrontLinks';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface Props {
   settings: FooterSettings;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeId }) => {
+  const { isEn } = useLanguage();
   // --- 1. COMPACT / MODERN CATALOG THEME ---
   if (themeId && themeId.includes('compact')) {
     return (
@@ -16,35 +18,35 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
         <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12 border-b border-gray-800 pb-12">
             <div className="lg:col-span-2">
-              <h3 className="text-2xl font-black text-white mb-6 tracking-tighter break-words">Toko Kami</h3>
-              <p className="mb-6 leading-relaxed max-w-sm">Belanja produk pilihan dengan mudah dan aman.</p>
+              <h3 className="text-2xl font-black text-white mb-6 tracking-tighter break-words">{isEn ? 'Our Store' : 'Toko Kami'}</h3>
+              <p className="mb-6 leading-relaxed max-w-sm">{isEn ? 'Shop selected products easily and safely.' : 'Belanja produk pilihan dengan mudah dan aman.'}</p>
             </div>
 
             <div>
-              <h4 className="text-white font-bold mb-6 uppercase tracking-wider">Perusahaan</h4>
+              <h4 className="text-white font-bold mb-6 uppercase tracking-wider">{isEn ? 'Company' : 'Perusahaan'}</h4>
               <ul className="space-y-3">
-                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Tentang Kami</a></li>
-                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Karir</a></li>
+                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">{isEn ? 'About Us' : 'Tentang Kami'}</a></li>
+                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">{isEn ? 'Careers' : 'Karir'}</a></li>
                 <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Mitra</a></li>
+                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">{isEn ? 'Partners' : 'Mitra'}</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-white font-bold mb-6 uppercase tracking-wider">Bantuan</h4>
+              <h4 className="text-white font-bold mb-6 uppercase tracking-wider">{isEn ? 'Help' : 'Bantuan'}</h4>
               <ul className="space-y-3">
-                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Pusat Bantuan</a></li>
-                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Cara Belanja</a></li>
-                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Lacak Pesanan</a></li>
-                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Pengembalian</a></li>
+                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">{isEn ? 'Help Center' : 'Pusat Bantuan'}</a></li>
+                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">{isEn ? 'How to Shop' : 'Cara Belanja'}</a></li>
+                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">{isEn ? 'Track Order' : 'Lacak Pesanan'}</a></li>
+                <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">{isEn ? 'Returns' : 'Pengembalian'}</a></li>
               </ul>
             </div>
 
             {settings.showNewsletter && (
               <div>
                 <h4 className="text-white font-bold mb-6 uppercase tracking-wider">Promo</h4>
-                <p className="mb-4 text-xs leading-relaxed">Lihat penawaran dan diskon terbaru dari toko kami.</p>
-                <a href={STORE_ROUTES.promo} className="block w-full px-4 py-2 bg-[#0055FF] text-white font-bold rounded text-center hover:bg-blue-600 transition-colors">Lihat Promo</a>
+                <p className="mb-4 text-xs leading-relaxed">{isEn ? 'See the latest offers and discounts from our store.' : 'Lihat penawaran dan diskon terbaru dari toko kami.'}</p>
+                <a href={STORE_ROUTES.promo} className="block w-full px-4 py-2 bg-[#0055FF] text-white font-bold rounded text-center hover:bg-blue-600 transition-colors">{isEn ? 'View Promos' : 'Lihat Promo'}</a>
               </div>
             )}
           </div>
@@ -63,14 +65,14 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
       <footer className="bg-[#FAF7F7] pt-16 sm:pt-32 pb-10 sm:pb-16 border-t border-[#E5E0DD] box-border">
         <div className="mx-auto px-4 sm:px-6 max-w-7xl flex flex-col items-center">
           <h2 className="text-3xl sm:text-5xl md:text-8xl text-[#241A1A] font-normal tracking-wider sm:tracking-widest uppercase mb-10 sm:mb-16 text-center break-words" style={{ fontFamily: themeSettings.fontFamily }}>
-            Toko Kami
+            {isEn ? 'Our Store' : 'Toko Kami'}
           </h2>
           
           <div className="flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-16 mb-12 sm:mb-24 text-[#241A1A]">
-            <a href={STORE_ROUTES.contact} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">Beranda</a>
-            <a href={STORE_ROUTES.catalog} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">Katalog</a>
+            <a href={STORE_ROUTES.contact} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">{isEn ? 'Home' : 'Beranda'}</a>
+            <a href={STORE_ROUTES.catalog} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">{isEn ? 'Catalog' : 'Katalog'}</a>
             <a href={STORE_ROUTES.contact} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">Promo</a>
-            <a href={STORE_ROUTES.contact} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">Kontak</a>
+            <a href={STORE_ROUTES.contact} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">{isEn ? 'Contact' : 'Kontak'}</a>
           </div>
 
           <div className="w-full flex flex-col md:flex-row items-center justify-between border-t border-[#241A1A]/10 pt-8 mt-auto text-center md:text-left gap-4">
@@ -102,17 +104,17 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
             </div>
             
             <div>
-              <h4 className="text-lg sm:text-xl font-black uppercase mb-4 sm:mb-8 tracking-widest text-[#FF0000]">Jelajahi</h4>
+              <h4 className="text-lg sm:text-xl font-black uppercase mb-4 sm:mb-8 tracking-widest text-[#FF0000]">{isEn ? 'Explore' : 'Jelajahi'}</h4>
               <ul className="space-y-3 sm:space-y-4">
-                <li><a href={STORE_ROUTES.catalog} className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Semua Produk</a></li>
+                <li><a href={STORE_ROUTES.catalog} className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">{isEn ? 'All Products' : 'Semua Produk'}</a></li>
                 <li><a href={STORE_ROUTES.catalog} className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Promo</a></li>
-                <li><a href={STORE_ROUTES.catalog} className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Kontak</a></li>
+                <li><a href={STORE_ROUTES.catalog} className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">{isEn ? 'Contact' : 'Kontak'}</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-lg sm:text-xl font-black uppercase mb-4 sm:mb-8 tracking-widest text-[#FF0000]">Hubungi Kami</h4>
-              <a href={STORE_ROUTES.contact} className="inline-block bg-white text-black border-4 border-black px-5 py-3 text-xs sm:text-sm font-black uppercase hover:bg-[#FF0000] hover:text-white transition-colors">Kontak &rarr;</a>
+              <h4 className="text-lg sm:text-xl font-black uppercase mb-4 sm:mb-8 tracking-widest text-[#FF0000]">{isEn ? 'Contact Us' : 'Hubungi Kami'}</h4>
+              <a href={STORE_ROUTES.contact} className="inline-block bg-white text-black border-4 border-black px-5 py-3 text-xs sm:text-sm font-black uppercase hover:bg-[#FF0000] hover:text-white transition-colors">{isEn ? 'Contact →' : 'Kontak →'}</a>
             </div>
           </div>
           
@@ -133,32 +135,32 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
         <div className="mx-auto px-6 max-w-6xl relative z-10">
           <div className="flex flex-col items-center text-center mb-16 sm:mb-24">
             <h3 className="text-3xl md:text-5xl font-medium mb-6 tracking-tight" style={{ fontFamily: themeSettings.fontFamily }}>
-              Temukan Produk Favorit Anda.
+              {isEn ? 'Find Your Favorite Products.' : 'Temukan Produk Favorit Anda.'}
             </h3>
-            <p className="text-white/70 mb-10 font-light max-w-lg">Jelajahi katalog lengkap dan penawaran terbaru dari toko kami.</p>
-            <a href={STORE_ROUTES.catalog} className="bg-[#D9A05B] text-white px-8 py-3 rounded-full font-medium hover:bg-[#c28e4e] transition-colors">Belanja Sekarang</a>
+            <p className="text-white/70 mb-10 font-light max-w-lg">{isEn ? 'Explore our full catalog and latest offers.' : 'Jelajahi katalog lengkap dan penawaran terbaru dari toko kami.'}</p>
+            <a href={STORE_ROUTES.catalog} className="bg-[#D9A05B] text-white px-8 py-3 rounded-full font-medium hover:bg-[#c28e4e] transition-colors">{isEn ? 'Shop Now' : 'Belanja Sekarang'}</a>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-8 sm:gap-12 border-t border-white/10 pt-16 mb-16">
             <div className="col-span-2 md:col-span-1">
               <h2 className="text-2xl font-semibold tracking-tight mb-6" style={{ fontFamily: themeSettings.fontFamily }}>
-                Toko Kami<span className="text-[#D9A05B]">.</span>
+                {isEn ? 'Our Store' : 'Toko Kami'}<span className="text-[#D9A05B]">.</span>
               </h2>
             </div>
             <div>
-              <h4 className="font-semibold mb-6">Belanja</h4>
+              <h4 className="font-semibold mb-6">{isEn ? 'Shop' : 'Belanja'}</h4>
               <ul className="space-y-4 font-light text-white/70">
-                <li><a href={STORE_ROUTES.catalog} className="hover:text-[#D9A05B] transition-colors">Semua Produk</a></li>
+                <li><a href={STORE_ROUTES.catalog} className="hover:text-[#D9A05B] transition-colors">{isEn ? 'All Products' : 'Semua Produk'}</a></li>
                 <li><a href={STORE_ROUTES.catalog} className="hover:text-[#D9A05B] transition-colors">Promo</a></li>
-                <li><a href={STORE_ROUTES.catalog} className="hover:text-[#D9A05B] transition-colors">Katalog</a></li>
+                <li><a href={STORE_ROUTES.catalog} className="hover:text-[#D9A05B] transition-colors">{isEn ? 'Catalog' : 'Katalog'}</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-6">Informasi</h4>
+              <h4 className="font-semibold mb-6">{isEn ? 'Information' : 'Informasi'}</h4>
               <ul className="space-y-4 font-light text-white/70">
-                <li><a href={STORE_ROUTES.home} className="hover:text-[#D9A05B] transition-colors">Beranda</a></li>
+                <li><a href={STORE_ROUTES.home} className="hover:text-[#D9A05B] transition-colors">{isEn ? 'Home' : 'Beranda'}</a></li>
                 <li><a href={STORE_ROUTES.promo} className="hover:text-[#D9A05B] transition-colors">Promo</a></li>
-                <li><a href={STORE_ROUTES.contact} className="hover:text-[#D9A05B] transition-colors">Kontak</a></li>
+                <li><a href={STORE_ROUTES.contact} className="hover:text-[#D9A05B] transition-colors">{isEn ? 'Contact' : 'Kontak'}</a></li>
               </ul>
             </div>
           </div>
@@ -180,26 +182,26 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
             <a href="/" className="font-extrabold text-2xl tracking-tight text-white block" style={{ fontFamily: themeSettings.fontFamily }}>
-              Toko Kami
+              {isEn ? 'Our Store' : 'Toko Kami'}
             </a>
-            <p className="text-xs text-gray-400 leading-relaxed max-w-sm">Belanja produk pilihan dengan mudah dan aman.</p>
+            <p className="text-xs text-gray-400 leading-relaxed max-w-sm">{isEn ? 'Shop selected products easily and safely.' : 'Belanja produk pilihan dengan mudah dan aman.'}</p>
           </div>
 
           {/* Belanja */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-4">Belanja</h4>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-4">{isEn ? 'Shop' : 'Belanja'}</h4>
             <ul className="space-y-2.5 text-xs text-gray-400">
-              <li><a href={STORE_ROUTES.home} className="hover:text-white transition-colors">Beranda</a></li>
-              <li><a href={STORE_ROUTES.catalog} className="hover:text-white transition-colors">Katalog</a></li>
+              <li><a href={STORE_ROUTES.home} className="hover:text-white transition-colors">{isEn ? 'Home' : 'Beranda'}</a></li>
+              <li><a href={STORE_ROUTES.catalog} className="hover:text-white transition-colors">{isEn ? 'Catalog' : 'Katalog'}</a></li>
               <li><a href={STORE_ROUTES.promo} className="hover:text-white transition-colors">Promo</a></li>
             </ul>
           </div>
 
           {/* Bantuan */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-4">Bantuan Pelanggan</h4>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-4">{isEn ? 'Customer Help' : 'Bantuan Pelanggan'}</h4>
             <ul className="space-y-2.5 text-xs text-gray-400">
-              <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Hubungi Kami</a></li>
+              <li><a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">{isEn ? 'Contact Us' : 'Hubungi Kami'}</a></li>
             </ul>
           </div>
 
@@ -207,7 +209,7 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
 
         {/* Bottom copyright */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400">
-          <p>{settings.copyrightText || `© ${new Date().getFullYear()} Toko Kami. Hak cipta dilindungi.`}</p>
+          <p>{settings.copyrightText || `© ${new Date().getFullYear()} ${isEn ? 'Our Store' : 'Toko Kami'}. ${isEn ? 'All rights reserved.' : 'Hak cipta dilindungi.'}`}</p>
         </div>
       </div>
     </footer>

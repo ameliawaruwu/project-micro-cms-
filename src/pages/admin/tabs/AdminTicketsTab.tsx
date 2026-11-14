@@ -10,6 +10,7 @@ import {
   CATEGORY_LABELS,
   PRIORITY_LABELS,
   STATUS_META,
+  ticketStatusLabel,
   SimpleModal,
   TICKET_STATUSES,
   TicketStatusBadge,
@@ -20,6 +21,16 @@ import {
   labelClass,
   primaryBtn,
 } from '../../../components/tickets/ticketUi';
+
+const ROLE_LABELS_EN: Record<string, string> = {
+  admin: 'Super Admin',
+  sub_admin: 'Sub Admin',
+  sub_admin_umum: 'General Admin',
+  sub_admin_produk: 'Product Admin',
+  community_admin: 'Product Admin',
+  merchant: 'Merchant',
+  buyer: 'Buyer',
+};
 
 interface AdminTicketsTabProps {
   currentUser?: User | null;
@@ -55,7 +66,7 @@ export const AdminTicketsTab: React.FC<AdminTicketsTabProps> = ({
     try {
       setTickets(await ticketService.listAll());
     } catch (err: any) {
-      setLoadError(err?.message || 'Gagal memuat tiket.');
+      setLoadError(err?.message || (isEn ? 'Failed to load tickets.' : 'Gagal memuat tiket.'));
     } finally {
       setLoading(false);
     }
@@ -107,9 +118,9 @@ export const AdminTicketsTab: React.FC<AdminTicketsTabProps> = ({
       replaceTicket(updated);
       setSelected(null);
       onTicketsChanged?.();
-      onShowToast?.(`${updated.ticketNumber} → ${STATUS_META[updated.status].label}`);
+      onShowToast?.(`${updated.ticketNumber} → ${ticketStatusLabel(updated.status, isEn)}`);
     } catch (err: any) {
-      setModalError(err?.message || 'Gagal menyimpan.');
+      setModalError(err?.message || (isEn ? 'Failed to save.' : 'Gagal menyimpan.'));
     } finally {
       setSaving(false);
     }
@@ -126,7 +137,7 @@ export const AdminTicketsTab: React.FC<AdminTicketsTabProps> = ({
       setSelected(null);
       onTicketsChanged?.();
     } catch (err: any) {
-      setModalError(err?.message || 'Gagal menghapus.');
+      setModalError(err?.message || (isEn ? 'Failed to delete.' : 'Gagal menghapus.'));
       setConfirmOpen(false);
     } finally {
       setSaving(false);
@@ -191,7 +202,7 @@ export const AdminTicketsTab: React.FC<AdminTicketsTabProps> = ({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[#1F1F1F] truncate">{t.subject}</p>
                     <p className="text-[11px] text-[#A8A09D] mt-0.5 truncate">
-                      {t.requesterName} · {ROLE_LABELS[t.requesterRole] || t.requesterRole}
+                      {t.requesterName} · {(isEn ? ROLE_LABELS_EN : ROLE_LABELS)[t.requesterRole] || t.requesterRole}
                       {t.storeName ? ` · ${t.storeName}` : t.communityName ? ` · ${t.communityName}` : ''}
                       {' · '}
                       {formatTicketDate(t.createdAt)}
@@ -241,7 +252,7 @@ export const AdminTicketsTab: React.FC<AdminTicketsTabProps> = ({
               </div>
               <div>
                 <dt className="text-[#A8A09D]">{isEn ? 'Role' : 'Peran'}</dt>
-                <dd className="text-[#1F1F1F]">{ROLE_LABELS[selected.requesterRole] || selected.requesterRole}</dd>
+                <dd className="text-[#1F1F1F]">{(isEn ? ROLE_LABELS_EN : ROLE_LABELS)[selected.requesterRole] || selected.requesterRole}</dd>
                 <dd className="text-[#706866] truncate">{selected.storeName || selected.communityName || '-'}</dd>
               </div>
               <div>
@@ -274,7 +285,7 @@ export const AdminTicketsTab: React.FC<AdminTicketsTabProps> = ({
                         active ? STATUS_META[s].className + ' ring-1 ring-current' : 'border-[#E5E0DD] text-[#706866] hover:bg-[#FAF7F7]'
                       }`}
                     >
-                      {STATUS_META[s].label}
+                      {ticketStatusLabel(s, isEn)}
                     </button>
                   );
                 })}

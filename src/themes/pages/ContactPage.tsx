@@ -7,6 +7,7 @@ import { useStoreChromeOptions } from './storeChrome';
 import { Phone, Mail, MapPin, Send } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { getDeviceClass } from '../../utils/responsivePreview';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ContactPageProps {
   themeData?: ThemeSchema;
@@ -19,6 +20,7 @@ interface ContactPageProps {
 export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: propThemeId, store, onNavigate, deviceMode }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
   const isMobile = deviceMode ? deviceMode === 'mobile' : undefined;
+  const { isEn } = useLanguage();
   const isTablet = deviceMode ? deviceMode === 'tablet' : undefined;
   const gridCols2Class = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
@@ -69,14 +71,14 @@ export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: pr
         <div className="pt-24 pb-24 bg-white text-black min-h-screen border-b-8 border-black">
           <div className="max-w-4xl mx-auto px-6">
             <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-8 text-center">
-              HUBUNGI KAMI
+              {isEn ? 'CONTACT US' : 'HUBUNGI KAMI'}
             </h1>
             <div className="bg-[#FF0000] p-8 border-8 border-black shadow-[12px_12px_0px_rgba(0,0,0,1)] space-y-4">
-              <input type="text" placeholder="NAMA LENGKAP" className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm" />
+              <input type="text" placeholder={isEn ? 'FULL NAME' : 'NAMA LENGKAP'} className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm" />
               <input type="email" placeholder="EMAIL" className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm" />
-              <textarea placeholder="PESAN ANDA..." rows={4} className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm" />
+              <textarea placeholder={isEn ? 'YOUR MESSAGE...' : 'PESAN ANDA...'} rows={4} className="w-full p-4 bg-white border-4 border-black font-black uppercase text-sm" />
               <button className="w-full py-5 bg-black text-white text-xl font-black uppercase border-4 border-black hover:bg-yellow-300 hover:text-black transition shadow-[4px_4px_0px_rgba(0,0,0,1)]">
-                KIRIM PESAN 📩
+                {isEn ? 'SEND MESSAGE' : 'KIRIM PESAN'} 📩
               </button>
             </div>
           </div>
@@ -114,16 +116,16 @@ export const ContactPage: React.FC<ContactPageProps> = ({ themeData, themeId: pr
         <div className="max-w-4xl mx-auto px-6">
           <div className="bg-[var(--sf-card)] p-8 md:p-12 rounded-[var(--sf-radius)] border border-[var(--sf-border)] shadow-sm space-y-8">
             <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold text-[var(--sf-text)]">Hubungi Kami</h1>
-              <p className="text-sm text-[var(--sf-muted)]">Ada pertanyaan? Tim kami siap membantu Anda kapan saja.</p>
+              <h1 className="text-3xl font-bold text-[var(--sf-text)]">{isEn ? 'Contact Us' : 'Hubungi Kami'}</h1>
+              <p className="text-sm text-[var(--sf-muted)]">{isEn ? 'Have a question? Our team is ready to help you anytime.' : 'Ada pertanyaan? Tim kami siap membantu Anda kapan saja.'}</p>
             </div>
             <div className={`grid ${gridCols2Class} gap-8`}>
               <div className="space-y-4">
-                <input type="text" placeholder="Nama Anda" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-                <input type="email" placeholder="Email Anda" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-                <textarea placeholder="Pesan Anda..." rows={4} className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="text" placeholder={isEn ? 'Your Name' : 'Nama Anda'} className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="email" placeholder={isEn ? 'Your Email' : 'Email Anda'} className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                <textarea placeholder={isEn ? 'Your Message...' : 'Pesan Anda...'} rows={4} className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
                 <button className="w-full py-3.5 bg-[var(--sf-primary)] text-white font-bold text-sm rounded-[var(--sf-radius)] hover:bg-[var(--sf-primary)] transition shadow-md">
-                  Kirim Pesan
+                  {isEn ? 'Send Message' : 'Kirim Pesan'}
                 </button>
               </div>
               <div className="bg-[var(--sf-subtle)] p-6 rounded-[var(--sf-radius)] space-y-4 text-sm text-[var(--sf-text-soft)] border border-[var(--sf-border)]">

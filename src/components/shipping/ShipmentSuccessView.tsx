@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Order, ShippingBranch, CreateShipmentResult } from '../../types';
 import { ShipmentThermalLabel } from './ShipmentThermalLabel';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ShipmentSuccessViewProps {
   order: Order;
@@ -39,6 +40,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
   handlePrintLabel,
   onClose,
 }) => {
+  const { isEn } = useLanguage();
   if (showThermalPreview) {
     return (
       <div className="space-y-4">
@@ -49,24 +51,24 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#EAEAEA] text-[#555555] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] font-semibold text-xs transition cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Kembali ke Resi</span>
+            <span>{isEn ? 'Back to Tracking Number' : 'Kembali ke Resi'}</span>
           </button>
 
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrintLabel}
               className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#E8DDDE] bg-[#F5E8EA] text-[#66000E] hover:bg-[#F9EDEF] font-semibold text-xs transition cursor-pointer"
-              title="Buka Pelacakan Online Biteship"
+              title={isEn ? 'Open Biteship Online Tracking' : 'Buka Pelacakan Online Biteship'}
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Lacak Biteship</span>
+              <span className="hidden sm:inline">{isEn ? 'Track on Biteship' : 'Lacak Biteship'}</span>
             </button>
             <button
               onClick={() => window.print()}
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Cetak Label Thermal</span>
+              <span>{isEn ? 'Print Thermal Label' : 'Cetak Label Thermal'}</span>
             </button>
           </div>
         </div>
@@ -91,11 +93,11 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
       </div>
 
       <div>
-        <h4 className="font-bold text-sm text-[#1F1F1F]">Pengiriman Berhasil Diatur!</h4>
+        <h4 className="font-bold text-sm text-[#1F1F1F]">{isEn ? 'Shipment Arranged Successfully!' : 'Pengiriman Berhasil Diatur!'}</h4>
         <p className="text-[#555555] text-xs mt-0.5">
           {deliveryType === 'pickup'
-            ? `Kurir ${dynamicCourierName} akan menjemput paket sesuai jadwal ke alamat gudang asal Anda.`
-            : `Paket siap diantar ke counter gerai ${dynamicCourierName} terdekat.`}
+            ? (isEn ? `A ${dynamicCourierName} courier will collect the parcel from your origin warehouse as scheduled.` : `Kurir ${dynamicCourierName} akan menjemput paket sesuai jadwal ke alamat gudang asal Anda.`)
+            : (isEn ? `The parcel is ready to be dropped at the nearest ${dynamicCourierName} counter.` : `Paket siap diantar ke counter gerai ${dynamicCourierName} terdekat.`)}
         </p>
       </div>
 
@@ -103,7 +105,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
       <div className="p-4 bg-white rounded-xl border border-[#E5E0DD] shadow-2xs space-y-2 text-left">
         <div className="flex items-center justify-between text-[#777777]">
           <span className="text-[11px] font-semibold">
-            Nomor Resi / AWB ({dynamicCourierName} - {dynamicServiceName})
+            {isEn ? 'Tracking Number / AWB' : 'Nomor Resi / AWB'} ({dynamicCourierName} - {dynamicServiceName})
           </span>
           <span className="text-[10px] uppercase font-bold bg-[#F5E8EA] text-[#66000E] px-2 py-0.5 rounded">
             Biteship Verified
@@ -119,7 +121,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#F7F7F7] hover:bg-[#EAEAEA] text-[#1F1F1F] font-semibold text-xs transition cursor-pointer"
           >
             {isCopiedResi ? <Check className="w-3.5 h-3.5 text-[#027A48]" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{isCopiedResi ? 'Tersalin' : 'Salin'}</span>
+            <span>{isCopiedResi ? (isEn ? 'Copied' : 'Tersalin') : (isEn ? 'Copy' : 'Salin')}</span>
           </button>
         </div>
 
@@ -144,7 +146,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
           className="w-full sm:flex-1 py-2.5 px-3.5 rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
         >
           <ExternalLink className="w-3.5 h-3.5" />
-          <span>Cetak Label Pengiriman (PDF)</span>
+          <span>{isEn ? 'Print Shipping Label (PDF)' : 'Cetak Label Pengiriman (PDF)'}</span>
         </button>
 
         <button
@@ -152,7 +154,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
           className="w-full sm:flex-1 py-2.5 px-3.5 rounded-xl border border-[#66000E] text-[#66000E] hover:bg-[#F5E8EA] font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
         >
           <Printer className="w-3.5 h-3.5" />
-          <span>Pratinjau & Cetak Label Thermal</span>
+          <span>{isEn ? 'Preview & Print Thermal Label' : 'Pratinjau & Cetak Label Thermal'}</span>
         </button>
 
         <button
@@ -162,7 +164,7 @@ export const ShipmentSuccessView: React.FC<ShipmentSuccessViewProps> = ({
           }}
           className="w-full sm:w-auto py-2.5 px-4 rounded-xl border border-[#EAEAEA] text-[#555555] hover:bg-[#F7F7F7] font-semibold text-xs transition cursor-pointer"
         >
-          Selesai
+          {isEn ? 'Done' : 'Selesai'}
         </button>
       </div>
     </div>

@@ -14,6 +14,7 @@ import {
 import { Store as StoreType, StoreSectionOptions, NavMenuItem } from '../../types';
 import { generateWhatsAppLink } from '../../utils/formatters';
 import { DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface StoreHeaderProps {
   store: StoreType;
@@ -45,6 +46,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
   onOpenCart,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isEn } = useLanguage();
 
   const opts: StoreSectionOptions = headerOptions || {};
   const sticky = opts.stickyHeader !== false;
@@ -106,7 +108,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
           <span className="truncate max-w-2xl">
             {topNoticeText || (
               <>
-                Toko Online Resmi <strong>{store.name}</strong> • Pengiriman Aman Seluruh Indonesia
+                {isEn ? 'Official Online Store' : 'Toko Online Resmi'} <strong>{store.name}</strong> • {isEn ? 'Safe Shipping Across Indonesia' : 'Pengiriman Aman Seluruh Indonesia'}
               </>
             )}
           </span>
@@ -192,7 +194,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
             />
             <input
               type="text"
-              placeholder="Cari produk di toko..."
+              placeholder={isEn ? 'Search store products...' : 'Cari produk di toko...'}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className={`w-full pl-9 pr-3 py-2 rounded-xl text-xs transition focus:outline-none focus:ring-2 ${
@@ -218,10 +220,10 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
                   : 'bg-[#66000E] text-white hover:bg-[#801010]'
               }`}
               style={!isBrandStyle ? { backgroundColor: primaryAccent } : undefined}
-              title="Buka Keranjang Belanja"
+              title={isEn ? 'Open Shopping Cart' : 'Buka Keranjang Belanja'}
             >
               <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
-              <span className="hidden sm:inline">Keranjang</span>
+              <span className="hidden sm:inline">{isEn ? 'Cart' : 'Keranjang'}</span>
               {cartCount > 0 && (
                 <span
                   className={`w-4.5 h-4.5 rounded-full text-[10px] font-bold flex items-center justify-center ${
@@ -244,7 +246,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
                   ? 'text-white border-white/20 hover:bg-white/15'
                   : 'text-[#4A4240] border-[#E5E0DD] hover:bg-[#FAF7F7]'
               }`}
-              title="Buka Menu"
+              title={isEn ? 'Open Menu' : 'Buka Menu'}
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -263,7 +265,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
             />
             <input
               type="text"
-              placeholder="Cari produk di toko..."
+              placeholder={isEn ? 'Search store products...' : 'Cari produk di toko...'}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className={`w-full pl-9 pr-3 py-2 rounded-xl text-xs transition focus:outline-none ${
@@ -286,7 +288,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
           }`}
         >
           <div className="text-[10px] font-bold uppercase tracking-wider text-white/70 mb-1">
-            Navigasi Halaman
+            {isEn ? 'Page Navigation' : 'Navigasi Halaman'}
           </div>
           {navItems.map((item) => (
             <a
@@ -328,7 +330,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
                 : 'text-[#555555] hover:bg-[#F7F7F7] hover:text-[#1F1F1F]'
             }`}
           >
-            Semua Produk
+            {isEn ? 'All Products' : 'Semua Produk'}
           </button>
           {categories.map((cat) => (
             <button

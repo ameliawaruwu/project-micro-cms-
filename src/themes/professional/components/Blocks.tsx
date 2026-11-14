@@ -3,6 +3,7 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useSectionProducts } from '../../useSectionProducts';
 import { AddToCartButton } from '../../storefrontCart';
 import { STORE_ROUTES, formatRupiah, productHref } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const heading = sectionOptions.heading || "Mengapa Belanja di Toko Kami?";
@@ -48,6 +49,7 @@ export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobil
 };
 
 export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   // Produk mengikuti pengaturan panel editor (kategori, produk pilihan, urutan, jumlah).
   const products = useSectionProducts('professional', sectionOptions, { defaultCount: 8 });
   const heading = sectionOptions.heading || sectionOptions.featuredTitle || "Katalog Produk";
@@ -74,7 +76,7 @@ export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?
             href={STORE_ROUTES.catalog}
             className="inline-block w-fit shrink-0 px-5 py-2.5 text-sm font-semibold text-[#1E40AF] border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
           >
-            Lihat Semua Produk →
+            {isEn ? 'View All Products →' : 'Lihat Semua Produk →'}
           </a>
         </div>
 
@@ -86,7 +88,7 @@ export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?
                   {product.image && (
                     <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   )}
-                  {(product.stock ?? 1) > 0 && <div className="absolute top-2 right-2 px-2 py-1 bg-green-100 text-green-800 text-[10px] font-bold uppercase rounded">Stok tersedia</div>}
+                  {(product.stock ?? 1) > 0 && <div className="absolute top-2 right-2 px-2 py-1 bg-green-100 text-green-800 text-[10px] font-bold uppercase rounded">{isEn ? 'In stock' : 'Stok tersedia'}</div>}
                 </div>
                 <div className="p-3 sm:p-5">
                   <h3 className="font-bold text-gray-900 text-xs sm:text-sm md:text-base mb-1.5 line-clamp-2 break-words storefront-card-title">{product.name}</h3>
@@ -95,7 +97,7 @@ export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?
               </a>
               <div className="px-3 pb-3 sm:px-5 sm:pb-5">
                 <AddToCartButton product={product} className="w-full min-w-0 whitespace-nowrap py-2 bg-gray-50 border border-gray-300 rounded-md text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors">
-                  + Keranjang
+                  {isEn ? '+ Cart' : '+ Keranjang'}
                 </AddToCartButton>
               </div>
             </div>
@@ -129,6 +131,7 @@ function getMerchantTestimonials(value: unknown): TestimonialItem[] {
  * section berubah menjadi ajakan belanja / menghubungi toko (tanpa ulasan palsu).
  */
 export const ProfessionalTestimonials: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const testimonials = getMerchantTestimonials(sectionOptions.testimonials);
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
@@ -152,13 +155,13 @@ export const ProfessionalTestimonials: React.FC<{ sectionOptions?: any; isMobile
               href={STORE_ROUTES.catalog}
               className="inline-block px-8 py-3.5 bg-[#1E40AF] text-white font-semibold rounded-md hover:bg-[#1e3a8a] transition-colors shadow-md text-center"
             >
-              Belanja Sekarang
+              {isEn ? 'Shop Now' : 'Belanja Sekarang'}
             </a>
             <a
               href={STORE_ROUTES.contact}
               className="inline-block px-8 py-3.5 bg-white text-gray-700 font-semibold rounded-md border border-gray-300 hover:bg-gray-50 transition-colors text-center"
             >
-              Hubungi Kami
+              {isEn ? 'Contact Us' : 'Hubungi Kami'}
             </a>
           </div>
         </div>

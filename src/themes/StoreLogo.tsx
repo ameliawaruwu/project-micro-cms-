@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCmsStore } from '../cms/useCmsStore';
+import { useLanguage } from '../contexts/LanguageContext';
 
 /** URL logo gambar toko: dari pengaturan header (logoUrl), atau logo toko yang tersimpan. */
 export function getStoreLogoUrl(sectionOptions: any = {}, storeLogoUrl?: string): string {
@@ -21,13 +22,14 @@ interface StoreLogoProps {
  * jika belum tampilkan logo teks bawaan tema (children).
  */
 export const StoreLogo: React.FC<StoreLogoProps> = ({ sectionOptions = {}, name, imgClassName = 'h-9 sm:h-11', children }) => {
+  const { isEn } = useLanguage();
   const storeLogoUrl = useCmsStore((state) => state.storeInfo?.logoUrl);
   const logoUrl = getStoreLogoUrl(sectionOptions, storeLogoUrl);
   if (!logoUrl) return <>{children}</>;
   return (
     <img
       src={logoUrl}
-      alt={name || 'Logo toko'}
+      alt={name || (isEn ? 'Store logo' : 'Logo toko')}
       className={`${imgClassName} w-auto max-w-[200px] object-contain block`}
       loading="eager"
     />

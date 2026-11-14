@@ -12,6 +12,7 @@ import { useCmsStore } from '../../cms/useCmsStore';
 import { cartService } from '../../services/cartService';
 import { getDeviceClass, resolveResponsiveClasses } from '../../utils/responsivePreview';
 import { addProductToCart, toCartProduct } from '../storefrontCart';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ProductDetailPageProps {
   themeData?: ThemeSchema;
@@ -33,6 +34,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   deviceMode,
 }) => {
   const cmsProducts = useCmsStore(state => state.products);
+  const { isEn } = useLanguage();
   const { id: paramId } = useParams<{ id: string }>();
   const id = propProductId || paramId;
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
@@ -142,7 +144,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </div>
             <div className={rc(`${halfWidthClass} mt-12 md:mt-0`)}>
               <span className="px-4 py-2 bg-[#FF0000] text-white font-black text-sm uppercase tracking-widest border-2 border-black inline-block mb-4 shadow-[4px_4px_0px_rgba(0,0,0,1)]">
-                {product.categoryName || 'Produk Pilihan'}
+                {product.categoryName || (isEn ? 'Featured Product' : 'Produk Pilihan')}
               </span>
               <h1 className={rc("text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-black uppercase tracking-tighter leading-none mb-4 sm:mb-6 storefront-heading-hero")}>
                 {product.name}
@@ -194,7 +196,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 onClick={handleAddToCart}
                 className="w-full py-4 border border-[#241A1A] text-[#241A1A] font-serif uppercase tracking-[0.2em] hover:bg-[#241A1A] hover:text-white transition-colors duration-500 cursor-pointer"
               >
-                Tambah ke Keranjang
+                {isEn ? 'Add to Cart' : 'Tambah ke Keranjang'}
               </button>
             </div>
             <div className={`${width7of12Class} ${orderSecondClass}`}>
@@ -234,7 +236,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   onClick={handleBuyNow}
                   className="w-full py-4 bg-gradient-to-r from-[var(--sf-primary)] to-[color-mix(in_srgb,var(--sf-primary)_55%,white)] rounded-xl font-bold text-sm uppercase tracking-wider text-white shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:opacity-90 cursor-pointer"
                 >
-                  Beli Sekarang
+                  {isEn ? 'Buy Now' : 'Beli Sekarang'}
                 </button>
                 <button
                   type="button"
@@ -269,7 +271,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 onClick={handleBuyNow}
                 className="w-full py-4 bg-[#2D5A27] text-white rounded-2xl font-bold text-base hover:bg-[#1B3B2B] transition-colors shadow-lg cursor-pointer"
               >
-                Beli Sekarang 🍃
+                {isEn ? 'Buy Now' : 'Beli Sekarang'} 🍃
               </button>
               <button
                 type="button"
@@ -302,14 +304,14 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 onClick={handleBuyNow}
                 className="w-full py-4 bg-[#8C531B] hover:bg-[#724113] text-[#FFFDF9] font-sans text-xs uppercase tracking-[0.2em] rounded-lg shadow-sm transition-all duration-300 cursor-pointer"
               >
-                Pesan Koleksi Eksklusif
+                {isEn ? 'Order Exclusive Collection' : 'Pesan Koleksi Eksklusif'}
               </button>
               <button
                 type="button"
                 onClick={handleAddToCart}
                 className="w-full py-3.5 border border-[#8C531B] text-[#8C531B] hover:bg-[#8C531B] hover:text-[#FFFDF9] font-sans text-xs uppercase tracking-[0.2em] rounded-lg transition-all duration-300 cursor-pointer"
               >
-                Tambah ke Keranjang
+                {isEn ? 'Add to Cart' : 'Tambah ke Keranjang'}
               </button>
             </div>
           </div>
@@ -336,7 +338,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 onClick={handleAddToCart}
                 className="w-full py-4 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-base shadow-lg shadow-pink-200 hover:scale-102 transition-transform cursor-pointer"
               >
-                Masukkan Keranjang Belanja 🛍️
+                {isEn ? 'Add to Shopping Cart' : 'Masukkan Keranjang Belanja'} 🛍️
               </button>
             </div>
           </div>
@@ -364,13 +366,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 className={rc("flex-1 py-3.5 px-6 border-2 border-[var(--sf-primary)] text-[var(--sf-text)] text-xs sm:text-sm font-semibold uppercase tracking-wider hover:bg-[var(--sf-subtle)] transition-colors rounded-[var(--sf-radius)] cursor-pointer flex items-center justify-center gap-2")}
               >
                 <ShoppingCart className="w-4 h-4" />
-                <span>Tambah ke Keranjang</span>
+                <span>{isEn ? 'Add to Cart' : 'Tambah ke Keranjang'}</span>
               </button>
               <button 
                 onClick={handleBuyNow}
                 className={rc("flex-1 py-3.5 px-6 bg-[var(--sf-primary)] text-white text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-[var(--sf-primary)] transition-colors rounded-[var(--sf-radius)] cursor-pointer shadow-md flex items-center justify-center gap-2")}
               >
-                <span>Beli Sekarang</span>
+                <span>{isEn ? 'Buy Now' : 'Beli Sekarang'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -394,14 +396,14 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         {productMissing ? (
           <div className="pt-24 pb-24 min-h-[60vh] flex items-center justify-center px-6 text-center">
             <div className="max-w-sm space-y-3">
-              <h1 className="text-xl font-semibold text-gray-900">Produk tidak ditemukan</h1>
-              <p className="text-sm text-gray-500">Produk ini tidak tersedia atau sudah tidak dijual.</p>
+              <h1 className="text-xl font-semibold text-gray-900">{isEn ? 'Product not found' : 'Produk tidak ditemukan'}</h1>
+              <p className="text-sm text-gray-500">{isEn ? 'This product is unavailable or no longer sold.' : 'Produk ini tidak tersedia atau sudah tidak dijual.'}</p>
               <button
                 type="button"
                 onClick={() => onNavigate && onNavigate('katalog')}
                 className="px-5 py-2.5 rounded-lg border border-gray-900 text-gray-900 text-xs font-semibold hover:bg-gray-900 hover:text-white transition cursor-pointer"
               >
-                Lihat Katalog
+                {isEn ? 'View Catalog' : 'Lihat Katalog'}
               </button>
             </div>
           </div>

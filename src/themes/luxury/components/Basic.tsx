@@ -167,7 +167,7 @@ export const LuxuryFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
   const navItems = getNavMenuItems(sectionOptions);
   const copyrightText = sectionOptions.copyrightText || (isEn
     ? `© ${new Date().getFullYear()} ${storeTitle}. All rights reserved.`
-    : `© ${new Date().getFullYear()} ${storeTitle}. Seluruh hak cipta dilindungi.`);
+    : `© ${new Date().getFullYear()} ${storeTitle}. ${isEn ? 'All rights reserved.' : 'Seluruh hak cipta dilindungi.'}`);
 
   return (
     <footer className="w-full px-5 sm:px-8 md:px-16 py-14 sm:py-20 bg-white text-[#36281D] flex flex-col items-center text-center border-t border-[#F0EBE1]">

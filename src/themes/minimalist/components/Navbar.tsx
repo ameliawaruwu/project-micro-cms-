@@ -8,8 +8,10 @@ import { NavSearchButton } from '../../NavSearchButton';
 import { StoreLogo } from '../../StoreLogo';
 import { NavCartButton } from '../../storefrontCart';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore((state) => state.storeInfo);
   const header = getHeaderDisplay(sectionOptions);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -65,7 +67,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-1.5 -ml-1 text-gray-900 hover:text-gray-600 active:bg-gray-100 rounded-lg transition-colors focus:outline-none cursor-pointer"
-            aria-label="Menu Navigasi"
+            aria-label={isEn ? 'Navigation Menu' : 'Menu Navigasi'}
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>

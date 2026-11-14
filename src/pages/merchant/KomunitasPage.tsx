@@ -134,7 +134,7 @@ export const KomunitasPage: React.FC<KomunitasPageProps> = ({ onShowToast, onNav
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button type="button" onClick={load} className={ghostBtn} aria-label="Refresh">
+          <button type="button" onClick={load} className={ghostBtn} aria-label={isEn ? 'Refresh' : 'Muat ulang'}>
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button type="button" onClick={openModal} disabled={!hasStores || loading} className={primaryBtn}>

@@ -95,7 +95,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
     await loadRequests();
     if (onRequestUpdated) onRequestUpdated();
     setSelectedRequestForApprove(null);
-    if (onShowToast) onShowToast(`Permintaan domain ${selectedRequestForApprove.fullDomain} berhasil disetujui!`);
+    if (onShowToast) onShowToast(isEn ? `Domain request ${selectedRequestForApprove.fullDomain} approved!` : `Permintaan domain ${selectedRequestForApprove.fullDomain} berhasil disetujui!`);
   };
 
   const handleOpenRejectModal = (req: DomainRequest) => {
@@ -115,7 +115,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
     await loadRequests();
     if (onRequestUpdated) onRequestUpdated();
     setSelectedRequestForReject(null);
-    if (onShowToast) onShowToast(`Permintaan domain ${selectedRequestForReject.fullDomain} ditolak dengan saran.`);
+    if (onShowToast) onShowToast(isEn ? `Domain request ${selectedRequestForReject.fullDomain} rejected with suggestions.` : `Permintaan domain ${selectedRequestForReject.fullDomain} ditolak dengan saran.`);
   };
 
   const handleOpenProofModal = (req: DomainRequest) => {
@@ -139,8 +139,8 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
     if (onShowToast) {
       onShowToast(
         connect.success
-          ? `Pembayaran ${req.fullDomain} disetujui dan domain diaktifkan.`
-          : `Pembayaran ${req.fullDomain} disetujui, tetapi domain belum terhubung: ${connect.message}`
+          ? (isEn ? `Payment for ${req.fullDomain} approved and domain activated.` : `Pembayaran ${req.fullDomain} disetujui dan domain diaktifkan.`)
+          : (isEn ? `Payment for ${req.fullDomain} approved, but the domain is not connected yet: ${connect.message}` : `Pembayaran ${req.fullDomain} disetujui, tetapi domain belum terhubung: ${connect.message}`)
       );
     }
   };
@@ -149,7 +149,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
     const req = selectedRequestForProof;
     if (!req) return;
     if (!proofRejectReason.trim()) {
-      setProofError('Tuliskan alasan penolakan agar merchant tahu apa yang harus diperbaiki.');
+      setProofError(isEn ? 'Write a rejection reason so the merchant knows what to fix.' : 'Tuliskan alasan penolakan agar merchant tahu apa yang harus diperbaiki.');
       return;
     }
     setIsProcessingProof(true);
@@ -157,13 +157,13 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
     const ok = await domainRequestService.rejectPaymentProof(req.id, proofRejectReason);
     setIsProcessingProof(false);
     if (!ok) {
-      setProofError('Gagal menolak bukti bayar. Coba lagi.');
+      setProofError(isEn ? 'Failed to reject the payment proof. Please try again.' : 'Gagal menolak bukti bayar. Coba lagi.');
       return;
     }
     await loadRequests();
     if (onRequestUpdated) onRequestUpdated();
     setSelectedRequestForProof(null);
-    if (onShowToast) onShowToast(`Bukti bayar ${req.fullDomain} ditolak. Merchant diminta mengunggah ulang.`);
+    if (onShowToast) onShowToast(isEn ? `Payment proof for ${req.fullDomain} rejected. The merchant has been asked to re-upload.` : `Bukti bayar ${req.fullDomain} ditolak. Merchant diminta mengunggah ulang.`);
   };
 
   return (
@@ -192,7 +192,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
           className="px-3.5 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shadow-xs cursor-pointer self-start sm:self-auto shrink-0"
         >
           <ExternalLink className="w-3.5 h-3.5" />
-          <span>Buka IDCloudHost Domain</span>
+          <span>{isEn ? 'Open IDCloudHost Domain' : 'Buka IDCloudHost Domain'}</span>
         </a>
       </div>
 
@@ -200,7 +200,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-medium text-gray-500 block">Menunggu Review</span>
+            <span className="text-[11px] font-medium text-gray-500 block">{isEn ? 'Awaiting Review' : 'Menunggu Review'}</span>
             <span className="text-xl font-black text-amber-600">{pendingCount}</span>
           </div>
           <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -210,7 +210,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
 
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-medium text-gray-500 block">Disetujui / Aktif</span>
+            <span className="text-[11px] font-medium text-gray-500 block">{isEn ? 'Approved / Active' : 'Disetujui / Aktif'}</span>
             <span className="text-xl font-black text-emerald-600">{approvedCount}</span>
           </div>
           <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -220,7 +220,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
 
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-medium text-gray-500 block">Ditolak / Beri Saran</span>
+            <span className="text-[11px] font-medium text-gray-500 block">{isEn ? 'Rejected / Suggested' : 'Ditolak / Beri Saran'}</span>
             <span className="text-xl font-black text-red-600">{rejectedCount}</span>
           </div>
           <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
@@ -254,7 +254,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {st === 'all' ? 'Semua' : st}
+              {st === 'all' ? (isEn ? 'All' : 'Semua') : st}
             </button>
           ))}
         </div>
@@ -266,12 +266,12 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
           <table className="w-full text-left text-xs text-gray-600">
             <thead className="bg-gray-50/80 text-[11px] font-bold text-gray-500 border-b border-gray-200 uppercase tracking-wider">
               <tr>
-                <th className="px-4 py-3">Nama Toko</th>
-                <th className="px-4 py-3">Domain yang Diajukan</th>
-                <th className="px-4 py-3">Biaya Tahunan</th>
-                <th className="px-4 py-3">Tanggal Pengajuan</th>
+                <th className="px-4 py-3">{isEn ? 'Store Name' : 'Nama Toko'}</th>
+                <th className="px-4 py-3">{isEn ? 'Requested Domain' : 'Domain yang Diajukan'}</th>
+                <th className="px-4 py-3">{isEn ? 'Annual Fee' : 'Biaya Tahunan'}</th>
+                <th className="px-4 py-3">{isEn ? 'Request Date' : 'Tanggal Pengajuan'}</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Aksi Admin</th>
+                <th className="px-4 py-3 text-right">{isEn ? 'Admin Actions' : 'Aksi Admin'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -279,7 +279,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                 <tr>
                   <td colSpan={6} className="text-center py-10 text-gray-400">
                     <Globe className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <span>Tidak ada permohonan domain yang sesuai filter.</span>
+                    <span>{isEn ? 'No domain requests match the filter.' : 'Tidak ada permohonan domain yang sesuai filter.'}</span>
                   </td>
                 </tr>
               ) : (
@@ -297,22 +297,22 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                           href={`https://idcloudhost.com/domain/?domain=${req.fullDomain}`}
                           target="_blank"
                           rel="noreferrer"
-                          title="Cek di IDCloudHost"
+                          title={isEn ? 'Check on IDCloudHost' : 'Cek di IDCloudHost'}
                           className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       </div>
-                      <span className="text-[10px] text-gray-400">Ekstensi {req.tld}</span>
+                      <span className="text-[10px] text-gray-400">{isEn ? 'Extension' : 'Ekstensi'} {req.tld}</span>
                     </td>
 
                     <td className="px-4 py-3.5 font-bold text-gray-900">
                       {formatRupiah(req.price)}
-                      <span className="text-[10px] text-gray-400 font-normal block">/ tahun</span>
+                      <span className="text-[10px] text-gray-400 font-normal block">{isEn ? '/ year' : '/ tahun'}</span>
                     </td>
 
                     <td className="px-4 py-3.5 text-gray-500">
-                      {new Date(req.createdAt).toLocaleDateString('id-ID', {
+                      {new Date(req.createdAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',
@@ -335,7 +335,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                         {req.status === 'approved' && <CheckCircle2 className="w-3 h-3" />}
                         {req.status === 'rejected' && <XCircle className="w-3 h-3" />}
                         {req.status === 'active' && <Check className="w-3 h-3" />}
-                        <span>{req.status === 'approved' && req.paymentProofUrl ? 'cek bayar' : req.status}</span>
+                        <span>{req.status === 'approved' && req.paymentProofUrl ? (isEn ? 'check payment' : 'cek bayar') : req.status}</span>
                       </span>
                     </td>
 
@@ -348,14 +348,14 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                               onClick={() => handleOpenApproveModal(req)}
                               className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1"
                             >
-                              <Check className="w-3 h-3" /> Setujui
+                              <Check className="w-3 h-3" /> {isEn ? 'Approve' : 'Setujui'}
                             </button>
                             <button
                               type="button"
                               onClick={() => handleOpenRejectModal(req)}
                               className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1"
                             >
-                              <X className="w-3 h-3" /> Tolak & Saran
+                              <X className="w-3 h-3" /> {isEn ? 'Reject & Suggest' : 'Tolak & Saran'}
                             </button>
                           </>
                         )}
@@ -365,7 +365,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                             onClick={() => handleOpenRejectModal(req)}
                             className="px-2.5 py-1 text-gray-500 hover:bg-gray-100 rounded-lg text-xs font-medium cursor-pointer"
                           >
-                            Edit Saran
+                            {isEn ? 'Edit Suggestions' : 'Edit Saran'}
                           </button>
                         )}
                         {req.status === 'approved' && req.paymentProofUrl && (
@@ -374,17 +374,17 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                             onClick={() => handleOpenProofModal(req)}
                             className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1"
                           >
-                            <Receipt className="w-3 h-3" /> Cek Bukti Bayar
+                            <Receipt className="w-3 h-3" /> {isEn ? 'Check Payment Proof' : 'Cek Bukti Bayar'}
                           </button>
                         )}
                         {req.status === 'approved' && !req.paymentProofUrl && (
                           <span className="text-[11px] text-blue-700 font-semibold">
-                            Menunggu Pembayaran Toko
+                            {isEn ? 'Awaiting Store Payment' : 'Menunggu Pembayaran Toko'}
                           </span>
                         )}
                         {req.status === 'active' && (
                           <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1 justify-end">
-                            <Check className="w-3 h-3" /> Terhubung
+                            <Check className="w-3 h-3" /> {isEn ? 'Connected' : 'Terhubung'}
                           </span>
                         )}
                       </div>
@@ -404,7 +404,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                Setujui Permintaan Domain
+                {isEn ? 'Approve Domain Request' : 'Setujui Permintaan Domain'}
               </h3>
               <button
                 type="button"
@@ -416,12 +416,16 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
             </div>
 
             <p className="text-xs text-gray-600 leading-relaxed">
-              Anda akan menyetujui ketersediaan domain <strong>{selectedRequestForApprove.fullDomain}</strong> untuk toko <strong>{selectedRequestForApprove.storeName}</strong>. Sistem akan menerbitkan invoice pembayaran Midtrans ke akun toko tersebut.
+              {isEn ? (
+                <>You are about to approve the availability of domain <strong>{selectedRequestForApprove.fullDomain}</strong> for store <strong>{selectedRequestForApprove.storeName}</strong>. The system will issue a Midtrans payment invoice to that store account.</>
+              ) : (
+                <>Anda akan menyetujui ketersediaan domain <strong>{selectedRequestForApprove.fullDomain}</strong> untuk toko <strong>{selectedRequestForApprove.storeName}</strong>. Sistem akan menerbitkan invoice pembayaran Midtrans ke akun toko tersebut.</>
+              )}
             </p>
 
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">
-                Nominal Tagihan Domain (1 Tahun):
+                {isEn ? 'Domain Bill Amount (1 Year):' : 'Nominal Tagihan Domain (1 Tahun):'}
               </label>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-gray-500">Rp</span>
@@ -440,14 +444,14 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                 onClick={() => setSelectedRequestForApprove(null)}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold cursor-pointer"
               >
-                Batal
+                {isEn ? 'Cancel' : 'Batal'}
               </button>
               <button
                 type="button"
                 onClick={handleConfirmApprove}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-xs"
               >
-                Konfirmasi Setujui
+                {isEn ? 'Confirm Approval' : 'Konfirmasi Setujui'}
               </button>
             </div>
           </div>
@@ -461,7 +465,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-emerald-600" />
-                Verifikasi Bukti Bayar Domain
+                {isEn ? 'Verify Domain Payment Proof' : 'Verifikasi Bukti Bayar Domain'}
               </h3>
               <button
                 type="button"
@@ -473,23 +477,23 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-              <span className="text-gray-500">Toko</span>
+              <span className="text-gray-500">{isEn ? 'Store' : 'Toko'}</span>
               <span className="font-bold text-gray-900 text-right truncate">{selectedRequestForProof.storeName}</span>
               <span className="text-gray-500">Domain</span>
               <span className="font-bold text-gray-900 text-right truncate">{selectedRequestForProof.fullDomain}</span>
-              <span className="text-gray-500">Tagihan</span>
+              <span className="text-gray-500">{isEn ? 'Bill' : 'Tagihan'}</span>
               <span className="font-black text-gray-900 text-right">{formatRupiah(selectedRequestForProof.price)}</span>
               {selectedRequestForProof.invoiceNumber && (
                 <>
-                  <span className="text-gray-500">No. Invoice</span>
+                  <span className="text-gray-500">{isEn ? 'Invoice No.' : 'No. Invoice'}</span>
                   <span className="font-mono font-semibold text-gray-900 text-right">{selectedRequestForProof.invoiceNumber}</span>
                 </>
               )}
               {selectedRequestForProof.paymentProofSubmittedAt && (
                 <>
-                  <span className="text-gray-500">Dikirim</span>
+                  <span className="text-gray-500">{isEn ? 'Submitted' : 'Dikirim'}</span>
                   <span className="text-gray-900 text-right">
-                    {new Date(selectedRequestForProof.paymentProofSubmittedAt).toLocaleString('id-ID', {
+                    {new Date(selectedRequestForProof.paymentProofSubmittedAt).toLocaleString(isEn ? 'en-US' : 'id-ID', {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',
@@ -506,26 +510,27 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               className="block rounded-xl border border-gray-200 bg-gray-50 p-2"
-              title="Buka bukti ukuran penuh"
+              title={isEn ? 'Open full-size proof' : 'Buka bukti ukuran penuh'}
             >
               <img
                 src={selectedRequestForProof.paymentProofUrl}
-                alt="Bukti bayar"
+                alt={isEn ? 'Payment proof' : 'Bukti bayar'}
                 className="w-full max-h-80 object-contain rounded-lg"
               />
             </a>
             <p className="text-[11px] text-gray-500 leading-relaxed">
-              Cocokkan nominal dan waktu transfer dengan mutasi QRIS platform. Menyetujui akan menandai invoice lunas,
-              memasang domain ke toko, dan mendaftarkannya ke panel hosting.
+              {isEn
+                ? 'Match the transfer amount and time against the platform QRIS statement. Approving will mark the invoice as paid, attach the domain to the store, and register it with the hosting panel.'
+                : 'Cocokkan nominal dan waktu transfer dengan mutasi QRIS platform. Menyetujui akan menandai invoice lunas, memasang domain ke toko, dan mendaftarkannya ke panel hosting.'}
             </p>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Alasan penolakan (wajib bila menolak):</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1">{isEn ? 'Rejection reason (required when rejecting):' : 'Alasan penolakan (wajib bila menolak):'}</label>
               <textarea
                 rows={2}
                 value={proofRejectReason}
                 onChange={(e) => setProofRejectReason(e.target.value)}
-                placeholder="Contoh: Nominal transfer tidak sesuai tagihan."
+                placeholder={isEn ? 'Example: Transfer amount does not match the bill.' : 'Contoh: Nominal transfer tidak sesuai tagihan.'}
                 className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
@@ -543,7 +548,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                 onClick={handleRejectProof}
                 className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
               >
-                Tolak Bukti
+                {isEn ? 'Reject Proof' : 'Tolak Bukti'}
               </button>
               <button
                 type="button"
@@ -552,7 +557,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {isProcessingProof ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                Setujui & Aktifkan Domain
+                {isEn ? 'Approve & Activate Domain' : 'Setujui & Aktifkan Domain'}
               </button>
             </div>
           </div>
@@ -566,7 +571,7 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-red-600" />
-                Tolak & Berikan Saran Alternatif
+                {isEn ? 'Reject & Suggest Alternatives' : 'Tolak & Berikan Saran Alternatif'}
               </h3>
               <button
                 type="button"
@@ -578,36 +583,40 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
             </div>
 
             <p className="text-xs text-gray-600 leading-relaxed">
-              Jika domain <strong>{selectedRequestForReject.fullDomain}</strong> sudah terdaftar di IDCloudHost/Whois, masukkan rekomendasi alternatif domain yang masih tersedia agar merchant dapat langsung memilih.
+              {isEn ? (
+                <>If domain <strong>{selectedRequestForReject.fullDomain}</strong> is already registered on IDCloudHost/Whois, enter available alternative domains so the merchant can pick one right away.</>
+              ) : (
+                <>Jika domain <strong>{selectedRequestForReject.fullDomain}</strong> sudah terdaftar di IDCloudHost/Whois, masukkan rekomendasi alternatif domain yang masih tersedia agar merchant dapat langsung memilih.</>
+              )}
             </p>
 
             <div className="space-y-2.5">
-              <label className="block text-xs font-bold text-gray-700">Rekomendasi Domain Tersedia:</label>
+              <label className="block text-xs font-bold text-gray-700">{isEn ? 'Available Domain Recommendations:' : 'Rekomendasi Domain Tersedia:'}</label>
               <input
                 type="text"
                 value={suggestion1}
                 onChange={(e) => setSuggestion1(e.target.value)}
-                placeholder="Rekomendasi 1: contoh.id"
+                placeholder={isEn ? 'Recommendation 1: example.id' : 'Rekomendasi 1: contoh.id'}
                 className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
               />
               <input
                 type="text"
                 value={suggestion2}
                 onChange={(e) => setSuggestion2(e.target.value)}
-                placeholder="Rekomendasi 2: contoh.online"
+                placeholder={isEn ? 'Recommendation 2: example.online' : 'Rekomendasi 2: contoh.online'}
                 className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
               />
               <input
                 type="text"
                 value={suggestion3}
                 onChange={(e) => setSuggestion3(e.target.value)}
-                placeholder="Rekomendasi 3: contoh.top"
+                placeholder={isEn ? 'Recommendation 3: example.top' : 'Rekomendasi 3: contoh.top'}
                 className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Catatan untuk Merchant:</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1">{isEn ? 'Notes for Merchant:' : 'Catatan untuk Merchant:'}</label>
               <textarea
                 rows={2}
                 value={adminNotes}
@@ -622,14 +631,14 @@ export const AdminDomainRequestsTab: React.FC<AdminDomainRequestsTabProps> = ({
                 onClick={() => setSelectedRequestForReject(null)}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold cursor-pointer"
               >
-                Batal
+                {isEn ? 'Cancel' : 'Batal'}
               </button>
               <button
                 type="button"
                 onClick={handleConfirmReject}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-xs"
               >
-                Kirim Saran ke Merchant
+                {isEn ? 'Send Suggestions to Merchant' : 'Kirim Saran ke Merchant'}
               </button>
             </div>
           </div>

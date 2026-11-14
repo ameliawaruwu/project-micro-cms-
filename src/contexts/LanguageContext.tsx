@@ -930,6 +930,18 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 const LANGUAGE_STORAGE_KEY = 'kroomify_language_preference';
 
+/**
+ * Bahasa aktif untuk kode di luar komponen React atau di luar LanguageProvider
+ * (mis. AuthContext, ErrorBoundary, service). Komponen tetap memakai useLanguage().
+ */
+export const isEnglishPreferred = (): boolean => {
+  try {
+    return localStorage.getItem(LANGUAGE_STORAGE_KEY) === 'en';
+  } catch {
+    return false;
+  }
+};
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     try {

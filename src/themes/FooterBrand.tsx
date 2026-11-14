@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCmsStore } from '../cms/useCmsStore';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export type FooterLogoType = 'text' | 'image';
 
@@ -32,13 +33,14 @@ interface FooterBrandProps {
  * gambar sesuai pilihan merchant di Pengaturan Footer.
  */
 export const FooterBrand: React.FC<FooterBrandProps> = ({ sectionOptions = {}, name, imgClassName = 'h-12 mb-4', children }) => {
+  const { isEn } = useLanguage();
   const storeLogoUrl = useCmsStore((state) => state.storeInfo?.logoUrl);
   const logoUrl = getFooterLogoUrl(sectionOptions, storeLogoUrl);
   if (!logoUrl) return <>{children}</>;
   return (
     <img
       src={logoUrl}
-      alt={name || 'Logo toko'}
+      alt={name || (isEn ? 'Store logo' : 'Logo toko')}
       className={`${imgClassName} w-auto max-w-[220px] object-contain block`}
       loading="lazy"
     />

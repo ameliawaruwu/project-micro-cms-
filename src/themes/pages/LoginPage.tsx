@@ -7,6 +7,7 @@ import { useStoreChromeOptions } from './storeChrome';
 import { Key, Mail, Lock, User, ArrowRight, Sparkles, CheckCircle, ShieldCheck } from 'lucide-react';
 import { THEME_DATA_MAP } from '../themeData';
 import { useCmsStore } from '../../cms/useCmsStore';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface LoginPageProps {
   themeData?: ThemeSchema;
@@ -25,6 +26,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   isRegister = false,
   mode: propMode
 }) => {
+  const { isEn } = useLanguage();
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
   const themeDataObj = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['minimalist'];
   const liveStoreInfo = useCmsStore((state) => state.storeInfo);
@@ -77,7 +79,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 {brandName} AUTH SYSTEM
               </span>
               <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter text-white">
-                {viewMode === 'register' ? 'DAFTAR AKUN' : viewMode === 'forgot_password' ? 'LUPA PASSWORD' : 'MASUK AKUN'}
+                {viewMode === 'register'
+                  ? (isEn ? 'REGISTER' : 'DAFTAR AKUN')
+                  : viewMode === 'forgot_password'
+                    ? (isEn ? 'FORGOT PASSWORD' : 'LUPA PASSWORD')
+                    : (isEn ? 'SIGN IN' : 'MASUK AKUN')}
               </h1>
             </div>
 
@@ -86,50 +92,54 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <>
                   {resetSent ? (
                     <div className="p-4 bg-white border-4 border-black text-black font-black uppercase text-center text-sm">
-                      ✅ Link reset password telah dikirim ke email Anda!
+                      {isEn ? '✅ A password reset link has been sent to your email!' : '✅ Link reset password telah dikirim ke email Anda!'}
                     </div>
                   ) : (
                     <>
-                      <p className="text-white font-black uppercase text-xs">Masukkan email terdaftar untuk reset kata sandi:</p>
-                      <input type="email" placeholder="EMAIL TERDAFTAR" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
+                      <p className="text-white font-black uppercase text-xs">{isEn ? 'Enter your registered email to reset your password:' : 'Masukkan email terdaftar untuk reset kata sandi:'}</p>
+                      <input type="email" placeholder={isEn ? 'REGISTERED EMAIL' : 'EMAIL TERDAFTAR'} className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
                       <button 
                         onClick={() => setResetSent(true)}
                         className="w-full py-5 bg-black text-white text-lg font-black uppercase border-4 border-black hover:bg-yellow-300 hover:text-black transition shadow-[4px_4px_0px_rgba(0,0,0,1)] cursor-pointer"
                       >
-                        KIRIM LINK RESET ⚡
+                        {isEn ? 'SEND RESET LINK ⚡' : 'KIRIM LINK RESET ⚡'}
                       </button>
                     </>
                   )}
                   <div className="text-center pt-2">
                     <button onClick={() => onNavigate?.('login')} className="font-black text-xs uppercase bg-white text-black px-3 py-1.5 border-2 border-black hover:bg-yellow-300 cursor-pointer">
-                      ← KEMBALI KE LOGIN
+                      {isEn ? '← BACK TO LOGIN' : '← KEMBALI KE LOGIN'}
                     </button>
                   </div>
                 </>
               ) : (
                 <>
                   {viewMode === 'register' && (
-                    <input type="text" placeholder="NAMA LENGKAP" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
+                    <input type="text" placeholder={isEn ? 'FULL NAME' : 'NAMA LENGKAP'} className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
                   )}
                   <input type="email" placeholder="EMAIL" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
-                  <input type="password" placeholder="KATA SANDI" className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
+                  <input type="password" placeholder={isEn ? 'PASSWORD' : 'KATA SANDI'} className="w-full p-4 bg-white border-4 border-black text-black font-black uppercase text-sm focus:bg-yellow-300 focus:outline-none" />
                   
                   <button 
                     onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'profile')}
                     className="w-full py-5 bg-black text-white text-xl font-black uppercase border-4 border-black hover:bg-yellow-300 hover:text-black transition shadow-[4px_4px_0px_rgba(0,0,0,1)] cursor-pointer"
                   >
-                    {viewMode === 'register' ? 'DAFTAR SEKARANG 📝' : 'MASUK SEKARANG 🔑'}
+                    {viewMode === 'register'
+                      ? (isEn ? 'REGISTER NOW 📝' : 'DAFTAR SEKARANG 📝')
+                      : (isEn ? 'SIGN IN NOW 🔑' : 'MASUK SEKARANG 🔑')}
                   </button>
 
                   <div className="flex justify-between items-center pt-2 text-xs">
                     <button onClick={() => onNavigate?.('forgot_password')} className="font-black text-xs uppercase bg-white text-black px-2.5 py-1 border-2 border-black hover:bg-yellow-300 cursor-pointer">
-                      Lupa Password?
+                      {isEn ? 'Forgot Password?' : 'Lupa Password?'}
                     </button>
                     <button 
                       onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'register')}
                       className="font-black text-xs uppercase bg-white text-black px-2.5 py-1 border-2 border-black hover:bg-yellow-300 cursor-pointer"
                     >
-                      {viewMode === 'register' ? 'Sudah Punya Akun' : 'Daftar Akun Baru'}
+                      {viewMode === 'register'
+                        ? (isEn ? 'Already Have an Account' : 'Sudah Punya Akun')
+                        : (isEn ? 'Register New Account' : 'Daftar Akun Baru')}
                     </button>
                   </div>
                 </>
@@ -290,7 +300,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <div className="text-center mb-8">
               <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full mb-3 uppercase tracking-wider">🌿 {brandName}</span>
               <h1 className="text-3xl font-bold text-emerald-950">
-                {viewMode === 'register' ? 'Daftar Akun Natural' : viewMode === 'forgot_password' ? 'Reset Kata Sandi' : 'Selamat Datang Kembali'}
+                {viewMode === 'register'
+                  ? (isEn ? 'Create a Natural Account' : 'Daftar Akun Natural')
+                  : viewMode === 'forgot_password'
+                    ? (isEn ? 'Reset Password' : 'Reset Kata Sandi')
+                    : (isEn ? 'Welcome Back' : 'Selamat Datang Kembali')}
               </h1>
             </div>
 
@@ -299,47 +313,51 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <>
                   {resetSent ? (
                     <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs text-center font-medium">
-                      🌿 Instruksi reset kata sandi telah dikirim ke email Anda.
+                      {isEn ? '🌿 Password reset instructions have been sent to your email.' : '🌿 Instruksi reset kata sandi telah dikirim ke email Anda.'}
                     </div>
                   ) : (
                     <>
-                      <p className="text-xs text-emerald-700">Masukkan alamat email terdaftar Anda:</p>
-                      <input type="email" placeholder="Email Terdaftar" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                      <p className="text-xs text-emerald-700">{isEn ? 'Enter your registered email address:' : 'Masukkan alamat email terdaftar Anda:'}</p>
+                      <input type="email" placeholder={isEn ? 'Registered Email' : 'Email Terdaftar'} className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                       <button 
                         onClick={() => setResetSent(true)}
                         className="w-full py-4 bg-emerald-800 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm transition-all shadow-md cursor-pointer"
                       >
-                        Kirim Link Reset 🌿
+                        {isEn ? 'Send Reset Link 🌿' : 'Kirim Link Reset 🌿'}
                       </button>
                     </>
                   )}
                   <div className="text-center pt-2 text-xs text-emerald-700">
                     <button onClick={() => onNavigate?.('login')} className="hover:underline cursor-pointer font-semibold">
-                      ← Kembali ke Halaman Masuk
+                      {isEn ? '← Back to Sign In' : '← Kembali ke Halaman Masuk'}
                     </button>
                   </div>
                 </>
               ) : (
                 <>
                   {viewMode === 'register' && (
-                    <input type="text" placeholder="Nama Lengkap" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                    <input type="text" placeholder={isEn ? 'Full Name' : 'Nama Lengkap'} className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                   )}
-                  <input type="email" placeholder="Email Anda" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
-                  <input type="password" placeholder="Kata Sandi" className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                  <input type="email" placeholder={isEn ? 'Your Email' : 'Email Anda'} className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                  <input type="password" placeholder={isEn ? 'Password' : 'Kata Sandi'} className="w-full p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-emerald-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                   
                   <button 
                     onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'profile')}
                     className="w-full py-4 bg-emerald-800 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm transition-all shadow-md cursor-pointer"
                   >
-                    {viewMode === 'register' ? 'Daftar Sekarang 🌿' : 'Masuk Akun 🌿'}
+                    {viewMode === 'register'
+                      ? (isEn ? 'Register Now 🌿' : 'Daftar Sekarang 🌿')
+                      : (isEn ? 'Sign In 🌿' : 'Masuk Akun 🌿')}
                   </button>
 
                   <div className="flex justify-between items-center pt-2 text-xs text-emerald-700">
                     <button onClick={() => onNavigate?.('forgot_password')} className="hover:underline cursor-pointer">
-                      Lupa Kata Sandi?
+                      {isEn ? 'Forgot Password?' : 'Lupa Kata Sandi?'}
                     </button>
                     <button onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'register')} className="hover:underline cursor-pointer font-bold text-emerald-900">
-                      {viewMode === 'register' ? 'Sudah Punya Akun' : 'Daftar Akun Baru'}
+                      {viewMode === 'register'
+                        ? (isEn ? 'Already Have an Account' : 'Sudah Punya Akun')
+                        : (isEn ? 'Register New Account' : 'Daftar Akun Baru')}
                     </button>
                   </div>
                 </>
@@ -358,7 +376,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <div className="text-center mb-8">
               <span className="inline-block px-4 py-1 bg-[#FFD1DC] text-[#FF85A1] text-xs font-black rounded-full mb-3 rotate-2">💖 {brandName}</span>
               <h1 className="text-3xl sm:text-4xl font-black text-gray-800">
-                {viewMode === 'register' ? 'Daftar Member Cutie 🌸' : viewMode === 'forgot_password' ? 'Lupa Password 🥺' : 'Masuk Member 💖'}
+                {viewMode === 'register'
+                  ? (isEn ? 'Join as a Cutie Member 🌸' : 'Daftar Member Cutie 🌸')
+                  : viewMode === 'forgot_password'
+                    ? (isEn ? 'Forgot Password 🥺' : 'Lupa Password 🥺')
+                    : (isEn ? 'Member Sign In 💖' : 'Masuk Member 💖')}
               </h1>
             </div>
 
@@ -367,47 +389,51 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <>
                   {resetSent ? (
                     <div className="p-4 bg-[#FFF5F7] rounded-2xl border-2 border-[#FFD1DC] text-[#FF85A1] text-xs font-bold text-center">
-                      🌸 Link reset kata sandi sudah dikirim ke email kamu!
+                      {isEn ? '🌸 The password reset link has been sent to your email!' : '🌸 Link reset kata sandi sudah dikirim ke email kamu!'}
                     </div>
                   ) : (
                     <>
-                      <p className="text-xs text-gray-500 font-semibold">Ketik email terdaftar kamu di bawah ya:</p>
-                      <input type="email" placeholder="Email Terdaftar" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
+                      <p className="text-xs text-gray-500 font-semibold">{isEn ? 'Type your registered email below:' : 'Ketik email terdaftar kamu di bawah ya:'}</p>
+                      <input type="email" placeholder={isEn ? 'Registered Email' : 'Email Terdaftar'} className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
                       <button 
                         onClick={() => setResetSent(true)}
                         className="w-full py-4 bg-[#FF85A1] hover:bg-[#FF6B8B] text-white rounded-2xl font-black text-sm transition-all shadow-sm cursor-pointer"
                       >
-                        Kirim Link Reset 🌸
+                        {isEn ? 'Send Reset Link 🌸' : 'Kirim Link Reset 🌸'}
                       </button>
                     </>
                   )}
                   <div className="text-center pt-2 text-xs">
                     <button onClick={() => onNavigate?.('login')} className="font-bold text-[#FF85A1] hover:underline cursor-pointer">
-                      ← Kembali ke Log In
+                      {isEn ? '← Back to Log In' : '← Kembali ke Log In'}
                     </button>
                   </div>
                 </>
               ) : (
                 <>
                   {viewMode === 'register' && (
-                    <input type="text" placeholder="Nama Lengkap Kamu" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
+                    <input type="text" placeholder={isEn ? 'Your Full Name' : 'Nama Lengkap Kamu'} className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
                   )}
-                  <input type="email" placeholder="Alamat Email" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
-                  <input type="password" placeholder="Password Cantik" className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
+                  <input type="email" placeholder={isEn ? 'Email Address' : 'Alamat Email'} className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
+                  <input type="password" placeholder={isEn ? 'Lovely Password' : 'Password Cantik'} className="w-full p-4 bg-[#FAF7F7] border-2 border-[#FFD1DC] rounded-2xl text-gray-800 text-sm font-semibold focus:outline-none focus:border-[#FF85A1]" />
                   
                   <button 
                     onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'profile')}
                     className="w-full py-4 bg-[#FF85A1] hover:bg-[#FF6B8B] text-white rounded-2xl font-black text-sm transition-all shadow-sm cursor-pointer"
                   >
-                    {viewMode === 'register' ? 'Daftar Member Cutie 🌸' : 'Masuk Sekarang 💖'}
+                    {viewMode === 'register'
+                      ? (isEn ? 'Join as a Cutie Member 🌸' : 'Daftar Member Cutie 🌸')
+                      : (isEn ? 'Sign In Now 💖' : 'Masuk Sekarang 💖')}
                   </button>
 
                   <div className="flex justify-between items-center pt-2 text-xs font-bold text-gray-500">
                     <button onClick={() => onNavigate?.('forgot_password')} className="hover:text-[#FF85A1] cursor-pointer">
-                      Lupa Password?
+                      {isEn ? 'Forgot Password?' : 'Lupa Password?'}
                     </button>
                     <button onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'register')} className="text-[#FF85A1] hover:underline cursor-pointer">
-                      {viewMode === 'register' ? 'Sudah Ada Akun' : 'Daftar Akun Baru'}
+                      {viewMode === 'register'
+                        ? (isEn ? 'Already Have an Account' : 'Sudah Ada Akun')
+                        : (isEn ? 'Register New Account' : 'Daftar Akun Baru')}
                     </button>
                   </div>
                 </>
@@ -425,7 +451,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           <div className="text-center mb-8">
             <span className="text-xs font-semibold uppercase tracking-widest text-[var(--sf-muted)] mb-2 block">{brandName}</span>
             <h1 className="text-3xl font-bold text-[var(--sf-text)]">
-              {viewMode === 'register' ? 'Buat Akun Baru' : viewMode === 'forgot_password' ? 'Reset Kata Sandi' : 'Masuk ke Akun Anda'}
+              {viewMode === 'register'
+                ? (isEn ? 'Create a New Account' : 'Buat Akun Baru')
+                : viewMode === 'forgot_password'
+                  ? (isEn ? 'Reset Password' : 'Reset Kata Sandi')
+                  : (isEn ? 'Sign In to Your Account' : 'Masuk ke Akun Anda')}
             </h1>
           </div>
 
@@ -434,47 +464,49 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               <>
                 {resetSent ? (
                   <div className="p-4 bg-[var(--sf-subtle)] rounded-[var(--sf-radius)] text-[var(--sf-text)] text-xs font-medium text-center">
-                    ✅ Link petunjuk reset password telah dikirim ke alamat email Anda.
+                    {isEn ? '✅ A password reset instructions link has been sent to your email address.' : '✅ Link petunjuk reset password telah dikirim ke alamat email Anda.'}
                   </div>
                 ) : (
                   <>
-                    <p className="text-xs text-[var(--sf-text-soft)]">Masukkan email yang terdaftar di akun Anda:</p>
-                    <input type="email" placeholder="Email Anda" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                    <p className="text-xs text-[var(--sf-text-soft)]">{isEn ? 'Enter the email registered to your account:' : 'Masukkan email yang terdaftar di akun Anda:'}</p>
+                    <input type="email" placeholder={isEn ? 'Your Email' : 'Email Anda'} className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
                     <button 
                       onClick={() => setResetSent(true)}
                       className="w-full py-3.5 bg-[var(--sf-primary)] text-white font-bold text-sm rounded-[var(--sf-radius)] hover:bg-[var(--sf-primary)] transition shadow-md cursor-pointer"
                     >
-                      Kirim Link Reset
+                      {isEn ? 'Send Reset Link' : 'Kirim Link Reset'}
                     </button>
                   </>
                 )}
                 <div className="text-center pt-2 text-xs text-[var(--sf-muted)]">
                   <button onClick={() => onNavigate?.('login')} className="hover:underline cursor-pointer font-semibold text-[var(--sf-text)]">
-                    ← Kembali ke Masuk
+                    {isEn ? '← Back to Sign In' : '← Kembali ke Masuk'}
                   </button>
                 </div>
               </>
             ) : (
               <>
                 {viewMode === 'register' && (
-                  <input type="text" placeholder="Nama Lengkap" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                  <input type="text" placeholder={isEn ? 'Full Name' : 'Nama Lengkap'} className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
                 )}
-                <input type="email" placeholder="Email Anda" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-                <input type="password" placeholder="Kata Sandi" className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="email" placeholder={isEn ? 'Your Email' : 'Email Anda'} className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+                <input type="password" placeholder={isEn ? 'Password' : 'Kata Sandi'} className="w-full px-4 py-3 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-sm focus:outline-none focus:ring-2 focus:ring-black" />
                 
                 <button 
                   onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'profile')}
                   className="w-full py-3.5 bg-[var(--sf-primary)] text-white font-bold text-sm rounded-[var(--sf-radius)] hover:bg-[var(--sf-primary)] transition shadow-md cursor-pointer"
                 >
-                  {viewMode === 'register' ? 'Daftar Sekarang' : 'Masuk'}
+                  {viewMode === 'register' ? (isEn ? 'Register Now' : 'Daftar Sekarang') : (isEn ? 'Sign In' : 'Masuk')}
                 </button>
 
                 <div className="flex justify-between items-center text-xs text-[var(--sf-muted)] pt-2 border-t border-[var(--sf-border)]">
                   <span onClick={() => onNavigate?.('forgot_password')} className="hover:underline cursor-pointer">
-                    Lupa Password?
+                    {isEn ? 'Forgot Password?' : 'Lupa Password?'}
                   </span>
                   <span onClick={() => onNavigate?.(viewMode === 'register' ? 'login' : 'register')} className="hover:underline cursor-pointer font-semibold text-[var(--sf-text)]">
-                    {viewMode === 'register' ? 'Sudah Punya Akun' : 'Belum Punya Akun'}
+                    {viewMode === 'register'
+                      ? (isEn ? 'Already Have an Account' : 'Sudah Punya Akun')
+                      : (isEn ? "Don't Have an Account" : 'Belum Punya Akun')}
                   </span>
                 </div>
               </>

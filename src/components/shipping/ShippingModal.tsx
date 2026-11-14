@@ -18,6 +18,7 @@ import { shippingService } from '../../services/shippingService';
 import { orderService } from '../../services/orderService';
 import { ShipmentSuccessView } from './ShipmentSuccessView';
 import { ShipmentFulfillmentForm } from './ShipmentFulfillmentForm';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ShippingModalProps {
   order: Order | null;
@@ -34,6 +35,7 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
   onSuccess,
   onShowNotification,
 }) => {
+  const { isEn } = useLanguage();
   const [deliveryType, setDeliveryType] = useState<ShippingMethod>('drop_off');
   const [branches, setBranches] = useState<ShippingBranch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<ShippingBranch | null>(null);
@@ -122,18 +124,18 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
   if (!isOpen || !order) return null;
 
   // Nama kurir dinamis
-  const dynamicCourierName = selectedCourier?.courier_name || order.courier || 'Ekspedisi';
-  const dynamicServiceName = selectedCourier?.courier_service_name || order.courierService || 'Reguler';
+  const dynamicCourierName = selectedCourier?.courier_name || order.courier || (isEn ? 'Courier' : 'Ekspedisi');
+  const dynamicServiceName = selectedCourier?.courier_service_name || order.courierService || (isEn ? 'Regular' : 'Reguler');
 
   const handleCourierSelect = (c: AvailableCourier) => {
     setSelectedCourier(c);
     // Auto-adjust delivery type jika metode saat ini tidak didukung oleh kurir baru
     if (deliveryType === 'drop_off' && !c.available_for_drop_off) {
       setDeliveryType('pickup');
-      onShowNotification(`${c.courier_name} hanya mendukung metode Pick-up (Kurir Jemput).`);
+      onShowNotification(isEn ? `${c.courier_name} only supports Pick-up (courier collects).` : `${c.courier_name} hanya mendukung metode Pick-up (Kurir Jemput).`);
     } else if (deliveryType === 'pickup' && !c.available_for_pickup) {
       setDeliveryType('drop_off');
-      onShowNotification(`${c.courier_name} hanya mendukung metode Drop-off (Antar ke Counter).`);
+      onShowNotification(isEn ? `${c.courier_name} only supports Drop-off (drop at counter).` : `${c.courier_name} hanya mendukung metode Drop-off (Antar ke Counter).`);
     }
   };
 
@@ -142,7 +144,7 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
     if (!resi) return;
     navigator.clipboard.writeText(resi);
     setIsCopiedResi(true);
-    onShowNotification(`Nomor Resi ${resi} berhasil disalin!`);
+    onShowNotification(isEn ? `Tracking number ${resi} copied!` : `Nomor Resi ${resi} berhasil disalin!`);
     setTimeout(() => setIsCopiedResi(false), 2000);
   };
 
@@ -204,10 +206,12 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
 
       onSuccess(updated);
       onShowNotification(
-        result.message || `Resi pengiriman ${result.tracking_number} berhasil diterbitkan!`
+        isEn
+          ? `Tracking number ${result.tracking_number} issued successfully!`
+          : result.message || `Resi pengiriman ${result.tracking_number} berhasil diterbitkan!`
       );
     } catch (err: any) {
-      setErrorMsg(err.message || 'Gagal memproses pengiriman paket');
+      setErrorMsg(err.message || (isEn ? 'Failed to process the shipment' : 'Gagal memproses pengiriman paket'));
     } finally {
       setIsSubmitting(false);
     }
@@ -233,7 +237,7 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
         'noopener,noreferrer'
       );
     } else {
-      alert('Nomor resi atau link label belum tersedia.');
+      alert(isEn ? 'Tracking number or label link is not available yet.' : 'Nomor resi atau link label belum tersedia.');
     }
   };
 
@@ -251,10 +255,12 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-sm sm:text-base text-[#1F1F1F]">
-                {showThermalPreview ? 'Pratinjau Label Pengiriman (Thermal A6)' : 'Atur Pengiriman Pesanan'}
+                {showThermalPreview
+                  ? (isEn ? 'Shipping Label Preview (Thermal A6)' : 'Pratinjau Label Pengiriman (Thermal A6)')
+                  : (isEn ? 'Arrange Order Shipment' : 'Atur Pengiriman Pesanan')}
               </h3>
               <p className="text-[11px] text-[#777777]">
-                Pesanan #{order.orderNumber} • {order.customerName}
+                {isEn ? 'Order' : 'Pesanan'} #{order.orderNumber} • {order.customerName}
               </p>
             </div>
           </div>
@@ -323,7 +329,7 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
               disabled={isSubmitting}
               className="px-4 py-2.5 min-h-[40px] rounded-xl border border-[#E5E0DD] text-[#555555] hover:bg-[#F7F7F7] font-semibold text-xs transition cursor-pointer"
             >
-              Batal
+              {isEn ? 'Cancel' : 'Batal'}
             </button>
 
             <button
@@ -334,13 +340,15 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Menerbitkan Resi {dynamicCourierName}...</span>
+                  <span>{isEn ? `Issuing ${dynamicCourierName} tracking number...` : `Menerbitkan Resi ${dynamicCourierName}...`}</span>
                 </>
               ) : (
                 <>
                   <Truck className="w-4 h-4" />
                   <span>
-                    Konfirmasi {deliveryType === 'pickup' ? 'Pick-up' : 'Drop-off'} ({dynamicCourierName}) & Buat Resi
+                    {isEn
+                      ? `Confirm ${deliveryType === 'pickup' ? 'Pick-up' : 'Drop-off'} (${dynamicCourierName}) & Create Tracking Number`
+                      : `Konfirmasi ${deliveryType === 'pickup' ? 'Pick-up' : 'Drop-off'} (${dynamicCourierName}) & Buat Resi`}
                   </span>
                 </>
               )}

@@ -5,8 +5,10 @@ import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
 
@@ -15,7 +17,7 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address;
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
   const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName || ''}. Hak cipta dilindungi.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName || ''}. ${isEn ? 'All rights reserved.' : 'Hak cipta dilindungi.'}`;
 
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
@@ -44,7 +46,7 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
         {/* Links */}
         <div className={`flex-1 flex ${flexDirClass} gap-12 sm:gap-16 justify-end`}>
           <div>
-            <h4 className="font-sans text-[10px] tracking-[0.3em] uppercase text-[#A39D98] mb-8">Navigasi</h4>
+            <h4 className="font-sans text-[10px] tracking-[0.3em] uppercase text-[#A39D98] mb-8">{isEn ? 'Navigation' : 'Navigasi'}</h4>
             <ul className="space-y-4">
               {getNavMenuItems(sectionOptions).map(nav => (
                 <li key={nav.id}>
@@ -57,7 +59,7 @@ export const ElegantFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
           </div>
 
           <div>
-            <h4 className="font-sans text-[10px] tracking-[0.3em] uppercase text-[#A39D98] mb-8">Kontak</h4>
+            <h4 className="font-sans text-[10px] tracking-[0.3em] uppercase text-[#A39D98] mb-8">{isEn ? 'Contact' : 'Kontak'}</h4>
             <ul className="space-y-4 font-sans text-xs tracking-wider text-[#FAF9F6]">
               {address && <li className="break-words">{address}</li>}
               {email && <li className="break-all"><a href={`mailto:${email}`} className="hover:underline">{email}</a></li>}

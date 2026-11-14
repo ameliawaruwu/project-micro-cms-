@@ -52,7 +52,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const { updateUser } = useAuth();
 
   const openProfileModal = () => {
@@ -129,7 +129,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <div className="pt-2.5 px-1 text-[11px] text-[#706866] space-y-1">
                   <div className="flex items-center justify-between">
                     <span>{t('account_role', 'Peran Akun:')}</span>
-                    <span className="font-medium text-[#241A1A]">{user?.role === 'admin' ? 'Super Admin' : user?.role === 'sub_admin_umum' ? 'Admin Umum Komunitas' : (user?.role === 'community_admin' || user?.role === 'sub_admin_produk') ? 'Admin Produk Komunitas' : user?.role === 'sub_admin' ? 'Sub Admin' : t('store_owner', 'Pemilik Toko')}</span>
+                    <span className="font-medium text-[#241A1A]">{user?.role === 'admin' ? 'Super Admin' : user?.role === 'sub_admin_umum' ? (isEn ? 'Community General Admin' : 'Admin Umum Komunitas') : (user?.role === 'community_admin' || user?.role === 'sub_admin_produk') ? (isEn ? 'Community Product Admin' : 'Admin Produk Komunitas') : user?.role === 'sub_admin' ? 'Sub Admin' : t('store_owner', 'Pemilik Toko')}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>{t('account_status', 'Status Akun:')}</span>
@@ -144,7 +144,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#241A1A] hover:border-[#66000E]/40 hover:text-[#66000E] hover:bg-[#FAF7F7] transition cursor-pointer"
                   >
                     <UserPen className="w-3.5 h-3.5" />
-                    <span>{t('edit_profile', 'Edit Profil')}</span>
+                    <span>{isEn ? 'Edit Profile' : 'Edit Profil'}</span>
                   </button>
                 )}
               </div>

@@ -26,7 +26,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   onNavigateRegister,
   onLaunchDemo,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [products, setProducts] = useState<DemoProduct[]>([
     {
       id: '1',
@@ -84,11 +84,11 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     e.target.value = '';
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setFormError(t('product_modal_photo_invalid', 'File harus berupa gambar (JPG, PNG, atau WEBP).'));
+      setFormError(isEn ? 'File must be an image (JPG, PNG, or WEBP).' : 'File harus berupa gambar (JPG, PNG, atau WEBP).');
       return;
     }
     if (file.size > DEMO_PHOTO_MAX_BYTES) {
-      setFormError(t('product_modal_photo_too_big', 'Ukuran foto maksimal 5 MB.'));
+      setFormError(isEn ? 'Maximum photo size is 5 MB.' : 'Ukuran foto maksimal 5 MB.');
       return;
     }
     // Simulasi saja: foto hanya ditampilkan lokal di browser, tidak diunggah ke server.
@@ -118,15 +118,15 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     const stock = parseInt(newProductStock.replace(/\D/g, ''), 10);
 
     if (!name) {
-      setFormError(t('product_modal_name_required', 'Nama produk wajib diisi.'));
+      setFormError(isEn ? 'Product name is required.' : 'Nama produk wajib diisi.');
       return;
     }
     if (!Number.isFinite(price) || price <= 0) {
-      setFormError(t('product_modal_price_required', 'Harga harus lebih dari 0.'));
+      setFormError(isEn ? 'Price must be greater than 0.' : 'Harga harus lebih dari 0.');
       return;
     }
     if (!Number.isFinite(stock) || stock < 0) {
-      setFormError(t('product_modal_stock_invalid', 'Jumlah stok tidak valid.'));
+      setFormError(isEn ? 'Invalid stock quantity.' : 'Jumlah stok tidak valid.');
       return;
     }
 
@@ -383,7 +383,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   {newProductImage ? (
                     <>
                       <img src={newProductImage} alt="" className="w-16 h-16 rounded-lg object-cover border border-[#E8DDDE]" />
-                      <span>{t('product_modal_photo_change', 'Ganti foto')}</span>
+                      <span>{isEn ? 'Change photo' : 'Ganti foto'}</span>
                     </>
                   ) : (
                     <>
@@ -401,7 +401,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Sambal Bawang Bu Rudy"
+                  placeholder={isEn ? 'e.g. Sambal Bawang Bu Rudy' : 'Contoh: Sambal Bawang Bu Rudy'}
                   value={newProductName}
                   onChange={(e) => setNewProductName(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DDDE] text-xs sm:text-sm text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-1 focus:ring-[#66000E]"

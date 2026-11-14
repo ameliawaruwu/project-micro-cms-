@@ -60,7 +60,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           <select
             value={selectedCategory}
             onChange={(e) => onCategoryChange(e.target.value)}
-            aria-label="Filter kategori"
+            aria-label={isEn ? 'Filter category' : 'Filter kategori'}
             className="py-2.5 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
           >
             <option value="all">{t('all_categories', 'Semua Kategori')}</option>
@@ -150,7 +150,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                     {/* Category */}
                     <td className="py-3.5 px-4">
                       <span className="inline-block text-[11px] font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200">
-                        {prod.category || 'Umum'}
+                        {prod.category || (isEn ? 'General' : 'Umum')}
                       </span>
                     </td>
 
@@ -183,7 +183,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                             ? 'text-red-600'
                             : 'text-[#241A1A]'
                         }`}>
-                          {prod.stock} unit
+                          {prod.stock} {isEn ? 'units' : 'unit'}
                         </span>
                         <span className={`inline-flex items-center w-fit text-[9px] font-bold px-2 py-0.5 rounded-full ${
                           prod.stock <= 0
@@ -192,7 +192,11 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                             ? 'bg-red-50 text-red-600 border border-red-200'
                             : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         }`}>
-                          {prod.stock <= 0 ? 'Habis' : prod.stock <= 5 ? 'Hampir Habis' : 'Tersedia'}
+                          {prod.stock <= 0
+                            ? (isEn ? 'Out of Stock' : 'Habis')
+                            : prod.stock <= 5
+                            ? (isEn ? 'Low Stock' : 'Hampir Habis')
+                            : (isEn ? 'In Stock' : 'Tersedia')}
                         </span>
                       </div>
                     </td>
@@ -223,8 +227,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
             
             {/* Table Footer with Summary */}
             <div className="px-6 py-3 bg-[#FAF7F7] border-t border-[#E5E0DD] flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#706866]">
-              <span>Total: <strong>{products.length}</strong> produk terdaftar</span>
-              <span className="text-[11px] text-gray-400">Klik nama produk atau ikon pensil untuk mengubah rincian produk</span>
+              <span>Total: <strong>{products.length}</strong> {isEn ? 'products listed' : 'produk terdaftar'}</span>
+              <span className="text-[11px] text-gray-400">{isEn ? 'Click a product name or the pencil icon to edit product details' : 'Klik nama produk atau ikon pensil untuk mengubah rincian produk'}</span>
             </div>
           </div>
         )}

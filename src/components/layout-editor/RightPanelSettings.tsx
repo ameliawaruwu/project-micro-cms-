@@ -42,6 +42,7 @@ import { useCmsStore } from '../../cms/useCmsStore';
 import { storeService } from '../../services/storeService';
 import { mediaService } from '../../services/mediaService';
 import { getFooterLogoType } from '../../themes/FooterBrand';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /** Kolom media sosial footer (dibaca tema lewat getFooterSocialLinks). */
 const FOOTER_SOCIAL_FIELDS = [
@@ -53,9 +54,9 @@ const FOOTER_SOCIAL_FIELDS = [
 ] as const;
 
 /** Kolom tautan legal footer (dibaca tema lewat getFooterLegalLinks). */
-const FOOTER_LEGAL_FIELDS = [
-  { textKey: 'privacyPolicyText', urlKey: 'privacyPolicyUrl', label: 'Kebijakan Privasi' },
-  { textKey: 'termsOfServiceText', urlKey: 'termsOfServiceUrl', label: 'Syarat & Ketentuan' },
+const getFooterLegalFields = (isEn: boolean) => [
+  { textKey: 'privacyPolicyText', urlKey: 'privacyPolicyUrl', label: isEn ? 'Privacy Policy' : 'Kebijakan Privasi' },
+  { textKey: 'termsOfServiceText', urlKey: 'termsOfServiceUrl', label: isEn ? 'Terms & Conditions' : 'Syarat & Ketentuan' },
 ] as const;
 
 interface RightPanelSettingsProps {
@@ -121,6 +122,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   const [showAddMenuForm, setShowAddMenuForm] = useState(false);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isEn } = useLanguage();
 
   // If no section is selected, show Global Theme Settings
   if (!selectedSection || showGlobalSettings) {
@@ -142,7 +144,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             <div className="w-7 h-7 rounded flex items-center justify-center bg-[#F1F8FF] text-[#2C6ECB]">
               <Palette className="w-4 h-4" />
             </div>
-            <h2 className="text-[13px] font-bold text-[#202223]">Pengaturan Tema</h2>
+            <h2 className="text-[13px] font-bold text-[#202223]">{isEn ? 'Theme Settings' : 'Pengaturan Tema'}</h2>
           </div>
         </div>
 
@@ -151,16 +153,16 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
           <div className="space-y-2.5">
             <label className="text-[13px] font-bold text-[#202223] flex items-center gap-1.5">
               <Paintbrush className="w-3.5 h-3.5" />
-              Aksen Warna Utama
+              {isEn ? 'Primary Accent Color' : 'Aksen Warna Utama'}
             </label>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { name: 'Biru (Default)', color: '#2C6ECB' },
+                { name: isEn ? 'Blue (Default)' : 'Biru (Default)', color: '#2C6ECB' },
                 { name: 'Maroon', color: '#66000E' },
                 { name: 'Emerald', color: '#027A48' },
                 { name: 'Amber', color: '#B54708' },
-                { name: 'Hitam', color: '#1A1A1A' },
-                { name: 'Ungu', color: '#7C3AED' },
+                { name: isEn ? 'Black' : 'Hitam', color: '#1A1A1A' },
+                { name: isEn ? 'Purple' : 'Ungu', color: '#7C3AED' },
               ].map((c) => (
                 <button
                   key={c.color}
@@ -189,17 +191,17 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
           <div className="space-y-2.5 pt-4 border-t border-[#E1E3E5]">
             <label className="text-[13px] font-bold text-[#202223] flex items-center gap-1.5">
               <Type className="w-3.5 h-3.5" />
-              Tipografi
+              {isEn ? 'Typography' : 'Tipografi'}
             </label>
             <div className="p-3 rounded-xl bg-[#F6F6F7] border border-[#E1E3E5] text-center">
-              <p className="text-[11px] text-[#8C9196]">Tipografi diatur secara global pada level tema.</p>
+              <p className="text-[11px] text-[#8C9196]">{isEn ? 'Typography is set globally at the theme level.' : 'Tipografi diatur secara global pada level tema.'}</p>
             </div>
           </div>
 
           <div className="p-3 rounded-lg bg-[#F1F8FF] border border-[#BAE0FF] flex gap-2">
             <Sparkles className="w-4 h-4 text-[#2C6ECB] shrink-0 mt-0.5" />
             <span className="text-[11px] text-[#202223] leading-relaxed">
-              Pilih sebuah section dari panel kiri atau klik di kanvas untuk menyesuaikan konten spesifik.
+              {isEn ? 'Select a section from the left panel or click on the canvas to customize specific content.' : 'Pilih sebuah section dari panel kiri atau klik di kanvas untuk menyesuaikan konten spesifik.'}
             </span>
           </div>
         </div>
@@ -224,7 +226,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
       const url = await mediaService.uploadImage(file, 'layout', store?.id || undefined);
       handleOptionChange({ imageUrl: url, bannerUrl: url });
     } catch (err: any) {
-      setImageUploadError(err?.message || 'Gagal mengupload gambar.');
+      setImageUploadError(err?.message || (isEn ? 'Failed to upload image.' : 'Gagal mengupload gambar.'));
     } finally {
       setIsUploadingImage(false);
     }
@@ -285,7 +287,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
               type="button"
               onClick={() => onDuplicateSection(sectionKey)}
               className="p-1.5 rounded text-[#8C9196] hover:text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer"
-              title="Duplikasi"
+              title={isEn ? 'Duplicate' : 'Duplikasi'}
             >
               <Copy className="w-3.5 h-3.5" />
             </button>
@@ -293,7 +295,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
               type="button"
               onClick={() => onDeleteSection(sectionKey)}
               className="p-1.5 rounded text-[#8C9196] hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
-              title="Hapus"
+              title={isEn ? 'Delete' : 'Hapus'}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -309,7 +311,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             {/* ── IMAGE SECTION ── */}
             {hasImage && (
               <div className="space-y-2">
-                <label className="text-[12px] font-bold text-[#202223]">Gambar Utama</label>
+                <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Main Image' : 'Gambar Utama'}</label>
 
                 {currentImageUrl ? (
                   <div className="relative rounded-lg overflow-hidden aspect-video border border-[#E1E3E5] bg-[#F6F6F7]">
@@ -322,7 +324,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       <button
                         onClick={() => handleOptionChange({ imageUrl: '', bannerUrl: '' })}
                         className="p-2 bg-white rounded-full text-red-600 hover:scale-105 transition cursor-pointer"
-                        title="Hapus Gambar"
+                        title={isEn ? 'Remove Image' : 'Hapus Gambar'}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -334,8 +336,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     className="aspect-video rounded-lg border-2 border-dashed border-[#E1E3E5] bg-[#F6F6F7] hover:bg-[#F1F8FF] hover:border-[#2C6ECB] transition cursor-pointer flex flex-col items-center justify-center gap-2 p-3 text-center"
                   >
                     <Upload className="w-6 h-6 text-[#2C6ECB]" />
-                    <span className="text-[11px] font-bold text-[#2C6ECB]">Upload Foto dari Perangkat / Galeri</span>
-                    <span className="text-[10px] text-[#8C9196]">Atau klik tombol Upload di bawah</span>
+                    <span className="text-[11px] font-bold text-[#2C6ECB]">{isEn ? 'Upload Photo from Device / Gallery' : 'Upload Foto dari Perangkat / Galeri'}</span>
+                    <span className="text-[10px] text-[#8C9196]">{isEn ? 'Or click the Upload button below' : 'Atau klik tombol Upload di bawah'}</span>
                   </div>
                 )}
 
@@ -353,11 +355,11 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="py-1.5 px-2 rounded-lg border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center justify-center gap-1 shrink-0"
-                    title="Upload gambar dari galeri HP atau komputer"
+                    title={isEn ? 'Upload an image from your phone gallery or computer' : 'Upload gambar dari galeri HP atau komputer'}
                     disabled={isUploadingImage}
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>{isUploadingImage ? 'Mengupload...' : 'Upload'}</span>
+                    <span>{isUploadingImage ? (isEn ? 'Uploading...' : 'Mengupload...') : 'Upload'}</span>
                   </button>
                   <button
                     type="button"
@@ -368,7 +370,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${showImagePresets ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
                       }`}
                   >
-                    Pilih Galeri
+                    {isEn ? 'Choose Gallery' : 'Pilih Galeri'}
                   </button>
                   <button
                     type="button"
@@ -379,7 +381,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${showUrlInput ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
                       }`}
                   >
-                    Input URL
+                    {isEn ? 'Enter URL' : 'Input URL'}
                   </button>
                 </div>
 
@@ -414,7 +416,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       className="w-full py-2 px-3 rounded-lg border-2 border-dashed border-[#2C6ECB]/40 bg-[#F1F8FF] hover:bg-[#2C6ECB]/10 text-[11px] font-bold text-[#2C6ECB] flex items-center justify-center gap-2 transition cursor-pointer"
                     >
                       <Upload className="w-4 h-4" />
-                      <span>+ Upload Foto Sendiri dari Perangkat</span>
+                      <span>{isEn ? '+ Upload Your Own Photo from Device' : '+ Upload Foto Sendiri dari Perangkat'}</span>
                     </button>
                     <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
                       {CURATED_BANNER_PRESETS.map((preset) => (
@@ -442,7 +444,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 <div className="space-y-3">
                   <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
                     <StoreIcon className="w-3.5 h-3.5 text-[#2C6ECB]" />
-                    <span className="text-[12px] font-bold text-[#202223]">Identitas Brand Footer</span>
+                    <span className="text-[12px] font-bold text-[#202223]">{isEn ? 'Footer Brand Identity' : 'Identitas Brand Footer'}</span>
                   </div>
 
                   {/* Logo footer: teks (nama toko) atau gambar */}
@@ -451,11 +453,11 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     const footerLogoPreview = (opts as any).footerLogoUrl || store.logoUrl || '';
                     return (
                       <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-gray-700">Logo Footer</label>
-                        <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-[#F1F2F3]" role="radiogroup" aria-label="Jenis logo footer">
+                        <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Footer Logo' : 'Logo Footer'}</label>
+                        <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-[#F1F2F3]" role="radiogroup" aria-label={isEn ? 'Footer logo type' : 'Jenis logo footer'}>
                           {([
-                            { value: 'text', label: 'Teks', Icon: Type },
-                            { value: 'image', label: 'Gambar', Icon: ImageIcon },
+                            { value: 'text', label: isEn ? 'Text' : 'Teks', Icon: Type },
+                            { value: 'image', label: isEn ? 'Image' : 'Gambar', Icon: ImageIcon },
                           ] as const).map(({ value, label, Icon }) => (
                             <button
                               key={value}
@@ -476,8 +478,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                         {footerLogoType === 'image' && (
                           <div className="p-3 rounded-lg border border-[#E1E3E5] bg-white space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-[12px] font-semibold text-[#202223]">Logo Gambar Footer</span>
-                              <span className="text-[10px] text-[#6D7175]">PNG/JPG/WEBP, maks. 2 MB</span>
+                              <span className="text-[12px] font-semibold text-[#202223]">{isEn ? 'Footer Image Logo' : 'Logo Gambar Footer'}</span>
+                              <span className="text-[10px] text-[#6D7175]">{isEn ? 'PNG/JPG/WEBP, max. 2 MB' : 'PNG/JPG/WEBP, maks. 2 MB'}</span>
                             </div>
                             <input
                               ref={footerLogoInputRef}
@@ -490,15 +492,15 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                 if (!file) return;
                                 setFooterLogoError('');
                                 if (!file.type.startsWith('image/')) {
-                                  setFooterLogoError('File harus berupa gambar.');
+                                  setFooterLogoError((isEn ? 'File must be an image.' : 'File harus berupa gambar.'));
                                   return;
                                 }
                                 if (file.size > 2 * 1024 * 1024) {
-                                  setFooterLogoError('Ukuran logo maksimal 2 MB.');
+                                  setFooterLogoError((isEn ? 'Logo size must be at most 2 MB.' : 'Ukuran logo maksimal 2 MB.'));
                                   return;
                                 }
                                 if (!store?.id) {
-                                  setFooterLogoError('Toko belum siap, coba lagi.');
+                                  setFooterLogoError((isEn ? 'Store is not ready yet, please try again.' : 'Toko belum siap, coba lagi.'));
                                   return;
                                 }
                                 setIsUploadingFooterLogo(true);
@@ -506,7 +508,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                   const url = await storeService.uploadStoreImage(store.id, file, 'logo');
                                   handleOptionChange({ footerLogoUrl: url } as any);
                                 } catch (err: any) {
-                                  setFooterLogoError(err?.message || 'Gagal mengupload logo.');
+                                  setFooterLogoError(err?.message || (isEn ? 'Failed to upload logo.' : 'Gagal mengupload logo.'));
                                 } finally {
                                   setIsUploadingFooterLogo(false);
                                 }
@@ -515,7 +517,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                             {footerLogoPreview ? (
                               <div className="flex items-center gap-3">
                                 <div className="w-24 h-14 rounded-md border border-[#E1E3E5] bg-[repeating-conic-gradient(#F1F2F3_0%_25%,#FFFFFF_0%_50%)] [background-size:12px_12px] flex items-center justify-center overflow-hidden">
-                                  <img src={footerLogoPreview} alt="Logo footer" className="max-w-full max-h-full object-contain" />
+                                  <img src={footerLogoPreview} alt={isEn ? 'Footer logo' : 'Logo footer'} className="max-w-full max-h-full object-contain" />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                   <button
@@ -524,7 +526,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                     onClick={() => footerLogoInputRef.current?.click()}
                                     className="px-2.5 py-1 rounded-md border border-[#E1E3E5] text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] disabled:opacity-60 cursor-pointer"
                                   >
-                                    {isUploadingFooterLogo ? 'Mengupload...' : (opts as any).footerLogoUrl ? 'Ganti Logo' : 'Upload Logo Khusus'}
+                                    {isUploadingFooterLogo ? (isEn ? 'Uploading...' : 'Mengupload...') : (opts as any).footerLogoUrl ? (isEn ? 'Change Logo' : 'Ganti Logo') : (isEn ? 'Upload Custom Logo' : 'Upload Logo Khusus')}
                                   </button>
                                   {(opts as any).footerLogoUrl && (
                                     <button
@@ -533,7 +535,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                       onClick={() => handleOptionChange({ footerLogoUrl: '' } as any)}
                                       className="px-2.5 py-1 rounded-md border border-red-200 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60 cursor-pointer"
                                     >
-                                      Hapus Logo
+                                      {isEn ? 'Remove Logo' : 'Hapus Logo'}
                                     </button>
                                   )}
                                 </div>
@@ -546,15 +548,15 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                 className="w-full py-3 rounded-md border-2 border-dashed border-[#C9CCCF] text-[12px] font-semibold text-[#2C6ECB] hover:border-[#2C6ECB] hover:bg-[#F1F8FF] disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
                               >
                                 <Upload className="w-3.5 h-3.5" />
-                                <span>{isUploadingFooterLogo ? 'Mengupload logo...' : 'Upload Logo'}</span>
+                                <span>{isUploadingFooterLogo ? (isEn ? 'Uploading logo...' : 'Mengupload logo...') : 'Upload Logo'}</span>
                               </button>
                             )}
                             <p className="text-[11px] text-[#6D7175]">
                               {(opts as any).footerLogoUrl
-                                ? 'Logo ini hanya dipakai di footer.'
+                                ? (isEn ? 'This logo is only used in the footer.' : 'Logo ini hanya dipakai di footer.')
                                 : footerLogoPreview
-                                  ? 'Memakai logo header. Upload logo khusus bila footer butuh versi lain (mis. logo putih untuk footer gelap).'
-                                  : 'Belum ada logo: footer tetap menampilkan nama toko sampai logo diupload.'}
+                                  ? (isEn ? 'Using the header logo. Upload a custom logo if the footer needs another version (e.g. a white logo for a dark footer).' : 'Memakai logo header. Upload logo khusus bila footer butuh versi lain (mis. logo putih untuk footer gelap).')
+                                  : (isEn ? 'No logo yet: the footer shows the store name until a logo is uploaded.' : 'Belum ada logo: footer tetap menampilkan nama toko sampai logo diupload.')}
                             </p>
                             {footerLogoError && <p className="text-[11px] font-semibold text-red-600">{footerLogoError}</p>}
                           </div>
@@ -564,7 +566,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   })()}
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-gray-700">Nama Toko / Judul Footer</label>
+                    <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Store Name / Footer Title' : 'Nama Toko / Judul Footer'}</label>
                     <input
                       type="text"
                       value={opts.storeName || opts.heading || opts.title || store.name || ''}
@@ -574,13 +576,13 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                         useCmsStore.getState().updateStoreInfo({ name: val });
                         if (onUpdateStore) onUpdateStore({ name: val });
                       }}
-                      placeholder="Nama Toko di Footer..."
+                      placeholder={isEn ? 'Store name in footer...' : 'Nama Toko di Footer...'}
                       className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-gray-700">Deskripsi / Tagline Footer</label>
+                    <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Footer Description / Tagline' : 'Deskripsi / Tagline Footer'}</label>
                     <textarea
                       rows={3}
                       value={opts.description !== undefined ? opts.description : (store.description || '')}
@@ -590,7 +592,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                         const val = e.target.value;
                         handleOptionChange({ description: val, tagline: val, subheading: val });
                       }}
-                      placeholder="Tuliskan deskripsi singkat atau slogan toko..."
+                      placeholder={isEn ? 'Write a short description or store slogan...' : 'Tuliskan deskripsi singkat atau slogan toko...'}
                       className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                     />
                   </div>
@@ -600,11 +602,11 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
                     <MapPin className="w-3.5 h-3.5 text-[#2C6ECB]" />
-                    <span className="text-[12px] font-bold text-[#202223]">Kontak & Alamat Fisik</span>
+                    <span className="text-[12px] font-bold text-[#202223]">{isEn ? 'Contact & Physical Address' : 'Kontak & Alamat Fisik'}</span>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-gray-700">Alamat Toko</label>
+                    <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Store Address' : 'Alamat Toko'}</label>
                     <textarea
                       rows={2}
                       value={opts.address !== undefined ? opts.address : (store.address || '')}
@@ -614,14 +616,14 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                         useCmsStore.getState().updateStoreInfo({ address: val });
                         if (onUpdateStore) onUpdateStore({ address: val });
                       }}
-                      placeholder="Alamat jalan, kota, provinsi..."
+                      placeholder={isEn ? 'Street address, city, province...' : 'Alamat jalan, kota, provinsi...'}
                       className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                     />
                   </div>
 
                   <div className="space-y-1">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-gray-700">Email Kontak Toko</label>
+                      <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Store Contact Email' : 'Email Kontak Toko'}</label>
                       <input
                         type="email"
                         value={opts.email !== undefined ? opts.email : ((store as any).email || '')}
@@ -631,11 +633,11 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                           useCmsStore.getState().updateStoreInfo({ email: val });
                           if (onUpdateStore) onUpdateStore({ email: val } as any);
                         }}
-                        placeholder="kontak@toko.com"
+                        placeholder={isEn ? 'contact@store.com' : 'kontak@toko.com'}
                         className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
                       />
                     </div>
-                    <p className="text-[11px] text-gray-500">Pembeli menghubungi toko lewat email ini (tampil di footer).</p>
+                    <p className="text-[11px] text-gray-500">{isEn ? 'Buyers contact the store through this email (shown in the footer).' : 'Pembeli menghubungi toko lewat email ini (tampil di footer).'}</p>
                   </div>
                 </div>
 
@@ -643,7 +645,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
                     <Share2 className="w-3.5 h-3.5 text-[#2C6ECB]" />
-                    <span className="text-[12px] font-bold text-[#202223]">Tautan Media Sosial</span>
+                    <span className="text-[12px] font-bold text-[#202223]">{isEn ? 'Social Media Links' : 'Tautan Media Sosial'}</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -657,34 +659,34 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                             const val = e.target.value;
                             handleOptionChange({ [key]: val, socials: { ...(opts.socials || {}), [key]: val } });
                           }}
-                          placeholder="@username atau URL"
+                          placeholder={isEn ? '@username or URL' : '@username atau URL'}
                           className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
                         />
                       </div>
                     ))}
                   </div>
-                  <p className="text-[11px] text-gray-500">Kosongkan untuk menyembunyikan ikon media sosial tersebut.</p>
+                  <p className="text-[11px] text-gray-500">{isEn ? 'Leave empty to hide that social media icon.' : 'Kosongkan untuk menyembunyikan ikon media sosial tersebut.'}</p>
                 </div>
 
                 {/* 4. Hak Cipta & Kebijakan */}
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
                     <Shield className="w-3.5 h-3.5 text-[#2C6ECB]" />
-                    <span className="text-[12px] font-bold text-[#202223]">Hak Cipta & Legalitas</span>
+                    <span className="text-[12px] font-bold text-[#202223]">{isEn ? 'Copyright & Legal' : 'Hak Cipta & Legalitas'}</span>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-gray-700">Teks Hak Cipta (Copyright)</label>
+                    <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Copyright Text' : 'Teks Hak Cipta (Copyright)'}</label>
                     <input
                       type="text"
                       value={opts.copyrightText !== undefined ? opts.copyrightText : `© ${new Date().getFullYear()} ${opts.storeName || store.name || 'Toko'}. All rights reserved.`}
                       onChange={(e) => handleOptionChange({ copyrightText: e.target.value })}
-                      placeholder="© 2026 Nama Toko..."
+                      placeholder={isEn ? '© 2026 Store Name...' : '© 2026 Nama Toko...'}
                       className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                     />
                   </div>
 
-                  {FOOTER_LEGAL_FIELDS.map(({ textKey, urlKey, label }) => (
+                  {getFooterLegalFields(isEn).map(({ textKey, urlKey, label }) => (
                     <div key={textKey} className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-gray-700">{label}</label>
@@ -697,7 +699,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-gray-700">Link {label}</label>
+                        <label className="text-[11px] font-bold text-gray-700">{isEn ? `${label} Link` : `Link ${label}`}</label>
                         <input
                           type="text"
                           value={opts[urlKey] ?? ''}
@@ -708,13 +710,13 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       </div>
                     </div>
                   ))}
-                  <p className="text-[11px] text-gray-500">Tautan legal tampil di samping hak cipta footer bila teks atau link-nya diisi. Link boleh https://, /halaman, atau #bagian; bila link kosong, tautan diarahkan ke Beranda. Kosongkan keduanya untuk menyembunyikan.</p>
+                  <p className="text-[11px] text-gray-500">{isEn ? 'Legal links appear next to the footer copyright when their text or link is filled in. Links can be https://, /page, or #section; if the link is empty, it points to the Home page. Leave both empty to hide.' : 'Tautan legal tampil di samping hak cipta footer bila teks atau link-nya diisi. Link boleh https://, /halaman, atau #bagian; bila link kosong, tautan diarahkan ke Beranda. Kosongkan keduanya untuk menyembunyikan.'}</p>
                 </div>
               </div>
             ) : (
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[12px] font-bold text-[#202223]">Teks Judul</label>
+                <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Title Text' : 'Teks Judul'}</label>
                 <input
                   type="text"
                   value={opts.heading || opts.featuredTitle || opts.announcementText || opts.testimonialsTitle || opts.newsletterTitle || (selectedSection.id === 'header' ? (opts.storeName || '') : '')}
@@ -730,7 +732,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     }
                     else handleOptionChange({ heading: e.target.value });
                   }}
-                  placeholder={selectedSection.id === 'header' ? (store.name || 'Nama Toko / Judul Header') : (selectedSection.title || 'Teks Judul...')}
+                  placeholder={selectedSection.id === 'header' ? (store.name || (isEn ? 'Store Name / Header Title' : 'Nama Toko / Judul Header')) : (selectedSection.title || (isEn ? 'Title text...' : 'Teks Judul...'))}
                   className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB] focus:ring-1 focus:ring-[#2C6ECB]"
                 />
               </div>
@@ -739,8 +741,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 <div className="space-y-1">
                   <label className="text-[12px] font-bold text-[#202223]">
                     {selectedSection.id === 'brand_philosophy'
-                      ? 'Isi Teks Filosofi'
-                      : 'Deskripsi / Subjudul'}
+                      ? (isEn ? 'Philosophy Text' : 'Isi Teks Filosofi')
+                      : (isEn ? 'Description / Subtitle' : 'Deskripsi / Subjudul')}
                   </label>
                   <textarea
                     rows={selectedSection.id === 'brand_philosophy' ? 4 : 3}
@@ -762,7 +764,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       }
                       else handleOptionChange({ subheading: e.target.value, description: e.target.value, content: e.target.value });
                     }}
-                    placeholder={selectedSection.id === 'brand_philosophy' ? 'Tuliskan filosofi, visi atau kisah brand Anda...' : 'Deskripsi konten bagian ini...'}
+                    placeholder={selectedSection.id === 'brand_philosophy' ? (isEn ? 'Write your brand philosophy, vision or story...' : 'Tuliskan filosofi, visi atau kisah brand Anda...') : (isEn ? 'Describe this section\'s content...' : 'Deskripsi konten bagian ini...')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB] focus:ring-1 focus:ring-[#2C6ECB]"
                   />
                 </div>
@@ -770,7 +772,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
 
               {BADGE_SECTION_IDS.includes(selectedSection.id) && (
                 <div className="space-y-1">
-                  <label className="text-[12px] font-bold text-[#202223]">Label Badge</label>
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Badge Label' : 'Label Badge'}</label>
                   <input
                     type="text"
                     value={opts.badgeText || opts.discountBadge || opts.incentiveBadge || ''}
@@ -779,7 +781,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       else if (selectedSection.id === 'newsletter') handleOptionChange({ incentiveBadge: e.target.value });
                       else handleOptionChange({ badgeText: e.target.value });
                     }}
-                    placeholder={selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' ? 'Contoh: PROMO SPESIAL' : 'Kosongkan untuk label bawaan tema'}
+                    placeholder={selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' ? (isEn ? 'Example: SPECIAL PROMO' : 'Contoh: PROMO SPESIAL') : (isEn ? 'Leave empty for the theme\'s default label' : 'Kosongkan untuk label bawaan tema')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                   />
                 </div>
@@ -796,7 +798,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             {selectedSection.id === 'collection_grid' && (
               <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-[#202223]">Jumlah Kolom Tampilan</label>
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Number of Display Columns' : 'Jumlah Kolom Tampilan'}</label>
                   <div className="grid grid-cols-3 gap-2">
                     {[2, 3, 4].map((cols) => (
                       <button
@@ -809,7 +811,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                             : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
                         }`}
                       >
-                        {cols} Kolom
+                        {isEn ? `${cols} Columns` : `${cols} Kolom`}
                       </button>
                     ))}
                   </div>
@@ -820,39 +822,39 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             {/* ── BUTTONS / CTA ── */}
             {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' || selectedSection.id === 'signature_collection' || selectedSection.id === 'craftsmanship_story' || selectedSection.id === 'private_collection' || selectedSection.id === 'innovation_cta' || selectedSection.id === 'limited_release' || selectedSection.id === 'community_board' || selectedSection.id === 'latest_drop' || selectedSection.id === 'asymmetric_showcase' || selectedSection.id === 'collection_grid' || selectedSection.id === 'lookbook' || selectedSection.id === 'tech_features' || selectedSection.id === 'floating_showcase') && (
               <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
-                <label className="text-[12px] font-bold text-[#202223]">Tombol Utama / Aksi</label>
+                <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Main / Action Button' : 'Tombol Utama / Aksi'}</label>
                 <div className="space-y-2">
                   <input
                     type="text"
                     value={opts.buttonLabel || opts.buttonText || ''}
                     onChange={(e) => handleOptionChange({ buttonLabel: e.target.value, buttonText: e.target.value })}
-                    placeholder="Teks Tombol"
+                    placeholder={isEn ? 'Button Text' : 'Teks Tombol'}
                     className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                   />
                   <input
                     type="text"
                     value={opts.buttonLink || '#'}
                     onChange={(e) => handleOptionChange({ buttonLink: e.target.value })}
-                    placeholder="Link Tujuan (URL atau #id)"
+                    placeholder={isEn ? 'Target Link (URL or #id)' : 'Link Tujuan (URL atau #id)'}
                     className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                   />
                 </div>
 
                 {selectedSection.id === 'hero_banner' && (
                   <div className="pt-3 space-y-2">
-                    <label className="text-[12px] font-bold text-[#202223]">Tombol Sekunder</label>
+                    <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Secondary Button' : 'Tombol Sekunder'}</label>
                     <input
                       type="text"
                       value={opts.secondaryButtonLabel || ''}
                       onChange={(e) => handleOptionChange({ secondaryButtonLabel: e.target.value })}
-                      placeholder="Teks Tombol Kedua"
+                      placeholder={isEn ? 'Second Button Text' : 'Teks Tombol Kedua'}
                       className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                     />
                     <input
                       type="text"
                       value={opts.secondaryButtonLink || '#'}
                       onChange={(e) => handleOptionChange({ secondaryButtonLink: e.target.value })}
-                      placeholder="Link Tujuan (URL atau #id)"
+                      placeholder={isEn ? 'Target Link (URL or #id)' : 'Link Tujuan (URL atau #id)'}
                       className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                     />
                   </div>
@@ -864,9 +866,9 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             {selectedSection.id === 'header' && (
               <div className="space-y-4 pt-4 border-t border-[#E1E3E5]">
                 <div className="space-y-2">
-                  <label className="text-[12px] font-bold text-[#202223]">Pengaturan Header & Logo</label>
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Header & Logo Settings' : 'Pengaturan Header & Logo'}</label>
                   <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
-                    <span className="text-[12px] text-[#202223]">Tampilkan Logo</span>
+                    <span className="text-[12px] text-[#202223]">{isEn ? 'Show Logo' : 'Tampilkan Logo'}</span>
                     <input
                       type="checkbox"
                       checked={opts.showLogo !== false}
@@ -877,8 +879,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   {/* Logo gambar toko */}
                   <div className="p-3 rounded-lg border border-[#E1E3E5] bg-white space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[12px] font-semibold text-[#202223]">Logo Gambar</span>
-                      <span className="text-[10px] text-[#6D7175]">PNG/JPG/WEBP/SVG, maks. 2 MB</span>
+                      <span className="text-[12px] font-semibold text-[#202223]">{isEn ? 'Image Logo' : 'Logo Gambar'}</span>
+                      <span className="text-[10px] text-[#6D7175]">{isEn ? 'PNG/JPG/WEBP/SVG, max. 2 MB' : 'PNG/JPG/WEBP/SVG, maks. 2 MB'}</span>
                     </div>
                     <input
                       ref={logoInputRef}
@@ -891,15 +893,15 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                         if (!file) return;
                         setLogoError('');
                         if (!file.type.startsWith('image/')) {
-                          setLogoError('File harus berupa gambar.');
+                          setLogoError((isEn ? 'File must be an image.' : 'File harus berupa gambar.'));
                           return;
                         }
                         if (file.size > 2 * 1024 * 1024) {
-                          setLogoError('Ukuran logo maksimal 2 MB.');
+                          setLogoError((isEn ? 'Logo size must be at most 2 MB.' : 'Ukuran logo maksimal 2 MB.'));
                           return;
                         }
                         if (!store?.id) {
-                          setLogoError('Toko belum siap, coba lagi.');
+                          setLogoError((isEn ? 'Store is not ready yet, please try again.' : 'Toko belum siap, coba lagi.'));
                           return;
                         }
                         setIsUploadingLogo(true);
@@ -909,7 +911,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                           useCmsStore.getState().updateStoreInfo({ logoUrl: url });
                           if (onUpdateStore) onUpdateStore({ logoUrl: url });
                         } catch (err: any) {
-                          setLogoError(err?.message || 'Gagal mengupload logo.');
+                          setLogoError(err?.message || (isEn ? 'Failed to upload logo.' : 'Gagal mengupload logo.'));
                         } finally {
                           setIsUploadingLogo(false);
                         }
@@ -918,7 +920,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     {(opts as any).logoUrl || store.logoUrl ? (
                       <div className="flex items-center gap-3">
                         <div className="w-24 h-14 rounded-md border border-[#E1E3E5] bg-[repeating-conic-gradient(#F1F2F3_0%_25%,#FFFFFF_0%_50%)] [background-size:12px_12px] flex items-center justify-center overflow-hidden">
-                          <img src={(opts as any).logoUrl || store.logoUrl} alt="Logo toko" className="max-w-full max-h-full object-contain" />
+                          <img src={(opts as any).logoUrl || store.logoUrl} alt={isEn ? 'Store logo' : 'Logo toko'} className="max-w-full max-h-full object-contain" />
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <button
@@ -927,7 +929,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                             onClick={() => logoInputRef.current?.click()}
                             className="px-2.5 py-1 rounded-md border border-[#E1E3E5] text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] disabled:opacity-60 cursor-pointer"
                           >
-                            {isUploadingLogo ? 'Mengupload...' : 'Ganti Logo'}
+                            {isUploadingLogo ? (isEn ? 'Uploading...' : 'Mengupload...') : (isEn ? 'Change Logo' : 'Ganti Logo')}
                           </button>
                           <button
                             type="button"
@@ -939,7 +941,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                             }}
                             className="px-2.5 py-1 rounded-md border border-red-200 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60 cursor-pointer"
                           >
-                            Hapus Logo
+                            {isEn ? 'Remove Logo' : 'Hapus Logo'}
                           </button>
                         </div>
                       </div>
@@ -951,16 +953,16 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                         className="w-full py-3 rounded-md border-2 border-dashed border-[#C9CCCF] text-[12px] font-semibold text-[#2C6ECB] hover:border-[#2C6ECB] hover:bg-[#F1F8FF] disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         <Upload className="w-3.5 h-3.5" />
-                        <span>{isUploadingLogo ? 'Mengupload logo...' : 'Upload Logo'}</span>
+                        <span>{isUploadingLogo ? (isEn ? 'Uploading logo...' : 'Mengupload logo...') : 'Upload Logo'}</span>
                       </button>
                     )}
                     <p className="text-[11px] text-[#6D7175]">
-                      Jika logo gambar diupload, nama toko di header diganti dengan logo. Tanpa logo, header menampilkan nama toko.
+                      {isEn ? 'If an image logo is uploaded, it replaces the store name in the header. Without a logo, the header shows the store name.' : 'Jika logo gambar diupload, nama toko di header diganti dengan logo. Tanpa logo, header menampilkan nama toko.'}
                     </p>
                     {logoError && <p className="text-[11px] font-semibold text-red-600">{logoError}</p>}
                   </div>
                   <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
-                    <span className="text-[12px] text-[#202223]">Header Sticky / Melayang</span>
+                    <span className="text-[12px] text-[#202223]">{isEn ? 'Sticky / Floating Header' : 'Header Sticky / Melayang'}</span>
                     <input
                       type="checkbox"
                       checked={opts.stickyHeader !== false}
@@ -969,7 +971,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     />
                   </label>
                   <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
-                    <span className="text-[12px] text-[#202223]">Bar Pencarian Produk</span>
+                    <span className="text-[12px] text-[#202223]">{isEn ? 'Product Search Bar' : 'Bar Pencarian Produk'}</span>
                     <input
                       type="checkbox"
                       checked={opts.showSearchBar !== false}
@@ -978,7 +980,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     />
                   </label>
                   <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
-                    <span className="text-[12px] text-[#202223]">Icon Keranjang Belanja</span>
+                    <span className="text-[12px] text-[#202223]">{isEn ? 'Shopping Cart Icon' : 'Icon Keranjang Belanja'}</span>
                     <input
                       type="checkbox"
                       checked={opts.showCartBadge !== false}
@@ -991,13 +993,13 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 {/* Navigation Menu Editor */}
                 <div className="space-y-2 pt-3 border-t border-[#E1E3E5]">
                   <div className="flex items-center justify-between">
-                    <label className="text-[12px] font-bold text-[#202223]">Menu Navigasi</label>
+                    <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Navigation Menu' : 'Menu Navigasi'}</label>
                     <button
                       type="button"
                       onClick={() => setShowAddMenuForm(!showAddMenuForm)}
                       className="text-[11px] font-bold text-[#2C6ECB] hover:underline flex items-center gap-1 cursor-pointer"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Tambah Menu
+                      <Plus className="w-3.5 h-3.5" /> {isEn ? 'Add Menu' : 'Tambah Menu'}
                     </button>
                   </div>
 
@@ -1005,14 +1007,14 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     <div className="p-2.5 bg-[#F1F8FF] border border-[#BAE0FF] rounded-lg space-y-2">
                       <input
                         type="text"
-                        placeholder="Nama Menu (mis: Katalog)"
+                        placeholder={isEn ? 'Menu Name (e.g. Catalog)' : 'Nama Menu (mis: Katalog)'}
                         value={newMenuLabel}
                         onChange={(e) => setNewMenuLabel(e.target.value)}
                         className="w-full px-2.5 py-1 text-[12px] bg-white border border-[#E1E3E5] rounded"
                       />
                       <input
                         type="text"
-                        placeholder="Link Tujuan (mis: #katalog atau /produk)"
+                        placeholder={isEn ? 'Target Link (e.g. #catalog or /products)' : 'Link Tujuan (mis: #katalog atau /produk)'}
                         value={newMenuHref}
                         onChange={(e) => setNewMenuHref(e.target.value)}
                         className="w-full px-2.5 py-1 text-[12px] bg-white border border-[#E1E3E5] rounded"
@@ -1023,7 +1025,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                           onClick={() => setShowAddMenuForm(false)}
                           className="px-2.5 py-1 text-[11px] border border-[#E1E3E5] bg-white rounded"
                         >
-                          Batal
+                          {isEn ? 'Cancel' : 'Batal'}
                         </button>
                         <button
                           type="button"
@@ -1042,7 +1044,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                           }}
                           className="px-2.5 py-1 text-[11px] font-bold bg-[#202223] text-white rounded"
                         >
-                          Simpan
+                          {isEn ? 'Save' : 'Simpan'}
                         </button>
                       </div>
                     </div>
@@ -1063,15 +1065,15 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                             type="text"
                             value={item.label || ''}
                             onChange={(e) => updateNavItem({ label: e.target.value })}
-                            aria-label="Nama menu"
-                            placeholder="Nama menu"
+                            aria-label={isEn ? 'Menu name' : 'Nama menu'}
+                            placeholder={isEn ? 'Menu name' : 'Nama menu'}
                             className="flex-1 min-w-0 px-1.5 py-1 font-semibold text-[#202223] border border-transparent hover:border-[#E1E3E5] focus:border-[#2C6ECB] rounded outline-none"
                           />
                           <input
                             type="text"
                             value={item.href || ''}
                             onChange={(e) => updateNavItem({ href: e.target.value })}
-                            aria-label="Link tujuan menu"
+                            aria-label={isEn ? 'Menu target link' : 'Link tujuan menu'}
                             placeholder="/katalog"
                             className="w-[90px] px-1.5 py-1 text-[10px] text-[#6D7175] border border-transparent hover:border-[#E1E3E5] focus:border-[#2C6ECB] rounded outline-none"
                           />
@@ -1082,7 +1084,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                               const updatedItems = currentItems.filter((_: any, i: number) => i !== idx);
                               handleOptionChange({ navMenuItems: updatedItems });
                             }}
-                            aria-label="Hapus menu"
+                            aria-label={isEn ? 'Remove menu' : 'Hapus menu'}
                             className="text-red-500 hover:text-red-700 p-0.5 shrink-0"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1109,13 +1111,13 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
               <div className="space-y-4 pt-4 border-t border-[#E1E3E5]">
                 {/* Filter Kategori */}
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-[#202223]">Filter Kategori Produk</label>
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Product Category Filter' : 'Filter Kategori Produk'}</label>
                   <select
                     value={opts.selectedCategoryId || 'all'}
                     onChange={(e) => handleOptionChange({ selectedCategoryId: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                   >
-                    <option value="all">Semua Kategori Produk</option>
+                    <option value="all">{isEn ? 'All Product Categories' : 'Semua Kategori Produk'}</option>
                     {Array.from(new Set(effectiveProducts.map((p: any) => p.category || p.categoryName).filter(Boolean))).map((cat: any) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
@@ -1125,9 +1127,9 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 {/* Jumlah Produk Slider */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <label className="text-[12px] font-bold text-[#202223]">Jumlah Produk Ditampilkan</label>
+                    <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Number of Products Shown' : 'Jumlah Produk Ditampilkan'}</label>
                     <span className="text-[11px] font-bold text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded">
-                      {opts.productCount || 4} Produk
+                      {isEn ? `${opts.productCount || 4} Products` : `${opts.productCount || 4} Produk`}
                     </span>
                   </div>
                   <input
@@ -1143,24 +1145,24 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
 
                 {/* Urutan Produk */}
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-[#202223]">Urutan Produk</label>
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Product Order' : 'Urutan Produk'}</label>
                   <select
                     value={opts.sortOrder || 'default'}
                     onChange={(e) => handleOptionChange({ sortOrder: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                   >
-                    <option value="default">Default (Sesuai Urutan Store)</option>
-                    <option value="price-asc">Harga: Termurah ke Termahal</option>
-                    <option value="price-desc">Harga: Termahal ke Termurah</option>
-                    <option value="name-asc">Nama Produk: A - Z</option>
-                    <option value="newest">Produk Terbaru</option>
+                    <option value="default">{isEn ? 'Default (Store Order)' : 'Default (Sesuai Urutan Store)'}</option>
+                    <option value="price-asc">{isEn ? 'Price: Low to High' : 'Harga: Termurah ke Termahal'}</option>
+                    <option value="price-desc">{isEn ? 'Price: High to Low' : 'Harga: Termahal ke Termurah'}</option>
+                    <option value="name-asc">{isEn ? 'Product Name: A - Z' : 'Nama Produk: A - Z'}</option>
+                    <option value="newest">{isEn ? 'Newest Products' : 'Produk Terbaru'}</option>
                   </select>
                 </div>
 
                 {/* Manual Product Selection (Pick Specific Products) */}
                 <div className="space-y-2 pt-3 border-t border-[#E1E3E5]">
-                  <label className="text-[12px] font-bold text-[#202223]">Pilih Produk Spesifik (Manual)</label>
-                  <p className="text-[10px] text-[#8C9196]">Centang produk yang ingin ditampilkan khusus pada section ini:</p>
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Select Specific Products (Manual)' : 'Pilih Produk Spesifik (Manual)'}</label>
+                  <p className="text-[10px] text-[#8C9196]">{isEn ? 'Check the products to show specifically in this section:' : 'Centang produk yang ingin ditampilkan khusus pada section ini:'}</p>
                   <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar p-2 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg">
                     {effectiveProducts.map((product: any) => {
                       const selectedIds = opts.selectedProductIds || [];
@@ -1196,8 +1198,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
                   <div className="flex items-center justify-between">
                     <div>
-                      <label className="text-[12px] font-bold text-[#202223] block">Editor Detail Produk</label>
-                      <span className="text-[10px] text-[#8C9196]">Klik produk untuk mengedit data lengkap</span>
+                      <label className="text-[12px] font-bold text-[#202223] block">{isEn ? 'Product Detail Editor' : 'Editor Detail Produk'}</label>
+                      <span className="text-[10px] text-[#8C9196]">{isEn ? 'Click a product to edit its full details' : 'Klik produk untuk mengedit data lengkap'}</span>
                     </div>
                     <span className="text-[10px] text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded font-semibold shrink-0">Real-time CMS</span>
                   </div>
@@ -1233,7 +1235,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                 <div className="flex items-center gap-2 text-[10px] text-[#8C9196]">
                                   <span>Rp {Number(product.price || 0).toLocaleString('id-ID')}</span>
                                   <span>•</span>
-                                  <span>Stok: {product.stock ?? 10}</span>
+                                  <span>{isEn ? 'Stock' : 'Stok'}: {product.stock ?? 10}</span>
                                 </div>
                               </div>
                             </div>
@@ -1247,24 +1249,24 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                             <div className="p-3 space-y-3 bg-[#FAF7F7]">
                               {/* 1. Nama Produk */}
                               <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-gray-700">Nama Produk</label>
+                                <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Product Name' : 'Nama Produk'}</label>
                                 <input
                                   type="text"
                                   value={product.name || ''}
                                   onChange={(e) => handleSaveProduct({ ...product, name: e.target.value })}
-                                  placeholder="Nama Produk"
+                                  placeholder={isEn ? 'Product Name' : 'Nama Produk'}
                                   className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
                                 />
                               </div>
 
                               {/* 2. Deskripsi Produk */}
                               <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-gray-700">Deskripsi Produk</label>
+                                <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Product Description' : 'Deskripsi Produk'}</label>
                                 <textarea
                                   rows={2}
                                   value={product.description || ''}
                                   onChange={(e) => handleSaveProduct({ ...product, description: e.target.value })}
-                                  placeholder="Deskripsi singkat produk..."
+                                  placeholder={isEn ? 'Short product description...' : 'Deskripsi singkat produk...'}
                                   className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
                                 />
                               </div>
@@ -1272,7 +1274,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                               {/* 3. Harga & Stok */}
                               <div className="grid grid-cols-2 gap-2">
                                 <div className="space-y-1">
-                                  <label className="text-[11px] font-bold text-gray-700">Harga (Rp)</label>
+                                  <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Price (Rp)' : 'Harga (Rp)'}</label>
                                   <input
                                     type="number"
                                     value={product.price || 0}
@@ -1281,7 +1283,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                   />
                                 </div>
                                 <div className="space-y-1">
-                                  <label className="text-[11px] font-bold text-gray-700">Stok</label>
+                                  <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Stock' : 'Stok'}</label>
                                   <input
                                     type="number"
                                     value={product.stock ?? 10}
@@ -1293,26 +1295,26 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
 
                               {/* 4. Kategori */}
                               <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-gray-700">Kategori</label>
+                                <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Category' : 'Kategori'}</label>
                                 <input
                                   type="text"
                                   value={product.categoryName || product.category || ''}
                                   onChange={(e) => handleSaveProduct({ ...product, categoryName: e.target.value, category: e.target.value })}
-                                  placeholder="Kategori (mis: Pakaian, Seni, Makanan)"
+                                  placeholder={isEn ? 'Category (e.g. Clothing, Art, Food)' : 'Kategori (mis: Pakaian, Seni, Makanan)'}
                                   className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
                                 />
                               </div>
 
                               {/* 5. Gambar Produk (Upload + URL) */}
                               <div className="space-y-1.5 pt-1">
-                                <label className="text-[11px] font-bold text-gray-700">Foto Produk</label>
+                                <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Product Photo' : 'Foto Produk'}</label>
                                 <div className="flex items-center gap-2">
                                   <label
                                     htmlFor={`full-product-upload-${product.id}`}
                                     className="py-1 px-2.5 rounded-lg border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center gap-1.5 shrink-0"
                                   >
                                     <Upload className="w-3.5 h-3.5" />
-                                    <span>{uploadingProductId === product.id ? 'Mengupload...' : 'Upload'}</span>
+                                    <span>{uploadingProductId === product.id ? (isEn ? 'Uploading...' : 'Mengupload...') : 'Upload'}</span>
                                   </label>
                                   <input
                                     type="file"
@@ -1330,7 +1332,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                         const url = await mediaService.uploadImage(file, 'product', store.id);
                                         handleSaveProduct({ ...product, image: url, imageUrl: url });
                                       } catch (err: any) {
-                                        setProductUploadError({ id: product.id, message: err?.message || 'Gagal mengupload foto.' });
+                                        setProductUploadError({ id: product.id, message: err?.message || (isEn ? 'Failed to upload photo.' : 'Gagal mengupload foto.') });
                                       } finally {
                                         setUploadingProductId(null);
                                       }
@@ -1341,7 +1343,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                     value={product.image || product.imageUrl || ''}
                                     onChange={(e) => handleSaveProduct({ ...product, image: e.target.value, imageUrl: e.target.value })}
                                     className="flex-1 min-w-0 px-2.5 py-1.5 text-[11px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
-                                    placeholder="Atau masukkan URL Foto"
+                                    placeholder={isEn ? 'Or enter a Photo URL' : 'Atau masukkan URL Foto'}
                                   />
                                 </div>
                                 {productUploadError?.id === product.id && (

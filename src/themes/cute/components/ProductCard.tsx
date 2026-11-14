@@ -4,6 +4,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { InlineEditableImage } from '../../../components/layout-editor/InlineEditableImage';
 import { AddToCartButton, addProductToCart, useStorefrontSlug } from '../../storefrontCart';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface ProductCardProps {
   product: CmsProduct;
@@ -11,6 +12,7 @@ interface ProductCardProps {
 }
 
 export const CuteProductCard: React.FC<ProductCardProps> = ({ product, options = {} }) => {
+  const { isEn } = useLanguage();
   const updateProduct = useCmsStore(state => state.updateProduct);
 
   const showPrice = options.showPrice !== false;
@@ -48,7 +50,7 @@ export const CuteProductCard: React.FC<ProductCardProps> = ({ product, options =
               <div className="bg-[#FFF5F7] text-[#FF85A1] text-[10px] font-bold px-2.5 py-1 rounded-full inline-block mb-2">
                 <InlineEditableText
                   tagName="span"
-                  value={product.categoryName || 'Kategori'}
+                  value={product.categoryName || (isEn ? 'Category' : 'Kategori')}
                   onSave={(val) => updateProduct({ ...product, categoryName: val })}
                 />
               </div>
@@ -87,7 +89,7 @@ export const CuteProductCard: React.FC<ProductCardProps> = ({ product, options =
               product={product}
               className="w-full py-2 bg-[#FF85A1] text-white font-black text-xs rounded-full hover:bg-[#FF6B8B] transition shadow-xs"
             >
-              + Keranjang
+              {isEn ? '+ Cart' : '+ Keranjang'}
             </AddToCartButton>
           </div>
         )}

@@ -34,6 +34,7 @@ import { fitDeviceModeToViewport, getViewportDeviceMode, type PreviewDeviceMode 
 import { ScaledDeviceFrame, DEVICE_DESIGN_WIDTH } from '../../components/layout-editor/ScaledDeviceFrame';
 import { useAuth } from '../../contexts/AuthContext';
 import { sessionHeaders } from '../../services/supabaseClient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface LayoutPageProps {
   store: Store;
@@ -66,6 +67,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 }) => {
   const [currentStore, setCurrentStore] = useState<Store>(store);
   const { user } = useAuth();
+  const { isEn } = useLanguage();
   const cmsProducts = useCmsStore(state => state.products);
 
   const initialSections = useMemo(
@@ -681,7 +683,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
   // Helper: Trigger store creation ONLY when merchant explicitly picks or creates a template
   const ensureStoreExistsForTemplate = async (template: TemplateGalleryItem): Promise<Store> => {
-    if (!user) throw new Error('User tidak terautentikasi.');
+    if (!user) throw new Error(isEn ? 'User is not authenticated.' : 'User tidak terautentikasi.');
 
     const mappedThemeId = normalizeThemeId(template.storeTemplate?.id || template.id);
     const newSections = (template.storeTemplate?.sections || []).map((s, idx) => ({
@@ -793,30 +795,30 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       } : t))
     );
     setEditingDraftId(theme.id);
-    onShowNotification(`🎉 Tema "${theme.name}" berhasil dipublikasikan sebagai Tema Utama toko!`);
+    onShowNotification(isEn ? `🎉 Theme "${theme.name}" published as the store's main theme!` : `🎉 Tema "${theme.name}" berhasil dipublikasikan sebagai Tema Utama toko!`);
   };
 
   const handleDuplicateTheme = (theme: SavedThemeItem) => {
     const duplicated: SavedThemeItem = {
       ...theme,
       id: `${theme.id}_copy_${Date.now()}`,
-      name: `${theme.name} (Salinan)`,
+      name: isEn ? `${theme.name} (Copy)` : `${theme.name} (Salinan)`,
       updatedAt: new Date().toISOString(),
     };
     setSavedThemes((prev) => [duplicated, ...prev]);
-    onShowNotification(`Draf tema "${theme.name}" berhasil diduplikasi.`);
+    onShowNotification(isEn ? `Theme draft "${theme.name}" duplicated.` : `Draf tema "${theme.name}" berhasil diduplikasi.`);
   };
 
   const handleRenameTheme = (theme: SavedThemeItem, newName: string) => {
     setSavedThemes((prev) =>
       prev.map((t) => (t.id === theme.id ? { ...t, name: newName, updatedAt: new Date().toISOString() } : t))
     );
-    onShowNotification(`Nama draf diubah menjadi "${newName}".`);
+    onShowNotification(isEn ? `Draft renamed to "${newName}".` : `Nama draf diubah menjadi "${newName}".`);
   };
 
   const handleDeleteTheme = (themeId: string) => {
     setSavedThemes((prev) => prev.filter((t) => t.id !== themeId));
-    onShowNotification('Draf tema berhasil dihapus dari Pustaka Tema.');
+    onShowNotification(isEn ? 'Theme draft removed from the Theme Library.' : 'Draf tema berhasil dihapus dari Pustaka Tema.');
   };
 
   // Handle clicking a template card → open template in editor directly without redirecting to a new tab
@@ -834,7 +836,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
     if (!isFullscreen) {
-      onShowNotification('Mode Layar Penuh aktif. Tekan Esc atau tombol Layar Penuh untuk keluar.');
+      onShowNotification(isEn ? 'Fullscreen mode on. Press Esc or the Fullscreen button to exit.' : 'Mode Layar Penuh aktif. Tekan Esc atau tombol Layar Penuh untuk keluar.');
     }
   };
 
@@ -945,7 +947,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
     // Persist layout
     onSaveLayout(data.layoutSettings);
-    onShowNotification(`🎉 Website toko "${updated.name}" berhasil di-generate!`);
+    onShowNotification(isEn ? `🎉 Store website "${updated.name}" generated!` : `🎉 Website toko "${updated.name}" berhasil di-generate!`);
   };
 
   // Undo / Redo History Stack
@@ -976,7 +978,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setHistoryIndex(newIdx);
     const targetSections = history[newIdx];
     setSections(targetSections);
-    onShowNotification('Perubahan diurungkan (Undo).');
+    onShowNotification(isEn ? 'Change undone.' : 'Perubahan diurungkan (Undo).');
   };
 
   const handleRedo = () => {
@@ -985,7 +987,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setHistoryIndex(newIdx);
     const targetSections = history[newIdx];
     setSections(targetSections);
-    onShowNotification('Perubahan diulangi (Redo).');
+    onShowNotification(isEn ? 'Change redone.' : 'Perubahan diulangi (Redo).');
   };
 
   // Selected section object
@@ -1050,7 +1052,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     const duplicated: StoreSectionConfig = {
       ...target,
       key: newKey,
-      title: `${target.title} (Salinan)`,
+      title: isEn ? `${target.title} (Copy)` : `${target.title} (Salinan)`,
       order: targetIdx + 1,
       options: target.options ? JSON.parse(JSON.stringify(target.options)) : {},
     };
@@ -1063,7 +1065,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setSelectedSectionKey(newKey);
     pushToHistory(reordered);
     setActivePreset('custom');
-    onShowNotification(`Bagian "${target.title}" berhasil diduplikasi.`);
+    onShowNotification(isEn ? `Section "${target.title}" duplicated.` : `Bagian "${target.title}" berhasil diduplikasi.`);
   };
 
   // Rename a section
@@ -1077,13 +1079,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     });
     setSections(updated);
     pushToHistory(updated);
-    onShowNotification('Nama bagian berhasil diubah.');
+    onShowNotification(isEn ? 'Section renamed.' : 'Nama bagian berhasil diubah.');
   };
 
   // Delete a section
   const handleDeleteSection = (key: string) => {
     if (sections.length <= 1) {
-      onShowNotification('Minimal harus ada 1 bagian pada toko.');
+      onShowNotification(isEn ? 'The store must have at least 1 section.' : 'Minimal harus ada 1 bagian pada toko.');
       return;
     }
 
@@ -1101,7 +1103,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
     pushToHistory(reordered);
     setActivePreset('custom');
-    onShowNotification('Bagian berhasil dihapus dari etalase toko.');
+    onShowNotification(isEn ? 'Section removed from the storefront.' : 'Bagian berhasil dihapus dari etalase toko.');
   };
 
   // Add section from template
@@ -1122,7 +1124,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setSelectedSectionKey(newKey);
     pushToHistory(updated);
     setActivePreset('custom');
-    onShowNotification(`Bagian "${template.title}" berhasil ditambahkan ke tata letak.`);
+    onShowNotification(isEn ? `Section "${template.title}" added to the layout.` : `Bagian "${template.title}" berhasil ditambahkan ke tata letak.`);
   };
 
   // Update specific section options
@@ -1191,7 +1193,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       setSelectedSectionKey(cloned[0].key || `${cloned[0].id}-0`);
       setActivePreset(presetId);
       pushToHistory(cloned);
-      onShowNotification(`Preset "${preset.name}" berhasil diterapkan!`);
+      onShowNotification(isEn ? `Preset "${preset.name}" applied!` : `Preset "${preset.name}" berhasil diterapkan!`);
     }
   };
 
@@ -1207,7 +1209,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setActivePreset('standard');
     setPrimaryAccent('#66000E');
     pushToHistory(defaults);
-    onShowNotification('Pengaturan tata letak dikembalikan ke bawaan.');
+    onShowNotification(isEn ? 'Layout settings reset to default.' : 'Pengaturan tata letak dikembalikan ke bawaan.');
   };
 
   // Save layout
@@ -1267,8 +1269,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setHasChanges(false);
     setTimeout(() => {
       setIsSaving(false);
-      const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
-      onShowNotification(`Draf tema & tata letak berhasil disimpan pada pukul ${timeStr}! Jam pembaruan draf diperbarui.`);
+      const timeStr = isEn
+        ? new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        : new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+      onShowNotification(isEn ? `Theme draft & layout saved at ${timeStr}! Draft update time refreshed.` : `Draf tema & tata letak berhasil disimpan pada pukul ${timeStr}! Jam pembaruan draf diperbarui.`);
     }, 200);
   };
 
@@ -1334,10 +1338,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       }
 
       setCurrentStore((prev) => ({ ...prev, isPublished: false }));
-      onShowNotification('Toko online berhasil di-unpublish (kembali menjadi draf).');
+      onShowNotification(isEn ? 'Online store unpublished (back to draft).' : 'Toko online berhasil di-unpublish (kembali menjadi draf).');
     } catch (err: any) {
       console.error('Error unpublishing store:', err);
-      onShowNotification('Gagal membatalkan publikasi toko.');
+      onShowNotification(isEn ? 'Failed to unpublish the store.' : 'Gagal membatalkan publikasi toko.');
     } finally {
       setIsUnpublishing(false);
       setIsUnpublishModalOpen(false);
@@ -1392,7 +1396,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 setHistory([newSections]);
                 setHistoryIndex(0);
                 useCmsStore.getState().loadThemeData(mappedThemeId);
-                onShowNotification(`Template "${storeTemplate.name}" berhasil diterapkan!`);
+                onShowNotification(isEn ? `Template "${storeTemplate.name}" applied!` : `Template "${storeTemplate.name}" berhasil diterapkan!`);
               }
             }}
             onPreviewTheme={(themeId) => {
@@ -1423,14 +1427,14 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               <button
                 onClick={() => { setPageMode('library'); setPreviewTemplate(null); }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer text-gray-500 hover:text-gray-900"
-                title="Kembali"
+                title={isEn ? 'Back' : 'Kembali'}
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="w-px h-6 bg-gray-200"></div>
               <div className="min-w-0">
                 <h2 className="text-base font-bold text-gray-900 leading-none truncate">{previewTemplate.name}</h2>
-                <span className="text-xs text-gray-500 font-medium">Gratis • Multi-Page</span>
+                <span className="text-xs text-gray-500 font-medium">{isEn ? 'Free • Multi-Page' : 'Gratis • Multi-Page'}</span>
               </div>
             </div>
 
@@ -1526,7 +1530,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               {/* Template Title & Badge */}
               <div className="flex items-center gap-2 px-1 min-w-0">
                 <span className="font-extrabold text-gray-900 text-sm tracking-tight truncate">{previewTemplate.name}</span>
-                <span className="text-xs text-gray-500 font-medium">Gratis</span>
+                <span className="text-xs text-gray-500 font-medium">{isEn ? 'Free' : 'Gratis'}</span>
               </div>
 
               <div className="w-px h-5 bg-gray-200 shrink-0 mx-1"></div>
@@ -1537,13 +1541,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                   onClick={() => { setPageMode('library'); setPreviewTemplate(null); }}
                   className="px-4 py-1.5 rounded-full border border-gray-300 text-xs font-bold text-gray-800 bg-white hover:bg-gray-50 transition cursor-pointer"
                 >
-                  Batal
+                  {isEn ? 'Cancel' : 'Batal'}
                 </button>
                 <button
                   onClick={() => handleApplyAndEdit(previewTemplate)}
                   className="px-5 py-2 rounded-full text-xs font-extrabold text-white bg-[#E60023] hover:bg-red-700 transition-all shadow-sm active:scale-95 cursor-pointer"
                 >
-                  Coba tema
+                  {isEn ? 'Try theme' : 'Coba tema'}
                 </button>
               </div>
             </div>
@@ -1569,7 +1573,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             <div className="max-w-xl w-full text-center space-y-6">
               <Loader2 className="w-8 h-8 text-red-600 animate-spin mx-auto" />
               <p className="text-lg font-semibold text-gray-700">
-                Menambahkan "{loadingTemplateName}" ke tema toko online Anda...
+                {isEn ? `Adding "${loadingTemplateName}" to your online store themes...` : `Menambahkan "${loadingTemplateName}" ke tema toko online Anda...`}
               </p>
 
               {/* Progress Bar */}
@@ -1590,22 +1594,22 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6">
               <div>
                 <h4 className="font-bold text-white mb-2">MicroCMS</h4>
-                <p className="text-xs">Platform toko online #1 Indonesia</p>
+                <p className="text-xs">{isEn ? "Indonesia's #1 online store platform" : 'Platform toko online #1 Indonesia'}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-white/90 mb-2">Bantuan</h4>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer">Pusat Bantuan</p>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Dokumentasi API</p>
+                <h4 className="font-semibold text-white/90 mb-2">{isEn ? 'Help' : 'Bantuan'}</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">{isEn ? 'Help Center' : 'Pusat Bantuan'}</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">{isEn ? 'API Documentation' : 'Dokumentasi API'}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-white/90 mb-2">Kategori</h4>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer">Semua Tema</p>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Tema Gratis</p>
+                <h4 className="font-semibold text-white/90 mb-2">{isEn ? 'Categories' : 'Kategori'}</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">{isEn ? 'All Themes' : 'Semua Tema'}</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">{isEn ? 'Free Themes' : 'Tema Gratis'}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-white/90 mb-2">Tentang</h4>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer">Tim Kami</p>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Syarat Layanan</p>
+                <h4 className="font-semibold text-white/90 mb-2">{isEn ? 'About' : 'Tentang'}</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">{isEn ? 'Our Team' : 'Tim Kami'}</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">{isEn ? 'Terms of Service' : 'Syarat Layanan'}</p>
               </div>
             </div>
           </div>
@@ -1750,7 +1754,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               }`}
             >
               <Eye className="w-4 h-4" />
-              <span className="text-[10px]">Pratinjau</span>
+              <span className="text-[10px]">{isEn ? 'Preview' : 'Pratinjau'}</span>
             </button>
             <button
               type="button"
@@ -1762,7 +1766,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               }`}
             >
               <ArrowRight className="w-4 h-4 rotate-90" />
-              <span className="text-[10px]">Struktur</span>
+              <span className="text-[10px]">{isEn ? 'Structure' : 'Struktur'}</span>
             </button>
             <button
               type="button"
@@ -1779,7 +1783,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               }`}
             >
               <Palette className="w-4 h-4" />
-              <span className="text-[10px]">Pengaturan</span>
+              <span className="text-[10px]">{isEn ? 'Settings' : 'Pengaturan'}</span>
             </button>
           </div>
 
@@ -1823,13 +1827,17 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     <EyeOff className="w-5 h-5 text-rose-600" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-[#241A1A]">Tarik Publikasi Toko?</h3>
-                    <p className="text-xs text-[#706866]">Kembalikan website toko ke status Draf</p>
+                    <h3 className="text-base font-bold text-[#241A1A]">{isEn ? 'Unpublish Store?' : 'Tarik Publikasi Toko?'}</h3>
+                    <p className="text-xs text-[#706866]">{isEn ? 'Return the store website to Draft status' : 'Kembalikan website toko ke status Draf'}</p>
                   </div>
                 </div>
 
                 <p className="text-xs text-[#555] leading-relaxed">
-                  Setelah di-unpublish, website toko <strong>{currentStore.name}</strong> tidak dapat diakses secara publik oleh pembeli dan statusnya kembali menjadi draf. Anda dapat mempublikasikannya kembali kapan saja.
+                  {isEn ? (
+                    <>Once unpublished, the <strong>{currentStore.name}</strong> store website can no longer be accessed publicly by buyers and its status returns to draft. You can publish it again at any time.</>
+                  ) : (
+                    <>Setelah di-unpublish, website toko <strong>{currentStore.name}</strong> tidak dapat diakses secara publik oleh pembeli dan statusnya kembali menjadi draf. Anda dapat mempublikasikannya kembali kapan saja.</>
+                  )}
                 </p>
 
                 <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100">
@@ -1839,7 +1847,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     disabled={isUnpublishing}
                     className="px-4 py-2 text-xs font-semibold text-[#706866] hover:bg-gray-100 rounded-xl transition cursor-pointer"
                   >
-                    Batal
+                    {isEn ? 'Cancel' : 'Batal'}
                   </button>
                   <button
                     type="button"
@@ -1850,12 +1858,12 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     {isUnpublishing ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Memproses...</span>
+                        <span>{isEn ? 'Processing...' : 'Memproses...'}</span>
                       </>
                     ) : (
                       <>
                         <EyeOff className="w-3.5 h-3.5" />
-                        <span>Ya, Unpublish Toko</span>
+                        <span>{isEn ? 'Yes, Unpublish Store' : 'Ya, Unpublish Toko'}</span>
                       </>
                     )}
                   </button>

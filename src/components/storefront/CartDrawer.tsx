@@ -61,7 +61,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onRemoveItem,
   onOrderSuccess,
 }) => {
-  const { language } = useLanguage();
+  const { language, isEn } = useLanguage();
   const [step, setStep] = useState<'cart' | 'checkout' | 'payment' | 'success'>('cart');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -90,15 +90,22 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     if (!payConfig || payConfig.enableManualTransfer) {
       list.push({
         id: 'transfer_manual',
-        title: payConfig?.manualQrisImageUrl ? 'Transfer Bank / QRIS Toko' : 'Transfer Bank Manual',
-        desc: 'Bayar ke rekening/QRIS toko lalu kirim bukti bayar',
+        title: payConfig?.manualQrisImageUrl
+          ? (isEn ? 'Bank Transfer / Store QRIS' : 'Transfer Bank / QRIS Toko')
+          : (isEn ? 'Manual Bank Transfer' : 'Transfer Bank Manual'),
+        desc: isEn ? "Pay to the store's account/QRIS, then send proof of payment" : 'Bayar ke rekening/QRIS toko lalu kirim bukti bayar',
       });
     }
+    const codOption = {
+      id: 'cod' as const,
+      title: isEn ? 'Cash on Delivery (COD)' : 'Bayar di Tempat (COD)',
+      desc: isEn ? 'Pay in cash when your order arrives' : 'Bayar tunai saat pesanan Anda tiba',
+    };
     if (!payConfig || payConfig.enableCod) {
-      list.push({ id: 'cod', title: 'Bayar di Tempat (COD)', desc: 'Bayar tunai saat pesanan Anda tiba' });
+      list.push(codOption);
     }
     if (list.length === 0) {
-      list.push({ id: 'cod', title: 'Bayar di Tempat (COD)', desc: 'Bayar tunai saat pesanan Anda tiba' });
+      list.push(codOption);
     }
     return list;
   })();
@@ -355,7 +362,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           onError: (err) => {
             console.error('Duitku payment error:', err);
             setIsSubmitting(false);
-            alert('Pembayaran Duitku dibatalkan atau belum selesai. Silakan coba kembali.');
+            alert(isEn ? 'The Duitku payment was cancelled or not completed. Please try again.' : 'Pembayaran Duitku dibatalkan atau belum selesai. Silakan coba kembali.');
           },
           onClose: () => {
             setIsSubmitting(false);
@@ -371,7 +378,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const handleProceedToPayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim() || !address.trim()) {
-      alert('Mohon lengkapi formulir nama, nomor WhatsApp, dan alamat pengiriman.');
+      alert(isEn ? 'Please complete your name, WhatsApp number, and shipping address.' : 'Mohon lengkapi formulir nama, nomor WhatsApp, dan alamat pengiriman.');
       return;
     }
 
@@ -380,7 +387,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       const selectedName = selectedChannelId === 'cod' ? 'COD (Bayar di Tempat)' : 'Transfer Bank Manual';
       createOrderRecord(selectedName)
         .then(showCompletedOrder)
-        .catch((err) => alert('Gagal membuat pesanan: ' + (err?.message || 'Silakan coba lagi.')));
+        .catch((err) => alert((isEn ? 'Failed to create order: ' : 'Gagal membuat pesanan: ') + (err?.message || (isEn ? 'Please try again.' : 'Silakan coba lagi.'))));
       return;
     }
 
@@ -396,7 +403,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     try {
       showCompletedOrder(await createOrderRecord(selectedChannel.name));
     } catch {
-      alert('Terjadi kesalahan saat memproses pesanan.');
+      alert(isEn ? 'An error occurred while processing the order.' : 'Terjadi kesalahan saat memproses pesanan.');
     } finally {
       setIsSubmitting(false);
     }
@@ -435,13 +442,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-sm text-[#241A1A] leading-tight">
-                {step === 'cart' && 'Keranjang Belanja'}
-                {step === 'checkout' && 'Pengiriman & Pembayaran'}
-                {step === 'payment' && 'Sesi Pembayaran Duitku'}
-                {step === 'success' && 'Pesanan Berhasil'}
+                {step === 'cart' && (isEn ? 'Shopping Cart' : 'Keranjang Belanja')}
+                {step === 'checkout' && (isEn ? 'Shipping & Payment' : 'Pengiriman & Pembayaran')}
+                {step === 'payment' && (isEn ? 'Duitku Payment Session' : 'Sesi Pembayaran Duitku')}
+                {step === 'success' && (isEn ? 'Order Successful' : 'Pesanan Berhasil')}
               </h3>
               <p className="text-[11px] text-[#706866]">
-                {items.length} produk • {store.name}
+                {items.length} {isEn ? 'products' : 'produk'} • {store.name}
               </p>
             </div>
           </div>
@@ -462,9 +469,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <div className="w-14 h-14 rounded-2xl bg-[#F5E8EA] text-[#66000E] flex items-center justify-center">
                   <ShoppingBag className="w-7 h-7 text-[#66000E]" />
                 </div>
-                <h4 className="font-bold text-sm text-[#241A1A]">Keranjang Masih Kosong</h4>
+                <h4 className="font-bold text-sm text-[#241A1A]">{isEn ? 'Your Cart Is Still Empty' : 'Keranjang Masih Kosong'}</h4>
                 <p className="text-xs text-[#706866] max-w-xs leading-relaxed">
-                  Pilih produk UMKM favorit Anda dari katalog toko dan tambahkan ke keranjang untuk melanjutkan pemesanan.
+                  {isEn
+                    ? 'Choose your favorite products from the store catalog and add them to your cart to continue ordering.'
+                    : 'Pilih produk UMKM favorit Anda dari katalog toko dan tambahkan ke keranjang untuk melanjutkan pemesanan.'}
                 </p>
               </div>
             ) : (
@@ -496,7 +505,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <button
                         onClick={() => onRemoveItem(item.product.id)}
                         className="text-gray-400 hover:text-red-600 transition p-1 cursor-pointer"
-                        title="Hapus Produk"
+                        title={isEn ? 'Remove Product' : 'Hapus Produk'}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -527,7 +536,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             {items.length > 0 && (
               <div className="p-4 border-t border-[#E5E0DD] bg-[#FAF7F7] space-y-3 shrink-0">
                 <div className="flex items-center justify-between text-xs text-[#706866]">
-                  <span>Subtotal ({items.length} Item):</span>
+                  <span>Subtotal ({items.length} {isEn ? 'Items' : 'Item'}):</span>
                   <span className="text-sm font-black text-[#241A1A]">{formatRupiah(subtotal)}</span>
                 </div>
 
@@ -535,7 +544,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   onClick={() => setStep('checkout')}
                   className="w-full py-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <span>Lanjut ke Pengiriman & Pembayaran</span>
+                  <span>{isEn ? 'Continue to Shipping & Payment' : 'Lanjut ke Pengiriman & Pembayaran'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -551,23 +560,23 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <div className="space-y-2.5">
                 <h4 className="text-xs font-bold text-[#241A1A] uppercase tracking-wider flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-[#66000E]" />
-                  <span>Informasi Pembeli & Penerima</span>
+                  <span>{isEn ? 'Buyer & Recipient Information' : 'Informasi Pembeli & Penerima'}</span>
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">Nama Lengkap *</label>
+                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">{isEn ? 'Full Name *' : 'Nama Lengkap *'}</label>
                     <input
                       type="text"
                       required
-                      placeholder="Nama Anda"
+                      placeholder={isEn ? 'Your Name' : 'Nama Anda'}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] bg-[#FAF7F7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">No. WhatsApp *</label>
+                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">{isEn ? 'WhatsApp No. *' : 'No. WhatsApp *'}</label>
                     <input
                       type="tel"
                       required
@@ -585,16 +594,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-[#241A1A] uppercase tracking-wider flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-[#66000E]" />
-                    <span>Alamat Pengiriman & Kurir</span>
+                    <span>{isEn ? 'Shipping Address & Courier' : 'Alamat Pengiriman & Kurir'}</span>
                   </h4>
                   <span className="text-[10px] font-semibold text-[#706866] bg-[#FAF7F7] px-2 py-0.5 rounded-full border border-[#E5E0DD]">
-                    Berat: {totalWeightGrams}g ({totalWeightKg} kg)
+                    {isEn ? 'Weight' : 'Berat'}: {totalWeightGrams}g ({totalWeightKg} kg)
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">Kota Tujuan *</label>
+                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">{isEn ? 'Destination City *' : 'Kota Tujuan *'}</label>
                     <select
                       value={city}
                       onChange={(e) => {
@@ -611,7 +620,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       }}
                       className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#241A1A] bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition cursor-pointer"
                     >
-                      <option value="">-- Pilih Kota Tujuan --</option>
+                      <option value="">{isEn ? '-- Select Destination City --' : '-- Pilih Kota Tujuan --'}</option>
                       {INDONESIAN_CITIES.map((c) => (
                         <option key={c.id} value={c.name}>
                           {c.name} ({c.province})
@@ -621,7 +630,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">Kode Pos Tujuan *</label>
+                    <label className="block text-[11px] font-semibold text-[#706866] mb-1">{isEn ? 'Destination Postal Code *' : 'Kode Pos Tujuan *'}</label>
                     <input
                       type="text"
                       maxLength={5}
@@ -635,11 +644,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#706866] mb-1">Alamat Lengkap *</label>
+                  <label className="block text-[11px] font-semibold text-[#706866] mb-1">{isEn ? 'Full Address *' : 'Alamat Lengkap *'}</label>
                   <textarea
                     rows={2}
                     required
-                    placeholder="Jl. Nama Jalan No. XX, RT/RW, Kelurahan, Patokan..."
+                    placeholder={isEn ? 'Street Name No. XX, RT/RW, Village, Landmark...' : 'Jl. Nama Jalan No. XX, RT/RW, Kelurahan, Patokan...'}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] bg-[#FAF7F7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] transition"
@@ -648,7 +657,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                 {/* Couriers */}
                 <div className="space-y-1.5 pt-1">
-                  <label className="block text-[11px] font-semibold text-[#706866]">Pilih Layanan Ekspedisi</label>
+                  <label className="block text-[11px] font-semibold text-[#706866]">{isEn ? 'Choose a Courier Service' : 'Pilih Layanan Ekspedisi'}</label>
                   <div className="space-y-1.5">
                     {availableRates.map((rate) => {
                       const isSelected = courier === rate.courier;
@@ -678,7 +687,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                                   </span>
                                 )}
                               </div>
-                              <span className="text-[10px] text-[#706866]">Estimasi: {rate.etd}</span>
+                              <span className="text-[10px] text-[#706866]">{isEn ? 'Estimate' : 'Estimasi'}: {rate.etd}</span>
                             </div>
                           </div>
 
@@ -698,20 +707,28 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <div>
                     <h4 className="text-xs font-bold text-[#241A1A] uppercase tracking-wider flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-[#66000E]" />
-                      <span>{isManualMode ? 'Metode Pembayaran (Manual)' : 'Metode Pembayaran (Duitku)'}</span>
+                      <span>
+                        {isManualMode
+                          ? (isEn ? 'Payment Method (Manual)' : 'Metode Pembayaran (Manual)')
+                          : (isEn ? 'Payment Method (Duitku)' : 'Metode Pembayaran (Duitku)')}
+                      </span>
                     </h4>
                     <p className="text-[10px] text-[#706866]">
-                      {isManualMode ? 'Pembayaran via Transfer Bank, WA, atau COD' : `${activeChannels.length} metode pembayaran otomatis aktif`}
+                      {isManualMode
+                        ? (isEn ? 'Payment via Bank Transfer, WA, or COD' : 'Pembayaran via Transfer Bank, WA, atau COD')
+                        : isEn
+                          ? `${activeChannels.length} automatic payment methods active`
+                          : `${activeChannels.length} metode pembayaran otomatis aktif`}
                     </p>
                   </div>
                   {isManualMode ? (
                     <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                      Metode Manual
+                      {isEn ? 'Manual Method' : 'Metode Manual'}
                     </span>
                   ) : (
                     <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
                       <CheckCircle className="w-3 h-3" />
-                      <span>Cek Otomatis 24 Jam</span>
+                      <span>{isEn ? 'Automatic 24/7 Check' : 'Cek Otomatis 24 Jam'}</span>
                     </span>
                   )}
                 </div>
@@ -719,7 +736,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 {isManualMode ? (
                   <div className="space-y-2">
                     <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-2.5 text-[11px] text-amber-900 leading-snug">
-                      Pembayaran online sedang tidak aktif. Pesanan Anda disimpan langsung ke sistem toko, lalu selesaikan pembayaran secara manual.
+                      {isEn
+                        ? "Online payment is currently inactive. Your order is saved directly to the store's system; then complete the payment manually."
+                        : 'Pembayaran online sedang tidak aktif. Pesanan Anda disimpan langsung ke sistem toko, lalu selesaikan pembayaran secara manual.'}
                     </div>
                     {manualOptions.map((m) => (
                       <div
@@ -746,11 +765,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     {/* Category Filter Tabs */}
                     <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
                       {[
-                        { id: 'all', label: 'Semua' },
+                        { id: 'all', label: isEn ? 'All' : 'Semua' },
                         { id: 'qris_ewallet', label: 'QRIS & E-Wallet' },
-                        { id: 'virtual_account', label: 'Transfer Bank (VA)' },
-                        { id: 'credit_card', label: 'Kartu Kredit' },
-                        { id: 'retail_paylater', label: 'Gerai / PayLater' },
+                        { id: 'virtual_account', label: isEn ? 'Bank Transfer (VA)' : 'Transfer Bank (VA)' },
+                        { id: 'credit_card', label: isEn ? 'Credit Card' : 'Kartu Kredit' },
+                        { id: 'retail_paylater', label: isEn ? 'Retail / PayLater' : 'Gerai / PayLater' },
                       ].map((tab) => (
                         <button
                           key={tab.id}
@@ -771,7 +790,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <div className="space-y-1.5 max-h-56 overflow-y-auto pr-0.5 custom-scrollbar">
                       {filteredChannels.length === 0 ? (
                         <p className="text-xs text-gray-400 py-3 text-center">
-                          Tidak ada metode dalam kategori ini.
+                          {isEn ? 'No methods in this category.' : 'Tidak ada metode dalam kategori ini.'}
                         </p>
                       ) : (
                         filteredChannels.map((channel) => {
@@ -838,15 +857,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             <div className="p-4 border-t border-[#E5E0DD] bg-[#FAF7F7] space-y-3 shrink-0">
               <div className="space-y-1 text-xs">
                 <div className="flex items-center justify-between text-[#706866]">
-                  <span>Subtotal Produk:</span>
+                  <span>{isEn ? 'Product Subtotal:' : 'Subtotal Produk:'}</span>
                   <span>{formatRupiah(subtotal)}</span>
                 </div>
                 <div className="flex items-center justify-between text-[#706866]">
-                  <span>Ongkos Kirim ({courier}):</span>
+                  <span>{isEn ? 'Shipping Cost' : 'Ongkos Kirim'} ({courier}):</span>
                   <span>{formatRupiah(shippingCost)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm font-black text-[#241A1A] pt-1.5 border-t border-[#E5E0DD]">
-                  <span>Total Tagihan:</span>
+                  <span>{isEn ? 'Total Bill:' : 'Total Tagihan:'}</span>
                   <span className="text-[#66000E] font-black">{formatRupiah(grandTotal)}</span>
                 </div>
               </div>
@@ -864,7 +883,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   disabled={isSubmitting}
                   className="flex-1 py-3 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  <span>Bayar Sekarang ({formatRupiah(grandTotal)})</span>
+                  <span>{isEn ? 'Pay Now' : 'Bayar Sekarang'} ({formatRupiah(grandTotal)})</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -879,19 +898,19 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               {/* Order Summary Pill */}
               <div className="bg-[#FAF7F7] rounded-2xl p-3.5 border border-[#E5E0DD] space-y-1.5 text-[#706866]">
                 <div className="flex items-center justify-between">
-                  <span>Penerima:</span>
+                  <span>{isEn ? 'Recipient:' : 'Penerima:'}</span>
                   <span className="font-bold text-[#241A1A]">
                     {name} ({phone})
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Kurir & Tujuan:</span>
+                  <span>{isEn ? 'Courier & Destination:' : 'Kurir & Tujuan:'}</span>
                   <span className="font-medium text-[#241A1A]">
                     {courier} • {city}
                   </span>
                 </div>
                 <div className="pt-2 border-t border-[#E5E0DD] flex items-center justify-between">
-                  <span className="font-bold text-[#241A1A]">Total Tagihan:</span>
+                  <span className="font-bold text-[#241A1A]">{isEn ? 'Total Bill:' : 'Total Tagihan:'}</span>
                   <span className="text-base font-black text-[#66000E]">
                     {formatRupiah(grandTotal)}
                   </span>
@@ -906,7 +925,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <span>Duitku Payment Gateway</span>
                   </span>
                   <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-100">
-                    Otomatis Dicek
+                    {isEn ? 'Auto-Checked' : 'Otomatis Dicek'}
                   </span>
                 </div>
 
@@ -936,11 +955,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <>
                     <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-medium border border-emerald-100">
                       <Clock className="w-3 h-3" />
-                      <span>Selesaikan dalam 14:59</span>
+                      <span>{isEn ? 'Complete within 14:59' : 'Selesaikan dalam 14:59'}</span>
                     </div>
 
                     <p className="text-xs text-[#706866]">
-                      Buka aplikasi <strong>BCA/Mandiri/BRI/BNI Mobile</strong>, atau <strong>GoPay, OVO, ShopeePay, DANA</strong>, lalu scan kode QR di bawah:
+                      {isEn ? 'Open the' : 'Buka aplikasi'} <strong>BCA/Mandiri/BRI/BNI Mobile</strong>{isEn ? ' app, or' : ', atau'} <strong>GoPay, OVO, ShopeePay, DANA</strong>{isEn ? ', then scan the QR code below:' : ', lalu scan kode QR di bawah:'}
                     </p>
 
                     <div className="w-44 h-44 mx-auto bg-white p-2.5 rounded-2xl border-2 border-[#E5E0DD] shadow-xs flex items-center justify-center">
@@ -953,16 +972,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       />
                     </div>
                     <p className="text-[10px] text-[#A8A09E]">
-                      NMID: ID10200392019 • PT DUITKU TRANS INDONESIA (Toko: {store.name})
+                      NMID: ID10200392019 • PT DUITKU TRANS INDONESIA ({isEn ? 'Store' : 'Toko'}: {store.name})
                     </p>
                   </>
                 ) : selectedChannel.category === 'virtual_account' ? (
                   /* Virtual Account View */
                   <div className="p-3.5 bg-[#FAF7F7] rounded-2xl border border-[#E5E0DD] text-left space-y-2">
                     <div className="flex items-center justify-between text-[11px] text-[#706866]">
-                      <span>Nomor Virtual Account ({selectedChannel.name}):</span>
+                      <span>{isEn ? 'Virtual Account Number' : 'Nomor Virtual Account'} ({selectedChannel.name}):</span>
                       <span className="text-[10px] font-bold text-[#66000E] bg-[#F5E8EA] px-2 py-0.2 rounded-full border border-[#E6DDDA]">
-                        Verifikasi Instan 24 Jam
+                        {isEn ? 'Instant 24/7 Verification' : 'Verifikasi Instan 24 Jam'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-[#E5E0DD]">
@@ -975,16 +994,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         className="px-2.5 py-1.5 rounded-lg bg-[#FAF7F7] border border-[#E5E0DD] text-[11px] font-bold text-[#241A1A] hover:bg-[#EAE4E2] transition cursor-pointer flex items-center gap-1"
                       >
                         {isCopiedVa ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{isCopiedVa ? 'Tersalin' : 'Salin VA'}</span>
+                        <span>{isCopiedVa ? (isEn ? 'Copied' : 'Tersalin') : (isEn ? 'Copy VA' : 'Salin VA')}</span>
                       </button>
                     </div>
                     <div className="space-y-1 text-[11px] text-[#706866] pt-1">
-                      <p className="font-semibold text-[#241A1A]">Cara Pembayaran:</p>
+                      <p className="font-semibold text-[#241A1A]">{isEn ? 'How to Pay:' : 'Cara Pembayaran:'}</p>
                       <ol className="list-decimal list-inside space-y-0.5 pl-1">
-                        <li>Buka aplikasi m-Banking atau ATM bank Anda</li>
-                        <li>Pilih menu <strong>Transfer / Bayar &gt; Virtual Account</strong></li>
-                        <li>Masukkan nomor VA di atas &amp; nominal tepat <strong>{formatRupiah(grandTotal)}</strong></li>
-                        <li>Konfirmasi pembayaran hingga muncul resi berhasil</li>
+                        <li>{isEn ? 'Open your m-Banking app or bank ATM' : 'Buka aplikasi m-Banking atau ATM bank Anda'}</li>
+                        <li>{isEn ? 'Select the menu' : 'Pilih menu'} <strong>{isEn ? 'Transfer / Pay > Virtual Account' : 'Transfer / Bayar > Virtual Account'}</strong></li>
+                        <li>{isEn ? 'Enter the VA number above & the exact amount' : 'Masukkan nomor VA di atas & nominal tepat'} <strong>{formatRupiah(grandTotal)}</strong></li>
+                        <li>{isEn ? 'Confirm the payment until a success receipt appears' : 'Konfirmasi pembayaran hingga muncul resi berhasil'}</li>
                       </ol>
                     </div>
                   </div>
@@ -992,10 +1011,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   /* Other Channels View (Credit Card, Retail) */
                   <div className="p-3.5 bg-[#FAF7F7] rounded-2xl border border-[#E5E0DD] text-left space-y-2">
                     <div className="font-bold text-xs text-[#241A1A]">
-                      Petunjuk Pembayaran {selectedChannel.name}
+                      {isEn ? 'Payment Instructions' : 'Petunjuk Pembayaran'} {selectedChannel.name}
                     </div>
                     <p className="text-[11px] text-[#706866] leading-relaxed">
-                      Lanjutkan pembayaran pada jendela popup resmi Duitku POP. Sistem akan memverifikasi transaksi secara real-time dan memperbarui status pesanan Anda.
+                      {isEn
+                        ? 'Continue the payment in the official Duitku POP popup window. The system will verify the transaction in real time and update your order status.'
+                        : 'Lanjutkan pembayaran pada jendela popup resmi Duitku POP. Sistem akan memverifikasi transaksi secara real-time dan memperbarui status pesanan Anda.'}
                     </p>
                   </div>
                 )}
@@ -1009,7 +1030,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     className="w-full py-2.5 rounded-xl bg-[#002A45] hover:bg-[#001D30] text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Buka Jendela Duitku POP</span>
+                    <span>{isEn ? 'Open Duitku POP Window' : 'Buka Jendela Duitku POP'}</span>
                   </button>
 
                   <button
@@ -1019,7 +1040,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     className="w-full py-2.5 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white text-xs font-bold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <CheckCircle className="w-3.5 h-3.5" />
-                    <span>{isSubmitting ? 'Memproses Pesanan...' : 'Konfirmasi Bayar Lunas (Selesai)'}</span>
+                    <span>
+                      {isSubmitting
+                        ? (isEn ? 'Processing Order...' : 'Memproses Pesanan...')
+                        : (isEn ? 'Confirm Full Payment (Done)' : 'Konfirmasi Bayar Lunas (Selesai)')}
+                    </span>
                   </button>
 
                   <button
@@ -1027,7 +1052,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     onClick={() => setStep('checkout')}
                     className="text-xs text-[#706866] hover:text-[#241A1A] transition cursor-pointer pt-1"
                   >
-                    ← Ubah Alamat atau Metode Pembayaran
+                    {isEn ? '← Change Address or Payment Method' : '← Ubah Alamat atau Metode Pembayaran'}
                   </button>
                 </div>
               </div>
@@ -1047,20 +1072,34 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 {isCompletedPaid ? (
                   <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold mb-1">
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Lunas Otomatis via Duitku</span>
+                    <span>{isEn ? 'Automatically Paid via Duitku' : 'Lunas Otomatis via Duitku'}</span>
                   </div>
                 ) : (
                   <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold mb-1">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>{isCompletedCod ? 'Bayar Saat Barang Tiba' : 'Menunggu Pembayaran'}</span>
+                    <span>
+                      {isCompletedCod
+                        ? (isEn ? 'Pay When Goods Arrive' : 'Bayar Saat Barang Tiba')
+                        : (isEn ? 'Awaiting Payment' : 'Menunggu Pembayaran')}
+                    </span>
                   </div>
                 )}
-                <h4 className="font-extrabold text-lg text-[#241A1A]">Pesanan Berhasil Dibuat!</h4>
+                <h4 className="font-extrabold text-lg text-[#241A1A]">{isEn ? 'Order Created Successfully!' : 'Pesanan Berhasil Dibuat!'}</h4>
                 <p className="text-xs text-[#706866] mt-1">
                   {isCompletedPaid ? (
-                    <>Terima kasih, pembayaran telah diterima dan pesanan telah diteruskan ke toko <strong>{store.name}</strong>.</>
+                    isEn ? (
+                      <>Thank you, your payment has been received and the order has been forwarded to <strong>{store.name}</strong>.</>
+                    ) : (
+                      <>Terima kasih, pembayaran telah diterima dan pesanan telah diteruskan ke toko <strong>{store.name}</strong>.</>
+                    )
                   ) : isCompletedCod ? (
-                    <>Pesanan telah diteruskan ke toko <strong>{store.name}</strong>. Siapkan uang pas saat pesanan tiba.</>
+                    isEn ? (
+                      <>Your order has been forwarded to <strong>{store.name}</strong>. Prepare the exact amount when the order arrives.</>
+                    ) : (
+                      <>Pesanan telah diteruskan ke toko <strong>{store.name}</strong>. Siapkan uang pas saat pesanan tiba.</>
+                    )
+                  ) : isEn ? (
+                    <>Your order has been forwarded to <strong>{store.name}</strong>. Complete the payment, then send proof of payment to the seller.</>
                   ) : (
                     <>Pesanan telah diteruskan ke toko <strong>{store.name}</strong>. Selesaikan pembayaran lalu kirim bukti bayar ke penjual.</>
                   )}
@@ -1070,34 +1109,34 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               {/* Receipt Card */}
               <div className="p-4 rounded-2xl bg-[#FAF7F7] border border-[#E5E0DD] text-left space-y-2.5 text-xs">
                 <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
-                  <span className="text-[#706866]">Nomor Pesanan:</span>
+                  <span className="text-[#706866]">{isEn ? 'Order Number:' : 'Nomor Pesanan:'}</span>
                   <span className="font-mono font-black text-[#241A1A]">{completedOrder.orderNumber}</span>
                 </div>
                 <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
-                  <span className="text-[#706866]">Penerima:</span>
+                  <span className="text-[#706866]">{isEn ? 'Recipient:' : 'Penerima:'}</span>
                   <span className="font-bold text-[#241A1A]">
                     {completedOrder.customerName} ({completedOrder.customerPhone})
                   </span>
                 </div>
                 <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
-                  <span className="text-[#706866]">Kurir & Ongkir:</span>
+                  <span className="text-[#706866]">{isEn ? 'Courier & Shipping:' : 'Kurir & Ongkir:'}</span>
                   <span className="font-medium text-[#241A1A]">
                     {completedOrder.courier} ({formatRupiah(completedOrder.shippingCost)})
                   </span>
                 </div>
                 <div className="flex items-center justify-between pb-2 border-b border-[#E5E0DD]">
-                  <span className="text-[#706866]">Metode Pembayaran:</span>
+                  <span className="text-[#706866]">{isEn ? 'Payment Method:' : 'Metode Pembayaran:'}</span>
                   {isCompletedPaid ? (
                     <span className="text-emerald-700 font-bold flex items-center gap-1">
                       <Check className="w-3.5 h-3.5" />
-                      <span>Lunas ({completedOrder.paymentMethod})</span>
+                      <span>{isEn ? 'Paid' : 'Lunas'} ({completedOrder.paymentMethod})</span>
                     </span>
                   ) : (
                     <span className="text-amber-800 font-bold text-right">{completedOrder.paymentMethod}</span>
                   )}
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="font-bold text-[#241A1A]">Total Pembayaran:</span>
+                  <span className="font-bold text-[#241A1A]">{isEn ? 'Payment Total:' : 'Total Pembayaran:'}</span>
                   <span className="font-black text-base text-[#66000E]">
                     {formatRupiah(completedOrder.grandTotal)}
                   </span>
@@ -1108,13 +1147,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               {!isCompletedPaid && !isCompletedCod && (
                 <div className="p-4 rounded-2xl bg-white border border-[#E5E0DD] text-left space-y-3 text-xs">
                   <p className="font-bold text-[#241A1A] flex items-center gap-1.5">
-                    <Building2 className="w-4 h-4 text-[#66000E]" /> Cara Pembayaran
+                    <Building2 className="w-4 h-4 text-[#66000E]" /> {isEn ? 'How to Pay' : 'Cara Pembayaran'}
                   </p>
                   {payConfig?.manualBankAccountNumber ? (
                     <div className="p-2.5 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] space-y-0.5">
-                      <div className="text-[10px] text-[#706866]">{payConfig.manualBankName || 'Rekening Toko'}</div>
+                      <div className="text-[10px] text-[#706866]">{payConfig.manualBankName || (isEn ? 'Store Account' : 'Rekening Toko')}</div>
                       <div className="font-mono font-black text-sm text-[#241A1A] break-all">{payConfig.manualBankAccountNumber}</div>
-                      <div className="text-[11px] text-[#241A1A]">a.n. {payConfig.manualBankAccountHolder || store.name}</div>
+                      <div className="text-[11px] text-[#241A1A]">{isEn ? 'Account holder:' : 'a.n.'} {payConfig.manualBankAccountHolder || store.name}</div>
                     </div>
                   ) : null}
                   {payConfig?.manualQrisImageUrl ? (
@@ -1123,19 +1162,19 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block w-fit mx-auto p-2 bg-white rounded-xl border border-[#E5E0DD]"
-                      title="Buka QRIS ukuran penuh"
+                      title={isEn ? 'Open full-size QRIS' : 'Buka QRIS ukuran penuh'}
                     >
-                      <img src={payConfig.manualQrisImageUrl} alt="QRIS toko" className="w-44 h-44 object-contain" />
+                      <img src={payConfig.manualQrisImageUrl} alt={isEn ? 'Store QRIS' : 'QRIS toko'} className="w-44 h-44 object-contain" />
                     </a>
                   ) : null}
                   {!payConfig?.manualBankAccountNumber && !payConfig?.manualQrisImageUrl && (
-                    <p className="text-[11px] text-[#706866]">Hubungi penjual lewat WhatsApp untuk mendapatkan nomor rekening pembayaran.</p>
+                    <p className="text-[11px] text-[#706866]">{isEn ? 'Contact the seller via WhatsApp to get the payment account number.' : 'Hubungi penjual lewat WhatsApp untuk mendapatkan nomor rekening pembayaran.'}</p>
                   )}
                   {payConfig?.manualInstructions && (
                     <p className="text-[11px] text-[#706866] whitespace-pre-line">{payConfig.manualInstructions}</p>
                   )}
                   <p className="text-[11px] text-[#241A1A]">
-                    Bayar tepat <strong>{formatRupiah(completedOrder.grandTotal)}</strong>, lalu kirim bukti bayar ke penjual.
+                    {isEn ? 'Pay exactly' : 'Bayar tepat'} <strong>{formatRupiah(completedOrder.grandTotal)}</strong>{isEn ? ', then send proof of payment to the seller.' : ', lalu kirim bukti bayar ke penjual.'}
                   </p>
                   {store.phoneWhatsApp && (
                     <a
@@ -1148,7 +1187,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
-                      <span>Kirim Bukti Bayar via WhatsApp</span>
+                      <span>{isEn ? 'Send Proof of Payment via WhatsApp' : 'Kirim Bukti Bayar via WhatsApp'}</span>
                     </a>
                   )}
                 </div>
@@ -1161,7 +1200,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   className="w-full py-2.5 rounded-xl bg-[#241A1A] hover:bg-black text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   {isCopiedOrderNumber ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{isCopiedOrderNumber ? 'Nomor Pesanan Tersalin!' : 'Salin Nomor Pesanan'}</span>
+                  <span>
+                    {isCopiedOrderNumber
+                      ? (isEn ? 'Order Number Copied!' : 'Nomor Pesanan Tersalin!')
+                      : (isEn ? 'Copy Order Number' : 'Salin Nomor Pesanan')}
+                  </span>
                 </button>
 
                 <button
@@ -1172,7 +1215,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   }}
                   className="w-full py-2.5 rounded-xl border border-[#E5E0DD] hover:bg-[#FAF7F7] text-xs font-semibold text-[#706866] transition cursor-pointer"
                 >
-                  Selesai &amp; Belanja Lagi
+                  {isEn ? 'Done & Shop Again' : 'Selesai & Belanja Lagi'}
                 </button>
               </div>
             </div>

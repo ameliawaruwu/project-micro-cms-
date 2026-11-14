@@ -11,6 +11,7 @@ import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { useThemeProductsSource } from '../../useSectionProducts';
 import { STORE_ROUTES } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const NatureNavbar: React.FC<{
   sectionOptions?: any;
@@ -27,6 +28,7 @@ export const NatureNavbar: React.FC<{
   searchQuery: controlledSearchQuery,
   onSearchChange
 }) => {
+  const { isEn } = useLanguage();
   const [localSearch, setLocalSearch] = React.useState('');
   const query = controlledSearchQuery !== undefined ? controlledSearchQuery : localSearch;
 
@@ -92,7 +94,7 @@ export const NatureNavbar: React.FC<{
               type="text"
               value={query}
               onChange={handleInputChange}
-              placeholder="Cari produk segar..."
+              placeholder={isEn ? 'Search fresh products...' : 'Cari produk segar...'}
               className="w-full pl-9 pr-7 py-1.5 bg-white border border-[#E8E4DB] rounded-full text-xs font-sans text-[#2C3B2D] placeholder-[#5C6B5D]/60 focus:outline-none focus:ring-1.5 focus:ring-[#2C3B2D] focus:border-transparent transition-all shadow-2xs"
             />
             {query && (
@@ -109,7 +111,7 @@ export const NatureNavbar: React.FC<{
 
           <NavTrackOrderButton className="p-1 text-[#2C3B2D] hover:text-[#1B3B2B] transition-colors" iconClassName="w-5 h-5" />
           {header.showCart && (
-            <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative text-xs sm:text-[13px] tracking-wide text-[#2C3B2D] hover:text-[#1B3B2B] transition-colors flex items-center gap-2 cursor-pointer font-sans whitespace-nowrap p-1">
+            <button type="button" data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'} className="relative text-xs sm:text-[13px] tracking-wide text-[#2C3B2D] hover:text-[#1B3B2B] transition-colors flex items-center gap-2 cursor-pointer font-sans whitespace-nowrap p-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
               <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#2D5A27] text-white text-[10px] font-bold leading-none flex items-center justify-center"><CartCount /></span>
             </button>
@@ -194,6 +196,7 @@ export const NatureHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions 
 };
 
 export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const { storeInfo, navigation } = useCmsStore();
   const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const footerAddress = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
@@ -205,7 +208,7 @@ export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
     ? ''
     : rawDesc;
 
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName.toUpperCase()}. HAK CIPTA DILINDUNGI.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName.toUpperCase()}. ${isEn ? 'ALL RIGHTS RESERVED.' : 'HAK CIPTA DILINDUNGI.'}`;
 
   const footerLinks = getNavMenuItems(sectionOptions);
 

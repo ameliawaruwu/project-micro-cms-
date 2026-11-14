@@ -5,6 +5,7 @@ import { InlineEditableText } from '../../../components/layout-editor/InlineEdit
 import { InlineEditableImage } from '../../../components/layout-editor/InlineEditableImage';
 import { AddToCartButton } from '../../storefrontCart';
 import { formatRupiah, productHref } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface ProductCardProps {
   product: CmsProduct;
@@ -13,6 +14,7 @@ interface ProductCardProps {
 }
 
 export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options = {}, readonly = false }) => {
+  const { isEn } = useLanguage();
   const updateProduct = useCmsStore(state => state.updateProduct);
 
   const showPrice = options.showPrice !== false;
@@ -95,7 +97,7 @@ export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options
             product={product}
             className="w-full min-w-0 whitespace-nowrap py-2 sm:py-2.5 px-2 sm:px-3 bg-[#2C3B2D] hover:bg-[#1E2A1F] text-[#F9F6F0] font-sans text-xs font-medium rounded-xl transition duration-200 flex items-center justify-center gap-1.5 shadow-2xs active:scale-98 cursor-pointer"
           >
-            <span>+ Keranjang</span>
+            <span>{isEn ? '+ Cart' : '+ Keranjang'}</span>
           </AddToCartButton>
         )}
       </div>

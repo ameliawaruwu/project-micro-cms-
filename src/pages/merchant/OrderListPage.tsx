@@ -27,7 +27,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
   onShowNotification,
   onNavigateDashboard,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [activeStatus, setActiveStatus] = useState<ShippingStatus | 'Semua'>('Semua');
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('all');
@@ -115,20 +115,20 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
-            aria-label="Filter metode pembayaran"
+            aria-label={isEn ? 'Filter payment method' : 'Filter metode pembayaran'}
             className="w-full sm:w-auto py-2 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs font-medium text-[#241A1A] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] truncate cursor-pointer"
           >
             <option value="all">{t('all_payments', 'Semua Bayar')}</option>
             <option value="QRIS">QRIS Instant</option>
             <option value="VA">Virtual Account</option>
-            <option value="Transfer">Transfer Bank</option>
+            <option value="Transfer">{isEn ? 'Bank Transfer' : 'Transfer Bank'}</option>
           </select>
 
           {/* Courier Filter */}
           <select
             value={courierFilter}
             onChange={(e) => setCourierFilter(e.target.value)}
-            aria-label="Filter kurir ekspedisi"
+            aria-label={isEn ? 'Filter courier' : 'Filter kurir ekspedisi'}
             className="w-full sm:w-auto py-2 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs font-medium text-[#241A1A] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] truncate cursor-pointer"
           >
             <option value="all">{t('all_couriers', 'Semua Kurir')}</option>

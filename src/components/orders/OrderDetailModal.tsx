@@ -109,28 +109,36 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   // Info driver & armada yang sinkron dengan kurir
   const driverInfo = isInstant
     ? {
-        name: courierLower.includes('grab') ? 'Mitra Driver GrabExpress' : 'Mitra Driver GoSend',
+        name: courierLower.includes('grab')
+          ? (isEn ? 'GrabExpress Driver Partner' : 'Mitra Driver GrabExpress')
+          : (isEn ? 'GoSend Driver Partner' : 'Mitra Driver GoSend'),
         plate: 'B 3481 SUT',
-        vehicleLabel: 'Kurir Sepeda Motor (Instant)',
-        statusDesc: `Kurir ${order?.courier} telah mengambil paket dari toko dan sedang melaju langsung ke alamat penerima.`,
+        vehicleLabel: isEn ? 'Motorbike Courier (Instant)' : 'Kurir Sepeda Motor (Instant)',
+        statusDesc: isEn
+          ? `${order?.courier} courier has picked up the package from the store and is heading straight to the recipient's address.`
+          : `Kurir ${order?.courier} telah mengambil paket dari toko dan sedang melaju langsung ke alamat penerima.`,
       }
     : isCargo
     ? {
-        name: `Driver Kargo (${order?.courier})`,
-        plate: 'B 9234 KRO (Truk CDE)',
-        vehicleLabel: 'Armada Truk / Mobil Box Kargo',
-        statusDesc: `Armada mobil box / truk ${order?.courier} dalam perjalanan mengantar muatan logistik ke lokasi.`,
+        name: isEn ? `Cargo Driver (${order?.courier})` : `Driver Kargo (${order?.courier})`,
+        plate: isEn ? 'B 9234 KRO (CDE Truck)' : 'B 9234 KRO (Truk CDE)',
+        vehicleLabel: isEn ? 'Cargo Truck / Box Van Fleet' : 'Armada Truk / Mobil Box Kargo',
+        statusDesc: isEn
+          ? `${order?.courier} box van / truck fleet is on the way delivering the logistics load to the destination.`
+          : `Armada mobil box / truk ${order?.courier} dalam perjalanan mengantar muatan logistik ke lokasi.`,
       }
     : {
-        name: `Kurir ${order?.courier} Express`,
+        name: isEn ? `${order?.courier} Express Courier` : `Kurir ${order?.courier} Express`,
         plate: 'D 4821 UTY (Honda Vario)',
-        vehicleLabel: 'Kurir Sepeda Motor (Rider Last-Mile)',
-        statusDesc: `Kurir motor ${order?.courier} sedang membawa paket Anda langsung menuju lokasi penerima.`,
+        vehicleLabel: isEn ? 'Motorbike Courier (Last-Mile Rider)' : 'Kurir Sepeda Motor (Rider Last-Mile)',
+        statusDesc: isEn
+          ? `${order?.courier} motorbike courier is carrying your package straight to the recipient's location.`
+          : `Kurir motor ${order?.courier} sedang membawa paket Anda langsung menuju lokasi penerima.`,
       };
 
   // Label alamat yang dinamis sesuai data order
-  const destinationLandmark = order?.customerAddress?.split(',')[0] || order?.customerCity || 'Lokasi Tujuan';
-  const destinationCityClean = order?.customerCity || 'Tujuan';
+  const destinationLandmark = order?.customerAddress?.split(',')[0] || order?.customerCity || (isEn ? 'Destination' : 'Lokasi Tujuan');
+  const destinationCityClean = order?.customerCity || (isEn ? 'Destination' : 'Tujuan');
 
   if (!isOpen || !order) return null;
 
@@ -138,7 +146,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     if (!order.resiNumber) return;
     navigator.clipboard.writeText(order.resiNumber);
     setCopiedResi(true);
-    if (onShowNotification) onShowNotification('Nomor resi berhasil disalin!');
+    if (onShowNotification) onShowNotification(isEn ? 'Tracking number copied!' : 'Nomor resi berhasil disalin!');
     setTimeout(() => setCopiedResi(false), 2000);
   };
 
@@ -146,6 +154,27 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const originCity = store?.city || 'Yogyakarta, DI Yogyakarta';
   const destinationAddress = `${order.customerAddress}, ${order.customerDistrict ? `${order.customerDistrict}, ` : ''}${order.customerCity}`;
   const biteshipTrackingUrl = generateTrackingLink(order.courier, order.resiNumber || '');
+
+  const shippingStatusLabel = (status: string): string => {
+    switch (status) {
+      case 'Baru':
+        return t('filter_new', 'Baru');
+      case 'Diproses':
+        return t('filter_processing', 'Diproses');
+      case 'Dikirim':
+        return t('filter_shipped', 'Dikirim');
+      case 'Selesai':
+        return t('filter_completed', 'Selesai');
+      case 'Dibatalkan':
+        return t('filter_cancelled', 'Dibatalkan');
+      case 'ready_to_ship':
+        return isEn ? 'Ready to Ship' : 'Siap Dikirim';
+      default:
+        return status;
+    }
+  };
+  const formatDateTimeEn = (value: string) =>
+    new Date(value).toLocaleString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs font-sans">
@@ -168,7 +197,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     ? 'bg-[#EFF8FF] text-[#175CD3] border-[#B2DDFF]'
                     : 'bg-[#FAF7F7] text-[#706866] border-[#E5E0DD]'
                 }`}>
-                  {order.shippingStatus}
+                  {shippingStatusLabel(order.shippingStatus)}
                 </span>
               </div>
               <p className="text-xs text-[#706866] mt-0.5">
@@ -199,12 +228,18 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 <Clock className={`w-5 h-5 shrink-0 ${order.paymentConfirmedAt ? 'text-amber-700' : 'text-[#706866]'}`} />
                 <div className="space-y-0.5">
                   <p className="text-sm font-bold text-[#241A1A]">
-                    {order.paymentConfirmedAt ? 'Pembeli sudah konfirmasi pembayaran' : 'Menunggu pembayaran pembeli'}
+                    {order.paymentConfirmedAt
+                      ? (isEn ? 'Buyer has confirmed payment' : 'Pembeli sudah konfirmasi pembayaran')
+                      : (isEn ? 'Awaiting buyer payment' : 'Menunggu pembayaran pembeli')}
                   </p>
                   <p className="text-xs text-[#706866] leading-relaxed">
                     {order.paymentConfirmedAt
-                      ? `Dikonfirmasi ${formatDateIndo(order.paymentConfirmedAt)}. Cek mutasi rekening / QRIS Anda sebesar ${formatRupiah(order.grandTotal)}, lalu tandai lunas.`
-                      : `Pembeli belum mengirim bukti pembayaran. Anda tetap bisa menandai lunas jika dana ${formatRupiah(order.grandTotal)} sudah masuk.`}
+                      ? (isEn
+                        ? `Confirmed ${formatDateTimeEn(order.paymentConfirmedAt)}. Check your bank / QRIS statement for ${formatRupiah(order.grandTotal)}, then mark it as paid.`
+                        : `Dikonfirmasi ${formatDateIndo(order.paymentConfirmedAt)}. Cek mutasi rekening / QRIS Anda sebesar ${formatRupiah(order.grandTotal)}, lalu tandai lunas.`)
+                      : (isEn
+                        ? `The buyer has not sent payment proof yet. You can still mark it as paid if ${formatRupiah(order.grandTotal)} has been received.`
+                        : `Pembeli belum mengirim bukti pembayaran. Anda tetap bisa menandai lunas jika dana ${formatRupiah(order.grandTotal)} sudah masuk.`)}
                   </p>
                 </div>
               </div>
@@ -223,7 +258,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   className="shrink-0 px-4 py-2.5 rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-70"
                 >
                   {isVerifyingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  <span>Tandai Lunas</span>
+                  <span>{isEn ? 'Mark as Paid' : 'Tandai Lunas'}</span>
                 </button>
               )}
             </div>
@@ -233,26 +268,28 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
           {proofUrl && (
             <div className="p-4 rounded-xl border bg-white border-[#E5E0DD] space-y-2.5">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-bold text-[#241A1A]">Bukti Pembayaran dari Pembeli</p>
+                <p className="text-sm font-bold text-[#241A1A]">{isEn ? 'Payment Proof from Buyer' : 'Bukti Pembayaran dari Pembeli'}</p>
                 <a
                   href={proofUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs font-semibold text-[#7A1D1D] hover:underline flex items-center gap-1"
                 >
-                  Buka ukuran penuh <ExternalLink className="w-3.5 h-3.5" />
+                  {isEn ? 'Open full size' : 'Buka ukuran penuh'} <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </div>
               <a href={proofUrl} target="_blank" rel="noopener noreferrer" className="block">
                 <img
                   src={proofUrl}
-                  alt={`Bukti pembayaran ${order.orderNumber}`}
+                  alt={isEn ? `Payment proof ${order.orderNumber}` : `Bukti pembayaran ${order.orderNumber}`}
                   className="max-h-80 w-full object-contain rounded-lg border border-[#E5E0DD] bg-[#FAF7F7]"
                 />
               </a>
               {!isPaid && (
                 <p className="text-xs text-[#706866]">
-                  Cocokkan nama pengirim, nominal {formatRupiah(order.grandTotal)}, dan waktu transfer dengan mutasi sebelum menandai lunas.
+                  {isEn
+                    ? `Match the sender name, amount ${formatRupiah(order.grandTotal)}, and transfer time with your statement before marking it as paid.`
+                    : `Cocokkan nama pengirim, nominal ${formatRupiah(order.grandTotal)}, dan waktu transfer dengan mutasi sebelum menandai lunas.`}
                 </p>
               )}
             </div>
@@ -263,9 +300,11 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             <div className="p-4 rounded-xl border bg-[#FAF7F7] border-[#E5E0DD] flex items-start gap-2.5">
               <Clock className="w-5 h-5 shrink-0 text-[#706866]" />
               <div className="space-y-0.5">
-                <p className="text-sm font-bold text-[#241A1A]">Pesanan COD menunggu konfirmasi Anda</p>
+                <p className="text-sm font-bold text-[#241A1A]">{isEn ? 'COD order awaiting your confirmation' : 'Pesanan COD menunggu konfirmasi Anda'}</p>
                 <p className="text-xs text-[#706866] leading-relaxed">
-                  {`Pastikan stok tersedia lalu konfirmasi pesanan sebelum mengatur pengiriman. Pembeli membayar ${formatRupiah(order.grandTotal)} saat barang tiba, dan pembayaran tercatat lunas otomatis ketika pesanan ditandai selesai.`}
+                  {isEn
+                    ? `Make sure the stock is available, then confirm the order before arranging shipping. The buyer pays ${formatRupiah(order.grandTotal)} on delivery, and the payment is recorded as paid automatically when the order is marked completed.`
+                    : `Pastikan stok tersedia lalu konfirmasi pesanan sebelum mengatur pengiriman. Pembeli membayar ${formatRupiah(order.grandTotal)} saat barang tiba, dan pembayaran tercatat lunas otomatis ketika pesanan ditandai selesai.`}
                 </p>
               </div>
             </div>
@@ -339,7 +378,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             {nextAction === 'verify_payment' ? (
               <span className="w-full sm:w-auto justify-center px-4 py-2.5 min-h-[42px] rounded-xl border border-amber-300 bg-amber-50 text-amber-800 font-semibold text-xs flex items-center gap-1.5">
                 <Clock className="w-4 h-4" />
-                <span>Tandai lunas dulu untuk mengirim</span>
+                <span>{isEn ? 'Mark as paid first to ship' : 'Tandai lunas dulu untuk mengirim'}</span>
               </span>
             ) : nextAction === 'confirm_cod' && onConfirmCodOrder ? (
               <button

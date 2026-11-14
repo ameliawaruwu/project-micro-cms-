@@ -3,6 +3,7 @@ import { Check, ShoppingBag } from 'lucide-react';
 import { cartService } from '../services/cartService';
 import { cmsProductToProduct } from '../cms/useCmsStore';
 import { Product } from '../types';
+import { isEnglishPreferred, useLanguage } from '../contexts/LanguageContext';
 
 /**
  * Konteks toko untuk komponen tema (navbar, kartu produk): slug toko dipakai sebagai kunci keranjang.
@@ -30,13 +31,21 @@ export function toCartProduct(product: any): Product {
 export function addProductToCart(storeSlug: string, product: any, quantity = 1): boolean {
   if (!product) return false;
   if (!storeSlug) {
-    notifyStorefront('Keranjang belum tersedia. Muat ulang halaman toko.');
+    notifyStorefront(
+      isEnglishPreferred()
+        ? 'Cart is not available yet. Reload the store page.'
+        : 'Keranjang belum tersedia. Muat ulang halaman toko.',
+    );
     return false;
   }
   const cartProduct = toCartProduct(product);
   cartService.addToCart(storeSlug, cartProduct, quantity);
   window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT));
-  notifyStorefront(`"${cartProduct.name}" berhasil ditambahkan ke keranjang`);
+  notifyStorefront(
+    isEnglishPreferred()
+      ? `"${cartProduct.name}" was added to your cart`
+      : `"${cartProduct.name}" berhasil ditambahkan ke keranjang`,
+  );
   return true;
 }
 
@@ -69,9 +78,10 @@ interface NavCartButtonProps {
  * CenterPreviewCanvas) dan menampilkan jumlah barang.
  */
 export const NavCartButton: React.FC<NavCartButtonProps> = ({ className = '', badgeClassName, children }) => {
+  const { isEn } = useLanguage();
   const count = useCartCount(useStorefrontSlug());
   return (
-    <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" title="Keranjang Belanja" className={`${/(^|\s)(absolute|fixed|sticky)(\s|$)/.test(className) ? '' : 'relative '}cursor-pointer ${className}`}>
+    <button type="button" data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'} title={isEn ? 'Shopping Cart' : 'Keranjang Belanja'} className={`${/(^|\s)(absolute|fixed|sticky)(\s|$)/.test(className) ? '' : 'relative '}cursor-pointer ${className}`}>
       {children ?? <ShoppingBag className="w-5 h-5" />}
       {count > 0 && (
         <span
@@ -96,6 +106,7 @@ interface AddToCartButtonProps {
 
 /** Tombol "tambah ke keranjang" untuk kartu produk tema. */
 export const AddToCartButton: React.FC<AddToCartButtonProps> = ({ product, className = '', style, children }) => {
+  const { isEn } = useLanguage();
   const storeSlug = useStorefrontSlug();
   return (
     <button
@@ -109,7 +120,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({ product, class
         addProductToCart(storeSlug, product, 1);
       }}
     >
-      {children ?? '+ Keranjang'}
+      {children ?? (isEn ? '+ Cart' : '+ Keranjang')}
     </button>
   );
 };

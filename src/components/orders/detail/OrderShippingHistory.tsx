@@ -1,7 +1,7 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
 import { Order, Store as StoreType } from '../../../types';
-import { formatDateIndo } from '../../../utils/formatters';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface OrderShippingHistoryProps {
   order: Order;
@@ -22,14 +22,23 @@ export const OrderShippingHistory: React.FC<OrderShippingHistoryProps> = ({
   destinationCityClean,
   originCity,
 }) => {
+  const { isEn } = useLanguage();
+  const formatOrderDate = (value: string | undefined | null): string => {
+    if (!value) return '';
+    try {
+      return new Intl.DateTimeFormat(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value));
+    } catch {
+      return value;
+    }
+  };
   return (
     <div className="p-3.5 sm:p-4 bg-white border-t border-[#E5E0DD] space-y-3 font-poppins">
       <div className="flex items-center justify-between">
         <span className="font-bold text-xs text-[#1F1F1F] flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5 text-[#66000E]" />
-          <span>Riwayat Perjalanan Kurir</span>
+          <span>{isEn ? 'Courier Trip History' : 'Riwayat Perjalanan Kurir'}</span>
         </span>
-        <span className="text-[10px] text-[#777777]">Pembaruan Terkini</span>
+        <span className="text-[10px] text-[#777777]">{isEn ? 'Latest Updates' : 'Pembaruan Terkini'}</span>
       </div>
 
       {/* Realistic Checkpoints */}
@@ -42,12 +51,20 @@ export const OrderShippingHistory: React.FC<OrderShippingHistoryProps> = ({
           <div>
             <div className="flex items-center justify-between">
               <span className="font-bold text-[#1F1F1F] text-xs flex items-center gap-1.5">
-                <span>{vehicleType === 'motor' ? '🛵 Kurir Motor Sedang Mengantar' : '🚐 Mobil Box Sedang Mengantar'}</span>
+                <span>{vehicleType === 'motor'
+                  ? (isEn ? '🛵 Motorbike Courier Delivering' : '🛵 Kurir Motor Sedang Mengantar')
+                  : (isEn ? '🚐 Box Van Delivering' : '🚐 Mobil Box Sedang Mengantar')}</span>
               </span>
-              <span className="text-[10px] text-[#777777]">Hari ini</span>
+              <span className="text-[10px] text-[#777777]">{isEn ? 'Today' : 'Hari ini'}</span>
             </div>
             <p className="text-[11px] text-[#555555] mt-0.5">
-              {order.shippingStatus === 'Selesai'
+              {isEn
+                ? order.shippingStatus === 'Selesai'
+                  ? `The package has been successfully handed over to ${order.customerName}.`
+                  : isInstant
+                  ? `${order.courier} courier is on the way delivering the order directly to ${destinationLandmark}, ${destinationCityClean}.`
+                  : `${order.courier} ${vehicleType === 'motor' ? 'motorbike' : 'box van'} courier is on the way to ${destinationLandmark}, ${destinationCityClean}.`
+                : order.shippingStatus === 'Selesai'
                 ? `Paket telah berhasil diserahterimakan kepada ${order.customerName}.`
                 : isInstant
                 ? `Kurir ${order.courier} sedang melaju mengantarkan pesanan langsung ke ${destinationLandmark}, ${destinationCityClean}.`
@@ -65,15 +82,19 @@ export const OrderShippingHistory: React.FC<OrderShippingHistoryProps> = ({
             <div className="flex items-center justify-between">
               <span className="font-semibold text-[#1F1F1F] text-xs">
                 {isInstant
-                  ? `Paket Selesai Di-Pickup oleh Kurir ${order.courier}`
-                  : `Tiba di Sorting Hub Gateway (${destinationCityClean})`}
+                  ? (isEn ? `Package Picked Up by ${order.courier} Courier` : `Paket Selesai Di-Pickup oleh Kurir ${order.courier}`)
+                  : (isEn ? `Arrived at Sorting Hub Gateway (${destinationCityClean})` : `Tiba di Sorting Hub Gateway (${destinationCityClean})`)}
               </span>
-              <span className="text-[10px] text-[#777777]">{formatDateIndo(order.createdAt).slice(0, 11)}</span>
+              <span className="text-[10px] text-[#777777]">{formatOrderDate(order.createdAt)}</span>
             </div>
             <p className="text-[11px] text-[#777777] mt-0.5">
               {isInstant
-                ? `Driver ${order.courier} telah mengambil paket dari toko ${store?.name || ''} dan mengonfirmasi penjemputan.`
-                : `Paket diangkut armada transit dan lolos sortir hub logistik untuk pengantaran last-mile.`}
+                ? (isEn
+                  ? `${order.courier} driver has picked up the package from ${store?.name || ''} and confirmed the pickup.`
+                  : `Driver ${order.courier} telah mengambil paket dari toko ${store?.name || ''} dan mengonfirmasi penjemputan.`)
+                : (isEn
+                  ? `The package was carried by the transit fleet and cleared hub sorting for last-mile delivery.`
+                  : `Paket diangkut armada transit dan lolos sortir hub logistik untuk pengantaran last-mile.`)}
             </p>
           </div>
         </div>
@@ -87,15 +108,15 @@ export const OrderShippingHistory: React.FC<OrderShippingHistoryProps> = ({
             <div className="flex items-center justify-between">
               <span className="font-semibold text-[#1F1F1F] text-xs">
                 {isInstant
-                  ? `Pesanan Diproses & Driver ${order.courier} Dialokasikan`
-                  : `Paket Diserahkan ke Gerai Kurir (${originCity.split(',')[0]})`}
+                  ? (isEn ? `Order Processed & ${order.courier} Driver Assigned` : `Pesanan Diproses & Driver ${order.courier} Dialokasikan`)
+                  : (isEn ? `Package Handed to Courier Outlet (${originCity.split(',')[0]})` : `Paket Diserahkan ke Gerai Kurir (${originCity.split(',')[0]})`)}
               </span>
-              <span className="text-[10px] text-[#777777]">{formatDateIndo(order.createdAt).slice(0, 11)}</span>
+              <span className="text-[10px] text-[#777777]">{formatOrderDate(order.createdAt)}</span>
             </div>
             <p className="text-[11px] text-[#777777] mt-0.5">
               {isInstant
-                ? `Sistem pengiriman langsung menghubungkan pesanan dengan kurir terdekat.`
-                : `Nomor resi resmi diterbitkan melalui integrasi sistem logistik.`}
+                ? (isEn ? `The instant delivery system matched the order with the nearest courier.` : `Sistem pengiriman langsung menghubungkan pesanan dengan kurir terdekat.`)
+                : (isEn ? `The official tracking number was issued through the logistics system integration.` : `Nomor resi resmi diterbitkan melalui integrasi sistem logistik.`)}
             </p>
           </div>
         </div>

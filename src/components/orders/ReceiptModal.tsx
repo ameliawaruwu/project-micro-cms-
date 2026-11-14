@@ -28,7 +28,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
 
   // Smart default: if order has resi, default to shipping label, else invoice A4
   const [format, setFormat] = useState<PrintFormat>(
@@ -42,7 +42,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   };
 
   const courierName = (order.courier || 'J&T').toUpperCase();
-  const courierService = order.courierService || 'EZ (Reguler)';
+  const courierService = order.courierService || (isEn ? 'EZ (Regular)' : 'EZ (Reguler)');
   const resiNumber = order.resiNumber || order.trackingNumber || 'AUTO-PICKUP';
   const isCOD = order.paymentMethod === 'COD';
 
@@ -58,6 +58,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             </div>
             <button
               onClick={onClose}
+              aria-label={isEn ? 'Close' : 'Tutup'}
               className="p-1.5 rounded-lg text-[#777777] hover:text-[#1F1F1F] hover:bg-[#EAEAEA] transition cursor-pointer"
             >
               <X className="w-4 h-4" />

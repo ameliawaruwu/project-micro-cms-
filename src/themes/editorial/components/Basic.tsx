@@ -12,8 +12,10 @@ import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { STORE_ROUTES } from '../../storefrontLinks';
 import { useThemeProductsSource } from '../../useSectionProducts';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const { storeInfo, navigation } = useCmsStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isDesktopPreview = !isMobile && !isTablet;
@@ -64,7 +66,7 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-1.5 -ml-1 text-gray-900 hover:text-gray-600 rounded-lg transition-colors cursor-pointer"
-            aria-label={mobileMenuOpen ? 'Tutup menu' : 'Buka menu'}
+            aria-label={mobileMenuOpen ? (isEn ? 'Close menu' : 'Tutup menu') : (isEn ? 'Open menu' : 'Buka menu')}
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -94,12 +96,12 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
             <button
               type="button"
               data-href="/katalog"
-              aria-label="Cari produk"
+              aria-label={isEn ? 'Search products' : 'Cari produk'}
               className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] hover:text-black transition-colors cursor-pointer"
-              title="Cari produk"
+              title={isEn ? 'Search products' : 'Cari produk'}
             >
               <Search className="w-4 h-4 text-gray-700" />
-              <span className="hidden lg:inline">Cari</span>
+              <span className="hidden lg:inline">{isEn ? 'Search' : 'Cari'}</span>
             </button>
           )}
 
@@ -107,14 +109,14 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
           <NavTrackOrderButton
             className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] hover:text-black transition-colors"
             iconClassName="w-4 h-4 text-gray-700"
-            label={<span className="hidden lg:inline">Lacak</span>}
+            label={<span className="hidden lg:inline">{isEn ? 'Track' : 'Lacak'}</span>}
           />
           {showCart && (
             <button
               type="button"
-              data-href="/keranjang" aria-label="Buka keranjang belanja"
+              data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'}
               className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] hover:text-black transition-colors relative cursor-pointer"
-              title="Keranjang Belanja"
+              title={isEn ? 'Shopping Cart' : 'Keranjang Belanja'}
             >
               <ShoppingBag className="w-4 h-4 text-gray-800" />
               <span className="w-4 h-4 rounded-full bg-black text-white text-[9px] font-bold flex items-center justify-center -ml-0.5">
@@ -233,6 +235,7 @@ export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
 };
 
 export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
   const rawTitle = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo?.name;
   const storeTitle = rawTitle;
@@ -240,7 +243,7 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolea
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const footerNavItems = getNavMenuItems(sectionOptions);
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle || ''}. Hak cipta dilindungi.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle || ''}. ${isEn ? 'All rights reserved.' : 'Hak cipta dilindungi.'}`;
   const footerFlexClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -267,7 +270,7 @@ export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolea
         <div className={`flex ${footerFlexClass} gap-8 md:gap-16 text-center mb-10`}>
           {address && (
             <div>
-              <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-3">Alamat</p>
+              <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-3">{isEn ? 'Address' : 'Alamat'}</p>
               <p className="text-xs uppercase tracking-widest text-gray-300 max-w-xs break-words">{address}</p>
             </div>
           )}

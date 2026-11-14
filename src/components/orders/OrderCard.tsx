@@ -36,7 +36,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   onSelectOrder,
   onShowNotification,
 }) => {
-  const { t, language } = useLanguage();
+  const { t, language, isEn } = useLanguage();
   const [copiedResi, setCopiedResi] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const nextAction = getMerchantOrderAction(order);
@@ -60,7 +60,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     if (!order.resiNumber) return;
     navigator.clipboard.writeText(order.resiNumber);
     setCopiedResi(true);
-    onShowNotification(`Nomor Resi ${order.resiNumber} berhasil disalin!`);
+    onShowNotification(isEn ? `Tracking number ${order.resiNumber} copied!` : `Nomor Resi ${order.resiNumber} berhasil disalin!`);
     setTimeout(() => setCopiedResi(false), 2000);
   };
 
@@ -81,6 +81,14 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       default:
         return status;
     }
+  };
+
+  const getPaymentStatusLabel = (status: string) => {
+    if (!isEn) return status;
+    if (status === 'Belum Dibayar') return 'Unpaid';
+    if (status === 'Sudah Dibayar') return 'Paid';
+    if (status === 'Gagal') return 'Failed';
+    return status;
   };
 
   const getStatusBadge = (status: string) => {
@@ -111,7 +119,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         <div
           onClick={() => onSelectOrder && onSelectOrder(order)}
           className={`flex items-center gap-1.5 sm:gap-2 min-w-0 ${onSelectOrder ? 'cursor-pointer group' : ''}`}
-          title={onSelectOrder ? 'Klik untuk melihat detail lengkap & tracking pesanan' : undefined}
+          title={onSelectOrder ? (isEn ? 'Click to view full order details & tracking' : 'Klik untuk melihat detail lengkap & tracking pesanan') : undefined}
         >
           <span className="font-bold text-xs sm:text-base text-[#241A1A] tracking-tight group-hover:text-[#66000E] transition shrink-0">
             #{order.orderNumber}
@@ -193,7 +201,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 <span className="text-[#555555] font-normal hidden sm:inline">{order.courier}</span>
               </div>
               <span className={`font-semibold border px-1.5 sm:px-2 py-0.5 rounded text-[10px] shrink-0 sm:hidden ${paymentBadgeClass}`}>
-                {isAwaitingPaymentCheck ? 'Perlu Dicek' : order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Lunas') : order.paymentStatus}
+                {isAwaitingPaymentCheck ? (isEn ? 'Needs Check' : 'Perlu Dicek') : order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Lunas') : getPaymentStatusLabel(order.paymentStatus)}
               </span>
             </div>
             <p className="text-[11px] text-[#555555] mt-0.5 line-clamp-1 sm:line-clamp-2">{order.customerAddress}</p>
@@ -203,7 +211,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           <div className="pt-2 border-t border-[#E5E0DD] hidden sm:flex items-center justify-between">
             <span className="font-semibold text-[#1F1F1F]">{t('courier_colon', 'Kurir:')} {order.courier}</span>
             <span className={`font-semibold border px-2 py-0.5 rounded-md text-[10px] ${paymentBadgeClass}`}>
-              {isAwaitingPaymentCheck ? 'Menunggu Pengecekan Bayar' : order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Sudah Dibayar') : (order.paymentStatus === 'Belum Dibayar' ? t('order_unpaid', 'Belum Dibayar') : order.paymentStatus)}
+              {isAwaitingPaymentCheck ? (isEn ? 'Awaiting Payment Check' : 'Menunggu Pengecekan Bayar') : order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Sudah Dibayar') : (order.paymentStatus === 'Belum Dibayar' ? t('order_unpaid', 'Belum Dibayar') : getPaymentStatusLabel(order.paymentStatus))}
             </span>
           </div>
         </div>
@@ -263,7 +271,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-xl border border-[#E8DDDE] bg-[#F5E8EA] text-[#66000E] hover:bg-[#F9EDEF] transition cursor-pointer"
-                title="Cetak Label Pengiriman"
+                title={isEn ? 'Print Shipping Label' : 'Cetak Label Pengiriman'}
               >
                 <Printer className="w-4 h-4" />
               </a>
@@ -271,7 +279,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <button
                 onClick={() => onPrintReceipt(order)}
                 className="p-2 rounded-xl border border-[#E5E0DD] bg-white text-[#706866] hover:bg-[#FAF7F7] transition cursor-pointer"
-                title="Cetak Struk"
+                title={isEn ? 'Print Receipt' : 'Cetak Struk'}
               >
                 <Printer className="w-4 h-4" />
               </button>
@@ -293,7 +301,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 px-3 py-2 min-h-[38px] rounded-xl border border-[#E8DDDE] bg-[#F5E8EA] text-[#66000E] hover:bg-[#F9EDEF] font-semibold text-xs transition cursor-pointer"
-                title="Cetak Label Pengiriman PDF (Biteship)"
+                title={isEn ? 'Print Shipping Label PDF (Biteship)' : 'Cetak Label Pengiriman PDF (Biteship)'}
               >
                 <Printer className="w-4 h-4" />
                 <span>{t('label_pdf', 'Label PDF')}</span>
@@ -302,7 +310,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <button
                 onClick={() => onPrintReceipt(order)}
                 className="p-2.5 rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer"
-                title="Cetak Struk Thermal / Label"
+                title={isEn ? 'Print Thermal Receipt / Label' : 'Cetak Struk Thermal / Label'}
               >
                 <Printer className="w-4 h-4" />
               </button>
@@ -314,7 +322,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             <button
               onClick={() => onSelectOrder(order)}
               className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-white hover:bg-[#FAF7F7] text-[#241A1A] font-semibold text-xs border border-[#E5E0DD] transition cursor-pointer shadow-2xs"
-              title="Lihat Detail Lengkap & Tracking"
+              title={isEn ? 'View Full Details & Tracking' : 'Lihat Detail Lengkap & Tracking'}
             >
               <Eye className="w-3.5 h-3.5 text-[#706866]" />
               <span>{t('detail_and_track', 'Detail & Lacak')}</span>
@@ -325,7 +333,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           {nextAction === 'verify_payment' ? (
             <button
               onClick={() => onSelectOrder?.(order)}
-              title="Tandai lunas dulu sebelum mengatur pengiriman"
+              title={isEn ? 'Mark as paid before arranging shipping' : 'Tandai lunas dulu sebelum mengatur pengiriman'}
               className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold text-xs transition cursor-pointer active:scale-98"
             >
               <Clock className="w-3.5 h-3.5" />

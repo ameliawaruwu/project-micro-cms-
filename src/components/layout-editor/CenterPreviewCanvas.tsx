@@ -57,6 +57,7 @@ import { StoreChromeContext, buildStoreChromeOptions } from '../../themes/pages/
 import { ShopPage, ProductDetailPage, CartPage, AboutPage, CheckoutPage, OrdersPage, ProfilePage, LoginPage, ContactPage, TrackOrderPage } from '../../themes/pages';
 import { loadGoogleFont } from '../../utils/fontLoader';
 import { stripDemoContactOptions } from '../../cms/useCmsStore';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const hasThemeComponent = (themeId: any, sectionId: string) => !!getThemeSectionComponent(themeId, sectionId);
 
@@ -146,6 +147,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 }) => {
   /** Device untuk komponen tema/halaman: undefined di storefront publik agar breakpoint asli berlaku. */
   const childDeviceMode = isLiveStorefront ? undefined : deviceMode;
+  const { isEn } = useLanguage();
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('Semua');
   const [searchPreviewQuery, setSearchPreviewQuery] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -572,7 +574,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
           customContent
         ) : visibleSections.length === 0 ? (
           <div className="py-24 text-center text-xs text-[#706866] p-6 space-y-2">
-            <p className="font-bold text-[#241A1A]">Toko sedang dalam perbaikan</p>
+            <p className="font-bold text-[#241A1A]">{isEn ? 'Store is under maintenance' : 'Toko sedang dalam perbaikan'}</p>
           </div>
         ) : (
           visibleSections.map((section, idx) => {
@@ -668,7 +670,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                       <Sparkles className="w-3 h-3 text-amber-300 animate-pulse shrink-0" />
                     )}
                     <InlineEditableText
-                      value={opts.announcementText || '✨ Toko Online Resmi UMKM • Pengiriman Aman ke Seluruh Indonesia'}
+                      value={opts.announcementText || (isEn ? '✨ Official MSME Online Store • Safe Shipping Across Indonesia' : '✨ Toko Online Resmi UMKM • Pengiriman Aman ke Seluruh Indonesia')}
                       onSave={() => {}}
                       className={`font-semibold text-center truncate ${isMobile ? 'text-[11px] max-w-[280px]' : 'text-xs max-w-xl'}`}
                       readonly={true}
@@ -767,7 +769,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           />
                           <input
                             type="text"
-                            placeholder="Cari produk..."
+                            placeholder={isEn ? 'Search products...' : 'Cari produk...'}
                             value={searchPreviewQuery}
                             onChange={(e) => setSearchPreviewQuery(e.target.value)}
                             className={`w-full pl-8 pr-3 py-1.5 text-xs rounded-xl transition ${
@@ -791,7 +793,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             style={opts.headerStyle !== 'brand' ? { backgroundColor: primaryAccent } : undefined}
                           >
                             <ShoppingBag className="w-3.5 h-3.5 stroke-[2.5]" />
-                            {isDesktop && <span>Keranjang</span>}
+                            {isDesktop && <span>{isEn ? 'Cart' : 'Keranjang'}</span>}
                             <span
                               className={`w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center ${
                                 opts.headerStyle === 'brand'
@@ -833,7 +835,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           />
                           <input
                             type="text"
-                            placeholder="Cari produk di toko..."
+                            placeholder={isEn ? 'Search products in store...' : 'Cari produk di toko...'}
                             value={searchPreviewQuery}
                             onChange={(e) => setSearchPreviewQuery(e.target.value)}
                             className={`w-full pl-8 pr-3 py-1.5 rounded-xl text-xs ${
@@ -855,7 +857,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                         }`}
                       >
                         <div className="text-[10px] font-bold uppercase tracking-wider opacity-70 mb-1">
-                          Menu Navigasi Mobile
+                          {isEn ? 'Mobile Navigation Menu' : 'Menu Navigasi Mobile'}
                         </div>
                         {(opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS).map((item, mIdx) => (
                           <div
@@ -935,7 +937,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-xs border border-white/30 text-amber-300">
                             <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
                             <InlineEditableText
-                              value={opts.badgeText || 'PROMO SPESIAL'}
+                              value={opts.badgeText || (isEn ? 'SPECIAL PROMO' : 'PROMO SPESIAL')}
                               onSave={() => {}}
                               className="text-amber-300"
                               readonly={true}
@@ -958,7 +960,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           opts.subheading ||
                           opts.description ||
                           store.tagline ||
-                          'Koleksi produk berkualitas langsung dari UMKM lokal Indonesia.'
+                          (isEn ? 'Quality products straight from local Indonesian MSMEs.' : 'Koleksi produk berkualitas langsung dari UMKM lokal Indonesia.')
                         }
                         onSave={() => {}}
                         className={`text-slate-100 leading-relaxed drop-shadow-xs block ${
@@ -978,7 +980,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                         }`}
                       >
                         <InlineEditableButton
-                          label={opts.buttonLabel || 'Jelajahi Produk'}
+                          label={opts.buttonLabel || (isEn ? 'Explore Products' : 'Jelajahi Produk')}
                           onSaveLabel={() => {}}
                           icon={<ArrowRight className="w-3.5 h-3.5 ml-1" />}
                           className={`rounded-xl font-bold text-xs text-white shadow-md flex items-center justify-center transition ${
@@ -989,7 +991,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                         />
                         {opts.secondaryButtonLabel && (
                           <InlineEditableButton
-                            label={opts.secondaryButtonLabel || 'Hubungi Kami'}
+                            label={opts.secondaryButtonLabel || (isEn ? 'Contact Us' : 'Hubungi Kami')}
                             onSaveLabel={() => {}}
                             icon={<MessageCircle className="w-3.5 h-3.5 mr-1 text-emerald-400" />}
                             iconPosition="left"
@@ -1016,7 +1018,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               type="text"
                               value={searchPreviewQuery}
                               onChange={(e) => setSearchPreviewQuery(e.target.value)}
-                              placeholder="Cari produk pilihan Anda..."
+                              placeholder={isEn ? 'Search for your favorite products...' : 'Cari produk pilihan Anda...'}
                               className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-[#E5E0DD] text-xs text-[#241A1A] placeholder-[#A8A09E] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
                             />
                           </div>
@@ -1042,7 +1044,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                 activeCategoryFilter === cat ? primaryAccent : undefined,
                             }}
                           >
-                            {cat}
+                            {cat === 'Semua' ? (isEn ? 'All' : 'Semua') : cat}
                           </button>
                         ))}
                       </div>
@@ -1059,20 +1061,20 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                         <div className="flex items-center gap-1.5">
                           <InlineEditableText
                             tagName="h3"
-                            value={opts.featuredTitle || '⭐ Produk Unggulan & Pilihan Toko'}
+                            value={opts.featuredTitle || (isEn ? '⭐ Featured & Store Picks' : '⭐ Produk Unggulan & Pilihan Toko')}
                             onSave={(val) => onUpdateSectionOptions(section.key || section.id, { featuredTitle: val })}
                             className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
                           />
                         </div>
                         <InlineEditableText
                           tagName="p"
-                          value={opts.featuredSubtitle || 'Produk pilihan terbaik dengan kualitas terjamin'}
+                          value={opts.featuredSubtitle || (isEn ? 'Top picks with guaranteed quality' : 'Produk pilihan terbaik dengan kualitas terjamin')}
                           onSave={(val) => onUpdateSectionOptions(section.key || section.id, { featuredSubtitle: val })}
                           className="text-[10px] sm:text-[11px] text-[#706866] mt-0.5 font-normal block"
                         />
                       </div>
                       <span className="text-[11px] sm:text-xs font-bold text-[#66000E] hover:underline flex items-center gap-0.5 shrink-0">
-                        <span>Lihat Semua</span>
+                        <span>{isEn ? 'View All' : 'Lihat Semua'}</span>
                         <ArrowRight className="w-3 h-3" />
                       </span>
                     </div>
@@ -1104,7 +1106,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                 referrerPolicy="no-referrer"
                               />
                               <span className="absolute top-1.5 left-1.5 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-xs">
-                                Unggulan
+                                {isEn ? 'Featured' : 'Unggulan'}
                               </span>
                             </div>
                             <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] line-clamp-1">
@@ -1118,7 +1120,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             type="button"
                             className="w-full mt-1.5 sm:mt-2 py-1 sm:py-1.5 rounded-xl text-[9px] sm:text-[10px] font-bold bg-[#FAF7F7] hover:bg-[#66000E] text-[#66000E] hover:text-white border border-[#E6DDDA] transition cursor-pointer"
                           >
-                            + Keranjang
+                            {isEn ? '+ Cart' : '+ Keranjang'}
                           </button>
                         </div>
                       ))}
@@ -1143,8 +1145,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">100% Produk Asli</h4>
-                          <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">Jaminan kualitas UMKM</p>
+                          <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">{isEn ? '100% Authentic Products' : '100% Produk Asli'}</h4>
+                          <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">{isEn ? 'MSME quality guarantee' : 'Jaminan kualitas UMKM'}</p>
                         </div>
                       </div>
 
@@ -1153,8 +1155,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">Pengiriman Cepat</h4>
-                          <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">Ekspedisi aman se-Indonesia</p>
+                          <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">{isEn ? 'Fast Shipping' : 'Pengiriman Cepat'}</h4>
+                          <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">{isEn ? 'Safe delivery across Indonesia' : 'Ekspedisi aman se-Indonesia'}</p>
                         </div>
                       </div>
 
@@ -1163,8 +1165,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           <HeartHandshake className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">Layanan Amanah</h4>
-                          <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">CS responsif via WA</p>
+                          <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">{isEn ? 'Trusted Service' : 'Layanan Amanah'}</h4>
+                          <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">{isEn ? 'Responsive support via WhatsApp' : 'CS responsif via WA'}</p>
                         </div>
                       </div>
                     </div>
@@ -1178,7 +1180,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                       <div>
                         <InlineEditableText
                           tagName="h3"
-                          value={opts.heading || 'Katalog Semua Produk'}
+                          value={opts.heading || (isEn ? 'All Products Catalog' : 'Katalog Semua Produk')}
                           onSave={(val) => onUpdateSectionOptions(section.key || section.id, { heading: val })}
                           className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
                         />
@@ -1203,7 +1205,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               }
                             }
                             return displayList.length;
-                          })()} produk siap dipesan
+                          })()}{isEn ? ' products ready to order' : ' produk siap dipesan'}
                         </p>
                       </div>
                     </div>
@@ -1232,7 +1234,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                       if (displayList.length === 0) {
                         return (
                           <div className="py-8 text-center text-xs text-[#706866] bg-[#FAF7F7] rounded-2xl border border-[#E5E0DD] p-4">
-                            Tidak ada produk pada kategori ini.
+                            {isEn ? 'No products in this category.' : 'Tidak ada produk pada kategori ini.'}
                           </div>
                         );
                       }
@@ -1273,12 +1275,12 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                   />
                                   {opts.showBadge !== false && p.isFeatured && (
                                     <span className="absolute top-1.5 left-1.5 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-xs">
-                                      Unggulan
+                                      {isEn ? 'Featured' : 'Unggulan'}
                                     </span>
                                   )}
                                   {opts.showStockBadge !== false && p.stock !== undefined && (
                                     <span className="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-white text-[8px] font-semibold px-1.5 py-0.5 rounded">
-                                      Stok {p.stock}
+                                      {isEn ? `Stock ${p.stock}` : `Stok ${p.stock}`}
                                     </span>
                                   )}
                                 </div>
@@ -1312,7 +1314,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                   className="w-full mt-1.5 sm:mt-2 py-1.5 rounded-xl text-[10px] font-bold bg-[#66000E] text-white hover:bg-[#801010] transition cursor-pointer"
                                   style={{ backgroundColor: primaryAccent }}
                                 >
-                                  + Beli Sekarang
+                                  {isEn ? '+ Buy Now' : '+ Beli Sekarang'}
                                 </button>
                               )}
                             </div>
@@ -1341,7 +1343,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                     {opts.discountBadge !== undefined && (
                       <span className="text-[9px] sm:text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-white text-[#241A1A] shadow-xs">
                         <InlineEditableText
-                          value={opts.discountBadge || 'DISKON HINGGA 50%'}
+                          value={opts.discountBadge || (isEn ? 'UP TO 50% OFF' : 'DISKON HINGGA 50%')}
                           onSave={() => {}}
                           className="text-[#241A1A]"
                           readonly={true}
@@ -1351,7 +1353,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
                     <InlineEditableText
                       tagName="h3"
-                      value={opts.heading || 'Penawaran Spesial Promo Hari Ini'}
+                      value={opts.heading || (isEn ? 'Today\'s Special Promo Offer' : 'Penawaran Spesial Promo Hari Ini')}
                       onSave={() => {}}
                       className={`font-extrabold tracking-tight block ${
                         isMobile ? 'text-sm sm:text-base leading-tight' : 'text-base sm:text-xl'
@@ -1361,14 +1363,14 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
                     <InlineEditableText
                       tagName="p"
-                      value={opts.description || 'Dapatkan potongan harga eksklusif untuk pesanan Anda hari ini.'}
+                      value={opts.description || (isEn ? 'Get exclusive discounts on your order today.' : 'Dapatkan potongan harga eksklusif untuk pesanan Anda hari ini.')}
                       onSave={() => {}}
                       className={`text-white/90 block ${isMobile ? 'text-[11px] max-w-xs' : 'text-xs max-w-md'}`}
                       readonly={true}
                     />
 
                     <InlineEditableButton
-                      label={opts.buttonLabel || 'Klaim Promo Sekarang'}
+                      label={opts.buttonLabel || (isEn ? 'Claim Promo Now' : 'Klaim Promo Sekarang')}
                       onSaveLabel={() => {}}
                       className={`mt-1.5 rounded-xl bg-white text-[#241A1A] font-bold text-xs hover:bg-[#FAF7F7] transition shadow-md ${
                         isMobile ? 'w-full py-2' : 'px-5 py-2'
@@ -1392,7 +1394,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                       </div>
                       <InlineEditableText
                         tagName="h3"
-                        value={opts.testimonialsTitle || 'Ulasan & Kepuasan Pelanggan'}
+                        value={opts.testimonialsTitle || (isEn ? 'Customer Reviews & Satisfaction' : 'Ulasan & Kepuasan Pelanggan')}
                         onSave={() => {}}
                         className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
                         readonly={true}
@@ -1438,7 +1440,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               />
                             </div>
                             <span className="text-[9px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold">
-                              Verified
+                              {isEn ? 'Verified' : 'Terverifikasi'}
                             </span>
                           </div>
                         </div>
@@ -1453,7 +1455,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                     {opts.incentiveBadge !== undefined && (
                       <span className="inline-block text-[9px] sm:text-[10px] font-bold text-[#66000E] bg-white px-2.5 py-0.5 rounded-full border border-[#E6DDDA]">
                         <InlineEditableText
-                          value={opts.incentiveBadge || 'DISCOUNT VOUCHER 10%'}
+                          value={opts.incentiveBadge || (isEn ? '10% DISCOUNT VOUCHER' : 'VOUCHER DISKON 10%')}
                           onSave={() => {}}
                           className="text-[#66000E]"
                           readonly={true}
@@ -1462,7 +1464,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                     )}
                     <InlineEditableText
                       tagName="h3"
-                      value={opts.newsletterTitle || 'Dapatkan Voucher & Info Promo'}
+                      value={opts.newsletterTitle || (isEn ? 'Get Vouchers & Promo Updates' : 'Dapatkan Voucher & Info Promo')}
                       onSave={() => {}}
                       className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
                       readonly={true}
@@ -1471,7 +1473,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                       tagName="p"
                       value={
                         opts.newsletterSubtitle ||
-                        'Daftarkan email Anda untuk menerima info diskon dan produk terbaru.'
+                        (isEn ? 'Sign up with your email to receive discount news and new products.' : 'Daftarkan email Anda untuk menerima info diskon dan produk terbaru.')
                       }
                       onSave={() => {}}
                       className="text-[11px] sm:text-xs text-[#706866] max-w-md mx-auto block"
@@ -1480,11 +1482,11 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                     <div className={`pt-1 ${isMobile ? 'flex flex-col gap-2 w-full max-w-xs mx-auto' : 'flex items-center gap-2 max-w-sm mx-auto'}`}>
                       <input
                         type="email"
-                        placeholder={opts.newsletterPlaceholder || 'Masukkan email Anda...'}
+                        placeholder={opts.newsletterPlaceholder || (isEn ? 'Enter your email...' : 'Masukkan email Anda...')}
                         className="flex-1 px-3 py-2 rounded-xl bg-white border border-[#E5E0DD] text-xs text-[#241A1A] focus:outline-none"
                       />
                       <InlineEditableButton
-                        label={opts.buttonText || 'Daftar'}
+                        label={opts.buttonText || (isEn ? 'Sign Up' : 'Daftar')}
                         onSaveLabel={() => {}}
                         className={`rounded-xl text-xs font-bold text-white shadow-2xs cursor-pointer shrink-0 ${
                           isMobile ? 'w-full py-2' : 'px-4 py-2'
@@ -1509,14 +1511,14 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                       <div className="space-y-1">
                         <h4 className="text-xs font-bold text-[#241A1A] flex items-center gap-1.5">
                           <MapPin className="w-3.5 h-3.5 text-[#66000E]" />
-                          <span>{opts.heading || 'Lokasi & Kontak Toko'}</span>
+                          <span>{opts.heading || (isEn ? 'Store Location & Contact' : 'Lokasi & Kontak Toko')}</span>
                         </h4>
                         <p className="text-[11px] text-[#5A5250]">
                           {opts.address || (store.address ? `${store.address}, ${store.city}` : store.city)}
                         </p>
                         <p className="text-[10px] text-[#706866] flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          <span>{opts.openingHours || 'Buka Setiap Hari: 08:00 - 20:00 WIB'}</span>
+                          <span>{opts.openingHours || (isEn ? 'Open Daily: 08:00 - 20:00 WIB' : 'Buka Setiap Hari: 08:00 - 20:00 WIB')}</span>
                         </p>
                       </div>
 
@@ -1530,7 +1532,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                     <div className="font-bold text-xs tracking-tight">{store.name}</div>
                     <InlineEditableText
                       tagName="p"
-                      value={opts.copyrightText || 'Hak Cipta Dilindungi Undang-Undang • Katalog Resmi UMKM Indonesia'}
+                      value={opts.copyrightText || (isEn ? 'All Rights Reserved • Official Indonesian MSME Catalog' : 'Hak Cipta Dilindungi Undang-Undang • Katalog Resmi UMKM Indonesia')}
                       onSave={() => {}}
                       className={`text-[#A8A09E] block max-w-xl mx-auto ${isMobile ? 'text-[9px]' : 'text-[10px]'}`}
                       readonly={true}
@@ -1616,7 +1618,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                  
                  <div className="flex-1 py-16 px-6">
                    <div className="max-w-7xl mx-auto">
-                     <h1 className="text-3xl font-bold mb-8 text-center text-gray-900">Katalog Produk</h1>
+                     <h1 className="text-3xl font-bold mb-8 text-center text-gray-900">{isEn ? 'Product Catalog' : 'Katalog Produk'}</h1>
                      
                      {/* Search & Categories */}
                      <div className="mb-12 space-y-6">
@@ -1626,7 +1628,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                            type="text"
                            value={searchPreviewQuery}
                            onChange={(e) => setSearchPreviewQuery(e.target.value)}
-                           placeholder="Cari produk..."
+                           placeholder={isEn ? 'Search products...' : 'Cari produk...'}
                            className="w-full pl-12 pr-4 py-3 rounded-full bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black"
                          />
                        </div>
@@ -1642,7 +1644,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                              }`}
                            >
-                             {cat}
+                             {cat === 'Semua' ? (isEn ? 'All' : 'Semua') : cat}
                            </button>
                          ))}
                        </div>
@@ -1688,8 +1690,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                </div>
             ) : visibleSections.length === 0 ? (
               <div className="py-24 text-center text-xs text-[#706866] p-6 space-y-2">
-                <p className="font-bold text-[#241A1A]">Semua Bagian Sedang Disembunyikan</p>
-                <p>Aktifkan kembali bagian toko pada panel kiri untuk menampilkan pratinjau.</p>
+                <p className="font-bold text-[#241A1A]">{isEn ? 'All Sections Are Hidden' : 'Semua Bagian Sedang Disembunyikan'}</p>
+                <p>{isEn ? 'Re-enable store sections in the left panel to show the preview.' : 'Aktifkan kembali bagian toko pada panel kiri untuk menampilkan pratinjau.'}</p>
               </div>
             ) : (
               visibleSections.map((section, idx) => {
@@ -1786,7 +1788,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             type="button"
                             onClick={() => onMoveSection(globalIndex, globalIndex - 1)}
                             className="p-1 rounded-lg hover:bg-white/20 text-white transition cursor-pointer"
-                            title="Pindah ke Atas"
+                            title={isEn ? 'Move Up' : 'Pindah ke Atas'}
                           >
                             <ArrowUp className="w-3.5 h-3.5" />
                           </button>
@@ -1798,7 +1800,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             type="button"
                             onClick={() => onMoveSection(globalIndex, globalIndex + 1)}
                             className="p-1 rounded-lg hover:bg-white/20 text-white transition cursor-pointer"
-                            title="Pindah ke Bawah"
+                            title={isEn ? 'Move Down' : 'Pindah ke Bawah'}
                           >
                             <ArrowDown className="w-3.5 h-3.5" />
                           </button>
@@ -1810,7 +1812,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             type="button"
                             onClick={() => onToggleVisibility(sectionKey)}
                             className="p-1 rounded-lg hover:bg-white/20 text-white transition cursor-pointer"
-                            title="Sembunyikan Bagian"
+                            title={isEn ? 'Hide Section' : 'Sembunyikan Bagian'}
                           >
                             <EyeOff className="w-3.5 h-3.5" />
                           </button>
@@ -1822,7 +1824,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             type="button"
                             onClick={() => onDeleteSection(sectionKey)}
                             className="p-1 rounded-lg hover:bg-red-500/40 text-red-300 transition cursor-pointer"
-                            title="Hapus Bagian"
+                            title={isEn ? 'Delete Section' : 'Hapus Bagian'}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1868,8 +1870,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           <Sparkles className="w-3 h-3 text-amber-300 animate-pulse shrink-0" />
                         )}
                         <InlineEditableText
-                          value={opts.announcementText || '✨ Toko Online Resmi UMKM • Pengiriman Aman ke Seluruh Indonesia'}
-                          placeholder="Teks pengumuman di sini..."
+                          value={opts.announcementText || (isEn ? '✨ Official MSME Online Store • Safe Shipping Across Indonesia' : '✨ Toko Online Resmi UMKM • Pengiriman Aman ke Seluruh Indonesia')}
+                          placeholder={isEn ? 'Announcement text here...' : 'Teks pengumuman di sini...'}
                           onSave={(newText) => handleUpdateOption(sectionKey, { announcementText: newText })}
                           className={`font-semibold text-center truncate ${isMobile ? 'text-[11px] max-w-[280px]' : 'text-xs max-w-xl'}`}
                           isSelected={isSelected}
@@ -1908,7 +1910,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                   alt={store.name}
                                   className="w-full h-full object-cover"
                                   containerClassName="w-full h-full"
-                                  title="Ganti Logo Toko"
+                                  title={isEn ? 'Change Store Logo' : 'Ganti Logo Toko'}
                                   onUpdateImage={(newLogo) => {
                                     if (onUpdateStore) onUpdateStore({ logoUrl: newLogo });
                                   }}
@@ -1920,7 +1922,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             <div className="min-w-0">
                               <InlineEditableText
                                 value={store.name}
-                                placeholder="Nama Toko..."
+                                placeholder={isEn ? 'Store Name...' : 'Nama Toko...'}
                                 onSave={(newName) => {
                                   if (onUpdateStore) onUpdateStore({ name: newName });
                                 }}
@@ -1989,7 +1991,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               />
                               <input
                                 type="text"
-                                placeholder="Cari produk..."
+                                placeholder={isEn ? 'Search products...' : 'Cari produk...'}
                                 value={searchPreviewQuery}
                                 onChange={(e) => setSearchPreviewQuery(e.target.value)}
                                 className={`w-full pl-8 pr-3 py-1.5 text-xs rounded-xl transition ${
@@ -2016,7 +2018,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                 style={opts.headerStyle !== 'brand' ? { backgroundColor: primaryAccent } : undefined}
                               >
                                 <ShoppingBag className="w-3.5 h-3.5 stroke-[2.5]" />
-                                {isDesktop && <span>Keranjang</span>}
+                                {isDesktop && <span>{isEn ? 'Cart' : 'Keranjang'}</span>}
                                 <span
                                   className={`w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center ${
                                     opts.headerStyle === 'brand'
@@ -2042,7 +2044,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                     ? 'text-white border-white/30 hover:bg-white/15'
                                     : 'text-[#4A4240] border-[#E5E0DD] hover:bg-[#FAF7F7]'
                                 }`}
-                                title="Menu Navigasi Mobile"
+                                title={isEn ? 'Mobile Navigation Menu' : 'Menu Navigasi Mobile'}
                               >
                                 {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
                               </button>
@@ -2061,7 +2063,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               />
                               <input
                                 type="text"
-                                placeholder="Cari produk di toko..."
+                                placeholder={isEn ? 'Search products in store...' : 'Cari produk di toko...'}
                                 value={searchPreviewQuery}
                                 onChange={(e) => setSearchPreviewQuery(e.target.value)}
                                 className={`w-full pl-8 pr-3 py-1.5 rounded-xl text-xs ${
@@ -2085,7 +2087,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="text-[10px] font-bold uppercase tracking-wider opacity-70 mb-1">
-                              Menu Navigasi Mobile
+                              {isEn ? 'Mobile Navigation Menu' : 'Menu Navigasi Mobile'}
                             </div>
                             {(opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS).map((item, mIdx) => (
                               <div
@@ -2136,7 +2138,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             alt={store.name}
                             className="w-full h-full object-cover"
                             containerClassName="w-full h-full absolute inset-0"
-                            title="Ganti Background Banner"
+                            title={isEn ? 'Change Banner Background' : 'Ganti Background Banner'}
                             onUpdateImage={(newImg) => handleUpdateOption(sectionKey, { imageUrl: newImg })}
                             isSelected={isSelected}
                             readonly={readonly}
@@ -2172,8 +2174,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-xs border border-white/30 text-amber-300">
                                 <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
                                 <InlineEditableText
-                                  value={opts.badgeText || 'PROMO SPESIAL'}
-                                  placeholder="Teks Badge"
+                                  value={opts.badgeText || (isEn ? 'SPECIAL PROMO' : 'PROMO SPESIAL')}
+                                  placeholder={isEn ? 'Badge Text' : 'Teks Badge'}
                                   onSave={(newBadge) => handleUpdateOption(sectionKey, { badgeText: newBadge })}
                                   className="text-amber-300"
                                   isSelected={isSelected}
@@ -2185,7 +2187,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           <InlineEditableText
                             tagName="h1"
                             value={opts.heading || store.name}
-                            placeholder="Judul Utama Banner..."
+                            placeholder={isEn ? 'Main Banner Title...' : 'Judul Utama Banner...'}
                             onSave={(newHeading) => handleUpdateOption(sectionKey, { heading: newHeading })}
                             className={`font-extrabold tracking-tight text-white leading-tight drop-shadow-sm block ${
                               isMobile ? 'text-lg leading-snug' : isTablet ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'
@@ -2199,9 +2201,9 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               opts.subheading ||
                               opts.description ||
                               store.tagline ||
-                              'Koleksi produk berkualitas langsung dari UMKM lokal Indonesia.'
+                              (isEn ? 'Quality products straight from local Indonesian MSMEs.' : 'Koleksi produk berkualitas langsung dari UMKM lokal Indonesia.')
                             }
-                            placeholder="Deskripsi atau subjudul banner..."
+                            placeholder={isEn ? 'Banner description or subtitle...' : 'Deskripsi atau subjudul banner...'}
                             multiline
                             onSave={(newSub) => handleUpdateOption(sectionKey, { subheading: newSub, description: newSub })}
                             className={`text-slate-100 leading-relaxed drop-shadow-xs block ${
@@ -2223,7 +2225,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             }`}
                           >
                             <InlineEditableButton
-                              label={opts.buttonLabel || 'Jelajahi Produk'}
+                              label={opts.buttonLabel || (isEn ? 'Explore Products' : 'Jelajahi Produk')}
                               onSaveLabel={(newLabel) => handleUpdateOption(sectionKey, { buttonLabel: newLabel })}
                               icon={<ArrowRight className="w-3.5 h-3.5 ml-1" />}
                               className={`rounded-xl font-bold text-xs text-white shadow-md flex items-center justify-center transition ${
@@ -2235,7 +2237,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
                             {opts.secondaryButtonLabel && (
                               <InlineEditableButton
-                                label={opts.secondaryButtonLabel || 'Hubungi Kami'}
+                                label={opts.secondaryButtonLabel || (isEn ? 'Contact Us' : 'Hubungi Kami')}
                                 onSaveLabel={(newSec) => handleUpdateOption(sectionKey, { secondaryButtonLabel: newSec })}
                                 icon={<MessageCircle className="w-3.5 h-3.5 mr-1 text-emerald-400" />}
                                 iconPosition="left"
@@ -2262,7 +2264,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                   type="text"
                                   value={searchPreviewQuery}
                                   onChange={(e) => setSearchPreviewQuery(e.target.value)}
-                                  placeholder="Cari produk pilihan Anda..."
+                                  placeholder={isEn ? 'Search for your favorite products...' : 'Cari produk pilihan Anda...'}
                                   className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-[#E5E0DD] text-xs text-[#241A1A] placeholder-[#A8A09E] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"
                                 />
                               </div>
@@ -2289,7 +2291,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                       activeCategoryFilter === cat ? primaryAccent : undefined,
                                   }}
                                 >
-                                  {cat}
+                                  {cat === 'Semua' ? (isEn ? 'All' : 'Semua') : cat}
                                 </button>
                               ))}
                             </div>
@@ -2306,8 +2308,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             <div className="flex items-center gap-1.5">
                               <InlineEditableText
                                 tagName="h3"
-                                value={opts.featuredTitle || '⭐ Produk Unggulan & Pilihan Toko'}
-                                placeholder="Judul Bagian Unggulan"
+                                value={opts.featuredTitle || (isEn ? '⭐ Featured & Store Picks' : '⭐ Produk Unggulan & Pilihan Toko')}
+                                placeholder={isEn ? 'Featured Section Title' : 'Judul Bagian Unggulan'}
                                 onSave={(newTitle) => handleUpdateOption(sectionKey, { featuredTitle: newTitle })}
                                 className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
                                 isSelected={isSelected}
@@ -2315,15 +2317,15 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                             </div>
                             <InlineEditableText
                               tagName="p"
-                              value={opts.featuredSubtitle || 'Produk pilihan terbaik dengan kualitas terjamin'}
-                              placeholder="Subjudul Bagian Unggulan"
+                              value={opts.featuredSubtitle || (isEn ? 'Top picks with guaranteed quality' : 'Produk pilihan terbaik dengan kualitas terjamin')}
+                              placeholder={isEn ? 'Featured Section Subtitle' : 'Subjudul Bagian Unggulan'}
                               onSave={(newSub) => handleUpdateOption(sectionKey, { featuredSubtitle: newSub })}
                               className="text-[10px] sm:text-[11px] text-[#706866] mt-0.5 font-normal block"
                               isSelected={isSelected}
                             />
                           </div>
                           <span className="text-[11px] sm:text-xs font-bold text-[#66000E] hover:underline flex items-center gap-0.5 shrink-0">
-                            <span>Lihat Semua</span>
+                            <span>{isEn ? 'View All' : 'Lihat Semua'}</span>
                             <ArrowRight className="w-3 h-3" />
                           </span>
                         </div>
@@ -2356,7 +2358,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                     referrerPolicy="no-referrer"
                                   />
                                   <span className="absolute top-1.5 left-1.5 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-xs">
-                                    Unggulan
+                                    {isEn ? 'Featured' : 'Unggulan'}
                                   </span>
                                 </div>
                                 <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] line-clamp-1">
@@ -2371,7 +2373,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                 type="button"
                                 className="w-full mt-1.5 sm:mt-2 py-1 sm:py-1.5 rounded-xl text-[9px] sm:text-[10px] font-bold bg-[#FAF7F7] hover:bg-[#66000E] text-[#66000E] hover:text-white border border-[#E6DDDA] transition cursor-pointer"
                               >
-                                + Keranjang
+                                {isEn ? '+ Cart' : '+ Keranjang'}
                               </button>
                             </div>
                           ))}
@@ -2396,8 +2398,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
                             </div>
                             <div className="min-w-0">
-                              <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">100% Produk Asli</h4>
-                              <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">Jaminan kualitas UMKM</p>
+                              <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">{isEn ? '100% Authentic Products' : '100% Produk Asli'}</h4>
+                              <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">{isEn ? 'MSME quality guarantee' : 'Jaminan kualitas UMKM'}</p>
                             </div>
                           </div>
 
@@ -2406,8 +2408,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
                             </div>
                             <div className="min-w-0">
-                              <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">Pengiriman Cepat</h4>
-                              <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">Ekspedisi aman se-Indonesia</p>
+                              <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">{isEn ? 'Fast Shipping' : 'Pengiriman Cepat'}</h4>
+                              <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">{isEn ? 'Safe delivery across Indonesia' : 'Ekspedisi aman se-Indonesia'}</p>
                             </div>
                           </div>
 
@@ -2416,8 +2418,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               <HeartHandshake className="w-4 h-4 sm:w-5 sm:h-5" />
                             </div>
                             <div className="min-w-0">
-                              <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">Layanan Amanah</h4>
-                              <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">CS responsif via WA</p>
+                              <h4 className="text-[11px] sm:text-xs font-bold text-[#241A1A] truncate">{isEn ? 'Trusted Service' : 'Layanan Amanah'}</h4>
+                              <p className="text-[9px] sm:text-[10px] text-[#706866] truncate">{isEn ? 'Responsive support via WhatsApp' : 'CS responsif via WA'}</p>
                             </div>
                           </div>
                         </div>
@@ -2431,21 +2433,21 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           <div>
                             <InlineEditableText
                               tagName="h3"
-                              value={opts.heading || 'Katalog Semua Produk'}
-                              placeholder="Judul Katalog Produk"
+                              value={opts.heading || (isEn ? 'All Products Catalog' : 'Katalog Semua Produk')}
+                              placeholder={isEn ? 'Product Catalog Title' : 'Judul Katalog Produk'}
                               onSave={(newHeading) => handleUpdateOption(sectionKey, { heading: newHeading })}
                               className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
                               isSelected={isSelected}
                             />
                             <p className="text-[10px] sm:text-[11px] text-[#706866]">
-                              {filteredProducts.length} produk siap dipesan
+                              {isEn ? `${filteredProducts.length} products ready to order` : `${filteredProducts.length} produk siap dipesan`}
                             </p>
                           </div>
                         </div>
 
                         {filteredProducts.length === 0 ? (
                           <div className="py-8 text-center text-xs text-[#706866] bg-[#FAF7F7] rounded-2xl border border-[#E5E0DD] p-4">
-                            Tidak ada produk pada kategori ini.
+                            {isEn ? 'No products in this category.' : 'Tidak ada produk pada kategori ini.'}
                           </div>
                         ) : (
                           <div
@@ -2476,7 +2478,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                     />
                                     {opts.showStockBadge !== false && (
                                       <span className="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-white text-[8px] font-semibold px-1.5 py-0.5 rounded">
-                                        Stok {p.stock}
+                                        {isEn ? `Stock ${p.stock}` : `Stok ${p.stock}`}
                                       </span>
                                     )}
                                   </div>
@@ -2493,7 +2495,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                   className="w-full mt-1.5 sm:mt-2 py-1.5 rounded-xl text-[10px] font-bold bg-[#66000E] text-white hover:bg-[#801010] transition cursor-pointer"
                                   style={{ backgroundColor: primaryAccent }}
                                 >
-                                  Beli Sekarang
+                                  {isEn ? 'Buy Now' : 'Beli Sekarang'}
                                 </button>
                               </div>
                             ))}
@@ -2520,8 +2522,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                         {opts.discountBadge !== undefined && (
                           <span className="text-[9px] sm:text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-white text-[#241A1A] shadow-xs">
                             <InlineEditableText
-                              value={opts.discountBadge || 'DISKON HINGGA 50%'}
-                              placeholder="Badge Diskon"
+                              value={opts.discountBadge || (isEn ? 'UP TO 50% OFF' : 'DISKON HINGGA 50%')}
+                              placeholder={isEn ? 'Discount Badge' : 'Badge Diskon'}
                               onSave={(newBadge) => handleUpdateOption(sectionKey, { discountBadge: newBadge })}
                               className="text-[#241A1A]"
                               isSelected={isSelected}
@@ -2531,8 +2533,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
                         <InlineEditableText
                           tagName="h3"
-                          value={opts.heading || 'Penawaran Spesial Promo Hari Ini'}
-                          placeholder="Judul Banner Promo"
+                          value={opts.heading || (isEn ? 'Today\'s Special Promo Offer' : 'Penawaran Spesial Promo Hari Ini')}
+                          placeholder={isEn ? 'Promo Banner Title' : 'Judul Banner Promo'}
                           onSave={(newHeading) => handleUpdateOption(sectionKey, { heading: newHeading })}
                           className={`font-extrabold tracking-tight block ${
                             isMobile ? 'text-sm sm:text-base leading-tight' : 'text-base sm:text-xl'
@@ -2542,8 +2544,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
                         <InlineEditableText
                           tagName="p"
-                          value={opts.description || 'Dapatkan potongan harga eksklusif untuk pesanan Anda hari ini.'}
-                          placeholder="Deskripsi promo..."
+                          value={opts.description || (isEn ? 'Get exclusive discounts on your order today.' : 'Dapatkan potongan harga eksklusif untuk pesanan Anda hari ini.')}
+                          placeholder={isEn ? 'Promo description...' : 'Deskripsi promo...'}
                           multiline
                           onSave={(newDesc) => handleUpdateOption(sectionKey, { description: newDesc })}
                           className={`text-white/90 block ${isMobile ? 'text-[11px] max-w-xs' : 'text-xs max-w-md'}`}
@@ -2551,7 +2553,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                         />
 
                         <InlineEditableButton
-                          label={opts.buttonLabel || 'Klaim Promo Sekarang'}
+                          label={opts.buttonLabel || (isEn ? 'Claim Promo Now' : 'Klaim Promo Sekarang')}
                           onSaveLabel={(newBtn) => handleUpdateOption(sectionKey, { buttonLabel: newBtn })}
                           className={`mt-1.5 rounded-xl bg-white text-[#241A1A] font-bold text-xs hover:bg-[#FAF7F7] transition shadow-md ${
                             isMobile ? 'w-full py-2' : 'px-5 py-2'
@@ -2575,8 +2577,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           </div>
                           <InlineEditableText
                             tagName="h3"
-                            value={opts.testimonialsTitle || 'Ulasan & Kepuasan Pelanggan'}
-                            placeholder="Judul Testimoni"
+                            value={opts.testimonialsTitle || (isEn ? 'Customer Reviews & Satisfaction' : 'Ulasan & Kepuasan Pelanggan')}
+                            placeholder={isEn ? 'Testimonials Title' : 'Judul Testimoni'}
                             onSave={(newTitle) => handleUpdateOption(sectionKey, { testimonialsTitle: newTitle })}
                             className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
                             isSelected={isSelected}
@@ -2600,7 +2602,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                               <InlineEditableText
                                 tagName="p"
                                 value={t.comment}
-                                placeholder="Tuliskan testimoni pembeli..."
+                                placeholder={isEn ? 'Write a buyer\'s testimonial...' : 'Tuliskan testimoni pembeli...'}
                                 multiline
                                 onSave={(newComment) => {
                                   const updatedList = [...(opts.testimonialsList || [])];
@@ -2617,7 +2619,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                   <InlineEditableText
                                     tagName="div"
                                     value={t.name}
-                                    placeholder="Nama Pembeli"
+                                    placeholder={isEn ? 'Buyer Name' : 'Nama Pembeli'}
                                     onSave={(newName) => {
                                       const updatedList = [...(opts.testimonialsList || [])];
                                       if (updatedList[tIdx]) {
@@ -2631,7 +2633,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                   <InlineEditableText
                                     tagName="div"
                                     value={t.location}
-                                    placeholder="Kota / Asal"
+                                    placeholder={isEn ? 'City / Origin' : 'Kota / Asal'}
                                     onSave={(newLoc) => {
                                       const updatedList = [...(opts.testimonialsList || [])];
                                       if (updatedList[tIdx]) {
@@ -2644,7 +2646,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                                   />
                                 </div>
                                 <span className="text-[9px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold">
-                                  Verified
+                                  {isEn ? 'Verified' : 'Terverifikasi'}
                                 </span>
                               </div>
                             </div>
@@ -2659,8 +2661,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                         {opts.incentiveBadge !== undefined && (
                           <span className="inline-block text-[9px] sm:text-[10px] font-bold text-[#66000E] bg-white px-2.5 py-0.5 rounded-full border border-[#E6DDDA]">
                             <InlineEditableText
-                              value={opts.incentiveBadge || 'DISCOUNT VOUCHER 10%'}
-                              placeholder="Badge Insentif"
+                              value={opts.incentiveBadge || (isEn ? '10% DISCOUNT VOUCHER' : 'VOUCHER DISKON 10%')}
+                              placeholder={isEn ? 'Incentive Badge' : 'Badge Insentif'}
                               onSave={(newBadge) => handleUpdateOption(sectionKey, { incentiveBadge: newBadge })}
                               className="text-[#66000E]"
                               isSelected={isSelected}
@@ -2669,8 +2671,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                         )}
                         <InlineEditableText
                           tagName="h3"
-                          value={opts.newsletterTitle || 'Dapatkan Voucher & Info Promo'}
-                          placeholder="Judul Newsletter"
+                          value={opts.newsletterTitle || (isEn ? 'Get Vouchers & Promo Updates' : 'Dapatkan Voucher & Info Promo')}
+                          placeholder={isEn ? 'Newsletter Title' : 'Judul Newsletter'}
                           onSave={(newTitle) => handleUpdateOption(sectionKey, { newsletterTitle: newTitle })}
                           className={`font-bold text-[#241A1A] block ${isMobile ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
                           isSelected={isSelected}
@@ -2679,9 +2681,9 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           tagName="p"
                           value={
                             opts.newsletterSubtitle ||
-                            'Daftarkan email Anda untuk menerima info diskon dan produk terbaru.'
+                            (isEn ? 'Sign up with your email to receive discount news and new products.' : 'Daftarkan email Anda untuk menerima info diskon dan produk terbaru.')
                           }
-                          placeholder="Subjudul newsletter..."
+                          placeholder={isEn ? 'Newsletter subtitle...' : 'Subjudul newsletter...'}
                           multiline
                           onSave={(newSub) => handleUpdateOption(sectionKey, { newsletterSubtitle: newSub })}
                           className="text-[11px] sm:text-xs text-[#706866] max-w-md mx-auto block"
@@ -2690,11 +2692,11 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                         <div className={`pt-1 ${isMobile ? 'flex flex-col gap-2 w-full max-w-xs mx-auto' : 'flex items-center gap-2 max-w-sm mx-auto'}`}>
                           <input
                             type="email"
-                            placeholder={opts.newsletterPlaceholder || 'Masukkan email Anda...'}
+                            placeholder={opts.newsletterPlaceholder || (isEn ? 'Enter your email...' : 'Masukkan email Anda...')}
                             className="flex-1 px-3 py-2 rounded-xl bg-white border border-[#E5E0DD] text-xs text-[#241A1A] focus:outline-none"
                           />
                           <InlineEditableButton
-                            label={opts.buttonText || 'Daftar'}
+                            label={opts.buttonText || (isEn ? 'Sign Up' : 'Daftar')}
                             onSaveLabel={(newBtn) => handleUpdateOption(sectionKey, { buttonText: newBtn })}
                             className={`rounded-xl text-xs font-bold text-white shadow-2xs cursor-pointer shrink-0 ${
                               isMobile ? 'w-full py-2' : 'px-4 py-2'
@@ -2719,14 +2721,14 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                           <div className="space-y-1">
                             <h4 className="text-xs font-bold text-[#241A1A] flex items-center gap-1.5">
                               <MapPin className="w-3.5 h-3.5 text-[#66000E]" />
-                              <span>{opts.heading || 'Lokasi & Kontak Toko'}</span>
+                              <span>{opts.heading || (isEn ? 'Store Location & Contact' : 'Lokasi & Kontak Toko')}</span>
                             </h4>
                             <p className="text-[11px] text-[#5A5250]">
                               {opts.address || (store.address ? `${store.address}, ${store.city}` : store.city)}
                             </p>
                             <p className="text-[10px] text-[#706866] flex items-center gap-1">
                               <Clock className="w-3 h-3" />
-                              <span>{opts.openingHours || 'Buka Setiap Hari: 08:00 - 20:00 WIB'}</span>
+                              <span>{opts.openingHours || (isEn ? 'Open Daily: 08:00 - 20:00 WIB' : 'Buka Setiap Hari: 08:00 - 20:00 WIB')}</span>
                             </p>
                           </div>
 
@@ -2750,7 +2752,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                         <InlineEditableText
                           tagName="p"
                           value={opts.copyrightText || `© ${new Date().getFullYear()} ${opts.storeName || opts.heading || store.name}. All rights reserved.`}
-                          placeholder="Teks Hak Cipta Footer..."
+                          placeholder={isEn ? 'Footer copyright text...' : 'Teks Hak Cipta Footer...'}
                           onSave={(newCopy) => handleUpdateOption(sectionKey, { copyrightText: newCopy })}
                           className={`text-[#A8A09E] block max-w-xl mx-auto pt-2 text-[10px]`}
                           isSelected={isSelected}
@@ -2778,7 +2780,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
             const showCart = getHeaderDisplay(headerOpts).showCart && !hasCartMenu;
             const menuItems = navItems.slice(0, showCart ? BOTTOM_NAV_MAX_ITEMS - 1 : BOTTOM_NAV_MAX_ITEMS);
             const items = showCart
-              ? [...menuItems, { id: 'bottom-nav-cart', label: 'Keranjang', route: '/keranjang', page: 'cart', Icon: ShoppingBag }]
+              ? [...menuItems, { id: 'bottom-nav-cart', label: isEn ? 'Cart' : 'Keranjang', route: '/keranjang', page: 'cart', Icon: ShoppingBag }]
               : menuItems;
             // Menu aktif = yang menuju halaman yang sedang dipratinjau; beranda bila tidak ada.
             const activeId =
@@ -2796,7 +2798,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                 ? '0 0 0 1px var(--sf-border), 0 12px 32px -8px color-mix(in srgb, var(--sf-primary) 45%, transparent)'
                 : '0 12px 32px -8px color-mix(in srgb, var(--sf-primary) 28%, transparent), 0 2px 6px rgba(0,0,0,0.06)';
             return (
-              <nav aria-label="Navigasi menu" className="relative h-0 shrink-0 z-30" style={getStorefrontThemeVars(activeThemeId, primaryAccent)}>
+              <nav aria-label={isEn ? 'Navigation menu' : 'Navigasi menu'} className="relative h-0 shrink-0 z-30" style={getStorefrontThemeVars(activeThemeId, primaryAccent)}>
                 <ul
                   className={`absolute inset-x-3 bottom-3 flex items-center gap-1 p-1.5 backdrop-blur-xl select-none ${shapeClass} ${variant.brutal ? 'border-2' : 'border'}`}
                   style={{

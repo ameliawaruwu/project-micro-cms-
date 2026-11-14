@@ -2,6 +2,7 @@ import React from 'react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
 import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Galeri foto produk toko bergaya masonry; tidak dirender bila belum ada foto produk. */
 export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -72,6 +73,7 @@ export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boole
 
 /** Sorotan satu produk toko dengan gaya kartu miring; tidak dirender tanpa gambar. */
 export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const products = useThemeProductsSource('creative');
   const product = products.find((p) => p.isFeatured && p.image) || products.find((p) => p.image) || products[0];
   const image = resolveSectionImage(sectionOptions) || product?.image;
@@ -126,7 +128,7 @@ export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile
                 href={STORE_ROUTES.catalog}
                 className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 border-2 border-white rounded-full font-bold uppercase tracking-wider text-sm hover:bg-white hover:text-blue-600 transition-colors"
               >
-                Semua Produk
+                {isEn ? 'All Products' : 'Semua Produk'}
               </a>
             </div>
           </div>

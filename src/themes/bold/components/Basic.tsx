@@ -14,8 +14,10 @@ import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { STORE_ROUTES } from '../../storefrontLinks';
 import { useThemeProductsSource } from '../../useSectionProducts';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
   const header = getHeaderDisplay(sectionOptions);
   const showLogo = sectionOptions.showLogo ?? true;
@@ -67,7 +69,7 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
         )}
         <NavTrackOrderButton className="p-2 text-zinc-400 hover:text-white transition-colors" />
         {header.showCart && (
-          <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative cursor-pointer bg-white text-zinc-950 p-2.5 rounded-lg hover:bg-zinc-200 transition-all shadow-md hover:shadow-white/10 active:scale-95 flex items-center justify-center">
+          <button type="button" data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'} className="relative cursor-pointer bg-white text-zinc-950 p-2.5 rounded-lg hover:bg-zinc-200 transition-all shadow-md hover:shadow-white/10 active:scale-95 flex items-center justify-center">
             <CartBagIcon className="w-4 h-4" />
             <CartCountBadge className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold leading-none flex items-center justify-center bg-zinc-950 text-white ring-2 ring-white" />
           </button>
@@ -181,13 +183,14 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
 };
 
 export const BoldFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle} Hak cipta dilindungi.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle} ${isEn ? 'All rights reserved.' : 'Hak cipta dilindungi.'}`;
 
   return (
     <footer className="w-full px-5 sm:px-8 py-12 sm:py-16 bg-zinc-950 text-white text-center border-t border-zinc-800/80 relative overflow-hidden">

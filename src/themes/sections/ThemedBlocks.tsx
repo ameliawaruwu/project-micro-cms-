@@ -5,6 +5,7 @@ import { getStorefrontThemeVars } from '../pages/storefrontTheme';
 import { getThemeContainer } from '../themeContainer';
 import { whatsAppChatLink } from '../sectionContent';
 import { STORE_ROUTES, resolveSectionCta, resolveSectionImage } from '../storefrontLinks';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * Bagian umum (Pengumuman, Banner Promo, Keunggulan Toko, Info Toko) yang bisa ditambahkan
@@ -72,6 +73,12 @@ export const ThemedPromoBanner: React.FC<ThemedBlockProps> = ({ sectionOptions =
   );
 };
 
+const BENEFITS_EN = [
+  { icon: ShieldCheck, title: 'Guaranteed Products', desc: 'Products are checked before shipping' },
+  { icon: Truck, title: 'Safe Shipping', desc: 'Neatly packed, shipped across Indonesia' },
+  { icon: CreditCard, title: 'Easy Payment', desc: 'Transfer, QRIS, or COD' },
+];
+
 const BENEFITS = [
   { icon: ShieldCheck, title: 'Produk Terjamin', desc: 'Produk dicek sebelum dikirim' },
   { icon: Truck, title: 'Pengiriman Aman', desc: 'Dikemas rapi ke seluruh Indonesia' },
@@ -79,6 +86,7 @@ const BENEFITS = [
 ];
 
 export const ThemedStoreBenefits: React.FC<ThemedBlockProps> = ({ sectionOptions = {}, themeId, accentColor }) => {
+  const { isEn } = useLanguage();
   const heading = sectionOptions.heading || 'Mengapa Belanja di Toko Kami?';
   const container = getThemeContainer(themeId);
   return (
@@ -88,7 +96,7 @@ export const ThemedStoreBenefits: React.FC<ThemedBlockProps> = ({ sectionOptions
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-center text-[var(--sf-text)] mb-6 sm:mb-10">{heading}</h2>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
-          {BENEFITS.map(({ icon: Icon, title, desc }) => (
+          {(isEn ? BENEFITS_EN : BENEFITS).map(({ icon: Icon, title, desc }) => (
             <div key={title} className="flex sm:flex-col items-center sm:text-center gap-4 sm:gap-3 p-4 sm:p-6 rounded-[var(--sf-radius)] bg-[var(--sf-card)] border border-[var(--sf-border)]">
               <div className="w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-full flex items-center justify-center bg-[var(--sf-primary-soft)] text-[var(--sf-primary)]">
                 <Icon className="w-5 h-5" />
@@ -142,6 +150,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ icon: Icon, title, value, hre
 };
 
 export const ThemedStoreInfo: React.FC<ThemedBlockProps> = ({ sectionOptions = {}, themeId, accentColor }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore((s) => s.storeInfo);
   const heading = sectionOptions.heading || 'Kunjungi & Hubungi Toko Kami';
   const description = pickText(sectionOptions.description);
@@ -159,13 +168,13 @@ export const ThemedStoreInfo: React.FC<ThemedBlockProps> = ({ sectionOptions = {
         {description && <p className="text-sm sm:text-base text-center text-[var(--sf-text-soft)] max-w-2xl mx-auto mt-3">{description}</p>}
         {hasDetails ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 mt-6 sm:mt-8">
-            {address && <ContactCard icon={MapPin} title="Alamat" value={address} />}
+            {address && <ContactCard icon={MapPin} title={isEn ? 'Address' : 'Alamat'} value={address} />}
             {email && <ContactCard icon={Mail} title="Email" value={email} href={EMAIL_PATTERN.test(email) ? `mailto:${email}` : null} />}
-            {phone && <ContactCard icon={Phone} title="Telepon / WhatsApp" value={phone} href={whatsAppLink} external />}
-            {openingHours && <ContactCard icon={Clock} title="Jam Operasional" value={openingHours} />}
+            {phone && <ContactCard icon={Phone} title={isEn ? 'Phone / WhatsApp' : 'Telepon / WhatsApp'} value={phone} href={whatsAppLink} external />}
+            {openingHours && <ContactCard icon={Clock} title={isEn ? 'Opening Hours' : 'Jam Operasional'} value={openingHours} />}
           </div>
         ) : (
-          <p className="text-sm text-center text-[var(--sf-muted)] mt-2">Isi alamat & kontak di panel bagian ini atau di Pengaturan Toko agar tampil di sini.</p>
+          <p className="text-sm text-center text-[var(--sf-muted)] mt-2">{isEn ? 'Fill in the address & contact in this section panel or in Store Settings to show them here.' : 'Isi alamat & kontak di panel bagian ini atau di Pengaturan Toko agar tampil di sini.'}</p>
         )}
         {whatsAppLink && (
           <div className="flex justify-center mt-6 sm:mt-8">

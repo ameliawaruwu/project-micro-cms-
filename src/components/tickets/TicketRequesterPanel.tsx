@@ -66,7 +66,7 @@ export const TicketRequesterPanel: React.FC<TicketRequesterPanelProps> = ({
     try {
       setTickets(await ticketService.listByRequester(user.id));
     } catch (err: any) {
-      setLoadError(err?.message || 'Gagal memuat tiket.');
+      setLoadError(err?.message || (isEn ? 'Failed to load tickets.' : 'Gagal memuat tiket.'));
     } finally {
       setLoading(false);
     }
@@ -109,7 +109,7 @@ export const TicketRequesterPanel: React.FC<TicketRequesterPanelProps> = ({
       setFilter('all');
       onShowToast?.(isEn ? `Ticket ${created.ticketNumber} submitted` : `Tiket ${created.ticketNumber} terkirim`, 'success');
     } catch (err: any) {
-      setFormError(err?.message || 'Gagal mengirim tiket.');
+      setFormError(err?.message || (isEn ? 'Failed to send ticket.' : 'Gagal mengirim tiket.'));
     } finally {
       setSubmitting(false);
     }
@@ -168,7 +168,7 @@ export const TicketRequesterPanel: React.FC<TicketRequesterPanelProps> = ({
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[#1F1F1F] truncate">{t.subject}</p>
                       <p className="text-[11px] text-[#A8A09D] mt-0.5 truncate">
-                        {t.ticketNumber} · {CATEGORY_LABELS[t.category]?.[isEn ? 'en' : 'id'] || t.category} · {formatTicketDate(t.createdAt)}
+                        {t.ticketNumber} · {CATEGORY_LABELS[t.category]?.[isEn ? 'en' : 'id'] || t.category} · {formatTicketDate(t.createdAt, isEn)}
                       </p>
                     </div>
                     {t.adminResponse && <MessageSquare className="w-3.5 h-3.5 text-[#66000E] shrink-0" />}

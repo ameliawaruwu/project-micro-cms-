@@ -19,7 +19,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
 
   const [branchName, setBranchName] = useState('');
   const [picName, setPicName] = useState('');
@@ -72,7 +72,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
     setFormError('');
 
     if (!branchName.trim() || !picName.trim() || !picPhone.trim() || !address.trim() || !city.trim() || !postalCode.trim()) {
-      setFormError('Mohon lengkapi semua kolom wajib (*).');
+      setFormError(isEn ? 'Please fill in all required fields (*).' : 'Mohon lengkapi semua kolom wajib (*).');
       return;
     }
 

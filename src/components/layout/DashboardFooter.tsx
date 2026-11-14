@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface DashboardFooterProps {
   /** Nama panel yang sedang dipakai, mis. "Panel Merchant" / "Panel Super Admin". */
@@ -11,8 +12,9 @@ interface DashboardFooterProps {
  * Footer bersama untuk halaman dasbor merchant, super admin, dan sub admin.
  * Ikut tergulir di bawah konten (bukan melayang) agar tidak menutupi tabel/form.
  */
-export const DashboardFooter: React.FC<DashboardFooterProps> = ({ panelLabel, language = 'id', className = '' }) => {
-  const isEn = language === 'en';
+export const DashboardFooter: React.FC<DashboardFooterProps> = ({ panelLabel, language, className = '' }) => {
+  const { isEn: contextIsEn } = useLanguage();
+  const isEn = language ? language === 'en' : contextIsEn;
   const year = new Date().getFullYear();
 
   // mt-auto: di dalam <main> flex-col, footer terdorong ke dasar area konten saat kontennya

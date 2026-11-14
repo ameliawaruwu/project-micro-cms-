@@ -14,6 +14,16 @@ import { Breadcrumb } from '../../../components/common/Breadcrumb';
 import { ConfirmDeleteModal } from '../../../components/common/ConfirmDeleteModal';
 import { SimpleModal, fieldClass, ghostBtn, labelClass, primaryBtn } from '../../../components/tickets/ticketUi';
 
+const ROLE_LABELS_EN: Record<string, string> = {
+  admin: 'Super Admin',
+  sub_admin: 'Sub Admin',
+  sub_admin_umum: 'General Admin',
+  sub_admin_produk: 'Product Admin',
+  community_admin: 'Product Admin',
+  merchant: 'Merchant',
+  buyer: 'Buyer',
+};
+
 interface AdminUsersTabProps {
   currentUser?: User | null;
   language: string;
@@ -77,7 +87,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
       setUsers(list);
       setCommunities(comms);
     } catch (err: any) {
-      setLoadError(err?.message || 'Gagal memuat user.');
+      setLoadError(err?.message || (isEn ? 'Failed to load users.' : 'Gagal memuat user.'));
     } finally {
       setLoading(false);
     }
@@ -90,8 +100,8 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
   const filterItems: { id: RoleFilter; label: string }[] = [
     { id: 'all', label: isEn ? 'All' : 'Semua' },
     { id: 'admin', label: 'Super Admin' },
-    { id: 'sub_admin_umum', label: 'Admin Umum' },
-    { id: 'admin_produk', label: 'Admin Produk' },
+    { id: 'sub_admin_umum', label: isEn ? 'General Admin' : 'Admin Umum' },
+    { id: 'admin_produk', label: isEn ? 'Product Admin' : 'Admin Produk' },
     { id: 'merchant', label: 'Merchant' },
   ];
 
@@ -158,7 +168,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
       }
       setIsFormOpen(false);
     } catch (err: any) {
-      setFormError(err?.message || 'Gagal menyimpan.');
+      setFormError(err?.message || (isEn ? 'Failed to save.' : 'Gagal menyimpan.'));
     } finally {
       setSaving(false);
     }
@@ -181,7 +191,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
       onShowToast?.(isEn ? 'User deleted' : 'User dihapus');
       setPendingDelete(null);
     } catch (err: any) {
-      onShowToast?.(err?.message || 'Gagal menghapus user.');
+      onShowToast?.(err?.message || (isEn ? 'Failed to delete user.' : 'Gagal menghapus user.'));
     } finally {
       setDeleting(false);
     }
@@ -192,6 +202,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
   const roleOptions = ROLE_OPTIONS.some((r) => r.value === form.role)
     ? ROLE_OPTIONS
     : [...ROLE_OPTIONS, { value: form.role, label: ROLE_LABELS[form.role] || form.role }];
+  const roleLabels = isEn ? ROLE_LABELS_EN : ROLE_LABELS;
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
@@ -277,7 +288,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
                   </p>
                 </div>
                 <span className={`hidden sm:inline-flex px-2 py-0.5 rounded-full border text-[11px] font-medium whitespace-nowrap ${ROLE_BADGE[u.role] || ROLE_BADGE.merchant}`}>
-                  {ROLE_LABELS[u.role] || u.role}
+                  {roleLabels[u.role] || u.role}
                 </span>
                 <button type="button" onClick={() => openEdit(u)} className="p-1.5 rounded-md text-[#706866] hover:text-[#66000E] hover:bg-[#FAF7F7] cursor-pointer" title="Edit">
                   <Pencil className="w-3.5 h-3.5" />
@@ -330,7 +341,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
             <label className={labelClass}>{isEn ? 'Role' : 'Peran'}</label>
             <select className={fieldClass} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as ManagedRole })}>
               {roleOptions.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
+                <option key={r.value} value={r.value}>{roleLabels[r.value] || r.label}</option>
               ))}
             </select>
           </div>

@@ -26,7 +26,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
   onShowNotification,
   onNavigateDashboard,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [activeTab, setActiveTab] = useState<'pembayaran' | 'pengiriman'>('pembayaran');
 
   // Langganan di muka dinonaktifkan: Seluruh integrasi terbuka
@@ -61,7 +61,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-[#E5E0DD] shadow-2xs text-xs text-[#241A1A]">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span className="font-medium">{activePaymentsCount + activeShippingsCount} {t('services_active', 'Layanan Aktif')}</span>
+            <span className="font-medium">{isEn ? `${activePaymentsCount + activeShippingsCount} Active Services` : `${activePaymentsCount + activeShippingsCount} Layanan Aktif`}</span>
           </div>
         </div>
       </div>
@@ -78,7 +78,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
           }`}
         >
           <CreditCard className={`w-4 h-4 ${activeTab === 'pembayaran' ? 'text-[#66000E]' : 'text-[#706866]'}`} />
-          <span>{t('tab_payment', 'Pembayaran')}</span>
+          <span>{isEn ? 'Payment' : 'Pembayaran'}</span>
           <span
             className={`px-2 py-0.2 text-[10px] font-medium rounded-full transition-colors ${
               activeTab === 'pembayaran'
@@ -100,7 +100,7 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
           }`}
         >
           <Truck className={`w-4 h-4 ${activeTab === 'pengiriman' ? 'text-[#66000E]' : 'text-[#706866]'}`} />
-          <span>{t('tab_shipping', 'Pengiriman')}</span>
+          <span>{isEn ? 'Shipping' : 'Pengiriman'}</span>
           <span
             className={`px-2 py-0.2 text-[10px] font-medium rounded-full transition-colors ${
               activeTab === 'pengiriman'
@@ -118,10 +118,10 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
         <div className="space-y-4 animate-in fade-in duration-200">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-[#241A1A]">
-              Penyedia Layanan Pembayaran
+              {isEn ? 'Payment Service Providers' : 'Penyedia Layanan Pembayaran'}
             </h2>
             <span className="text-xs text-[#706866]">
-              {activePaymentsCount} dari {paymentIntegrations.length} aktif
+              {isEn ? `${activePaymentsCount} of ${paymentIntegrations.length} active` : `${activePaymentsCount} dari ${paymentIntegrations.length} aktif`}
             </span>
           </div>
 
@@ -146,10 +146,10 @@ export const IntegrationListPage: React.FC<IntegrationListPageProps> = ({
         <div className="space-y-4 animate-in fade-in duration-200">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-[#241A1A]">
-              Pilihan Ekspedisi & Kurir
+              {isEn ? 'Shipping Carriers & Couriers' : 'Pilihan Ekspedisi & Kurir'}
             </h2>
             <span className="text-xs text-[#706866]">
-              {activeShippingsCount} dari {shippingIntegrations.length} aktif
+              {isEn ? `${activeShippingsCount} of ${shippingIntegrations.length} active` : `${activeShippingsCount} dari ${shippingIntegrations.length} aktif`}
             </span>
           </div>
 

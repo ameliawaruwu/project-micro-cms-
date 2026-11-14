@@ -6,15 +6,17 @@ import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#8B5CF6', isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. Hak cipta dilindungi.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. ${isEn ? 'All rights reserved.' : 'Hak cipta dilindungi.'}`;
 
   const mainGridClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
@@ -73,7 +75,7 @@ export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: st
           {(email || address) && (
             <div className={`${columnSpanClass} min-w-0`}>
               <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span> Kontak
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span> {isEn ? 'Contact' : 'Kontak'}
               </h4>
               <div className="space-y-2.5 text-xs text-gray-400 font-mono">
                 {address && (

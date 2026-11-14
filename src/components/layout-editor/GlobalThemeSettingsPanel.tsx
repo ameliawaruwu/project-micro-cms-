@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { GlobalThemeSettings } from '../../types';
 import { AVAILABLE_FONTS, loadGoogleFont } from '../../utils/fontLoader';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface GlobalThemeSettingsPanelProps {
   settings?: GlobalThemeSettings;
@@ -43,6 +44,7 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
   onUpdate,
   onClose,
 }) => {
+  const { isEn } = useLanguage();
   const safeColors = {
     ...DEFAULT_GLOBAL_SETTINGS.colors,
     ...(settings?.colors || {}),
@@ -116,6 +118,7 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
             <button
               type="button"
               onClick={onClose}
+              aria-label={isEn ? 'Back' : 'Kembali'}
               className="p-1 rounded text-[#8C9196] hover:text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer shrink-0"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -123,7 +126,7 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
           )}
           <h2 className="text-[14px] font-bold text-[#202223] truncate flex items-center gap-2">
             <Palette className="w-4 h-4 text-[#2C6ECB]" />
-            Pengaturan Tema Global
+            {isEn ? 'Global Theme Settings' : 'Pengaturan Tema Global'}
           </h2>
         </div>
       </div>
@@ -134,24 +137,24 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
         {/* Colors Group */}
         <div className="space-y-3">
           <h3 className="text-[12px] font-bold text-[#202223] uppercase tracking-wider flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5 text-[#8C9196]" /> Warna
+            <Palette className="w-3.5 h-3.5 text-[#8C9196]" /> {isEn ? 'Colors' : 'Warna'}
           </h3>
           <div className="space-y-2">
-            <ColorPickerItem label="Warna Utama" value={safeColors.primary || '#2C6ECB'} onChange={(val) => updateColors({ primary: val })} />
-            <ColorPickerItem label="Warna Sekunder" value={safeColors.secondary || '#1E40AF'} onChange={(val) => updateColors({ secondary: val })} />
-            <ColorPickerItem label="Latar Belakang" value={safeColors.background || '#FFFFFF'} onChange={(val) => updateColors({ background: val })} />
-            <ColorPickerItem label="Teks Utama" value={safeColors.text || '#202223'} onChange={(val) => updateColors({ text: val })} />
+            <ColorPickerItem label={isEn ? 'Primary Color' : 'Warna Utama'} value={safeColors.primary || '#2C6ECB'} onChange={(val) => updateColors({ primary: val })} />
+            <ColorPickerItem label={isEn ? 'Secondary Color' : 'Warna Sekunder'} value={safeColors.secondary || '#1E40AF'} onChange={(val) => updateColors({ secondary: val })} />
+            <ColorPickerItem label={isEn ? 'Background' : 'Latar Belakang'} value={safeColors.background || '#FFFFFF'} onChange={(val) => updateColors({ background: val })} />
+            <ColorPickerItem label={isEn ? 'Main Text' : 'Teks Utama'} value={safeColors.text || '#202223'} onChange={(val) => updateColors({ text: val })} />
           </div>
         </div>
 
         {/* Typography Group */}
         <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
           <h3 className="text-[12px] font-bold text-[#202223] uppercase tracking-wider flex items-center gap-1.5">
-            <Type className="w-3.5 h-3.5 text-[#8C9196]" /> Tipografi
+            <Type className="w-3.5 h-3.5 text-[#8C9196]" /> {isEn ? 'Typography' : 'Tipografi'}
           </h3>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-[#6D7175]">Font Heading (Judul)</label>
+              <label className="text-[11px] font-semibold text-[#6D7175]">{isEn ? 'Heading Font (Titles)' : 'Font Heading (Judul)'}</label>
               <select
                 value={safeTypography.headingFont || 'Inter'}
                 onChange={(e) => updateTypography({ headingFont: e.target.value })}
@@ -166,7 +169,7 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
             </div>
             
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-[#6D7175]">Font Tubuh (Isi & Konten)</label>
+              <label className="text-[11px] font-semibold text-[#6D7175]">{isEn ? 'Body Font (Text & Content)' : 'Font Tubuh (Isi & Konten)'}</label>
               <select
                 value={safeTypography.bodyFont || 'Inter'}
                 onChange={(e) => updateTypography({ bodyFont: e.target.value })}
@@ -185,11 +188,11 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
         {/* Buttons Group */}
         <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
           <h3 className="text-[12px] font-bold text-[#202223] uppercase tracking-wider flex items-center gap-1.5">
-            <MousePointer2 className="w-3.5 h-3.5 text-[#8C9196]" /> Tombol
+            <MousePointer2 className="w-3.5 h-3.5 text-[#8C9196]" /> {isEn ? 'Buttons' : 'Tombol'}
           </h3>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-[#6D7175]">Sudut Tombol (Radius)</label>
+              <label className="text-[11px] font-semibold text-[#6D7175]">{isEn ? 'Button Corners (Radius)' : 'Sudut Tombol (Radius)'}</label>
               <div className="flex bg-[#F6F6F7] p-1 rounded-lg border border-[#E1E3E5]">
                 {['none', 'sm', 'md', 'full'].map(radius => (
                   <button
@@ -201,7 +204,7 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
                         : 'text-[#6D7175] hover:text-[#202223]'
                     }`}
                   >
-                    {radius === 'none' ? 'Kotak' : radius === 'sm' ? 'Kecil' : radius === 'md' ? 'Bulat' : 'Pill'}
+                    {radius === 'none' ? (isEn ? 'Square' : 'Kotak') : radius === 'sm' ? (isEn ? 'Small' : 'Kecil') : radius === 'md' ? (isEn ? 'Rounded' : 'Bulat') : 'Pill'}
                   </button>
                 ))}
               </div>

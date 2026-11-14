@@ -4,9 +4,11 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useSectionProducts, useThemeProductsSource } from '../../useSectionProducts';
 import { AddToCartButton } from '../../storefrontCart';
 import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Lookbook dari foto produk toko; tidak dirender bila belum ada produk bergambar. */
 export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
   const products = useThemeProductsSource('fashion');
   const items = products.filter((p) => p.image).slice(0, 2);
@@ -41,7 +43,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
               <div className="absolute bottom-6 left-6 right-6 sm:bottom-8 sm:left-8 text-white min-w-0">
                 <p className="text-xs uppercase tracking-widest mb-2 line-clamp-1">{main.name}</p>
-                <span className="text-sm border-b border-white pb-1">Lihat Produk</span>
+                <span className="text-sm border-b border-white pb-1">{isEn ? 'View Product' : 'Lihat Produk'}</span>
               </div>
             </a>
           </div>
@@ -52,7 +54,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
                 <div className="absolute bottom-6 left-6 right-6 sm:bottom-8 sm:left-8 text-white min-w-0">
                   <p className="text-xs uppercase tracking-widest mb-2 line-clamp-1">{second.name}</p>
-                  <span className="text-sm border-b border-white pb-1">Lihat Produk</span>
+                  <span className="text-sm border-b border-white pb-1">{isEn ? 'View Product' : 'Lihat Produk'}</span>
                 </div>
               </a>
             )}
@@ -79,6 +81,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
 /** Produk unggulan dari toko; tidak dirender bila toko belum punya produk. */
 export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const products = useSectionProducts('fashion', sectionOptions, { defaultCount: 4 });
   const heading = sectionOptions.heading || 'Produk Terlaris';
 
@@ -100,7 +103,7 @@ export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?
             href={STORE_ROUTES.catalog}
             className="shrink-0 whitespace-nowrap text-[10px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 transition-colors"
           >
-            Lihat Semua
+            {isEn ? 'View All' : 'Lihat Semua'}
           </a>
         </div>
 
@@ -114,7 +117,7 @@ export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?
                   )}
                 </a>
                 <AddToCartButton product={p} className="absolute bottom-0 left-0 w-full bg-white text-black text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] py-3 sm:py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 font-medium whitespace-nowrap">
-                  + Keranjang
+                  {isEn ? '+ Cart' : '+ Keranjang'}
                 </AddToCartButton>
               </div>
               <a href={productHref(p)} className="block text-center min-w-0">

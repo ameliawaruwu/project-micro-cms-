@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Plus, Minus, ShoppingBag, Zap, ShieldCheck, Truck } from 'lucide-react';
 import { Product } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -19,6 +20,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onBuyNow,
 }) => {
   const [quantity, setQuantity] = useState(1);
+  const { isEn } = useLanguage();
 
   if (!isOpen || !product) return null;
 
@@ -44,7 +46,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* Header with Close */}
         <div className="flex items-center justify-between pb-3 border-b border-[#E5E0DD]">
           <span className="text-xs font-semibold text-[#777777] uppercase tracking-wider">
-            Detail Produk • {product.category}
+            {isEn ? 'Product Details' : 'Detail Produk'} • {product.category}
           </span>
           <button
             onClick={onClose}
@@ -66,7 +68,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               />
               {hasDiscount && (
                 <div className="absolute top-3 left-3 bg-[#66000E] text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-xs">
-                  Hemat {discountPercent}%
+                  {isEn ? 'Save' : 'Hemat'} {discountPercent}%
                 </div>
               )}
             </div>
@@ -88,16 +90,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                         {formatRupiah(product.price)}
                       </span>
                       <span className="bg-[#66000E] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
-                        Diskon {discountPercent}%
+                        {isEn ? 'Discount' : 'Diskon'} {discountPercent}%
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-[#706866] flex-wrap">
-                      <span className="font-medium">Harga Regular:</span>
+                      <span className="font-medium">{isEn ? 'Regular Price:' : 'Harga Regular:'}</span>
                       <span className="line-through font-semibold text-[#8F8785]">
                         {formatRupiah(product.originalPrice!)}
                       </span>
                       <span className="text-[#027A48] font-bold text-xs">
-                        (Hemat {formatRupiah(product.originalPrice! - product.price)})
+                        ({isEn ? 'Save' : 'Hemat'} {formatRupiah(product.originalPrice! - product.price)})
                       </span>
                     </div>
                   </div>
@@ -113,16 +115,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               {/* Stock Status */}
               <div className="mt-2 text-xs font-semibold">
                 {isOutOfStock ? (
-                  <span className="text-[#66000E]">❌ Stok Habis</span>
+                  <span className="text-[#66000E]">❌ {isEn ? 'Out of Stock' : 'Stok Habis'}</span>
                 ) : (
-                  <span className="text-[#027A48]">✓ Stok Tersedia ({product.stock} barang tersisa)</span>
+                  <span className="text-[#027A48]">
+                    ✓ {isEn ? `In Stock (${product.stock} items left)` : `Stok Tersedia (${product.stock} barang tersisa)`}
+                  </span>
                 )}
               </div>
 
               {/* Description */}
               <div className="mt-3.5 pt-3 border-t border-[#E5E0DD]">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-[#777777] mb-1">
-                  Deskripsi Produk
+                  {isEn ? 'Product Description' : 'Deskripsi Produk'}
                 </h4>
                 <p className="text-xs sm:text-sm text-[#555555] leading-relaxed max-h-36 overflow-y-auto pr-1">
                   {product.description}
@@ -133,11 +137,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-[#555555] font-medium bg-[#F7F7F7] p-2.5 rounded-xl border border-[#E5E0DD]">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#027A48]" />
-                  <span>100% Produk Original</span>
+                  <span>{isEn ? '100% Original Product' : '100% Produk Original'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Truck className="w-3.5 h-3.5 text-[#66000E]" />
-                  <span>Kirim Cepat J&T/JNE</span>
+                  <span>{isEn ? 'Fast Shipping J&T/JNE' : 'Kirim Cepat J&T/JNE'}</span>
                 </div>
               </div>
             </div>
@@ -145,7 +149,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             {/* Quantity Selector & CTAs */}
             <div className="pt-3 border-t border-[#E5E0DD] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-[#1F1F1F]">Jumlah Pembelian:</span>
+                <span className="text-xs font-semibold text-[#1F1F1F]">{isEn ? 'Quantity:' : 'Jumlah Pembelian:'}</span>
                 <div className="flex items-center bg-[#F7F7F7] rounded-xl p-1 border border-[#E5E0DD]">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -174,7 +178,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   className="py-2.5 px-3 min-h-[44px] rounded-xl bg-[#F7F7F7] hover:bg-[#EAEAEA] border border-[#E5E0DD] text-[#1F1F1F] font-semibold text-xs flex items-center justify-center gap-2 transition disabled:opacity-40 cursor-pointer"
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span>+ Keranjang</span>
+                  <span>{isEn ? '+ Cart' : '+ Keranjang'}</span>
                 </button>
 
                 <button
@@ -183,7 +187,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   className="py-2.5 px-3 min-h-[44px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs flex items-center justify-center gap-2 transition shadow-xs disabled:opacity-40 cursor-pointer"
                 >
                   <Zap className="w-4 h-4 fill-white" />
-                  <span>Beli Sekarang</span>
+                  <span>{isEn ? 'Buy Now' : 'Beli Sekarang'}</span>
                 </button>
               </div>
             </div>

@@ -267,6 +267,46 @@ const PLAN_FEATURE_MAP: Record<string, string> = {
   'Dukungan custom domain toko (.com / .id)': 'Custom store domain support (.com / .id)',
 };
 
+// Teks kanal pembayaran (nama & badge) yang ditulis dalam Bahasa Indonesia.
+const CHANNEL_TEXT_EN: Record<string, string> = {
+  'Rekomendasi Instan': 'Instant Recommendation',
+  'Scan Universal': 'Universal Scan',
+  'Instan': 'Instant',
+  'Otomatis 24 Jam': 'Automatic 24 Hours',
+  'Instan Tercepat': 'Fastest Instant',
+  'Scan Bebas Biaya': 'Fee-Free Scan',
+  'Otomatis 24/7': 'Automatic 24/7',
+  'Nobu QRIS (Semua Bank & E-Wallet)': 'Nobu QRIS (All Banks & E-Wallets)',
+  'BSI Virtual Account (Syariah)': 'BSI Virtual Account (Sharia)',
+};
+
+// Label siklus/status invoice disimpan sebagai teks; diterjemahkan saat ditampilkan.
+const INVOICE_TEXT_EN: Record<string, string> = {
+  'Tahunan': 'Yearly',
+  'Bulanan': 'Monthly',
+  'Tahunan (1 Tahun)': 'Yearly (1 Year)',
+  'Lunas (Duitku)': 'Paid (Duitku)',
+  'Lunas (Midtrans)': 'Paid (Midtrans)',
+  'Dibatalkan': 'Cancelled',
+  'Menunggu Pembayaran': 'Pending Payment',
+  'pending': 'Pending Payment',
+  'cancelled': 'Cancelled',
+  'paid': 'Paid',
+};
+const INVOICE_TEXT_ID: Record<string, string> = {
+  'Yearly': 'Tahunan',
+  'Monthly': 'Bulanan',
+  'Yearly (1 Year)': 'Tahunan (1 Tahun)',
+  'Paid (Duitku)': 'Lunas (Duitku)',
+  'Paid (Midtrans)': 'Lunas (Midtrans)',
+  'Cancelled': 'Dibatalkan',
+  'Pending Payment': 'Menunggu Pembayaran',
+  'pending': 'Menunggu Pembayaran',
+  'cancelled': 'Dibatalkan',
+  'paid': 'Lunas',
+  'Paid': 'Lunas',
+};
+
 export const BillingPage: React.FC<BillingPageProps> = ({
   store,
   onUpdateStore,
@@ -278,6 +318,8 @@ export const BillingPage: React.FC<BillingPageProps> = ({
 
   const getPlanName = (name: string) => (isEn && PLAN_NAME_MAP[name] ? PLAN_NAME_MAP[name] : name);
   const getPlanTagline = (tagline: string) => (isEn && PLAN_TAGLINE_MAP[tagline] ? PLAN_TAGLINE_MAP[tagline] : tagline);
+  const getChannelText = (text?: string) => (!text ? '' : (isEn && CHANNEL_TEXT_EN[text] ? CHANNEL_TEXT_EN[text] : text));
+  const getInvoiceText = (text: string) => (isEn ? INVOICE_TEXT_EN[text] || text : INVOICE_TEXT_ID[text] || text);
   const getPlanBadge = (badge?: string) => (!badge ? '' : (isEn && PLAN_BADGE_MAP[badge] ? PLAN_BADGE_MAP[badge] : badge));
   const getPlanFeature = (feat: string) => {
     if (!isEn) return feat;
@@ -778,7 +820,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       } else {
         if (onShowNotification) {
           const msg = checkRes.statusMessage
-            ? (isEn ? `Status Duitku: "${checkRes.statusMessage}". Pembayaran belum lunas.` : `Status transaksi Duitku: "${checkRes.statusMessage}". Pembayaran belum lunas.`)
+            ? (isEn ? `Duitku status: "${checkRes.statusMessage}". Payment not completed yet.` : `Status transaksi Duitku: "${checkRes.statusMessage}". Pembayaran belum lunas.`)
             : (isEn ? 'Payment not detected yet. Please complete payment via Duitku.' : 'Pembayaran belum terdeteksi di Duitku. Silakan selesaikan pembayaran via Duitku.');
           onShowNotification(msg);
         }
@@ -837,7 +879,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
       onUpdateStore(updated);
       setIsProcessing(false);
       setIsModalOpen(false);
-      if (onShowNotification) onShowNotification('Paket toko dialihkan ke Paket Free (Gratis).');
+      if (onShowNotification) onShowNotification(isEn ? 'Store plan switched to the Free plan.' : 'Paket toko dialihkan ke Paket Free (Gratis).');
       return;
     }
 
@@ -1124,7 +1166,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   )}
                 </div>
                 <h3 className="font-bold text-sm sm:text-base text-gray-900 flex items-center gap-2">
-                  <span>{store.plan === 'community' ? 'Community UMKM' : (store.plan === 'personal' ? 'Personal Toko' : store.plan)}</span>
+                  <span>{store.plan === 'community' ? getPlanName('Community UMKM') : (store.plan === 'personal' ? getPlanName('Personal Toko') : store.plan)}</span>
                   <span className="text-xs font-normal text-gray-500">
                     • {isEn ? 'Active until' : 'Berlaku s/d'}{' '}
                     <strong className="text-gray-700 font-semibold">
@@ -1162,7 +1204,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 <h3 className="font-bold text-xs sm:text-sm text-[#1F1F1F] flex items-center gap-1.5 flex-wrap">
                   <span>{getPlanName(pendingSubscription.planName)}</span>
                   <span className="text-[#66000E] font-black">
-                    ({formatRupiah(pendingSubscription.amount === 35000 ? 350000 : (pendingSubscription.amount === 99000 ? 1000000 : pendingSubscription.amount))} / tahun)
+                    ({formatRupiah(pendingSubscription.amount === 35000 ? 350000 : (pendingSubscription.amount === 99000 ? 1000000 : pendingSubscription.amount))} {isEn ? '/ year' : '/ tahun'})
                   </span>
                 </h3>
               </div>
@@ -1185,7 +1227,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 type="button"
                 onClick={() => handleCheckPaymentStatus(pendingSubscription, true)}
                 className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold text-[11px] transition cursor-pointer shadow-2xs"
-                title="Simulasi pelunasan instan untuk pengujian sandbox"
+                title={isEn ? 'Simulate instant settlement for sandbox testing' : 'Simulasi pelunasan instan untuk pengujian sandbox'}
               >
                 <span>{isEn ? '⚡ Simulate Paid (Dev)' : '⚡ Simulasi Lunas'}</span>
               </button>
@@ -1211,10 +1253,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
-                Skema Bagi Hasil Omset Aktif
+                {isEn ? 'Revenue Sharing Scheme Active' : 'Skema Bagi Hasil Omset Aktif'}
               </span>
               <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                Tanpa Biaya Langganan Di Muka
+                {isEn ? 'No Upfront Subscription Fee' : 'Tanpa Biaya Langganan Di Muka'}
               </span>
             </div>
             <h3 className="font-bold text-sm text-gray-900">
@@ -1275,7 +1317,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                       </span>
                       {isStorePaid && plan.slug !== 'free' && store.planExpiresAt && (
                         <span className="text-[9px] text-gray-500 font-medium block mt-0.5">
-                          s/d {new Date(store.planExpiresAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short' })}
+                          {isEn ? 'until' : 's/d'} {new Date(store.planExpiresAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short' })}
                         </span>
                       )}
                     </div>
@@ -1439,12 +1481,12 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                               </span>
                             </td>
                             <td className="py-3 px-3.5 font-bold text-[#1F1F1F] whitespace-nowrap">{getPlanName(inv.plan)}</td>
-                            <td className="py-3 px-3.5 text-[#706866] whitespace-nowrap">{inv.cycle}</td>
+                            <td className="py-3 px-3.5 text-[#706866] whitespace-nowrap">{getInvoiceText(inv.cycle)}</td>
                             <td className="py-3 px-3.5 text-[#706866] whitespace-nowrap">{inv.date}</td>
                             <td className="py-3 px-3.5 font-bold text-[#66000E] whitespace-nowrap">{formatRupiah(inv.amount)}</td>
                             <td className="py-3 px-3.5 whitespace-nowrap">
                               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border inline-block ${statusBadgeClass}`}>
-                                {inv.status}
+                                {getInvoiceText(inv.status)}
                               </span>
                             </td>
                             <td className="py-3 px-3.5 text-right whitespace-nowrap">
@@ -1606,15 +1648,15 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                         </div>
 
                         <div className="min-w-0">
-                          <div className="font-bold text-xs text-[#241A1A] truncate">{channel.name}</div>
+                          <div className="font-bold text-xs text-[#241A1A] truncate">{getChannelText(channel.name)}</div>
                           <div className="text-[10px] text-gray-500 flex items-center gap-1.5">
                             {channel.badge && (
-                              <span className="text-emerald-700 font-medium">{channel.badge}</span>
+                              <span className="text-emerald-700 font-medium">{getChannelText(channel.badge)}</span>
                             )}
                             {channel.fee && Number(channel.fee) > 0 ? (
-                              <span>• Biaya: {formatRupiah(Number(channel.fee))}</span>
+                              <span>• {isEn ? 'Fee' : 'Biaya'}: {formatRupiah(Number(channel.fee))}</span>
                             ) : (
-                              <span>• Bebas Biaya Admin</span>
+                              <span>• {isEn ? 'No Admin Fee' : 'Bebas Biaya Admin'}</span>
                             )}
                           </div>
                         </div>
@@ -1647,7 +1689,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   {isProcessing
                     ? (isEn ? 'Processing Transaction...' : 'Memproses Transaksi...')
                     : (isEn
-                        ? `Pay Now via Duitku (${(paymentCategory === 'qris' ? qrisChannels : vaChannels).find((c) => c.code === selectedChannelCode)?.name || 'Duitku'})`
+                        ? `Pay Now via Duitku (${getChannelText((paymentCategory === 'qris' ? qrisChannels : vaChannels).find((c) => c.code === selectedChannelCode)?.name) || 'Duitku'})`
                         : `Bayar via Duitku (${(paymentCategory === 'qris' ? qrisChannels : vaChannels).find((c) => c.code === selectedChannelCode)?.name || 'Duitku'})`)}
                 </span>
                 <ArrowRight className="w-4 h-4" />
@@ -1718,7 +1760,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
                   activeQrisPayment.qrString || activeQrisPayment.paymentUrl || activeQrisPayment.orderId
                 )}&color=66000E`}
-                alt="Kode QRIS"
+                alt={isEn ? 'QRIS code' : 'Kode QRIS'}
                 className="w-full h-full object-contain"
               />
             </div>
@@ -1771,7 +1813,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                     await handleActivatePlan(subToActivate);
                   }}
                   className="flex-1 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold text-[11px] transition cursor-pointer"
-                  title="Simulasi pelunasan instan untuk pengujian dev"
+                  title={isEn ? 'Simulate instant settlement for dev testing' : 'Simulasi pelunasan instan untuk pengujian dev'}
                 >
                   <span>{isEn ? '⚡ Simulate Paid (Dev)' : '⚡ Simulasi Lunas'}</span>
                 </button>
@@ -1809,7 +1851,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   <Building2 className="w-5 h-5 text-[#66000E]" />
                 )}
                 <h3 className="font-bold text-sm text-[#241A1A] text-left">
-                  {activeVaPayment.bankName}
+                  {getChannelText(activeVaPayment.bankName)}
                 </h3>
               </div>
               <button
@@ -1838,7 +1880,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                   {isEn ? 'Virtual Account Number' : 'Nomor Virtual Account'}
                 </span>
                 <span className="text-[10px] font-bold text-[#66000E] bg-red-50 px-2 py-0.5 rounded-md border border-red-100">
-                  Otomatis
+                  {isEn ? 'Automatic' : 'Otomatis'}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-2">
@@ -1971,7 +2013,7 @@ export const BillingPage: React.FC<BillingPageProps> = ({
                     await handleActivatePlan(subToActivate);
                   }}
                   className="flex-1 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold text-[11px] transition cursor-pointer"
-                  title="Simulasi pelunasan instan untuk pengujian dev"
+                  title={isEn ? 'Simulate instant settlement for dev testing' : 'Simulasi pelunasan instan untuk pengujian dev'}
                 >
                   <span>{isEn ? '⚡ Simulate Paid (Dev)' : '⚡ Simulasi Lunas'}</span>
                 </button>

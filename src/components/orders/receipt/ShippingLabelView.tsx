@@ -1,6 +1,7 @@
 import React from 'react';
 import { Order, Store as StoreType } from '../../../types';
-import { formatRupiah, formatDateIndo } from '../../../utils/formatters';
+import { formatRupiah } from '../../../utils/formatters';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { BarcodeSvg } from './BarcodeSvg';
 import { useStoreBaseDomain } from '../../../utils/storeDomain';
 
@@ -22,6 +23,15 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
   isCOD,
 }) => {
   const { domain: storeBaseDomain } = useStoreBaseDomain(store);
+  const { isEn } = useLanguage();
+  const formatOrderDate = (value: string | undefined | null): string => {
+    if (!value) return '';
+    try {
+      return new Intl.DateTimeFormat(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+    } catch {
+      return value;
+    }
+  };
   return (
     <div
       id="printable-receipt"
@@ -54,8 +64,8 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
           {resiNumber}
         </div>
         <div className="flex items-center justify-between text-[10px] font-semibold text-gray-700 px-1 pt-1 border-t border-dashed border-gray-300">
-          <span>No. Pesanan: #{order.orderNumber}</span>
-          <span>{formatDateIndo(order.createdAt)}</span>
+          <span>{isEn ? 'Order No.' : 'No. Pesanan'}: #{order.orderNumber}</span>
+          <span>{formatOrderDate(order.createdAt)}</span>
         </div>
       </div>
 
@@ -64,7 +74,7 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
         {/* Consignee / Penerima */}
         <div className="p-2.5 space-y-1 bg-white">
           <div className="text-[9px] font-black uppercase tracking-wider text-gray-600">
-            PENERIMA (KEPADA):
+            {isEn ? 'RECIPIENT (TO):' : 'PENERIMA (KEPADA):'}
           </div>
           <div className="font-extrabold text-sm text-black">{order.customerName}</div>
           <div className="font-mono font-bold text-black text-[11px]">{order.customerPhone}</div>
@@ -79,12 +89,12 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
         {/* Shipper / Pengirim */}
         <div className="p-2.5 space-y-1 bg-white">
           <div className="text-[9px] font-black uppercase tracking-wider text-gray-600">
-            PENGIRIM (DARI):
+            {isEn ? 'SENDER (FROM):' : 'PENGIRIM (DARI):'}
           </div>
           <div className="font-extrabold text-xs text-black">{store.name}</div>
           <div className="font-mono text-black text-[10px]">{store.phoneWhatsApp || '-'}</div>
           <div className="text-gray-800 text-[10px] leading-snug">
-            {store.city || 'Kota Toko'}
+            {store.city || (isEn ? 'Store City' : 'Kota Toko')}
           </div>
           <div className="text-[9px] text-gray-500 font-mono">
             {store.customDomain || `${store.slug}.${storeBaseDomain}`}
@@ -95,7 +105,7 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
       {/* Shipping Notes (if provided) */}
       {order.notes && (
         <div className="p-2 border-b-2 border-black bg-gray-50 text-[10px] leading-snug">
-          <span className="font-bold text-black uppercase">Instruksi Pengiriman: </span>
+          <span className="font-bold text-black uppercase">{isEn ? 'Delivery Instructions: ' : 'Instruksi Pengiriman: '}</span>
           <span className="italic text-gray-800">"{order.notes}"</span>
         </div>
       )}
@@ -103,12 +113,12 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
       {/* Package Content & Specs */}
       <div className="p-2.5 border-b-2 border-black space-y-1.5 text-[10px] leading-tight">
         <div className="flex items-center justify-between font-bold border-b border-gray-200 pb-1">
-          <span>Berat: 1.0 Kg</span>
-          <span>Jml Barang: {order.items.reduce((acc, i) => acc + i.quantity, 0)} pcs</span>
-          <span>Ongkir: {formatRupiah(order.shippingCost)}</span>
+          <span>{isEn ? 'Weight' : 'Berat'}: 1.0 Kg</span>
+          <span>{isEn ? 'Items' : 'Jml Barang'}: {order.items.reduce((acc, i) => acc + i.quantity, 0)} pcs</span>
+          <span>{isEn ? 'Shipping' : 'Ongkir'}: {formatRupiah(order.shippingCost)}</span>
         </div>
         <div>
-          <span className="font-bold uppercase text-gray-600 block mb-0.5 text-[9px]">Daftar Barang:</span>
+          <span className="font-bold uppercase text-gray-600 block mb-0.5 text-[9px]">{isEn ? 'Item List:' : 'Daftar Barang:'}</span>
           <div className="space-y-1">
             {order.items.map((item, idx) => (
               <div key={idx} className="flex justify-between items-start text-gray-900">
@@ -124,13 +134,13 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
 
       {/* Footer Total */}
       <div className="p-2 bg-black text-white flex items-center justify-between text-xs font-bold">
-        <span>TOTAL DIBAYAR</span>
+        <span>{isEn ? 'TOTAL PAID' : 'TOTAL DIBAYAR'}</span>
         <span className="text-sm tracking-wide">{formatRupiah(order.grandTotal)}</span>
       </div>
 
       {/* Scissors cutting guide for standard A4 paper prints */}
       <div className="text-center py-2 text-[9px] font-mono text-gray-500 border-t border-dashed border-gray-400 bg-white print:block">
-        ✂ ---------------- Garis Potong Label Paket ---------------- ✂
+        {isEn ? '✂ ---------------- Package Label Cut Line ---------------- ✂' : '✂ ---------------- Garis Potong Label Paket ---------------- ✂'}
       </div>
     </div>
   );

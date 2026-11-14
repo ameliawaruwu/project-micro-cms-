@@ -13,8 +13,10 @@ import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { useThemeProductsSource } from '../../useSectionProducts';
 import { STORE_ROUTES } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
   const header = getHeaderDisplay(sectionOptions);
   const showLogo = sectionOptions.showLogo ?? true;
@@ -38,7 +40,7 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
         </div>
         <div className="flex gap-6 shrink-0">
           <a href={STORE_ROUTES.promo} className="hover:text-white transition-colors">Promo</a>
-          <a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">Bantuan</a>
+          <a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">{isEn ? 'Help' : 'Bantuan'}</a>
         </div>
       </div>
       <div className="w-full px-4 sm:px-6 md:px-16 py-4 md:py-5 flex justify-between items-center gap-4">
@@ -76,14 +78,14 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
         </div>
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           <a href={STORE_ROUTES.contact} className="hidden sm:inline-flex px-5 py-2 text-sm font-semibold text-white border border-blue-400 rounded-md hover:bg-blue-800 transition-colors">
-            Hubungi Kami
+            {isEn ? 'Contact Us' : 'Hubungi Kami'}
           </a>
           {header.showSearch && (
             <NavSearchButton className="p-2 text-blue-50 hover:text-white transition-colors" iconClassName="w-5 h-5" />
           )}
           <NavTrackOrderButton className="p-2 text-blue-50 hover:text-white transition-colors" iconClassName="w-5 h-5" />
           {header.showCart && (
-            <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="relative flex items-center justify-center p-2.5 bg-white text-[#1E40AF] rounded-md hover:bg-gray-100 transition-colors shadow-sm cursor-pointer">
+            <button type="button" data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'} className="relative flex items-center justify-center p-2.5 bg-white text-[#1E40AF] rounded-md hover:bg-gray-100 transition-colors shadow-sm cursor-pointer">
               <CartBagIcon className="w-4 h-4" />
               <CartCountBadge className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold leading-none flex items-center justify-center bg-[#1E40AF] text-white ring-2 ring-white" />
             </button>
@@ -165,13 +167,14 @@ export const ProfessionalHero: React.FC<{ sectionOptions?: any; isMobile?: boole
 };
 
 export const ProfessionalFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const navItems = getNavMenuItems(sectionOptions);
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. Hak cipta dilindungi.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle}. ${isEn ? 'All rights reserved.' : 'Hak cipta dilindungi.'}`;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-2',
@@ -213,7 +216,7 @@ export const ProfessionalFooter: React.FC<{ sectionOptions?: any; isMobile?: boo
 
           {(email || address) && (
             <div>
-              <h3 className="text-white font-semibold mb-5 uppercase tracking-wider text-sm">Kontak</h3>
+              <h3 className="text-white font-semibold mb-5 uppercase tracking-wider text-sm">{isEn ? 'Contact' : 'Kontak'}</h3>
               <ul className="space-y-3 text-sm">
                 {address && <li className="break-words">{address}</li>}
                 {email && <li><a href={`mailto:${email}`} className="hover:underline break-all">{email}</a></li>}

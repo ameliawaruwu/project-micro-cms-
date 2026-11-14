@@ -1,5 +1,6 @@
 import React from 'react';
 import { PackageSearch } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface NavTrackOrderButtonProps {
   className?: string;
@@ -17,15 +18,19 @@ export const NavTrackOrderButton: React.FC<NavTrackOrderButtonProps> = ({
   className = '',
   iconClassName = 'w-4 h-4',
   label,
-}) => (
-  <button
-    type="button"
-    data-href="/lacak"
-    aria-label="Lacak pesanan"
-    title="Lacak pesanan"
-    className={`cursor-pointer ${className}`}
-  >
-    <PackageSearch className={iconClassName} />
-    {label}
-  </button>
-);
+}) => {
+  const { isEn } = useLanguage();
+  const text = isEn ? 'Track order' : 'Lacak pesanan';
+  return (
+    <button
+      type="button"
+      data-href="/lacak"
+      aria-label={text}
+      title={text}
+      className={`cursor-pointer ${className}`}
+    >
+      <PackageSearch className={iconClassName} />
+      {label}
+    </button>
+  );
+};

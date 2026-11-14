@@ -8,6 +8,7 @@ import { useStoreChromeOptions } from './storeChrome';
 import { ShoppingBag, ArrowRight, Trash2 } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { cartService } from '../../services/cartService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CartPageProps {
   themeData?: ThemeSchema;
@@ -18,6 +19,7 @@ interface CartPageProps {
 }
 
 export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThemeId, store, products = [], onNavigate }) => {
+  const { isEn } = useLanguage();
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
   const liveStoreInfo = useCmsStore((state) => state.storeInfo);
   const settings = themeData?.settings || {
@@ -27,7 +29,7 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
     fontFamily: 'sans-serif'
   };
 
-  const storeName = liveStoreInfo?.name || store?.name || 'Toko Kami';
+  const storeName = liveStoreInfo?.name || store?.name || (isEn ? 'Our Store' : 'Toko Kami');
   const storeDesc = liveStoreInfo?.description || store?.description || '';
   const activeStoreSlug = store?.slug || (liveStoreInfo as any)?.slug;
 
@@ -98,16 +100,18 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[var(--sf-subtle)] flex items-center justify-center mb-4 text-[var(--sf-muted)]">
         <ShoppingBag className="w-8 h-8 sm:w-10 sm:h-10" />
       </div>
-      <h2 className="text-xl sm:text-2xl font-bold text-[var(--sf-text)] mb-2">Keranjang Belanja Kosong</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-[var(--sf-text)] mb-2">{isEn ? 'Your Shopping Cart Is Empty' : 'Keranjang Belanja Kosong'}</h2>
       <p className="text-xs sm:text-sm text-[var(--sf-muted)] max-w-md mb-6 leading-relaxed">
-        Anda belum menambahkan barang apapun ke keranjang belanja. Jelajahi katalog kami dan temukan produk terbaik.
+        {isEn
+          ? "You haven't added any items to your shopping cart yet. Browse our catalog and find the best products."
+          : 'Anda belum menambahkan barang apapun ke keranjang belanja. Jelajahi katalog kami dan temukan produk terbaik.'}
       </p>
       <button 
         type="button"
         onClick={() => onNavigate ? onNavigate('katalog') : null}
         className="px-6 py-3 bg-[var(--sf-primary)] text-white rounded-[var(--sf-radius)] text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-[var(--sf-primary)] transition cursor-pointer shadow-md"
       >
-        Mulai Belanja
+        {isEn ? 'Start Shopping' : 'Mulai Belanja'}
       </button>
     </div>
   );
@@ -123,7 +127,7 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
         <div className="pt-24 pb-24 bg-white text-black min-h-screen border-b-8 border-black">
           <div className="max-w-5xl mx-auto px-6">
             <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-black uppercase tracking-tighter mb-8">
-              KERANJANG BELANJA
+              {isEn ? 'SHOPPING CART' : 'KERANJANG BELANJA'}
             </h1>
             <div className="bg-[#FF0000] p-6 md:p-12 border-8 border-black shadow-[16px_16px_0px_rgba(0,0,0,1)] space-y-4 sm:space-y-6">
               {cartItems.map((item) => (
@@ -139,7 +143,7 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
                     type="button"
                     onClick={() => handleRemove(item.product.id)}
                     className="p-2 sm:p-3 bg-black text-white font-black hover:bg-[#FF0000] border-2 border-black cursor-pointer shrink-0"
-                    title="Hapus barang"
+                    title={isEn ? 'Remove item' : 'Hapus barang'}
                   >
                     <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
@@ -154,7 +158,7 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
                 onClick={() => onNavigate ? onNavigate('checkout') : null}
                 className="w-full py-4 sm:py-6 bg-black text-white text-xl sm:text-2xl font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] cursor-pointer"
               >
-                LANJUT PENGIRIMAN 🚀
+                {isEn ? 'CONTINUE TO SHIPPING 🚀' : 'LANJUT PENGIRIMAN 🚀'}
               </button>
             </div>
           </div>
@@ -166,7 +170,7 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
     return (
       <div className="pt-28 pb-24 bg-[var(--sf-card)] text-[var(--sf-text)] min-h-screen">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <h1 className="text-2xl sm:text-4xl font-light tracking-tight mb-6 sm:mb-8">Keranjang Belanja ({cartItems.reduce((acc, it) => acc + it.quantity, 0)} Item)</h1>
+          <h1 className="text-2xl sm:text-4xl font-light tracking-tight mb-6 sm:mb-8">{isEn ? 'Shopping Cart' : 'Keranjang Belanja'} ({cartItems.reduce((acc, it) => acc + it.quantity, 0)} {isEn ? 'Items' : 'Item'})</h1>
           <div className="bg-[var(--sf-subtle)] rounded-[var(--sf-radius)] p-4 sm:p-8 border border-[var(--sf-border)] space-y-4 sm:space-y-6">
             <div className="divide-y divide-[var(--sf-border)]">
               {cartItems.map((item) => (
@@ -203,7 +207,7 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
                       type="button"
                       onClick={() => handleRemove(item.product.id)}
                       className="text-[var(--sf-muted)] hover:text-red-500 p-1 transition cursor-pointer"
-                      title="Hapus dari keranjang"
+                      title={isEn ? 'Remove from cart' : 'Hapus dari keranjang'}
                     >
                       <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
@@ -213,7 +217,7 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
             </div>
             
             <div className="border-t border-[var(--sf-border)] pt-4 flex justify-between items-center font-bold text-lg sm:text-xl text-[var(--sf-text)]">
-              <span>Total Pembayaran</span>
+              <span>{isEn ? 'Payment Total' : 'Total Pembayaran'}</span>
               <span className="text-[var(--sf-primary)]">Rp {totalAmount.toLocaleString('id-ID')}</span>
             </div>
 
@@ -222,7 +226,7 @@ export const CartPage: React.FC<CartPageProps> = ({ themeData, themeId: propThem
               onClick={() => onNavigate ? onNavigate('checkout') : null}
               className="w-full py-3.5 sm:py-4 bg-[var(--sf-primary)] hover:bg-[var(--sf-primary)] text-white rounded-[var(--sf-radius)] font-bold text-xs sm:text-sm uppercase tracking-widest transition cursor-pointer shadow-md flex items-center justify-center gap-2"
             >
-              <span>Lanjut ke Pembayaran &amp; Checkout</span>
+              <span>{isEn ? 'Continue to Payment & Checkout' : 'Lanjut ke Pembayaran & Checkout'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

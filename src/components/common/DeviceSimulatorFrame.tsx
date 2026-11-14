@@ -1,5 +1,6 @@
 import React from 'react';
 import { Smartphone, Globe, X } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface DeviceSimulatorFrameProps {
   title?: string;
@@ -14,13 +15,14 @@ export const DeviceSimulatorFrame: React.FC<DeviceSimulatorFrameProps> = ({
   onClose,
   children,
 }) => {
+  const { isEn } = useLanguage();
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-140px)] py-6 px-4 bg-black/80 backdrop-blur-md font-poppins">
       {/* Device frame header */}
       <div className="w-full max-w-sm mb-3 flex items-center justify-between text-white/90 px-2">
         <div className="flex items-center gap-2 text-xs font-semibold">
           <Smartphone className="w-4 h-4 text-[#66000E]" />
-          <span>{title} (Simulator HP)</span>
+          <span>{title} {isEn ? '(Phone Simulator)' : '(Simulator HP)'}</span>
         </div>
         {onClose && (
           <button
@@ -28,7 +30,7 @@ export const DeviceSimulatorFrame: React.FC<DeviceSimulatorFrameProps> = ({
             className="flex items-center gap-1 text-xs text-white/80 hover:text-white bg-white/10 px-2.5 py-1 rounded-xl transition cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
-            <span>Tutup Simulator</span>
+            <span>{isEn ? 'Close Simulator' : 'Tutup Simulator'}</span>
           </button>
         )}
       </div>

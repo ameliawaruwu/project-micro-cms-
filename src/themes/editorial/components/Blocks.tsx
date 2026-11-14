@@ -3,6 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useThemeProductsSource } from '../../useSectionProducts';
 import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Lookbook dua foto produk toko; tidak dirender bila belum ada foto produk. */
 export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -66,6 +67,7 @@ export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: bool
 
 /** Banner kampanye; latar memakai gambar merchant, banner toko, atau foto produk. */
 export const EditorialCampaign: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const products = useThemeProductsSource('editorial');
   const heading = sectionOptions.heading || 'Koleksi Pilihan';
@@ -94,7 +96,7 @@ export const EditorialCampaign: React.FC<{ sectionOptions?: any }> = ({ sectionO
           href={STORE_ROUTES.catalog}
           className="inline-block mt-8 sm:mt-10 border-b border-white pb-1 uppercase tracking-[0.3em] text-[10px] md:text-xs hover:opacity-70 transition-opacity"
         >
-          Belanja Sekarang
+          {isEn ? 'Shop Now' : 'Belanja Sekarang'}
         </a>
       </div>
     </section>
@@ -151,6 +153,7 @@ export const EditorialAsymmetricShowcase: React.FC<{ sectionOptions?: any; isMob
 
 /** Cerita toko; bawaan memakai deskripsi toko. */
 export const EditorialBrandStory: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const heading = sectionOptions.heading || 'Tentang Kami';
   const desc =
@@ -168,7 +171,7 @@ export const EditorialBrandStory: React.FC<{ sectionOptions?: any }> = ({ sectio
         href={STORE_ROUTES.contact}
         className="inline-block mt-10 border-b border-gray-900 pb-1 uppercase tracking-[0.2em] text-[10px] font-medium hover:text-gray-500 hover:border-gray-500 transition-colors"
       >
-        Hubungi Kami
+        {isEn ? 'Contact Us' : 'Hubungi Kami'}
       </a>
       <div className="w-px h-16 sm:h-24 bg-gray-300 mx-auto mt-12 sm:mt-20"></div>
     </section>
@@ -177,6 +180,7 @@ export const EditorialBrandStory: React.FC<{ sectionOptions?: any }> = ({ sectio
 
 /** Sorotan beberapa produk toko bergaya jurnal; tidak dirender bila belum ada foto produk. */
 export const EditorialJournal: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const products = useThemeProductsSource('editorial');
   const items = products.filter((p) => p.image).slice(0, 3);
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
@@ -205,7 +209,7 @@ export const EditorialJournal: React.FC<{ sectionOptions?: any; isMobile?: boole
             </div>
             <div className="flex flex-col items-center text-center px-4 min-w-0">
               <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-3 sm:mb-4">
-                {product.categoryName || 'Produk'}
+                {product.categoryName || (isEn ? 'Product' : 'Produk')}
               </p>
               <h3 className="text-xl sm:text-2xl font-serif group-hover:text-gray-500 transition-colors line-clamp-2 break-words">{product.name}</h3>
               <p className="mt-2 text-sm tracking-widest text-gray-700">{formatRupiah(product.price)}</p>

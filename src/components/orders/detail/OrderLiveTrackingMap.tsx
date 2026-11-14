@@ -15,6 +15,7 @@ import {
   MotorDeliveryIllustration,
   MobilDeliveryIllustration,
 } from './DeliveryIllustrations';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface OrderLiveTrackingMapProps {
   order: Order;
@@ -50,6 +51,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
   originCity,
   destinationAddress,
 }) => {
+  const { isEn } = useLanguage();
   const [isMapExpanded, setIsMapExpanded] = useState<boolean>(false);
   const [mapDisplayMode, setMapDisplayMode] = useState<'route_map' | 'google_maps'>('route_map');
 
@@ -67,21 +69,21 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h4 className="font-bold text-xs sm:text-sm text-[#1F1F1F]">
-                Pelacakan & Logistik Pengiriman
+                {isEn ? 'Shipping Tracking & Logistics' : 'Pelacakan & Logistik Pengiriman'}
               </h4>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-[#1F1F1F] border border-[#E5E0DD] shadow-2xs">
-                {order.courier} {order.courierService || 'Reguler'}
+                {order.courier} {order.courierService || (isEn ? 'Regular' : 'Reguler')}
               </span>
             </div>
             <div className="text-[11px] text-[#777777] mt-0.5 flex items-center gap-1.5 flex-wrap">
-              <span>No. Resi:</span>
-              <strong className="font-mono text-[#1F1F1F]">{order.resiNumber || 'Belum terbit'}</strong>
+              <span>{isEn ? 'Tracking No.:' : 'No. Resi:'}</span>
+              <strong className="font-mono text-[#1F1F1F]">{order.resiNumber || (isEn ? 'Not issued yet' : 'Belum terbit')}</strong>
               {order.resiNumber && (
                 <button
                   type="button"
                   onClick={handleCopyResi}
                   className="p-1 hover:bg-[#F0F0F0] rounded text-[#777777] hover:text-[#1F1F1F] transition cursor-pointer"
-                  title="Salin Resi"
+                  title={isEn ? 'Copy Tracking No.' : 'Salin Resi'}
                 >
                   {copiedResi ? <Check className="w-3.5 h-3.5 text-[#027A48]" /> : <Copy className="w-3.5 h-3.5 text-[#777777]" />}
                 </button>
@@ -99,7 +101,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
               rel="noopener noreferrer"
               className="px-3 py-1.5 rounded-xl bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] font-semibold text-xs flex items-center gap-1.5 hover:bg-[#F9EDEF] transition cursor-pointer"
             >
-              <span>Lacak Live Biteship</span>
+              <span>{isEn ? 'Live Track on Biteship' : 'Lacak Live Biteship'}</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
@@ -135,7 +137,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
 
             <div className="flex items-center gap-2 mt-1 text-[10px] text-[#777777] font-mono flex-wrap">
               <span className="font-bold text-[#1F1F1F] bg-white px-1.5 py-0.5 rounded border border-[#EAEAEA]">
-                Plat: {driverInfo.plate}
+                {isEn ? 'Plate' : 'Plat'}: {driverInfo.plate}
               </span>
               <span>•</span>
               <span>{driverInfo.name}</span>
@@ -155,13 +157,15 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
             <div className="w-6 h-6 rounded-lg bg-[#66000E]/10 text-[#66000E] flex items-center justify-center">
               <MapIcon className="w-3.5 h-3.5" />
             </div>
-            <span className="font-bold text-[#1F1F1F]">Visual Peta & Jalur Pengiriman</span>
+            <span className="font-bold text-[#1F1F1F]">{isEn ? 'Shipping Map & Route' : 'Visual Peta & Jalur Pengiriman'}</span>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-[#777777] border border-[#E5E0DD] font-medium hidden sm:inline-block">
-              {isMapExpanded ? 'Sedang Ditampilkan' : 'Opsional • Klik untuk Buka Peta'}
+              {isMapExpanded
+                ? (isEn ? 'Showing' : 'Sedang Ditampilkan')
+                : (isEn ? 'Optional • Click to Open Map' : 'Opsional • Klik untuk Buka Peta')}
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-[#66000E] text-xs font-bold">
-            <span>{isMapExpanded ? 'Sembunyikan Peta' : 'Buka Peta'}</span>
+            <span>{isMapExpanded ? (isEn ? 'Hide Map' : 'Sembunyikan Peta') : (isEn ? 'Open Map' : 'Buka Peta')}</span>
             <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isMapExpanded ? 'rotate-180' : ''}`} />
           </div>
         </button>
@@ -173,7 +177,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
             <div className="flex items-center justify-between gap-2 pb-1">
               <div className="flex items-center gap-1 text-[11px] font-bold text-[#1F1F1F]">
                 <Sparkles className="w-3.5 h-3.5 text-[#66000E]" />
-                <span>Jalur Pengiriman Toko ➔ Pembeli</span>
+                <span>{isEn ? 'Delivery Route Store ➔ Buyer' : 'Jalur Pengiriman Toko ➔ Pembeli'}</span>
               </div>
 
               <div className="flex items-center gap-1 bg-[#EDEDED] p-0.5 rounded-lg text-[11px]">
@@ -187,7 +191,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                   }`}
                 >
                   <Route className="w-3 h-3" />
-                  <span>Peta Rute Interaktif</span>
+                  <span>{isEn ? 'Interactive Route Map' : 'Peta Rute Interaktif'}</span>
                 </button>
 
                 <button
@@ -249,10 +253,12 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                   </path>
 
                   <text x="180" y="275" fill="#94A3B8" fontSize="9" fontFamily="sans-serif" fontWeight="bold">
-                    {isInstant ? `Rute Langsung ${order.courier}` : `Rute Antarkota ➔ Hub ${destinationCityClean}`}
+                    {isInstant
+                      ? (isEn ? `${order.courier} Direct Route` : `Rute Langsung ${order.courier}`)
+                      : (isEn ? `Intercity Route ➔ ${destinationCityClean} Hub` : `Rute Antarkota ➔ Hub ${destinationCityClean}`)}
                   </text>
                   <text x="440" y="70" fill="#94A3B8" fontSize="9" fontFamily="sans-serif" fontWeight="bold">
-                    Menuju Kawasan {destinationCityClean}
+                    {isEn ? `Heading to ${destinationCityClean} Area` : `Menuju Kawasan ${destinationCityClean}`}
                   </text>
                 </svg>
 
@@ -263,8 +269,8 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                       🏬
                     </div>
                     <div>
-                      <p className="font-black text-[10px] text-[#027A48] leading-none uppercase">Asal Toko</p>
-                      <p className="text-[9px] text-[#1F1F1F] font-bold truncate max-w-[90px] sm:max-w-[110px]">{store?.name || 'Toko Pengirim'}</p>
+                      <p className="font-black text-[10px] text-[#027A48] leading-none uppercase">{isEn ? 'Store Origin' : 'Asal Toko'}</p>
+                      <p className="text-[9px] text-[#1F1F1F] font-bold truncate max-w-[90px] sm:max-w-[110px]">{store?.name || (isEn ? 'Sender Store' : 'Toko Pengirim')}</p>
                       <p className="text-[8px] text-[#777777] leading-none">{originCity.split(',')[0]}</p>
                     </div>
                   </div>
@@ -279,9 +285,9 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                   <div className="absolute left-[30%] bottom-[32%] -translate-x-1/2 hidden sm:flex flex-col items-center z-10">
                     <div className="bg-white/90 backdrop-blur-xs px-2 py-1 rounded-lg border border-[#EAEAEA] shadow-xs text-[9px] font-bold text-[#555555] flex items-center gap-1">
                       <span className="text-xs">🚐</span>
-                      <span>Mobil Box Transit</span>
+                      <span>{isEn ? 'Transit Box Van' : 'Mobil Box Transit'}</span>
                     </div>
-                    <span className="text-[7px] text-[#94A3B8] font-mono">Antarkota</span>
+                    <span className="text-[7px] text-[#94A3B8] font-mono">{isEn ? 'Intercity' : 'Antarkota'}</span>
                   </div>
                 )}
 
@@ -290,7 +296,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                   <div className="absolute left-[50%] top-[48%] -translate-x-1/2 -translate-y-1/2 hidden sm:flex flex-col items-center z-10">
                     <div className="bg-white/95 backdrop-blur-xs px-2 py-1 rounded-lg border border-[#EAEAEA] shadow-xs text-[9px] font-bold text-[#1F1F1F] flex items-center gap-1">
                       <span>🏢</span>
-                      <span>Hub Gateway {destinationCityClean}</span>
+                      <span>{isEn ? `${destinationCityClean} Gateway Hub` : `Hub Gateway ${destinationCityClean}`}</span>
                     </div>
                     <div className="w-2.5 h-2.5 rounded-full bg-[#64748B] ring-2 ring-white mt-0.5" />
                   </div>
@@ -304,11 +310,15 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                     </span>
                     <div>
                       <p className="font-black text-[10px] text-white uppercase leading-tight tracking-wide flex items-center gap-1">
-                        <span>{isInstant ? 'Kurir Instant' : vehicleType === 'motor' ? 'Kurir Motor Last-Mile' : 'Mobil Box Pengantar'}</span>
+                        <span>{isInstant
+                          ? (isEn ? 'Instant Courier' : 'Kurir Instant')
+                          : vehicleType === 'motor'
+                          ? (isEn ? 'Last-Mile Motorbike Courier' : 'Kurir Motor Last-Mile')
+                          : (isEn ? 'Delivery Box Van' : 'Mobil Box Pengantar')}</span>
                         <span className="w-1.5 h-1.5 rounded-full bg-[#12B76A] animate-ping inline-block" />
                       </p>
                       <p className="text-[9px] text-[#E8DDDE] font-medium leading-none">
-                        {order.courier} • Mengantar ke Lokasi
+                        {order.courier} • {isEn ? 'Delivering to Location' : 'Mengantar ke Lokasi'}
                       </p>
                     </div>
                   </div>
@@ -328,7 +338,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                       🏠
                     </div>
                     <div>
-                      <p className="font-black text-[10px] text-[#66000E] leading-none uppercase">Lokasi Tujuan</p>
+                      <p className="font-black text-[10px] text-[#66000E] leading-none uppercase">{isEn ? 'Destination' : 'Lokasi Tujuan'}</p>
                       <p className="text-[9px] text-[#1F1F1F] font-bold truncate max-w-[100px] sm:max-w-[140px]">
                         {destinationLandmark}
                       </p>
@@ -352,18 +362,21 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#12B76A]"></span>
                     </span>
                     <span className="font-bold text-[11px] text-[#1F1F1F]">
-                      {vehicleType === 'motor' ? '🛵 Kurir Motor' : '🚐 Mobil Box'} sedang menuju lokasimu
+                      {vehicleType === 'motor'
+                        ? (isEn ? '🛵 Motorbike courier' : '🛵 Kurir Motor')
+                        : (isEn ? '🚐 Box van' : '🚐 Mobil Box')}{' '}
+                      {isEn ? 'is heading to your location' : 'sedang menuju lokasimu'}
                     </span>
                   </div>
                   <span className="text-[10px] font-semibold text-[#027A48] bg-[#ECFDF3] px-2 py-0.5 rounded-md border border-[#ABEFC6]">
-                    Estimasi: Hari ini
+                    {isEn ? 'Estimate: Today' : 'Estimasi: Hari ini'}
                   </span>
                 </div>
 
                 {/* Bottom-right Distance ETA Badge */}
                 <div className="absolute bottom-2.5 right-2.5 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-lg border border-[#E5E0DD] shadow-md text-[10px] text-[#1F1F1F] font-mono z-20 pointer-events-none hidden sm:flex items-center gap-1.5">
                   <Navigation className="w-3 h-3 text-[#66000E]" />
-                  <span>Sisa Jarak: <strong>~{isInstant ? '2.4' : '3.8'} km</strong> • {destinationCityClean}</span>
+                  <span>{isEn ? 'Remaining:' : 'Sisa Jarak:'} <strong>~{isInstant ? '2.4' : '3.8'} km</strong> • {destinationCityClean}</span>
                 </div>
               </div>
             ) : (
@@ -383,7 +396,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#12B76A]"></span>
                   </span>
                   <span className="font-semibold text-[11px] text-[#1F1F1F]">
-                    Pin Tujuan: {order.customerCity}
+                    {isEn ? 'Destination Pin' : 'Pin Tujuan'}: {order.customerCity}
                   </span>
                 </div>
 
@@ -393,7 +406,9 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                   </div>
                   <div>
                     <div className="text-[11px] font-bold text-[#1F1F1F] flex items-center gap-1.5">
-                      <span>{vehicleType === 'motor' ? 'Kurir Motor En-Route' : 'Mobil Box En-Route'}</span>
+                      <span>{vehicleType === 'motor'
+                        ? (isEn ? 'Motorbike Courier En-Route' : 'Kurir Motor En-Route')
+                        : (isEn ? 'Box Van En-Route' : 'Mobil Box En-Route')}</span>
                       <span className="w-1.5 h-1.5 rounded-full bg-[#12B76A] animate-ping" />
                     </div>
                     <p className="text-[10px] text-[#555555] max-w-[200px] truncate">
@@ -408,7 +423,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
               <div className="flex items-center gap-2 text-[11px] text-[#555555]">
                 <MapPin className="w-3.5 h-3.5 text-[#66000E]" />
-                <span>Terhubung langsung dengan rute navigasi ekspedisi</span>
+                <span>{isEn ? 'Linked directly to the courier navigation route' : 'Terhubung langsung dengan rute navigasi ekspedisi'}</span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -419,7 +434,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                   className="px-3 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-[11px] flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
                 >
                   <Navigation className="w-3.5 h-3.5" />
-                  <span>Buka Rute di Google Maps</span>
+                  <span>{isEn ? 'Open Route in Google Maps' : 'Buka Rute di Google Maps'}</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
 
@@ -430,7 +445,7 @@ export const OrderLiveTrackingMap: React.FC<OrderLiveTrackingMapProps> = ({
                   className="px-3 py-1.5 rounded-lg bg-white border border-[#E5E0DD] text-[#1F1F1F] hover:bg-[#F7F7F7] font-semibold text-[11px] flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <MapIcon className="w-3.5 h-3.5 text-[#555555]" />
-                  <span>Titik Alamat</span>
+                  <span>{isEn ? 'Address Pin' : 'Titik Alamat'}</span>
                 </a>
               </div>
             </div>

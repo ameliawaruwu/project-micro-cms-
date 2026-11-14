@@ -26,7 +26,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   initialStoreName = '',
 }) => {
   const { register, loginWithGoogle } = useAuth();
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
 
   // Form states
   const [fullName, setFullName] = useState('');
@@ -44,17 +44,17 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
     setError(null);
 
     if (!fullName.trim()) {
-      setError('Silakan masukkan nama lengkap.');
+      setError(isEn ? 'Please enter your full name.' : 'Silakan masukkan nama lengkap.');
       return;
     }
 
     if (!email.trim() || !email.includes('@')) {
-      setError('Silakan masukkan alamat email yang valid.');
+      setError(isEn ? 'Please enter a valid email address.' : 'Silakan masukkan alamat email yang valid.');
       return;
     }
 
     if (!password.trim() || password.length < 8) {
-      setError('Kata sandi harus minimal 8 karakter.');
+      setError(isEn ? 'Password must be at least 8 characters.' : 'Kata sandi harus minimal 8 karakter.');
       return;
     }
 
@@ -73,7 +73,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
 
       onSuccess(email.trim().toLowerCase());
     } catch (err: any) {
-      setError(err?.message || 'Gagal mendaftar. Silakan coba kembali.');
+      setError(err?.message || (isEn ? 'Registration failed. Please try again.' : 'Gagal mendaftar. Silakan coba kembali.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -85,7 +85,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
       setError(null);
       await loginWithGoogle('register');
     } catch {
-      setError('Gagal menghubungkan ke Google. Pastikan Google Provider sudah aktif di Supabase.');
+      setError(isEn ? 'Failed to connect to Google. Make sure the Google Provider is enabled in Supabase.' : 'Gagal menghubungkan ke Google. Pastikan Google Provider sudah aktif di Supabase.');
     } finally {
       setIsGoogleSubmitting(false);
     }
@@ -190,7 +190,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Contoh: Budi Santoso"
+                  placeholder={isEn ? 'e.g. Budi Santoso' : 'Contoh: Budi Santoso'}
                   required
                   className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
                 />
@@ -211,7 +211,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nama@email.com"
+                  placeholder={isEn ? 'name@email.com' : 'nama@email.com'}
                   required
                   autoComplete="email"
                   className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
@@ -226,9 +226,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   htmlFor="reg-phone"
                   className="block text-xs sm:text-sm font-medium text-[#1A1110]"
                 >
-                  Nomor WhatsApp
+                  {isEn ? 'WhatsApp Number' : 'Nomor WhatsApp'}
                 </label>
-                <span className="text-[11px] text-[#8C8280]">Opsional</span>
+                <span className="text-[11px] text-[#8C8280]">{isEn ? 'Optional' : 'Opsional'}</span>
               </div>
               <div className="relative">
                 <input
@@ -275,7 +275,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimal 8 karakter"
+                  placeholder={isEn ? 'At least 8 characters' : 'Minimal 8 karakter'}
                   required
                   autoComplete="new-password"
                   className="w-full h-12 pl-5 pr-12 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7] tracking-wider"
@@ -284,7 +284,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7E7E88] hover:text-[#1A1110] transition-colors p-1.5 rounded-full hover:bg-black/5 cursor-pointer focus:outline-none"
-                  title={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                  title={showPassword ? (isEn ? 'Hide password' : 'Sembunyikan kata sandi') : (isEn ? 'Show password' : 'Tampilkan kata sandi')}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -298,9 +298,9 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   htmlFor="reg-store-name"
                   className="block text-xs sm:text-sm font-medium text-[#1A1110]"
                 >
-                  Nama Toko Online <span className="text-slate-400 font-normal">(Opsional)</span>
+                  {isEn ? 'Online Store Name' : 'Nama Toko Online'} <span className="text-slate-400 font-normal">{isEn ? '(Optional)' : '(Opsional)'}</span>
                 </label>
-                <span className="text-[11px] text-[#7E7E88]">Boleh diisi nanti</span>
+                <span className="text-[11px] text-[#7E7E88]">{isEn ? 'Can be filled in later' : 'Boleh diisi nanti'}</span>
               </div>
               <div className="relative">
                 <input
@@ -308,7 +308,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   type="text"
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
-                  placeholder="Contoh: Toko Berkah UMKM"
+                  placeholder={isEn ? 'e.g. Toko Berkah UMKM' : 'Contoh: Toko Berkah UMKM'}
                   className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
                 />
               </div>
@@ -325,7 +325,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span>{t('saving', 'Mendaftarkan akun...')}</span>
+                    <span>{isEn ? 'Creating account...' : t('saving', 'Mendaftarkan akun...')}</span>
                   </>
                 ) : (
                   <span>{t('auth_signup_now', 'Daftar Sekarang')}</span>

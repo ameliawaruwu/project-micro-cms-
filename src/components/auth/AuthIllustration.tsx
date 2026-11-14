@@ -1,10 +1,12 @@
 import React from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface AuthIllustrationProps {
   variant?: 'full' | 'desktop-only' | 'mobile-only';
 }
 
 export const AuthIllustration: React.FC<AuthIllustrationProps> = ({ variant = 'full' }) => {
+  const { isEn } = useLanguage();
   return (
     <>
       {/* ========================================================================= */}
@@ -185,7 +187,7 @@ export const AuthIllustration: React.FC<AuthIllustrationProps> = ({ variant = 'f
                   fontFamily="sans-serif"
                   letterSpacing="2"
                 >
-                  🏪 TOKO UMKM DIGITAL
+                  {isEn ? '🏪 DIGITAL MSME STORE' : '🏪 TOKO UMKM DIGITAL'}
                 </text>
 
                 {/* Classic Minimal Awning / Kanopi */}
@@ -263,7 +265,7 @@ export const AuthIllustration: React.FC<AuthIllustrationProps> = ({ variant = 'f
                   <g transform="translate(48, 55)">
                     <rect x="0" y="0" width="64" height="24" rx="12" fill="#66000E" />
                     <text x="32" y="16" fill="#FFFFFF" fontSize="10" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
-                      BUKA
+                      {isEn ? 'OPEN' : 'BUKA'}
                     </text>
                   </g>
                 </g>
@@ -287,10 +289,10 @@ export const AuthIllustration: React.FC<AuthIllustrationProps> = ({ variant = 'f
                 <circle cx="25" cy="25" r="14" fill="#66000E" />
                 <path d="M19,25 L23,29 L31,21" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 <text x="50" y="24" fill="#241A1A" fontSize="11" fontWeight="bold" fontFamily="sans-serif">
-                  Toko Online Siap Jualan
+                  {isEn ? 'Online Store Ready to Sell' : 'Toko Online Siap Jualan'}
                 </text>
                 <text x="50" y="38" fill="#706866" fontSize="10" fontWeight="500" fontFamily="sans-serif">
-                  Katalog • Order WA • Pembayaran
+                  {isEn ? 'Catalog • WA Orders • Payments' : 'Katalog • Order WA • Pembayaran'}
                 </text>
               </g>
             </g>

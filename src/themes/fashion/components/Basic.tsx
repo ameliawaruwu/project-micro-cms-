@@ -11,8 +11,10 @@ import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { STORE_ROUTES } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
   const header = getHeaderDisplay(sectionOptions);
   const showLogo = sectionOptions.showLogo ?? true;
@@ -47,7 +49,7 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
 
         <div className="w-20 shrink-0 flex justify-end">
           {header.showCart && (
-            <button type="button" data-href="/keranjang" aria-label="Buka keranjang belanja" className="text-white hover:text-gray-400 transition-colors relative cursor-pointer p-1">
+            <button type="button" data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'} className="text-white hover:text-gray-400 transition-colors relative cursor-pointer p-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
               <CartCountBadge className="absolute -top-1 -right-1.5 min-w-[16px] h-4 px-1 bg-white text-black text-[9px] font-bold rounded-full flex items-center justify-center" />
             </button>
@@ -129,6 +131,7 @@ export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions
 };
 
 export const FashionFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
   const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
   const storeDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
@@ -172,7 +175,7 @@ export const FashionFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean;
 
           {(email || address) && (
             <div>
-              <h3 className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-5">Kontak</h3>
+              <h3 className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-5">{isEn ? 'Contact' : 'Kontak'}</h3>
               <ul className="space-y-3 text-sm text-gray-300">
                 {address && <li className="break-words">{address}</li>}
                 {email && <li><a href={`mailto:${email}`} className="hover:text-white transition-colors break-all">{email}</a></li>}

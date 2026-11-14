@@ -5,8 +5,10 @@ import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
   
@@ -15,7 +17,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address;
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
   const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. Hak cipta dilindungi.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. ${isEn ? 'All rights reserved.' : 'Hak cipta dilindungi.'}`;
 
   // Ponsel & tablet: nama toko selebar penuh di atas, lalu Navigasi dan Kontak berdampingan
   // (bukan Kontak sendirian di baris bawah). Desktop tetap 12 kolom 5/3/4.
@@ -82,7 +84,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
         </div>
 
         <div className={navColClass}>
-          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">Navigasi</h4>
+          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">{isEn ? 'Navigation' : 'Navigasi'}</h4>
           <ul className="space-y-2.5 sm:space-y-3">
             {navList.map((nav: any) => (
               <li key={nav.id}>
@@ -95,7 +97,7 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boole
         </div>
 
         <div className={contactColClass}>
-          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">Kontak</h4>
+          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">{isEn ? 'Contact' : 'Kontak'}</h4>
           <ul className="space-y-2 text-xs sm:text-sm text-gray-600 font-light mb-4">
             {address && <li className="break-words">{address}</li>}
             {email && <li className="break-all"><a href={`mailto:${email}`} className="hover:text-black transition-colors">{email}</a></li>}

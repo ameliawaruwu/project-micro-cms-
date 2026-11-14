@@ -10,8 +10,10 @@ import { ShoppingBag as CartBagIcon } from 'lucide-react';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { NavTrackOrderButton } from '../../NavTrackOrderButton';
 import { STORE_ROUTES, formatRupiah, productHref } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
   const header = getHeaderDisplay(sectionOptions);
 
@@ -62,7 +64,7 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
         {header.showCart && (
           <button
             type="button"
-            data-href="/keranjang" aria-label="Buka keranjang belanja"
+            data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'}
             className="relative p-2.5 bg-transparent border rounded transition-all duration-300 cursor-pointer flex items-center justify-center"
             style={{ borderColor: accentColor, color: accentColor }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accentColor; e.currentTarget.style.color = '#fff'; e.currentTarget.style.boxShadow = `0 0 15px ${accentColor}`; }}
@@ -150,6 +152,7 @@ export const FuturisticHero: React.FC<{ sectionOptions?: any; accentColor?: stri
 };
 
 export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const title = sectionOptions.featuredTitle || sectionOptions.heading || 'Produk Unggulan';
   const desiredCols = [2, 3, 4].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 3;
   // Ikuti pengaturan editor (kategori, produk pilihan, urutan, jumlah); tanpa pilihan manual
@@ -192,7 +195,7 @@ export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accent
             </div>
             <div className="p-3 sm:p-8 relative z-20 border-t border-gray-800 bg-[#0a0a0a]/80 backdrop-blur-sm">
               <div className="flex justify-between items-center gap-2 mb-3">
-                <div className="text-[10px] font-mono uppercase tracking-wider truncate min-w-0" style={{ color: accentColor }}>{product.categoryName || 'Produk'}</div>
+                <div className="text-[10px] font-mono uppercase tracking-wider truncate min-w-0" style={{ color: accentColor }}>{product.categoryName || (isEn ? 'Product' : 'Produk')}</div>
                 <div className="text-[10px] text-gray-500 font-mono">0{i+1}</div>
               </div>
               <h3 className="font-bold text-sm sm:text-xl mb-2 sm:mb-3 text-white line-clamp-2 break-words">{product.name}</h3>
@@ -206,8 +209,9 @@ export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accent
 };
 
 export const FuturisticFooter: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#A855F7' }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name}. Hak cipta dilindungi.`;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name}. ${isEn ? 'All rights reserved.' : 'Hak cipta dilindungi.'}`;
 
   return (
     <footer className="w-full px-4 sm:px-8 py-12 sm:py-16 bg-[#020202] border-t text-center relative overflow-hidden" style={{ borderColor: `${accentColor}33` }}>

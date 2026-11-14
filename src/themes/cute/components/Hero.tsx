@@ -5,8 +5,10 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { STORE_ROUTES } from '../../storefrontLinks';
 import { useThemeProductsSource } from '../../useSectionProducts';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const CuteHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const products = useThemeProductsSource('cute');
   // Tanpa banner dari merchant, pakai foto produk toko sendiri sebelum gambar bawaan tema.
@@ -88,7 +90,7 @@ export const CuteHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTa
             />
             {/* Cute badge on image */}
             <div className="absolute right-2 sm:-right-4 top-6 sm:top-10 bg-[#FFD1DC] w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center border-4 border-white shadow-md rotate-12 group-hover:rotate-45 transition-transform">
-              <span className="font-black text-[#FF85A1] text-sm sm:text-base text-center leading-tight">Produk<br/>Terbaru</span>
+              <span className="font-black text-[#FF85A1] text-sm sm:text-base text-center leading-tight">{isEn ? <>New<br/>Arrivals</> : <>Produk<br/>Terbaru</>}</span>
             </div>
           </div>
         </div>

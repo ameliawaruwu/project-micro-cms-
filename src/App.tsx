@@ -114,6 +114,7 @@ import { normalizeThemeId } from './themes/ThemeRegistry';
 import { THEME_DATA_MAP } from './themes/themeData';
 import { useCmsStore } from './cms/useCmsStore';
 import { filterRealProducts } from './utils/demoProducts';
+import { useLanguage, isEnglishPreferred } from './contexts/LanguageContext';
 
 const isAnyAdminRole = (role?: string) =>
   role === 'admin' ||
@@ -125,6 +126,7 @@ const isAnyAdminRole = (role?: string) =>
 export default function App() {
   // Auth Context Hook
   const { user, store: authStore, isAuthenticated, isLoading: isAuthLoading, logout } = useAuth();
+  const { isEn } = useLanguage();
 
   // State: Authentication View
   const [authView, setAuthView] = useState<'login' | 'register' | 'forgot_password' | null>(null);
@@ -156,7 +158,10 @@ export default function App() {
       if (!isStorefrontOrPreview) {
         setViewMode(targetMode);
         setAuthView(null);
-        addToast(isNewUser ? 'Akun Google berhasil dibuat!' : 'Berhasil masuk dengan akun Google!');
+        const en = isEnglishPreferred();
+        addToast(isNewUser
+          ? (en ? 'Google account created successfully!' : 'Akun Google berhasil dibuat!')
+          : (en ? 'Signed in with Google successfully!' : 'Berhasil masuk dengan akun Google!'));
       }
       loadData();
     };
@@ -170,7 +175,9 @@ export default function App() {
     };
 
     const handleGoogleUnregistered = (e: any) => {
-      const msg = e.detail?.message || `Akun Google (${e.detail?.email || 'ini'}) belum terdaftar. Silakan lakukan registrasi terlebih dahulu.`;
+      const msg = e.detail?.message || (isEnglishPreferred()
+        ? `This Google account${e.detail?.email ? ` (${e.detail.email})` : ''} is not registered yet. Please sign up first.`
+        : `Akun Google (${e.detail?.email || 'ini'}) belum terdaftar. Silakan lakukan registrasi terlebih dahulu.`);
       console.warn('[App] Akun Google belum terdaftar:', e.detail?.email);
       setViewMode('landing');
       setAuthView('login');
@@ -941,7 +948,9 @@ export default function App() {
       setOrders((prev) =>
         prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
       );
-      addToast(`Status pesanan #${updatedOrder.orderNumber} terupdate secara real-time!`, 'info');
+      addToast(isEnglishPreferred()
+        ? `Order #${updatedOrder.orderNumber} status updated in real time!`
+        : `Status pesanan #${updatedOrder.orderNumber} terupdate secara real-time!`, 'info');
     });
 
     const handleOrderCreated = (e: any) => {
@@ -991,7 +1000,9 @@ export default function App() {
       setStores((prev) => prev.map((s) => (s.id === updatedStore.id ? { ...s, ...updatedStore } : s)));
 
       if (updatedStore.isPublished === false && viewMode === 'storefront-live') {
-        addToast('⚠️ Toko ini baru saja ditarik dari publikasi (unpublish) oleh pemilik toko.', 'info');
+        addToast(isEnglishPreferred()
+          ? '⚠️ This store was just unpublished by its owner.'
+          : '⚠️ Toko ini baru saja ditarik dari publikasi (unpublish) oleh pemilik toko.', 'info');
       }
     });
 
@@ -1038,7 +1049,7 @@ export default function App() {
     const userStores = await storeService.getStoresForUser(user.id);
     const target = userStores.find((s) => s.id === storeId);
     if (!target) {
-      addToast('Anda tidak memiliki izin mengakses toko ini.', 'error');
+      addToast(isEn ? 'You do not have permission to access this store.' : 'Anda tidak memiliki izin mengakses toko ini.', 'error');
       return;
     }
 
@@ -1092,7 +1103,7 @@ export default function App() {
   // Handlers for Products
   const handleOpenAddProduct = () => {
     if (!activeStore || !activeStore.id) {
-      addToast('Silakan atur nama dan profil toko Anda di Pengaturan Toko terlebih dahulu.', 'info');
+      addToast(isEn ? 'Please set up your store name and profile in Store Settings first.' : 'Silakan atur nama dan profil toko Anda di Pengaturan Toko terlebih dahulu.', 'info');
       setActiveTab('pengaturan');
       return;
     }
@@ -1128,24 +1139,24 @@ export default function App() {
       useCmsStore.getState().setProductsFromMerchant(next);
       return next;
     });
-    addToast(`Produk "${created.name}" berhasil disalin.`);
+    addToast(isEn ? `Product "${created.name}" duplicated successfully.` : `Produk "${created.name}" berhasil disalin.`);
   };
 
   const handleSyncProducts = async () => {
     if (!activeStore) return;
-    addToast('Menyinkronkan produk ke database Supabase Cloud...');
+    addToast(isEn ? 'Syncing products to the Supabase Cloud database...' : 'Menyinkronkan produk ke database Supabase Cloud...');
     const res = await productService.syncAllLocalToCloud(activeStore.id);
     if (res.success) {
-      addToast(`Berhasil! ${res.count} produk tersinkron ke database Supabase Cloud.`);
+      addToast(isEn ? `Done! ${res.count} products synced to the Supabase Cloud database.` : `Berhasil! ${res.count} produk tersinkron ke database Supabase Cloud.`);
       await loadData();
     } else {
-      addToast(`Gagal sinkron: ${res.error}`, 'error');
+      addToast(isEn ? `Sync failed: ${res.error}` : `Gagal sinkron: ${res.error}`, 'error');
     }
   };
 
   const handleSaveProduct = async (data: any) => {
     if (!activeStore || !activeStore.id) {
-      addToast('Toko belum dibuat. Silakan lengkapi profil toko di Pengaturan Toko terlebih dahulu.', 'error');
+      addToast(isEn ? 'Store not created yet. Please complete your store profile in Store Settings first.' : 'Toko belum dibuat. Silakan lengkapi profil toko di Pengaturan Toko terlebih dahulu.', 'error');
       setIsProductFormModalOpen(false);
       setActiveTab('pengaturan');
       return;
@@ -1159,7 +1170,7 @@ export default function App() {
           useCmsStore.getState().setProductsFromMerchant(next);
           return next;
         });
-        addToast(`Produk "${updated.name}" berhasil diperbarui.`);
+        addToast(isEn ? `Product "${updated.name}" updated successfully.` : `Produk "${updated.name}" berhasil diperbarui.`);
       } else {
         const res = await productService.createProduct(activeStore.id, data);
         const created = res.product;
@@ -1169,15 +1180,19 @@ export default function App() {
           return next;
         });
         if (res.syncedToCloud) {
-          addToast(`Produk "${created.name}" berhasil disimpan & tersinkron ke cloud!`);
+          addToast(isEn ? `Product "${created.name}" saved & synced to the cloud!` : `Produk "${created.name}" berhasil disimpan & tersinkron ke cloud!`);
         } else {
-          addToast(`Produk "${created.name}" tersimpan di perangkat ini. Error cloud: ${res.cloudError || 'tidak diketahui'}`, 'info');
+          addToast(isEn
+            ? `Product "${created.name}" saved on this device. Cloud error: ${res.cloudError || 'unknown'}`
+            : `Produk "${created.name}" tersimpan di perangkat ini. Error cloud: ${res.cloudError || 'tidak diketahui'}`, 'info');
         }
       }
       setIsProductFormModalOpen(false);
       setProductToEdit(null);
     } catch (err: any) {
-      addToast(`Gagal menyimpan produk: ${err?.message || 'Terjadi kesalahan. Coba lagi.'}`, 'error');
+      addToast(isEn
+        ? `Failed to save product: ${err?.message || 'Something went wrong. Please try again.'}`
+        : `Gagal menyimpan produk: ${err?.message || 'Terjadi kesalahan. Coba lagi.'}`, 'error');
     } finally {
       setIsSavingProduct(false);
     }
@@ -1211,9 +1226,9 @@ export default function App() {
 
     try {
       await productService.deleteProduct(targetId, targetStoreId);
-      addToast(`Produk "${targetName}" berhasil dihapus.`);
+      addToast(isEn ? `Product "${targetName}" deleted successfully.` : `Produk "${targetName}" berhasil dihapus.`);
     } catch (err: any) {
-      addToast(`Gagal menghapus produk: ${err.message}`, 'error');
+      addToast(isEn ? `Failed to delete product: ${err.message}` : `Gagal menghapus produk: ${err.message}`, 'error');
       if (targetStoreId) {
         const fresh = await productService.getProductsByStore(targetStoreId);
         setProducts(fresh);
@@ -1233,7 +1248,7 @@ export default function App() {
       useCmsStore.getState().setProductsFromMerchant(next);
       return next;
     });
-    addToast(`Stok ${prod.name} diperbarui menjadi ${newStock}.`);
+    addToast(isEn ? `Stock for ${prod.name} updated to ${newStock}.` : `Stok ${prod.name} diperbarui menjadi ${newStock}.`);
   };
 
   // Handlers for Orders
@@ -1251,7 +1266,9 @@ export default function App() {
   const handleConfirmShipping = async (orderId: string, courier: CourierType, resi: string) => {
     const updated = await orderService.processShipment(orderId, courier, resi);
     setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
-    addToast(`Pesanan #${updated.orderNumber} berhasil diproses dengan resi ${updated.resiNumber}.`);
+    addToast(isEn
+      ? `Order #${updated.orderNumber} processed with tracking number ${updated.resiNumber}.`
+      : `Pesanan #${updated.orderNumber} berhasil diproses dengan resi ${updated.resiNumber}.`);
   };
 
   const handlePrintReceipt = (order: Order) => {
@@ -1270,9 +1287,9 @@ export default function App() {
     try {
       const updated = await orderService.updateOrderStatus(orderId, 'Diproses', undefined, currentStore?.id);
       replaceOrder(updated);
-      addToast(`Pesanan COD #${updated.orderNumber} dikonfirmasi. Silakan atur pengiriman.`);
+      addToast(isEn ? `COD order #${updated.orderNumber} confirmed. Please arrange shipping.` : `Pesanan COD #${updated.orderNumber} dikonfirmasi. Silakan atur pengiriman.`);
     } catch (err: any) {
-      addToast(err?.message || 'Gagal mengonfirmasi pesanan.', 'error');
+      addToast(err?.message || (isEn ? 'Failed to confirm order.' : 'Gagal mengonfirmasi pesanan.'), 'error');
     }
   };
 
@@ -1284,9 +1301,9 @@ export default function App() {
         updated = await orderService.updatePaymentStatus(orderId, 'Sudah Dibayar', currentStore?.id);
       }
       replaceOrder(updated);
-      addToast(`Pesanan #${updated.orderNumber} telah ditandai Selesai.`);
+      addToast(isEn ? `Order #${updated.orderNumber} marked as Completed.` : `Pesanan #${updated.orderNumber} telah ditandai Selesai.`);
     } catch (err: any) {
-      addToast(err?.message || 'Gagal menandai pesanan selesai.', 'error');
+      addToast(err?.message || (isEn ? 'Failed to mark order as completed.' : 'Gagal menandai pesanan selesai.'), 'error');
     }
   };
 
@@ -1294,9 +1311,9 @@ export default function App() {
     try {
       const updated = await orderService.updatePaymentStatus(orderId, 'Sudah Dibayar', currentStore?.id);
       replaceOrder(updated);
-      addToast(`Pembayaran pesanan #${updated.orderNumber} ditandai lunas.`);
+      addToast(isEn ? `Payment for order #${updated.orderNumber} marked as paid.` : `Pembayaran pesanan #${updated.orderNumber} ditandai lunas.`);
     } catch (err: any) {
-      addToast(err?.message || 'Gagal menandai pembayaran lunas.', 'error');
+      addToast(err?.message || (isEn ? 'Failed to mark payment as paid.' : 'Gagal menandai pembayaran lunas.'), 'error');
     }
   };
 
@@ -1310,7 +1327,9 @@ export default function App() {
   const handleCreateStoreFromSettings = async (data: Partial<Store>) => {
     if (!user) return;
     if (stores && stores.length > 0 && stores[0].id) {
-      addToast('Akun Anda sudah memiliki toko terdaftar. Satu akun hanya diperbolehkan memiliki satu toko.', 'error');
+      addToast(isEn
+        ? 'Your account already has a registered store. Each account may only have one store.'
+        : 'Akun Anda sudah memiliki toko terdaftar. Satu akun hanya diperbolehkan memiliki satu toko.', 'error');
       return;
     }
     try {
@@ -1341,10 +1360,10 @@ export default function App() {
       setStores([newStore]);
       localStorage.setItem('microcms_auth_store', JSON.stringify(newStore));
       localStorage.setItem('microcms_active_store_id', newStore.id);
-      addToast(`🎉 Toko "${newStore.name}" berhasil dibuat!`);
+      addToast(isEn ? `🎉 Store "${newStore.name}" created successfully!` : `🎉 Toko "${newStore.name}" berhasil dibuat!`);
     } catch (err) {
       console.error('Error creating store:', err);
-      addToast('Gagal membuat toko. Silakan coba lagi.', 'error');
+      addToast(isEn ? 'Failed to create store. Please try again.' : 'Gagal membuat toko. Silakan coba lagi.', 'error');
     }
   };
 
@@ -1353,7 +1372,7 @@ export default function App() {
     const updated = await storeService.updateStore(activeStore.id, { layoutSettings }, user?.id);
     setActiveStore(updated);
     setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-    addToast('Tata letak halaman toko berhasil disimpan!');
+    addToast(isEn ? 'Store page layout saved successfully!' : 'Tata letak halaman toko berhasil disimpan!');
   };
 
   const handlePublishStore = async (storeId?: string) => {
@@ -1361,7 +1380,7 @@ export default function App() {
     if (!targetId) return;
     // Validasi ownership: pastikan toko yang di-publish milik user yang sedang login
     if (storeId && activeStore?.id && storeId !== activeStore.id) {
-      addToast('Akses ditolak: Anda tidak dapat mempublikasikan toko milik merchant lain.', 'error');
+      addToast(isEn ? "Access denied: you cannot publish another merchant's store." : 'Akses ditolak: Anda tidak dapat mempublikasikan toko milik merchant lain.', 'error');
       return;
     }
 
@@ -1369,10 +1388,10 @@ export default function App() {
       const updated = await storeService.setPublishedStatus(targetId, true, user?.id);
       setActiveStore(updated);
       setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-      addToast('🎉 Selamat! Toko online Anda resmi dipublikasikan dan live!');
+      addToast(isEn ? '🎉 Congratulations! Your online store is now published and live!' : '🎉 Selamat! Toko online Anda resmi dipublikasikan dan live!');
     } catch (err: any) {
       console.error('Error publishing store:', err);
-      addToast(err?.message || 'Gagal mempublikasikan toko.', 'error');
+      addToast(err?.message || (isEn ? 'Failed to publish store.' : 'Gagal mempublikasikan toko.'), 'error');
     }
   };
 
@@ -1381,17 +1400,17 @@ export default function App() {
     if (!targetId) return;
     // Validasi ownership: pastikan toko yang di-unpublish milik user yang sedang login
     if (storeId && activeStore?.id && storeId !== activeStore.id) {
-      addToast('Akses ditolak: Anda tidak dapat mengubah status toko milik merchant lain.', 'error');
+      addToast(isEn ? "Access denied: you cannot change the status of another merchant's store." : 'Akses ditolak: Anda tidak dapat mengubah status toko milik merchant lain.', 'error');
       return;
     }
     try {
       const updated = await storeService.setPublishedStatus(targetId, false, user?.id);
       setActiveStore(updated);
       setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-      addToast('Toko online berhasil di-unpublish (kembali menjadi draf).', 'info');
+      addToast(isEn ? 'Online store unpublished (back to draft).' : 'Toko online berhasil di-unpublish (kembali menjadi draf).', 'info');
     } catch (err: any) {
       console.error('Error unpublishing store:', err);
-      addToast(err?.message || 'Gagal membatalkan publikasi toko.', 'error');
+      addToast(err?.message || (isEn ? 'Failed to unpublish store.' : 'Gagal membatalkan publikasi toko.'), 'error');
     }
   };
 
@@ -1400,13 +1419,13 @@ export default function App() {
     if (!activeStore) return;
     const amt = Number(withdrawAmount) || 0;
     if (amt <= 0 || amt > activeStore.balance) {
-      alert('Jumlah penarikan tidak valid atau melebihi saldo aktif.');
+      alert(isEn ? 'Invalid withdrawal amount or it exceeds the active balance.' : 'Jumlah penarikan tidak valid atau melebihi saldo aktif.');
       return;
     }
     const { newBalance } = await storeService.withdrawBalance(activeStore.id, amt);
     setActiveStore({ ...activeStore, balance: newBalance });
     setWithdrawModalOpen(false);
-    addToast(`Penarikan dana ${formatRupiah(amt)} berhasil diproses ke rekening!`);
+    addToast(isEn ? `Withdrawal of ${formatRupiah(amt)} processed to your account!` : `Penarikan dana ${formatRupiah(amt)} berhasil diproses ke rekening!`);
   };
 
   // Handlers for Cart & Public Storefront
@@ -1414,7 +1433,7 @@ export default function App() {
     if (!activeStore) return;
     const newItems = cartService.addToCart(activeStore.slug, product, quantity);
     setCartItems([...newItems]);
-    addToast(`${quantity}x ${product.name} dimasukkan ke keranjang!`);
+    addToast(isEn ? `${quantity}x ${product.name} added to cart!` : `${quantity}x ${product.name} dimasukkan ke keranjang!`);
   };
 
   const handleBuyNow = (product: Product, quantity = 1) => {
@@ -1434,13 +1453,13 @@ export default function App() {
     if (!activeStore) return;
     const newItems = cartService.removeFromCart(activeStore.slug, productId);
     setCartItems([...newItems]);
-    addToast('Item dihapus dari keranjang.');
+    addToast(isEn ? 'Item removed from cart.' : 'Item dihapus dari keranjang.');
   };
 
   const handleOrderSuccess = (newOrder: Order) => {
     setOrders((prev) => [newOrder, ...prev]);
     setCartItems([]);
-    addToast(`Pesanan #${newOrder.orderNumber} berhasil dibuat!`);
+    addToast(isEn ? `Order #${newOrder.orderNumber} created successfully!` : `Pesanan #${newOrder.orderNumber} berhasil dibuat!`);
   };
 
   // Handlers for Integrations
@@ -1470,7 +1489,7 @@ export default function App() {
     }
     setAuthView(null);
     setViewMode('merchant-desktop');
-    addToast('Mode Merchant MicroCMS Aktif!', 'info');
+    addToast(isEn ? 'MicroCMS Merchant Mode Active!' : 'Mode Merchant MicroCMS Aktif!', 'info');
   };
 
   const handleLaunchStorefrontDemo = async () => {
@@ -1488,7 +1507,7 @@ export default function App() {
     }
     setAuthView(null);
     setViewMode('storefront');
-    addToast('Mode Toko Online Pembeli (Storefront) Aktif!', 'info');
+    addToast(isEn ? 'Buyer Online Store (Storefront) Mode Active!' : 'Mode Toko Online Pembeli (Storefront) Aktif!', 'info');
   };
 
   // 0. AUTH LOADING SPLASH: Mencegah flicker LandingPage saat session sedang diverifikasi
@@ -1499,7 +1518,7 @@ export default function App() {
           <KroomifyLogo className="h-10 w-auto" />
           <div className="flex items-center gap-2.5 text-sm font-medium text-[#706866]">
             <Loader2 className="w-4 h-4 animate-spin text-[#66000E]" />
-            <span>Memverifikasi sesi toko...</span>
+            <span>{isEn ? 'Verifying store session...' : 'Memverifikasi sesi toko...'}</span>
           </div>
         </div>
       </div>
@@ -1555,7 +1574,7 @@ export default function App() {
               setRegisteredEmailForLogin(registeredEmail);
             }
             setAuthView('login');
-            addToast('Akun berhasil didaftarkan! Silakan masuk dengan kata sandi Anda.', 'success');
+            addToast(isEn ? 'Account registered! Please log in with your password.' : 'Akun berhasil didaftarkan! Silakan masuk dengan kata sandi Anda.', 'success');
           }}
           onNavigateLogin={() => setAuthView('login')}
           onNavigateLanding={() => {
@@ -1581,15 +1600,19 @@ export default function App() {
             setAuthView(null);
             if (targetMode === 'admin') {
               if (currentUser?.role === 'sub_admin_umum') {
-                addToast(currentUser?.communityName ? `Selamat datang di Halaman Komunitas ${currentUser.communityName}!` : 'Selamat datang Admin Umum Komunitas!');
+                addToast(currentUser?.communityName
+                  ? (isEn ? `Welcome to the ${currentUser.communityName} Community Page!` : `Selamat datang di Halaman Komunitas ${currentUser.communityName}!`)
+                  : (isEn ? 'Welcome, Community General Admin!' : 'Selamat datang Admin Umum Komunitas!'));
               } else if (currentUser?.role === 'community_admin' || currentUser?.role === 'sub_admin_produk' || currentUser?.role === 'sub_admin') {
-                addToast(currentUser?.communityName ? `Selamat datang di Portal Toko & Produk ${currentUser.communityName}!` : 'Selamat datang Admin Produk Komunitas!');
+                addToast(currentUser?.communityName
+                  ? (isEn ? `Welcome to the ${currentUser.communityName} Store & Product Portal!` : `Selamat datang di Portal Toko & Produk ${currentUser.communityName}!`)
+                  : (isEn ? 'Welcome, Community Product Admin!' : 'Selamat datang Admin Produk Komunitas!'));
               } else {
-                addToast('Selamat datang di Super Admin Panel!');
+                addToast(isEn ? 'Welcome to the Super Admin Panel!' : 'Selamat datang di Super Admin Panel!');
               }
             } else {
               loadData();
-              addToast('Berhasil masuk ke Dashboard Toko!');
+              addToast(isEn ? 'Signed in to the Store Dashboard!' : 'Berhasil masuk ke Dashboard Toko!');
               // Merchant langsung diarahkan ke Dashboard tanpa popup onboarding modal
             }
           }}
@@ -1663,7 +1686,7 @@ export default function App() {
       <div className="min-h-screen bg-[#FAF7F7] flex flex-col items-center justify-center font-sans">
         <div className="flex flex-col items-center gap-3">
           <div className="w-9 h-9 border-3 border-[#66000E] border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-xs font-semibold text-[#706866] tracking-wide">Memuat...</span>
+          <span className="text-xs font-semibold text-[#706866] tracking-wide">{isEn ? 'Loading...' : 'Memuat...'}</span>
         </div>
       </div>
     );
@@ -1681,15 +1704,15 @@ export default function App() {
               <span className="truncate">
                 {currentStore?.name ? (
                   <>
-                    Pratinjau: <strong>{currentStore.name}</strong>
+                    {isEn ? 'Preview: ' : 'Pratinjau: '}<strong>{currentStore.name}</strong>
                     {!currentStore.isPublished && (
                       <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                        Belum Publish
+                        {isEn ? 'Not Published' : 'Belum Publish'}
                       </span>
                     )}
                   </>
                 ) : (
-                  <>Toko Tidak Ditemukan</>
+                  <>{isEn ? 'Store Not Found' : 'Toko Tidak Ditemukan'}</>
                 )}
               </span>
             </div>
@@ -1703,7 +1726,7 @@ export default function App() {
                     ? 'bg-[#FFD358] text-[#002A45] shadow-xs'
                     : 'text-white/80 hover:text-white'
                   }`}
-                title="Mode Desktop"
+                title={isEn ? 'Desktop Mode' : 'Mode Desktop'}
               >
                 <Monitor className="w-3.5 h-3.5" />
                 <span className="hidden md:inline">Desktop</span>
@@ -1715,7 +1738,7 @@ export default function App() {
                     ? 'bg-[#FFD358] text-[#002A45] shadow-xs'
                     : 'text-white/80 hover:text-white'
                   }`}
-                title="Mode Tablet"
+                title={isEn ? 'Tablet Mode' : 'Mode Tablet'}
               >
                 <Tablet className="w-3.5 h-3.5" />
                 <span className="hidden md:inline">Tablet</span>
@@ -1727,10 +1750,10 @@ export default function App() {
                     ? 'bg-[#FFD358] text-[#002A45] shadow-xs'
                     : 'text-white/80 hover:text-white'
                   }`}
-                title="Mode Ponsel"
+                title={isEn ? 'Phone Mode' : 'Mode Ponsel'}
               >
                 <Smartphone className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Ponsel</span>
+                <span className="hidden md:inline">{isEn ? 'Phone' : 'Ponsel'}</span>
               </button>
             </div>
 
@@ -1738,10 +1761,10 @@ export default function App() {
               <button
                 onClick={() => setViewMode('storefront-live')}
                 className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer text-xs transition"
-                title="Buka toko penuh tanpa frame simulator"
+                title={isEn ? 'Open the full store without the simulator frame' : 'Buka toko penuh tanpa frame simulator'}
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Layar Penuh</span>
+                <span className="hidden sm:inline">{isEn ? 'Full Screen' : 'Layar Penuh'}</span>
               </button>
 
               <button
@@ -1755,7 +1778,7 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg bg-[#FFD358] hover:bg-[#FFB915] text-[#002A45] font-extrabold flex items-center gap-1 shadow-xs cursor-pointer text-xs"
               >
                 <Monitor className="w-3.5 h-3.5" />
-                <span>{isAnyAdminRole(user?.role) ? 'Ke Admin' : 'Kembali'}</span>
+                <span>{isAnyAdminRole(user?.role) ? (isEn ? 'To Admin' : 'Ke Admin') : (isEn ? 'Back' : 'Kembali')}</span>
               </button>
             </div>
           </div>
@@ -1843,7 +1866,7 @@ export default function App() {
             <div className="flex items-center justify-center min-h-screen bg-white">
               <div className="flex flex-col items-center gap-3 text-gray-400">
                 <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm font-medium">Memuat toko...</span>
+                <span className="text-sm font-medium">{isEn ? 'Loading store...' : 'Memuat toko...'}</span>
               </div>
             </div>
           );
@@ -1924,14 +1947,14 @@ export default function App() {
             {/* Owner Draft / Preview Banner in Preview Mode */}
             {isPreview && (
               <div className="bg-amber-500 text-white text-xs font-semibold px-4 py-2 text-center flex items-center justify-between sm:justify-center gap-3 sticky top-0 z-50 shadow-xs">
-                <span>⚠️ Mode Pratinjau: Menampilkan tampilan toko dan tata letak yang sedang diedit.</span>
+                <span>{isEn ? '⚠️ Preview Mode: showing the store design and layout being edited.' : '⚠️ Mode Pratinjau: Menampilkan tampilan toko dan tata letak yang sedang diedit.'}</span>
                 <div className="flex items-center gap-2">
                   {!isPublished && user && (
                     <button
                       onClick={() => handlePublishStore(currentStore.id)}
                       className="px-2.5 py-1 bg-white text-amber-900 rounded-lg text-[11px] font-bold hover:bg-amber-50 cursor-pointer transition shadow-2xs"
                     >
-                      Publikasikan Sekarang
+                      {isEn ? 'Publish Now' : 'Publikasikan Sekarang'}
                     </button>
                   )}
                   <button
@@ -1948,7 +1971,7 @@ export default function App() {
                     }}
                     className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-semibold cursor-pointer transition border border-amber-400/40 shadow-2xs"
                   >
-                    Kembali ke Editor
+                    {isEn ? 'Back to Editor' : 'Kembali ke Editor'}
                   </button>
                 </div>
               </div>
@@ -1967,7 +1990,9 @@ export default function App() {
                       }
                     }}
                     className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
-                    title={isAnyAdminRole(user?.role) ? 'Kembali ke Admin Panel' : 'Kembali ke Dashboard Merchant'}
+                    title={isAnyAdminRole(user?.role)
+                      ? (isEn ? 'Back to Admin Panel' : 'Kembali ke Admin Panel')
+                      : (isEn ? 'Back to Merchant Dashboard' : 'Kembali ke Dashboard Merchant')}
                   >
                     <Monitor className="w-3.5 h-3.5" />
                     <span>{isAnyAdminRole(user?.role) ? 'Admin Panel' : 'Dashboard'}</span>
@@ -1983,7 +2008,7 @@ export default function App() {
       {/* 3. PUBLIC STOREFRONT PHONE SIMULATOR */}
       {viewMode === 'storefront-phone' && (
         <DeviceSimulatorFrame
-          title={`Toko Online ${currentStore.name}`}
+          title={isEn ? `${currentStore.name} Online Store` : `Toko Online ${currentStore.name}`}
           urlPath={`microcms.id/${currentStore.slug}`}
           onClose={() => setViewMode(isAnyAdminRole(user?.role) ? 'admin' : 'merchant-desktop')}
         >
@@ -2029,7 +2054,7 @@ export default function App() {
             activeStore={currentStore}
             showCommunityMenu={showCommunityMenu}
             liveStoreUrl={liveStoreUrl}
-            userName={user?.name || 'Pemilik Toko'}
+            userName={user?.name || (isEn ? 'Store Owner' : 'Pemilik Toko')}
             isCollapsed={isSidebarCollapsed}
             isOpenMobile={mobileSidebarOpen}
             onCloseMobile={() => setMobileSidebarOpen(false)}
@@ -2247,7 +2272,7 @@ export default function App() {
               )}
 
               {/* Footer dasbor (tidak di editor layout yang memenuhi layar) */}
-              {activeTab !== 'layout' && <DashboardFooter panelLabel="Panel Merchant" />}
+              {activeTab !== 'layout' && <DashboardFooter panelLabel={isEn ? 'Merchant Panel' : 'Panel Merchant'} />}
             </main>
 
             {/* Mobile Bottom Navigation */}
@@ -2277,7 +2302,7 @@ export default function App() {
       {/* 2. Custom Alert Dialog: Confirm Delete Product */}
       <ConfirmDeleteModal
         isOpen={Boolean(productToDelete)}
-        title="Hapus Produk?"
+        title={isEn ? 'Delete Product?' : 'Hapus Produk?'}
         itemName={productToDelete?.name}
         isDeleting={isDeletingProduct}
         onConfirm={handleConfirmDeleteProduct}
@@ -2296,7 +2321,10 @@ export default function App() {
           const updated = await productService.updateProduct(id, { status: newStatus });
           setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
           setSelectedMerchantProduct(updated);
-          addToast(`Status produk diubah menjadi "${newStatus}".`);
+          const statusLabelEn: Record<string, string> = { Tersedia: 'Available', 'Hampir Habis': 'Low Stock', Habis: 'Out of Stock', Nonaktif: 'Inactive' };
+          addToast(isEn
+            ? `Product status changed to "${statusLabelEn[newStatus] || newStatus}".`
+            : `Status produk diubah menjadi "${newStatus}".`);
         }}
       />
 
@@ -2383,7 +2411,7 @@ export default function App() {
         store={currentStore}
         onPlanUpgraded={async (newPlan) => {
           await loadData(currentStore.id);
-          addToast(`Toko berhasil di-upgrade ke Paket ${newPlan.toUpperCase()}!`);
+          addToast(isEn ? `Store upgraded to the ${newPlan.toUpperCase()} plan!` : `Toko berhasil di-upgrade ke Paket ${newPlan.toUpperCase()}!`);
         }}
       />
 

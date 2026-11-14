@@ -29,7 +29,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
   storeId = '',
   onShowNotification,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [branches, setBranches] = useState<ShippingBranch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,12 +94,12 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
 
   const handleDelete = async (branch: ShippingBranch) => {
     if (branch.isDefault) {
-      alert('Cabang utama tidak dapat dihapus. Silakan jadikan cabang lain sebagai cabang utama terlebih dahulu.');
+      alert(isEn ? 'The main branch cannot be deleted. Please set another branch as the main branch first.' : 'Cabang utama tidak dapat dihapus. Silakan jadikan cabang lain sebagai cabang utama terlebih dahulu.');
       return;
     }
 
     if (branches.length <= 1) {
-      alert('Minimal harus ada 1 cabang gudang yang terdaftar');
+      alert(isEn ? 'At least 1 warehouse branch must be registered' : 'Minimal harus ada 1 cabang gudang yang terdaftar');
       return;
     }
 
@@ -174,12 +174,12 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
             <Warehouse className="w-6 h-6" />
           </div>
           <p className="font-bold text-sm text-[#1F1F1F]">
-            {searchQuery ? t('branch_empty_title', 'Tidak ada cabang yang cocok dengan pencarian') : 'Belum Ada Cabang atau Gudang Pengiriman'}
+            {searchQuery ? t('branch_empty_title', 'Tidak ada cabang yang cocok dengan pencarian') : isEn ? 'No Shipping Branches or Warehouses Yet' : 'Belum Ada Cabang atau Gudang Pengiriman'}
           </p>
           <p className="max-w-md mx-auto text-[#666666]">
             {searchQuery
-              ? t('branch_empty_search_desc', 'Coba kata kunci pencarian lain atau bersihkan kotak pencarian.')
-              : 'Tambahkan lokasi gudang atau toko fisik Anda sebagai titik penjemputan paket oleh kurir ekspedisi.'}
+              ? (isEn ? 'Try another search keyword or clear the search box.' : 'Coba kata kunci pencarian lain atau bersihkan kotak pencarian.')
+              : isEn ? 'Add your warehouse or physical store location as the pickup point for courier parcels.' : 'Tambahkan lokasi gudang atau toko fisik Anda sebagai titik penjemputan paket oleh kurir ekspedisi.'}
           </p>
           {!searchQuery && (
             <button
@@ -187,7 +187,7 @@ export const BranchManagement: React.FC<BranchManagementProps> = ({
               className="mt-2 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#66000E] to-[#801010] hover:brightness-110 text-white font-semibold text-xs shadow-xs transition cursor-pointer active:scale-[0.98]"
             >
               <Plus className="w-4 h-4" />
-              <span>Tambah Cabang / Gudang Pertama</span>
+              <span>{isEn ? 'Add First Branch / Warehouse' : 'Tambah Cabang / Gudang Pertama'}</span>
             </button>
           )}
         </div>
