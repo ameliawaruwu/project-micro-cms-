@@ -89,9 +89,11 @@ Aplikasi ini **tidak** menyentuh nginx, sudo, atau Cloudflare. Publikasi toko = 
 
 | Endpoint | Method | Keterangan & Perlindungan Keamanan |
 |---|---|---|
-| `/api/midtrans/snap-token` | `POST` | Validasi nominal di server (`grossAmount > 0`), sanitasi order ID/kontak, request Snap token ke Midtrans API menggunakan `MIDTRANS_SERVER_KEY`. |
+| `/api/midtrans/snap-token` | `POST` | Nominal diambil dari database lewat `resolveBillableAmount()` (bukan `grossAmount` browser), sanitasi order ID/kontak, request Snap token ke Midtrans API menggunakan `MIDTRANS_SERVER_KEY`. |
 | `/api/midtrans/notification`| `POST` | Webhook pembayaran dengan validasi signature hash SHA-512 (`order_id + status_code + gross_amount + ServerKey`). |
 | `/api/shipping/rates` | `POST` | Proxy ongkir Biteship API. Melindungi `BITESHIP_API_KEY` agar tidak terlihat di browser. |
+| `/api/shipping/quote` | `POST` | Tarif ongkir bertanda tangan server (HMAC, 2 jam). Berat dihitung dari tabel `products`; `mode: postal` (Biteship → rumus cadangan) atau `zone` (per kota). `backend/orderController.ts`. |
+| `/api/orders/place` | `POST` | Satu-satunya jalur membuat pesanan. Memverifikasi tarif bertanda tangan (toko, berat, tujuan) lalu memanggil `place_order` lewat koneksi DB tepercaya. |
 | `/api/send-email` | `POST` | Pengiriman email transaksi/notifikasi via SMTP dengan rate limit (maks 10 email/menit/IP). |
 | `/api/media/upload` | `POST` | Upload gambar (produk, logo, QRIS, layout, avatar) ke CDNKroombox (`backend/mediaController.ts`). Wajib sesi login; gambar toko dicek hak kelolanya; tipe dicek dari isi file (JPG/PNG/WEBP/GIF, maks 5MB, SVG ditolak); 30 upload/menit/user. Butuh env server `CDN_API_KEY` (opsional `CDN_API_URL`). Frontend: `src/services/mediaService.ts`. |
 
@@ -238,3 +240,40 @@ Saat developer menjalankan `npm run dev` di Windows (`http://localhost:3000`):
 
 4. **Event Navigation di Modal**:  
    Pada tombol tautan eksternal (seperti tombol "Kunjungi Toko" di modal), jangan menaruh `e.preventDefault()`, dan pastikan menggunakan `target="_blank"` serta `rel="noopener noreferrer"`.
+
+---
+
+## 6. Aturan Keamanan Kode (WAJIB untuk setiap perubahan)
+
+> [!IMPORTANT]
+> Setiap kode baru atau perubahan **wajib** ditulis dengan memperhatikan keamanannya. Anggap semua data dari browser bisa diubah pengguna (DevTools, Postman, skrip), termasuk harga, ongkir, nominal, ID toko, dan status. Periksa poin-poin di bawah sebelum commit.
+
+### 6.1 Uang & status hanya ditentukan server/database
+- **Harga produk, ongkir, total, nominal pembayaran, saldo, status lunas, dan paket langganan TIDAK BOLEH berasal dari browser.** Browser hanya mengirim *ID* dan *jumlah*; nilai uang dihitung ulang di server/database.
+- Pesanan dibuat lewat `POST /api/orders/place` (→ `place_order`). Ongkir hanya dari tarif bertanda tangan server (`POST /api/shipping/quote`, HMAC, berlaku 2 jam) yang dicek terhadap toko, isi keranjang, dan tujuan. Jangan memanggil RPC `place_order` dari browser.
+- Endpoint payment gateway (`/api/midtrans/snap-token`, `/api/duitku/create-invoice`) mengambil nominal dari database lewat `resolveBillableAmount()` (`backend/orderController.ts`). Fitur tagihan baru wajib menambah sumber nominalnya di sana, bukan menerima `grossAmount` dari browser.
+- Status lunas hanya diubah server setelah gateway mengonfirmasi, dan nominalnya dicocokkan dengan database (`mark_order_paid`, `mark_domain_paid`).
+- Jangan menambah Edge Function/endpoint yang memercayai nominal dari browser.
+
+### 6.2 Query database
+- Jangan menyusun SQL dengan menyambung string; di backend pakai parameter `$1, $2` (`pool.query(sql, [nilai])`).
+- Filter Supabase `.or()` menerima string mentah. Nilai dari input pengguna wajib dibungkus `pgrstValue()` / `pgrstLikeValue()` (`src/utils/postgrestFilter.ts`). Untuk satu kolom, pakai `.eq()` / `.ilike()` biasa.
+- Kolom sensitif (saldo, plan, total pesanan, status) dilindungi trigger/RLS. Tabel atau kolom baru yang menyangkut uang/hak akses wajib diberi RLS dan, bila perlu, trigger penjaga, lewat file migrasi di `supabase/migrations/`.
+- Fungsi `SECURITY DEFINER` baru: validasi semua input di dalam fungsi, set `search_path`, dan `GRANT EXECUTE` hanya ke role yang benar-benar butuh.
+
+### 6.3 Validasi input & otorisasi di server
+- Validasi tipe, format (regex ID/kode pos), batas panjang, dan rentang angka di server, bukan hanya di form.
+- Setiap endpoint yang mengubah data milik toko/pengguna wajib memeriksa sesi dan hak kelola (lihat `backend/sessionAuth.ts`); jangan memercayai `storeId`/`userId` dari body tanpa dicek.
+- Pesan error ke pengguna tidak boleh membocorkan detail internal (stack trace, query, kunci).
+
+### 6.4 Rahasia & data pribadi
+- API key/secret (Midtrans, Duitku, Biteship, CDN, SMTP, service role) hanya di env server, tidak pernah di `VITE_*` atau kode frontend, dan tidak pernah di-commit.
+- Jangan menaruh data pribadi di URL/query string atau log.
+
+### 6.5 Checklist sebelum commit
+1. Apakah ada nilai uang/status yang masih datang dari browser? → pindahkan ke server.
+2. Apakah ada input pengguna yang masuk ke query/filter tanpa parameter atau escape?
+3. Apakah endpoint baru memeriksa sesi & kepemilikan?
+4. Apakah tabel/fungsi baru punya RLS/GRANT yang tepat? Migrasi yang mencabut akses lama diterapkan **setelah** kode baru live.
+5. `npx tsc --noEmit` lolos. Catatan: `server.ts` & `backend/` tidak termasuk `tsconfig.json`; cek juga dengan
+   `npx tsc --noEmit --skipLibCheck --esModuleInterop --module esnext --moduleResolution bundler --target es2022 --lib es2022,dom --types node server.ts backend/<file>.ts`.
