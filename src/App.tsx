@@ -2061,6 +2061,13 @@ export default function App() {
               onLogout={handleLogout}
               onNavigateAuth={() => setAuthView('login')}
               onShowToast={addToast}
+              onNotificationNavigate={(link, storeId) => {
+                const tabs: MerchantTab[] = ['beranda', 'produk', 'pesanan', 'layout', 'domain', 'pembayaran', 'pengiriman', 'pengaturan', 'profil', 'integrasi', 'tiket', 'komunitas'];
+                if (!tabs.includes(link as MerchantTab)) return;
+                if (storeId && storeId !== currentStore.id) handleSelectStore(storeId);
+                setActiveTab(link as MerchantTab);
+                if (link !== 'produk') { setIsProductFormModalOpen(false); setProductToEdit(null); }
+              }}
             />
 
             {/* Main Content Area */}

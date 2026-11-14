@@ -2,6 +2,7 @@ import React from 'react';
 import { User, Settings } from 'lucide-react';
 import { LanguageSwitchButton } from '../../../contexts/LanguageContext';
 import { AdminTab, AdminNavItem } from '../types';
+import { NotificationBell } from '../../../components/common/NotificationBell';
 
 interface AdminHeaderProps {
   activeTab: AdminTab;
@@ -11,6 +12,8 @@ interface AdminHeaderProps {
   activeAdminEmail: string;
   activeAdminAvatar?: string;
   onOpenProfile?: () => void;
+  /** Klik notifikasi: tab tujuan & toko terkait. */
+  onNotificationNavigate?: (link: string, storeId: string | null) => void;
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
@@ -21,6 +24,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   activeAdminEmail,
   activeAdminAvatar,
   onOpenProfile,
+  onNotificationNavigate,
 }) => {
   const initials = (activeAdminName || 'A')
     .split(' ')
@@ -37,6 +41,12 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       <div className="flex items-center gap-3 shrink-0">
         {/* Language Switcher Button */}
         <LanguageSwitchButton compact />
+
+        <NotificationBell
+          variant="admin"
+          isEn={language === 'en'}
+          onNavigate={onNotificationNavigate}
+        />
 
         <div className="h-4 w-px bg-gray-200" />
 

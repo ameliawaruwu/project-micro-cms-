@@ -10,6 +10,7 @@ import { Store as StoreType, ViewMode, User } from '../../types';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProfileSettingsModal } from '../common/ProfileSettingsModal';
+import { NotificationBell } from '../common/NotificationBell';
 
 interface TopBarProps {
   stores?: StoreType[];
@@ -25,6 +26,8 @@ interface TopBarProps {
   onLogout?: () => void;
   onNavigateAuth?: () => void;
   onShowToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  /** Klik notifikasi: tab tujuan & toko terkait. */
+  onNotificationNavigate?: (link: string, storeId: string | null) => void;
 }
 
 /** Foto profil bila ada, selain itu ikon pengguna bawaan. */
@@ -45,10 +48,11 @@ export const TopBar: React.FC<TopBarProps> = ({
   user,
   onToggleSidebar,
   onShowToast,
+  onNotificationNavigate,
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const { updateUser } = useAuth();
 
   const openProfileModal = () => {
@@ -78,6 +82,8 @@ export const TopBar: React.FC<TopBarProps> = ({
       <div className="flex items-center gap-2 shrink-0">
         {/* Language Switch Button (ID / EN) */}
         <LanguageSwitchButton />
+
+        {user && <NotificationBell isEn={isEn} onNavigate={onNotificationNavigate} />}
 
         <div className="relative shrink-0">
           <button

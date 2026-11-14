@@ -696,6 +696,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           activeAdminEmail={activeAdminEmail}
           activeAdminAvatar={activeAdminAvatar}
           onOpenProfile={() => setIsProfileModalOpen(true)}
+          onNotificationNavigate={(link) => {
+            const target = navItems.find((item) => item.id === link);
+            if (target) setActiveTab(target.id);
+          }}
         />
 
         {/* Dynamic Content (Scrollable) */}
