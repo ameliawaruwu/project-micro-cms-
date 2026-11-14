@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Ticket, Search, Inbox, Loader2, RefreshCw, Trash2, ChevronRight } from 'lucide-react';
+import { Search, Inbox, Loader2, RefreshCw, Trash2, ChevronRight } from 'lucide-react';
+import { SupportAgentIcon } from '../../../components/common/icons/SupportAgentIcon';
 import { User } from '../../../types';
 import { ticketService, SupportTicket, TicketStatus } from '../../../services/ticketService';
 import { ROLE_LABELS } from '../../../services/userAdminService';
@@ -143,7 +144,7 @@ export const AdminTicketsTab: React.FC<AdminTicketsTabProps> = ({
 
       <div className="pb-3 border-b border-[#E5E0DD] flex items-center justify-between gap-3">
         <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-          <Ticket className="w-5 h-5 text-[#66000E]" />
+          <SupportAgentIcon className="w-5 h-5 text-[#66000E]" />
           <span>{isEn ? 'Manage Tickets' : 'Kelola Tiket'}</span>
         </h1>
         <button type="button" onClick={load} className={ghostBtn}>

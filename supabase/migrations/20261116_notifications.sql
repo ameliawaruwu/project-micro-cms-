@@ -12,6 +12,9 @@
 --     Super Admin             : pengguna/merchant baru, tiket baru, pengajuan domain &
 --                               bukti bayarnya, penarikan dana baru, tagihan komunitas lunas.
 --   Pelaku aksi tidak menerima notifikasi atas aksinya sendiri.
+-- Dua bahasa: setiap baris menyimpan `type` + `data` (parameter mentah, jsonb).
+--   Frontend menyusun kalimat ID/EN dari keduanya (src/utils/notificationText.ts);
+--   `title`/`body` (bahasa Indonesia) hanya cadangan untuk tipe yang belum dikenal.
 -- Keamanan: klien hanya bisa MEMBACA, menandai dibaca (kolom read_at) dan MENGHAPUS
 --   notifikasi miliknya sendiri (RLS via app_private.session_user_id()). Tidak ada
 --   hak INSERT untuk klien; baris hanya dibuat oleh trigger SECURITY DEFINER.
@@ -27,9 +30,13 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   body        VARCHAR(500),
   link        VARCHAR(48),
   store_id    VARCHAR,
+  data        JSONB NOT NULL DEFAULT '{}'::jsonb,
   read_at     TIMESTAMPTZ,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Bila tabel sudah ada dari versi sebelumnya migrasi ini.
+ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS data JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE INDEX IF NOT EXISTS notifications_user_created_idx
   ON public.notifications (user_id, created_at DESC);
@@ -67,9 +74,14 @@ AS $$
   SELECT 'Rp' || replace(to_char(coalesce(p_amount, 0), 'FM999,999,999,999,990'), ',', '.');
 $$;
 
+-- Signature lama (tanpa p_data) dibuang agar tidak menjadi overload yang ambigu.
+DROP FUNCTION IF EXISTS app_private.notify_roles(text[], text, text, text, text, text, text);
+DROP FUNCTION IF EXISTS app_private.notify_user(text, text, text, text, text, text);
+
 -- Satu notifikasi untuk satu pengguna. Lewati bila penerima kosong atau pelaku sendiri.
 CREATE OR REPLACE FUNCTION app_private.notify_user(
-  p_user_id text, p_type text, p_title text, p_body text, p_link text, p_store_id text DEFAULT NULL
+  p_user_id text, p_type text, p_title text, p_body text, p_link text,
+  p_store_id text DEFAULT NULL, p_data jsonb DEFAULT '{}'::jsonb
 )
 RETURNS void
 LANGUAGE plpgsql
@@ -80,8 +92,9 @@ BEGIN
   IF p_user_id IS NULL OR p_user_id = app_private.session_user_id() THEN
     RETURN;
   END IF;
-  INSERT INTO public.notifications (user_id, type, title, body, link, store_id)
-  VALUES (p_user_id, left(p_type, 48), left(p_title, 160), left(p_body, 500), left(p_link, 48), p_store_id);
+  INSERT INTO public.notifications (user_id, type, title, body, link, store_id, data)
+  VALUES (p_user_id, left(p_type, 48), left(p_title, 160), left(p_body, 500), left(p_link, 48), p_store_id,
+          jsonb_strip_nulls(coalesce(p_data, '{}'::jsonb)));
   -- Retensi 90 hari per pengguna.
   DELETE FROM public.notifications
    WHERE user_id = p_user_id AND created_at < now() - interval '90 days';
@@ -90,7 +103,8 @@ $$;
 
 -- Notifikasi ke semua pengguna dengan peran tertentu (opsional: dalam satu komunitas).
 CREATE OR REPLACE FUNCTION app_private.notify_roles(
-  p_roles text[], p_community_id text, p_type text, p_title text, p_body text, p_link text, p_store_id text DEFAULT NULL
+  p_roles text[], p_community_id text, p_type text, p_title text, p_body text, p_link text,
+  p_store_id text DEFAULT NULL, p_data jsonb DEFAULT '{}'::jsonb
 )
 RETURNS void
 LANGUAGE plpgsql
@@ -105,7 +119,7 @@ BEGIN
      WHERE u.role = ANY (p_roles)
        AND (p_community_id IS NULL OR u.community_id = p_community_id)
   LOOP
-    PERFORM app_private.notify_user(r.id, p_type, p_title, p_body, p_link, p_store_id);
+    PERFORM app_private.notify_user(r.id, p_type, p_title, p_body, p_link, p_store_id, p_data);
   END LOOP;
 END;
 $$;
@@ -121,8 +135,8 @@ AS $$
 $$;
 
 REVOKE ALL ON FUNCTION app_private.fmt_rupiah(bigint) FROM PUBLIC;
-REVOKE ALL ON FUNCTION app_private.notify_user(text, text, text, text, text, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION app_private.notify_roles(text[], text, text, text, text, text, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION app_private.notify_user(text, text, text, text, text, text, jsonb) FROM PUBLIC;
+REVOKE ALL ON FUNCTION app_private.notify_roles(text[], text, text, text, text, text, text, jsonb) FROM PUBLIC;
 REVOKE ALL ON FUNCTION app_private.store_owner(text) FROM PUBLIC;
 
 -- ---------------------------------------------------------------------------
@@ -136,25 +150,27 @@ SET search_path TO 'public'
 AS $$
 DECLARE
   v_owner text;
+  v_data jsonb;
 BEGIN
   BEGIN
     v_owner := app_private.store_owner(NEW.store_id);
+    v_data := jsonb_build_object('order_number', NEW.order_number, 'amount', NEW.total_amount);
     IF TG_OP = 'INSERT' THEN
       PERFORM app_private.notify_user(v_owner, 'order_new',
         'Pesanan baru ' || coalesce(NEW.order_number, ''),
         'Total ' || app_private.fmt_rupiah(NEW.total_amount) || ' · menunggu pembayaran/proses.',
-        'pesanan', NEW.store_id);
+        'pesanan', NEW.store_id, v_data);
       IF NEW.payment_status = 'paid' THEN
         PERFORM app_private.notify_user(v_owner, 'order_paid',
           'Pembayaran diterima ' || coalesce(NEW.order_number, ''),
           'Pesanan sebesar ' || app_private.fmt_rupiah(NEW.total_amount) || ' sudah lunas. Segera proses pengiriman.',
-          'pesanan', NEW.store_id);
+          'pesanan', NEW.store_id, v_data);
       END IF;
     ELSIF NEW.payment_status = 'paid' AND OLD.payment_status IS DISTINCT FROM 'paid' THEN
       PERFORM app_private.notify_user(v_owner, 'order_paid',
         'Pembayaran diterima ' || coalesce(NEW.order_number, ''),
         'Pesanan sebesar ' || app_private.fmt_rupiah(NEW.total_amount) || ' sudah lunas. Segera proses pengiriman.',
-        'pesanan', NEW.store_id);
+        'pesanan', NEW.store_id, v_data);
     END IF;
   EXCEPTION WHEN others THEN
     RAISE WARNING 'notify orders gagal: %', SQLERRM;
@@ -186,12 +202,13 @@ BEGIN
     IF v_actor IS NOT NULL THEN
       v_owner := app_private.store_owner(NEW.store_id);
       IF v_owner IS NOT NULL AND v_owner <> v_actor THEN
-        SELECT coalesce(nullif(btrim(u.name), ''), 'Admin komunitas') INTO v_actor_name
+        SELECT nullif(btrim(u.name), '') INTO v_actor_name
           FROM public.users u WHERE u.id = v_actor;
         PERFORM app_private.notify_user(v_owner, 'product_added',
           'Produk baru ditambahkan ke toko Anda',
-          '"' || coalesce(NEW.name, '-') || '" ditambahkan oleh ' || coalesce(v_actor_name, 'admin') || '.',
-          'produk', NEW.store_id);
+          '"' || coalesce(NEW.name, '-') || '" ditambahkan oleh ' || coalesce(v_actor_name, 'Admin komunitas') || '.',
+          'produk', NEW.store_id,
+          jsonb_build_object('product', NEW.name, 'actor', v_actor_name));
       END IF;
     END IF;
   EXCEPTION WHEN others THEN
@@ -218,21 +235,23 @@ AS $$
 DECLARE
   v_store record;
   v_community text;
+  v_data jsonb;
 BEGIN
   SELECT s.user_id, s.name INTO v_store FROM public.stores s WHERE s.id = p_store_id;
   SELECT c.name INTO v_community FROM public.communities c WHERE c.id = p_community_id;
   IF v_store IS NULL OR v_community IS NULL THEN
     RETURN;
   END IF;
+  v_data := jsonb_build_object('store', v_store.name, 'community', v_community);
   PERFORM app_private.notify_user(v_store.user_id, 'community_joined',
     'Toko Anda bergabung dengan komunitas',
     '"' || coalesce(v_store.name, '-') || '" kini menjadi toko binaan komunitas ' || v_community || '.',
-    'komunitas', p_store_id);
+    'komunitas', p_store_id, v_data);
   PERFORM app_private.notify_roles(ARRAY['community_admin', 'sub_admin_produk'], p_community_id,
     'community_store_added',
     'Toko binaan baru',
     '"' || coalesce(v_store.name, '-') || '" bergabung dengan komunitas ' || v_community || '. Anda bisa menambahkan produknya.',
-    'stores', p_store_id);
+    'stores', p_store_id, v_data);
 END;
 $$;
 
@@ -294,13 +313,16 @@ BEGIN
         'join_request_new',
         'Permintaan gabung komunitas',
         '"' || coalesce(v_store_name, '-') || '" ingin bergabung dengan ' || coalesce(v_community, 'komunitas Anda') || '.',
-        'community-members', NEW.store_id);
+        'community-members', NEW.store_id,
+        jsonb_build_object('store', v_store_name, 'community', v_community));
     ELSIF TG_OP = 'UPDATE' AND NEW.status = 'rejected' AND OLD.status IS DISTINCT FROM 'rejected' THEN
       PERFORM app_private.notify_user(NEW.user_id, 'join_request_rejected',
         'Permintaan gabung ditolak',
         'Permintaan "' || coalesce(v_store_name, '-') || '" ke ' || coalesce(v_community, 'komunitas') || ' ditolak'
           || CASE WHEN nullif(btrim(NEW.decision_note), '') IS NOT NULL THEN ': ' || NEW.decision_note ELSE '.' END,
-        'komunitas', NEW.store_id);
+        'komunitas', NEW.store_id,
+        jsonb_build_object('store', v_store_name, 'community', v_community,
+                           'note', left(nullif(btrim(NEW.decision_note), ''), 300)));
     END IF;
   EXCEPTION WHEN others THEN
     RAISE WARNING 'notify join requests gagal: %', SQLERRM;
@@ -327,13 +349,16 @@ DECLARE
   v_role text;
   v_link text;
   v_status text;
+  v_replied boolean;
 BEGIN
   BEGIN
     IF TG_OP = 'INSERT' THEN
       PERFORM app_private.notify_roles(ARRAY['admin'], NULL, 'ticket_new',
         'Tiket bantuan baru ' || coalesce(NEW.ticket_number, ''),
         coalesce(NEW.requester_name, 'Pengguna') || ': ' || coalesce(NEW.subject, '-'),
-        'tickets', NEW.store_id);
+        'tickets', NEW.store_id,
+        jsonb_build_object('ticket_number', NEW.ticket_number, 'requester', NEW.requester_name,
+                           'subject', left(NEW.subject, 200)));
     ELSIF NEW.status IS DISTINCT FROM OLD.status
        OR NEW.admin_response IS DISTINCT FROM OLD.admin_response THEN
       SELECT u.role INTO v_role FROM public.users u WHERE u.id = NEW.requester_id;
@@ -343,13 +368,15 @@ BEGIN
                     WHEN 'resolved' THEN 'selesai'
                     WHEN 'in_progress' THEN 'sedang diproses'
                     ELSE 'menunggu' END;
+      v_replied := NEW.admin_response IS DISTINCT FROM OLD.admin_response
+                   AND nullif(btrim(NEW.admin_response), '') IS NOT NULL;
       PERFORM app_private.notify_user(NEW.requester_id, 'ticket_update',
         'Tiket ' || coalesce(NEW.ticket_number, '') || ' diperbarui',
         '"' || coalesce(NEW.subject, '-') || '" kini ' || v_status
-          || CASE WHEN NEW.admin_response IS DISTINCT FROM OLD.admin_response
-                       AND nullif(btrim(NEW.admin_response), '') IS NOT NULL
-                  THEN ' · ada balasan baru dari admin.' ELSE '.' END,
-        v_link, NEW.store_id);
+          || CASE WHEN v_replied THEN ' · ada balasan baru dari admin.' ELSE '.' END,
+        v_link, NEW.store_id,
+        jsonb_build_object('ticket_number', NEW.ticket_number, 'subject', left(NEW.subject, 200),
+                           'status', NEW.status, 'replied', coalesce(v_replied, false)));
     END IF;
   EXCEPTION WHEN others THEN
     RAISE WARNING 'notify tickets gagal: %', SQLERRM;
@@ -374,19 +401,21 @@ SET search_path TO 'public'
 AS $$
 DECLARE
   v_status text;
+  v_data jsonb;
 BEGIN
   BEGIN
+    v_data := jsonb_build_object('store', NEW.store_name, 'domain', NEW.requested_domain);
     IF TG_OP = 'INSERT' THEN
       PERFORM app_private.notify_roles(ARRAY['admin'], NULL, 'domain_request_new',
         'Pengajuan domain baru',
         coalesce(NEW.store_name, 'Toko') || ' mengajukan ' || coalesce(NEW.requested_domain, '-') || '.',
-        'domain-requests', NEW.store_id);
+        'domain-requests', NEW.store_id, v_data);
     ELSE
       IF NEW.payment_proof_url IS NOT NULL AND OLD.payment_proof_url IS DISTINCT FROM NEW.payment_proof_url THEN
         PERFORM app_private.notify_roles(ARRAY['admin'], NULL, 'domain_payment_proof',
           'Bukti bayar domain masuk',
           coalesce(NEW.store_name, 'Toko') || ' mengirim bukti bayar untuk ' || coalesce(NEW.requested_domain, '-') || '.',
-          'domain-requests', NEW.store_id);
+          'domain-requests', NEW.store_id, v_data);
       END IF;
       IF NEW.status IS DISTINCT FROM OLD.status THEN
         v_status := CASE NEW.status
@@ -397,7 +426,7 @@ BEGIN
         PERFORM app_private.notify_user(app_private.store_owner(NEW.store_id), 'domain_status',
           'Status domain ' || coalesce(NEW.requested_domain, ''),
           'Pengajuan domain ' || coalesce(NEW.requested_domain, '-') || ' ' || coalesce(v_status, '-') || '.',
-          'domain', NEW.store_id);
+          'domain', NEW.store_id, v_data || jsonb_build_object('status', NEW.status));
       END IF;
     END IF;
   EXCEPTION WHEN others THEN
@@ -427,12 +456,14 @@ BEGIN
       PERFORM app_private.notify_roles(ARRAY['admin'], NULL, 'withdrawal_new',
         'Permintaan penarikan dana',
         coalesce(NEW.store_name, 'Toko') || ' meminta penarikan ' || app_private.fmt_rupiah(NEW.amount) || '.',
-        'withdrawals', NEW.store_id);
+        'withdrawals', NEW.store_id,
+        jsonb_build_object('store', NEW.store_name, 'amount', NEW.amount));
     ELSIF NEW.status IS DISTINCT FROM OLD.status THEN
       PERFORM app_private.notify_user(app_private.store_owner(NEW.store_id), 'withdrawal_status',
         'Status penarikan dana',
         'Penarikan ' || app_private.fmt_rupiah(NEW.amount) || ' kini berstatus ' || coalesce(NEW.status, '-') || '.',
-        'beranda', NEW.store_id);
+        'beranda', NEW.store_id,
+        jsonb_build_object('amount', NEW.amount, 'status', NEW.status));
     END IF;
   EXCEPTION WHEN others THEN
     RAISE WARNING 'notify withdrawals gagal: %', SQLERRM;
@@ -462,7 +493,8 @@ BEGIN
         'Pengguna baru terdaftar',
         coalesce(nullif(btrim(NEW.name), ''), 'Pengguna') || ' mendaftar sebagai '
           || CASE WHEN NEW.role = 'merchant' THEN 'pemilik toko' ELSE coalesce(NEW.role, '-') END || '.',
-        'users', NULL);
+        'users', NULL,
+        jsonb_build_object('name', nullif(btrim(NEW.name), ''), 'role', NEW.role));
     END IF;
   EXCEPTION WHEN others THEN
     RAISE WARNING 'notify users gagal: %', SQLERRM;
@@ -487,21 +519,24 @@ SET search_path TO 'public'
 AS $$
 DECLARE
   v_community text;
+  v_data jsonb;
 BEGIN
   BEGIN
     SELECT c.name INTO v_community FROM public.communities c WHERE c.id = NEW.community_id;
+    v_data := jsonb_build_object('community', v_community, 'period', NEW.period,
+                                 'invoice_number', NEW.invoice_number, 'amount', NEW.total_billed);
     IF TG_OP = 'INSERT' THEN
       PERFORM app_private.notify_roles(ARRAY['sub_admin', 'sub_admin_umum'], NEW.community_id,
         'community_invoice_new',
         'Tagihan komunitas ' || coalesce(NEW.period, ''),
         'Tagihan ' || coalesce(NEW.invoice_number, '') || ' sebesar ' || app_private.fmt_rupiah(NEW.total_billed) || ' telah terbit.',
-        'communities', NULL);
+        'communities', NULL, v_data);
     ELSIF NEW.status = 'paid' AND OLD.status IS DISTINCT FROM 'paid' THEN
       PERFORM app_private.notify_roles(ARRAY['admin'], NULL, 'community_invoice_paid',
         'Tagihan komunitas lunas',
         coalesce(v_community, 'Komunitas') || ' melunasi ' || coalesce(NEW.invoice_number, '') || ' ('
           || app_private.fmt_rupiah(NEW.total_billed) || ').',
-        'communities', NULL);
+        'communities', NULL, v_data);
     END IF;
   EXCEPTION WHEN others THEN
     RAISE WARNING 'notify community invoices gagal: %', SQLERRM;

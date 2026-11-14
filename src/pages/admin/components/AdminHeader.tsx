@@ -42,11 +42,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         {/* Language Switcher Button */}
         <LanguageSwitchButton compact />
 
-        <NotificationBell
-          variant="admin"
-          isEn={language === 'en'}
-          onNavigate={onNotificationNavigate}
-        />
+        <NotificationBell onNavigate={onNotificationNavigate} />
 
         <div className="h-4 w-px bg-gray-200" />
 

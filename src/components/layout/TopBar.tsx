@@ -52,7 +52,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const { t, isEn } = useLanguage();
+  const { t } = useLanguage();
   const { updateUser } = useAuth();
 
   const openProfileModal = () => {
@@ -83,7 +83,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         {/* Language Switch Button (ID / EN) */}
         <LanguageSwitchButton />
 
-        {user && <NotificationBell isEn={isEn} onNavigate={onNotificationNavigate} />}
+        {user && <NotificationBell onNavigate={onNotificationNavigate} />}
 
         <div className="relative shrink-0">
           <button

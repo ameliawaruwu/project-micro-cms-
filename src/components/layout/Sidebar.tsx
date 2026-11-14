@@ -14,10 +14,10 @@ import {
   X,
   LogOut,
   Crown,
-  LifeBuoy,
   Users,
   ExternalLink,
 } from 'lucide-react';
+import { SupportAgentIcon } from '../common/icons/SupportAgentIcon';
 import { MerchantTab, Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
@@ -110,7 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     ...(showCommunityMenu
       ? [{ id: 'komunitas' as MerchantTab, label: t('nav_community', 'Komunitas'), icon: Users }]
       : []),
-    { id: 'tiket' as MerchantTab, label: t('nav_tickets', 'Tiket Bantuan'), icon: LifeBuoy },
+    { id: 'tiket' as MerchantTab, label: t('nav_tickets', 'Tiket Bantuan'), icon: SupportAgentIcon },
     { id: 'pengaturan' as MerchantTab, label: t('nav_settings', 'Pengaturan'), icon: Settings },
   ];
 

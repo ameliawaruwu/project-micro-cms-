@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { LifeBuoy, Plus, ChevronDown, Inbox, Loader2, RefreshCw, MessageSquare } from 'lucide-react';
+import { Plus, ChevronDown, Inbox, Loader2, RefreshCw, MessageSquare } from 'lucide-react';
+import { SupportAgentIcon } from '../common/icons/SupportAgentIcon';
 import { User } from '../../types';
 import {
   ticketService,
@@ -125,7 +126,7 @@ export const TicketRequesterPanel: React.FC<TicketRequesterPanelProps> = ({
 
       <div className="pb-3 border-b border-[#E5E0DD] flex items-center justify-between gap-3">
         <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
-          <LifeBuoy className="w-5 h-5 text-[#66000E]" />
+          <SupportAgentIcon className="w-5 h-5 text-[#66000E]" />
           <span>{isEn ? 'Support Tickets' : 'Tiket Bantuan'}</span>
         </h1>
         <button type="button" className={primaryBtn} onClick={() => { setFormError(null); setIsFormOpen(true); }}>

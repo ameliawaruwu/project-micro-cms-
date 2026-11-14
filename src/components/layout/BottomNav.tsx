@@ -11,11 +11,11 @@ import {
   X,
   Store,
   ChevronRight,
-  LifeBuoy,
   Users,
   Globe,
   ExternalLink,
 } from 'lucide-react';
+import { SupportAgentIcon } from '../common/icons/SupportAgentIcon';
 import { MerchantTab } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -75,7 +75,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       id: 'tiket' as MerchantTab,
       label: t('nav_tickets', 'Tiket Bantuan'),
       desc: t('bottomnav_tickets_desc', 'Ajukan & pantau tiket'),
-      icon: LifeBuoy,
+      icon: SupportAgentIcon,
     },
     {
       id: 'pengaturan' as MerchantTab,

@@ -12,9 +12,8 @@ import {
   Users,
   Package,
   UserCog,
-  Ticket,
-  LifeBuoy,
 } from 'lucide-react';
+import { SupportAgentIcon } from '../../components/common/icons/SupportAgentIcon';
 import { Store, WithdrawalRequest, AdminPlatformStats, Order, BillingPlan, BillingSubscription, User } from '../../types';
 import { adminService } from '../../services/adminService';
 import { billingPlanService } from '../../services/billingPlanService';
@@ -556,7 +555,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         {
           id: 'my-tickets',
           label: language === 'en' ? 'Support Tickets' : 'Tiket Bantuan',
-          icon: LifeBuoy,
+          icon: SupportAgentIcon,
         },
       ]
     : isSubAdminProduk
@@ -585,7 +584,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         {
           id: 'my-tickets',
           label: language === 'en' ? 'Support Tickets' : 'Tiket Bantuan',
-          icon: LifeBuoy,
+          icon: SupportAgentIcon,
         },
       ]
     : isSubAdmin
@@ -619,7 +618,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         {
           id: 'my-tickets',
           label: language === 'en' ? 'Support Tickets' : 'Tiket Bantuan',
-          icon: LifeBuoy,
+          icon: SupportAgentIcon,
         },
       ]
     : [
@@ -631,7 +630,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         {
           id: 'tickets',
           label: language === 'en' ? 'Manage Tickets' : 'Kelola Tiket',
-          icon: Ticket,
+          icon: SupportAgentIcon,
           badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined,
         },
         {

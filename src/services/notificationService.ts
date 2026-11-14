@@ -12,11 +12,13 @@ export interface AppNotification {
   body: string | null;
   link: string | null;
   storeId: string | null;
+  /** Parameter mentah untuk menyusun teks dua bahasa (utils/notificationText). */
+  data: Record<string, unknown>;
   readAt: string | null;
   createdAt: string;
 }
 
-const COLUMNS = 'id, type, title, body, link, store_id, read_at, created_at';
+const COLUMNS = 'id, type, title, body, link, store_id, data, read_at, created_at';
 
 const mapRow = (r: any): AppNotification => ({
   id: Number(r.id),
@@ -25,6 +27,7 @@ const mapRow = (r: any): AppNotification => ({
   body: r.body ?? null,
   link: r.link ?? null,
   storeId: r.store_id ?? null,
+  data: r.data && typeof r.data === 'object' && !Array.isArray(r.data) ? r.data : {},
   readAt: r.read_at ?? null,
   createdAt: String(r.created_at || ''),
 });

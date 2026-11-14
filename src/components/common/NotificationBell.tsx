@@ -5,21 +5,20 @@ import {
   Wallet,
   Package,
   Users,
-  LifeBuoy,
   Globe,
   Receipt,
   UserPlus,
   CheckCheck,
   X,
 } from 'lucide-react';
+import { SupportAgentIcon } from './icons/SupportAgentIcon';
 import { notificationService, AppNotification } from '../../services/notificationService';
+import { notificationText } from '../../utils/notificationText';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface NotificationBellProps {
-  isEn?: boolean;
   /** Dipanggil saat notifikasi diklik: tab tujuan & toko terkait (bila ada). */
   onNavigate?: (link: string, storeId: string | null) => void;
-  /** Gaya tombol: 'merchant' (TopBar) atau 'admin' (AdminHeader). */
-  variant?: 'merchant' | 'admin';
 }
 
 const POLL_MS = 45_000;
@@ -30,7 +29,7 @@ const iconFor = (type: string) => {
   if (type.startsWith('product')) return Package;
   if (type.startsWith('community_invoice')) return Receipt;
   if (type.startsWith('community') || type.startsWith('join_request')) return Users;
-  if (type.startsWith('ticket')) return LifeBuoy;
+  if (type.startsWith('ticket')) return SupportAgentIcon;
   if (type.startsWith('domain')) return Globe;
   if (type.startsWith('user')) return UserPlus;
   return Bell;
@@ -50,11 +49,8 @@ const timeAgo = (iso: string, isEn: boolean) => {
   return new Date(t).toLocaleDateString(isEn ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short' });
 };
 
-export const NotificationBell: React.FC<NotificationBellProps> = ({
-  isEn = false,
-  onNavigate,
-  variant = 'merchant',
-}) => {
+export const NotificationBell: React.FC<NotificationBellProps> = ({ onNavigate }) => {
+  const { isEn } = useLanguage();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
@@ -130,10 +126,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
     await notificationService.remove(id);
   };
 
+  // Satu gaya untuk semua halaman (mengikuti header admin).
   const buttonClass =
-    variant === 'admin'
-      ? 'relative p-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center'
-      : 'relative p-1.5 rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#706866] hover:text-[#241A1A] hover:bg-white hover:border-[#66000E]/40 transition cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center shadow-2xs';
+    'relative p-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center';
 
   return (
     <div ref={wrapRef} className="relative shrink-0 font-poppins">
@@ -181,6 +176,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
             ) : (
               items.map((n) => {
                 const Icon = iconFor(n.type);
+                const text = notificationText(n, isEn);
                 return (
                   <div
                     key={n.id}
@@ -203,10 +199,10 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className={`text-[11px] leading-snug text-[#241A1A] break-words ${n.readAt ? 'font-medium' : 'font-bold'}`}>
-                        {n.title}
+                        {text.title}
                       </p>
-                      {n.body && (
-                        <p className="text-[10px] leading-snug text-[#706866] mt-0.5 break-words line-clamp-3">{n.body}</p>
+                      {text.body && (
+                        <p className="text-[10px] leading-snug text-[#706866] mt-0.5 break-words line-clamp-3">{text.body}</p>
                       )}
                       <p className="text-[9px] text-[#A39C9A] mt-1">{timeAgo(n.createdAt, isEn)}</p>
                     </div>
