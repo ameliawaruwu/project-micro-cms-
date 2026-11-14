@@ -214,42 +214,54 @@ class OrderService {
   }
 
   /**
-   * Buat pesanan lewat RPC `place_order`: harga, total, nomor pesanan, dan status (selalu
-   * belum dibayar) ditentukan database. Status lunas & saldo toko hanya diubah server
-   * setelah gateway pembayaran mengonfirmasi (lihat confirmGatewayPayment).
+   * Buat pesanan lewat server (`POST /api/orders/place` → `place_order`): harga, total, nomor
+   * pesanan, dan status (selalu belum dibayar) ditentukan database; ongkir hanya diterima dari
+   * tarif bertanda tangan server (`shippingQuote`), jadi tidak bisa diubah dari browser.
+   * Status lunas & saldo toko hanya diubah server setelah gateway pembayaran mengonfirmasi.
    */
   async createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt'>): Promise<Order> {
-    const { data, error } = await supabase.rpc('place_order', {
-      p_store_id: orderData.storeId,
-      p_customer: {
-        name: orderData.customerName,
-        phone: orderData.customerPhone,
-        email: orderData.customerEmail || null,
-        address: orderData.customerAddress,
-      },
-      p_items: (orderData.items || []).map((it) => ({
-        product_id: it.productId,
-        quantity: it.quantity,
-        variant_info: it.variantName || null,
-      })),
-      p_shipping: {
-        cost: Math.max(0, Math.round(Number(orderData.shippingCost || 0))),
-        city: orderData.customerCity || null,
-        courier: orderData.courier || null,
-        service: orderData.courierService || null,
-        courier_code: orderData.courierCode || null,
-        postal_code: orderData.customerPostalCode || null,
-        origin_branch_id: orderData.originBranchId || null,
-      },
-      p_payment_method: orderData.paymentMethod || 'Manual',
-      p_notes: orderData.notes || null,
-    });
-    if (error || !data) {
-      console.error('[Supabase Database] Gagal membuat pesanan:', error);
-      throw new Error(error?.message || 'Gagal membuat pesanan. Silakan coba lagi.');
+    if (!orderData.shippingQuote) {
+      throw new Error('Tarif ongkir belum dikonfirmasi server. Silakan pilih ulang kurir pengiriman.');
+    }
+    let res: Response;
+    try {
+      res = await fetch('/api/orders/place', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId: orderData.storeId,
+          customer: {
+            name: orderData.customerName,
+            phone: orderData.customerPhone,
+            email: orderData.customerEmail || null,
+            address: orderData.customerAddress,
+          },
+          items: (orderData.items || []).map((it) => ({
+            productId: it.productId,
+            quantity: it.quantity,
+            variantInfo: it.variantName || null,
+          })),
+          shipping: {
+            quote: orderData.shippingQuote,
+            city: orderData.customerCity || null,
+            courier: orderData.courier || null,
+            service: orderData.courierService || null,
+            postal_code: orderData.customerPostalCode || null,
+          },
+          paymentMethod: orderData.paymentMethod || 'Manual',
+          notes: orderData.notes || null,
+        }),
+      });
+    } catch {
+      throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda lalu coba lagi.');
+    }
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok || !result?.order) {
+      console.error('[orderService] Gagal membuat pesanan:', result);
+      throw new Error(result?.message || 'Gagal membuat pesanan. Silakan coba lagi.');
     }
 
-    const newOrder = mapSupabaseRowToOrder(data);
+    const newOrder = mapSupabaseRowToOrder(result.order);
     // Simpan di perangkat pembeli agar halaman status pesanan tetap bisa menampilkannya.
     const orders = this.getStoredOrders(orderData.storeId);
     orders.unshift(newOrder);

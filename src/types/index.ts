@@ -447,6 +447,8 @@ export interface BiteshipRateOption {
   price: number;
   etd: string;
   badge?: string;
+  /** Tanda tangan server atas tarif ini (dari /api/shipping/quote); wajib saat membuat pesanan. */
+  quote?: string;
 }
 
 export interface AvailableCourier {
@@ -513,6 +515,8 @@ export interface Order {
   courierCode?: string;
   courierService?: string;
   originBranchId?: string;
+  /** Token tarif ongkir bertanda tangan server; hanya dipakai saat membuat pesanan. */
+  shippingQuote?: string;
   shippingMethod?: ShippingMethod;
   resiNumber?: string;
   trackingNumber?: string;

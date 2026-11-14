@@ -162,15 +162,38 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [availableRates, setAvailableRates] = useState<ShippingRate[]>([]);
   const [selectedRate, setSelectedRate] = useState<ShippingRate | null>(null);
 
+  // Tarif dihitung & ditandatangani server (berat dari data produk) agar ongkir pesanan
+  // tidak bisa diubah dari browser. Kunci isi keranjang mencegah permintaan ulang yang tidak perlu.
+  const cartQuoteKey = items.map((item) => `${item.product.id}:${item.quantity}`).join(',');
   useEffect(() => {
-    const rates = shippingService.calculateRates(store.city || 'Jakarta Selatan', city, totalWeightGrams);
-    setAvailableRates(rates);
-
-    // Pick first or matching courier rate
-    const match = rates.find((r) => r.courier === courier) || rates[0];
-    setSelectedRate(match || null);
-    if (match) setCourier(match.courier);
-  }, [city, totalWeightGrams, store.city]);
+    if (!city || items.length === 0) {
+      // Belum ada kota tujuan: tampilkan perkiraan saja (pesanan tetap butuh tarif dari server).
+      const rates = shippingService.calculateRates(store.city || 'Jakarta Selatan', city, totalWeightGrams);
+      setAvailableRates(rates);
+      const match = rates.find((r) => r.courier === courier) || rates[0];
+      setSelectedRate(match || null);
+      return;
+    }
+    let cancelled = false;
+    shippingService
+      .getZoneCheckoutRates({
+        storeId: store.id,
+        items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+        destinationCity: city,
+        fallbackWeightGrams: totalWeightGrams,
+      })
+      .then(({ rates }) => {
+        if (cancelled) return;
+        setAvailableRates(rates);
+        // Pick first or matching courier rate
+        const match = rates.find((r) => r.courier === courier) || rates[0];
+        setSelectedRate(match || null);
+        if (match) setCourier(match.courier);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [city, cartQuoteKey, store.id]);
 
   const isCompletedPaid = completedOrder?.paymentStatus === 'Sudah Dibayar';
   const isCompletedCod = /cod/i.test(completedOrder?.paymentMethod || '');
@@ -241,6 +264,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         : selectedRate
         ? `${selectedRate.serviceName} (${selectedRate.etd})`
         : 'Reguler (1-2 Hari)',
+      shippingQuote: selectedBiteshipRate?.quote || selectedRate?.quote,
       items: orderItems,
       subtotal,
       shippingCost,

@@ -15,6 +15,7 @@ import { sendMail, MailerNotConfiguredError } from './backend/mailer';
 import { publicApiRouter } from './backend/publicApiController';
 import { partnerApiRouter } from './backend/partnerApiController';
 import { communityMembershipRouter } from './backend/communityMembershipController';
+import { orderRouter, resolveBillableAmount } from './backend/orderController';
 
 dotenv.config();
 
@@ -186,15 +187,20 @@ app.post('/api/midtrans/snap-token', async (req, res) => {
       return res.status(500).json({ error: true, message: 'MIDTRANS_SERVER_KEY belum dikonfigurasi di server .env atau Pengaturan Admin.' });
     }
 
-    const rawAmount = Number(data.grossAmount);
-    if (isNaN(rawAmount) || rawAmount <= 0) {
-      return res.status(400).json({ error: true, message: 'Nominal transaksi tidak valid (harus lebih besar dari Rp 0)' });
+    const sanitizedOrderId = String(data.orderId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+    if (!sanitizedOrderId) {
+      return res.status(400).json({ error: true, message: 'ID transaksi wajib diisi.' });
     }
-    if (rawAmount > 500_000_000) {
-      return res.status(400).json({ error: true, message: 'Nominal transaksi melebihi batas maksimum' });
+    // Nominal diambil dari database, bukan dari `grossAmount` kiriman browser.
+    const billable = await resolveBillableAmount(sanitizedOrderId);
+    if ('error' in billable) {
+      return res.status(billable.status).json({ error: true, message: billable.error });
+    }
+    const rawAmount = billable.amount;
+    if (!Number.isFinite(rawAmount) || rawAmount <= 0 || rawAmount > 500_000_000) {
+      return res.status(400).json({ error: true, message: 'Nominal transaksi tidak valid.' });
     }
 
-    const sanitizedOrderId = String(data.orderId || `ORDER-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
     const sanitizedName = String(data.customerName || 'Pembeli').replace(/<[^>]*>/g, '').trim().slice(0, 100);
     const sanitizedPhone = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
     const sanitizedEmail = String(data.customerEmail || 'customer@example.com').trim().slice(0, 100);
@@ -464,6 +470,19 @@ app.post('/api/duitku/payment-methods', async (req, res) => {
   }
 });
 
+// Rincian item dari browser hanya dipakai bila totalnya sama dengan nominal resmi (syarat Duitku).
+function clientItemsMatch(items: unknown, amount: number): items is any[] {
+  if (!Array.isArray(items) || items.length === 0 || items.length > 100) return false;
+  let sum = 0;
+  for (const it of items as any[]) {
+    const price = Math.round(Number(it?.price || 0));
+    const qty = Math.max(1, Math.round(Number(it?.quantity || 1)));
+    if (!Number.isFinite(price) || price < 0) return false;
+    sum += price * qty;
+  }
+  return sum === amount;
+}
+
 // 4b.2 Create Invoice / Inquiry Duitku (v2/inquiry)
 app.post('/api/duitku/create-invoice', async (req, res) => {
   try {
@@ -477,13 +496,19 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
       });
     }
 
-    const rawAmount = Number(data.grossAmount || data.paymentAmount);
-    if (isNaN(rawAmount) || rawAmount <= 0) {
-      return res.status(400).json({ error: true, message: 'Nominal transaksi tidak valid (harus lebih besar dari Rp 0)' });
+    const merchantOrderId = String(data.orderId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 50);
+    if (!merchantOrderId) {
+      return res.status(400).json({ error: true, message: 'ID transaksi wajib diisi.' });
     }
-
-    const paymentAmount = Math.round(rawAmount);
-    const merchantOrderId = String(data.orderId || `ORDER-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 50);
+    // Nominal diambil dari database, bukan dari `grossAmount` kiriman browser.
+    const billable = await resolveBillableAmount(merchantOrderId);
+    if ('error' in billable) {
+      return res.status(billable.status).json({ error: true, message: billable.error });
+    }
+    const paymentAmount = billable.amount;
+    if (!Number.isFinite(paymentAmount) || paymentAmount <= 0 || paymentAmount > 500_000_000) {
+      return res.status(400).json({ error: true, message: 'Nominal transaksi tidak valid.' });
+    }
     const productDetails = String(data.productDetails || 'Pembayaran Toko').slice(0, 255);
     const customerVaName = String(data.customerName || 'Pelanggan').slice(0, 20);
     const email = String(data.customerEmail || 'customer@example.com').trim().slice(0, 100);
@@ -548,7 +573,7 @@ app.post('/api/duitku/create-invoice', async (req, res) => {
       customerVaName,
       email,
       phoneNumber,
-      itemDetails: Array.isArray(data.items) && data.items.length > 0
+      itemDetails: clientItemsMatch(data.items, paymentAmount)
         ? data.items.map((it: any) => ({
             name: String(it.name || 'Item').slice(0, 50),
             price: Math.round(Number(it.price || 0)),
@@ -984,6 +1009,8 @@ app.post(['/api/payment/callback', '/api/callback', '/api/duitku/callback'], asy
 
 
 // 5. Publikasi toko: host toko didaftarkan lewat API Kroombox Panel (backend/panelDomainClient.ts)
+
+app.use('/api', orderRouter);
 
 app.use('/deploy', deployRouter);
 app.use('/api/deploy', deployRouter);

@@ -118,32 +118,11 @@ class MidtransService {
    * Request real Snap Token from backend (Supabase Edge Function or Local Express Proxy)
    */
   async createSnapToken(params: SnapTransactionParams): Promise<{ token: string; redirectUrl?: string }> {
-    // 1. Prioritas utama: Panggil Backend Serverless Supabase Edge Function 'midtrans-snap'
-    try {
-      const { data, error } = await supabase.functions.invoke('midtrans-snap', {
-        body: params,
-      });
-
-      if (!error && data?.token) {
-        return {
-          token: data.token,
-          redirectUrl: data.redirectUrl,
-        };
-      }
-      if (error) {
-        console.warn('[Midtrans] Edge Function invoke failed, trying fallback endpoints:', error);
-      }
-    } catch (edgeErr) {
-      console.warn('[Midtrans] Supabase Edge Function notice:', edgeErr);
-    }
-
-    // 2. Fallback direct HTTP fetch ke Edge Function atau Backend Server lokal (/api/midtrans/snap-token)
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kaveesimezonkgvhcbln.supabase.co';
+    // Hanya lewat backend: nominal tagihan diambil server dari database (pesanan/domain/langganan),
+    // bukan dari `grossAmount` kiriman browser. Edge Function lama tidak dipakai karena
+    // memercayai nominal dari browser.
     const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-    const endpoints = [
-      `${supabaseUrl}/functions/v1/midtrans-snap`,
-      '/api/midtrans/snap-token',
-    ];
+    const endpoints = ['/api/midtrans/snap-token'];
 
     let lastError: any = null;
     for (const endpoint of endpoints) {

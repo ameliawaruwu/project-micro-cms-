@@ -5,6 +5,7 @@ import { storeInCommunity, addExtraMembership, removeExtraMembership } from '../
 import { getWibIsoString } from '../utils/formatters';
 import { authService, passwordProblem } from './authService';
 import { idService } from './idService';
+import { pgrstLikeValue } from '../utils/postgrestFilter';
 
 const COMMUNITIES_KEY = 'microcms_communities_v1';
 
@@ -138,7 +139,7 @@ class CommunityService {
       const { data } = await supabase
         .from('communities')
         .select(PUBLIC_COMMUNITY_COLUMNS)
-        .or(`slug.ilike.${clean},name.ilike.${clean},id.ilike.${clean}`)
+        .or(`slug.ilike.${pgrstLikeValue(clean)},name.ilike.${pgrstLikeValue(clean)},id.ilike.${pgrstLikeValue(clean)}`)
         .maybeSingle();
 
       if (data) {

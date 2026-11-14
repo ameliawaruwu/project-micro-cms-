@@ -6,6 +6,7 @@ import { idService } from './idService';
 import { mediaService } from './mediaService';
 import { billingPlanService } from './billingPlanService';
 import { DEFAULT_MANUAL_INSTRUCTIONS } from '../utils/manualPayment';
+import { pgrstValue, pgrstLikeValue } from '../utils/postgrestFilter';
 
 const STORE_KEY = 'microcms_stores_v2';
 const ACTIVE_STORE_KEY = 'microcms_active_store_id';
@@ -373,12 +374,12 @@ class StoreService {
     // 1. Fetch live from Supabase cloud so status is 100% synchronized across devices/browsers
     try {
       const orConditions = [
-        `slug.ilike.${clean}`,
-        `slug.ilike.${cleanNoWww}`,
-        `custom_domain.ilike.${clean}`,
-        `custom_domain.ilike.${cleanNoWww}`,
-        `custom_domain.ilike.${cleanWithWww}`,
-        `id.eq.${clean}`,
+        `slug.ilike.${pgrstLikeValue(clean)}`,
+        `slug.ilike.${pgrstLikeValue(cleanNoWww)}`,
+        `custom_domain.ilike.${pgrstLikeValue(clean)}`,
+        `custom_domain.ilike.${pgrstLikeValue(cleanNoWww)}`,
+        `custom_domain.ilike.${pgrstLikeValue(cleanWithWww)}`,
+        `id.eq.${pgrstValue(clean)}`,
       ].join(',');
 
       let { data, error } = await supabase
@@ -391,7 +392,7 @@ class StoreService {
         const fallback = await supabase
           .from('stores')
           .select('*')
-          .or(`slug.ilike.${clean},slug.ilike.${cleanNoWww},id.eq.${clean}`)
+          .or(`slug.ilike.${pgrstLikeValue(clean)},slug.ilike.${pgrstLikeValue(cleanNoWww)},id.eq.${pgrstValue(clean)}`)
           .limit(1);
         data = fallback.data;
         error = fallback.error;

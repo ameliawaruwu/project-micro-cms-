@@ -3,6 +3,7 @@ import { storeService } from './storeService';
 import { productService } from './productService';
 import { supabase, setSessionToken } from './supabaseClient';
 import { idService } from './idService';
+import { pgrstValue, pgrstLikeValue } from '../utils/postgrestFilter';
 
 const AUTH_USER_KEY = 'microcms_auth_user';
 const AUTH_MERCHANT_KEY = 'microcms_auth_merchant';
@@ -377,7 +378,9 @@ class AuthService {
         const { data } = await supabase
           .from('communities')
           .select('id, name, slug')
-          .or(`slug.ilike.${cleanCode},name.ilike.${cleanCode},id.ilike.${cleanCode}`)
+          .or(
+            `slug.ilike.${pgrstLikeValue(cleanCode)},name.ilike.${pgrstLikeValue(cleanCode)},id.ilike.${pgrstLikeValue(cleanCode)}`
+          )
           .maybeSingle();
         if (data) {
           matchedCommunity = { id: data.id, name: data.name };
@@ -890,7 +893,7 @@ class AuthService {
       const cleanEmail = email.toLowerCase().trim();
       let query = supabase.from('users').select('id, email');
       if (cleanEmail && userId) {
-        query = query.or(`email.eq.${cleanEmail},id.eq.${userId}`);
+        query = query.or(`email.eq.${pgrstValue(cleanEmail)},id.eq.${pgrstValue(userId)}`);
       } else if (cleanEmail) {
         query = query.eq('email', cleanEmail);
       } else {

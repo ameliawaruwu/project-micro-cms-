@@ -278,14 +278,21 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     setRatesError('');
 
     try {
-      const result = await shippingService.checkBiteshipRates({
-        storeId: store?.id,
+      // Tarif dihitung & ditandatangani server (berat dari data produk), agar ongkir pesanan
+      // tidak bisa diubah dari browser.
+      const result = await shippingService.getCheckoutRates({
+        storeId: store?.id || '',
+        items: sampleItems.map((s) => ({ productId: s.id, quantity: s.quantity || 1 })),
         destinationPostalCode: destCode,
-        weight: totalWeightGrams,
         couriers: 'jnt,jne,sicepat,anteraja,gosend',
+        fallbackWeightGrams: totalWeightGrams,
       });
 
-      if (result.rates && result.rates.length > 0) {
+      if (result.error) {
+        setRatesError(result.error);
+        setAvailableRates([]);
+        setSelectedRate(null);
+      } else if (result.rates && result.rates.length > 0) {
         setAvailableRates(result.rates);
       } else {
         setRatesError('Tidak ada layanan kurir yang tersedia untuk area ini.');
@@ -674,6 +681,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       courier: (selectedRate?.courier_code?.toUpperCase() || 'KURIR') as any,
       courierCode: selectedRate?.courier_code || 'kurir',
       courierService: selectedRate ? `${selectedRate.courier_service_name} • ${selectedRate.etd}` : 'Reguler',
+      shippingQuote: selectedRate?.quote,
       shippingStatus: 'Baru',
       notes: `Alamat: ${formattedFullAddress}. Kurir: ${courierDisplayName}. Ongkir: Rp ${shippingFee.toLocaleString('id-ID')}`,
     });
