@@ -1,7 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Users, Check, X, Inbox, Loader2, RefreshCw, Search, ChevronRight } from 'lucide-react';
+import { Users, Check, X, Inbox, Loader2, RefreshCw, Search, ChevronRight, Plus, Store as StoreIcon } from 'lucide-react';
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
-import { communityMembershipService, ManageData, ManagedRequest, membershipSourceLabel } from '../../../services/communityMembershipService';
+import {
+  communityMembershipService,
+  ManageData,
+  ManagedRequest,
+  StoreLookupResult,
+  membershipSourceLabel,
+} from '../../../services/communityMembershipService';
 import { RequestStatusBadge, formatDate } from '../../../components/community/communityUi';
 import { SimpleModal, fieldClass, ghostBtn, labelClass, primaryBtn } from '../../../components/tickets/ticketUi';
 
@@ -9,11 +15,13 @@ interface AdminCommunityMembersTabProps {
   language: string;
   onShowToast?: (msg: string) => void;
   onNavigateOverview?: () => void;
+  /** Sub-Admin Utama: boleh menambah toko binaan & memutuskan permintaan gabung. Server tetap memeriksa peran. */
+  canManage?: boolean;
 }
 
 type View = 'pending' | 'members' | 'history';
 
-export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> = ({ language, onShowToast, onNavigateOverview }) => {
+export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> = ({ language, onShowToast, onNavigateOverview, canManage = false }) => {
   const isEn = language === 'en';
   const [data, setData] = useState<ManageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,6 +32,12 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState<'approve' | 'reject' | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [lookupQuery, setLookupQuery] = useState('');
+  const [lookupResults, setLookupResults] = useState<StoreLookupResult[] | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,6 +86,45 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
     }
   };
 
+  const openAdd = () => {
+    setAddOpen(true);
+    setLookupQuery('');
+    setLookupResults(null);
+    setAddError(null);
+  };
+
+  const runLookup = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const q = lookupQuery.trim();
+    if (!q) return;
+    setLookupLoading(true);
+    setAddError(null);
+    try {
+      setLookupResults(await communityMembershipService.lookupStore(q));
+    } catch (err: any) {
+      setLookupResults(null);
+      setAddError(err?.message || (isEn ? 'Search failed.' : 'Pencarian gagal.'));
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const addStore = async (r: StoreLookupResult) => {
+    setAddingId(r.storeId);
+    setAddError(null);
+    try {
+      const msg = await communityMembershipService.addMember(r.storeId);
+      setAddOpen(false);
+      onShowToast?.(msg || (isEn ? 'Store added.' : 'Toko ditambahkan.'));
+      setView('members');
+      await load();
+    } catch (err: any) {
+      setAddError(err?.message || (isEn ? 'Failed to add store.' : 'Gagal menambahkan toko.'));
+    } finally {
+      setAddingId(null);
+    }
+  };
+
   const tabs: { id: View; label: string; count: number }[] = [
     { id: 'pending', label: isEn ? 'Pending requests' : 'Permintaan masuk', count: pending.length },
     { id: 'members', label: isEn ? 'Members' : 'Anggota', count: data?.members.length || 0 },
@@ -95,10 +148,18 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
               : 'Toko anggota komunitas Anda dan permintaan gabung yang menunggu. Toko dengan email yang cocok dengan portal masuk otomatis.'}
           </p>
         </div>
-        <button type="button" onClick={load} className={ghostBtn} aria-label="Refresh">
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">Refresh</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button type="button" onClick={load} className={ghostBtn} aria-label="Refresh">
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+          {canManage && (
+            <button type="button" onClick={openAdd} className={primaryBtn}>
+              <Plus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{isEn ? 'Add store' : 'Tambah Toko Binaan'}</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -218,6 +279,8 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
             <button type="button" className={ghostBtn} onClick={() => setSelected(null)} disabled={!!saving}>
               {isEn ? 'Close' : 'Tutup'}
             </button>
+            {canManage && (
+              <>
             <button type="button" className={`${ghostBtn} text-[#66000E]`} onClick={() => decide(false)} disabled={!!saving}>
               {saving === 'reject' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
               {isEn ? 'Reject' : 'Tolak'}
@@ -226,6 +289,8 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
               {saving === 'approve' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               {isEn ? 'Approve' : 'Setujui'}
             </button>
+              </>
+            )}
           </>
         }
       >
@@ -245,14 +310,83 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
                 {selected.message}
               </p>
             )}
-            <div>
-              <label className={labelClass}>{isEn ? 'Note to applicant (optional)' : 'Catatan untuk pemohon (opsional)'}</label>
-              <textarea className={`${fieldClass} min-h-[70px] resize-y`} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
-            </div>
+            {canManage ? (
+              <div>
+                <label className={labelClass}>{isEn ? 'Note to applicant (optional)' : 'Catatan untuk pemohon (opsional)'}</label>
+                <textarea className={`${fieldClass} min-h-[70px] resize-y`} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
+              </div>
+            ) : (
+              <p className="text-[11px] text-[#706866] rounded-lg bg-[#FAF7F7] border border-[#F0ECEA] p-3">
+                {isEn
+                  ? 'Only the community lead (Sub-Admin Utama) can approve or reject join requests.'
+                  : 'Hanya Sub-Admin Utama yang dapat menyetujui atau menolak permintaan gabung.'}
+              </p>
+            )}
             {modalError && <p className="text-xs text-[#66000E]">{modalError}</p>}
           </>
         )}
       </SimpleModal>
+
+      {canManage && (
+        <SimpleModal
+          open={addOpen}
+          title={isEn ? 'Add store to community' : 'Tambah Toko Binaan'}
+          onClose={() => !addingId && setAddOpen(false)}
+          footer={
+            <button type="button" className={ghostBtn} onClick={() => setAddOpen(false)} disabled={!!addingId}>
+              {isEn ? 'Close' : 'Tutup'}
+            </button>
+          }
+        >
+          <p className="text-xs text-[#706866] leading-relaxed">
+            {isEn
+              ? 'Enter the full store link/slug (e.g. tokoku or tokoku.lapakq.com) or the exact owner email.'
+              : 'Masukkan tautan/slug toko secara lengkap (mis. tokoku atau tokoku.lapakq.com) atau email pemilik toko.'}
+          </p>
+          <form onSubmit={runLookup} className="flex gap-2">
+            <input
+              className={`${fieldClass} flex-1 min-w-0`}
+              maxLength={254}
+              placeholder={isEn ? 'Store slug or owner email' : 'Slug toko atau email pemilik'}
+              value={lookupQuery}
+              onChange={(e) => setLookupQuery(e.target.value)}
+              autoFocus
+            />
+            <button type="submit" className={primaryBtn} disabled={lookupLoading || !lookupQuery.trim()}>
+              {lookupLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{isEn ? 'Find' : 'Cari'}</span>
+            </button>
+          </form>
+          {lookupResults && lookupResults.length === 0 && (
+            <p className="text-xs text-[#A8A09D] text-center py-3">{isEn ? 'No store found.' : 'Toko tidak ditemukan.'}</p>
+          )}
+          {lookupResults && lookupResults.length > 0 && (
+            <ul className="divide-y divide-[#F0ECEA] border border-[#F0ECEA] rounded-lg">
+              {lookupResults.map((r) => (
+                <li key={r.storeId} className="px-3 py-2.5 flex items-center gap-3">
+                  <StoreIcon className="w-4 h-4 text-[#A8A09D] shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-[#1F1F1F] truncate">{r.storeName}</p>
+                    <p className="text-[11px] text-[#A8A09D] truncate">
+                      {r.slug ? `${r.slug}.lapakq.com` : '-'}
+                      {r.ownerName ? ` · ${r.ownerName}` : ''}
+                    </p>
+                  </div>
+                  {r.alreadyMember ? (
+                    <span className="text-[11px] text-[#706866] shrink-0">{isEn ? 'Member' : 'Sudah anggota'}</span>
+                  ) : (
+                    <button type="button" className={`${primaryBtn} shrink-0`} onClick={() => addStore(r)} disabled={!!addingId}>
+                      {addingId === r.storeId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                      {isEn ? 'Add' : 'Tambah'}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {addError && <p className="text-xs text-[#66000E]">{addError}</p>}
+        </SimpleModal>
+      )}
     </div>
   );
 };

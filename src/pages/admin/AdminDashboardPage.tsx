@@ -75,8 +75,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [adminUser, setAdminUser] = useState<User | null>(() => currentUser || authService.getCurrentUser().user || null);
   const loggedInUser = adminUser || currentUser || authService.getCurrentUser().user;
   
+  // Sub-Admin Utama (sub_admin / sub_admin_umum): halaman komunitas & menambah toko binaan.
   const isSubAdminUmum =
     loggedInUser?.role === 'sub_admin_umum' ||
+    loggedInUser?.role === 'sub_admin' ||
     loggedInUser?.email === 'admin1@gmps.com' ||
     loggedInUser?.email === 'admin1@gmail.com';
 
@@ -93,8 +95,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
 
   // Hak akses ketat berdasarkan peran sub-admin:
-  // - Admin Umum: Dashboard ('overview') & Halaman Komunitas ('communities')
-  // - Sub Admin Produk: Dashboard ('overview'), Toko Binaan ('stores'), dan Produk ('products')
+  // - Sub Admin Utama: Dashboard, Halaman Komunitas, Anggota Komunitas (tambah toko binaan & setujui permintaan)
+  // - Sub Admin Produk: Dashboard, Toko Binaan, Produk (tambah produk ke toko binaan), Anggota Komunitas (lihat saja)
   useEffect(() => {
     if (isSubAdminUmum) {
       if (activeTab !== 'overview' && activeTab !== 'communities' && activeTab !== 'my-tickets' && activeTab !== 'community-members') {
@@ -720,6 +722,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               onShowToast={showToast}
               language={language}
               isSubAdmin={isSubAdmin}
+              canAddProduct={isSubAdminProduk && !!loggedInUser?.communityId}
             />
           )}
 
@@ -747,13 +750,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               language={language}
               onShowToast={(msg) => showToast(msg)}
               onNavigateOverview={() => setActiveTab('overview')}
+              canManage={isSubAdminUmum}
             />
           )}
 
           {activeTab === 'my-tickets' && isSubAdmin && (
             <TicketRequesterPanel
               user={loggedInUser}
-              requesterRole={isSubAdminUmum ? 'sub_admin_umum' : isSubAdminProduk ? 'community_admin' : 'sub_admin'}
+              requesterRole={loggedInUser?.role === 'sub_admin' ? 'sub_admin' : isSubAdminUmum ? 'sub_admin_umum' : isSubAdminProduk ? 'community_admin' : 'sub_admin'}
               language={language}
               onShowToast={(msg) => showToast(msg)}
               onNavigateDashboard={() => setActiveTab('overview')}

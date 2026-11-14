@@ -7,8 +7,11 @@
  *   DELETE /api/community/requests/:id       batalkan permintaan pending milik sendiri
  * Sub-admin komunitas (sub_admin, sub_admin_umum, community_admin, sub_admin_produk):
  *   GET    /api/community/manage             anggota + permintaan komunitas sendiri
+ * Hanya Sub-Admin Utama (sub_admin, sub_admin_umum) — Sub-Admin Produk hanya bisa melihat:
  *   POST   /api/community/manage/requests/:id/approve  { note? }
  *   POST   /api/community/manage/requests/:id/reject   { note? }
+ *   GET    /api/community/manage/lookup?q=   cari toko (slug/tautan persis atau email pemilik persis)
+ *   POST   /api/community/manage/members     { storeId } tambahkan toko binaan ke komunitas
  *
  * Jalur otomatis (email portal = email akun LapakQ) tetap di partnerApiController; di sini
  * hanya dibaca untuk menampilkan asal keanggotaan (stores.community_id / store_communities.source).
@@ -21,7 +24,13 @@ import { requireSession, SessionUser } from './sessionAuth';
 export const communityMembershipRouter = Router();
 
 const COMMUNITY_STAFF_ROLES = new Set(['sub_admin', 'sub_admin_umum', 'community_admin', 'sub_admin_produk']);
+/** Sub-Admin Utama: satu-satunya staf komunitas yang boleh menambah/menyetujui toko binaan. */
+const COMMUNITY_LEAD_ROLES = new Set(['sub_admin', 'sub_admin_umum']);
 const MAX_PENDING_PER_USER = 10;
+const LOOKUP_LIMIT_PER_MIN = 30;
+const ADD_LIMIT_PER_MIN = 20;
+const SLUG_REGEX = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
+const EMAIL_REGEX = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
 const MAX_TEXT = 500;
 
 const fail = (res: Response, status: number, message: string) =>
@@ -42,6 +51,54 @@ async function requireCommunityStaff(req: Request, res: Response): Promise<(Sess
     return null;
   }
   return user as SessionUser & { communityId: string };
+}
+
+/** Seperti requireCommunityStaff, tetapi hanya Sub-Admin Utama. */
+async function requireCommunityLead(req: Request, res: Response): Promise<(SessionUser & { communityId: string }) | null> {
+  const user = await requireCommunityStaff(req, res);
+  if (!user) return null;
+  if (!COMMUNITY_LEAD_ROLES.has(user.role)) {
+    fail(res, 403, 'Hanya Sub-Admin Utama yang dapat menambah atau menyetujui toko binaan.');
+    return null;
+  }
+  return user;
+}
+
+const rateWindows = new Map<string, number[]>();
+/** true bila batas terlampaui (jendela geser per kunci). */
+function hitLimit(key: string, limit: number, windowMs = 60_000): boolean {
+  const now = Date.now();
+  const hits = (rateWindows.get(key) || []).filter((t) => now - t < windowMs);
+  if (hits.length >= limit) {
+    rateWindows.set(key, hits);
+    return true;
+  }
+  hits.push(now);
+  rateWindows.set(key, hits);
+  if (rateWindows.size > 5000) {
+    for (const [k, v] of rateWindows) if (!v.some((t) => now - t < windowMs)) rateWindows.delete(k);
+  }
+  return false;
+}
+
+/**
+ * Jadikan toko anggota komunitas di dalam transaksi `client` (baris toko sudah dikunci pemanggil).
+ * Toko mandiri -> komunitas ini jadi komunitas utama; selain itu dicatat di store_communities.
+ */
+async function attachStoreToCommunity(client: any, storeId: string, communityId: string, source: string) {
+  const cm = await client.query('SELECT name FROM communities WHERE id = $1', [communityId]);
+  await client.query(
+    'UPDATE stores SET community_id = $1, community_name = $2, updated_at = now() WHERE id = $3 AND community_id IS NULL',
+    [communityId, cm.rows[0]?.name || null, storeId]
+  );
+  const fresh = await client.query('SELECT community_id FROM stores WHERE id = $1', [storeId]);
+  if (fresh.rows[0]?.community_id !== communityId) {
+    await client.query(
+      `INSERT INTO store_communities (store_id, community_id, source) VALUES ($1, $2, $3)
+       ON CONFLICT (store_id, community_id) DO NOTHING`,
+      [storeId, communityId, source]
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -274,7 +331,7 @@ communityMembershipRouter.get('/manage', async (req: Request, res: Response) => 
 // POST /manage/requests/:id/(approve|reject)
 // ---------------------------------------------------------------------------
 async function decide(req: Request, res: Response, approve: boolean) {
-  const user = await requireCommunityStaff(req, res);
+  const user = await requireCommunityLead(req, res);
   if (!user) return;
   const id = String(req.params.id || '').trim();
   if (!safeIdentifier(id)) return fail(res, 400, 'ID permintaan tidak valid.');
@@ -303,22 +360,7 @@ async function decide(req: Request, res: Response, approve: boolean) {
         await client.query('ROLLBACK');
         return fail(res, 404, 'Toko pemohon sudah tidak ada.');
       }
-      const cm = await client.query('SELECT name FROM communities WHERE id = $1', [row.community_id]);
-      if (!st.rows[0].community_id) {
-        // Toko mandiri: komunitas ini menjadi komunitas utama (sama dengan partner API).
-        await client.query(
-          'UPDATE stores SET community_id = $1, community_name = $2, updated_at = now() WHERE id = $3 AND community_id IS NULL',
-          [row.community_id, cm.rows[0]?.name || null, row.store_id]
-        );
-      }
-      const fresh = await client.query('SELECT community_id FROM stores WHERE id = $1', [row.store_id]);
-      if (fresh.rows[0]?.community_id !== row.community_id) {
-        await client.query(
-          `INSERT INTO store_communities (store_id, community_id, source) VALUES ($1, $2, 'request')
-           ON CONFLICT (store_id, community_id) DO NOTHING`,
-          [row.store_id, row.community_id]
-        );
-      }
+      await attachStoreToCommunity(client, row.store_id, row.community_id, 'request');
     }
 
     await client.query(
@@ -342,3 +384,122 @@ async function decide(req: Request, res: Response, approve: boolean) {
 
 communityMembershipRouter.post('/manage/requests/:id/approve', (req, res) => decide(req, res, true));
 communityMembershipRouter.post('/manage/requests/:id/reject', (req, res) => decide(req, res, false));
+
+// ---------------------------------------------------------------------------
+// GET /manage/lookup?q=  (Sub-Admin Utama: cari toko untuk ditambahkan)
+// Hanya kecocokan persis (slug/tautan toko atau email pemilik) agar daftar toko & pemilik
+// tidak bisa ditelusuri; email pemilik tidak dikembalikan.
+// ---------------------------------------------------------------------------
+communityMembershipRouter.get('/manage/lookup', async (req: Request, res: Response) => {
+  const user = await requireCommunityLead(req, res);
+  if (!user) return;
+  if (hitLimit(`lookup:${user.id}`, LOOKUP_LIMIT_PER_MIN)) {
+    return fail(res, 429, 'Terlalu banyak pencarian. Coba lagi sebentar lagi.');
+  }
+  try {
+    let q = String(req.query.q || '').trim().toLowerCase().slice(0, 254);
+    // Terima juga tautan toko: https://slug.lapakq.com/... -> slug
+    const urlMatch = q.match(/^(?:https?:\/\/)?([a-z0-9-]+)\.lapakq\.com(?:[/?#].*)?$/);
+    if (urlMatch) q = urlMatch[1];
+
+    let rows: any[];
+    if (EMAIL_REGEX.test(q)) {
+      const r = await pool.query(
+        `SELECT s.id, s.name, s.slug, s.community_id, u.name AS owner_name
+           FROM stores s JOIN users u ON u.id = s.user_id
+          WHERE lower(u.email) = $1
+          ORDER BY s.created_at ASC LIMIT 10`,
+        [q]
+      );
+      rows = r.rows;
+    } else if (SLUG_REGEX.test(q)) {
+      const r = await pool.query(
+        `SELECT s.id, s.name, s.slug, s.community_id, u.name AS owner_name
+           FROM stores s LEFT JOIN users u ON u.id = s.user_id
+          WHERE lower(s.slug) = $1 LIMIT 1`,
+        [q]
+      );
+      rows = r.rows;
+    } else {
+      return fail(res, 400, 'Masukkan slug/tautan toko atau email pemilik secara lengkap.');
+    }
+
+    const ids = rows.map((r) => r.id);
+    const secondary = ids.length
+      ? await pool.query('SELECT store_id FROM store_communities WHERE community_id = $1 AND store_id = ANY($2)', [user.communityId, ids])
+      : { rows: [] as any[] };
+    const inSecondary = new Set(secondary.rows.map((r: any) => r.store_id));
+
+    return res.json({
+      success: true,
+      data: rows.map((r) => ({
+        storeId: r.id,
+        storeName: r.name,
+        slug: r.slug,
+        ownerName: r.owner_name,
+        alreadyMember: r.community_id === user.communityId || inSecondary.has(r.id),
+      })),
+    });
+  } catch (err: any) {
+    console.error('[community GET /manage/lookup] Error:', err?.message);
+    return fail(res, 500, 'Gagal mencari toko.');
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /manage/members  { storeId }  (Sub-Admin Utama: tambahkan toko binaan)
+// ---------------------------------------------------------------------------
+communityMembershipRouter.post('/manage/members', async (req: Request, res: Response) => {
+  const user = await requireCommunityLead(req, res);
+  if (!user) return;
+  if (hitLimit(`add:${user.id}`, ADD_LIMIT_PER_MIN)) {
+    return fail(res, 429, 'Terlalu banyak permintaan. Coba lagi sebentar lagi.');
+  }
+  const storeId = String(req.body?.storeId || '').trim();
+  if (!safeIdentifier(storeId)) return fail(res, 400, 'Toko tidak valid.');
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const cm = await client.query(`SELECT id FROM communities WHERE id = $1 AND status = 'active' LIMIT 1`, [user.communityId]);
+    if (cm.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return fail(res, 409, 'Komunitas Anda tidak aktif.');
+    }
+    const st = await client.query('SELECT id, name FROM stores WHERE id = $1 FOR UPDATE', [storeId]);
+    if (st.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return fail(res, 404, 'Toko tidak ditemukan.');
+    }
+    const already = await client.query(
+      `SELECT 1 FROM stores WHERE id = $1 AND community_id = $2
+       UNION ALL SELECT 1 FROM store_communities WHERE store_id = $1 AND community_id = $2 LIMIT 1`,
+      [storeId, user.communityId]
+    );
+    if (already.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return fail(res, 409, 'Toko ini sudah menjadi anggota komunitas Anda.');
+    }
+
+    await attachStoreToCommunity(client, storeId, user.communityId, 'staff');
+    // Permintaan gabung yang masih menunggu untuk toko ini dianggap selesai.
+    await client.query(
+      `UPDATE community_join_requests
+          SET status = 'approved', decided_by = $3, decided_at = now(), updated_at = now(),
+              decision_note = COALESCE(decision_note, 'Ditambahkan langsung oleh Sub-Admin Utama')
+        WHERE store_id = $1 AND community_id = $2 AND status = 'pending'`,
+      [storeId, user.communityId, user.id]
+    );
+    await client.query('COMMIT');
+    console.info(`[community] toko ${storeId} ditambahkan ke komunitas ${user.communityId} oleh ${user.id}`);
+    return res.status(201).json({ success: true, message: `${st.rows[0].name} ditambahkan sebagai toko binaan.` });
+  } catch (err: any) {
+    try {
+      await client.query('ROLLBACK');
+    } catch {}
+    console.error('[community POST /manage/members] Error:', err?.message);
+    return fail(res, 500, 'Gagal menambahkan toko.');
+  } finally {
+    client.release();
+  }
+});

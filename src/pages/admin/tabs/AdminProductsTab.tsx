@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { storeInCommunity } from '../../../utils/communityMembership';
-import { Package, Search, Trash2, Store as StoreIcon, Loader2 } from 'lucide-react';
+import { Package, Search, Trash2, Store as StoreIcon, Loader2, Plus } from 'lucide-react';
 import { Product, Store, User } from '../../../types';
 import { productService } from '../../../services/productService';
 import { storeService } from '../../../services/storeService';
 import { formatRupiah } from '../../../utils/formatters';
+import { AdminAddProductModal } from './AdminAddProductModal';
 
 interface AdminProductsTabProps {
   currentUser?: User | null;
   onShowToast?: (msg: string) => void;
   language?: string;
   isSubAdmin?: boolean;
+  /** Sub-Admin Produk: boleh menambah produk ke toko binaan komunitasnya. */
+  canAddProduct?: boolean;
 }
 
 export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
@@ -18,6 +21,7 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
   onShowToast,
   language = 'id',
   isSubAdmin = false,
+  canAddProduct = false,
 }) => {
   const isEn = language === 'en';
 
@@ -32,6 +36,7 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
   // Modal: Konfirmasi Hapus Produk
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const notify = (msg: string) => {
     if (onShowToast) onShowToast(msg);
@@ -160,6 +165,17 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
             </div>
           </div>
         </div>
+        {canAddProduct && (
+          <button
+            type="button"
+            onClick={() => setIsAddOpen(true)}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#66000E] hover:bg-[#4d000a] text-white text-xs font-semibold rounded-lg shadow-xs transition cursor-pointer disabled:opacity-50 self-start sm:self-auto"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            {isEn ? 'Add Product' : 'Tambah Produk'}
+          </button>
+        )}
       </div>
 
       {/* Metrics Row */}
@@ -362,6 +378,21 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
           </div>
         )}
       </div>
+
+      {canAddProduct && (
+        <AdminAddProductModal
+          open={isAddOpen}
+          stores={stores}
+          categories={categories}
+          isEn={isEn}
+          onClose={() => setIsAddOpen(false)}
+          onCreated={async (msg) => {
+            setIsAddOpen(false);
+            notify(msg);
+            await loadAllData();
+          }}
+        />
+      )}
 
       {/* MODAL: KONFIRMASI HAPUS */}
       {productToDelete && (

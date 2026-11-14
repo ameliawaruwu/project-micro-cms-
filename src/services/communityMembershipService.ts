@@ -58,6 +58,14 @@ export interface ManagedRequest {
   ownerEmail?: string | null;
 }
 
+export interface StoreLookupResult {
+  storeId: string;
+  storeName: string;
+  slug?: string;
+  ownerName?: string | null;
+  alreadyMember: boolean;
+}
+
 export interface ManageData {
   communityId: string;
   members: ManagedMember[];
@@ -101,6 +109,14 @@ export const communityMembershipService = {
       body: { note: note || undefined },
     });
   },
+  /** Sub-Admin Utama: cari toko lewat slug/tautan atau email pemilik (kecocokan persis). */
+  async lookupStore(q: string): Promise<StoreLookupResult[]> {
+    return (await call<{ data: StoreLookupResult[] }>(`/manage/lookup?q=${encodeURIComponent(q)}`)).data;
+  },
+  /** Sub-Admin Utama: tambahkan toko sebagai toko binaan komunitasnya. */
+  async addMember(storeId: string): Promise<string> {
+    return (await call<{ message: string }>('/manage/members', { method: 'POST', body: { storeId } })).message;
+  },
 };
 
 /** Label asal keanggotaan untuk ditampilkan ke pengguna. */
@@ -108,5 +124,6 @@ export function membershipSourceLabel(source: string, isEn: boolean): string {
   if (source.startsWith('partner:')) return isEn ? 'Automatic (portal email match)' : 'Otomatis (email portal cocok)';
   if (source === 'request') return isEn ? 'Join request approved' : 'Permintaan disetujui';
   if (source === 'admin') return isEn ? 'Added by admin' : 'Ditambahkan admin';
+  if (source === 'staff') return isEn ? 'Added by community lead' : 'Ditambahkan Sub-Admin Utama';
   return isEn ? 'Primary community' : 'Komunitas utama';
 }
