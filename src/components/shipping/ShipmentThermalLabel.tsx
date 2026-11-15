@@ -1,6 +1,7 @@
 import React from 'react';
 import { Order, ShippingBranch } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { buyerNote } from '../orders/receipt/receiptData';
 
 interface ShipmentThermalLabelProps {
   order: Order;
@@ -144,9 +145,9 @@ export const ShipmentThermalLabel: React.FC<ShipmentThermalLabelProps> = ({
             </p>
           </div>
         )}
-        {order.notes && (
+        {buyerNote(order) && (
           <div className="text-[10px] text-zinc-500 italic">
-            {isEn ? 'Notes' : 'Catatan'}: {order.notes}
+            {isEn ? 'Notes' : 'Catatan'}: {buyerNote(order)}
           </div>
         )}
       </div>

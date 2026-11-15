@@ -3,6 +3,7 @@ import { Order, Store as StoreType } from '../../../types';
 import { formatRupiah } from '../../../utils/formatters';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { useStoreBaseDomain } from '../../../utils/storeDomain';
+import { storeAddressLine } from './receiptData';
 
 interface ThermalReceiptViewProps {
   order: Order;
@@ -35,8 +36,8 @@ export const ThermalReceiptView: React.FC<ThermalReceiptViewProps> = ({
       {/* Header */}
       <div className="text-center pb-2 border-b border-dashed border-black space-y-0.5">
         <h2 className="text-sm font-bold tracking-tight text-black">{store.name}</h2>
-        <p className="text-[10px] text-gray-600">{store.city}</p>
-        <p className="text-[10px] text-gray-600">WA: {store.phoneWhatsApp || '-'}</p>
+        {storeAddressLine(store) && <p className="text-[10px] text-gray-600">{storeAddressLine(store)}</p>}
+        {store.phoneWhatsApp && <p className="text-[10px] text-gray-600">WA: {store.phoneWhatsApp}</p>}
       </div>
 
       {/* Order Info */}
@@ -46,7 +47,7 @@ export const ThermalReceiptView: React.FC<ThermalReceiptViewProps> = ({
           <span>{orderDate}</span>
         </div>
         <div>{isEn ? 'Cust' : 'Plg'}: {order.customerName} ({order.customerPhone})</div>
-        <div>{isEn ? 'Courier' : 'Kurir'}: {courierName} - {resiNumber}</div>
+        <div>{isEn ? 'Courier' : 'Kurir'}: {courierName}{resiNumber ? ` - ${resiNumber}` : ''}</div>
       </div>
 
       {/* Items */}

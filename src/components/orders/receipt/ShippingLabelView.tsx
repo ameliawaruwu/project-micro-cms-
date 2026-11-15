@@ -4,6 +4,7 @@ import { formatRupiah } from '../../../utils/formatters';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { BarcodeSvg } from './BarcodeSvg';
 import { useStoreBaseDomain } from '../../../utils/storeDomain';
+import { buyerNote, displayAddress, formatWeight, storeAddressLine } from './receiptData';
 
 interface ShippingLabelViewProps {
   order: Order;
@@ -12,6 +13,8 @@ interface ShippingLabelViewProps {
   courierService: string;
   resiNumber: string;
   isCOD: boolean;
+  /** Total berat dari tabel products (gram); null selama dimuat. */
+  weightGrams: number | null;
 }
 
 export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
@@ -21,9 +24,12 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
   courierService,
   resiNumber,
   isCOD,
+  weightGrams,
 }) => {
   const { domain: storeBaseDomain } = useStoreBaseDomain(store);
   const { isEn } = useLanguage();
+  const senderAddress = storeAddressLine(store);
+  const note = buyerNote(order);
   const formatOrderDate = (value: string | undefined | null): string => {
     if (!value) return '';
     try {
@@ -41,9 +47,11 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
       <div className="bg-black text-white p-2.5 flex items-center justify-between border-b-2 border-black">
         <div className="flex items-center gap-2">
           <span className="text-base font-black tracking-wider uppercase">{courierName}</span>
-          <span className="text-[11px] font-semibold bg-white/20 px-1.5 py-0.5 rounded tracking-wide">
-            {courierService}
-          </span>
+          {courierService && (
+            <span className="text-[11px] font-semibold bg-white/20 px-1.5 py-0.5 rounded tracking-wide">
+              {courierService}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded tracking-wider ${
@@ -51,18 +59,25 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
           }`}>
             {isCOD ? `COD: ${formatRupiah(order.grandTotal)}` : 'NON-COD'}
           </span>
-          <span className="text-[9px] font-bold bg-white/20 px-1.5 py-0.5 rounded uppercase">
-            {order.shippingMethod === 'pickup' ? 'PICK-UP' : 'DROP-OFF'}
-          </span>
+          {order.shippingMethod && (
+            <span className="text-[9px] font-bold bg-white/20 px-1.5 py-0.5 rounded uppercase">
+              {order.shippingMethod === 'pickup' ? 'PICK-UP' : 'DROP-OFF'}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Barcode & Resi Box */}
       <div className="p-3 border-b-2 border-black text-center bg-white space-y-1">
-        <BarcodeSvg code={resiNumber} />
+        <BarcodeSvg code={resiNumber || order.orderNumber} />
         <div className="font-mono font-black text-base sm:text-lg tracking-widest text-black">
-          {resiNumber}
+          {resiNumber || `#${order.orderNumber}`}
         </div>
+        {!resiNumber && (
+          <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-500">
+            {isEn ? 'Tracking number not issued yet' : 'Nomor resi belum terbit'}
+          </div>
+        )}
         <div className="flex items-center justify-between text-[10px] font-semibold text-gray-700 px-1 pt-1 border-t border-dashed border-gray-300">
           <span>{isEn ? 'Order No.' : 'No. Pesanan'}: #{order.orderNumber}</span>
           <span>{formatOrderDate(order.createdAt)}</span>
@@ -79,7 +94,7 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
           <div className="font-extrabold text-sm text-black">{order.customerName}</div>
           <div className="font-mono font-bold text-black text-[11px]">{order.customerPhone}</div>
           <div className="text-gray-800 text-[10px] leading-snug pt-0.5">
-            {order.customerAddress}
+            {displayAddress(order.customerAddress)}
           </div>
           <div className="font-bold text-black text-[10px]">
             {order.customerDistrict ? `${order.customerDistrict}, ` : ''}{order.customerCity} {order.customerPostalCode || ''}
@@ -92,10 +107,12 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
             {isEn ? 'SENDER (FROM):' : 'PENGIRIM (DARI):'}
           </div>
           <div className="font-extrabold text-xs text-black">{store.name}</div>
-          <div className="font-mono text-black text-[10px]">{store.phoneWhatsApp || '-'}</div>
-          <div className="text-gray-800 text-[10px] leading-snug">
-            {store.city || (isEn ? 'Store City' : 'Kota Toko')}
-          </div>
+          {store.phoneWhatsApp && (
+            <div className="font-mono text-black text-[10px]">{store.phoneWhatsApp}</div>
+          )}
+          {senderAddress && (
+            <div className="text-gray-800 text-[10px] leading-snug">{senderAddress}</div>
+          )}
           <div className="text-[9px] text-gray-500 font-mono">
             {store.customDomain || `${store.slug}.${storeBaseDomain}`}
           </div>
@@ -103,17 +120,17 @@ export const ShippingLabelView: React.FC<ShippingLabelViewProps> = ({
       </div>
 
       {/* Shipping Notes (if provided) */}
-      {order.notes && (
+      {note && (
         <div className="p-2 border-b-2 border-black bg-gray-50 text-[10px] leading-snug">
-          <span className="font-bold text-black uppercase">{isEn ? 'Delivery Instructions: ' : 'Instruksi Pengiriman: '}</span>
-          <span className="italic text-gray-800">"{order.notes}"</span>
+          <span className="font-bold text-black uppercase">{isEn ? 'Buyer Note: ' : 'Catatan Pembeli: '}</span>
+          <span className="italic text-gray-800">"{note}"</span>
         </div>
       )}
 
       {/* Package Content & Specs */}
       <div className="p-2.5 border-b-2 border-black space-y-1.5 text-[10px] leading-tight">
         <div className="flex items-center justify-between font-bold border-b border-gray-200 pb-1">
-          <span>{isEn ? 'Weight' : 'Berat'}: 1.0 Kg</span>
+          <span>{isEn ? 'Weight' : 'Berat'}: {weightGrams === null ? '…' : formatWeight(weightGrams, isEn)}</span>
           <span>{isEn ? 'Items' : 'Jml Barang'}: {order.items.reduce((acc, i) => acc + i.quantity, 0)} pcs</span>
           <span>{isEn ? 'Shipping' : 'Ongkir'}: {formatRupiah(order.shippingCost)}</span>
         </div>

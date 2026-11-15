@@ -16,6 +16,7 @@ import { Order } from '../../types';
 import { getMerchantOrderAction } from '../../utils/orderFlow';
 import { formatRupiah, formatDateIndo, generateTrackingLink } from '../../utils/formatters';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { buyerNote, displayAddress } from './receipt/receiptData';
 
 interface OrderCardProps {
   order: Order;
@@ -40,6 +41,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   const [copiedResi, setCopiedResi] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const nextAction = getMerchantOrderAction(order);
+  const note = buyerNote(order);
+  const address = displayAddress(order.customerAddress);
+  const courierLabel = [order.courier, order.courierService?.split('•')[0].trim()].filter(Boolean).join(' · ');
 
   const handleConfirmCod = async () => {
     if (!onConfirmCodOrder) return;
@@ -128,12 +132,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           <span className="font-semibold text-xs sm:text-sm text-[#706866] group-hover:text-[#241A1A] transition truncate">
             {order.customerName}
           </span>
-          {onSelectOrder && (
-            <span className="text-[10px] text-[#706866] bg-[#FAF7F7] px-2 py-0.5 rounded-lg border border-[#E5E0DD] group-hover:border-[#E8DDDE] group-hover:text-[#66000E] group-hover:bg-[#F5E8EA] transition hidden sm:inline-flex items-center gap-1 shrink-0">
-              <Eye className="w-3 h-3" />
-              <span>{t('detail_short', 'Detail')}</span>
-            </span>
-          )}
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
@@ -152,13 +150,17 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         <div className="md:col-span-2 space-y-2">
           {order.items.map((item, idx) => (
             <div key={idx} className="flex items-center gap-2.5 sm:gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white border border-[#EAEAEA] overflow-hidden shrink-0">
-                <img
-                  src={item.productImage || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=100'}
-                  alt={item.productName}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#FAF7F7] border border-[#EAEAEA] overflow-hidden shrink-0 flex items-center justify-center">
+                {item.productImage ? (
+                  <img
+                    src={item.productImage}
+                    alt={item.productName}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <Package className="w-4 h-4 text-[#B5ABA8]" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <h5 className="font-semibold text-xs sm:text-sm text-[#1F1F1F] truncate">
@@ -182,10 +184,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             </div>
           ))}
 
-          {order.notes && (
+          {note && (
             <div className="text-[11px] sm:text-xs text-[#555555] bg-[#F9F9F9] px-2.5 py-1.5 rounded-lg border border-[#EAEAEA] mt-1 flex items-start gap-1.5">
               <span className="font-semibold text-[#1F1F1F] shrink-0">{t('buyer_note', 'Catatan:')}</span>
-              <span className="line-clamp-2">{order.notes}</span>
+              <span className="line-clamp-2">{note}</span>
             </div>
           )}
         </div>
@@ -197,20 +199,23 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <div className="flex items-center gap-1.5 font-semibold text-[#1F1F1F] text-[11px] sm:text-xs truncate">
                 <MapPin className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
                 <span className="truncate">{order.customerCity}</span>
-                <span className="text-[#CCCCCC] hidden sm:inline">•</span>
-                <span className="text-[#555555] font-normal hidden sm:inline">{order.courier}</span>
               </div>
               <span className={`font-semibold border px-1.5 sm:px-2 py-0.5 rounded text-[10px] shrink-0 sm:hidden ${paymentBadgeClass}`}>
                 {isAwaitingPaymentCheck ? (isEn ? 'Needs Check' : 'Perlu Dicek') : order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Lunas') : getPaymentStatusLabel(order.paymentStatus)}
               </span>
             </div>
-            <p className="text-[11px] text-[#555555] mt-0.5 line-clamp-1 sm:line-clamp-2">{order.customerAddress}</p>
-            <p className="text-[11px] text-[#777777] font-mono mt-0.5 hidden sm:block">WA: {order.customerPhone}</p>
+            {address && (
+              <p className="text-[11px] text-[#555555] mt-0.5 line-clamp-1 sm:line-clamp-2" title={address}>{address}</p>
+            )}
+            <p className="text-[11px] text-[#777777] font-mono mt-0.5 hidden sm:block">{order.customerPhone}</p>
           </div>
 
-          <div className="pt-2 border-t border-[#E5E0DD] hidden sm:flex items-center justify-between">
-            <span className="font-semibold text-[#1F1F1F]">{t('courier_colon', 'Kurir:')} {order.courier}</span>
-            <span className={`font-semibold border px-2 py-0.5 rounded-md text-[10px] ${paymentBadgeClass}`}>
+          <div className="pt-2 border-t border-[#E5E0DD] hidden sm:flex items-center justify-between gap-2">
+            <span className="flex items-center gap-1.5 min-w-0 text-[11px] font-semibold text-[#1F1F1F]">
+              <Package className="w-3.5 h-3.5 text-[#706866] shrink-0" />
+              <span className="truncate">{courierLabel || '-'}</span>
+            </span>
+            <span className={`font-semibold border px-2 py-0.5 rounded-md text-[10px] shrink-0 ${paymentBadgeClass}`}>
               {isAwaitingPaymentCheck ? (isEn ? 'Awaiting Payment Check' : 'Menunggu Pengecekan Bayar') : order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Sudah Dibayar') : (order.paymentStatus === 'Belum Dibayar' ? t('order_unpaid', 'Belum Dibayar') : getPaymentStatusLabel(order.paymentStatus))}
             </span>
           </div>

@@ -3,6 +3,7 @@ import { Order, Store as StoreType } from '../../../types';
 import { formatRupiah } from '../../../utils/formatters';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { useStoreBaseDomain } from '../../../utils/storeDomain';
+import { buyerNote, storeAddressLine } from './receiptData';
 
 interface InvoiceA4ViewProps {
   order: Order;
@@ -47,8 +48,12 @@ export const InvoiceA4View: React.FC<InvoiceA4ViewProps> = ({
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-black uppercase">
             {store.name}
           </h1>
-          <p className="text-xs text-gray-600 mt-0.5">{store.city || 'Indonesia'}</p>
-          <p className="text-xs text-gray-600 font-mono">WA: {store.phoneWhatsApp || '-'}</p>
+          {storeAddressLine(store) && (
+            <p className="text-xs text-gray-600 mt-0.5 max-w-[90mm]">{storeAddressLine(store)}</p>
+          )}
+          {store.phoneWhatsApp && (
+            <p className="text-xs text-gray-600 font-mono">WA: {store.phoneWhatsApp}</p>
+          )}
           <p className="text-xs text-gray-500 font-mono">{store.customDomain || `${store.slug}.${storeBaseDomain}`}</p>
         </div>
 
@@ -87,17 +92,19 @@ export const InvoiceA4View: React.FC<InvoiceA4ViewProps> = ({
             {isEn ? 'Shipping Details:' : 'Detail Pengiriman:'}
           </div>
           <div className="font-bold text-black">
-            {courierName} ({courierService})
+            {courierName}{courierService ? ` (${courierService})` : ''}
           </div>
           <div className="font-mono text-xs font-semibold text-black mt-0.5">
-            {isEn ? 'Tracking No.' : 'No. Resi'}: {resiNumber}
+            {isEn ? 'Tracking No.' : 'No. Resi'}: {resiNumber || (isEn ? 'Not issued yet' : 'Belum terbit')}
           </div>
-          <div className="text-gray-700 mt-1">
-            {isEn ? 'Method' : 'Metode'}: {order.shippingMethod === 'pickup' ? (isEn ? 'Courier Pick-up' : 'Pick-up Kurir') : 'Drop-off Counter'}
-          </div>
-          {order.notes && (
+          {order.shippingMethod && (
+            <div className="text-gray-700 mt-1">
+              {isEn ? 'Method' : 'Metode'}: {order.shippingMethod === 'pickup' ? (isEn ? 'Courier Pick-up' : 'Pick-up Kurir') : 'Drop-off Counter'}
+            </div>
+          )}
+          {buyerNote(order) && (
             <div className="text-[11px] italic text-gray-600 mt-1 bg-white p-1 rounded border border-gray-200">
-              {isEn ? 'Notes' : 'Catatan'}: "{order.notes}"
+              {isEn ? 'Notes' : 'Catatan'}: "{buyerNote(order)}"
             </div>
           )}
         </div>

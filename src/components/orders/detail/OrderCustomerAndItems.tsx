@@ -3,6 +3,7 @@ import { User, Phone, MapPin, Package } from 'lucide-react';
 import { Order } from '../../../types';
 import { formatRupiah } from '../../../utils/formatters';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { buyerNote, displayAddress } from '../receipt/receiptData';
 
 interface OrderCustomerAndItemsProps {
   order: Order;
@@ -28,12 +29,12 @@ export const OrderCustomerAndItems: React.FC<OrderCustomerAndItemsProps> = ({ or
           <p className="flex items-start gap-1.5 pt-1">
             <MapPin className="w-3.5 h-3.5 text-[#66000E] shrink-0 mt-0.5" />
             <span className="leading-snug">
-              {order.customerAddress}, {order.customerCity} {order.customerPostalCode || ''}
+              {displayAddress(order.customerAddress)}, {order.customerCity} {order.customerPostalCode || ''}
             </span>
           </p>
-          {order.notes && (
+          {buyerNote(order) && (
             <div className="p-2.5 rounded-xl bg-white border border-[#E5E0DD] text-[#555555] text-[11px] mt-2">
-              <span className="font-bold text-[#1F1F1F]">{t('notes', 'Catatan')}:</span> "{order.notes}"
+              <span className="font-bold text-[#1F1F1F]">{t('notes', 'Catatan')}:</span> "{buyerNote(order)}"
             </div>
           )}
         </div>
