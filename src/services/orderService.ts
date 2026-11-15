@@ -1,5 +1,5 @@
 import { Order, ShippingStatus, CourierType, PaymentStatus, OrderItem } from '../types';
-import { supabase, getSessionToken } from './supabaseClient';
+import { supabase, getSessionToken, sessionHeaders } from './supabaseClient';
 import { mediaService } from './mediaService';
 
 /** Data pesanan yang boleh dilihat pembeli lewat halaman Lacak Pesanan (tanpa alamat / kontak). */
@@ -339,6 +339,24 @@ class OrderService {
     }
 
     return orders[index];
+  }
+
+  /**
+   * Minta server mengirim email "pembayaran diterima" ke pembeli (nomor pesanan, nomor HP,
+   * rincian, tautan lacak). Mengembalikan kode hasil dari server, mis. 'sent' atau 'no_email'.
+   */
+  async notifyOrderPaid(orderId: string): Promise<string> {
+    try {
+      const res = await fetch('/api/orders/notify-paid', {
+        method: 'POST',
+        headers: sessionHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      return typeof data?.result === 'string' ? data.result : 'failed';
+    } catch {
+      return 'failed';
+    }
   }
 
   async updatePaymentStatus(orderId: string, paymentStatus: PaymentStatus, storeId?: string): Promise<Order> {

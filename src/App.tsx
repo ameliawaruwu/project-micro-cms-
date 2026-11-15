@@ -1312,6 +1312,18 @@ export default function App() {
       const updated = await orderService.updatePaymentStatus(orderId, 'Sudah Dibayar', currentStore?.id);
       replaceOrder(updated);
       addToast(isEn ? `Payment for order #${updated.orderNumber} marked as paid.` : `Pembayaran pesanan #${updated.orderNumber} ditandai lunas.`);
+      const emailResult = await orderService.notifyOrderPaid(orderId);
+      if (emailResult === 'sent') {
+        addToast(isEn
+          ? 'Confirmation email with order number & tracking link sent to the customer.'
+          : 'Email konfirmasi berisi nomor pesanan & tautan lacak terkirim ke pembeli.');
+      } else if (emailResult === 'no_email') {
+        addToast(isEn
+          ? 'Customer has no email address, so no confirmation email was sent.'
+          : 'Pembeli tidak mencantumkan email, jadi email konfirmasi tidak dikirim.', 'info');
+      } else if (emailResult === 'mailer_not_configured' || emailResult === 'failed') {
+        addToast(isEn ? 'Confirmation email could not be sent.' : 'Email konfirmasi gagal dikirim.', 'error');
+      }
     } catch (err: any) {
       addToast(err?.message || (isEn ? 'Failed to mark payment as paid.' : 'Gagal menandai pembayaran lunas.'), 'error');
     }

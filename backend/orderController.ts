@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { pool } from './publicApiController';
+import { requireStoreManager } from './sessionAuth';
+import { sendOrderPaidEmail } from './orderEmail';
 import { simulateCourierRates, zoneCourierRates } from '../src/utils/shippingFormulas';
 
 /**
@@ -314,6 +316,43 @@ orderRouter.post('/orders/place', async (req: Request, res: Response) => {
     if (err?.code === 'P0001' && msg) return res.status(400).json({ success: false, message: msg });
     console.error('[orders/place]', msg);
     return res.status(500).json({ success: false, message: 'Gagal membuat pesanan. Silakan coba lagi.' });
+  }
+});
+
+const NOTIFY_WINDOW_MS = 60 * 1000;
+const NOTIFY_MAX_PER_WINDOW = 20;
+const PAID_EMAIL_MAX_AGE_MS = 30 * 60 * 1000;
+const notifyHits = new Map<string, number[]>();
+
+// Penjual menandai pembayaran lunas (transfer manual/QRIS/COD) lalu meminta email konfirmasi ke pembeli.
+// Server memeriksa sesi & hak kelola toko, status lunas di database (paid_at maksimal 30 menit lalu),
+// dan hanya mengirim sekali per pesanan. Isi email seluruhnya dari database.
+orderRouter.post('/orders/notify-paid', async (req: Request, res: Response) => {
+  try {
+    const orderId = String(req.body?.orderId || '').trim();
+    if (!ID_RE.test(orderId)) {
+      return res.status(400).json({ success: false, message: 'ID pesanan tidak valid.' });
+    }
+    const orderRes = await pool.query('SELECT store_id FROM public.orders WHERE id = $1 LIMIT 1', [orderId]);
+    const order = orderRes.rows[0];
+    if (!order) return res.status(404).json({ success: false, message: 'Pesanan tidak ditemukan.' });
+
+    const user = await requireStoreManager(req, res, String(order.store_id));
+    if (!user) return;
+
+    const now = Date.now();
+    const hits = (notifyHits.get(user.id) || []).filter((t) => now - t < NOTIFY_WINDOW_MS);
+    if (hits.length >= NOTIFY_MAX_PER_WINDOW) {
+      return res.status(429).json({ success: false, message: 'Terlalu banyak permintaan. Coba lagi sebentar.' });
+    }
+    hits.push(now);
+    notifyHits.set(user.id, hits);
+
+    const result = await sendOrderPaidEmail(orderId, PAID_EMAIL_MAX_AGE_MS);
+    return res.status(200).json({ success: result === 'sent', result });
+  } catch (err: any) {
+    console.error('[orders notify-paid]', err?.message);
+    return res.status(503).json({ success: false, message: 'Database tidak dapat dihubungi' });
   }
 });
 

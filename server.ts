@@ -16,6 +16,7 @@ import { publicApiRouter } from './backend/publicApiController';
 import { partnerApiRouter } from './backend/partnerApiController';
 import { communityMembershipRouter } from './backend/communityMembershipController';
 import { orderRouter, resolveBillableAmount } from './backend/orderController';
+import { sendOrderPaidEmail } from './backend/orderEmail';
 
 dotenv.config();
 
@@ -761,6 +762,10 @@ async function applyGatewayPayment(merchantOrderId: string, amount: number): Pro
     } else {
       const r = await pool.query('SELECT app_private.mark_order_paid($1, $2) AS result', [merchantOrderId, amount]);
       order = r.rows[0]?.result || null;
+      // Email konfirmasi ke pembeli hanya saat pembayaran pertama kali dicatat (saldo baru dikredit).
+      if (order?.credited && order?.order_id) {
+        void sendOrderPaidEmail(String(order.order_id));
+      }
     }
   } catch (err: any) {
     console.error('[applyGatewayPayment]', merchantOrderId, err?.message);
