@@ -90,16 +90,16 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
       active: !isPaid,
       statusLabel: language === 'en' ? 'Created' : 'Selesai Dibuat',
       badgeColor: 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]',
-      description: language === 'en' 
-        ? `Order #${order.orderNumber} successfully created by ${order.customerName}. Data of ${order.items?.length || 1} products and destination address are securely stored.`
-        : `Pesanan #${order.orderNumber} berhasil dibuat oleh ${order.customerName}. Data belanja ${order.items?.length || 1} produk dan alamat pengiriman telah tersimpan aman di database toko.`,
+      description: language === 'en'
+        ? `${order.items?.length || 1} product(s) ordered by ${order.customerName}.`
+        : `${order.items?.length || 1} produk dipesan oleh ${order.customerName}.`,
       actionType: 'none',
     },
     {
       id: 2,
       title: language === 'en' ? 'Payment Received' : 'Pembayaran Diterima',
       subtitle: isPaid
-        ? `${order.paymentMethod} (${language === 'en' ? 'Paid' : 'Lunas'})`
+        ? order.paymentMethod
         : isCodUnpaid
         ? (language === 'en' ? 'Pay on Delivery' : 'Bayar di Tempat')
         : (language === 'en' ? 'Awaiting Payment' : 'Menunggu Bayar'),
@@ -113,16 +113,10 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
         : (language === 'en' ? 'Awaiting Verification' : 'Menunggu Verifikasi'),
       badgeColor: isPaid ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]' : 'bg-[#FEFCE8] text-[#A16207] border-[#FEF08A]',
       description: isPaid
-        ? (language === 'en'
-            ? `Order bill of ${formatRupiah(order.grandTotal)} has been verified via ${order.paymentMethod}.`
-            : `Tagihan pesanan sebesar ${formatRupiah(order.grandTotal)} telah diverifikasi lunas melalui metode pembayaran ${order.paymentMethod}.`)
+        ? (language === 'en' ? `Total ${formatRupiah(order.grandTotal)} paid.` : `Total ${formatRupiah(order.grandTotal)} sudah lunas.`)
         : isCodUnpaid
-        ? (language === 'en'
-            ? `Customer pays ${formatRupiah(order.grandTotal)} in cash when the package arrives. Payment is recorded as paid once the order is marked completed.`
-            : `Pembeli membayar tunai ${formatRupiah(order.grandTotal)} saat paket tiba. Pembayaran tercatat lunas otomatis ketika pesanan ditandai selesai.`)
-        : (language === 'en'
-            ? `Waiting for payment of ${formatRupiah(order.grandTotal)} from customer via ${order.paymentMethod}.`
-            : `Menunggu penyelesaian pembayaran sebesar ${formatRupiah(order.grandTotal)} dari pelanggan via ${order.paymentMethod}.`),
+        ? (language === 'en' ? `Cash ${formatRupiah(order.grandTotal)} on delivery.` : `Tunai ${formatRupiah(order.grandTotal)} saat paket tiba.`)
+        : (language === 'en' ? `Awaiting ${formatRupiah(order.grandTotal)}.` : `Menunggu ${formatRupiah(order.grandTotal)}.`),
       actionType: 'receipt',
     },
     {
@@ -135,12 +129,8 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
       statusLabel: isProcessed ? (language === 'en' ? 'Packed' : 'Selesai Dikemas') : (language === 'en' ? 'Needs Processing' : 'Perlu Diproses'),
       badgeColor: isProcessed ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]' : 'bg-[#F5E8EA] text-[#66000E] border-[#E8DDDE]',
       description: isProcessed
-        ? (language === 'en'
-            ? `Order is packed neatly by seller, shipping label printed and ready for ${order.courier} courier hand-over.`
-            : `Pesanan telah selesai dipacking rapi oleh penjual, label pengiriman telah tercetak dan siap diserahkan ke gerai kurir ${order.courier}.`)
-        : (language === 'en'
-            ? `Order has not been processed yet. Please click "Process Shipping" to print label and prepare package.`
-            : `Pesanan belum diproses. Silakan klik tombol "Proses Pengiriman" untuk mencetak resi dan menyiapkan paket.`),
+        ? (language === 'en' ? `Ready for ${order.courier}.` : `Siap diserahkan ke ${order.courier}.`)
+        : (language === 'en' ? 'Package not prepared yet.' : 'Paket belum disiapkan.'),
       actionType: isProcessed ? 'receipt' : 'process',
     },
     {
@@ -154,11 +144,9 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
       badgeColor: isShipped ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]' : 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]',
       description: isShipped
         ? (language === 'en'
-            ? `Package has been handed over and is being delivered by ${order.courier} (${order.courierService || 'Regular'}). Official tracking: ${order.resiNumber || '-'}.`
-            : `Paket telah diserahterimakan dan sedang diantar oleh kurir ${order.courier} (${order.courierService || 'Reguler'}). Nomor resi resmi: ${order.resiNumber || '-'}.`)
-        : (language === 'en'
-            ? `Package is waiting for pickup or handover to courier ${order.courier}. Tracking number will be generated upon processing.`
-            : `Paket menunggu penjemputan atau serah terima kepada kurir ${order.courier}. Nomor resi akan terbit otomatis saat diproses.`),
+            ? `Delivered by ${order.courier} (${order.courierService || 'Regular'}).`
+            : `Diantar ${order.courier} (${order.courierService || 'Reguler'}).`)
+        : (language === 'en' ? `Waiting for ${order.courier}.` : `Menunggu kurir ${order.courier}.`),
       actionType: isShipped ? 'tracking' : 'none',
     },
     {
@@ -171,12 +159,8 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
       statusLabel: isCompleted ? (language === 'en' ? 'Successful' : 'Pesanan Berhasil') : (language === 'en' ? 'Awaiting Confirmation' : 'Menunggu Konfirmasi'),
       badgeColor: isCompleted ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]' : 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]',
       description: isCompleted
-        ? (language === 'en'
-            ? `Package has been received by ${order.customerName} in ${order.customerCity}. The transaction is complete.`
-            : `Paket telah berhasil diterima oleh ${order.customerName} di ${order.customerCity}. Seluruh proses transaksi jual-beli telah selesai sempurna.`)
-        : (language === 'en'
-            ? `Package will be handed over to ${order.customerAddress}, ${order.customerCity}. Once received, order can be marked completed.`
-            : `Paket akan diserahterimakan ke alamat ${order.customerAddress}, ${order.customerCity}. Setelah diterima, penjual atau pembeli dapat menyelesaikan pesanan.`),
+        ? (language === 'en' ? `Received by ${order.customerName}.` : `Diterima ${order.customerName}.`)
+        : (language === 'en' ? `Heading to ${order.customerCity}.` : `Menuju ${order.customerCity}.`),
       actionType: !isCompleted && isShipped ? 'complete' : 'none',
     },
   ];
@@ -195,9 +179,6 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#1F1F1F]">
               {language === 'en' ? 'Order Journey Status' : 'Status Perjalanan Pesanan'}
             </h4>
-            <p className="text-[10px] text-[#777777]">
-              {language === 'en' ? 'Click stages below to view details and quick actions' : 'Klik tahapan di bawah untuk melihat rincian aktivitas & aksi cepat'}
-            </p>
           </div>
         </div>
 
@@ -206,8 +187,7 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
           {/* Progress Pill Indicator */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#E5E0DD] shadow-2xs text-[11px] font-bold text-[#1F1F1F]">
             <span className="w-2 h-2 rounded-full bg-[#66000E]" />
-            <span>{language === 'en' ? `Step ${currentStepIndex + 1} of 5` : `Tahap ${currentStepIndex + 1} dari 5`}</span>
-            <span className="text-[#777777] font-normal font-mono">• {progressPercentage}%</span>
+            <span>{language === 'en' ? `Step ${currentStepIndex + 1}/5` : `Tahap ${currentStepIndex + 1}/5`}</span>
           </div>
 
           {/* Dynamic Live Status Badge */}
@@ -259,7 +239,7 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
                 key={step.id}
                 type="button"
                 onClick={() => setSelectedStepId(step.id)}
-                title={`Detail: ${step.title}`}
+                aria-label={step.title}
                 className="group flex flex-col items-center text-center relative z-10 px-1 cursor-pointer select-none transition-transform duration-200 focus:outline-none"
               >
                 {/* Node Circle */}
@@ -344,9 +324,6 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="text-[10px] font-mono text-[#777777] px-1 font-semibold">
-              {language === 'en' ? `Step ${currentSelectedStep.id} / 5` : `Tahap ${currentSelectedStep.id} / 5`}
-            </span>
             <button
               type="button"
               disabled={currentSelectedStep.id === 5}
