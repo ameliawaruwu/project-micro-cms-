@@ -54,7 +54,7 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
       </div>
 
       {showNav && (
-        <div className="order-3 lg:order-2 w-full lg:w-auto lg:flex-1 flex flex-wrap justify-center lg:justify-end items-center gap-x-6 sm:gap-x-8 gap-y-2 font-bold uppercase tracking-wider text-xs md:text-sm">
+        <div data-sf-mobile-nav="" className="order-3 lg:order-2 w-full lg:w-auto lg:flex-1 flex flex-wrap justify-center lg:justify-end items-center gap-x-6 sm:gap-x-8 gap-y-2 font-bold uppercase tracking-wider text-xs md:text-sm">
           {getNavMenuItems(sectionOptions).map(nav => (
             <a key={nav.id} href={nav.route} className="text-zinc-400 hover:text-white transition-colors relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-red-500 hover:after:w-full after:transition-all">
               {nav.label}

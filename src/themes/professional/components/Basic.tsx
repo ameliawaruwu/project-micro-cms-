@@ -93,7 +93,7 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
         </div>
       </div>
       {showNav && (
-        <div className="md:hidden flex gap-6 overflow-x-auto [scrollbar-width:none] px-4 sm:px-6 pb-3 -mt-1 text-sm font-semibold text-blue-50 whitespace-nowrap">
+        <div data-sf-mobile-nav="" className="md:hidden flex gap-6 overflow-x-auto [scrollbar-width:none] px-4 sm:px-6 pb-3 -mt-1 text-sm font-semibold text-blue-50 whitespace-nowrap">
           {getNavMenuItems(sectionOptions).map(nav => (
             <a key={nav.id} href={nav.route} className="hover:text-white transition-colors">{nav.label}</a>
           ))}

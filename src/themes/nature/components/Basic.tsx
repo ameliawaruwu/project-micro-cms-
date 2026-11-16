@@ -120,7 +120,7 @@ export const NatureNavbar: React.FC<{
       </div>
 
       {showNav && (
-        <div className="mt-3 flex flex-wrap justify-center gap-x-5 sm:gap-x-8 gap-y-2">
+        <div data-sf-mobile-nav="" className="mt-3 flex flex-wrap justify-center gap-x-5 sm:gap-x-8 gap-y-2">
           {navList.map(nav => (
             <a key={nav.id} href={nav.route} className="text-xs sm:text-[13px] tracking-wide font-medium text-[#5C6B5D] hover:text-[#2C3B2D] transition-colors relative group font-sans whitespace-nowrap">
               {nav.label}

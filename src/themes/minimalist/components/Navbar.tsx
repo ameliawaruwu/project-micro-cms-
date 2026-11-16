@@ -62,7 +62,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
       <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between py-3 sm:py-4 px-3 sm:px-5 md:px-10 gap-2 sm:gap-4 box-border">
         
         {/* Mobile / Tablet Hamburger Button */}
-        <div className={`${showHamburger} items-center shrink-0`}>
+        <div data-sf-mobile-nav="" className={`${showHamburger} items-center shrink-0`}>
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -130,7 +130,7 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
 
       {/* Dedicated Mobile Collapsible Drawer Menu */}
       {showNav && mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-100 w-full bg-white px-4 py-3 shadow-lg animate-in slide-in-from-top-2 duration-200">
+        <div data-sf-mobile-nav="" className="md:hidden border-t border-gray-100 w-full bg-white px-4 py-3 shadow-lg animate-in slide-in-from-top-2 duration-200">
           <nav className="flex flex-col space-y-1">
             {navItems.map((nav: any) => (
               <a

@@ -76,7 +76,7 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
         )}
       </div>
       {showNavMenu && (
-        <div className="md:hidden w-full flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap">
+        <div data-sf-mobile-nav="" className="md:hidden w-full flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap">
           {getNavMenuItems(sectionOptions).map(nav => (
             <a key={nav.id} href={nav.route} className="text-[11px] uppercase tracking-widest text-gray-400 hover:text-white transition-colors">{nav.label}</a>
           ))}

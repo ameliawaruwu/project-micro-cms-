@@ -98,7 +98,7 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
       </nav>
 
       {/* Baris menu mobile/tablet: menu navbar tetap bisa diakses di layar kecil */}
-      <nav className={`${showMobileNav} items-center justify-center flex-wrap gap-x-5 gap-y-2 mt-4`}>
+      <nav data-sf-mobile-nav="" className={`${showMobileNav} items-center justify-center flex-wrap gap-x-5 gap-y-2 mt-4`}>
         {navItems.map((nav) => (
           <a
             key={nav.id}

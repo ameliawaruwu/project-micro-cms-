@@ -73,7 +73,7 @@ export const ModernNavbar: React.FC<{ sectionOptions?: any; accentColor?: string
         </div>
 
       </div>
-      <nav className="lg:hidden max-w-7xl mx-auto flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap px-5 pt-3">
+      <nav data-sf-mobile-nav="" className="lg:hidden max-w-7xl mx-auto flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap px-5 pt-3">
         {navItems.map((nav) => (
           <a key={nav.id} href={nav.route} className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
             {nav.label}

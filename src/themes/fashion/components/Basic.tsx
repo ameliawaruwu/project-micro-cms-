@@ -57,7 +57,7 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
         </div>
       </div>
       {showNav && (
-        <div className="w-full border-t border-white/10 px-4 sm:px-6 py-3 flex flex-wrap justify-center gap-x-5 sm:gap-x-8 gap-y-2">
+        <div data-sf-mobile-nav="" className="w-full border-t border-white/10 px-4 sm:px-6 py-3 flex flex-wrap justify-center gap-x-5 sm:gap-x-8 gap-y-2">
           {getNavMenuItems(sectionOptions).map((nav) => (
             <a
               key={nav.id}

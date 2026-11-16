@@ -561,6 +561,16 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
   // Ruang kosong di bawah halaman agar footer tidak tertutup navigasi bawah. Warnanya diambil
   // dari elemen paling bawah (biasanya footer template) supaya tidak muncul pita putih.
   const showBottomNav = isMobile || isLiveStorefront;
+  // Menu header versi HP (baris menu / hamburger, ditandai data-sf-mobile-nav di tiap tema)
+  // disembunyikan bila menunya sudah pindah ke navigasi bawah.
+  const bottomNavHasMenu = getNavMenuItems(sections.find((s) => s.id === 'header')?.options || {}).length > 0;
+  const bottomNavCss = !bottomNavHasMenu
+    ? ''
+    : isLiveStorefront
+      ? '@media (max-width: 767.98px) { .storefront-font-scope [data-sf-mobile-nav] { display: none !important; } }'
+      : isMobile
+        ? '.storefront-font-scope [data-sf-mobile-nav] { display: none !important; }'
+        : '';
   const contentRef = React.useRef<HTMLDivElement>(null);
   const [bottomFill, setBottomFill] = useState('');
   React.useLayoutEffect(() => {
@@ -720,7 +730,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
         onClickCapture={handleCanvasClick}
         onClick={handleCanvasClick}
       >
-        <style dangerouslySetInnerHTML={{ __html: fontStyles }} />
+        <style dangerouslySetInnerHTML={{ __html: fontStyles + bottomNavCss }} />
         {customContent ? (
           customContent
         ) : visibleSections.length === 0 ? (
@@ -1762,7 +1772,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
             onClickCapture={handleCanvasClick}
             onClick={handleCanvasClick}
           >
-            <style dangerouslySetInnerHTML={{ __html: fontStyles }} />
+            <style dangerouslySetInnerHTML={{ __html: fontStyles + bottomNavCss }} />
             {renderPageCustomContent(activePage) ? (
               renderPageCustomContent(activePage)
             ) : activePage === 'katalog' ? (

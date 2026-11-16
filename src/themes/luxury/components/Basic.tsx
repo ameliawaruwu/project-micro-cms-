@@ -58,7 +58,7 @@ export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
       </div>
 
       {showNav && navItems.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-[#F0EBE1] flex flex-wrap justify-center gap-x-5 sm:gap-x-8 gap-y-2">
+        <div data-sf-mobile-nav="" className="mt-4 pt-3 border-t border-[#F0EBE1] flex flex-wrap justify-center gap-x-5 sm:gap-x-8 gap-y-2">
           {navItems.map((nav) => (
             <a key={nav.id} href={nav.route} className="text-[10px] uppercase tracking-[0.25em] text-[#7D6E63] hover:text-[#8C531B] transition-colors duration-300">
               {nav.label}

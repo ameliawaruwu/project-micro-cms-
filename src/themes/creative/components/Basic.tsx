@@ -73,7 +73,7 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean
         )}
       </div>
       {showNav && (
-        <div className="md:hidden w-full flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap">
+        <div data-sf-mobile-nav="" className="md:hidden w-full flex gap-6 overflow-x-auto [scrollbar-width:none] whitespace-nowrap">
           {getNavMenuItems(sectionOptions).map(nav => (
             <a key={nav.id} href={nav.route} className="text-xs font-bold uppercase tracking-widest hover:text-yellow-300 transition-colors">
               {nav.label}

@@ -61,7 +61,7 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
         </div>
 
         {/* Mobile Hamburger */}
-        <div className={`${showHamburger} items-center`}>
+        <div data-sf-mobile-nav="" className={`${showHamburger} items-center`}>
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -145,7 +145,7 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && showMobileDrawer && (
-        <div className="border-t border-gray-200 bg-[#FAFAFA] px-4 sm:px-6 py-5 space-y-4 font-sans animate-in slide-in-from-top-2 duration-200">
+        <div data-sf-mobile-nav="" className="border-t border-gray-200 bg-[#FAFAFA] px-4 sm:px-6 py-5 space-y-4 font-sans animate-in slide-in-from-top-2 duration-200">
           <div className="text-[10px] tracking-[0.2em] uppercase text-gray-400 font-semibold border-b border-gray-200 pb-2">
             {leftSubtitle}
           </div>
