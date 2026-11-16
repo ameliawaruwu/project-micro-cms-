@@ -632,6 +632,29 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     return savedThemes[0]?.id || '';
   });
 
+  // Draf yang sedang tayang di website live. Hanya draf ini yang boleh menimpa layout toko
+  // (Perbarui Website) atau di-unpublish; draf lain cukup disimpan ke Pustaka tema.
+  const liveDraftId = useMemo(() => {
+    const live = currentStore.layoutSettings || {};
+    if (live.activeDraftId && savedThemes.some((t) => t.id === live.activeDraftId)) return live.activeDraftId as string;
+    if (live.activeTemplateId) {
+      const byTemplate = savedThemes.find(
+        (t) => t.id === live.activeTemplateId || t.storeTemplate?.id === live.activeTemplateId
+      );
+      if (byTemplate) return byTemplate.id;
+    }
+    if (live.activeThemeId) {
+      const liveTheme = normalizeThemeId(live.activeThemeId);
+      const byTheme = savedThemes.find(
+        (t) => normalizeThemeId(t.customLayoutSettings?.activeThemeId || t.storeTemplate?.id || t.id) === liveTheme
+      );
+      if (byTheme) return byTheme.id;
+    }
+    return '';
+  }, [currentStore.layoutSettings, savedThemes]);
+  // Tanpa penanda live (data lama) → perilaku lama: draf yang diedit dianggap live.
+  const isEditingLive = !liveDraftId || editingDraftId === liveDraftId;
+
   // Re-sync savedThemes whenever currentStore or user changes
   useEffect(() => {
     if (!currentStore.id || !user) {
@@ -774,13 +797,18 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     useCmsStore.getState().loadThemeData(mappedThemeId);
 
     // Set as active theme layout
+    const custom = theme.customLayoutSettings || {};
     onSaveLayout({
       ...store.layoutSettings,
+      ...(custom.pages ? { pages: custom.pages } : {}),
+      ...(custom.globalThemeSettings ? { globalThemeSettings: custom.globalThemeSettings } : {}),
+      ...(custom.fontFamily ? { fontFamily: custom.fontFamily } : {}),
       activeTemplateId: storeTemplateId,
+      activeDraftId: theme.id,
       activeThemeId: mappedThemeId,
       themeStyle: mappedThemeId,
-      primaryAccent: theme.primaryAccent,
-      sections: theme.customLayoutSettings?.sections || theme.storeTemplate.sections,
+      primaryAccent: custom.primaryAccent || theme.primaryAccent,
+      sections: custom.sections || theme.storeTemplate.sections,
     });
     
     setSavedThemes((prev) =>
@@ -1213,8 +1241,12 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   };
 
   // Save layout
-  const handleSave = () => {
+  // forceLive: jadikan draf yang sedang diedit sebagai tampilan website live.
+  const handleSave = (forceLive = false) => {
     setIsSaving(true);
+    const editingDraft = savedThemes.find((t) => t.id === editingDraftId);
+    // Toko belum terbit: simpan tetap memperbarui layout toko seperti sebelumnya.
+    const writesLive = !currentStore.isPublished || isEditingLive || forceLive;
     const nowIso = new Date().toISOString();
     const updatedMap = {
       ...pageSectionsMap,
@@ -1265,7 +1297,14 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       return prev;
     });
 
-    onSaveLayout(layoutSettings);
+    if (writesLive) {
+      onSaveLayout({
+        ...layoutSettings,
+        ...(editingDraft
+          ? { activeTemplateId: editingDraft.storeTemplate?.id || editingDraft.id, activeDraftId: editingDraft.id }
+          : {}),
+      });
+    }
     setHasChanges(false);
     setTimeout(() => {
       setIsSaving(false);
@@ -1273,7 +1312,11 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         ? new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
         : new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
       onShowNotification(
-        store.isPublished
+        !writesLive
+          ? (isEn ? `Draft saved at ${timeStr}. The live website is unchanged.` : `Draf disimpan pada pukul ${timeStr}. Website live tidak berubah.`)
+          : forceLive
+          ? (isEn ? `🎉 "${editingDraft?.name || 'Theme'}" is now live on your website.` : `🎉 "${editingDraft?.name || 'Tema'}" kini tayang di website live.`)
+          : store.isPublished
           ? (isEn ? `Live website updated at ${timeStr}.` : `Website live diperbarui pada pukul ${timeStr}.`)
           : (isEn ? `Theme draft & layout saved at ${timeStr}! Draft update time refreshed.` : `Draf tema & tata letak berhasil disimpan pada pukul ${timeStr}! Jam pembaruan draf diperbarui.`)
       );
@@ -1304,7 +1347,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       activePage,
     };
 
-    onSaveLayout(layoutSettings);
+    const editingDraft = savedThemes.find((t) => t.id === editingDraftId);
+    onSaveLayout({
+      ...layoutSettings,
+      ...(editingDraft
+        ? { activeTemplateId: editingDraft.storeTemplate?.id || editingDraft.id, activeDraftId: editingDraft.id }
+        : {}),
+    });
     setHasChanges(false);
     setTimeout(() => {
       setIsSaving(false);
@@ -1412,6 +1461,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             }}
             savedThemes={savedThemes}
             editingDraftId={editingDraftId}
+            liveDraftId={liveDraftId}
             onAddSavedTheme={handleAddSavedTheme}
             onPublishTheme={handlePublishTheme}
             onDuplicateTheme={handleDuplicateTheme}
@@ -1633,7 +1683,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             hasChanges={hasChanges}
             deviceMode={deviceMode}
             onDeviceModeChange={setDeviceMode}
-            onSave={handleSave}
+            onSave={() => handleSave()}
+            isLiveDraft={isEditingLive}
+            onPublishDraft={() => handleSave(true)}
             onReset={handleReset}
             onOpenStorefront={handleOpenPreviewTab}
             onBack={() => {

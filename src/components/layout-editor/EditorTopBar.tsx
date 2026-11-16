@@ -112,6 +112,10 @@ interface EditorTopBarProps {
   onPublish?: () => void;
   onUnpublish?: () => void;
   isUnpublishing?: boolean;
+  /** false bila draf yang diedit bukan draf yang sedang tayang di website live. */
+  isLiveDraft?: boolean;
+  /** Jadikan draf yang sedang diedit sebagai tampilan website live. */
+  onPublishDraft?: () => void;
 }
 
 export const EditorTopBar: React.FC<EditorTopBarProps> = ({
@@ -135,8 +139,13 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
   onPublish,
   onUnpublish,
   isUnpublishing = false,
+  isLiveDraft = true,
+  onPublishDraft,
 }) => {
   const { t, isEn } = useLanguage();
+  // Unpublish & "Perbarui Website" hanya untuk draf yang sedang tayang di website live.
+  const isLive = store.isPublished && isLiveDraft;
+  const isOtherDraftOfLiveStore = store.isPublished && !isLiveDraft;
   const pageLabel = (page: EditorPage) => (isEn ? PAGE_LABELS_EN[page.id] ?? page.label : page.label);
   const [isPageDropdownOpen, setIsPageDropdownOpen] = useState(false);
   const pageDropdownRef = useRef<HTMLDivElement>(null);
@@ -191,28 +200,28 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
             <span
               className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0"
               title={
-                store.isPublished
+                isLive
                   ? (isEn ? 'Changes are not live yet. Click "Update Website" to apply them.' : 'Perubahan belum tampil di website. Klik "Perbarui Website" untuk menerapkannya.')
                   : (isEn ? 'There are unsaved changes' : 'Ada perubahan belum disimpan')
               }
             >
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
               <span className="hidden min-[480px]:inline">
-                {store.isPublished ? (isEn ? 'Not updated' : 'Belum diperbarui') : 'Draft'}
+                {isLive ? (isEn ? 'Not updated' : 'Belum diperbarui') : 'Draft'}
               </span>
             </span>
           ) : (
             <span
               className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0"
               title={
-                store.isPublished
+                isLive
                   ? (isEn ? 'Website is up to date with your latest changes' : 'Website sudah memakai perubahan terbaru')
                   : (isEn ? 'All changes saved' : 'Semua perubahan tersimpan')
               }
             >
-              {store.isPublished ? <Globe className="w-2.5 h-2.5" /> : <Check className="w-2.5 h-2.5" />}
+              {isLive ? <Globe className="w-2.5 h-2.5" /> : <Check className="w-2.5 h-2.5" />}
               <span className="hidden min-[480px]:inline">
-                {store.isPublished ? (isEn ? 'Live' : 'Live · Terbaru') : (isEn ? 'Saved' : 'Tersimpan')}
+                {isLive ? (isEn ? 'Live' : 'Live · Terbaru') : (isEn ? 'Saved' : 'Tersimpan')}
               </span>
             </span>
           )}
@@ -371,7 +380,18 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
         </button>
 
         {/* Publish / Unpublish Toggle Button */}
-        {store.isPublished ? (
+        {isOtherDraftOfLiveStore ? (
+          <button
+            type="button"
+            onClick={onPublishDraft}
+            disabled={isSaving}
+            className="p-1.5 sm:px-3.5 sm:py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+            title={isEn ? 'Use this draft as the theme of your live website' : 'Pakai draf ini sebagai tema website live'}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{isEn ? 'Publish Theme' : 'Publikasikan Tema'}</span>
+          </button>
+        ) : isLive ? (
           <button
             type="button"
             onClick={onUnpublish}
@@ -405,20 +425,22 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
               : 'bg-[#008060] hover:bg-[#006e52]'
           } ${isSaving ? 'opacity-70 cursor-wait' : ''}`}
           title={
-            store.isPublished
+            isLive
               ? (isEn ? 'Save and apply changes to the live website' : 'Simpan & terapkan perubahan ke website live')
+              : isOtherDraftOfLiveStore
+              ? (isEn ? 'Save this draft without changing the live website' : 'Simpan draf ini tanpa mengubah website live')
               : (isEn ? 'Save Layout Changes' : 'Simpan Perubahan Layout')
           }
         >
-          {store.isPublished ? (
+          {isLive ? (
             <RefreshCw className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} />
           ) : (
             <Save className="w-3.5 h-3.5" />
           )}
           <span className="hidden sm:inline">
             {isSaving
-              ? (store.isPublished ? (isEn ? 'Updating...' : 'Memperbarui...') : (isEn ? 'Saving...' : 'Menyimpan...'))
-              : (store.isPublished ? (isEn ? 'Update Website' : 'Perbarui Website') : (isEn ? 'Save' : 'Simpan'))}
+              ? (isLive ? (isEn ? 'Updating...' : 'Memperbarui...') : (isEn ? 'Saving...' : 'Menyimpan...'))
+              : (isLive ? (isEn ? 'Update Website' : 'Perbarui Website') : (isEn ? 'Save' : 'Simpan'))}
           </span>
         </button>
       </div>

@@ -229,6 +229,8 @@ interface ThemeLibraryViewProps {
   onPreviewTemplate?: (template: TemplateGalleryItem) => void;
   savedThemes?: SavedThemeItem[];
   editingDraftId?: string;
+  /** Draf yang sedang tayang di website live. */
+  liveDraftId?: string;
   onAddSavedTheme?: (template: TemplateGalleryItem) => void;
   onPublishTheme?: (theme: SavedThemeItem) => void;
   onDuplicateTheme?: (theme: SavedThemeItem) => void;
@@ -247,6 +249,7 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
   onPreviewTemplate,
   savedThemes = [],
   editingDraftId,
+  liveDraftId,
   onAddSavedTheme,
   onPublishTheme,
   onDuplicateTheme,
@@ -352,7 +355,9 @@ export const ThemeLibraryView: React.FC<ThemeLibraryViewProps> = ({
             <div className="bg-white border border-[#E5E0DD] rounded-2xl shadow-xs overflow-visible">
               <div className="flex flex-col">
                 {(showAllDrafts ? savedThemes : savedThemes.slice(0, 3)).map((savedTmpl, idx) => {
-                  const isCurrentActive = currentTemplateId === savedTmpl.storeTemplate.id;
+                  const isCurrentActive = liveDraftId
+                    ? savedTmpl.id === liveDraftId
+                    : currentTemplateId === savedTmpl.storeTemplate.id;
                   const isEditingActive = editingDraftId
                     ? savedTmpl.id === editingDraftId
                     : !isCurrentActive && idx === 0;
