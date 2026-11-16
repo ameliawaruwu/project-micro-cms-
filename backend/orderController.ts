@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { pool } from './publicApiController';
 import { requireStoreManager } from './sessionAuth';
-import { sendOrderPaidEmail, sendOrderCancelledEmail, sendOrderPlacedEmail } from './orderEmail';
+import { sendOrderPaidEmail, sendOrderCancelledEmail, sendOrderPlacedEmail, sendCancelRequestEmail } from './orderEmail';
 import { simulateCourierRates, zoneCourierRates } from '../src/utils/shippingFormulas';
 
 /**
@@ -407,50 +407,35 @@ const CANCEL_MESSAGES: Record<string, [number, string]> = {
   insufficient_balance: [409, 'Saldo toko tidak cukup untuk menarik kembali dana pesanan ini. Hubungi admin LapakQ.'],
 };
 
-// Batalkan pesanan. Dua mode:
-// - Penjual: { orderId, reason } + sesi login dengan hak kelola toko (dicek server).
-// - Pembeli tanpa login: { storeId, orderNumber, phone, reason } — dibuktikan dengan nomor pesanan + HP,
-//   hanya selama pesanan belum lunas & belum diproses (aturan di app_private.cancel_order_by_buyer).
+// Batalkan pesanan: hanya penjual, { orderId, reason } + sesi login dengan hak kelola toko (dicek server).
+// Pembeli tidak bisa membatalkan sendiri; ia mengajukan permintaan lewat POST /orders/cancel-request
+// (email ke penjual), lalu penjual yang membatalkan.
 // Status & saldo hanya diubah fungsi database; browser tidak pernah mengirim status/nominal.
 orderRouter.post('/orders/cancel', async (req: Request, res: Response) => {
   try {
     const body = req.body || {};
     const reason = clean(body.reason, 300);
-    let result: any;
-
-    if (body.orderId !== undefined) {
-      const orderId = String(body.orderId || '').trim();
-      if (!ID_RE.test(orderId)) return res.status(400).json({ success: false, code: 'invalid', message: CANCEL_MESSAGES.invalid[1] });
-      const orderRes = await pool.query('SELECT store_id FROM public.orders WHERE id = $1 LIMIT 1', [orderId]);
-      const order = orderRes.rows[0];
-      if (!order) return res.status(404).json({ success: false, code: 'not_found', message: 'Pesanan tidak ditemukan.' });
-
-      const user = await requireStoreManager(req, res, String(order.store_id));
-      if (!user) return;
-      if (cancelRateLimited(`u:${user.id}`)) {
-        return res.status(429).json({ success: false, code: 'rate_limited', message: 'Terlalu banyak permintaan. Coba lagi sebentar.' });
-      }
-      const r = await pool.query('SELECT app_private.cancel_order_by_merchant($1, $2) AS result', [orderId, reason || null]);
-      result = r.rows[0]?.result;
-    } else {
-      const storeId = String(body.storeId || '').trim();
-      const orderNumber = String(body.orderNumber || '').trim().toUpperCase();
-      const phone = String(body.phone || '').replace(/[^0-9+]/g, '').slice(0, 20);
-      if (!ID_RE.test(storeId) || !/^[A-Z0-9-]{4,32}$/.test(orderNumber) || phone.length < 9) {
-        return res.status(400).json({ success: false, code: 'invalid', message: CANCEL_MESSAGES.invalid[1] });
-      }
-      const ip = req.ip || req.socket.remoteAddress || 'unknown';
-      if (cancelRateLimited(`ip:${ip}`)) {
-        return res.status(429).json({ success: false, code: 'rate_limited', message: 'Terlalu banyak permintaan. Coba lagi sebentar.' });
-      }
-      const r = await pool.query('SELECT app_private.cancel_order_by_buyer($1, $2, $3, $4) AS result', [
-        storeId,
-        orderNumber,
-        phone,
-        reason || null,
-      ]);
-      result = r.rows[0]?.result;
+    if (body.orderId === undefined) {
+      return res.status(403).json({
+        success: false,
+        code: 'contact_seller',
+        message: 'Pembatalan dilakukan oleh penjual. Kirim permintaan pembatalan ke penjual lewat halaman Lacak Pesanan.',
+      });
     }
+
+    const orderId = String(body.orderId || '').trim();
+    if (!ID_RE.test(orderId)) return res.status(400).json({ success: false, code: 'invalid', message: CANCEL_MESSAGES.invalid[1] });
+    const orderRes = await pool.query('SELECT store_id FROM public.orders WHERE id = $1 LIMIT 1', [orderId]);
+    const order = orderRes.rows[0];
+    if (!order) return res.status(404).json({ success: false, code: 'not_found', message: 'Pesanan tidak ditemukan.' });
+
+    const user = await requireStoreManager(req, res, String(order.store_id));
+    if (!user) return;
+    if (cancelRateLimited(`u:${user.id}`)) {
+      return res.status(429).json({ success: false, code: 'rate_limited', message: 'Terlalu banyak permintaan. Coba lagi sebentar.' });
+    }
+    const r = await pool.query('SELECT app_private.cancel_order_by_merchant($1, $2) AS result', [orderId, reason || null]);
+    const result: any = r.rows[0]?.result;
 
     const status = String(result?.status || '');
     if (status !== 'cancelled') {
@@ -469,6 +454,53 @@ orderRouter.post('/orders/cancel', async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error('[orders cancel]', err?.message);
     return res.status(500).json({ success: false, code: 'failed', message: 'Gagal membatalkan pesanan. Silakan coba lagi.' });
+  }
+});
+
+// Pembeli tanpa login meminta pembatalan: dibuktikan dengan nomor pesanan + nomor HP (public.track_order,
+// termasuk batas percobaan gagal). Server mengirim email ke pemilik toko; status pesanan TIDAK diubah.
+// Email penjual tidak pernah dikirim ke browser.
+orderRouter.post('/orders/cancel-request', async (req: Request, res: Response) => {
+  try {
+    const body = req.body || {};
+    const storeId = String(body.storeId || '').trim();
+    const orderNumber = String(body.orderNumber || '').trim().toUpperCase();
+    const phone = String(body.phone || '').replace(/[^0-9+]/g, '').slice(0, 20);
+    const reason = clean(body.reason, 300);
+    if (!ID_RE.test(storeId) || !/^[A-Z0-9-]{4,32}$/.test(orderNumber) || phone.length < 9) {
+      return res.status(400).json({ success: false, code: 'invalid', message: 'Data permintaan tidak valid.' });
+    }
+    if (reason.length < 5) {
+      return res.status(400).json({ success: false, code: 'reason_required', message: 'Tuliskan alasan pembatalan (minimal 5 karakter).' });
+    }
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    if (cancelRateLimited(`req:${ip}`)) {
+      return res.status(429).json({ success: false, code: 'rate_limited', message: 'Terlalu banyak permintaan. Coba lagi sebentar.' });
+    }
+
+    const tracked = await pool.query('SELECT public.track_order($1, $2, $3) AS result', [storeId, orderNumber, phone]);
+    const found: any = tracked.rows[0]?.result;
+    const status = String(found?.status || '');
+    if (status === 'locked') return res.status(429).json({ success: false, code: 'locked', message: CANCEL_MESSAGES.locked[1] });
+    if (status !== 'found') return res.status(404).json({ success: false, code: 'not_found', message: CANCEL_MESSAGES.not_found[1] });
+
+    const orderStatus = String(found.order?.order_status || '');
+    if (orderStatus === 'cancelled') {
+      return res.status(409).json({ success: false, code: 'already_cancelled', message: CANCEL_MESSAGES.already_cancelled[1] });
+    }
+    if (orderStatus !== 'pending' && orderStatus !== 'processing') {
+      return res.status(409).json({ success: false, code: 'shipped', message: CANCEL_MESSAGES.shipped[1] });
+    }
+
+    const sent = await sendCancelRequestEmail(storeId, orderNumber, reason);
+    if (sent === 'sent') return res.json({ success: true });
+    if (sent === 'already_requested') {
+      return res.status(409).json({ success: false, code: 'already_requested', message: 'Permintaan pembatalan sudah dikirim ke penjual. Tunggu balasan penjual.' });
+    }
+    return res.status(503).json({ success: false, code: 'email_failed', message: 'Permintaan belum bisa dikirim ke penjual. Silakan coba lagi nanti.' });
+  } catch (err: any) {
+    console.error('[orders cancel-request]', err?.message);
+    return res.status(500).json({ success: false, code: 'failed', message: 'Gagal mengirim permintaan pembatalan. Silakan coba lagi.' });
   }
 });
 

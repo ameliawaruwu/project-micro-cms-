@@ -11,6 +11,7 @@ import {
   Eye,
   Clock,
   Loader2,
+  XCircle,
 } from 'lucide-react';
 import { Order } from '../../types';
 import { getMerchantOrderAction } from '../../utils/orderFlow';
@@ -41,6 +42,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   const [copiedResi, setCopiedResi] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const nextAction = getMerchantOrderAction(order);
+  const isCancelled = order.shippingStatus === 'Dibatalkan';
   const note = buyerNote(order);
   const address = displayAddress(order.customerAddress);
   const courierLabel = [order.courier, order.courierService?.split('•')[0].trim()].filter(Boolean).join(' · ');
@@ -222,6 +224,27 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         </div>
       </div>
 
+      {/* Penanda pesanan dibatalkan */}
+      {isCancelled && (
+        <div className="p-2 sm:p-3 bg-[#FEF3F2] rounded-xl border border-[#FECDCA] flex items-start gap-2 text-xs">
+          <XCircle className="w-4 h-4 shrink-0 text-[#B42318]" />
+          <p className="text-[#B42318] leading-relaxed">
+            <span className="font-semibold">
+              {order.cancelledBy === 'buyer'
+                ? (isEn ? 'Cancelled by the buyer' : 'Dibatalkan oleh pembeli')
+                : order.cancelledBy === 'merchant'
+                ? (isEn ? 'Cancelled by your store' : 'Dibatalkan oleh toko Anda')
+                : order.cancelledBy === 'system'
+                ? (isEn ? 'Cancelled automatically (not paid within 24 hours)' : 'Dibatalkan otomatis (tidak dibayar dalam 24 jam)')
+                : (isEn ? 'Order cancelled' : 'Pesanan dibatalkan')}
+            </span>
+            {order.cancelledBy !== 'system' && order.cancelReason && (
+              <span className="text-[#706866]">{` · ${isEn ? 'Reason' : 'Alasan'}: ${order.cancelReason}`}</span>
+            )}
+          </p>
+        </div>
+      )}
+
       {/* Resi Box if shipped */}
       {order.resiNumber && (
         <div className="p-2 sm:p-3 bg-[#F9F9F9] rounded-xl border border-[#E5E0DD] flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -369,6 +392,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{t('mark_completed', 'Tandai Selesai')}</span>
             </button>
+          ) : isCancelled ? (
+            <span className="inline-flex items-center justify-center gap-1 text-xs font-semibold text-[#B42318] bg-[#FEF3F2] px-2.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl border border-[#FECDCA]">
+              <XCircle className="w-3.5 h-3.5" />
+              <span>{t('filter_cancelled', 'Dibatalkan')}</span>
+            </span>
           ) : (
             <span className="inline-flex items-center justify-center gap-1 text-xs font-semibold text-[#027A48] bg-[#ECFDF3] px-2.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl border border-[#ABEFC6]">
               <CheckCircle2 className="w-3.5 h-3.5" />

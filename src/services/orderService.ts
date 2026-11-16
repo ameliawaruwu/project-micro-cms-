@@ -423,9 +423,25 @@ class OrderService {
     return result;
   }
 
-  /** Pembeli tanpa login membatalkan pesanan: dibuktikan dengan nomor pesanan + nomor HP. */
-  async cancelOrderAsBuyer(storeId: string, orderNumber: string, phone: string, reason: string): Promise<CancelOrderResult> {
-    return this.postCancel({ storeId, orderNumber, phone, reason }, false);
+  /**
+   * Pembeli tanpa login meminta pembatalan: server memverifikasi nomor pesanan + nomor HP lalu
+   * mengirim email ke penjual. Status pesanan tidak berubah; penjual yang membatalkan.
+   */
+  async requestCancellation(storeId: string, orderNumber: string, phone: string, reason: string): Promise<{ success: boolean; code?: string }> {
+    try {
+      const res = await fetch('/api/orders/cancel-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeId, orderNumber, phone, reason }),
+      });
+      const data = await res.json().catch(() => ({}));
+      return {
+        success: res.ok && data?.success === true,
+        code: typeof data?.code === 'string' ? data.code : res.ok ? undefined : 'failed',
+      };
+    } catch {
+      return { success: false, code: 'network' };
+    }
   }
 
   async updatePaymentStatus(orderId: string, paymentStatus: PaymentStatus, storeId?: string): Promise<Order> {

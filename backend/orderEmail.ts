@@ -370,3 +370,121 @@ export async function sendOrderPlacedEmail(orderId: string): Promise<OrderPlaced
     return 'failed';
   }
 }
+
+// -----------------------------------------------------------------------------
+// Email "Permintaan pembatalan" dari pembeli ke penjual
+// -----------------------------------------------------------------------------
+// Pembeli tidak bisa membatalkan sendiri; ia mengajukan permintaan yang dikirim ke email pemilik toko.
+// Alamat email penjual tidak pernah dikirim ke browser. Balasan penjual diarahkan ke email pembeli
+// (Reply-To) bila pembeli mengisinya saat checkout. Pembatalannya tetap dilakukan penjual di dashboard.
+
+const CANCEL_REQUEST_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+const cancelRequests = new Map<string, number>();
+
+export type CancelRequestEmailResult =
+  | 'sent'
+  | 'already_requested'
+  | 'not_found'
+  | 'no_merchant_email'
+  | 'mailer_not_configured'
+  | 'failed';
+
+function buildCancelRequestHtml(order: any, items: any[], storeName: string, reason: string): string {
+  const rows = items
+    .map(
+      (i) => `<tr>
+        <td style="padding:6px 0;border-bottom:1px solid #EEE;font-size:13px;color:#1F1F1F;">${esc(i.product_name)}${i.variant_info ? ` <span style="font-size:11px;color:#777;">(${esc(i.variant_info)})</span>` : ''} × ${esc(i.quantity)}</td>
+      </tr>`
+    )
+    .join('');
+  const paid = order.payment_status === 'paid';
+  const buyerEmail = EMAIL_RE.test(String(order.customer_email || '').trim()) ? String(order.customer_email).trim() : '';
+  return `<!doctype html><html><body style="margin:0;background:#F5F2F1;font-family:Arial,Helvetica,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
+    <div style="background:#FFF;border:1px solid #E5E0DD;border-radius:16px;padding:24px;">
+      <p style="font-size:12px;color:#777;margin:0 0 4px;">${esc(storeName)}</p>
+      <h1 style="font-size:20px;color:#1F1F1F;margin:0 0 8px;">Pembeli meminta pembatalan pesanan</h1>
+      <p style="font-size:13px;color:#555;margin:0 0 12px;line-height:1.5;">
+        ${esc(order.customer_name || 'Pembeli')} meminta pesanan berikut dibatalkan. Pesanan <b>belum</b> dibatalkan:
+        bila Anda setuju, buka dashboard LapakQ &rarr; Pesanan &rarr; Detail pesanan &rarr; <b>Batalkan Pesanan</b>.
+      </p>
+      <p style="font-size:13px;color:#555;margin:0 0 16px;line-height:1.5;"><b>Alasan pembeli:</b> ${esc(reason)}</p>
+      <p style="font-size:12px;color:#777;margin:0 0 4px;">Nomor Pesanan</p>
+      <p style="font-size:15px;font-weight:700;color:#1F1F1F;margin:0 0 16px;">#${esc(order.order_number)}</p>
+      <table style="width:100%;border-collapse:collapse;">${rows}
+        <tr><td style="padding:8px 0;font-size:14px;font-weight:700;color:#1F1F1F;">Total ${esc(rupiah(order.total_amount))}${paid ? ' (sudah dibayar)' : ''}</td></tr>
+      </table>
+      <p style="font-size:13px;color:#555;margin:16px 0 0;line-height:1.5;">
+        <b>Kontak pembeli:</b> ${esc(order.customer_phone || '-')}${buyerEmail ? ` &middot; ${esc(buyerEmail)}` : ''}
+      </p>
+      ${paid ? `<p style="font-size:13px;color:#1F1F1F;background:#FFF7E6;border:1px solid #F5D9A8;border-radius:10px;padding:12px;margin:16px 0 0;line-height:1.5;">Pesanan ini sudah dibayar. Bila dibatalkan, kembalikan dana ke pembeli secara manual.</p>` : ''}
+      <div style="text-align:center;margin:24px 0 0;"><a href="https://${PUBLIC_BASE_DOMAIN}/" style="display:inline-block;background:#66000E;color:#FFF;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:10px;">Buka Dashboard</a></div>
+    </div>
+    <p style="font-size:11px;color:#999;text-align:center;margin:16px 0 0;">Email ini dikirim otomatis oleh LapakQ atas permintaan pembeli.${buyerEmail ? ' Balas email ini untuk menghubungi pembeli.' : ''}</p>
+  </div>
+</body></html>`;
+}
+
+/**
+ * Kirim permintaan pembatalan ke email pemilik toko. Pemanggil WAJIB sudah memverifikasi pembeli
+ * (nomor pesanan + nomor HP lewat public.track_order). Tidak pernah melempar error.
+ */
+export async function sendCancelRequestEmail(
+  storeId: string,
+  orderNumber: string,
+  reason: string
+): Promise<CancelRequestEmailResult> {
+  const key = `${storeId}:${orderNumber}`;
+  const now = Date.now();
+  const last = cancelRequests.get(key);
+  if (last && now - last < CANCEL_REQUEST_COOLDOWN_MS) return 'already_requested';
+  try {
+    const orderRes = await pool.query(
+      `SELECT id, store_id, order_number, customer_name, customer_phone, customer_email,
+              total_amount, payment_status
+         FROM public.orders WHERE store_id = $1 AND order_number = $2 LIMIT 1`,
+      [storeId, orderNumber]
+    );
+    const order = orderRes.rows[0];
+    if (!order) return 'not_found';
+
+    const [itemsRes, storeRes] = await Promise.all([
+      pool.query(
+        `SELECT product_name, quantity, variant_info FROM public.order_items WHERE order_id = $1 ORDER BY id LIMIT 100`,
+        [order.id]
+      ),
+      pool.query(
+        `SELECT s.name, u.email AS owner_email
+           FROM public.stores s JOIN public.users u ON u.id = s.user_id
+          WHERE s.id = $1 LIMIT 1`,
+        [storeId]
+      ),
+    ]);
+    const store = storeRes.rows[0] || {};
+    const merchantEmail = String(store.owner_email || '').trim();
+    if (!EMAIL_RE.test(merchantEmail)) return 'no_merchant_email';
+    const storeName = String(store.name || 'Toko LapakQ');
+    const buyerEmail = String(order.customer_email || '').trim();
+
+    cancelRequests.set(key, now);
+    if (cancelRequests.size > 5000) {
+      for (const [k, t] of cancelRequests) if (now - t >= CANCEL_REQUEST_COOLDOWN_MS) cancelRequests.delete(k);
+    }
+    try {
+      await sendMail(
+        merchantEmail,
+        `Permintaan pembatalan - #${String(order.order_number).replace(/[\r\n]/g, '')} (${storeName.replace(/[\r\n]/g, ' ')})`,
+        buildCancelRequestHtml(order, itemsRes.rows, storeName, reason),
+        EMAIL_RE.test(buyerEmail) ? { replyTo: buyerEmail } : {}
+      );
+    } catch (err) {
+      cancelRequests.delete(key);
+      throw err;
+    }
+    return 'sent';
+  } catch (err: any) {
+    if (err instanceof MailerNotConfiguredError) return 'mailer_not_configured';
+    console.error('[orderEmail] gagal mengirim permintaan pembatalan:', err?.message);
+    return 'failed';
+  }
+}

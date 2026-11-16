@@ -11,7 +11,12 @@ export class MailerNotConfiguredError extends Error {}
  * menyebabkan "ENETUNREACH". Karena itu IPv4 di-resolve manual dan disambungkan langsung, dengan
  * `servername` asli agar verifikasi sertifikat TLS tetap cocok.
  */
-export async function sendMail(to: string, subject: string, html: string): Promise<string> {
+export async function sendMail(
+  to: string,
+  subject: string,
+  html: string,
+  options: { replyTo?: string } = {}
+): Promise<string> {
   const smtpEmail = process.env.SMTP_EMAIL;
   const smtpPassword = process.env.SMTP_PASSWORD;
   if (!smtpEmail || !smtpPassword) {
@@ -44,6 +49,7 @@ export async function sendMail(to: string, subject: string, html: string): Promi
     to,
     subject,
     html,
+    ...(options.replyTo ? { replyTo: options.replyTo } : {}),
   });
   return info.messageId;
 }

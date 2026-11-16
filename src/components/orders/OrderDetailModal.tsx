@@ -263,56 +263,6 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             </div>
           )}
 
-          {/* KONFIRMASI PEMBATALAN OLEH PENJUAL */}
-          {canCancel && isCancelOpen && (
-            <div className="p-4 rounded-xl border bg-white border-[#FECDCA] space-y-3">
-              <div className="flex items-start gap-2.5">
-                <AlertTriangle className="w-5 h-5 shrink-0 text-[#B42318]" />
-                <div className="space-y-0.5">
-                  <p className="text-sm font-bold text-[#241A1A]">
-                    {isEn ? 'Cancel this order?' : 'Batalkan pesanan ini?'}
-                  </p>
-                  <p className="text-xs text-[#706866] leading-relaxed">
-                    {isPaid
-                      ? (isEn
-                        ? `The buyer has paid ${formatRupiah(order.grandTotal)}. You must refund it manually, and any amount credited to your store balance will be deducted.`
-                        : `Pembeli sudah membayar ${formatRupiah(order.grandTotal)}. Anda wajib mengembalikan dananya secara manual, dan saldo toko yang sudah masuk akan dikurangi.`)
-                      : (isEn
-                        ? 'The buyer will be notified by email. This cannot be undone.'
-                        : 'Pembeli akan diberi tahu lewat email. Pembatalan tidak bisa diurungkan.')}
-                  </p>
-                </div>
-              </div>
-              <textarea
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value.slice(0, 300))}
-                maxLength={300}
-                rows={2}
-                placeholder={isEn ? 'Reason for cancelling (e.g. out of stock)' : 'Alasan pembatalan (mis. stok habis)'}
-                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] placeholder:text-[#A29A98] focus:outline-none focus:border-[#66000E] resize-none"
-              />
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-                <button
-                  type="button"
-                  disabled={isCancelling}
-                  onClick={() => setIsCancelOpen(false)}
-                  className="px-4 py-2.5 min-h-[40px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] font-semibold text-xs transition cursor-pointer disabled:opacity-70"
-                >
-                  {isEn ? 'Keep Order' : 'Tidak Jadi'}
-                </button>
-                <button
-                  type="button"
-                  disabled={isCancelling}
-                  onClick={handleCancelOrder}
-                  className="px-4 py-2.5 min-h-[40px] rounded-xl bg-[#B42318] hover:bg-[#912018] text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-70"
-                >
-                  {isCancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-                  <span>{isEn ? 'Yes, Cancel Order' : 'Ya, Batalkan Pesanan'}</span>
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* 0. PENGECEKAN PEMBAYARAN QRIS / TRANSFER LANGSUNG */}
           {isManualTransferMethod(order.paymentMethod) && !isPaid && !isCancelled && (
             <div
@@ -464,6 +414,56 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
           {/* 3. DETAILS: CUSTOMER INFO & ITEMS BREAKDOWN */}
           <OrderCustomerAndItems order={order} />
         </div>
+
+        {/* KONFIRMASI PEMBATALAN OLEH PENJUAL */}
+        {canCancel && isCancelOpen && (
+          <div className="p-4 sm:px-6 border-t border-[#FECDCA] bg-[#FEF3F2] space-y-3 shrink-0">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="w-5 h-5 shrink-0 text-[#B42318]" />
+              <div className="space-y-0.5">
+                <p className="text-sm font-bold text-[#241A1A]">
+                  {isEn ? 'Cancel this order?' : 'Batalkan pesanan ini?'}
+                </p>
+                <p className="text-xs text-[#706866] leading-relaxed">
+                  {isPaid
+                    ? (isEn
+                      ? `The buyer has paid ${formatRupiah(order.grandTotal)}. You must refund it manually, and any amount credited to your store balance will be deducted.`
+                      : `Pembeli sudah membayar ${formatRupiah(order.grandTotal)}. Anda wajib mengembalikan dananya secara manual, dan saldo toko yang sudah masuk akan dikurangi.`)
+                    : (isEn
+                      ? 'The buyer will be notified by email. This cannot be undone.'
+                      : 'Pembeli akan diberi tahu lewat email. Pembatalan tidak bisa diurungkan.')}
+                </p>
+              </div>
+            </div>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value.slice(0, 300))}
+              maxLength={300}
+              rows={2}
+              placeholder={isEn ? 'Reason for cancelling (e.g. out of stock)' : 'Alasan pembatalan (mis. stok habis)'}
+              className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs text-[#241A1A] placeholder:text-[#A29A98] focus:outline-none focus:border-[#66000E] resize-none"
+            />
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={() => setIsCancelOpen(false)}
+                className="px-4 py-2.5 min-h-[40px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] font-semibold text-xs transition cursor-pointer disabled:opacity-70"
+              >
+                {isEn ? 'Keep Order' : 'Tidak Jadi'}
+              </button>
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={handleCancelOrder}
+                className="px-4 py-2.5 min-h-[40px] rounded-xl bg-[#B42318] hover:bg-[#912018] text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-70"
+              >
+                {isCancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                <span>{isEn ? 'Yes, Cancel Order' : 'Ya, Batalkan Pesanan'}</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Footer Actions */}
         <div className="p-3.5 sm:p-4 border-t border-[#E5E0DD] bg-white flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
