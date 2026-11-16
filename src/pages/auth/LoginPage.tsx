@@ -209,24 +209,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           {/* PILL CAPSULE FORM */}
           <form onSubmit={handleSubmit} className="space-y-4 w-full" noValidate>
-            {/* Input: Username / Email */}
+            {/* Input: Email */}
             <div className="space-y-1.5 text-left">
               <label
                 htmlFor="login-email"
                 className="block text-xs sm:text-sm font-medium text-[#1A1110]"
               >
-                {t('auth_email_label', 'Email atau Username')}
+                {t('auth_email_label', 'Alamat Email')}
               </label>
               <div className="relative">
                 <input
                   id="login-email"
-                  type="text"
+                  type="email"
                   inputMode="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={isEn ? 'name@email.com' : 'nama@email.com'}
                   required
-                  autoComplete="username email"
+                  autoComplete="email"
                   className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
                 />
               </div>

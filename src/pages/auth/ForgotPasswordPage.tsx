@@ -45,7 +45,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
     }
   }, [resendCooldown]);
 
-  const isInputValid = email.trim().length >= 2;
+  const isInputValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
   const isPasswordValid = newPassword.length >= 8;
   const isPasswordMatch = newPassword === confirmPassword;
 
@@ -53,8 +53,8 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
     e.preventDefault();
     setError(null);
 
-    if (!email.trim() || email.trim().length < 2) {
-      setError(isEn ? 'Please enter a valid email address or username.' : 'Mohon masukkan alamat email atau username yang valid.');
+    if (!isInputValid) {
+      setError(isEn ? 'Please enter a valid email address.' : 'Mohon masukkan alamat email yang valid.');
       return;
     }
 
@@ -64,7 +64,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
       setResendCooldown(30);
       setStep('token');
     } catch (err: any) {
-      setError(err?.message || (isEn ? 'Failed to send the reset token. Please check your email/username.' : 'Gagal mengirim token atur ulang. Silakan periksa kembali email/username Anda.'));
+      setError(err?.message || (isEn ? 'Failed to send the reset token. Please check your email address.' : 'Gagal mengirim token atur ulang. Silakan periksa kembali alamat email Anda.'));
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +79,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
       await forgotPassword(email.trim());
       setResendCooldown(30);
     } catch (err: any) {
-      setError(err?.message || (isEn ? 'Failed to resend the token. Please check your email/username.' : 'Gagal mengirim ulang token. Periksa kembali email/username Anda.'));
+      setError(err?.message || (isEn ? 'Failed to resend the token. Please check your email address.' : 'Gagal mengirim ulang token. Periksa kembali alamat email Anda.'));
     } finally {
       setIsLoading(false);
     }
@@ -233,7 +233,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                 </h1>
                 <p className="text-xs sm:text-sm text-[#6B6260] mt-1.5 leading-relaxed">
                   {step === 'email'
-                    ? (isEn ? 'Enter your registered email or username to receive a password reset token.' : 'Masukkan email atau username terdaftar Anda untuk menerima token atur ulang kata sandi.')
+                    ? (isEn ? 'Enter your registered email address to receive a password reset token.' : 'Masukkan alamat email terdaftar Anda untuk menerima token atur ulang kata sandi.')
                     : step === 'token'
                     ? (isEn ? `Enter the 6-digit token sent for account ${email}.` : `Masukkan 6-digit token yang telah dikirim untuk akun ${email}.`)
                     : (isEn ? 'Please set a new password for your account.' : 'Silakan atur kata sandi baru untuk akun Anda.')}
@@ -258,7 +258,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                         htmlFor="forgot-email"
                         className="block text-xs sm:text-sm font-medium text-[#1A1110]"
                       >
-                        {isEn ? 'Email or Username' : 'Email atau Username'}
+                        {isEn ? 'Email Address' : 'Alamat Email'}
                       </label>
                       {isInputValid && (
                         <span className="inline-flex items-center gap-0.5 text-[10px] text-[#16845B] font-semibold">
@@ -271,7 +271,9 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                     <div className="relative">
                       <input
                         id="forgot-email"
-                        type="text"
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder={isEn ? 'name@email.com' : 'nama@email.com'}

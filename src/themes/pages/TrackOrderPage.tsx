@@ -140,8 +140,12 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
   const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
 
   const storeId: string = store?.id || '';
+  // Nomor pesanan hanya huruf/angka/tanda hubung; nomor WhatsApp hanya angka
+  // ("+62 812-3456" dari autofill menjadi "628123456").
+  const cleanOrderNumber = (value: string) => value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 32);
+  const cleanPhone = (value: string) => value.replace(/\D/g, '').slice(0, 15);
   const [orderNumber, setOrderNumber] = useState(
-    () => new URLSearchParams(window.location.search).get('no')?.slice(0, 32) || '',
+    () => cleanOrderNumber(new URLSearchParams(window.location.search).get('no') || ''),
   );
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -190,7 +194,7 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
 
   const handlePickLocal = (order: Order) => {
     setOrderNumber(order.orderNumber);
-    setPhone(order.customerPhone || '');
+    setPhone(cleanPhone(order.customerPhone || ''));
     runTrack(order.orderNumber, order.customerPhone || '');
   };
 
@@ -537,7 +541,7 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
               <span className="block text-xs font-semibold mb-1">{isEn ? 'Order Number' : 'Nomor Pesanan'}</span>
               <input
                 value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value.toUpperCase())}
+                onChange={(e) => setOrderNumber(cleanOrderNumber(e.target.value))}
                 placeholder="KB-1A2B3C4D5E"
                 maxLength={32}
                 autoComplete="off"
@@ -549,10 +553,12 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
               <span className="block text-xs font-semibold mb-1">{isEn ? 'WhatsApp Number' : 'Nomor WhatsApp'}</span>
               <input
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(cleanPhone(e.target.value))}
                 placeholder="08xxxxxxxxxx"
-                inputMode="tel"
-                maxLength={20}
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]{9,15}"
+                maxLength={15}
                 autoComplete="tel"
                 required
                 className={inputClass}

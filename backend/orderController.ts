@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { pool } from './publicApiController';
 import { requireStoreManager } from './sessionAuth';
-import { sendOrderPaidEmail, sendOrderCancelledEmail } from './orderEmail';
+import { sendOrderPaidEmail, sendOrderCancelledEmail, sendOrderPlacedEmail } from './orderEmail';
 import { simulateCourierRates, zoneCourierRates } from '../src/utils/shippingFormulas';
 
 /**
@@ -241,6 +241,22 @@ orderRouter.post('/shipping/quote', async (req: Request, res: Response) => {
   }
 });
 
+const PLACED_EMAIL_WINDOW_MS = 10 * 60 * 1000;
+const PLACED_EMAIL_MAX_PER_WINDOW = 5;
+const placedEmailHits = new Map<string, number[]>();
+
+function placedEmailRateLimited(key: string): boolean {
+  const now = Date.now();
+  const hits = (placedEmailHits.get(key) || []).filter((t) => now - t < PLACED_EMAIL_WINDOW_MS);
+  if (hits.length >= PLACED_EMAIL_MAX_PER_WINDOW) return true;
+  hits.push(now);
+  placedEmailHits.set(key, hits);
+  if (placedEmailHits.size > 5000) {
+    for (const [k, v] of placedEmailHits) if (!v.some((t) => now - t < PLACED_EMAIL_WINDOW_MS)) placedEmailHits.delete(k);
+  }
+  return false;
+}
+
 // Buat pesanan: ongkir hanya dari tarif bertanda tangan, harga produk dari database.
 orderRouter.post('/orders/place', async (req: Request, res: Response) => {
   try {
@@ -309,6 +325,13 @@ orderRouter.post('/orders/place', async (req: Request, res: Response) => {
     );
     const order = result.rows[0]?.result;
     if (!order) return res.status(500).json({ success: false, message: 'Gagal membuat pesanan.' });
+    // Email konfirmasi ke pembeli (dibatasi per IP agar endpoint publik ini tidak jadi alat spam email).
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    if (order.id && !placedEmailRateLimited(ip)) {
+      void sendOrderPlacedEmail(String(order.id)).then((r) => {
+        if (r !== 'sent' && r !== 'no_email') console.warn('[orders/place] email pesanan baru:', r);
+      });
+    }
     return res.json({ success: true, order });
   } catch (err: any) {
     // Pesan validasi dari place_order (RAISE EXCEPTION) aman ditampilkan ke pembeli.
@@ -435,7 +458,9 @@ orderRouter.post('/orders/cancel', async (req: Request, res: Response) => {
       return res.status(code).json({ success: false, code: status || 'failed', message });
     }
 
-    void sendOrderCancelledEmail(String(result.order_id));
+    void sendOrderCancelledEmail(String(result.order_id)).then((r) => {
+      if (r !== 'sent' && r !== 'no_email') console.warn('[orders cancel] email pembatalan:', r);
+    });
     return res.json({
       success: true,
       wasPaid: Boolean(result.was_paid),

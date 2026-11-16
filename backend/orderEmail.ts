@@ -17,6 +17,16 @@ const SLUG_RE = /^[a-z0-9-]{1,63}$/;
 
 const sentOrders = new Set<string>();
 
+/** Kalimat pembuka email detail pesanan sesuai jenisnya. */
+function placedIntro(order: any, kind: DetailEmailKind): string {
+  if (kind === 'paid') return 'pembayaran pesanan Anda sudah dikonfirmasi penjual dan pesanan sedang diproses.';
+  const method = String(order.payment_method || '');
+  if (/cod|bayar di tempat/i.test(method)) {
+    return 'pesanan Anda sudah kami terima. Penjual akan segera memproses pesanan, dan pembayaran dilakukan saat barang tiba.';
+  }
+  return 'pesanan Anda sudah kami terima. Silakan selesaikan pembayaran sesuai metode yang dipilih; pesanan diproses setelah pembayaran diverifikasi penjual.';
+}
+
 export type OrderPaidEmailResult =
   | 'sent'
   | 'already_sent'
@@ -66,7 +76,9 @@ async function storeTrackUrl(store: any, orderNumber: string): Promise<string | 
   return `https://${host}/lacak?no=${encodeURIComponent(orderNumber)}`;
 }
 
-function buildHtml(order: any, items: any[], storeName: string, trackUrl: string | null): string {
+type DetailEmailKind = 'paid' | 'placed';
+
+function buildHtml(order: any, items: any[], storeName: string, trackUrl: string | null, kind: DetailEmailKind = 'paid'): string {
   const subtotal = items.reduce((acc, i) => acc + (Number(i.subtotal) || Number(i.price) * Number(i.quantity) || 0), 0);
   const courier = [order.shipping_courier, order.shipping_service].filter(Boolean).join(' · ');
   const address = [cleanAddress(order.shipping_address), order.shipping_city].filter(Boolean).join(', ');
@@ -100,9 +112,9 @@ function buildHtml(order: any, items: any[], storeName: string, trackUrl: string
   <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
     <div style="background:#FFF;border:1px solid #E5E0DD;border-radius:16px;padding:24px;">
       <p style="font-size:12px;color:#777;margin:0 0 4px;">${esc(storeName)}</p>
-      <h1 style="font-size:20px;color:#1F1F1F;margin:0 0 8px;">Pembayaran diterima ✅</h1>
+      <h1 style="font-size:20px;color:#1F1F1F;margin:0 0 8px;">${kind === 'placed' ? 'Pesanan diterima' : 'Pembayaran diterima ✅'}</h1>
       <p style="font-size:13px;color:#555;margin:0 0 20px;line-height:1.5;">
-        Halo ${esc(order.customer_name || 'Pelanggan')}, pembayaran pesanan Anda sudah dikonfirmasi penjual dan pesanan sedang diproses.
+        Halo ${esc(order.customer_name || 'Pelanggan')}, ${placedIntro(order, kind)}
       </p>
 
       <table style="width:100%;border-collapse:collapse;background:#FAF7F7;border:1px solid #E5E0DD;border-radius:12px;">
@@ -293,6 +305,68 @@ export async function sendOrderCancelledEmail(orderId: string): Promise<OrderCan
   } catch (err: any) {
     if (err instanceof MailerNotConfiguredError) return 'mailer_not_configured';
     console.error('[orderEmail] gagal mengirim email pembatalan:', err?.message);
+    return 'failed';
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Email "Pesanan diterima" (setelah checkout berhasil)
+// -----------------------------------------------------------------------------
+
+const placedOrders = new Set<string>();
+
+export type OrderPlacedEmailResult = 'sent' | 'already_sent' | 'no_email' | 'not_found' | 'mailer_not_configured' | 'failed';
+
+/** Kirim email konfirmasi pesanan baru untuk `orderId`. Isi diambil dari database. Tidak pernah melempar error. */
+export async function sendOrderPlacedEmail(orderId: string): Promise<OrderPlacedEmailResult> {
+  if (placedOrders.has(orderId)) return 'already_sent';
+  try {
+    const orderRes = await pool.query(
+      `SELECT id, store_id, order_number, customer_name, customer_phone, customer_email,
+              shipping_address, shipping_city, shipping_courier, shipping_service, shipping_cost,
+              total_amount, payment_method, created_at
+         FROM public.orders WHERE id = $1 LIMIT 1`,
+      [orderId]
+    );
+    const order = orderRes.rows[0];
+    if (!order) return 'not_found';
+    // Hanya pesanan yang baru dibuat (mencegah jalur ini dipakai untuk mengirim ulang email lama).
+    const createdAt = order.created_at ? new Date(order.created_at).getTime() : 0;
+    if (!createdAt || Date.now() - createdAt > 10 * 60 * 1000) return 'not_found';
+    const email = String(order.customer_email || '').trim();
+    if (!EMAIL_RE.test(email)) return 'no_email';
+
+    const [itemsRes, storeRes] = await Promise.all([
+      pool.query(
+        `SELECT product_name, price, quantity, subtotal, variant_info
+           FROM public.order_items WHERE order_id = $1 ORDER BY id LIMIT 100`,
+        [orderId]
+      ),
+      pool.query(
+        `SELECT name, slug, custom_domain, community_id, is_published, is_suspended
+           FROM public.stores WHERE id = $1 LIMIT 1`,
+        [order.store_id]
+      ),
+    ]);
+    const store = storeRes.rows[0] || {};
+    const storeName = String(store.name || 'Toko LapakQ');
+    const trackUrl = await storeTrackUrl(store, String(order.order_number));
+
+    placedOrders.add(orderId);
+    try {
+      await sendMail(
+        email,
+        `Pesanan diterima - #${String(order.order_number).replace(/[\r\n]/g, '')} (${storeName.replace(/[\r\n]/g, ' ')})`,
+        buildHtml(order, itemsRes.rows, storeName, trackUrl, 'placed')
+      );
+    } catch (err) {
+      placedOrders.delete(orderId);
+      throw err;
+    }
+    return 'sent';
+  } catch (err: any) {
+    if (err instanceof MailerNotConfiguredError) return 'mailer_not_configured';
+    console.error('[orderEmail] gagal mengirim email pesanan baru:', err?.message);
     return 'failed';
   }
 }

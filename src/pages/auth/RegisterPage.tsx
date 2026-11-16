@@ -197,7 +197,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
               </div>
             </div>
 
-            {/* Input 2: Username / Email */}
+            {/* Input 2: Email */}
             <div className="space-y-1.5 text-left">
               <label
                 htmlFor="reg-email"

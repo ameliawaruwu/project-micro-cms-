@@ -523,7 +523,7 @@ export const translations: Translations = {
   // Authentication (Login / Register / Forgot Password)
   auth_login_title: { id: 'Masuk ke Akun Toko', en: 'Log In to Store Account' },
   auth_login_subtitle: { id: 'Kelola toko online dan pesanan Anda', en: 'Manage your online store and orders' },
-  auth_email_label: { id: 'Email atau Username', en: 'Email or Username' },
+  auth_email_label: { id: 'Alamat Email', en: 'Email Address' },
   auth_password_label: { id: 'Kata Sandi', en: 'Password' },
   auth_forgot_password: { id: 'Lupa Kata Sandi?', en: 'Forgot Password?' },
   auth_login_button: { id: 'Masuk', en: 'Log In' },
