@@ -1432,7 +1432,11 @@ export default function App() {
     const updated = await storeService.updateStore(activeStore.id, { layoutSettings }, user?.id);
     setActiveStore(updated);
     setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-    addToast(isEn ? 'Store page layout saved successfully!' : 'Tata letak halaman toko berhasil disimpan!');
+    addToast(
+      updated.isPublished
+        ? (isEn ? 'Store website updated! Visitors now see the latest layout.' : 'Website toko diperbarui! Pengunjung kini melihat tampilan terbaru.')
+        : (isEn ? 'Store page layout saved successfully!' : 'Tata letak halaman toko berhasil disimpan!')
+    );
   };
 
   const handlePublishStore = async (storeId?: string) => {

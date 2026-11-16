@@ -1272,7 +1272,11 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       const timeStr = isEn
         ? new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
         : new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
-      onShowNotification(isEn ? `Theme draft & layout saved at ${timeStr}! Draft update time refreshed.` : `Draf tema & tata letak berhasil disimpan pada pukul ${timeStr}! Jam pembaruan draf diperbarui.`);
+      onShowNotification(
+        store.isPublished
+          ? (isEn ? `Live website updated at ${timeStr}.` : `Website live diperbarui pada pukul ${timeStr}.`)
+          : (isEn ? `Theme draft & layout saved at ${timeStr}! Draft update time refreshed.` : `Draf tema & tata letak berhasil disimpan pada pukul ${timeStr}! Jam pembaruan draf diperbarui.`)
+      );
     }, 200);
   };
 

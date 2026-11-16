@@ -188,14 +188,32 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
             {store.name || (isEn ? 'MSME Store' : 'Toko UMKM')}
           </span>
           {hasChanges ? (
-            <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0" title={isEn ? 'There are unsaved changes' : 'Ada perubahan belum disimpan'}>
+            <span
+              className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0"
+              title={
+                store.isPublished
+                  ? (isEn ? 'Changes are not live yet. Click "Update Website" to apply them.' : 'Perubahan belum tampil di website. Klik "Perbarui Website" untuk menerapkannya.')
+                  : (isEn ? 'There are unsaved changes' : 'Ada perubahan belum disimpan')
+              }
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-              <span className="hidden min-[480px]:inline">Draft</span>
+              <span className="hidden min-[480px]:inline">
+                {store.isPublished ? (isEn ? 'Not updated' : 'Belum diperbarui') : 'Draft'}
+              </span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0" title={isEn ? 'All changes saved' : 'Semua perubahan tersimpan'}>
-              <Check className="w-2.5 h-2.5" />
-              <span className="hidden min-[480px]:inline">{isEn ? 'Saved' : 'Tersimpan'}</span>
+            <span
+              className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0"
+              title={
+                store.isPublished
+                  ? (isEn ? 'Website is up to date with your latest changes' : 'Website sudah memakai perubahan terbaru')
+                  : (isEn ? 'All changes saved' : 'Semua perubahan tersimpan')
+              }
+            >
+              {store.isPublished ? <Globe className="w-2.5 h-2.5" /> : <Check className="w-2.5 h-2.5" />}
+              <span className="hidden min-[480px]:inline">
+                {store.isPublished ? (isEn ? 'Live' : 'Live · Terbaru') : (isEn ? 'Saved' : 'Tersimpan')}
+              </span>
             </span>
           )}
         </div>
@@ -386,10 +404,22 @@ export const EditorTopBar: React.FC<EditorTopBarProps> = ({
               ? 'bg-[#008060] hover:bg-[#006e52] shadow-sm ring-1 ring-[#008060]/20'
               : 'bg-[#008060] hover:bg-[#006e52]'
           } ${isSaving ? 'opacity-70 cursor-wait' : ''}`}
-          title={isEn ? 'Save Layout Changes' : 'Simpan Perubahan Layout'}
+          title={
+            store.isPublished
+              ? (isEn ? 'Save and apply changes to the live website' : 'Simpan & terapkan perubahan ke website live')
+              : (isEn ? 'Save Layout Changes' : 'Simpan Perubahan Layout')
+          }
         >
-          <Save className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{isSaving ? (isEn ? 'Saving...' : 'Menyimpan...') : (isEn ? 'Save' : 'Simpan')}</span>
+          {store.isPublished ? (
+            <RefreshCw className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} />
+          ) : (
+            <Save className="w-3.5 h-3.5" />
+          )}
+          <span className="hidden sm:inline">
+            {isSaving
+              ? (store.isPublished ? (isEn ? 'Updating...' : 'Memperbarui...') : (isEn ? 'Saving...' : 'Menyimpan...'))
+              : (store.isPublished ? (isEn ? 'Update Website' : 'Perbarui Website') : (isEn ? 'Save' : 'Simpan'))}
+          </span>
         </button>
       </div>
     </header>
