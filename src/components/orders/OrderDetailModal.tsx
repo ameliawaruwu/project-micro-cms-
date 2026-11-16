@@ -142,36 +142,6 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
   const vehicleType: 'motor' | 'mobil' = isCargo ? 'mobil' : 'motor';
 
-  // Info driver & armada yang sinkron dengan kurir
-  const driverInfo = isInstant
-    ? {
-        name: courierLower.includes('grab')
-          ? (isEn ? 'GrabExpress Driver Partner' : 'Mitra Driver GrabExpress')
-          : (isEn ? 'GoSend Driver Partner' : 'Mitra Driver GoSend'),
-        plate: 'B 3481 SUT',
-        vehicleLabel: isEn ? 'Motorbike Courier (Instant)' : 'Kurir Sepeda Motor (Instant)',
-        statusDesc: isEn
-          ? `${order?.courier} courier has picked up the package from the store and is heading straight to the recipient's address.`
-          : `Kurir ${order?.courier} telah mengambil paket dari toko dan sedang melaju langsung ke alamat penerima.`,
-      }
-    : isCargo
-    ? {
-        name: isEn ? `Cargo Driver (${order?.courier})` : `Driver Kargo (${order?.courier})`,
-        plate: isEn ? 'B 9234 KRO (CDE Truck)' : 'B 9234 KRO (Truk CDE)',
-        vehicleLabel: isEn ? 'Cargo Truck / Box Van Fleet' : 'Armada Truk / Mobil Box Kargo',
-        statusDesc: isEn
-          ? `${order?.courier} box van / truck fleet is on the way delivering the logistics load to the destination.`
-          : `Armada mobil box / truk ${order?.courier} dalam perjalanan mengantar muatan logistik ke lokasi.`,
-      }
-    : {
-        name: isEn ? `${order?.courier} Express Courier` : `Kurir ${order?.courier} Express`,
-        plate: 'D 4821 UTY (Honda Vario)',
-        vehicleLabel: isEn ? 'Motorbike Courier (Last-Mile Rider)' : 'Kurir Sepeda Motor (Rider Last-Mile)',
-        statusDesc: isEn
-          ? `${order?.courier} motorbike courier is carrying your package straight to the recipient's location.`
-          : `Kurir motor ${order?.courier} sedang membawa paket Anda langsung menuju lokasi penerima.`,
-      };
-
   // Label alamat yang dinamis sesuai data order
   const destinationLandmark = order?.customerAddress?.split(',')[0] || order?.customerCity || (isEn ? 'Destination' : 'Lokasi Tujuan');
   const destinationCityClean = order?.customerCity || (isEn ? 'Destination' : 'Tujuan');
@@ -474,7 +444,6 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             biteshipTrackingUrl={biteshipTrackingUrl}
             vehicleType={vehicleType}
             isInstant={isInstant}
-            driverInfo={driverInfo}
             destinationLandmark={destinationLandmark}
             destinationCityClean={destinationCityClean}
             originCity={originCity}
