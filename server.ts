@@ -15,7 +15,7 @@ import { sendMail, MailerNotConfiguredError } from './backend/mailer';
 import { publicApiRouter } from './backend/publicApiController';
 import { partnerApiRouter } from './backend/partnerApiController';
 import { communityMembershipRouter } from './backend/communityMembershipController';
-import { orderRouter, resolveBillableAmount } from './backend/orderController';
+import { orderRouter, resolveBillableAmount, startOrderExpiryJob } from './backend/orderController';
 import { sendOrderPaidEmail } from './backend/orderEmail';
 
 dotenv.config();
@@ -1034,4 +1034,6 @@ app.use('/api/v1', publicApiRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running securely on http://localhost:${PORT}`);
+  // Pesanan non-COD yang tidak dibayar dalam 24 jam dibatalkan otomatis.
+  startOrderExpiryJob();
 });

@@ -472,6 +472,37 @@ orderRouter.post('/orders/cancel', async (req: Request, res: Response) => {
   }
 });
 
+/** Pesanan non-COD wajib dibayar dalam 24 jam sejak checkout (lihat app_private.expire_unpaid_orders). */
+export const PAYMENT_WINDOW_HOURS = 24;
+const EXPIRY_SWEEP_MS = 5 * 60 * 1000;
+let expirySweepRunning = false;
+
+/**
+ * Batalkan otomatis pesanan yang melewati batas bayar. Dijalankan berkala oleh server.
+ * Fungsi DB hanya bisa dipanggil koneksi server (tidak di-GRANT ke anon/authenticated).
+ */
+export async function expireUnpaidOrders(): Promise<number> {
+  if (expirySweepRunning) return 0;
+  expirySweepRunning = true;
+  try {
+    const r = await pool.query('SELECT app_private.expire_unpaid_orders($1) AS n', [PAYMENT_WINDOW_HOURS]);
+    const n = Number(r.rows[0]?.n || 0);
+    if (n > 0) console.log(`[orders] ${n} pesanan dibatalkan otomatis (batas bayar ${PAYMENT_WINDOW_HOURS} jam habis)`);
+    return n;
+  } catch (err: any) {
+    // Fungsi belum ada (migrasi belum diterapkan) atau DB tidak terjangkau: coba lagi di putaran berikutnya.
+    console.error('[orders] expire_unpaid_orders:', err?.message);
+    return 0;
+  } finally {
+    expirySweepRunning = false;
+  }
+}
+
+export function startOrderExpiryJob(): void {
+  void expireUnpaidOrders();
+  setInterval(() => void expireUnpaidOrders(), EXPIRY_SWEEP_MS).unref();
+}
+
 /**
  * Nominal tagihan yang sah untuk ID transaksi gateway, diambil dari database (bukan browser).
  * - Pesanan toko: `<order_number>` atau `<order_number>-<sufiks>` → orders.total_amount (belum lunas).
@@ -499,11 +530,16 @@ export async function resolveBillableAmount(
 
   const candidates = Array.from(new Set([merchantOrderId, merchantOrderId.replace(/-[A-Za-z0-9]+$/, '')]));
   const o = await pool.query(
-    'SELECT total_amount, payment_status, order_status FROM orders WHERE order_number = ANY($1::text[]) LIMIT 1',
-    [candidates]
+    `SELECT total_amount, payment_status, order_status,
+            (created_at < now() - make_interval(hours => $2)) AS past_deadline
+       FROM orders WHERE order_number = ANY($1::text[]) LIMIT 1`,
+    [candidates, PAYMENT_WINDOW_HOURS]
   );
   if (o.rows[0]) {
     if (o.rows[0].payment_status === 'paid') return { error: 'Pesanan ini sudah lunas.', status: 409 };
+    if (o.rows[0].payment_status === 'expired' || o.rows[0].past_deadline) {
+      return { error: `Batas waktu pembayaran ${PAYMENT_WINDOW_HOURS} jam untuk pesanan ini sudah habis.`, status: 409 };
+    }
     if (o.rows[0].order_status === 'cancelled') return { error: 'Pesanan ini sudah dibatalkan.', status: 409 };
     return { amount: Math.round(Number(o.rows[0].total_amount)) };
   }

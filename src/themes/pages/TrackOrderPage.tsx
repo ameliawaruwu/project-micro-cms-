@@ -19,6 +19,7 @@ import { useStoreChromeOptions } from './storeChrome';
 import { orderService, TrackedOrder } from '../../services/orderService';
 import { formatDateIndo, formatRupiah, generateTrackingLink } from '../../utils/formatters';
 import { isCodMethod } from '../../utils/orderFlow';
+import { getPaymentDeadline, PAYMENT_WINDOW_HOURS } from '../../utils/orderPaymentDeadline';
 import { isManualTransferMethod } from '../../utils/manualPayment';
 import { ManualPaymentDetails } from './ManualPaymentDetails';
 import { PaymentProofUpload } from './PaymentProofUpload';
@@ -351,8 +352,32 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
     // Kirim bukti butuh id pesanan, yang hanya ada di perangkat tempat pesanan dibuat.
     const localOrderId = findLocalOrder(order.orderNumber)?.id;
 
+    const deadline = getPaymentDeadline({
+      createdAt: order.createdAt,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: 'Belum Dibayar',
+      paymentConfirmedAt: order.paymentConfirmedAt,
+      shippingStatus: order.orderStatus === 'pending' ? 'Baru' : 'Diproses',
+    });
+    if (deadline && deadline.getTime() <= Date.now()) {
+      return (
+        <div className="p-4 rounded-[var(--sf-radius)] bg-red-50 border border-red-200 text-xs text-red-700 leading-relaxed">
+          {isEn
+            ? `The ${PAYMENT_WINDOW_HOURS}-hour payment deadline for this order has passed. The order will be cancelled automatically.`
+            : `Batas waktu pembayaran ${PAYMENT_WINDOW_HOURS} jam untuk pesanan ini sudah habis. Pesanan akan dibatalkan otomatis.`}
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-2.5">
+        {deadline && (
+          <p className="p-3 rounded-[var(--sf-radius)] bg-amber-50 border border-amber-200 text-xs text-amber-900 font-medium leading-relaxed">
+            {isEn
+              ? `Please pay before ${new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(deadline)}. Unpaid orders are cancelled automatically after ${PAYMENT_WINDOW_HOURS} hours.`
+              : `Selesaikan pembayaran sebelum ${formatDateIndo(deadline.toISOString())}. Pesanan yang tidak dibayar dalam ${PAYMENT_WINDOW_HOURS} jam dibatalkan otomatis.`}
+          </p>
+        )}
         {paymentConfig && <ManualPaymentDetails paymentConfig={paymentConfig} total={order.totalAmount} />}
         {localOrderId ? (
           <PaymentProofUpload
@@ -403,9 +428,11 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
                     ? (isEn ? 'You cancelled this order.' : 'Pesanan ini sudah Anda batalkan.')
                     : order.cancelledBy === 'merchant'
                       ? (isEn ? 'This order was cancelled by the seller.' : 'Pesanan ini dibatalkan oleh penjual.')
+                      : order.cancelledBy === 'system'
+                      ? (isEn ? `This order was cancelled automatically because it was not paid within ${PAYMENT_WINDOW_HOURS} hours.` : `Pesanan ini dibatalkan otomatis karena tidak dibayar dalam ${PAYMENT_WINDOW_HOURS} jam.`)
                       : (isEn ? 'This order has been cancelled. Contact the seller if you have any questions.' : 'Pesanan ini dibatalkan. Hubungi penjual bila ada pertanyaan.')}
                 </p>
-                {order.cancelReason && (
+                {order.cancelReason && order.cancelledBy !== 'system' && (
                   <p className="text-xs break-words">
                     <span className="font-semibold">{isEn ? 'Reason:' : 'Alasan:'}</span> {order.cancelReason}
                   </p>

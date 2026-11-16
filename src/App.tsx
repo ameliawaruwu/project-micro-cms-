@@ -359,6 +359,10 @@ export default function App() {
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [orderToPrint, setOrderToPrint] = useState<Order | null>(null);
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<Order | null>(null);
+  // Modal detail selalu memakai data terbaru dari daftar pesanan (ikut perubahan realtime).
+  const liveSelectedOrder = selectedOrderDetail
+    ? orders.find((o) => o.id === selectedOrderDetail.id) ?? selectedOrderDetail
+    : null;
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [isUpgradePlanModalOpen, setIsUpgradePlanModalOpen] = useState(false);
@@ -946,7 +950,9 @@ export default function App() {
 
     const unsubscribe = orderService.subscribeToOrderChanges(activeStore.id, (updatedOrder) => {
       setOrders((prev) =>
-        prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
+        prev.some((o) => o.id === updatedOrder.id)
+          ? prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder, items: o.items.length ? o.items : updatedOrder.items } : o))
+          : [updatedOrder, ...prev]
       );
       addToast(isEnglishPreferred()
         ? `Order #${updatedOrder.orderNumber} status updated in real time!`
@@ -2394,7 +2400,7 @@ export default function App() {
 
       {/* 4. Order Detail Modal with Stepper & Info (Base Modal z-50) */}
       <OrderDetailModal
-        order={selectedOrderDetail}
+        order={liveSelectedOrder}
         store={currentStore}
         isOpen={Boolean(selectedOrderDetail)}
         onClose={() => setSelectedOrderDetail(null)}

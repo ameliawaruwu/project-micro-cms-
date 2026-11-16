@@ -511,6 +511,8 @@ export interface Order {
   paymentConfirmedAt?: string;
   /** URL CDN foto bukti transfer yang diunggah pembeli (QRIS / transfer langsung). */
   paymentProofUrl?: string;
+  /** Waktu pembayaran dinyatakan lunas (gateway / ditandai penjual). */
+  paidAt?: string;
   courier: CourierType;
   courierCode?: string;
   courierService?: string;
@@ -524,7 +526,8 @@ export interface Order {
   shippingLabelUrl?: string;
   cancelledAt?: string;
   cancelReason?: string;
-  cancelledBy?: 'buyer' | 'merchant';
+  /** 'system' = dibatalkan otomatis karena batas bayar 24 jam habis. */
+  cancelledBy?: 'buyer' | 'merchant' | 'system';
   pickupTime?: string;
   destinationAddress?: string;
   destinationPostalCode?: string;
@@ -532,6 +535,7 @@ export interface Order {
   shippingStatus: ShippingStatus;
   createdAt: string;
   shippedAt?: string;
+  updatedAt?: string;
   notes?: string;
 }
 

@@ -194,9 +194,7 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
           {isShipped && !isCompleted ? (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#ECFDF3] text-[#027A48] border border-[#ABEFC6]">
               <span className="w-2 h-2 rounded-full bg-[#12B76A] animate-ping" />
-              <span>{vehicleType === 'motor'
-                ? (language === 'en' ? 'Motorbike Courier Delivering' : 'Kurir Motor Mengantar')
-                : (language === 'en' ? 'Box Van Delivering' : 'Mobil Box Mengantar')}</span>
+              <span>{language === 'en' ? 'Being Shipped' : 'Sedang Dikirim'}</span>
             </span>
           ) : isCompleted ? (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#ECFDF3] text-[#027A48] border border-[#ABEFC6]">
@@ -206,7 +204,13 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
           ) : (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white text-[#555555] border border-[#EAEAEA]">
               <Clock className="w-3.5 h-3.5 text-[#777777]" />
-              <span>{language === 'en' ? 'Being Processed by Seller' : 'Dalam Proses Penjual'}</span>
+              <span>{order.shippingStatus === 'Dibatalkan'
+                ? (language === 'en' ? 'Order Cancelled' : 'Pesanan Dibatalkan')
+                : !isPaid && !isCodUnpaid && !order.paymentConfirmedAt
+                ? (language === 'en' ? 'Awaiting Payment' : 'Menunggu Pembayaran')
+                : !isPaid && !isCodUnpaid
+                ? (language === 'en' ? 'Awaiting Payment Check' : 'Menunggu Cek Pembayaran')
+                : (language === 'en' ? 'Being Processed by Seller' : 'Dalam Proses Penjual')}</span>
             </span>
           )}
         </div>

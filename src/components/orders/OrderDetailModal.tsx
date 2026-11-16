@@ -24,6 +24,7 @@ import { OrderLiveTrackingMap } from './detail/OrderLiveTrackingMap';
 import { OrderShippingHistory } from './detail/OrderShippingHistory';
 import { OrderCustomerAndItems } from './detail/OrderCustomerAndItems';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { getPaymentDeadline } from '../../utils/orderPaymentDeadline';
 
 interface OrderDetailModalProps {
   isOpen: boolean;
@@ -63,6 +64,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const isPaid = order?.paymentStatus === 'Sudah Dibayar';
   // Bukti transfer hanya ditampilkan bila berupa URL https (diisi server dari CDN).
   const proofUrl = order?.paymentProofUrl?.startsWith('https://') ? order.paymentProofUrl : null;
+  const paymentDeadline = order ? getPaymentDeadline(order) : null;
   const isProcessed = order?.shippingStatus !== 'Baru';
   const isShipped = order?.shippingStatus === 'Dikirim' || order?.shippingStatus === 'Selesai';
   const isCompleted = order?.shippingStatus === 'Selesai';
@@ -263,6 +265,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     ? (isEn ? 'Cancelled by the buyer' : 'Dibatalkan oleh pembeli')
                     : order.cancelledBy === 'merchant'
                     ? (isEn ? 'Cancelled by your store' : 'Dibatalkan oleh toko Anda')
+                    : order.cancelledBy === 'system'
+                    ? (isEn ? 'Cancelled automatically: not paid within 24 hours' : 'Dibatalkan otomatis: tidak dibayar dalam 24 jam')
                     : (isEn ? 'Order cancelled' : 'Pesanan dibatalkan')}
                 </p>
                 <p className="text-xs text-[#706866] leading-relaxed">
@@ -272,7 +276,9 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       {'. '}
                     </>
                   )}
-                  {order.cancelReason
+                  {order.cancelledBy === 'system'
+                    ? (isEn ? 'The buyer did not pay before the deadline.' : 'Pembeli tidak membayar sebelum batas waktu.')
+                    : order.cancelReason
                     ? `${isEn ? 'Reason' : 'Alasan'}: ${order.cancelReason}`
                     : (isEn ? 'No reason given.' : 'Tanpa alasan.')}
                 </p>
@@ -360,6 +366,14 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       : (isEn
                         ? `The buyer has not sent payment proof yet. You can still mark it as paid if ${formatRupiah(order.grandTotal)} has been received.`
                         : `Pembeli belum mengirim bukti pembayaran. Anda tetap bisa menandai lunas jika dana ${formatRupiah(order.grandTotal)} sudah masuk.`)}
+                    {paymentDeadline && (
+                      <>
+                        {' '}
+                        {isEn
+                          ? `Cancelled automatically if unpaid by ${formatDateTimeEn(paymentDeadline.toISOString())}.`
+                          : `Batal otomatis bila belum dibayar sampai ${formatDateIndo(paymentDeadline.toISOString())}.`}
+                      </>
+                    )}
                   </p>
                 </div>
               </div>

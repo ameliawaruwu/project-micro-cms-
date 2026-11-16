@@ -1,5 +1,6 @@
 import express, { Router, Request, Response } from 'express';
 import { pool } from './publicApiController';
+import { PAYMENT_WINDOW_HOURS } from './orderController';
 import { canManageStore, isPlatformAdmin, requireAdmin, requireSession, SessionUser } from './sessionAuth';
 
 // Upload gambar (produk, logo, QRIS, gambar editor layout, avatar, bukti bayar) ke CDNKroombox.
@@ -247,12 +248,18 @@ mediaRouter.post('/payment-proof', express.json({ limit: '8mb' }), async (req: R
   let storeId = '';
   try {
     const found = await pool.query(
-      `SELECT store_id FROM public.orders
+      `SELECT store_id, order_status,
+              (payment_confirmed_at IS NULL AND created_at < now() - make_interval(hours => $3)) AS past_deadline
+         FROM public.orders
         WHERE id = $1 AND order_number = $2 AND payment_status = 'unpaid'
         LIMIT 1`,
-      [orderId, orderNumber]
+      [orderId, orderNumber, PAYMENT_WINDOW_HOURS]
     );
-    if (found.rows.length === 0) return fail(res, 404, 'Pesanan tidak ditemukan atau sudah dibayar.');
+    if (found.rows.length === 0) return fail(res, 404, 'Pesanan tidak ditemukan, sudah dibayar, atau batas bayarnya habis.');
+    if (found.rows[0].order_status === 'cancelled') return fail(res, 409, 'Pesanan ini sudah dibatalkan.');
+    if (found.rows[0].past_deadline) {
+      return fail(res, 409, `Batas waktu pembayaran ${PAYMENT_WINDOW_HOURS} jam untuk pesanan ini sudah habis.`);
+    }
     storeId = String(found.rows[0].store_id || '');
   } catch (err: any) {
     console.error('[media] payment proof order lookup error:', err?.message);
@@ -276,7 +283,7 @@ mediaRouter.post('/payment-proof', express.json({ limit: '8mb' }), async (req: R
           SET payment_proof_url = $1,
               payment_confirmed_at = coalesce(payment_confirmed_at, now()),
               updated_at = now()
-        WHERE id = $2 AND order_number = $3 AND payment_status = 'unpaid'
+        WHERE id = $2 AND order_number = $3 AND payment_status = 'unpaid' AND order_status <> 'cancelled'
         RETURNING payment_confirmed_at`,
       [uploaded.url, orderId, orderNumber]
     );

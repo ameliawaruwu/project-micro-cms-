@@ -15,7 +15,7 @@ export interface TrackedOrder {
   shippedAt?: string;
   cancelledAt?: string;
   cancelReason?: string;
-  cancelledBy?: 'buyer' | 'merchant';
+  cancelledBy?: 'buyer' | 'merchant' | 'system';
   courier: string;
   courierService?: string;
   trackingNumber?: string;
@@ -117,6 +117,7 @@ function mapSupabaseRowToOrder(row: any): Order {
     paymentStatus,
     paymentConfirmedAt: row.payment_confirmed_at || undefined,
     paymentProofUrl: row.payment_proof_url || undefined,
+    paidAt: row.paid_at || undefined,
     courier: (row.shipping_courier as CourierType) || 'J&T',
     courierCode: row.courier_code || undefined,
     courierService: row.shipping_service || row.courier_service || undefined,
@@ -127,7 +128,12 @@ function mapSupabaseRowToOrder(row: any): Order {
     shippedAt: row.shipped_at || undefined,
     cancelledAt: row.cancelled_at || undefined,
     cancelReason: row.cancel_reason || undefined,
-    cancelledBy: row.cancelled_by === 'buyer' || row.cancelled_by === 'merchant' ? row.cancelled_by : undefined,
+    cancelledBy:
+      row.cancelled_by === 'buyer' || row.cancelled_by === 'merchant' || row.cancelled_by === 'system'
+        ? row.cancelled_by
+        : undefined,
+    pickupTime: row.pickup_time || undefined,
+    updatedAt: row.updated_at || undefined,
     notes: row.notes || undefined,
     shippingLabelUrl: row.shipping_label_url || undefined,
     shippingMethod: row.shipping_method || undefined,
@@ -522,7 +528,10 @@ class OrderService {
       shippedAt: row.shipped_at || undefined,
       cancelledAt: row.cancelled_at || undefined,
       cancelReason: row.cancel_reason || undefined,
-      cancelledBy: row.cancelled_by === 'buyer' || row.cancelled_by === 'merchant' ? row.cancelled_by : undefined,
+      cancelledBy:
+        row.cancelled_by === 'buyer' || row.cancelled_by === 'merchant' || row.cancelled_by === 'system'
+          ? row.cancelled_by
+          : undefined,
       courier: String(row.shipping_courier || row.courier_code || ''),
       courierService: row.courier_service || undefined,
       trackingNumber: row.tracking_number || undefined,
@@ -695,31 +704,28 @@ class OrderService {
             table: 'orders',
             filter: `store_id=eq.${storeId}`,
           },
-          (payload: any) => {
-            if (payload?.new && payload.new.id) {
-              const row = payload.new;
-              // Pastikan hanya proses event untuk storeId yang benar
-              if (row.store_id !== storeId) return;
-              const stored = this.getStoredOrders(storeId);
-              const idx = stored.findIndex((o) => o.id === row.id);
-              if (idx !== -1) {
-                const merged: Order = {
-                  ...stored[idx],
-                  shippingStatus: row.shipping_status || stored[idx].shippingStatus,
-                  resiNumber: row.tracking_number || stored[idx].resiNumber,
-                  trackingNumber: row.tracking_number || stored[idx].trackingNumber,
-                  shippingLabelUrl: row.shipping_label_url || stored[idx].shippingLabelUrl,
-                  shippingMethod: row.shipping_method || stored[idx].shippingMethod,
-                  courierCode: row.courier_code || stored[idx].courierCode,
-                  courierService: row.courier_service || stored[idx].courierService,
-                  pickupTime: row.pickup_time || stored[idx].pickupTime,
-                  shippedAt: row.shipped_at || stored[idx].shippedAt,
-                };
-                stored[idx] = merged;
-                this.saveOrders(storeId, stored);
-                onUpdate(merged);
-              }
+          async (payload: any) => {
+            const row = payload?.new;
+            if (!row?.id || row.store_id !== storeId) return;
+            const stored = this.getStoredOrders(storeId);
+            const idx = stored.findIndex((o) => o.id === row.id);
+            let next: Order;
+            if (idx !== -1) {
+              // Baris realtime tidak membawa order_items; pakai item yang sudah tersimpan.
+              next = { ...stored[idx], ...mapSupabaseRowToOrder(row), items: stored[idx].items };
+              stored[idx] = next;
+            } else {
+              // Pesanan baru: ambil lengkap dengan itemnya (RLS tetap berlaku).
+              const { data, error } = await supabase
+                .from('orders')
+                .select('*, order_items(*)')
+                .eq('id', row.id)
+                .maybeSingle();
+              next = mapSupabaseRowToOrder(!error && data ? data : row);
+              stored.unshift(next);
             }
+            this.saveOrders(storeId, stored);
+            onUpdate(next);
           }
         )
         .subscribe();

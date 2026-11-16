@@ -30,6 +30,7 @@ import { orderService } from '../../services/orderService';
 import { DEFAULT_MANUAL_INSTRUCTIONS } from '../../utils/manualPayment';
 import { ManualPaymentDetails } from './ManualPaymentDetails';
 import { PaymentProofUpload } from './PaymentProofUpload';
+import { getPaymentDeadline, PAYMENT_WINDOW_HOURS } from '../../utils/orderPaymentDeadline';
 import { cartService } from '../../services/cartService';
 import { duitkuService } from '../../services/duitkuService';
 import { getDeviceClass } from '../../utils/responsivePreview';
@@ -936,6 +937,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     : (isEn ? 'Automatically Confirmed' : 'Terkonfirmasi Otomatis')}
                 </span>
               </div>
+              {createdOrder && getPaymentDeadline(createdOrder) && (
+                <p className="p-2.5 rounded-[var(--sf-radius)] bg-amber-50 border border-amber-200 text-amber-900 font-medium leading-relaxed">
+                  {isEn
+                    ? `Please pay before ${new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(getPaymentDeadline(createdOrder)!)}. Unpaid orders are cancelled automatically after ${PAYMENT_WINDOW_HOURS} hours.`
+                    : `Selesaikan pembayaran sebelum ${new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(getPaymentDeadline(createdOrder)!)}. Pesanan yang tidak dibayar dalam ${PAYMENT_WINDOW_HOURS} jam dibatalkan otomatis.`}
+                </p>
+              )}
               <p><span className="text-[var(--sf-muted)]">{isEn ? 'Payment Method:' : 'Metode Pembayaran:'}</span> <span className="font-semibold text-[var(--sf-text)]">{selectedPaymentName}</span></p>
               <p><span className="text-[var(--sf-muted)]">{isEn ? 'Recipient:' : 'Penerima:'}</span> <span className="font-semibold text-[var(--sf-text)]">{customerName} ({customerPhone})</span></p>
               <p><span className="text-[var(--sf-muted)]">{isEn ? 'Shipping Address:' : 'Alamat Pengiriman:'}</span> <span className="font-semibold text-[var(--sf-text)]">{createdOrder?.customerAddress || detailedAddress}</span></p>
