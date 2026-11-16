@@ -558,12 +558,163 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
     return null;
   };
 
+  // Ruang kosong di bawah halaman agar footer tidak tertutup navigasi bawah. Warnanya diambil
+  // dari elemen paling bawah (biasanya footer template) supaya tidak muncul pita putih.
+  const showBottomNav = isMobile || isLiveStorefront;
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [bottomFill, setBottomFill] = useState('');
+  React.useLayoutEffect(() => {
+    const root = contentRef.current;
+    if (!showBottomNav || !root) return;
+    const isTransparent = (c: string) => !c || c === 'transparent' || /rgba\([^)]*,\s*0\)$/.test(c);
+    const measure = () => {
+      const rootWidth = root.clientWidth;
+      // Telusuri anak paling bawah yang terlihat; warna latar terakhir yang tidak transparan
+      // pada blok selebar halaman = warna tepi bawah halaman.
+      const pick = (parent: Element, inherited: string): string | null => {
+        for (let el = parent.lastElementChild; el; el = el.previousElementSibling) {
+          const node = el as HTMLElement;
+          if (node.tagName === 'STYLE' || node.tagName === 'SCRIPT' || node.hasAttribute('data-sf-bottom-ignore')) continue;
+          const cs = getComputedStyle(node);
+          if (cs.display === 'contents') {
+            const inner = pick(node, inherited);
+            if (inner !== null) return inner;
+            continue;
+          }
+          if (cs.display === 'none' || cs.position === 'fixed' || cs.position === 'absolute' || node.offsetHeight === 0) continue;
+          // Hanya blok selebar halaman (bukan tombol/kartu kecil di dalam footer).
+          if (node.offsetWidth < rootWidth * 0.9) return inherited;
+          const own = isTransparent(cs.backgroundColor) ? inherited : cs.backgroundColor;
+          return pick(node, own) ?? own;
+        }
+        return null;
+      };
+      const color = pick(root, '') ?? '';
+      setBottomFill((prev) => (prev === color ? prev : color));
+    };
+    measure();
+    let frame = 0;
+    const observer = new MutationObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [showBottomNav, activePage, activeThemeId, primaryAccent, sections, deviceMode]);
+
+  const renderBottomNavSpacer = (className = '') => (
+    <div
+      aria-hidden="true"
+      data-sf-bottom-ignore=""
+      className={`shrink-0 ${className}`}
+      style={{ backgroundColor: bottomFill || 'var(--sf-page, #ffffff)', ...getStorefrontThemeVars(activeThemeId, primaryAccent) }}
+    />
+  );
+
+  /**
+   * Navigasi bawah (kapsul melayang) untuk tampilan HP. Isinya = Menu Navigasi header template
+   * + Keranjang bila ikon keranjang header aktif; warna & bentuk mengikuti template aktif.
+   * - 'frame': di dalam bingkai HP editor (mode pratinjau mobile).
+   * - 'fixed': storefront publik, menempel di bawah layar dan hanya tampil di bawah breakpoint md.
+   */
+  const renderBottomNav = (placement: 'frame' | 'fixed') => {
+    const isFixed = placement === 'fixed';
+    const headerOpts = sections.find((s) => s.id === 'header')?.options || {};
+    const navItems = getNavMenuItems(headerOpts).map((item) => {
+      const page = resolveNavPage(item.route, item.label);
+      return { id: item.id, label: item.label, route: item.route, page, Icon: getBottomNavIcon(page, item.label) };
+    });
+    const hasCartMenu = navItems.some((item) => item.page === 'cart');
+    const showCart = getHeaderDisplay(headerOpts).showCart && !hasCartMenu;
+    const menuItems = navItems.slice(0, showCart ? BOTTOM_NAV_MAX_ITEMS - 1 : BOTTOM_NAV_MAX_ITEMS);
+    const items = showCart
+      ? [...menuItems, { id: 'bottom-nav-cart', label: isEn ? 'Cart' : 'Keranjang', route: '/keranjang', page: 'cart', Icon: ShoppingBag }]
+      : menuItems;
+    // Menu aktif = yang menuju halaman yang sedang dipratinjau; beranda bila tidak ada.
+    const activeId =
+      items.find((item) => item.page === activePage)?.id ??
+      (activePage === 'homepage' ? items[0]?.id : undefined);
+
+    if (items.length === 0) return null;
+
+    // Warna, font & aksen mengikuti template aktif (variabel --sf-*); bentuk per varian.
+    const variant = getBottomNavVariant(activeThemeId);
+    const shapeClass = variant.sharp ? 'rounded-none' : 'rounded-full';
+    const barShadow = variant.brutal
+      ? '4px 4px 0 0 var(--sf-text)'
+      : variant.glow
+        ? '0 0 0 1px var(--sf-border), 0 12px 32px -8px color-mix(in srgb, var(--sf-primary) 45%, transparent)'
+        : '0 12px 32px -8px color-mix(in srgb, var(--sf-primary) 28%, transparent), 0 2px 6px rgba(0,0,0,0.06)';
+    return (
+      <nav
+        aria-label={isEn ? 'Navigation menu' : 'Navigasi menu'}
+        data-sf-bottom-ignore=""
+        className={
+          isFixed
+            ? 'fixed inset-x-0 bottom-0 z-40 px-3 pt-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:hidden pointer-events-none'
+            : 'relative h-0 shrink-0 z-30'
+        }
+        style={getStorefrontThemeVars(activeThemeId, primaryAccent)}
+      >
+        <ul
+          className={`${isFixed ? 'relative pointer-events-auto' : 'absolute inset-x-3 bottom-3'} flex items-center gap-1 p-1.5 backdrop-blur-xl select-none ${shapeClass} ${variant.brutal ? 'border-2' : 'border'}`}
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--sf-card) 88%, transparent)',
+            borderColor: variant.brutal ? 'var(--sf-text)' : 'var(--sf-border)',
+            boxShadow: barShadow,
+          }}
+        >
+          {items.map(({ id, label, route, Icon }) => {
+            const isActive = id === activeId;
+            return (
+              <li key={id} className="flex-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => handleNavClick(route, label)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`relative flex w-full min-h-[52px] flex-col items-center justify-center gap-1 px-1 cursor-pointer transition-[color,background-color,opacity] duration-200 active:scale-95 ${shapeClass} ${
+                    isActive ? '' : 'opacity-80 hover:opacity-100'
+                  }`}
+                  style={
+                    isActive
+                      ? {
+                          backgroundColor: 'var(--sf-primary)',
+                          color: 'var(--sf-primary-contrast)',
+                          boxShadow: variant.brutal
+                            ? 'none'
+                            : '0 6px 14px -4px color-mix(in srgb, var(--sf-primary) 55%, transparent)',
+                        }
+                      : { color: 'var(--sf-text-soft)' }
+                  }
+                >
+                  <Icon className="w-5 h-5" strokeWidth={isActive ? 2.2 : 1.8} aria-hidden="true" />
+                  <span
+                    className={`leading-none truncate max-w-full ${
+                      variant.uppercase ? 'text-[9px] uppercase tracking-[0.08em]' : 'text-[10px] tracking-tight'
+                    } ${variant.brutal ? 'font-black' : isActive ? 'font-semibold' : 'font-medium'}`}
+                  >
+                    {label}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    );
+  };
+
   // If readonly, we skip the device chrome and just render the content container
   if (readonly) {
     const customContent = renderPageCustomContent(activePage);
 
     return (
+      <>
       <div
+        ref={contentRef}
         className="storefront-font-scope sf-desktop-density flex-1 w-full max-w-full overflow-x-clip bg-white relative pb-0 box-border flex flex-col min-h-screen"
         style={{ fontFamily: `'${bodyFont}', sans-serif` }}
         onClickCapture={handleCanvasClick}
@@ -1545,7 +1696,10 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                 );
               })
             )}
+        {isLiveStorefront && renderBottomNavSpacer('h-[calc(5.5rem+env(safe-area-inset-bottom))] md:hidden')}
       </div>
+      {isLiveStorefront && renderBottomNav('fixed')}
+      </>
     );
   }
 
@@ -1602,7 +1756,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
           {/* STOREFRONT PREVIEW SCROLLABLE CONTENT */}
           <div
-            className={`storefront-font-scope bg-white w-full max-w-full min-h-[620px] max-h-[calc((100vh-130px)/var(--preview-scale,1))] overflow-y-auto overflow-x-hidden custom-scrollbar relative selection:bg-[#F5E8EA] box-border ${isMobile ? 'pb-24' : ''}`}
+            className={`storefront-font-scope bg-white w-full max-w-full min-h-[620px] max-h-[calc((100vh-130px)/var(--preview-scale,1))] overflow-y-auto overflow-x-hidden custom-scrollbar relative selection:bg-[#F5E8EA] box-border`}
+            ref={contentRef}
             style={{ fontFamily: `'${bodyFont}', sans-serif` }}
             onClickCapture={handleCanvasClick}
             onClick={handleCanvasClick}
@@ -2765,87 +2920,13 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
                 );
               })
             )}
+            {isMobile && renderBottomNavSpacer('h-24')}
           </div>
 
           {/* Mobile Bottom Navigation Bar (Shown on Mobile device mode) */}
           {/* Kapsul melayang bergaya navigasi bawah landing page. Isinya = Menu Navigasi
               header template (panel kanan) + Keranjang bila ikon keranjang header aktif. */}
-          {isMobile && (() => {
-            const headerOpts = sections.find((s) => s.id === 'header')?.options || {};
-            const navItems = getNavMenuItems(headerOpts).map((item) => {
-              const page = resolveNavPage(item.route, item.label);
-              return { id: item.id, label: item.label, route: item.route, page, Icon: getBottomNavIcon(page, item.label) };
-            });
-            const hasCartMenu = navItems.some((item) => item.page === 'cart');
-            const showCart = getHeaderDisplay(headerOpts).showCart && !hasCartMenu;
-            const menuItems = navItems.slice(0, showCart ? BOTTOM_NAV_MAX_ITEMS - 1 : BOTTOM_NAV_MAX_ITEMS);
-            const items = showCart
-              ? [...menuItems, { id: 'bottom-nav-cart', label: isEn ? 'Cart' : 'Keranjang', route: '/keranjang', page: 'cart', Icon: ShoppingBag }]
-              : menuItems;
-            // Menu aktif = yang menuju halaman yang sedang dipratinjau; beranda bila tidak ada.
-            const activeId =
-              items.find((item) => item.page === activePage)?.id ??
-              (activePage === 'homepage' ? items[0]?.id : undefined);
-
-            if (items.length === 0) return null;
-
-            // Warna, font & aksen mengikuti template aktif (variabel --sf-*); bentuk per varian.
-            const variant = getBottomNavVariant(activeThemeId);
-            const shapeClass = variant.sharp ? 'rounded-none' : 'rounded-full';
-            const barShadow = variant.brutal
-              ? '4px 4px 0 0 var(--sf-text)'
-              : variant.glow
-                ? '0 0 0 1px var(--sf-border), 0 12px 32px -8px color-mix(in srgb, var(--sf-primary) 45%, transparent)'
-                : '0 12px 32px -8px color-mix(in srgb, var(--sf-primary) 28%, transparent), 0 2px 6px rgba(0,0,0,0.06)';
-            return (
-              <nav aria-label={isEn ? 'Navigation menu' : 'Navigasi menu'} className="relative h-0 shrink-0 z-30" style={getStorefrontThemeVars(activeThemeId, primaryAccent)}>
-                <ul
-                  className={`absolute inset-x-3 bottom-3 flex items-center gap-1 p-1.5 backdrop-blur-xl select-none ${shapeClass} ${variant.brutal ? 'border-2' : 'border'}`}
-                  style={{
-                    backgroundColor: 'color-mix(in srgb, var(--sf-card) 88%, transparent)',
-                    borderColor: variant.brutal ? 'var(--sf-text)' : 'var(--sf-border)',
-                    boxShadow: barShadow,
-                  }}
-                >
-                  {items.map(({ id, label, route, Icon }) => {
-                    const isActive = id === activeId;
-                    return (
-                      <li key={id} className="flex-1 min-w-0">
-                        <button
-                          type="button"
-                          onClick={() => handleNavClick(route, label)}
-                          aria-current={isActive ? 'page' : undefined}
-                          className={`relative flex w-full min-h-[52px] flex-col items-center justify-center gap-1 px-1 cursor-pointer transition-[color,background-color,opacity] duration-200 active:scale-95 ${shapeClass} ${
-                            isActive ? '' : 'opacity-80 hover:opacity-100'
-                          }`}
-                          style={
-                            isActive
-                              ? {
-                                  backgroundColor: 'var(--sf-primary)',
-                                  color: 'var(--sf-primary-contrast)',
-                                  boxShadow: variant.brutal
-                                    ? 'none'
-                                    : '0 6px 14px -4px color-mix(in srgb, var(--sf-primary) 55%, transparent)',
-                                }
-                              : { color: 'var(--sf-text-soft)' }
-                          }
-                        >
-                          <Icon className="w-5 h-5" strokeWidth={isActive ? 2.2 : 1.8} aria-hidden="true" />
-                          <span
-                            className={`leading-none truncate max-w-full ${
-                              variant.uppercase ? 'text-[9px] uppercase tracking-[0.08em]' : 'text-[10px] tracking-tight'
-                            } ${variant.brutal ? 'font-black' : isActive ? 'font-semibold' : 'font-medium'}`}
-                          >
-                            {label}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </nav>
-            );
-          })()}
+          {isMobile && renderBottomNav('frame')}
 
           {/* Mobile Bottom Home Bar Indicator */}
           {isMobile && (
