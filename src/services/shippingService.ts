@@ -1,12 +1,10 @@
 import {
-  CourierType,
   BiteshipRateOption,
-  CreateShipmentPayload,
   CreateShipmentResult,
   ShippingBranch,
   AvailableCourier,
 } from '../types';
-import { supabase } from './supabaseClient';
+import { supabase, sessionHeaders } from './supabaseClient';
 import { branchService } from './branchService';
 import { getApiEndpoint } from '../utils/apiConfig';
 import {
@@ -19,6 +17,14 @@ import {
 
 export type { ShippingRate, CityOption } from '../utils/shippingFormulas';
 export { INDONESIAN_CITIES } from '../utils/shippingFormulas';
+
+/** ok=true → `result` terisi; ok=false → `code` (+ `providerMessage` dari kurir). */
+export interface CreateShipmentResponse {
+  ok: boolean;
+  result?: CreateShipmentResult;
+  code?: string;
+  providerMessage?: string;
+}
 
 export const shippingService = {
   getCities(): CityOption[] {
@@ -263,49 +269,45 @@ export const shippingService = {
   },
 
   /**
-   * Panggil Supabase Edge Function 'create-shipment' untuk booking & generate resi Biteship
+   * Pesan kurir & resi lewat server (`POST /api/shipping/create-shipment`). Server memeriksa sesi,
+   * hak kelola toko, status bayar, lalu memesan ke Biteship dengan data dari database dan
+   * menyimpan resinya. Tidak ada resi simulasi: bila gagal, hasilnya berisi kode galat.
    */
-  async createShipment(
-    payload: CreateShipmentPayload & { origin_branch_id?: string; notes?: string }
-  ): Promise<CreateShipmentResult> {
-    // 1. Coba panggil via Supabase Edge Function
+  async createShipment(params: {
+    orderId: string;
+    deliveryType: 'pickup' | 'drop_off';
+    pickupDate?: string;
+    pickupTime?: string;
+    originBranchId?: string;
+    courierCode: string;
+    courierService: string;
+  }): Promise<CreateShipmentResponse> {
     try {
-      const { data, error } = await supabase.functions.invoke('create-shipment', {
-        body: payload,
+      const res = await fetch(getApiEndpoint('/api/shipping/create-shipment'), {
+        method: 'POST',
+        headers: sessionHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(params),
       });
-
-      if (!error && data?.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.success && data.trackingNumber) {
         return {
-          success: true,
-          tracking_number: data.tracking_number,
-          shipping_label_url: data.shipping_label_url,
-          status: data.shipping_status || 'ready_to_ship',
-          message: data.message,
+          ok: true,
+          result: {
+            success: true,
+            tracking_number: String(data.trackingNumber),
+            shipping_label_url: data.trackingUrl ? String(data.trackingUrl) : '',
+            status: String(data.status || 'confirmed'),
+          },
         };
       }
-    } catch (err) {
-      console.warn('[Supabase Edge Function] create-shipment fallback:', err);
+      return {
+        ok: false,
+        code: String(data?.code || (res.status === 401 ? 'unauthorized' : res.status === 403 ? 'forbidden' : 'failed')),
+        providerMessage: data?.providerMessage ? String(data.providerMessage) : undefined,
+      };
+    } catch {
+      return { ok: false, code: 'network' };
     }
-
-    // Booking resi hanya lewat server (Edge Function create-shipment). Kunci Biteship
-    // tidak pernah dipakai dari browser: semua VITE_* ikut terbundel ke klien.
-
-    // 3. Fallback simulation bila server offline
-    const prefix = 'WYB-';
-    const randomDigits = Math.floor(100000000000 + Math.random() * 900000000000);
-    const trackingNumber = `${prefix}${randomDigits}`;
-    const labelUrl = `https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development`;
-
-    return {
-      success: true,
-      tracking_number: trackingNumber,
-      shipping_label_url: labelUrl,
-      status: 'ready_to_ship',
-      message:
-        payload.delivery_type === 'pickup'
-          ? 'Penjemputan paket oleh kurir berhasil dijadwalkan!'
-          : 'Resi pengiriman drop-off berhasil diterbitkan.',
-    };
   },
 
   calculateRates(
@@ -314,21 +316,5 @@ export const shippingService = {
     weightGrams: number = 500
   ): ShippingRate[] {
     return zoneCourierRates(destinationCity, weightGrams);
-  },
-
-  generateResi(courier: CourierType): string {
-    const randomDigits = Math.floor(1000000000 + Math.random() * 9000000000);
-    switch (courier) {
-      case 'J&T':
-        return `JT${randomDigits}`;
-      case 'JNE':
-        return `JNE${randomDigits}`;
-      case 'SiCepat':
-        return `00${randomDigits}`;
-      case 'GoSend':
-        return `GK-${Math.floor(100000 + Math.random() * 900000)}`;
-      default:
-        return `EXP-${randomDigits}`;
-    }
   },
 };

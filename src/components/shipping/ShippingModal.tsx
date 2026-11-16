@@ -11,7 +11,6 @@ import {
   ShippingMethod,
   CreateShipmentResult,
   AvailableCourier,
-  CourierType,
 } from '../../types';
 import { branchService } from '../../services/branchService';
 import { shippingService } from '../../services/shippingService';
@@ -148,96 +147,100 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
     setTimeout(() => setIsCopiedResi(false), 2000);
   };
 
+  const shipmentErrorText = (code: string, providerMessage?: string): string => {
+    const messages: Record<string, [string, string]> = {
+      invalid: ['Data pengiriman tidak valid. Periksa pilihan kurir dan metode pengiriman.', 'Invalid shipment data. Check the courier and delivery method.'],
+      invalid_pickup: ['Jadwal penjemputan tidak valid. Pilih tanggal hari ini sampai 7 hari ke depan.', 'Invalid pick-up schedule. Choose a date from today up to 7 days ahead.'],
+      not_found: ['Pesanan tidak ditemukan.', 'Order not found.'],
+      unauthorized: ['Sesi login berakhir. Silakan masuk kembali.', 'Your session has expired. Please sign in again.'],
+      forbidden: ['Anda tidak punya akses untuk mengelola pesanan toko ini.', "You do not have access to manage this store's orders."],
+      rate_limited: ['Terlalu banyak permintaan. Coba lagi sebentar.', 'Too many requests. Please try again shortly.'],
+      cancelled: ['Pesanan sudah dibatalkan.', 'This order has been cancelled.'],
+      already_shipped: ['Pesanan ini sudah punya resi atau sudah dikirim. Muat ulang daftar pesanan.', 'This order already has a tracking number or has been shipped. Reload the order list.'],
+      cod_unconfirmed: ['Konfirmasi pesanan COD terlebih dahulu sebelum mengatur pengiriman.', 'Confirm the COD order before arranging shipment.'],
+      unpaid: ['Pesanan belum lunas. Tandai pembayaran lunas terlebih dahulu.', 'The order is not paid yet. Mark the payment as paid first.'],
+      branch_not_found: ['Cabang pengiriman tidak ditemukan. Pilih cabang lain.', 'Shipping branch not found. Choose another branch.'],
+      origin_incomplete: ['Lengkapi alamat, kode pos, dan nomor HP cabang pengiriman (atau alamat toko) terlebih dahulu.', 'Complete the address, postal code, and phone number of the shipping branch (or store address) first.'],
+      destination_incomplete: ['Alamat, kode pos, atau nomor HP pembeli belum lengkap, jadi kurir tidak bisa dipesan. Hubungi pembeli untuk melengkapinya.', "The buyer's address, postal code, or phone number is incomplete, so a courier cannot be booked. Contact the buyer to complete it."],
+      no_items: ['Pesanan tidak memiliki barang.', 'The order has no items.'],
+      not_configured: ['Layanan pemesanan kurir belum aktif. Hubungi admin LapakQ.', 'Courier booking is not active yet. Contact the LapakQ admin.'],
+      busy: ['Pemesanan kurir untuk pesanan ini sedang diproses. Tunggu sebentar lalu muat ulang.', 'A courier booking for this order is in progress. Wait a moment, then reload.'],
+      provider_unreachable: ['Layanan kurir tidak dapat dihubungi. Coba lagi beberapa saat.', 'The courier service cannot be reached. Please try again shortly.'],
+      courier_rejected: ['Kurir menolak pemesanan. Coba kurir atau layanan lain.', 'The courier rejected the booking. Try another courier or service.'],
+      network: ['Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', 'Cannot connect to the server. Check your internet connection.'],
+    };
+    const [id, en] = messages[code] || ['Gagal memesan kurir. Silakan coba lagi.', 'Failed to book the courier. Please try again.'];
+    const base = isEn ? en : id;
+    return providerMessage ? `${base} (${isEn ? 'Courier' : 'Kurir'}: ${providerMessage})` : base;
+  };
+
   const handleConfirmShipping = async () => {
     setIsSubmitting(true);
     setErrorMsg('');
 
     try {
-      const pickupTimeIso =
-        deliveryType === 'pickup'
-          ? `${pickupDate}T${pickupTimeSlot.slice(0, 2)}:00:00Z`
-          : undefined;
+      const courierCodeToSend = (selectedCourier?.courier_code || order.courierCode || '').toLowerCase();
+      const courierServiceToSend = (selectedCourier?.courier_service_code || '').toLowerCase();
+      if (!courierCodeToSend || !courierServiceToSend) {
+        setErrorMsg(isEn ? 'Choose a courier service first.' : 'Pilih layanan kurir terlebih dahulu.');
+        return;
+      }
 
-      const courierCodeToSend = (
-        selectedCourier?.courier_code ||
-        order.courierCode ||
-        order.courier ||
-        'jnt'
-      ).toLowerCase();
-
-      const courierServiceToSend = (
-        selectedCourier?.courier_service_code ||
-        order.courierService ||
-        'ez'
-      ).toLowerCase();
-
-      // 1. Panggil Edge Function create-shipment dengan kurir dinamis
-      const result = await shippingService.createShipment({
-        order_id: order.id,
-        delivery_type: deliveryType,
-        pickup_time: pickupTimeIso,
-        origin_branch_id: selectedBranch?.id,
-        courier_code: courierCodeToSend,
-        courier_service: courierServiceToSend,
+      // Server memesan kurir ke Biteship dan menyimpan resinya; tidak ada resi simulasi.
+      const response = await shippingService.createShipment({
+        orderId: order.id,
+        deliveryType,
+        pickupDate: deliveryType === 'pickup' ? pickupDate : undefined,
+        pickupTime: deliveryType === 'pickup' ? pickupTimeSlot.slice(0, 5) : undefined,
+        originBranchId: selectedBranch?.id,
+        courierCode: courierCodeToSend,
+        courierService: courierServiceToSend,
       });
 
+      if (!response.ok || !response.result) {
+        setErrorMsg(shipmentErrorText(response.code || 'failed', response.providerMessage));
+        return;
+      }
+
+      const result = response.result;
       setShipmentResult(result);
 
-      // Mapping nama kurir untuk order state
-      let mappedCourierType: CourierType = 'J&T';
-      if (courierCodeToSend.includes('jne')) mappedCourierType = 'JNE';
-      else if (courierCodeToSend.includes('sicepat')) mappedCourierType = 'SiCepat';
-      else if (courierCodeToSend.includes('gosend')) mappedCourierType = 'GoSend';
-
-      // 2. Update order di local / database
-      const updated = await orderService.processShipmentWithBiteship({
-        orderId: order.id,
-        courier: mappedCourierType,
-        courierCode: courierCodeToSend,
-        courierService: selectedCourier
-          ? `${selectedCourier.courier_name} ${selectedCourier.courier_service_name}`
-          : order.courierService,
-        trackingNumber: result.tracking_number,
-        shippingLabelUrl: result.shipping_label_url,
-        shippingMethod: deliveryType,
-        originBranchId: selectedBranch?.id,
-        pickupTime: pickupTimeIso,
-      });
-
-      onSuccess(updated);
+      // Ambil ulang pesanan dari database (resi & status sudah disimpan server).
+      const refreshed = await orderService.getOrderById(order.id, order.storeId);
+      onSuccess(
+        refreshed && refreshed.trackingNumber
+          ? refreshed
+          : {
+              ...order,
+              resiNumber: result.tracking_number,
+              trackingNumber: result.tracking_number,
+              shippingLabelUrl: result.shipping_label_url || order.shippingLabelUrl,
+              shippingMethod: deliveryType,
+              originBranchId: selectedBranch?.id || order.originBranchId,
+              shippingStatus: 'Dikirim',
+              shippedAt: new Date().toISOString(),
+            }
+      );
       onShowNotification(
         isEn
           ? `Tracking number ${result.tracking_number} issued successfully!`
-          : result.message || `Resi pengiriman ${result.tracking_number} berhasil diterbitkan!`
+          : `Resi pengiriman ${result.tracking_number} berhasil diterbitkan!`
       );
-    } catch (err: any) {
-      setErrorMsg(err.message || (isEn ? 'Failed to process the shipment' : 'Gagal memproses pengiriman paket'));
+    } catch {
+      setErrorMsg(isEn ? 'Failed to process the shipment. Please try again.' : 'Gagal memproses pengiriman paket. Silakan coba lagi.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handlePrintLabel = () => {
-    const labelUrl = shipmentResult?.shipping_label_url || order.shippingLabelUrl;
-    const trackingNumber =
-      shipmentResult?.tracking_number || order.trackingNumber || order.resiNumber;
-
-    if (
-      labelUrl &&
-      labelUrl.startsWith('http') &&
-      !labelUrl.includes('labels.biteship.com') &&
-      !labelUrl.includes('biteship.com/id/tracking')
-    ) {
-      window.open(labelUrl, '_blank', 'noopener,noreferrer');
-    } else if (trackingNumber) {
-      // Buka pelacakan resmi Biteship live testing
-      window.open(
-        `https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development`,
-        '_blank',
-        'noopener,noreferrer'
-      );
+    // Tautan pelacakan resmi dari Biteship (disimpan server saat pemesanan berhasil).
+    const trackingUrl = shipmentResult?.shipping_label_url || order.shippingLabelUrl;
+    if (trackingUrl && /^https:\/\//.test(trackingUrl)) {
+      window.open(trackingUrl, '_blank', 'noopener,noreferrer');
     } else {
-      alert(isEn ? 'Tracking number or label link is not available yet.' : 'Nomor resi atau link label belum tersedia.');
+      // Belum ada tautan dari kurir: tampilkan label thermal yang bisa dicetak.
+      setShowThermalPreview(true);
     }
   };
 

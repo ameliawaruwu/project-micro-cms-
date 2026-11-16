@@ -39,7 +39,6 @@ import {
   MerchantTab,
   ViewMode,
   ShippingStatus,
-  CourierType,
   CartItem,
   StoreLayoutSettings,
 } from './types';
@@ -1268,14 +1267,6 @@ export default function App() {
     setSelectedOrderDetail(null);
     setOrderToShip(order);
     setIsShippingModalOpen(true);
-  };
-
-  const handleConfirmShipping = async (orderId: string, courier: CourierType, resi: string) => {
-    const updated = await orderService.processShipment(orderId, courier, resi);
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
-    addToast(isEn
-      ? `Order #${updated.orderNumber} processed with tracking number ${updated.resiNumber}.`
-      : `Pesanan #${updated.orderNumber} berhasil diproses dengan resi ${updated.resiNumber}.`);
   };
 
   const handlePrintReceipt = (order: Order) => {
