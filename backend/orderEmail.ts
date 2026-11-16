@@ -142,13 +142,13 @@ export async function sendOrderPaidEmail(orderId: string, maxPaidAgeMs?: number)
     const orderRes = await pool.query(
       `SELECT id, store_id, order_number, customer_name, customer_phone, customer_email,
               shipping_address, shipping_city, shipping_courier, shipping_service, shipping_cost,
-              total_amount, payment_method, payment_status, paid_at
+              total_amount, payment_method, payment_status, paid_at, order_status
          FROM public.orders WHERE id = $1 LIMIT 1`,
       [orderId]
     );
     const order = orderRes.rows[0];
     if (!order) return 'not_found';
-    if (order.payment_status !== 'paid') return 'not_paid';
+    if (order.payment_status !== 'paid' || order.order_status === 'cancelled') return 'not_paid';
     if (maxPaidAgeMs !== undefined) {
       const paidAt = order.paid_at ? new Date(order.paid_at).getTime() : 0;
       if (!paidAt || Date.now() - paidAt > maxPaidAgeMs) return 'not_paid';
@@ -188,6 +188,111 @@ export async function sendOrderPaidEmail(orderId: string, maxPaidAgeMs?: number)
   } catch (err: any) {
     if (err instanceof MailerNotConfiguredError) return 'mailer_not_configured';
     console.error('[orderEmail] gagal mengirim email pesanan lunas:', err?.message);
+    return 'failed';
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Email "Pesanan dibatalkan"
+// -----------------------------------------------------------------------------
+
+const cancelledOrders = new Set<string>();
+
+export type OrderCancelledEmailResult = 'sent' | 'already_sent' | 'no_email' | 'not_cancelled' | 'not_found' | 'mailer_not_configured' | 'failed';
+
+function buildCancelHtml(order: any, items: any[], storeName: string, trackUrl: string | null): string {
+  const byBuyer = order.cancelled_by === 'buyer';
+  const paid = order.payment_status === 'paid';
+  const rows = items
+    .map(
+      (i) => `<tr>
+        <td style="padding:6px 0;border-bottom:1px solid #EEE;font-size:13px;color:#1F1F1F;">${esc(i.product_name)}${i.variant_info ? ` <span style="font-size:11px;color:#777;">(${esc(i.variant_info)})</span>` : ''} × ${esc(i.quantity)}</td>
+      </tr>`
+    )
+    .join('');
+  const intro = byBuyer
+    ? 'pesanan Anda sudah dibatalkan sesuai permintaan Anda.'
+    : `pesanan Anda dibatalkan oleh penjual ${esc(storeName)}.`;
+  const reason = order.cancel_reason
+    ? `<p style="font-size:13px;color:#555;margin:0 0 16px;line-height:1.5;"><b>Alasan:</b> ${esc(order.cancel_reason)}</p>`
+    : '';
+  const refund = paid
+    ? `<p style="font-size:13px;color:#1F1F1F;background:#FFF7E6;border:1px solid #F5D9A8;border-radius:10px;padding:12px;margin:16px 0 0;line-height:1.5;">
+         Pembayaran sebesar <b>${esc(rupiah(order.total_amount))}</b> sudah tercatat. Penjual akan menghubungi Anda untuk proses pengembalian dana.
+       </p>`
+    : '';
+  const track = trackUrl
+    ? `<div style="text-align:center;margin:24px 0 0;"><a href="${esc(trackUrl)}" style="display:inline-block;background:#66000E;color:#FFF;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:10px;">Lihat Status Pesanan</a></div>`
+    : '';
+
+  return `<!doctype html><html><body style="margin:0;background:#F5F2F1;font-family:Arial,Helvetica,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
+    <div style="background:#FFF;border:1px solid #E5E0DD;border-radius:16px;padding:24px;">
+      <p style="font-size:12px;color:#777;margin:0 0 4px;">${esc(storeName)}</p>
+      <h1 style="font-size:20px;color:#1F1F1F;margin:0 0 8px;">Pesanan dibatalkan</h1>
+      <p style="font-size:13px;color:#555;margin:0 0 12px;line-height:1.5;">
+        Halo ${esc(order.customer_name || 'Pelanggan')}, ${intro}
+      </p>
+      ${reason}
+      <p style="font-size:12px;color:#777;margin:0 0 4px;">Nomor Pesanan</p>
+      <p style="font-size:15px;font-weight:700;color:#1F1F1F;margin:0 0 16px;">#${esc(order.order_number)}</p>
+      <table style="width:100%;border-collapse:collapse;">${rows}
+        <tr><td style="padding:8px 0;font-size:14px;font-weight:700;color:#1F1F1F;">Total ${esc(rupiah(order.total_amount))}</td></tr>
+      </table>
+      ${refund}
+      ${track}
+    </div>
+    <p style="font-size:11px;color:#999;text-align:center;margin:16px 0 0;">Email ini dikirim otomatis oleh LapakQ atas nama ${esc(storeName)}. Mohon tidak membalas email ini.</p>
+  </div>
+</body></html>`;
+}
+
+/** Kirim email pembatalan untuk pesanan `orderId` (status harus sudah 'cancelled'). Tidak pernah melempar error. */
+export async function sendOrderCancelledEmail(orderId: string): Promise<OrderCancelledEmailResult> {
+  if (cancelledOrders.has(orderId)) return 'already_sent';
+  try {
+    const orderRes = await pool.query(
+      `SELECT id, store_id, order_number, customer_name, customer_email, total_amount,
+              payment_status, order_status, cancel_reason, cancelled_by
+         FROM public.orders WHERE id = $1 LIMIT 1`,
+      [orderId]
+    );
+    const order = orderRes.rows[0];
+    if (!order) return 'not_found';
+    if (order.order_status !== 'cancelled') return 'not_cancelled';
+    const email = String(order.customer_email || '').trim();
+    if (!EMAIL_RE.test(email)) return 'no_email';
+
+    const [itemsRes, storeRes] = await Promise.all([
+      pool.query(
+        `SELECT product_name, quantity, variant_info FROM public.order_items WHERE order_id = $1 ORDER BY id LIMIT 100`,
+        [orderId]
+      ),
+      pool.query(
+        `SELECT name, slug, custom_domain, community_id, is_published, is_suspended
+           FROM public.stores WHERE id = $1 LIMIT 1`,
+        [order.store_id]
+      ),
+    ]);
+    const store = storeRes.rows[0] || {};
+    const storeName = String(store.name || 'Toko LapakQ');
+    const trackUrl = await storeTrackUrl(store, String(order.order_number));
+
+    cancelledOrders.add(orderId);
+    try {
+      await sendMail(
+        email,
+        `Pesanan dibatalkan - #${String(order.order_number).replace(/[\r\n]/g, '')} (${storeName.replace(/[\r\n]/g, ' ')})`,
+        buildCancelHtml(order, itemsRes.rows, storeName, trackUrl)
+      );
+    } catch (err) {
+      cancelledOrders.delete(orderId);
+      throw err;
+    }
+    return 'sent';
+  } catch (err: any) {
+    if (err instanceof MailerNotConfiguredError) return 'mailer_not_configured';
+    console.error('[orderEmail] gagal mengirim email pembatalan:', err?.message);
     return 'failed';
   }
 }

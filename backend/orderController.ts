@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { pool } from './publicApiController';
 import { requireStoreManager } from './sessionAuth';
-import { sendOrderPaidEmail } from './orderEmail';
+import { sendOrderPaidEmail, sendOrderCancelledEmail } from './orderEmail';
 import { simulateCourierRates, zoneCourierRates } from '../src/utils/shippingFormulas';
 
 /**
@@ -356,6 +356,97 @@ orderRouter.post('/orders/notify-paid', async (req: Request, res: Response) => {
   }
 });
 
+const CANCEL_WINDOW_MS = 10 * 60 * 1000;
+const CANCEL_MAX_PER_WINDOW = 10;
+const cancelHits = new Map<string, number[]>();
+
+function cancelRateLimited(key: string): boolean {
+  const now = Date.now();
+  const hits = (cancelHits.get(key) || []).filter((t) => now - t < CANCEL_WINDOW_MS);
+  if (hits.length >= CANCEL_MAX_PER_WINDOW) return true;
+  hits.push(now);
+  cancelHits.set(key, hits);
+  if (cancelHits.size > 5000) {
+    for (const [k, v] of cancelHits) if (!v.some((t) => now - t < CANCEL_WINDOW_MS)) cancelHits.delete(k);
+  }
+  return false;
+}
+
+const CANCEL_MESSAGES: Record<string, [number, string]> = {
+  invalid: [400, 'Data pembatalan tidak valid.'],
+  not_found: [404, 'Pesanan tidak ditemukan. Periksa nomor pesanan dan nomor HP.'],
+  locked: [429, 'Terlalu banyak percobaan. Coba lagi dalam 1 jam.'],
+  already_cancelled: [409, 'Pesanan ini sudah dibatalkan.'],
+  paid: [409, 'Pesanan sudah dibayar. Hubungi penjual untuk membatalkan.'],
+  payment_confirmed: [409, 'Anda sudah mengirim konfirmasi pembayaran. Hubungi penjual untuk membatalkan.'],
+  processed: [409, 'Pesanan sudah diproses penjual. Hubungi penjual untuk membatalkan.'],
+  shipped: [409, 'Pesanan sudah dikirim atau sudah dipesankan kurir, tidak bisa dibatalkan.'],
+  insufficient_balance: [409, 'Saldo toko tidak cukup untuk menarik kembali dana pesanan ini. Hubungi admin LapakQ.'],
+};
+
+// Batalkan pesanan. Dua mode:
+// - Penjual: { orderId, reason } + sesi login dengan hak kelola toko (dicek server).
+// - Pembeli tanpa login: { storeId, orderNumber, phone, reason } — dibuktikan dengan nomor pesanan + HP,
+//   hanya selama pesanan belum lunas & belum diproses (aturan di app_private.cancel_order_by_buyer).
+// Status & saldo hanya diubah fungsi database; browser tidak pernah mengirim status/nominal.
+orderRouter.post('/orders/cancel', async (req: Request, res: Response) => {
+  try {
+    const body = req.body || {};
+    const reason = clean(body.reason, 300);
+    let result: any;
+
+    if (body.orderId !== undefined) {
+      const orderId = String(body.orderId || '').trim();
+      if (!ID_RE.test(orderId)) return res.status(400).json({ success: false, code: 'invalid', message: CANCEL_MESSAGES.invalid[1] });
+      const orderRes = await pool.query('SELECT store_id FROM public.orders WHERE id = $1 LIMIT 1', [orderId]);
+      const order = orderRes.rows[0];
+      if (!order) return res.status(404).json({ success: false, code: 'not_found', message: 'Pesanan tidak ditemukan.' });
+
+      const user = await requireStoreManager(req, res, String(order.store_id));
+      if (!user) return;
+      if (cancelRateLimited(`u:${user.id}`)) {
+        return res.status(429).json({ success: false, code: 'rate_limited', message: 'Terlalu banyak permintaan. Coba lagi sebentar.' });
+      }
+      const r = await pool.query('SELECT app_private.cancel_order_by_merchant($1, $2) AS result', [orderId, reason || null]);
+      result = r.rows[0]?.result;
+    } else {
+      const storeId = String(body.storeId || '').trim();
+      const orderNumber = String(body.orderNumber || '').trim().toUpperCase();
+      const phone = String(body.phone || '').replace(/[^0-9+]/g, '').slice(0, 20);
+      if (!ID_RE.test(storeId) || !/^[A-Z0-9-]{4,32}$/.test(orderNumber) || phone.length < 9) {
+        return res.status(400).json({ success: false, code: 'invalid', message: CANCEL_MESSAGES.invalid[1] });
+      }
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      if (cancelRateLimited(`ip:${ip}`)) {
+        return res.status(429).json({ success: false, code: 'rate_limited', message: 'Terlalu banyak permintaan. Coba lagi sebentar.' });
+      }
+      const r = await pool.query('SELECT app_private.cancel_order_by_buyer($1, $2, $3, $4) AS result', [
+        storeId,
+        orderNumber,
+        phone,
+        reason || null,
+      ]);
+      result = r.rows[0]?.result;
+    }
+
+    const status = String(result?.status || '');
+    if (status !== 'cancelled') {
+      const [code, message] = CANCEL_MESSAGES[status] || [500, 'Gagal membatalkan pesanan.'];
+      return res.status(code).json({ success: false, code: status || 'failed', message });
+    }
+
+    void sendOrderCancelledEmail(String(result.order_id));
+    return res.json({
+      success: true,
+      wasPaid: Boolean(result.was_paid),
+      balanceReversed: Boolean(result.balance_reversed),
+    });
+  } catch (err: any) {
+    console.error('[orders cancel]', err?.message);
+    return res.status(500).json({ success: false, code: 'failed', message: 'Gagal membatalkan pesanan. Silakan coba lagi.' });
+  }
+});
+
 /**
  * Nominal tagihan yang sah untuk ID transaksi gateway, diambil dari database (bukan browser).
  * - Pesanan toko: `<order_number>` atau `<order_number>-<sufiks>` → orders.total_amount (belum lunas).
@@ -383,11 +474,12 @@ export async function resolveBillableAmount(
 
   const candidates = Array.from(new Set([merchantOrderId, merchantOrderId.replace(/-[A-Za-z0-9]+$/, '')]));
   const o = await pool.query(
-    'SELECT total_amount, payment_status FROM orders WHERE order_number = ANY($1::text[]) LIMIT 1',
+    'SELECT total_amount, payment_status, order_status FROM orders WHERE order_number = ANY($1::text[]) LIMIT 1',
     [candidates]
   );
   if (o.rows[0]) {
     if (o.rows[0].payment_status === 'paid') return { error: 'Pesanan ini sudah lunas.', status: 409 };
+    if (o.rows[0].order_status === 'cancelled') return { error: 'Pesanan ini sudah dibatalkan.', status: 409 };
     return { amount: Math.round(Number(o.rows[0].total_amount)) };
   }
 

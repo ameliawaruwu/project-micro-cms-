@@ -148,6 +148,12 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [tracked, setTracked] = useState<TrackedOrder | null>(null);
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
+  // Nomor HP yang terbukti cocok saat pelacakan terakhir (dipakai untuk membatalkan pesanan).
+  const [trackedPhone, setTrackedPhone] = useState('');
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
 
   /** Salinan lokal pesanan yang dibuat dari perangkat ini (berisi id untuk konfirmasi bayar). */
   const findLocalOrder = (number: string): Order | undefined =>
@@ -162,6 +168,10 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
       const result = await orderService.trackOrder(storeId, number, phoneNumber);
       if (result.status === 'found') {
         setTracked(result.order);
+        setTrackedPhone(phoneNumber);
+        setIsCancelOpen(false);
+        setCancelReason('');
+        setCancelError('');
         setLocalOrders(orderService.getLocalOrders(storeId).slice(0, 5));
       } else {
         setErrorMessage(NOT_FOUND_MESSAGES[result.status][isEn ? 'en' : 'id']);
@@ -196,6 +206,116 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
   const handleProofSubmitted = (orderNumberSent: string, paymentConfirmedAt: string) => {
     setTracked((current) =>
       current?.orderNumber === orderNumberSent ? { ...current, paymentConfirmedAt } : current,
+    );
+  };
+
+  const CANCEL_ERRORS: Record<string, { id: string; en: string }> = {
+    paid: { id: 'Pesanan sudah dibayar. Hubungi penjual untuk membatalkan.', en: 'This order has been paid. Contact the seller to cancel it.' },
+    payment_confirmed: {
+      id: 'Anda sudah mengirim konfirmasi pembayaran. Hubungi penjual untuk membatalkan.',
+      en: 'You have already sent a payment confirmation. Contact the seller to cancel it.',
+    },
+    processed: { id: 'Pesanan sudah diproses penjual. Hubungi penjual untuk membatalkan.', en: 'The seller is already processing this order. Contact the seller to cancel it.' },
+    locked: { id: 'Terlalu banyak percobaan. Coba lagi dalam 1 jam.', en: 'Too many attempts. Please try again in 1 hour.' },
+    rate_limited: { id: 'Terlalu banyak permintaan. Coba lagi sebentar.', en: 'Too many requests. Please try again shortly.' },
+  };
+
+  const handleCancelOrder = async (order: TrackedOrder) => {
+    if (!storeId || isCancelling) return;
+    setIsCancelling(true);
+    setCancelError('');
+    const result = await orderService.cancelOrderAsBuyer(storeId, order.orderNumber, trackedPhone, cancelReason.trim());
+    setIsCancelling(false);
+    if (result.success || result.code === 'already_cancelled') {
+      await runTrack(order.orderNumber, trackedPhone);
+      return;
+    }
+    const known = result.code ? CANCEL_ERRORS[result.code] : undefined;
+    setCancelError(
+      known
+        ? known[isEn ? 'en' : 'id']
+        : isEn
+          ? 'Failed to cancel the order. Please try again.'
+          : 'Gagal membatalkan pesanan. Silakan coba lagi.',
+    );
+  };
+
+  /** Pembeli bisa membatalkan sendiri selama pesanan belum dibayar & belum diproses. */
+  const renderCancelAction = (order: TrackedOrder) => {
+    const canCancel = !order.isPaid && order.orderStatus === 'pending' && !order.paymentConfirmedAt && !!trackedPhone;
+    if (!canCancel) {
+      if (order.orderStatus === 'pending' || order.orderStatus === 'processing') {
+        return (
+          <p className="text-xs text-[var(--sf-muted)] text-center">
+            {isEn
+              ? 'Need to cancel? Contact the seller, since this order has been paid or is being processed.'
+              : 'Ingin membatalkan? Hubungi penjual, karena pesanan ini sudah dibayar atau sedang diproses.'}
+          </p>
+        );
+      }
+      return null;
+    }
+
+    if (!isCancelOpen) {
+      return (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => setIsCancelOpen(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700 hover:underline cursor-pointer"
+          >
+            <XCircle className="w-4 h-4" />
+            <span>{isEn ? 'Cancel Order' : 'Batalkan Pesanan'}</span>
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 rounded-[var(--sf-radius)] border border-red-200 bg-red-50 space-y-3">
+        <div>
+          <p className="text-sm font-bold text-red-800">{isEn ? 'Cancel this order?' : 'Batalkan pesanan ini?'}</p>
+          <p className="text-xs text-red-700 leading-relaxed mt-0.5">
+            {isEn
+              ? 'The order will be cancelled and cannot be restored. Do not make any payment for this order afterwards.'
+              : 'Pesanan akan dibatalkan dan tidak bisa dikembalikan. Jangan melakukan pembayaran untuk pesanan ini setelahnya.'}
+          </p>
+        </div>
+        <label className="block">
+          <span className="block text-xs font-semibold text-red-800 mb-1">{isEn ? 'Reason (optional)' : 'Alasan (opsional)'}</span>
+          <textarea
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value.slice(0, 300))}
+            rows={2}
+            maxLength={300}
+            placeholder={isEn ? 'e.g. Wrong item or address' : 'Mis. salah pilih barang atau alamat'}
+            className="w-full px-3 py-2 rounded-[var(--sf-radius)] border border-red-200 bg-white text-sm text-[var(--sf-text)] placeholder:text-[var(--sf-muted)] focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
+          />
+        </label>
+        {cancelError && <p className="text-xs font-semibold text-red-700">{cancelError}</p>}
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+          <button
+            type="button"
+            disabled={isCancelling}
+            onClick={() => {
+              setIsCancelOpen(false);
+              setCancelError('');
+            }}
+            className="px-4 py-2 rounded-[var(--sf-radius)] border border-[var(--sf-border)] bg-white text-xs font-semibold text-[var(--sf-text)] hover:bg-[var(--sf-subtle)] cursor-pointer disabled:opacity-60"
+          >
+            {isEn ? 'Keep Order' : 'Tidak Jadi'}
+          </button>
+          <button
+            type="button"
+            disabled={isCancelling}
+            onClick={() => handleCancelOrder(order)}
+            className="px-4 py-2 rounded-[var(--sf-radius)] bg-red-600 hover:bg-red-700 text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-70"
+          >
+            {isCancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+            <span>{isEn ? 'Yes, Cancel Order' : 'Ya, Batalkan Pesanan'}</span>
+          </button>
+        </div>
+      </div>
     );
   };
 
@@ -273,7 +393,25 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
           {isCancelled ? (
             <div className="flex items-start gap-2.5 p-3 rounded-[var(--sf-radius)] border border-red-200 bg-red-50 text-red-700">
               <XCircle className="w-5 h-5 shrink-0" />
-              <p className="text-sm font-semibold">{isEn ? 'This order has been cancelled. Contact the seller if you have any questions.' : 'Pesanan ini dibatalkan. Hubungi penjual bila ada pertanyaan.'}</p>
+              <div className="space-y-1 min-w-0">
+                <p className="text-sm font-semibold">
+                  {order.cancelledBy === 'buyer'
+                    ? (isEn ? 'You cancelled this order.' : 'Pesanan ini sudah Anda batalkan.')
+                    : order.cancelledBy === 'merchant'
+                      ? (isEn ? 'This order was cancelled by the seller.' : 'Pesanan ini dibatalkan oleh penjual.')
+                      : (isEn ? 'This order has been cancelled. Contact the seller if you have any questions.' : 'Pesanan ini dibatalkan. Hubungi penjual bila ada pertanyaan.')}
+                </p>
+                {order.cancelReason && (
+                  <p className="text-xs break-words">
+                    <span className="font-semibold">{isEn ? 'Reason:' : 'Alasan:'}</span> {order.cancelReason}
+                  </p>
+                )}
+                {order.isPaid && (
+                  <p className="text-xs">
+                    {isEn ? 'The seller will contact you about the refund.' : 'Penjual akan menghubungi Anda untuk pengembalian dana.'}
+                  </p>
+                )}
+              </div>
             </div>
           ) : (
             <ol className="space-y-3">
@@ -303,6 +441,8 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
         </div>
 
         {!isCancelled && renderPaymentAction(order)}
+
+        {!isCancelled && renderCancelAction(order)}
 
         <div className={`${cardClass} grid gap-4 sm:grid-cols-2`}>
           <div className="flex items-start gap-2.5">

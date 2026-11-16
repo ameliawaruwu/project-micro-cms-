@@ -522,6 +522,9 @@ export interface Order {
   trackingNumber?: string;
   shippingOrderId?: string;
   shippingLabelUrl?: string;
+  cancelledAt?: string;
+  cancelReason?: string;
+  cancelledBy?: 'buyer' | 'merchant';
   pickupTime?: string;
   destinationAddress?: string;
   destinationPostalCode?: string;

@@ -13,6 +13,9 @@ export interface TrackedOrder {
   paidAt?: string;
   orderStatus: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   shippedAt?: string;
+  cancelledAt?: string;
+  cancelReason?: string;
+  cancelledBy?: 'buyer' | 'merchant';
   courier: string;
   courierService?: string;
   trackingNumber?: string;
@@ -25,6 +28,15 @@ export interface TrackedOrder {
 export type TrackOrderResult =
   | { status: 'found'; order: TrackedOrder }
   | { status: 'not_found' | 'locked' | 'invalid' };
+
+/** Hasil pembatalan pesanan lewat server. `code` dipakai frontend untuk memilih pesan dua bahasa. */
+export interface CancelOrderResult {
+  success: boolean;
+  code?: string;
+  message?: string;
+  wasPaid?: boolean;
+  balanceReversed?: boolean;
+}
 
 // ============================================================
 // MERCHANT DATA ISOLATION: localStorage dipartisi per storeId
@@ -113,6 +125,9 @@ function mapSupabaseRowToOrder(row: any): Order {
     shippingStatus,
     createdAt: row.created_at || new Date().toISOString(),
     shippedAt: row.shipped_at || undefined,
+    cancelledAt: row.cancelled_at || undefined,
+    cancelReason: row.cancel_reason || undefined,
+    cancelledBy: row.cancelled_by === 'buyer' || row.cancelled_by === 'merchant' ? row.cancelled_by : undefined,
     notes: row.notes || undefined,
     shippingLabelUrl: row.shipping_label_url || undefined,
     shippingMethod: row.shipping_method || undefined,
@@ -359,6 +374,54 @@ class OrderService {
     }
   }
 
+  /** Batalkan pesanan lewat server (status & saldo hanya diubah database). */
+  private async postCancel(payload: Record<string, unknown>, withSession: boolean): Promise<CancelOrderResult> {
+    try {
+      const res = await fetch('/api/orders/cancel', {
+        method: 'POST',
+        headers: withSession
+          ? sessionHeaders({ 'Content-Type': 'application/json' })
+          : { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      return {
+        success: res.ok && data?.success === true,
+        code: typeof data?.code === 'string' ? data.code : res.ok ? undefined : 'failed',
+        message: typeof data?.message === 'string' ? data.message : undefined,
+        wasPaid: Boolean(data?.wasPaid),
+        balanceReversed: Boolean(data?.balanceReversed),
+      };
+    } catch {
+      return { success: false, code: 'network' };
+    }
+  }
+
+  /** Penjual membatalkan pesanan (perlu sesi login dengan hak kelola toko). */
+  async cancelOrderAsMerchant(orderId: string, reason: string, storeId?: string): Promise<CancelOrderResult> {
+    const result = await this.postCancel({ orderId, reason }, true);
+    if (result.success) {
+      const orders = this.getStoredOrders(storeId);
+      const index = orders.findIndex((o) => o.id === orderId);
+      if (index !== -1) {
+        orders[index] = {
+          ...orders[index],
+          shippingStatus: 'Dibatalkan',
+          cancelledAt: new Date().toISOString(),
+          cancelReason: reason.trim() || undefined,
+          cancelledBy: 'merchant',
+        };
+        this.saveOrders(storeId || orders[index].storeId, orders);
+      }
+    }
+    return result;
+  }
+
+  /** Pembeli tanpa login membatalkan pesanan: dibuktikan dengan nomor pesanan + nomor HP. */
+  async cancelOrderAsBuyer(storeId: string, orderNumber: string, phone: string, reason: string): Promise<CancelOrderResult> {
+    return this.postCancel({ storeId, orderNumber, phone, reason }, false);
+  }
+
   async updatePaymentStatus(orderId: string, paymentStatus: PaymentStatus, storeId?: string): Promise<Order> {
     const orders = this.getStoredOrders(storeId);
     const index = orders.findIndex((o) => o.id === orderId);
@@ -457,6 +520,9 @@ class OrderService {
       paidAt: row.paid_at || undefined,
       orderStatus: (row.order_status || 'pending') as TrackedOrder['orderStatus'],
       shippedAt: row.shipped_at || undefined,
+      cancelledAt: row.cancelled_at || undefined,
+      cancelReason: row.cancel_reason || undefined,
+      cancelledBy: row.cancelled_by === 'buyer' || row.cancelled_by === 'merchant' ? row.cancelled_by : undefined,
       courier: String(row.shipping_courier || row.courier_code || ''),
       courierService: row.courier_service || undefined,
       trackingNumber: row.tracking_number || undefined,

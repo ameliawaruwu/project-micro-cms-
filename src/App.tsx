@@ -1329,6 +1329,54 @@ export default function App() {
     }
   };
 
+  // Pembatalan oleh penjual: diputuskan server (POST /api/orders/cancel), bukan update langsung.
+  const handleCancelOrder = async (orderId: string, reason: string): Promise<boolean> => {
+    const target = orders.find((o) => o.id === orderId) || selectedOrderDetail;
+    const result = await orderService.cancelOrderAsMerchant(orderId, reason, currentStore?.id);
+    if (!result.success) {
+      const messages: Record<string, [string, string]> = {
+        shipped: ['Pesanan sudah dikirim, tidak bisa dibatalkan.', 'The order has already been shipped and cannot be cancelled.'],
+        insufficient_balance: [
+          'Dana pesanan ini sudah ditarik dari saldo toko. Hubungi admin LapakQ untuk membatalkannya.',
+          'The funds for this order were already withdrawn from your store balance. Contact LapakQ admin to cancel it.',
+        ],
+        already_cancelled: ['Pesanan ini sudah dibatalkan.', 'This order has already been cancelled.'],
+        rate_limited: ['Terlalu banyak percobaan. Coba lagi beberapa menit lagi.', 'Too many attempts. Please try again in a few minutes.'],
+        forbidden: ['Anda tidak berhak mengelola pesanan ini.', 'You are not allowed to manage this order.'],
+        network: ['Tidak dapat terhubung ke server. Periksa koneksi Anda.', 'Could not reach the server. Check your connection.'],
+      };
+      const pair = result.code ? messages[result.code] : undefined;
+      addToast(pair ? (isEn ? pair[1] : pair[0]) : (isEn ? 'Failed to cancel the order.' : 'Gagal membatalkan pesanan.'), 'error');
+      if (result.code === 'already_cancelled' && target) {
+        replaceOrder({ ...target, shippingStatus: 'Dibatalkan' });
+      }
+      return false;
+    }
+
+    if (target) {
+      replaceOrder({
+        ...target,
+        shippingStatus: 'Dibatalkan',
+        cancelledAt: new Date().toISOString(),
+        cancelReason: reason || undefined,
+        cancelledBy: 'merchant',
+      });
+    }
+    const number = target?.orderNumber ? `#${target.orderNumber} ` : '';
+    addToast(isEn ? `Order ${number}has been cancelled.` : `Pesanan ${number}telah dibatalkan.`);
+    if (result.wasPaid) {
+      addToast(
+        result.balanceReversed
+          ? (isEn
+            ? 'The order amount was deducted from your store balance. Please refund the buyer manually.'
+            : 'Nominal pesanan dikurangi dari saldo toko. Silakan kembalikan dana ke pembeli secara manual.')
+          : (isEn ? 'This order was paid. Please refund the buyer manually.' : 'Pesanan ini sudah dibayar. Silakan kembalikan dana ke pembeli secara manual.'),
+        'info'
+      );
+    }
+    return true;
+  };
+
   // Handlers for Store Settings & Wallet
   const handleUpdateStore = async (updated: Store) => {
     await storeService.updateStore(updated.id, updated, user?.id);
@@ -2351,6 +2399,7 @@ export default function App() {
         onMarkCompleted={handleMarkCompleted}
         onConfirmCodOrder={handleConfirmCodOrder}
         onVerifyPayment={handleVerifyPayment}
+        onCancelOrder={handleCancelOrder}
         onShowNotification={addToast}
       />
 

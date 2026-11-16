@@ -8,6 +8,8 @@ import {
   Clock,
   Loader2,
   ExternalLink,
+  XCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import { isManualTransferMethod } from '../../utils/manualPayment';
 import { getMerchantOrderAction } from '../../utils/orderFlow';
@@ -34,6 +36,8 @@ interface OrderDetailModalProps {
   onVerifyPayment?: (orderId: string) => Promise<void>;
   onConfirmCodOrder?: (orderId: string) => Promise<void>;
   onShowNotification?: (message: string, type?: 'success' | 'error' | 'info') => void;
+  /** Membatalkan pesanan lewat server; resolve true bila berhasil. */
+  onCancelOrder?: (orderId: string, reason: string) => Promise<boolean>;
 }
 
 export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
@@ -47,6 +51,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   onVerifyPayment,
   onConfirmCodOrder,
   onShowNotification,
+  onCancelOrder,
 }) => {
   const { t, language } = useLanguage();
   const isEn = language === 'en';
@@ -62,6 +67,35 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const isShipped = order?.shippingStatus === 'Dikirim' || order?.shippingStatus === 'Selesai';
   const isCompleted = order?.shippingStatus === 'Selesai';
   const nextAction = order ? getMerchantOrderAction(order) : 'none';
+  const isCancelled = order?.shippingStatus === 'Dibatalkan';
+  // Penjual boleh membatalkan selama pesanan belum dikirim (server memeriksa ulang).
+  const canCancel =
+    !!onCancelOrder &&
+    (order?.shippingStatus === 'Baru' || order?.shippingStatus === 'Diproses') &&
+    !order?.resiNumber &&
+    !order?.shippingOrderId;
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  useEffect(() => {
+    setIsCancelOpen(false);
+    setCancelReason('');
+  }, [order?.id]);
+
+  const handleCancelOrder = async () => {
+    if (!order || !onCancelOrder) return;
+    setIsCancelling(true);
+    try {
+      const ok = await onCancelOrder(order.id, cancelReason.trim());
+      if (ok) {
+        setIsCancelOpen(false);
+        setCancelReason('');
+      }
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   const handleConfirmCod = async () => {
     if (!order || !onConfirmCodOrder) return;
@@ -195,6 +229,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]'
                     : order.shippingStatus === 'Dikirim'
                     ? 'bg-[#EFF8FF] text-[#175CD3] border-[#B2DDFF]'
+                    : isCancelled
+                    ? 'bg-[#FEF3F2] text-[#B42318] border-[#FECDCA]'
                     : 'bg-[#FAF7F7] text-[#706866] border-[#E5E0DD]'
                 }`}>
                   {shippingStatusLabel(order.shippingStatus)}
@@ -217,8 +253,92 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
         {/* Scrollable Modal Body */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5 text-xs custom-scrollbar">
+          {/* PESANAN DIBATALKAN */}
+          {isCancelled && (
+            <div className="p-4 rounded-xl border bg-[#FEF3F2] border-[#FECDCA] flex items-start gap-2.5">
+              <XCircle className="w-5 h-5 shrink-0 text-[#B42318]" />
+              <div className="space-y-0.5">
+                <p className="text-sm font-bold text-[#241A1A]">
+                  {order.cancelledBy === 'buyer'
+                    ? (isEn ? 'Cancelled by the buyer' : 'Dibatalkan oleh pembeli')
+                    : order.cancelledBy === 'merchant'
+                    ? (isEn ? 'Cancelled by your store' : 'Dibatalkan oleh toko Anda')
+                    : (isEn ? 'Order cancelled' : 'Pesanan dibatalkan')}
+                </p>
+                <p className="text-xs text-[#706866] leading-relaxed">
+                  {order.cancelledAt && (
+                    <>
+                      {isEn ? formatDateTimeEn(order.cancelledAt) : formatDateIndo(order.cancelledAt)}
+                      {'. '}
+                    </>
+                  )}
+                  {order.cancelReason
+                    ? `${isEn ? 'Reason' : 'Alasan'}: ${order.cancelReason}`
+                    : (isEn ? 'No reason given.' : 'Tanpa alasan.')}
+                </p>
+                {isPaid && (
+                  <p className="text-xs text-[#B42318] font-medium leading-relaxed">
+                    {isEn
+                      ? `This order was paid. Refund ${formatRupiah(order.grandTotal)} to the buyer manually.`
+                      : `Pesanan ini sudah dibayar. Kembalikan dana ${formatRupiah(order.grandTotal)} ke pembeli secara manual.`}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* KONFIRMASI PEMBATALAN OLEH PENJUAL */}
+          {canCancel && isCancelOpen && (
+            <div className="p-4 rounded-xl border bg-white border-[#FECDCA] space-y-3">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="w-5 h-5 shrink-0 text-[#B42318]" />
+                <div className="space-y-0.5">
+                  <p className="text-sm font-bold text-[#241A1A]">
+                    {isEn ? 'Cancel this order?' : 'Batalkan pesanan ini?'}
+                  </p>
+                  <p className="text-xs text-[#706866] leading-relaxed">
+                    {isPaid
+                      ? (isEn
+                        ? `The buyer has paid ${formatRupiah(order.grandTotal)}. You must refund it manually, and any amount credited to your store balance will be deducted.`
+                        : `Pembeli sudah membayar ${formatRupiah(order.grandTotal)}. Anda wajib mengembalikan dananya secara manual, dan saldo toko yang sudah masuk akan dikurangi.`)
+                      : (isEn
+                        ? 'The buyer will be notified by email. This cannot be undone.'
+                        : 'Pembeli akan diberi tahu lewat email. Pembatalan tidak bisa diurungkan.')}
+                  </p>
+                </div>
+              </div>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value.slice(0, 300))}
+                maxLength={300}
+                rows={2}
+                placeholder={isEn ? 'Reason for cancelling (e.g. out of stock)' : 'Alasan pembatalan (mis. stok habis)'}
+                className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs text-[#241A1A] placeholder:text-[#A29A98] focus:outline-none focus:border-[#66000E] resize-none"
+              />
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={isCancelling}
+                  onClick={() => setIsCancelOpen(false)}
+                  className="px-4 py-2.5 min-h-[40px] rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] font-semibold text-xs transition cursor-pointer disabled:opacity-70"
+                >
+                  {isEn ? 'Keep Order' : 'Tidak Jadi'}
+                </button>
+                <button
+                  type="button"
+                  disabled={isCancelling}
+                  onClick={handleCancelOrder}
+                  className="px-4 py-2.5 min-h-[40px] rounded-xl bg-[#B42318] hover:bg-[#912018] text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-70"
+                >
+                  {isCancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                  <span>{isEn ? 'Yes, Cancel Order' : 'Ya, Batalkan Pesanan'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* 0. PENGECEKAN PEMBAYARAN QRIS / TRANSFER LANGSUNG */}
-          {isManualTransferMethod(order.paymentMethod) && !isPaid && (
+          {isManualTransferMethod(order.paymentMethod) && !isPaid && !isCancelled && (
             <div
               className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-3 ${
                 order.paymentConfirmedAt ? 'bg-amber-50 border-amber-300' : 'bg-[#FAF7F7] border-[#E5E0DD]'
@@ -372,6 +492,16 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               <Printer className="w-4 h-4" />
               <span>{t('receipt_modal_title', 'Cetak Struk')}</span>
             </button>
+            {canCancel && !isCancelOpen && (
+              <button
+                type="button"
+                onClick={() => setIsCancelOpen(true)}
+                className="w-full sm:w-auto justify-center px-3.5 py-2.5 min-h-[40px] rounded-xl border border-[#FECDCA] text-[#B42318] hover:bg-[#FEF3F2] font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <XCircle className="w-4 h-4" />
+                <span>{isEn ? 'Cancel Order' : 'Batalkan Pesanan'}</span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center w-full sm:w-auto">
