@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Inbox,
   LayoutDashboard,
   Package,
   ShoppingBag,
@@ -72,6 +73,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         ]
       : []),
     {
+      id: 'pesan' as MerchantTab,
+      label: t('nav_messages', 'Pesan Masuk'),
+      desc: t('bottomnav_messages_desc', 'Pesan dari halaman Hubungi Kami'),
+      icon: Inbox,
+    },
+    {
       id: 'tiket' as MerchantTab,
       label: t('nav_tickets', 'Tiket Bantuan'),
       desc: t('bottomnav_tickets_desc', 'Ajukan & pantau tiket'),
@@ -85,7 +92,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     },
   ];
 
-  const isSecondaryActive = ['layout', 'pembayaran', 'komunitas', 'tiket', 'pengaturan'].includes(activeTab);
+  const isSecondaryActive = ['layout', 'pembayaran', 'komunitas', 'pesan', 'tiket', 'pengaturan'].includes(activeTab);
 
   const handleSelectTab = (tab: MerchantTab) => {
     onTabChange(tab);

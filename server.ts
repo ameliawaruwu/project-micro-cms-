@@ -16,6 +16,7 @@ import { publicApiRouter } from './backend/publicApiController';
 import { partnerApiRouter } from './backend/partnerApiController';
 import { communityMembershipRouter } from './backend/communityMembershipController';
 import { orderRouter, resolveBillableAmount, startOrderExpiryJob } from './backend/orderController';
+import { messageRouter } from './backend/messageController';
 import { sendOrderPaidEmail } from './backend/orderEmail';
 
 dotenv.config();
@@ -1016,6 +1017,7 @@ app.post(['/api/payment/callback', '/api/callback', '/api/duitku/callback'], asy
 // 5. Publikasi toko: host toko didaftarkan lewat API Kroombox Panel (backend/panelDomainClient.ts)
 
 app.use('/api', orderRouter);
+app.use('/api', messageRouter);
 
 app.use('/deploy', deployRouter);
 app.use('/api/deploy', deployRouter);

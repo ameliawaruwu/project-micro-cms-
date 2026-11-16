@@ -83,6 +83,10 @@ export const notificationText = (n: AppNotification, isEn: boolean): Text => {
         ? { title: 'Join request rejected', body: `The request from "${str(d.store)}" to ${str(d.community, 'the community')} was rejected${note ? `: ${note}` : '.'}` }
         : { title: 'Permintaan gabung ditolak', body: `Permintaan "${str(d.store)}" ke ${str(d.community, 'komunitas')} ditolak${note ? `: ${note}` : '.'}` };
     }
+    case 'store_message':
+      return isEn
+        ? { title: `New message from ${str(d.sender, 'a visitor')}`, body: 'A visitor sent a message via your Contact page.' }
+        : { title: `Pesan baru dari ${str(d.sender, 'pengunjung')}`, body: 'Pengunjung mengirim pesan lewat halaman Hubungi Kami.' };
     case 'ticket_new':
       return isEn
         ? { title: `New support ticket ${str(d.ticket_number, '')}`.trim(), body: `${str(d.requester, 'A user')}: ${str(d.subject)}` }

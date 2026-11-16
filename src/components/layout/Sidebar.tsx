@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Inbox,
   LayoutDashboard,
   Package,
   ShoppingBag,
@@ -110,6 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     ...(showCommunityMenu
       ? [{ id: 'komunitas' as MerchantTab, label: t('nav_community', 'Komunitas'), icon: Users }]
       : []),
+    { id: 'pesan' as MerchantTab, label: t('nav_messages', 'Pesan Masuk'), icon: Inbox },
     { id: 'tiket' as MerchantTab, label: t('nav_tickets', 'Tiket Bantuan'), icon: SupportAgentIcon },
     { id: 'pengaturan' as MerchantTab, label: t('nav_settings', 'Pengaturan'), icon: Settings },
   ];

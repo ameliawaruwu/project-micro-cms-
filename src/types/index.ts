@@ -583,6 +583,7 @@ export type MerchantTab =
   | 'profil'
   | 'integrasi'
   | 'tiket'
+  | 'pesan'
   | 'komunitas';
 
 export type TimeFilter = 'Hari Ini' | '7 Hari' | '30 Hari' | 'Tahun Ini';

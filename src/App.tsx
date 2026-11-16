@@ -80,6 +80,7 @@ import { SettingsPage } from './pages/merchant/SettingsPage';
 import { LayoutPage } from './pages/merchant/LayoutPage';
 import { DomainPage } from './pages/merchant/DomainPage';
 import { TicketRequesterPanel } from './components/tickets/TicketRequesterPanel';
+import { MessagesPage } from './pages/merchant/MessagesPage';
 import { KomunitasPage } from './pages/merchant/KomunitasPage';
 import { communityMembershipService } from './services/communityMembershipService';
 
@@ -2157,7 +2158,7 @@ export default function App() {
               onNavigateAuth={() => setAuthView('login')}
               onShowToast={addToast}
               onNotificationNavigate={(link, storeId) => {
-                const tabs: MerchantTab[] = ['beranda', 'produk', 'pesanan', 'layout', 'domain', 'pembayaran', 'pengiriman', 'pengaturan', 'profil', 'integrasi', 'tiket', 'komunitas'];
+                const tabs: MerchantTab[] = ['beranda', 'produk', 'pesanan', 'layout', 'domain', 'pembayaran', 'pengiriman', 'pengaturan', 'profil', 'integrasi', 'pesan', 'tiket', 'komunitas'];
                 if (!tabs.includes(link as MerchantTab)) return;
                 if (storeId && storeId !== currentStore.id) handleSelectStore(storeId);
                 setActiveTab(link as MerchantTab);
@@ -2311,6 +2312,15 @@ export default function App() {
               {/* TAB: TIKET BANTUAN */}
               {activeTab === 'komunitas' && showCommunityMenu && (
                 <KomunitasPage
+                  onShowToast={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
+                />
+              )}
+
+              {activeTab === 'pesan' && (
+                <MessagesPage
+                  storeId={currentStore?.id}
+                  storeName={currentStore?.name}
                   onShowToast={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
                 />
