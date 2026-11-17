@@ -35,7 +35,6 @@ import { cartService } from '../../services/cartService';
 import { duitkuService } from '../../services/duitkuService';
 import { getDeviceClass } from '../../utils/responsivePreview';
 import { shippingService, INDONESIAN_CITIES } from '../../services/shippingService';
-import { integrationService } from '../../services/integrationService';
 import { adminService } from '../../services/adminService';
 import {
   paymentChannelService,
@@ -139,7 +138,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [ratesError, setRatesError] = useState('');
 
   // 4. Merchant Active Integrations & Channels state
-  const [activeCouriers, setActiveCouriers] = useState<string[]>([]);
   const [activePaymentChannels, setActivePaymentChannels] = useState<PaymentChannel[]>([]);
   const [isGatewayEnabledOnPlatform, setIsGatewayEnabledOnPlatform] = useState<boolean>(() => {
     return adminService.getPlatformSettings().paymentGatewayEnabled ?? true;
@@ -221,17 +219,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   // Load merchant shipping & payment settings
   const loadMerchantSettings = async () => {
     try {
-      const shippingIntegrations = await integrationService.getShippingIntegrations();
-      const enabled = shippingIntegrations
-        .filter((i) => i.isConnected)
-        .map((i) => (i.provider || '').toLowerCase())
-        .filter(Boolean);
-      setActiveCouriers(enabled);
-    } catch (err) {
-      console.warn('Failed to load merchant shipping integrations:', err);
-    }
-
-    try {
       const channels = paymentChannelService.getChannels();
       setActivePaymentChannels(channels.filter((c) => c.isEnabled));
     } catch (err) {
@@ -285,7 +272,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         storeId: store?.id || '',
         items: sampleItems.map((s) => ({ productId: s.id, quantity: s.quantity || 1 })),
         destinationPostalCode: destCode,
-        couriers: 'jnt,jne,sicepat,anteraja,gosend',
         fallbackWeightGrams: totalWeightGrams,
       });
 
@@ -310,21 +296,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
   };
 
-  // Filter couriers strictly based on merchant active integrations (with resilient fallback)
-  const displayedRates = useMemo(() => {
-    if (availableRates.length === 0) return [];
-    if (activeCouriers.length === 0) return availableRates;
-
-    const filtered = availableRates.filter((rate) => {
-      const code = (rate.courier_code || '').toLowerCase();
-      return activeCouriers.some((active) => {
-        if (!active || active === 'biteship') return false;
-        return code === active || code.startsWith(active) || active.startsWith(code);
-      });
-    });
-
-    return filtered.length > 0 ? filtered : availableRates;
-  }, [availableRates, activeCouriers]);
+  // Kurir yang tampil sudah disaring server sesuai kurir aktif toko (stores.shipping_couriers).
+  const displayedRates = availableRates;
 
   // Keep selectedRate valid whenever displayedRates change
   useEffect(() => {

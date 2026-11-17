@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Truck, MapPin, Warehouse, SlidersHorizontal, Lock, Sparkles } from 'lucide-react';
 import { Integration, Store } from '../../types';
 import { IntegrationCard } from '../../components/integrations/IntegrationCard';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { BranchManagement } from '../../components/shipping/BranchManagement';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
+import { integrationService, STORE_COURIER_PROVIDERS } from '../../services/integrationService';
+
+const isStoreCourier = (i: Integration) =>
+  (STORE_COURIER_PROVIDERS as readonly string[]).includes((i.provider || '').toLowerCase());
 
 interface ShippingListPageProps {
   store?: Store;
@@ -25,14 +29,64 @@ export const ShippingListPage: React.FC<ShippingListPageProps> = ({
   onShowNotification,
   onNavigateDashboard,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [activeSubTab, setActiveSubTab] = useState<'branches' | 'couriers'>('branches');
 
-  const shippingIntegrations = integrations.filter((i) => i.type === 'shipping');
+  // GoSend (kurir instan) tidak didukung alur resi, jadi tidak ditawarkan di sini.
+  const shippingIntegrations = integrations.filter(
+    (i) => i.type === 'shipping' && (i.provider || '').toLowerCase() !== 'gosend'
+  );
   const activeCount = shippingIntegrations.filter((i) => i.isConnected).length;
 
-  const handleToggle = (id: string) => {
+  // Kurir aktif disimpan per toko di database agar checkout pembeli & Atur Pengiriman memakai
+  // daftar yang sama. Saat halaman dibuka, samakan tampilan dengan yang tersimpan.
+  useEffect(() => {
+    if (!store?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const saved = await integrationService.getStoreCouriers(store.id);
+        if (cancelled) return;
+        const couriers = integrations.filter((i) => i.type === 'shipping' && isStoreCourier(i));
+        if (saved === null) {
+          await integrationService.saveStoreCouriers(
+            store.id,
+            couriers.filter((i) => i.isConnected).map((i) => i.provider)
+          );
+          return;
+        }
+        couriers.forEach((i) => {
+          if (i.isConnected !== saved.includes(i.provider.toLowerCase())) onToggleIntegration(i.id);
+        });
+      } catch (err) {
+        console.warn('[ShippingListPage] load store couriers failed:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store?.id]);
+
+  const handleToggle = async (id: string) => {
+    const target = shippingIntegrations.find((i) => i.id === id);
     onToggleIntegration(id);
+    if (!store?.id || !target || !isStoreCourier(target)) return;
+    const next = shippingIntegrations
+      .filter(isStoreCourier)
+      .filter((i) => (i.id === id ? !i.isConnected : i.isConnected))
+      .map((i) => i.provider);
+    try {
+      await integrationService.saveStoreCouriers(store.id, next);
+    } catch (err) {
+      console.warn('[ShippingListPage] save store couriers failed:', err);
+      onToggleIntegration(id);
+      onShowNotification(
+        isEn
+          ? 'Failed to save courier settings. Please try again.'
+          : 'Gagal menyimpan pengaturan kurir. Silakan coba lagi.'
+      );
+    }
   };
 
   return (

@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { pool } from './publicApiController';
 import { requireSession, requireStoreManager } from './sessionAuth';
+import { getStoreCourierCodes } from './orderController';
 
 /**
  * Pemesanan kurir & resi (Biteship) untuk pesanan merchant.
@@ -486,10 +487,11 @@ shipmentRouter.post('/shipping/route-couriers', async (req: Request, res: Respon
     const apiKey = (process.env.BITESHIP_API_KEY || '').trim();
     if (!apiKey) return fail(res, { status: 503, code: 'not_configured', message: 'Layanan kurir belum dikonfigurasi.' });
 
-    // Kode kurir dari daftar layanan (cache); bila belum ada, pakai kurir reguler umum.
-    const codes = courierCache
-      ? Array.from(new Set(courierCache.list.map((c) => c.courier_code)))
-      : ['jne', 'jnt', 'sicepat', 'anteraja', 'pos', 'tiki', 'ninja', 'lion', 'idexpress', 'sap', 'wahana', 'rpx', 'sentralcargo'];
+    // Kurir aktif toko (menu Pengiriman → Kurir & Ekspedisi), sama dengan pilihan pembeli di checkout.
+    const codes = await getStoreCourierCodes(storeId);
+    if (codes.length === 0) {
+      return fail(res, { status: 422, code: 'no_active_couriers', message: 'Toko belum mengaktifkan kurir pengiriman.' });
+    }
 
     const resp = await fetch('https://api.biteship.com/v1/rates/couriers', {
       method: 'POST',

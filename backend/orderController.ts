@@ -105,6 +105,25 @@ async function computeCartWeight(storeId: string, lines: CartLine[]): Promise<nu
   return Math.max(250, Math.round(total));
 }
 
+/** Kurir reguler yang bisa diaktifkan merchant (kode Biteship). */
+export const STORE_COURIER_CODES = ['jnt', 'jne', 'sicepat', 'anteraja'] as const;
+
+/**
+ * Kurir aktif toko dari `stores.shipping_couriers` (menu Pengiriman → Kurir & Ekspedisi).
+ * NULL / kolom belum ada → semua kurir bawaan; array kosong → tidak ada kurir aktif.
+ */
+export async function getStoreCourierCodes(storeId: string): Promise<string[]> {
+  const allowed = new Set<string>(STORE_COURIER_CODES);
+  try {
+    const r = await pool.query('SELECT shipping_couriers FROM stores WHERE id = $1', [storeId]);
+    const raw = r.rows[0]?.shipping_couriers;
+    if (!Array.isArray(raw)) return [...STORE_COURIER_CODES];
+    return Array.from(new Set(raw.map((c: unknown) => String(c).toLowerCase()))).filter((c) => allowed.has(c));
+  } catch {
+    return [...STORE_COURIER_CODES];
+  }
+}
+
 /** Asal pengiriman: cabang utama toko → kode pos toko → kode pos bawaan. */
 async function resolveOrigin(storeId: string): Promise<{ branchId: string | null; postal: string }> {
   try {
@@ -188,7 +207,13 @@ orderRouter.post('/shipping/quote', async (req: Request, res: Response) => {
       const city = clean(req.body?.destinationCity, 100);
       if (!city) return res.status(400).json({ success: false, message: 'Kota tujuan wajib diisi.' });
       const origin = await resolveOrigin(storeId);
-      const rates = zoneCourierRates(city, weight).map((r) => ({
+      const active = new Set(await getStoreCourierCodes(storeId));
+      if (active.size === 0) {
+        return res.status(400).json({ success: false, message: 'Toko belum mengaktifkan kurir pengiriman.' });
+      }
+      const rates = zoneCourierRates(city, weight)
+        .filter((r) => active.has(String(r.courierCode || '').toLowerCase()))
+        .map((r) => ({
         ...r,
         quote: signQuote({
           s: storeId,
@@ -209,10 +234,12 @@ orderRouter.post('/shipping/quote', async (req: Request, res: Response) => {
     if (!POSTAL_RE.test(destPostal)) {
       return res.status(400).json({ success: false, message: 'Kode pos tujuan tidak valid.' });
     }
-    const couriers = String(req.body?.couriers || 'jnt,jne,sicepat')
-      .toLowerCase()
-      .replace(/[^a-z0-9_,]/g, '')
-      .slice(0, 120) || 'jnt,jne,sicepat';
+    // Kurir hanya dari pengaturan toko (bukan dari browser), sama dengan daftar di Atur Pengiriman.
+    const activeCodes = await getStoreCourierCodes(storeId);
+    if (activeCodes.length === 0) {
+      return res.status(400).json({ success: false, message: 'Toko belum mengaktifkan kurir pengiriman.' });
+    }
+    const couriers = activeCodes.join(',');
     const origin = await resolveOrigin(storeId);
     let rates: any[] = await fetchBiteshipRates(origin.postal, destPostal, weight, couriers);
     let source = 'biteship';

@@ -1,5 +1,9 @@
 import { Integration } from '../types';
 import { initialIntegrations } from './mockData';
+import { supabase } from './supabaseClient';
+
+/** Kurir reguler yang bisa diaktifkan merchant; harus sama dengan STORE_COURIER_CODES di backend. */
+export const STORE_COURIER_PROVIDERS = ['jnt', 'jne', 'sicepat', 'anteraja'] as const;
 
 const INTEGRATIONS_KEY = 'microcms_integrations_v1';
 
@@ -57,6 +61,25 @@ class IntegrationService {
   async getShippingIntegrations(): Promise<Integration[]> {
     const all = this.getStoredIntegrations();
     return all.filter((i) => i.type === 'shipping');
+  }
+
+  /**
+   * Kurir aktif toko yang tersimpan di database (`stores.shipping_couriers`), dipakai server untuk
+   * tarif checkout dan daftar kurir Atur Pengiriman. `null` = belum pernah diatur.
+   */
+  async getStoreCouriers(storeId: string): Promise<string[] | null> {
+    const { data, error } = await supabase.from('stores').select('shipping_couriers').eq('id', storeId).maybeSingle();
+    if (error) throw error;
+    const raw = (data as { shipping_couriers?: unknown } | null)?.shipping_couriers;
+    return Array.isArray(raw) ? raw.map((c) => String(c).toLowerCase()) : null;
+  }
+
+  /** Simpan kurir aktif toko (hanya kode yang dikenal). */
+  async saveStoreCouriers(storeId: string, providers: string[]): Promise<void> {
+    const allowed = new Set<string>(STORE_COURIER_PROVIDERS);
+    const codes = Array.from(new Set(providers.map((p) => p.toLowerCase()))).filter((p) => allowed.has(p));
+    const { error } = await supabase.from('stores').update({ shipping_couriers: codes }).eq('id', storeId);
+    if (error) throw error;
   }
 
   async toggleIntegration(id: string): Promise<Integration> {

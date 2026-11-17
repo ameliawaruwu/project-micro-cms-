@@ -56,6 +56,8 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
   const [showThermalPreview, setShowThermalPreview] = useState(false);
   const [isCopiedResi, setIsCopiedResi] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  // Kurir pilihan pembeli yang tidak tersedia di rute/kurir aktif saat ini (untuk peringatan).
+  const [buyerCourierMissing, setBuyerCourierMissing] = useState<string | null>(null);
 
   // Load branches & available couriers
   useEffect(() => {
@@ -109,6 +111,8 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
           );
         });
 
+        const buyerCourierLabel = [order.courier || order.courierCode, order.courierService].filter(Boolean).join(' ');
+        setBuyerCourierMissing(!matchedCourier && couriers.length > 0 && buyerCourierLabel ? buyerCourierLabel : null);
         if (!matchedCourier) {
           matchedCourier = couriers[0];
         }
@@ -172,6 +176,13 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
           )) ||
         (current && routeCouriers.find((c) => c.courier_code === current.courier_code)) ||
         routeCouriers[0];
+      const orderCode = (order.courierCode || order.courier || '').toLowerCase();
+      const buyerCourierLabel = [order.courier || order.courierCode, order.courierService].filter(Boolean).join(' ');
+      setBuyerCourierMissing(
+        orderCode && !routeCouriers.some((c) => c.courier_code.toLowerCase() === orderCode || c.courier_name.toLowerCase().includes(orderCode))
+          ? buyerCourierLabel
+          : null
+      );
       handleCourierSelect(next);
     } finally {
       setIsLoadingCouriers(false);
@@ -334,6 +345,17 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
             <div className="p-3 bg-[#FEF3F2] border border-[#FECDCA] text-[#B42318] rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {!shipmentResult && buyerCourierMissing && (
+            <div className="p-3 bg-[#FFFAEB] border border-[#FEDF89] text-[#B54708] rounded-xl flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                {isEn
+                  ? `The buyer's courier (${buyerCourierMissing}) is not available for this route or is no longer active in your courier settings. Please check the selected courier below before booking.`
+                  : `Kurir pilihan pembeli (${buyerCourierMissing}) tidak tersedia untuk rute ini atau sudah tidak aktif di pengaturan kurir. Periksa kurir yang dipilih di bawah sebelum memesan resi.`}
+              </span>
             </div>
           )}
 
