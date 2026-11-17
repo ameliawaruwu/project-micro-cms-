@@ -28,7 +28,9 @@ const SOLD_OUT_STATUSES = ['out_of_stock', 'Habis'];
 const HIDDEN_STATUSES = [...SOLD_OUT_STATUSES, 'inactive', 'Nonaktif'];
 const sqlList = (vals: string[]) => vals.map((v) => `'${v}'`).join(', ');
 const sqlAvailable = (col: string) => `${col}stock > 0 AND COALESCE(${col}status, '') NOT IN (${sqlList(HIDDEN_STATUSES)})`;
-const sqlSoldOut = (col: string) => `(${col}stock <= 0 OR ${col}status IN (${sqlList(SOLD_OUT_STATUSES)}))`;
+const INACTIVE_STATUSES = ['inactive', 'Nonaktif'];
+const sqlSoldOut = (col: string) =>
+  `(${col}stock <= 0 OR ${col}status IN (${sqlList(SOLD_OUT_STATUSES)})) AND COALESCE(${col}status, '') NOT IN (${sqlList(INACTIVE_STATUSES)})`;
 const pgrstNotIn = (vals: string[]) => `(${vals.map((v) => `"${v}"`).join(',')})`;
 
 /** Nilai yang aman disisipkan ke filter PostgREST `.or()`; selain itu null. */
@@ -355,13 +357,15 @@ function sanitizeProduct(row: any) {
     .replace(/\s*<!--orig_price:\d+(?:\.\d+)?-->/g, '')
     .trim();
 
+  // Status merchant didahulukan: produk Nonaktif tidak boleh terbaca tersedia walau stoknya ada.
+  const rawStatus = String(row.status || '');
   let statusEnum = 'available';
-  if (stockNum <= 0 || row.status === 'out_of_stock') {
+  if (INACTIVE_STATUSES.includes(rawStatus)) {
+    statusEnum = 'inactive';
+  } else if (stockNum <= 0 || SOLD_OUT_STATUSES.includes(rawStatus)) {
     statusEnum = 'out_of_stock';
   } else if (stockNum <= 5) {
     statusEnum = 'low_stock';
-  } else if (row.status === 'inactive') {
-    statusEnum = 'inactive';
   }
 
   return {
@@ -857,6 +861,9 @@ publicApiRouter.get('/communities/:id/products', requireApiKey, enforceRateLimit
         query += ` AND ${sqlSoldOut('p.')}`;
       } else if (status === 'available') {
         query += ` AND ${sqlAvailable('p.')}`;
+      } else if (status !== 'all') {
+        // Default: produk Nonaktif tidak ditampilkan di API publik.
+        query += ` AND COALESCE(p.status, '') NOT IN (${sqlList(INACTIVE_STATUSES)})`;
       }
 
       const countRes = await pool.query(`SELECT COUNT(*)::int as total FROM (${query}) q`, params);
@@ -885,8 +892,9 @@ publicApiRouter.get('/communities/:id/products', requireApiKey, enforceRateLimit
       if (storeId) sQuery = sQuery.eq('store_id', storeId);
       if (category) sQuery = sQuery.ilike('category', category);
       if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,sku.ilike.%${safeSearchTerm(search)}%`);
-      if (status === 'out_of_stock') sQuery = sQuery.or(`stock.lte.0,status.in.${pgrstNotIn(SOLD_OUT_STATUSES)}`);
+      if (status === 'out_of_stock') sQuery = sQuery.or(`stock.lte.0,status.in.${pgrstNotIn(SOLD_OUT_STATUSES)}`).not('status', 'in', pgrstNotIn(INACTIVE_STATUSES));
       else if (status === 'available') sQuery = sQuery.gt('stock', 0).not('status', 'in', pgrstNotIn(HIDDEN_STATUSES));
+      else if (status !== 'all') sQuery = sQuery.or(`status.is.null,status.not.in.${pgrstNotIn(INACTIVE_STATUSES)}`);
 
       const { data, count, error } = await sQuery
         .order('created_at', { ascending: false })
@@ -1160,7 +1168,7 @@ publicApiRouter.get('/stores/:storeId/products', requireApiKey, enforceRateLimit
         if (statusFilter === 'available') {
           q = q.gt('stock', 0).not('status', 'in', pgrstNotIn(HIDDEN_STATUSES));
         } else if (statusFilter === 'out_of_stock') {
-          q = q.or(`stock.lte.0,status.in.${pgrstNotIn(SOLD_OUT_STATUSES)}`);
+          q = q.or(`stock.lte.0,status.in.${pgrstNotIn(SOLD_OUT_STATUSES)}`).not('status', 'in', pgrstNotIn(INACTIVE_STATUSES));
         }
       }
       const { data, count, error } = await q.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
@@ -1257,6 +1265,9 @@ publicApiRouter.get('/products', requireApiKey, enforceRateLimit, async (req: Re
         query += ` AND ${sqlSoldOut('p.')}`;
       } else if (status === 'available') {
         query += ` AND ${sqlAvailable('p.')}`;
+      } else if (status !== 'all') {
+        // Default: produk Nonaktif tidak ditampilkan di API publik.
+        query += ` AND COALESCE(p.status, '') NOT IN (${sqlList(INACTIVE_STATUSES)})`;
       }
       if (minPrice !== null && !isNaN(minPrice)) {
         query += ` AND p.price >= $${pIdx++}`;
@@ -1284,8 +1295,9 @@ publicApiRouter.get('/products', requireApiKey, enforceRateLimit, async (req: Re
       if (storeId) sQuery = sQuery.eq('store_id', storeId);
       if (category) sQuery = sQuery.ilike('category', category);
       if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,sku.ilike.%${safeSearchTerm(search)}%`);
-      if (status === 'out_of_stock') sQuery = sQuery.or(`stock.lte.0,status.in.${pgrstNotIn(SOLD_OUT_STATUSES)}`);
+      if (status === 'out_of_stock') sQuery = sQuery.or(`stock.lte.0,status.in.${pgrstNotIn(SOLD_OUT_STATUSES)}`).not('status', 'in', pgrstNotIn(INACTIVE_STATUSES));
       else if (status === 'available') sQuery = sQuery.gt('stock', 0).not('status', 'in', pgrstNotIn(HIDDEN_STATUSES));
+      else if (status !== 'all') sQuery = sQuery.or(`status.is.null,status.not.in.${pgrstNotIn(INACTIVE_STATUSES)}`);
       if (minPrice !== null && !isNaN(minPrice)) sQuery = sQuery.gte('price', minPrice);
       if (maxPrice !== null && !isNaN(maxPrice)) sQuery = sQuery.lte('price', maxPrice);
 
@@ -1363,6 +1375,11 @@ publicApiRouter.get('/products/:id', requireApiKey, enforceRateLimit, async (req
       if (!storeRow.is_published && !isPrivileged) {
         return sendError(res, 404, 'NOT_FOUND', 'Produk tidak ditemukan (toko belum dipublikasikan).');
       }
+    }
+
+    const isPrivilegedKey = Boolean(req.apiAuth?.communityId || req.apiAuth?.isMaster);
+    if (!isPrivilegedKey && INACTIVE_STATUSES.includes(String(row.status || ''))) {
+      return sendError(res, 404, 'NOT_FOUND', `Produk dengan ID "${id}" tidak ditemukan.`);
     }
 
     const sanitized = sanitizeProduct(row);
