@@ -115,6 +115,27 @@ export const shippingService = {
   },
 
   /**
+   * Layanan kurir untuk rute pesanan ini beserta metode yang didukung (Pick-up/Drop-off),
+   * dicek server ke Rates API Biteship. Mengembalikan [] bila gagal.
+   */
+  async getRouteCouriers(orderId: string, originBranchId?: string): Promise<AvailableCourier[]> {
+    try {
+      const res = await fetch(getApiEndpoint('/api/shipping/route-couriers'), {
+        method: 'POST',
+        headers: sessionHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ orderId, originBranchId: originBranchId || undefined }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.success && Array.isArray(data.couriers)) {
+        return data.couriers as AvailableCourier[];
+      }
+    } catch (err) {
+      console.warn('[shippingService] getRouteCouriers failed:', err);
+    }
+    return [];
+  },
+
+  /**
    * Panggil Supabase Edge Function 'check-shipping-rates' atau direct Biteship API
    */
   async checkBiteshipRates(params: {
@@ -250,6 +271,7 @@ export const shippingService = {
             tracking_number: String(data.trackingNumber),
             shipping_label_url: data.trackingUrl ? String(data.trackingUrl) : '',
             status: String(data.status || 'confirmed'),
+            pickup_scheduled: data.pickupScheduled !== false,
           },
         };
       }

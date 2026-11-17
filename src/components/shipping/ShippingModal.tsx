@@ -75,8 +75,10 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
 
         setSelectedBranch(matchBranch || null);
 
-        // 2. Load available couriers from Biteship API
-        const couriers = await shippingService.getAvailableCouriers();
+        // 2. Layanan kurir untuk rute pesanan ini (metode Pick-up/Drop-off per rute dari
+        //    Biteship); bila gagal, pakai daftar layanan umum.
+        const routeCouriers = await shippingService.getRouteCouriers(order.id, matchBranch?.id);
+        const couriers = routeCouriers.length > 0 ? routeCouriers : await shippingService.getAvailableCouriers();
         setAvailableCouriers(couriers);
 
         if (couriers.length === 0) {
@@ -151,6 +153,28 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
     } else if (deliveryType === 'pickup' && !c.available_for_pickup) {
       setDeliveryType('drop_off');
       onShowNotification(isEn ? `${c.courier_name} only supports Drop-off (drop at counter).` : `${c.courier_name} hanya mendukung metode Drop-off (Antar ke Counter).`);
+    }
+  };
+
+  // Ganti cabang = ganti kota asal, jadi metode yang didukung kurir bisa berbeda.
+  const handleBranchSelect = async (branch: ShippingBranch) => {
+    setSelectedBranch(branch);
+    setIsLoadingCouriers(true);
+    try {
+      const routeCouriers = await shippingService.getRouteCouriers(order.id, branch.id);
+      if (routeCouriers.length === 0) return;
+      setAvailableCouriers(routeCouriers);
+      const current = selectedCourier;
+      const next =
+        (current &&
+          routeCouriers.find(
+            (c) => c.courier_code === current.courier_code && c.courier_service_code === current.courier_service_code
+          )) ||
+        (current && routeCouriers.find((c) => c.courier_code === current.courier_code)) ||
+        routeCouriers[0];
+      handleCourierSelect(next);
+    } finally {
+      setIsLoadingCouriers(false);
     }
   };
 
@@ -243,7 +267,11 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
             }
       );
       onShowNotification(
-        isEn
+        deliveryType === 'pickup' && result.pickup_scheduled === false
+          ? isEn
+            ? `Tracking number ${result.tracking_number} issued. This courier does not accept scheduled pick-ups, so it will collect the package as soon as possible during operating hours.`
+            : `Resi ${result.tracking_number} berhasil diterbitkan. Kurir ini tidak menerima jadwal jemput, jadi paket akan dijemput secepatnya di jam operasional.`
+          : isEn
           ? `Tracking number ${result.tracking_number} issued successfully!`
           : `Resi pengiriman ${result.tracking_number} berhasil diterbitkan!`
       );
@@ -330,7 +358,7 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
               order={order}
               branches={branches}
               selectedBranch={selectedBranch}
-              setSelectedBranch={setSelectedBranch}
+              setSelectedBranch={(b) => void handleBranchSelect(b)}
               availableCouriers={availableCouriers}
               selectedCourier={selectedCourier}
               handleCourierSelect={handleCourierSelect}

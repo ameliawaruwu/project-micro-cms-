@@ -476,6 +476,8 @@ export interface CreateShipmentResult {
   shipping_label_url: string;
   status: string;
   message?: string;
+  /** false bila jadwal jemput ditolak kurir dan resi dipesan untuk dijemput secepatnya. */
+  pickup_scheduled?: boolean;
 }
 
 export interface OrderItem {
