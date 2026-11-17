@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Inbox, Mail, MailOpen, RefreshCw, Reply, Trash2 } from 'lucide-react';
+import { Inbox, Mail, MailOpen, RefreshCw, Trash2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Breadcrumb } from '../../components/common/Breadcrumb';
 import { storeMessageService, type StoreMessage } from '../../services/storeMessageService';
@@ -16,7 +16,7 @@ interface MessagesPageProps {
 type Filter = 'all' | 'unread';
 
 /** Kotak masuk pesan dari formulir "Hubungi Kami" di storefront. */
-export const MessagesPage: React.FC<MessagesPageProps> = ({ storeId, storeName, onShowToast, onNavigateDashboard, onUnreadChange }) => {
+export const MessagesPage: React.FC<MessagesPageProps> = ({ storeId, onShowToast, onNavigateDashboard, onUnreadChange }) => {
   const { t, isEn } = useLanguage();
   const [messages, setMessages] = useState<StoreMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,12 +98,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ storeId, storeName, 
       setBusyId(null);
       setConfirmDeleteId(null);
     }
-  };
-
-  const replyHref = (msg: StoreMessage) => {
-    const subject = isEn ? `Re: Your message to ${storeName || 'our store'}` : `Re: Pesan Anda untuk ${storeName || 'toko kami'}`;
-    const quoted = msg.message.split('\n').map((l) => `> ${l}`).join('\n');
-    return `mailto:${encodeURIComponent(msg.senderEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`\n\n${quoted}`)}`;
   };
 
   const pageTitle = t('nav_messages', 'Pesan Masuk');
@@ -209,13 +203,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ storeId, storeName, 
                   <div className="px-4 pb-4 pl-11 space-y-3">
                     <p className="text-sm text-[#241A1A] whitespace-pre-wrap break-words">{msg.message}</p>
                     <div className="flex flex-wrap items-center gap-2">
-                      <a
-                        href={replyHref(msg)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#66000E] hover:bg-[#4d000a] transition"
-                      >
-                        <Reply className="w-3.5 h-3.5" />
-                        {isEn ? 'Reply by email' : 'Balas via email'}
-                      </a>
                       <button
                         type="button"
                         onClick={() => void setRead(msg, false)}
