@@ -93,7 +93,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       !store ||
       !store.id ||
       !store.name ||
-      !store.onboarding?.storeNameSet ||
       store.name === 'Belum Memiliki Toko' ||
       store.name === 'Toko Baru UMKM' ||
       store.name.trim() === '';
@@ -568,6 +567,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         longitude: formData.longitude,
         logoUrl: formData.logoUrl.trim(),
         bannerUrl: formData.bannerUrl.trim(),
+        onboarding: {
+          storeNameSet: true,
+          productUploaded: Boolean(store.onboarding?.productUploaded),
+          paymentConnected: Boolean(store.onboarding?.paymentConnected),
+        },
       };
       onUpdateStore(updated);
       onShowNotification(t('settings_saved_notif', 'Pengaturan toko berhasil disimpan!'));
