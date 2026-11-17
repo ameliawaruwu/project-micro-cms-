@@ -37,7 +37,7 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E5E0DD] p-4 sm:p-5 lg:p-6 shadow-2xs font-sans text-left">
+    <div className="h-full bg-white rounded-2xl border border-[#E5E0DD] p-4 sm:p-5 lg:p-6 shadow-2xs font-sans text-left">
       <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-[#E5E0DD]">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-[#FAF7F7] text-[#66000E] border border-[#E6DDDA] flex items-center justify-center shrink-0">
