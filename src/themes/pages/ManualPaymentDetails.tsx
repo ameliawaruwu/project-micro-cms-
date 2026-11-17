@@ -1,20 +1,50 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { QrCode } from 'lucide-react';
 import type { StorePaymentConfig } from '../../types';
 import { DEFAULT_MANUAL_INSTRUCTIONS, resolveManualInstructions } from '../../utils/manualPayment';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { storeService } from '../../services/storeService';
 
 interface ManualPaymentDetailsProps {
   paymentConfig: StorePaymentConfig;
   total: number;
+  /** Bila diisi, QRIS & rekening diambil ulang dari database agar perubahan merchant langsung terlihat. */
+  storeId?: string;
 }
 
 /**
  * QRIS & rekening toko untuk pesanan "QRIS & Transfer" langsung ke penjual.
  * Dipakai di halaman checkout selesai dan halaman Lacak Pesanan.
  */
-export const ManualPaymentDetails: React.FC<ManualPaymentDetailsProps> = ({ paymentConfig, total }) => {
+export const ManualPaymentDetails: React.FC<ManualPaymentDetailsProps> = ({ paymentConfig: initialConfig, total, storeId }) => {
   const { isEn } = useLanguage();
+  // Data toko di storefront dimuat sekali saat halaman dibuka. Ambil ulang QRIS & rekening
+  // saat kotak ini tampil dan saat tab kembali aktif, supaya pembeli tidak membayar ke QRIS lama.
+  const [freshConfig, setFreshConfig] = useState<StorePaymentConfig | null>(null);
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    const refresh = () => {
+      storeService
+        .getStoreBySlug(storeId)
+        .then((fresh) => {
+          if (!cancelled && fresh?.id === storeId && fresh.paymentConfig) setFreshConfig(fresh.paymentConfig);
+        })
+        .catch(() => {
+          // Gagal memuat ulang: tetap tampilkan data yang sudah ada.
+        });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    refresh();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [storeId]);
+  const paymentConfig = freshConfig || initialConfig;
   const [copiedField, setCopiedField] = useState<'account' | 'amount' | null>(null);
   const instructions = resolveManualInstructions(paymentConfig.manualInstructions);
   // Petunjuk bawaan (bukan tulisan merchant) ikut bahasa aktif.

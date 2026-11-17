@@ -888,7 +888,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             )}
 
             {/* Instruction Box for Manual Transfer / QRIS */}
-            {isManualTransfer && <ManualPaymentDetails paymentConfig={paymentConfig} total={total} />}
+            {isManualTransfer && <ManualPaymentDetails paymentConfig={paymentConfig} total={total} storeId={store?.id} />}
 
             {/* General Manifest Details */}
             <div className="p-5 bg-[var(--sf-subtle)] rounded-[var(--sf-radius)] text-left text-xs text-[var(--sf-text-soft)] space-y-2.5 border border-[var(--sf-border)]">

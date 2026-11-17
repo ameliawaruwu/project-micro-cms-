@@ -405,7 +405,7 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({
               : `Selesaikan pembayaran sebelum ${formatDateIndo(deadline.toISOString())}. Pesanan yang tidak dibayar dalam ${PAYMENT_WINDOW_HOURS} jam dibatalkan otomatis.`}
           </p>
         )}
-        {paymentConfig && <ManualPaymentDetails paymentConfig={paymentConfig} total={order.totalAmount} />}
+        {paymentConfig && <ManualPaymentDetails paymentConfig={paymentConfig} total={order.totalAmount} storeId={store?.id} />}
         {localOrderId ? (
           <PaymentProofUpload
             orderId={localOrderId}
