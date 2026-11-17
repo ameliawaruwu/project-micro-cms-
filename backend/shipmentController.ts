@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { pool } from './publicApiController';
-import { requireStoreManager } from './sessionAuth';
+import { requireSession, requireStoreManager } from './sessionAuth';
 
 /**
  * Pemesanan kurir & resi (Biteship) untuk pesanan merchant.
@@ -302,5 +302,88 @@ shipmentRouter.post('/shipping/create-shipment', async (req: Request, res: Respo
   } catch (err: any) {
     console.error('[create-shipment]', err?.message);
     return fail(res, { status: 500, code: 'failed', message: 'Gagal memesan kurir. Silakan coba lagi.' });
+  }
+});
+
+/**
+ * `GET /api/shipping/couriers` — daftar layanan kurir Biteship beserta metode serah terima
+ * yang benar-benar didukung (`available_collection_method`), agar merchant tidak memilih
+ * drop-off untuk layanan yang hanya bisa dijemput. Wajib sesi login; disimpan 1 jam.
+ */
+type CourierOption = {
+  courier_name: string;
+  courier_code: string;
+  courier_service_name: string;
+  courier_service_code: string;
+  available_for_drop_off: boolean;
+  available_for_pickup: boolean;
+  tier?: string;
+  description?: string;
+};
+
+const COURIER_TTL_MS = 60 * 60 * 1000;
+// Layanan instan/same-day butuh koordinat titik jemput & antar, tidak didukung alur resi ini.
+const UNSUPPORTED_TIERS = new Set(['instant', 'same_day']);
+let courierCache: { at: number; list: CourierOption[] } | null = null;
+
+shipmentRouter.get('/shipping/couriers', async (req: Request, res: Response) => {
+  const user = await requireSession(req, res);
+  if (!user) return;
+
+  if (courierCache && Date.now() - courierCache.at < COURIER_TTL_MS) {
+    return res.json({ success: true, couriers: courierCache.list });
+  }
+
+  const apiKey = (process.env.BITESHIP_API_KEY || '').trim();
+  if (!apiKey) {
+    return fail(res, { status: 503, code: 'not_configured', message: 'Layanan kurir belum dikonfigurasi.' });
+  }
+
+  try {
+    const resp = await fetch('https://api.biteship.com/v1/couriers', {
+      headers: { Authorization: apiKey.startsWith('Bearer ') ? apiKey : `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(15000),
+    });
+    const data: any = await resp.json().catch(() => ({}));
+    if (!resp.ok || !Array.isArray(data?.couriers)) {
+      console.error('[shipping/couriers] Biteship error:', resp.status, data?.error || data?.code);
+      return fail(res, { status: 502, code: 'provider_error', message: 'Daftar kurir tidak dapat dimuat.' });
+    }
+
+    const seen = new Set<string>();
+    const list: CourierOption[] = [];
+    for (const c of data.couriers) {
+      const code = String(c?.courier_code || '').trim().toLowerCase();
+      const service = String(c?.courier_service_code || '').trim().toLowerCase();
+      const tier = String(c?.tier || '').trim().toLowerCase();
+      if (!CODE_RE.test(code) || !CODE_RE.test(service) || UNSUPPORTED_TIERS.has(tier)) continue;
+      const key = `${code}:${service}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const methods: string[] = Array.isArray(c?.available_collection_method)
+        ? c.available_collection_method.map((m: unknown) => String(m).toLowerCase().replace(/[^a-z]/g, ''))
+        : ['pickup']; // tanpa info: anggap hanya jemput, jangan tawarkan drop-off.
+      const pickup = methods.includes('pickup');
+      const dropOff = methods.includes('dropoff');
+      if (!pickup && !dropOff) continue;
+
+      list.push({
+        courier_name: clean(c.courier_name, 60) || code.toUpperCase(),
+        courier_code: code,
+        courier_service_name: clean(c.courier_service_name, 80) || service.toUpperCase(),
+        courier_service_code: service,
+        available_for_drop_off: dropOff,
+        available_for_pickup: pickup,
+        tier: tier || undefined,
+        description: clean(c.description, 200) || undefined,
+      });
+    }
+
+    courierCache = { at: Date.now(), list };
+    return res.json({ success: true, couriers: list });
+  } catch (err: any) {
+    console.error('[shipping/couriers] fetch failed:', err?.message);
+    return fail(res, { status: 502, code: 'provider_error', message: 'Daftar kurir tidak dapat dimuat.' });
   }
 });

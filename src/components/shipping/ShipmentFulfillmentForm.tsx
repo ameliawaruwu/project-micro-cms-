@@ -105,15 +105,15 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
 
         {/* Courier Select Dropdown */}
         <select
-          value={selectedCourier?.courier_code || ''}
+          value={selectedCourier ? `${selectedCourier.courier_code}:${selectedCourier.courier_service_code}` : ''}
           onChange={(e) => {
-            const c = availableCouriers.find((item) => item.courier_code === e.target.value);
+            const c = availableCouriers.find((item) => `${item.courier_code}:${item.courier_service_code}` === e.target.value);
             if (c) handleCourierSelect(c);
           }}
           className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
         >
           {availableCouriers.map((c) => (
-            <option key={`${c.courier_code}-${c.courier_service_code}`} value={c.courier_code}>
+            <option key={`${c.courier_code}-${c.courier_service_code}`} value={`${c.courier_code}:${c.courier_service_code}`}>
               {c.courier_name} - {c.courier_service_name} ({c.available_for_drop_off && c.available_for_pickup ? 'Drop-off & Pick-up' : c.available_for_drop_off ? (isEn ? 'Drop-off only' : 'Hanya Drop-off') : (isEn ? 'Pick-up only' : 'Hanya Pick-up')})
             </option>
           ))}
@@ -121,7 +121,10 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
 
         {/* Quick Selection Pills */}
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          {availableCouriers.slice(0, 5).map((c) => {
+          {availableCouriers
+            .filter((c, i, all) => all.findIndex((x) => x.courier_code === c.courier_code) === i)
+            .slice(0, 5)
+            .map((c) => {
             const isSelected = selectedCourier?.courier_code === c.courier_code;
             return (
               <button

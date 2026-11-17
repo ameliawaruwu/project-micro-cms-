@@ -79,9 +79,25 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
         const couriers = await shippingService.getAvailableCouriers();
         setAvailableCouriers(couriers);
 
-        // Match courier from order or default to first
+        if (couriers.length === 0) {
+          setErrorMsg(
+            isEn
+              ? 'Courier list could not be loaded. Please try again in a moment.'
+              : 'Daftar kurir tidak dapat dimuat. Silakan coba lagi sebentar lagi.'
+          );
+        }
+
+        // Cocokkan kurir & layanan pesanan; bila tidak ada, ambil layanan pertama kurirnya.
         const orderCourierCode = (order.courierCode || order.courier || 'jnt').toLowerCase();
-        let matchedCourier = couriers.find((c) => {
+        const orderServiceCode = (order.courierService || '').toLowerCase();
+        let matchedCourier = couriers.find(
+          (c) =>
+            c.courier_code.toLowerCase() === orderCourierCode &&
+            !!orderServiceCode &&
+            (c.courier_service_code.toLowerCase() === orderServiceCode ||
+              c.courier_service_name.toLowerCase() === orderServiceCode)
+        );
+        matchedCourier = matchedCourier || couriers.find((c) => {
           const cCode = c.courier_code.toLowerCase();
           const cName = c.courier_name.toLowerCase();
           return (
@@ -170,7 +186,12 @@ export const ShippingModal: React.FC<ShippingModalProps> = ({
       network: ['Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', 'Cannot connect to the server. Check your internet connection.'],
     };
     const [id, en] = messages[code] || ['Gagal memesan kurir. Silakan coba lagi.', 'Failed to book the courier. Please try again.'];
-    const base = isEn ? en : id;
+    let base = isEn ? en : id;
+    if (code === 'courier_rejected' && deliveryType === 'drop_off' && /drop/i.test(providerMessage || '')) {
+      base = isEn
+        ? 'This courier service does not accept Drop-off from your area. Choose Pick-up (courier collects) or another courier.'
+        : 'Layanan kurir ini tidak menerima Drop-off dari area Anda. Pilih Pick-up (Kurir Jemput) atau kurir lain.';
+    }
     return providerMessage ? `${base} (${isEn ? 'Courier' : 'Kurir'}: ${providerMessage})` : base;
   };
 
