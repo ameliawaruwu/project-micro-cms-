@@ -351,7 +351,13 @@ type CourierOption = {
 
 const COURIER_TTL_MS = 60 * 60 * 1000;
 // Layanan instan/same-day butuh koordinat titik jemput & antar, tidak didukung alur resi ini.
-const UNSUPPORTED_TIERS = new Set(['instant', 'same_day']);
+const UNSUPPORTED_SERVICE_TYPES = new Set(['instant', 'same_day']);
+// Kurir on-demand (motor/mobil/truk) selalu butuh koordinat, walau service_type-nya bukan instan.
+const ON_DEMAND_COURIERS = new Set(['gojek', 'grab', 'deliveree', 'lalamove', 'borzo', 'rara', 'mrspeedy']);
+const unsupportedService = (code: string, item: any) =>
+  ON_DEMAND_COURIERS.has(code) ||
+  UNSUPPORTED_SERVICE_TYPES.has(String(item?.service_type || '').trim().toLowerCase()) ||
+  UNSUPPORTED_SERVICE_TYPES.has(String(item?.tier || '').trim().toLowerCase());
 let courierCache: { at: number; list: CourierOption[] } | null = null;
 
 shipmentRouter.get('/shipping/couriers', async (req: Request, res: Response) => {
@@ -384,7 +390,7 @@ shipmentRouter.get('/shipping/couriers', async (req: Request, res: Response) => 
       const code = String(c?.courier_code || '').trim().toLowerCase();
       const service = String(c?.courier_service_code || '').trim().toLowerCase();
       const tier = String(c?.tier || '').trim().toLowerCase();
-      if (!CODE_RE.test(code) || !CODE_RE.test(service) || UNSUPPORTED_TIERS.has(tier)) continue;
+      if (!CODE_RE.test(code) || !CODE_RE.test(service) || unsupportedService(code, c)) continue;
       const key = `${code}:${service}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -508,7 +514,7 @@ shipmentRouter.post('/shipping/route-couriers', async (req: Request, res: Respon
       const code = String(p?.courier_code || p?.company || '').trim().toLowerCase();
       const service = String(p?.courier_service_code || p?.type || '').trim().toLowerCase();
       const tier = String(p?.tier || '').trim().toLowerCase();
-      if (!CODE_RE.test(code) || !CODE_RE.test(service) || UNSUPPORTED_TIERS.has(tier)) continue;
+      if (!CODE_RE.test(code) || !CODE_RE.test(service) || unsupportedService(code, p)) continue;
       const key = `${code}:${service}`;
       if (seen.has(key)) continue;
       seen.add(key);
