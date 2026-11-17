@@ -524,7 +524,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
-    const autoSlug = generatedSlug || (store.slug && store.slug.trim()) || '';
+    // Slug = alamat toko (<slug>.lapakq.com). Dibuat sekali dari nama saat toko belum punya slug;
+    // mengganti nama toko tidak mengubah alamat agar tautan toko yang sudah terbit tidak putus.
+    const existingSlug = (store?.slug || '').trim();
+    const autoSlug = existingSlug || generatedSlug;
 
     if (isNewStore && onCreateStore) {
       onCreateStore({
