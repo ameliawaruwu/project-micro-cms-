@@ -52,6 +52,7 @@ import { cartService } from './services/cartService';
 import { formatRupiah } from './utils/formatters';
 import { getStoreSections } from './utils/layoutConstants';
 import { isPlatformHost, getStoreSlugFromHost } from './utils/domainRouting';
+import { applyStoreBranding, resetDocumentBranding } from './utils/documentBranding';
 import { getShippingBlockReason, isCodMethod } from './utils/orderFlow';
 
 // Layout & Common Components
@@ -943,6 +944,17 @@ export default function App() {
       loadData();
     }
   }, [isAuthenticated, authStore, user?.id, isAuthLoading]);
+
+  // Judul tab & favicon: storefront memakai nama & logo toko, selain itu LapakQ.
+  useEffect(() => {
+    const isStorefrontView =
+      viewMode === 'storefront' || viewMode === 'storefront-live' || viewMode === 'storefront-phone';
+    if (isStorefrontView && activeStore?.name) {
+      applyStoreBranding(activeStore);
+    } else {
+      resetDocumentBranding();
+    }
+  }, [viewMode, activeStore?.name, activeStore?.logoUrl]);
 
   // Real-time synchronization for orders via Supabase WebSocket
   useEffect(() => {
