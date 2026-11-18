@@ -216,6 +216,13 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
         if (!reported.length) {
           setDeployStages((prev) => prev.map((s) => (s.status === 'running' ? { ...s, status: 'failed' } : s)));
         }
+        if (resData.code === 'DOMAIN_QUOTA_FULL') {
+          throw new Error(
+            isEn
+              ? `The address quota for ${selectedBaseDomain} is full on the hosting panel. Contact the LapakQ admin to raise this domain's quota.`
+              : `Kuota alamat di domain ${selectedBaseDomain} sudah penuh di server panel. Hubungi admin LapakQ agar kuota domain ini ditambah.`
+          );
+        }
         throw new Error(resData.error || resData.message || (isEn ? 'Failed to publish the store' : 'Gagal mempublikasikan toko'));
       }
 

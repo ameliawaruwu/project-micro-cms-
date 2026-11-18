@@ -78,6 +78,12 @@ const NAV_PAGE_RULES: NavPageRule[] = [
     matchesText: (text) => text === 'beranda' || text === 'home',
   },
   {
+    // Sebelum 'katalog' agar label "Produk Promo" membuka halaman promo, bukan katalog.
+    page: 'promo',
+    matchesHref: (href) => hrefHas('/promo', '/diskon', '/sale')(href) || hrefIs('#promo', '#diskon', '#sale')(href),
+    matchesText: textHas('promo', 'diskon', 'discount', 'sale'),
+  },
+  {
     page: 'katalog',
     matchesHref: (href) => hrefHas('/katalog', '/products', '/catalog', '/produk', '/shop')(href) || hrefIs('#katalog', '#produk')(href),
     matchesText: textHas('shop', 'katalog', 'produk', 'collection', 'drop', 'gadget', 'jewelry', 'new arrival', 'explore', 'koleksi', 'etalase'),
@@ -128,7 +134,7 @@ const NAV_PAGE_RULES: NavPageRule[] = [
 /**
  * Halaman toko tujuan sebuah tautan navigasi. Alamat (href) yang diisi merchant selalu
  * diutamakan; teks label hanya dipakai bila alamatnya tidak dikenali. Mengembalikan null
- * bila tidak ada halaman yang cocok (mis. anchor section "#promo").
+ * bila tidak ada halaman yang cocok (mis. anchor section "#testimoni").
  */
 export function resolveNavPage(href: string, text = ''): string | null {
   const cleanHref = (href || '').toLowerCase().trim();

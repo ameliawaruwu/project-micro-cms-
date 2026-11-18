@@ -71,7 +71,7 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
           <div className="flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-16 mb-12 sm:mb-24 text-[#241A1A]">
             <a href={STORE_ROUTES.contact} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">{isEn ? 'Home' : 'Beranda'}</a>
             <a href={STORE_ROUTES.catalog} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">{isEn ? 'Catalog' : 'Katalog'}</a>
-            <a href={STORE_ROUTES.contact} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">Promo</a>
+            <a href={STORE_ROUTES.promo} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">Promo</a>
             <a href={STORE_ROUTES.contact} className="text-xs sm:text-sm italic tracking-widest hover:opacity-50 transition-opacity">{isEn ? 'Contact' : 'Kontak'}</a>
           </div>
 
@@ -107,7 +107,7 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
               <h4 className="text-lg sm:text-xl font-black uppercase mb-4 sm:mb-8 tracking-widest text-[#FF0000]">{isEn ? 'Explore' : 'Jelajahi'}</h4>
               <ul className="space-y-3 sm:space-y-4">
                 <li><a href={STORE_ROUTES.catalog} className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">{isEn ? 'All Products' : 'Semua Produk'}</a></li>
-                <li><a href={STORE_ROUTES.catalog} className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Promo</a></li>
+                <li><a href={STORE_ROUTES.promo} className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">Promo</a></li>
                 <li><a href={STORE_ROUTES.catalog} className="text-base sm:text-xl font-bold uppercase hover:text-[#FF0000] hover:pl-4 transition-all inline-block">{isEn ? 'Contact' : 'Kontak'}</a></li>
               </ul>
             </div>
@@ -151,7 +151,7 @@ export const FooterSection: React.FC<Props> = ({ settings, themeSettings, themeI
               <h4 className="font-semibold mb-6">{isEn ? 'Shop' : 'Belanja'}</h4>
               <ul className="space-y-4 font-light text-white/70">
                 <li><a href={STORE_ROUTES.catalog} className="hover:text-[#D9A05B] transition-colors">{isEn ? 'All Products' : 'Semua Produk'}</a></li>
-                <li><a href={STORE_ROUTES.catalog} className="hover:text-[#D9A05B] transition-colors">Promo</a></li>
+                <li><a href={STORE_ROUTES.promo} className="hover:text-[#D9A05B] transition-colors">Promo</a></li>
                 <li><a href={STORE_ROUTES.catalog} className="hover:text-[#D9A05B] transition-colors">{isEn ? 'Catalog' : 'Katalog'}</a></li>
               </ul>
             </div>

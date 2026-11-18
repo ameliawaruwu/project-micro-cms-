@@ -65,6 +65,7 @@ const hasThemeComponent = (themeId: any, sectionId: string) => !!getThemeSection
 const NAV_PAGE_ICONS: Record<string, LucideIcon> = {
   homepage: House,
   katalog: LayoutGrid,
+  promo: Tag,
   about: Info,
   contact: Phone,
   cart: ShoppingBag,
@@ -470,6 +471,8 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
     if (pageId === 'promo') {
           return (
             <ShopPage 
+              key="promo"
+              promoOnly
               accentColor={primaryAccent}
               themeId={activeThemeId}
               store={store}

@@ -39,6 +39,8 @@ interface ShopPageProps {
   accentColor?: string;
   /** Membuka halaman detail untuk produk yang diklik. */
   onOpenProduct?: (productId: string) => void;
+  /** Halaman Promo: hanya produk yang sedang diskon (harga coret > harga jual). */
+  promoOnly?: boolean;
 }
 
 export const ShopPage: React.FC<ShopPageProps> = ({ 
@@ -51,6 +53,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   deviceMode,
   accentColor,
   onOpenProduct,
+  promoOnly = false,
 }) => {
   const isMobile = deviceMode ? deviceMode === 'mobile' : undefined;
   const isTablet = deviceMode ? deviceMode === 'tablet' : undefined;
@@ -103,7 +106,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   // State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
-  const [sortBy, setSortBy] = useState<'popular' | 'price-asc' | 'price-desc' | 'discount' | 'newest'>('popular');
+  const [sortBy, setSortBy] = useState<'popular' | 'price-asc' | 'price-desc' | 'discount' | 'newest'>(promoOnly ? 'discount' : 'popular');
   const [visibleCount, setVisibleCount] = useState(12);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   /** Nama kategori sistem ('Semua'/'Lainnya') diterjemahkan; kategori merchant apa adanya. */
@@ -120,8 +123,9 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   // 1. Get rich, abundant product catalog (16-24 items per theme)
   const fullCatalog = useMemo(() => {
     // Produk contoh hanya di Editor Layout (deviceMode terisi) saat toko belum punya produk.
-    return getEnrichedCatalog(activeThemeId, products, { useDemoWhenEmpty: deviceMode !== undefined });
-  }, [activeThemeId, products, deviceMode]);
+    const catalog = getEnrichedCatalog(activeThemeId, products, { useDemoWhenEmpty: deviceMode !== undefined });
+    return promoOnly ? catalog.filter((p) => (p.discountPercent || 0) > 0) : catalog;
+  }, [activeThemeId, products, deviceMode, promoOnly]);
 
   // 2. Compute categories with count
   const categoryStats = useMemo(() => {
@@ -209,7 +213,9 @@ export const ShopPage: React.FC<ShopPageProps> = ({
           <div className="max-w-sm space-y-2">
             <h1 className="text-xl font-semibold text-gray-900">{storeName}</h1>
             <p className="text-sm text-gray-500">
-              {isEn ? 'No products are available yet. Please check back soon.' : 'Belum ada produk yang dijual. Silakan kembali lagi nanti.'}
+              {promoOnly
+                ? (isEn ? 'There are no products on promo right now. Please check back soon.' : 'Belum ada produk yang sedang promo. Silakan kembali lagi nanti.')
+                : (isEn ? 'No products are available yet. Please check back soon.' : 'Belum ada produk yang dijual. Silakan kembali lagi nanti.')}
             </p>
           </div>
         </div>
@@ -226,7 +232,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 {storeName}
               </span>
               <h1 className={rc("text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-black text-white uppercase tracking-tighter mb-4 storefront-heading-hero")}>
-                {isEn ? 'PRODUCT CATALOG' : 'KATALOG PRODUK'}
+                {promoOnly ? (isEn ? 'ON PROMO' : 'PRODUK PROMO') : (isEn ? 'PRODUCT CATALOG' : 'KATALOG PRODUK')}
               </h1>
               <div className="flex flex-wrap gap-3 items-center">
                 <span className={rc("text-sm sm:text-lg font-black text-black bg-white inline-block px-4 py-2 border-4 border-black uppercase")}>
@@ -406,7 +412,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
           <div className={rc("max-w-7xl mx-auto px-4 sm:px-6 md:px-8")}>
             <div className="text-center mb-12">
               <span className="text-xs uppercase tracking-[0.3em] text-[#706866] block mb-2 font-sans font-semibold">
-                {isEn ? 'Curated Collection' : 'Koleksi Pilihan'}
+                {promoOnly ? (isEn ? 'On Promo' : 'Produk Promo') : (isEn ? 'Curated Collection' : 'Koleksi Pilihan')}
               </span>
               <h1 className={rc("text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-normal font-serif mb-4 tracking-wide storefront-heading-hero")}>
                 {storeName}
@@ -576,7 +582,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
           <div className={rc("max-w-7xl mx-auto px-4 sm:px-6 md:px-8")}>
             <div className="text-center mb-12">
               <span className="text-[11px] uppercase tracking-[0.35em] text-[#9A6027] block mb-2.5 font-mono font-medium">
-                {isEn ? 'Exquisite Selection' : 'Pilihan Istimewa'}
+                {promoOnly ? (isEn ? 'On Promo' : 'Produk Promo') : (isEn ? 'Exquisite Selection' : 'Pilihan Istimewa')}
               </span>
               <h1 className={rc("text-2xl sm:text-4xl lg:text-5xl font-serif text-[#36281D] font-normal tracking-tight mb-3 storefront-heading-hero")}>
                 {storeName}
@@ -716,7 +722,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             <div className="max-w-7xl mx-auto">
               <div className="inline-flex items-center gap-2 bg-blue-600/30 border border-blue-400/40 text-blue-200 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-300 animate-pulse"></span>
-                {isEn ? 'Product Catalog' : 'Katalog Produk'}
+                {promoOnly ? (isEn ? 'On Promo' : 'Produk Promo') : (isEn ? 'Product Catalog' : 'Katalog Produk')}
               </div>
               <h1 className={rc("text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 storefront-heading-hero")}>
                 {storeName}
@@ -858,7 +864,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
           {/* Header Title */}
           <div className="text-center mb-8">
-            <span className={`${ts.eyebrow} mb-3`}>{isEn ? 'Full Catalogue' : 'Katalog Lengkap'}</span>
+            <span className={`${ts.eyebrow} mb-3`}>{promoOnly ? (isEn ? 'On Promo' : 'Produk Promo') : (isEn ? 'Full Catalogue' : 'Katalog Lengkap')}</span>
             <h1 className={rc(`text-2xl sm:text-3xl md:text-4xl mb-3 storefront-heading-hero ${ts.title}`)}>
               {storeName}
             </h1>

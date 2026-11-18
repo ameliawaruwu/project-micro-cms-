@@ -98,6 +98,11 @@ async function hostInUse(host: string, baseDomain = PUBLIC_BASE_DOMAIN): Promise
 
 const panelError = (result: PanelResult, fallback: string) => result.message || fallback;
 
+// The panel limits how many hosts a site may use under domains it does not own as a zone.
+const QUOTA_RE = /limit|batas|kuota|quota|maksimal|maximum|melebihi|exceed/i;
+const isPanelQuotaError = (result: PanelResult) =>
+  [402, 403, 409, 422, 429].includes(result.status) && QUOTA_RE.test(result.message || '');
+
 // A store's hosts live under lapakq.com or, for a community store, the domain the admin set on
 // its community. The client sends baseDomain, but only these two are accepted for the store.
 async function storeBaseDomainAllowed(store: StoreRow, baseDomain: string): Promise<boolean | null> {
@@ -171,6 +176,16 @@ deployRouter.post('/publish', async (req: Request, res: Response) => {
     const stages: Array<{ name: string; status: 'success' | 'failed' | 'pending'; detail?: string }> = [];
 
     const primary = await panelDomainClient.addHost(primaryHost);
+    if (!primary.ok && isPanelQuotaError(primary)) {
+      // The panel caps hosts under platform domains per site (e.g. a community domain); the app
+      // itself sets no limit, so the merchant is told why and who can raise it.
+      console.warn(`[Deploy] Panel quota reached for ${primaryHost}: ${primary.message}`);
+      return res.status(409).json({
+        code: 'DOMAIN_QUOTA_FULL',
+        error: `Kuota alamat di domain ${baseDomain} sudah penuh di server panel. Hubungi admin LapakQ agar kuota domain ini ditambah.`,
+        stage: 'domain',
+      });
+    }
     if (!primary.ok) {
       return res.status(primary.status >= 400 && primary.status < 500 ? 400 : 502).json({
         error: `Gagal mengaktifkan alamat toko: ${panelError(primary, 'server panel menolak permintaan')}`,
