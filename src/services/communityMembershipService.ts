@@ -94,20 +94,8 @@ export const communityMembershipService = {
   async getMine(): Promise<MyCommunityData> {
     return (await call<{ data: MyCommunityData }>('/my')).data;
   },
-  async requestJoin(storeId: string, communityId: string, message?: string): Promise<void> {
-    await call('/requests', { method: 'POST', body: { storeId, communityId, message: message || undefined } });
-  },
-  async cancelRequest(id: string): Promise<void> {
-    await call(`/requests/${encodeURIComponent(id)}`, { method: 'DELETE' });
-  },
   async getManaged(): Promise<ManageData> {
     return (await call<{ data: ManageData }>('/manage')).data;
-  },
-  async decide(id: string, approve: boolean, note?: string): Promise<void> {
-    await call(`/manage/requests/${encodeURIComponent(id)}/${approve ? 'approve' : 'reject'}`, {
-      method: 'POST',
-      body: { note: note || undefined },
-    });
   },
   /** Sub-Admin Utama: cari toko lewat slug/tautan atau email pemilik (kecocokan persis). */
   async lookupStore(q: string): Promise<StoreLookupResult[]> {
@@ -116,6 +104,10 @@ export const communityMembershipService = {
   /** Sub-Admin Utama: tambahkan toko sebagai toko binaan komunitasnya. */
   async addMember(storeId: string): Promise<string> {
     return (await call<{ message: string }>('/manage/members', { method: 'POST', body: { storeId } })).message;
+  },
+  /** Sub-Admin Utama: keluarkan toko dari komunitasnya (produknya hilang dari API komunitas). */
+  async removeMember(storeId: string): Promise<string> {
+    return (await call<{ message: string }>(`/manage/members/${encodeURIComponent(storeId)}`, { method: 'DELETE' })).message;
   },
 };
 

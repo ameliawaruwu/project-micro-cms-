@@ -1,43 +1,39 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Users, Check, X, Inbox, Loader2, RefreshCw, Search, ChevronRight, Plus, Store as StoreIcon } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Users, Loader2, RefreshCw, Search, Plus, UserMinus, Store as StoreIcon } from 'lucide-react';
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
 import {
   communityMembershipService,
   ManageData,
-  ManagedRequest,
+  ManagedMember,
   StoreLookupResult,
   membershipSourceLabel,
 } from '../../../services/communityMembershipService';
-import { RequestStatusBadge, formatDate } from '../../../components/community/communityUi';
-import { SimpleModal, fieldClass, ghostBtn, labelClass, primaryBtn } from '../../../components/tickets/ticketUi';
+import { formatDate } from '../../../components/community/communityUi';
+import { SimpleModal, fieldClass, ghostBtn, primaryBtn } from '../../../components/tickets/ticketUi';
 
 interface AdminCommunityMembersTabProps {
   language: string;
   onShowToast?: (msg: string) => void;
   onNavigateOverview?: () => void;
-  /** Sub-Admin Utama: boleh menambah toko binaan & memutuskan permintaan gabung. Server tetap memeriksa peran. */
+  /** Sub-Admin Utama: boleh menambah & mengeluarkan toko binaan. Server tetap memeriksa peran. */
   canManage?: boolean;
 }
-
-type View = 'pending' | 'members' | 'history';
 
 export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> = ({ language, onShowToast, onNavigateOverview, canManage = false }) => {
   const isEn = language === 'en';
   const [data, setData] = useState<ManageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [view, setView] = useState<View>('pending');
   const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState<ManagedRequest | null>(null);
-  const [note, setNote] = useState('');
-  const [saving, setSaving] = useState<'approve' | 'reject' | null>(null);
-  const [modalError, setModalError] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [lookupQuery, setLookupQuery] = useState('');
   const [lookupResults, setLookupResults] = useState<StoreLookupResult[] | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<ManagedMember | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,36 +51,11 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
     load();
   }, [load]);
 
-  const pending = useMemo(() => (data?.requests || []).filter((r) => r.status === 'pending'), [data]);
-  const history = useMemo(() => (data?.requests || []).filter((r) => r.status !== 'pending'), [data]);
-
   const q = query.trim().toLowerCase();
-  const matches = (...vals: (string | null | undefined)[]) => !q || vals.some((v) => (v || '').toLowerCase().includes(q));
-  const visiblePending = pending.filter((r) => matches(r.storeName, r.ownerName, r.ownerEmail));
-  const visibleHistory = history.filter((r) => matches(r.storeName, r.ownerName, r.ownerEmail));
-  const visibleMembers = (data?.members || []).filter((m) => matches(m.storeName, m.ownerName, m.ownerEmail));
-
-  const openRequest = (r: ManagedRequest) => {
-    setSelected(r);
-    setNote('');
-    setModalError(null);
-  };
-
-  const decide = async (approve: boolean) => {
-    if (!selected) return;
-    setSaving(approve ? 'approve' : 'reject');
-    setModalError(null);
-    try {
-      await communityMembershipService.decide(selected.id, approve, note.trim());
-      setSelected(null);
-      onShowToast?.(approve ? (isEn ? 'Request approved.' : 'Permintaan disetujui.') : isEn ? 'Request rejected.' : 'Permintaan ditolak.');
-      await load();
-    } catch (err: any) {
-      setModalError(err?.message || (isEn ? 'Failed to process.' : 'Gagal memproses.'));
-    } finally {
-      setSaving(null);
-    }
-  };
+  const members = data?.members || [];
+  const visibleMembers = members.filter(
+    (m) => !q || [m.storeName, m.slug, m.ownerName, m.ownerEmail].some((v) => (v || '').toLowerCase().includes(q))
+  );
 
   const openAdd = () => {
     setAddOpen(true);
@@ -95,12 +66,12 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
 
   const runLookup = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    const q = lookupQuery.trim();
-    if (!q) return;
+    const term = lookupQuery.trim();
+    if (!term) return;
     setLookupLoading(true);
     setAddError(null);
     try {
-      setLookupResults(await communityMembershipService.lookupStore(q));
+      setLookupResults(await communityMembershipService.lookupStore(term));
     } catch (err: any) {
       setLookupResults(null);
       setAddError(err?.message || (isEn ? 'Search failed.' : 'Pencarian gagal.'));
@@ -113,10 +84,9 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
     setAddingId(r.storeId);
     setAddError(null);
     try {
-      const msg = await communityMembershipService.addMember(r.storeId);
+      await communityMembershipService.addMember(r.storeId);
       setAddOpen(false);
-      onShowToast?.(msg || (isEn ? 'Store added.' : 'Toko ditambahkan.'));
-      setView('members');
+      onShowToast?.(isEn ? `${r.storeName} added to the community.` : `${r.storeName} ditambahkan ke komunitas.`);
       await load();
     } catch (err: any) {
       setAddError(err?.message || (isEn ? 'Failed to add store.' : 'Gagal menambahkan toko.'));
@@ -125,11 +95,28 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
     }
   };
 
-  const tabs: { id: View; label: string; count: number }[] = [
-    { id: 'pending', label: isEn ? 'Pending requests' : 'Permintaan masuk', count: pending.length },
-    { id: 'members', label: isEn ? 'Members' : 'Anggota', count: data?.members.length || 0 },
-    { id: 'history', label: isEn ? 'History' : 'Riwayat', count: history.length },
-  ];
+  const openRemove = (m: ManagedMember) => {
+    setRemoveTarget(m);
+    setRemoveError(null);
+  };
+
+  const confirmRemove = async () => {
+    if (!removeTarget) return;
+    setRemoving(true);
+    setRemoveError(null);
+    try {
+      await communityMembershipService.removeMember(removeTarget.storeId);
+      onShowToast?.(
+        isEn ? `${removeTarget.storeName} removed from the community.` : `${removeTarget.storeName} dikeluarkan dari komunitas.`
+      );
+      setRemoveTarget(null);
+      await load();
+    } catch (err: any) {
+      setRemoveError(err?.message || (isEn ? 'Failed to remove store.' : 'Gagal mengeluarkan toko.'));
+    } finally {
+      setRemoving(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -144,14 +131,14 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
           <h1 className="text-lg font-semibold text-[#1F1F1F]">{isEn ? 'Community Members' : 'Anggota Komunitas'}</h1>
           <p className="text-xs text-[#706866] mt-0.5">
             {isEn
-              ? 'Stores in your community and pending join requests. Stores whose owner email matches the portal join automatically.'
-              : 'Toko anggota komunitas Anda dan permintaan gabung yang menunggu. Toko dengan email yang cocok dengan portal masuk otomatis.'}
+              ? 'Stores in your community. Stores are added by the community lead, or automatically when the owner email matches the portal. Only member stores appear on the community portal.'
+              : 'Toko yang tergabung di komunitas Anda. Toko ditambahkan oleh Sub-Admin Utama, atau otomatis bila email pemilik cocok dengan portal. Hanya produk toko anggota yang tampil di portal komunitas.'}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button type="button" onClick={load} className={ghostBtn} aria-label="Refresh">
+          <button type="button" onClick={load} className={ghostBtn} aria-label={isEn ? 'Refresh' : 'Muat ulang'}>
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
+            <span className="hidden sm:inline">{isEn ? 'Refresh' : 'Muat ulang'}</span>
           </button>
           {canManage && (
             <button type="button" onClick={openAdd} className={primaryBtn}>
@@ -163,31 +150,15 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-          {tabs.map((t) => {
-            const active = view === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setView(t.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border whitespace-nowrap transition cursor-pointer ${
-                  active
-                    ? 'bg-[#66000E] border-[#66000E] text-white'
-                    : 'bg-white border-[#E5E0DD] text-[#706866] hover:text-[#66000E] hover:border-[#E8DDDE]'
-                }`}
-              >
-                {t.label}
-                <span className={`ml-1.5 ${active ? 'text-white/80' : 'text-[#A8A09D]'}`}>{t.count}</span>
-              </button>
-            );
-          })}
-        </div>
+        <p className="text-xs text-[#706866]">
+          {isEn ? `${members.length} member stores` : `${members.length} toko anggota`}
+        </p>
         <div className="relative sm:w-64">
           <Search className="w-3.5 h-3.5 text-[#A8A09D] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             className={`${fieldClass} pl-8 py-1.5 text-xs`}
             placeholder={isEn ? 'Search store or owner…' : 'Cari toko atau pemilik…'}
+            aria-label={isEn ? 'Search store or owner' : 'Cari toko atau pemilik'}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -201,131 +172,82 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
           </div>
         ) : loadError ? (
           <div className="py-10 px-4 text-center text-xs text-[#66000E]">{loadError}</div>
-        ) : view === 'members' ? (
-          visibleMembers.length === 0 ? (
-            <Empty icon={<Users className="w-7 h-7" />} text={isEn ? 'No members yet' : 'Belum ada anggota'} />
-          ) : (
-            <ul className="divide-y divide-[#F0ECEA]">
-              {visibleMembers.map((m) => (
-                <li key={m.storeId} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#1F1F1F] truncate">{m.storeName}</p>
-                    <p className="text-[11px] text-[#A8A09D] truncate">
-                      {m.ownerName || '-'}
-                      {m.ownerEmail ? ` · ${m.ownerEmail}` : ''}
-                    </p>
-                  </div>
-                  <p className="text-[11px] text-[#706866] sm:text-right">
-                    {membershipSourceLabel(m.source, isEn)}
-                    {m.joinedAt ? ` · ${formatDate(m.joinedAt)}` : ''}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )
-        ) : view === 'pending' ? (
-          visiblePending.length === 0 ? (
-            <Empty icon={<Inbox className="w-7 h-7" />} text={isEn ? 'No pending requests' : 'Tidak ada permintaan yang menunggu'} />
-          ) : (
-            <ul className="divide-y divide-[#F0ECEA]">
-              {visiblePending.map((r) => (
-                <li key={r.id}>
-                  <button
-                    type="button"
-                    onClick={() => openRequest(r)}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#FAF7F7] transition cursor-pointer"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-[#1F1F1F] truncate">{r.storeName}</p>
-                      <p className="text-[11px] text-[#A8A09D] truncate">
-                        {r.ownerName || '-'}
-                        {r.ownerEmail ? ` · ${r.ownerEmail}` : ''} · {formatDate(r.createdAt)}
-                      </p>
-                    </div>
-                    <RequestStatusBadge status={r.status} isEn={isEn} />
-                    <ChevronRight className="w-4 h-4 text-[#A8A09D] shrink-0" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )
-        ) : visibleHistory.length === 0 ? (
-          <Empty icon={<Inbox className="w-7 h-7" />} text={isEn ? 'No decided requests' : 'Belum ada permintaan yang diputuskan'} />
+        ) : visibleMembers.length === 0 ? (
+          <div className="py-12 flex flex-col items-center gap-2 text-[#A8A09D]">
+            <Users className="w-7 h-7" />
+            <p className="text-xs">
+              {q ? (isEn ? 'No matching store' : 'Tidak ada toko yang cocok') : isEn ? 'No members yet' : 'Belum ada anggota'}
+            </p>
+          </div>
         ) : (
           <ul className="divide-y divide-[#F0ECEA]">
-            {visibleHistory.map((r) => (
-              <li key={r.id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            {visibleMembers.map((m) => (
+              <li key={m.storeId} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-[#1F1F1F] truncate">{r.storeName}</p>
-                  <p className="text-[11px] text-[#A8A09D] truncate">
-                    {r.ownerName || '-'}
-                    {r.ownerEmail ? ` · ${r.ownerEmail}` : ''} · {formatDate(r.decidedAt || r.createdAt)}
+                  <p className="text-sm font-medium text-[#1F1F1F] truncate">
+                    {m.storeName}
+                    {!m.isPublished && (
+                      <span className="ml-2 text-[10px] font-medium text-[#706866] bg-[#F5F2F1] rounded px-1.5 py-0.5 align-middle">
+                        {isEn ? 'Draft' : 'Draf'}
+                      </span>
+                    )}
                   </p>
-                  {r.decisionNote && <p className="text-[11px] text-[#706866] mt-0.5">{r.decisionNote}</p>}
+                  <p className="text-[11px] text-[#A8A09D] truncate">
+                    {m.slug ? `${m.slug}.lapakq.com · ` : ''}
+                    {m.ownerName || '-'}
+                    {m.ownerEmail ? ` · ${m.ownerEmail}` : ''}
+                  </p>
                 </div>
-                <RequestStatusBadge status={r.status} isEn={isEn} />
+                <p className="text-[11px] text-[#706866] sm:text-right">
+                  {membershipSourceLabel(m.source, isEn)}
+                  {m.joinedAt ? ` · ${formatDate(m.joinedAt)}` : ''}
+                </p>
+                {canManage && (
+                  <button
+                    type="button"
+                    onClick={() => openRemove(m)}
+                    className={`${ghostBtn} text-[#66000E] self-start sm:self-auto shrink-0`}
+                  >
+                    <UserMinus className="w-3.5 h-3.5" />
+                    {isEn ? 'Remove' : 'Keluarkan'}
+                  </button>
+                )}
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      <SimpleModal
-        open={!!selected}
-        title={isEn ? 'Join request' : 'Permintaan gabung'}
-        onClose={() => !saving && setSelected(null)}
-        footer={
-          <>
-            <button type="button" className={ghostBtn} onClick={() => setSelected(null)} disabled={!!saving}>
-              {isEn ? 'Close' : 'Tutup'}
-            </button>
-            {canManage && (
-              <>
-            <button type="button" className={`${ghostBtn} text-[#66000E]`} onClick={() => decide(false)} disabled={!!saving}>
-              {saving === 'reject' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
-              {isEn ? 'Reject' : 'Tolak'}
-            </button>
-            <button type="button" className={primaryBtn} onClick={() => decide(true)} disabled={!!saving}>
-              {saving === 'approve' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-              {isEn ? 'Approve' : 'Setujui'}
-            </button>
-              </>
-            )}
-          </>
-        }
-      >
-        {selected && (
-          <>
-            <div>
-              <p className="text-sm font-semibold text-[#1F1F1F]">{selected.storeName}</p>
-              <p className="text-[11px] text-[#A8A09D] mt-0.5">{formatDate(selected.createdAt)}</p>
-            </div>
-            <dl className="text-xs">
-              <dt className="text-[#A8A09D]">{isEn ? 'Owner' : 'Pemilik'}</dt>
-              <dd className="text-[#1F1F1F] break-all">{selected.ownerName || '-'}</dd>
-              {selected.ownerEmail && <dd className="text-[#706866] break-all">{selected.ownerEmail}</dd>}
-            </dl>
-            {selected.message && (
-              <p className="text-xs text-[#4A4242] whitespace-pre-wrap leading-relaxed rounded-lg bg-[#FAF7F7] border border-[#F0ECEA] p-3">
-                {selected.message}
-              </p>
-            )}
-            {canManage ? (
-              <div>
-                <label className={labelClass}>{isEn ? 'Note to applicant (optional)' : 'Catatan untuk pemohon (opsional)'}</label>
-                <textarea className={`${fieldClass} min-h-[70px] resize-y`} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
-              </div>
-            ) : (
-              <p className="text-[11px] text-[#706866] rounded-lg bg-[#FAF7F7] border border-[#F0ECEA] p-3">
+      {canManage && (
+        <SimpleModal
+          open={!!removeTarget}
+          title={isEn ? 'Remove store from community' : 'Keluarkan toko dari komunitas'}
+          onClose={() => !removing && setRemoveTarget(null)}
+          footer={
+            <>
+              <button type="button" className={ghostBtn} onClick={() => setRemoveTarget(null)} disabled={removing}>
+                {isEn ? 'Cancel' : 'Batal'}
+              </button>
+              <button type="button" className={primaryBtn} onClick={confirmRemove} disabled={removing}>
+                {removing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserMinus className="w-3.5 h-3.5" />}
+                {isEn ? 'Remove' : 'Keluarkan'}
+              </button>
+            </>
+          }
+        >
+          {removeTarget && (
+            <>
+              <p className="text-sm font-semibold text-[#1F1F1F]">{removeTarget.storeName}</p>
+              <p className="text-xs text-[#4A4242] leading-relaxed">
                 {isEn
-                  ? 'Only the community lead (Sub-Admin Utama) can approve or reject join requests.'
-                  : 'Hanya Sub-Admin Utama yang dapat menyetujui atau menolak permintaan gabung.'}
+                  ? 'This store will leave your community. Its products will no longer appear on the community portal (landing page linked via API), and the portal cannot add it back automatically. You can add it again later with "Add store".'
+                  : 'Toko ini akan keluar dari komunitas Anda. Produknya tidak lagi tampil di portal komunitas (landing page yang ditautkan lewat API), dan portal tidak dapat memasukkannya kembali secara otomatis. Anda bisa menambahkannya lagi nanti lewat "Tambah Toko Binaan".'}
               </p>
-            )}
-            {modalError && <p className="text-xs text-[#66000E]">{modalError}</p>}
-          </>
-        )}
-      </SimpleModal>
+              {removeError && <p className="text-xs text-[#66000E]">{removeError}</p>}
+            </>
+          )}
+        </SimpleModal>
+      )}
 
       {canManage && (
         <SimpleModal
@@ -348,6 +270,7 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
               className={`${fieldClass} flex-1 min-w-0`}
               maxLength={254}
               placeholder={isEn ? 'Store slug or owner email' : 'Slug toko atau email pemilik'}
+              aria-label={isEn ? 'Store slug or owner email' : 'Slug toko atau email pemilik'}
               value={lookupQuery}
               onChange={(e) => setLookupQuery(e.target.value)}
               autoFocus
@@ -390,10 +313,3 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
     </div>
   );
 };
-
-const Empty: React.FC<{ icon: React.ReactNode; text: string }> = ({ icon, text }) => (
-  <div className="py-12 flex flex-col items-center gap-2 text-[#A8A09D]">
-    {icon}
-    <p className="text-xs">{text}</p>
-  </div>
-);

@@ -814,11 +814,51 @@ export const getLayoutLogoUrl = (layoutSettings?: StoreLayoutSettings): string =
   return headerLogo(layoutSettings.sections);
 };
 
+/** Kunci identitas toko di header (nama, logo, tulisan di bawah logo). */
+const HEADER_BRAND_KEYS = ['title', 'heading', 'storeName', 'logoUrl', 'headerSubtitle', 'subheading', 'subtitle', 'tagline'];
+
+/**
+ * Identitas toko di header berlaku untuk semua halaman. Data lama bisa menyimpannya hanya di
+ * header sebagian halaman (mis. header beranda hanya berisi headerStyle), sehingga tulisan di
+ * bawah logo tampil di Katalog tetapi hilang di Beranda. Kunci yang belum ada diisi dari header
+ * beranda lebih dulu, lalu header halaman lain. Nilai yang sengaja dikosongkan ('') tetap dihormati.
+ */
+const withHeaderBrandIdentity = (
+  sections: StoreSectionConfig[],
+  layoutSettings: StoreLayoutSettings
+): StoreSectionConfig[] => {
+  const pages = Array.isArray(layoutSettings.pages) ? layoutSettings.pages : [];
+  const home = pages.find((p) => p.id === 'homepage' || p.slug === 'homepage');
+  const sources = [layoutSettings.sections, home?.sections, ...pages.filter((p) => p !== home).map((p) => p.sections)]
+    .map((secs) => (secs?.find((s) => s.id === 'header')?.options || {}) as Record<string, unknown>);
+  return sections.map((sec) => {
+    if (sec.id !== 'header') return sec;
+    const options = { ...(sec.options || {}) } as Record<string, unknown>;
+    let changed = false;
+    for (const key of HEADER_BRAND_KEYS) {
+      if (options[key] !== undefined) continue;
+      const src = sources.find((o) => typeof o[key] === 'string' && (o[key] as string).trim() !== '');
+      if (src) {
+        options[key] = src[key];
+        changed = true;
+      }
+    }
+    return changed ? { ...sec, options } : sec;
+  });
+};
+
 export const getStoreSectionsForPage = (
   layoutSettings?: StoreLayoutSettings,
   pageId: string = 'homepage'
 ): StoreSectionConfig[] => {
   if (!layoutSettings) return DEFAULT_STORE_SECTIONS;
+  return withHeaderBrandIdentity(resolveStoreSectionsForPage(layoutSettings, pageId), layoutSettings);
+};
+
+const resolveStoreSectionsForPage = (
+  layoutSettings: StoreLayoutSettings,
+  pageId: string
+): StoreSectionConfig[] => {
 
   const pageAliasMap: Record<string, string> = {
     'catalog': 'katalog',

@@ -77,6 +77,20 @@ async function communitiesOfStores(rows: any[]): Promise<Map<string, { id: strin
   return out;
 }
 
+/** Apakah toko pernah dikeluarkan dari komunitas (tabel community_store_removals; aman bila belum dimigrasi). */
+async function storeRemovedFromCommunity(storeId: string, communityId: string): Promise<boolean> {
+  try {
+    const r = await pool.query(
+      `SELECT 1 FROM community_store_removals WHERE store_id = $1 AND community_id = $2 LIMIT 1`,
+      [storeId, communityId]
+    );
+    return r.rows.length > 0;
+  } catch (err: any) {
+    if (err?.code === '42P01') return false; // tabel belum ada
+    throw err;
+  }
+}
+
 function presentStore(row: any, communities: { id: string; name: string }[], keyCommunityId: string) {
   return {
     ...sanitizeStore(row),
@@ -165,7 +179,18 @@ partnerApiRouter.post('/communities/:id/stores', async (req: Request, res: Respo
     const store = stRes.rows[0];
 
     let joined = false;
-    if (!(await storeInCommunity(store.id, store.community_id, communityId))) {
+    const alreadyMember = await storeInCommunity(store.id, store.community_id, communityId);
+    // Toko yang sudah dikeluarkan Sub-Admin Utama tidak boleh masuk lagi lewat portal;
+    // hanya Sub-Admin Utama yang bisa menambahkannya kembali dari dashboard LapakQ.
+    if (!alreadyMember && (await storeRemovedFromCommunity(store.id, communityId))) {
+      return sendError(
+        res,
+        409,
+        'STORE_REMOVED_FROM_COMMUNITY',
+        'Toko ini telah dikeluarkan dari komunitas oleh sub-admin. Hubungi sub-admin komunitas untuk menambahkannya kembali.'
+      );
+    }
+    if (!alreadyMember) {
       const cRes = await pool.query('SELECT name FROM communities WHERE id = $1', [communityId]);
       const communityName = cRes.rows[0]?.name || null;
       if (!store.community_id) {
