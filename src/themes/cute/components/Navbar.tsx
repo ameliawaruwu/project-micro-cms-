@@ -18,11 +18,19 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
   // Pengaturan header merchant: sembunyikan logo/nama toko atau menu navigasi bila dimatikan.
   const showLogo = sectionOptions.showLogo ?? true;
   const navItems = (sectionOptions.showNavMenu ?? true) ? getNavMenuItems(sectionOptions) : [];
-  const navFlexClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'flex-col',
-    tablet: 'flex-col',
-    desktop: 'flex-row',
-    fallback: 'flex-col md:flex-row',
+  // Logo di sudut kiri; di HP ikon aksi berada di sebelah kanan logo.
+  const navFlexClass = 'flex-row';
+  const logoAlignClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'items-start text-left',
+    tablet: 'items-start text-left',
+    desktop: 'items-center text-center',
+    fallback: 'items-start text-left md:items-center md:text-center',
+  });
+  const showHeartBadge = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
   });
   const navGapClass = isMobile || isTablet ? 'gap-4' : 'gap-4 md:gap-0';
   const showMobileBar = getDeviceClass(isMobile, isTablet, {
@@ -44,11 +52,9 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
       <div className={`max-w-5xl mx-auto flex ${navFlexClass} items-center ${navGapClass} justify-between`}>
         
         {/* Mobile top bar */}
-        <div className={`w-full ${showMobileBar} justify-between items-center`}>
-          {header.showSearch ? (
+        <div className={`order-last shrink-0 ${showMobileBar} justify-end items-center gap-2`}>
+          {header.showSearch && (
             <NavSearchButton className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm" iconClassName="w-5 h-5" />
-          ) : (
-            <span className="w-9 h-9" aria-hidden="true" />
           )}
           <NavTrackOrderButton className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm" iconClassName="w-5 h-5" />
           {header.showCart && (
@@ -61,9 +67,9 @@ export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
           )}
         </div>
 
-        {/* Center: Logo */}
-        <div className={`${logoFlexNoneClass} text-center flex flex-col items-center group cursor-pointer`}>
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-2 group-hover:-translate-y-1 transition-transform">
+        {/* Logo: di sudut kiri pada HP, di tengah pada desktop */}
+        <div className={`${logoFlexNoneClass} min-w-0 ${logoAlignClass} flex flex-col group cursor-pointer`}>
+          <div className={`${showHeartBadge} w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm mb-2 group-hover:-translate-y-1 transition-transform`}>
             <Heart className="w-6 h-6 text-[#FF85A1] fill-[#FF85A1]" />
           </div>
           {showLogo && (

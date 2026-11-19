@@ -49,14 +49,7 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
             <div className="flex flex-col min-w-0">
               <a href="/" className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-3 min-w-0">
                 <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">
-                  <>
-                    <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center shrink-0">
-                      <span className="text-[#1E40AF] font-bold text-xl leading-none">
-                        {(storeTitle || 'P')[0]?.toUpperCase()}
-                      </span>
-                    </div>
-                    <span className="truncate">{storeTitle}</span>
-                  </>
+                  {storeTitle}
                 </StoreLogo>
               </a>
               {storeSubtitle && (

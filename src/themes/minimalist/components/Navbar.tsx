@@ -38,24 +38,15 @@ export const MinimalistNavbar: React.FC<{ sectionOptions?: any; isMobile?: boole
     desktop: 'flex',
     fallback: 'hidden md:flex',
   });
-  const brandAlign = getDeviceClass(isMobile, isTablet, {
-    mobile: 'text-center',
-    tablet: 'text-center',
-    desktop: 'text-left',
-    fallback: 'text-center md:text-left',
-  });
+  // Logo selalu di sudut kiri header (juga di HP, saat menu pindah ke navigasi bawah).
+  const brandAlign = 'text-left';
   const brandFlex = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-1',
     tablet: 'flex-1',
     desktop: 'flex-initial',
     fallback: 'flex-1 md:flex-initial',
   });
-  const brandMarginClass = getDeviceClass(isMobile, isTablet, {
-    mobile: 'mx-auto',
-    tablet: 'mx-auto',
-    desktop: 'mx-0',
-    fallback: 'mx-auto md:mx-0',
-  });
+  const brandMarginClass = 'mx-0';
 
   return (
     <header className={`w-full max-w-full bg-white/95 backdrop-blur-md ${header.positionClass} font-sans border-b border-gray-100/90 box-border overflow-x-hidden transition-all`}>

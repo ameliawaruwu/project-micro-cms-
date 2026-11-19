@@ -72,8 +72,8 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
           </button>
         </div>
 
-        {/* Center: Brand Title (Dominant & Never Overlapped) */}
-        <div className="flex-1 flex flex-col justify-center items-center text-center px-2 min-w-0">
+        {/* Brand: di sudut kiri pada HP, di tengah pada desktop */}
+        <div className="flex-1 flex flex-col justify-center items-start text-left md:items-center md:text-center px-0 md:px-2 min-w-0">
           {showLogo && (
             <a
               href="/"

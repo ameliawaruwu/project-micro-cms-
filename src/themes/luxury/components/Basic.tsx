@@ -28,7 +28,7 @@ export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
     <nav className={`w-full px-5 sm:px-8 md:px-16 pt-5 pb-4 sm:pt-6 bg-white/95 backdrop-blur-md border-b border-[#F0EBE1] ${header.positionClass} transition-all duration-300`}>
       {header.showSearch && (
         <NavSearchButton
-          className="absolute left-4 sm:left-8 md:left-16 top-5 sm:top-7 p-1 text-[#8C531B] hover:text-[#5C4533] transition-colors"
+          className={`absolute ${header.showCart ? 'right-20' : 'right-12'} md:right-auto md:left-16 top-5 sm:top-7 p-1 text-[#8C531B] hover:text-[#5C4533] transition-colors`}
           iconClassName="w-5 h-5"
         />
       )}
@@ -44,10 +44,11 @@ export const LuxuryNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
           <CartBagIcon className="w-5 h-5" />
         </NavCartButton>
       )}
-      <div className="flex flex-col items-center text-center min-w-0">
+      {/* Logo: di sudut kiri pada HP (ikon pindah ke kanan), di tengah pada desktop */}
+      <div className={`flex flex-col items-start text-left md:items-center md:text-center min-w-0 ${header.showSearch ? 'pr-28' : 'pr-20'} md:pr-0`}>
         {showLogo && (
           <a href="/" className="text-2xl sm:text-3xl md:text-4xl font-serif text-[#8C531B] tracking-tight block max-w-full break-words">
-            <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-10 sm:h-12 mx-auto">{storeTitle}</StoreLogo>
+            <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-10 sm:h-12 md:mx-auto">{storeTitle}</StoreLogo>
           </a>
         )}
         {storeSubtitle && (

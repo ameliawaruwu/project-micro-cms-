@@ -25,21 +25,22 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
   return (
     <nav className={`w-full bg-[#18181B] text-white border-b border-white/10 ${header.positionClass}`}>
       <div className="w-full px-4 sm:px-6 md:px-12 py-4 sm:py-5 flex items-center gap-3">
-        <div className="w-20 shrink-0 flex justify-start gap-1">
+        <div className="w-auto md:w-20 shrink-0 flex justify-end md:justify-start gap-1">
           {header.showSearch && (
             <NavSearchButton className="text-white hover:text-gray-400 transition-colors p-1" iconClassName="w-5 h-5" />
           )}
           <NavTrackOrderButton className="text-white hover:text-gray-400 transition-colors p-1" iconClassName="w-5 h-5" />
         </div>
 
-        <div className="flex-1 min-w-0 flex justify-center">
+        {/* Logo: di sudut kiri pada HP, di tengah pada desktop */}
+        <div className="order-first md:order-none flex-1 min-w-0 flex justify-start md:justify-center">
           {showLogo && (
-            <div className="flex flex-col items-center min-w-0 max-w-full">
-              <a href="/" className="text-2xl sm:text-3xl md:text-4xl font-serif italic tracking-wider hover:opacity-80 transition-opacity text-center max-w-full truncate">
+            <div className="flex flex-col items-start md:items-center min-w-0 max-w-full">
+              <a href="/" className="text-2xl sm:text-3xl md:text-4xl font-serif italic tracking-wider hover:opacity-80 transition-opacity text-left md:text-center max-w-full truncate">
                 <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-10 sm:h-12">{storeTitle}</StoreLogo>
               </a>
               {storeSubtitle && (
-                <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-gray-400 mt-1 font-sans text-center line-clamp-1 max-w-full">
+                <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-gray-400 mt-1 font-sans text-left md:text-center line-clamp-1 max-w-full">
                   {storeSubtitle}
                 </span>
               )}
@@ -47,7 +48,7 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
           )}
         </div>
 
-        <div className="w-20 shrink-0 flex justify-end">
+        <div className="w-auto md:w-20 shrink-0 flex justify-end">
           {header.showCart && (
             <button type="button" data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'} className="text-white hover:text-gray-400 transition-colors relative cursor-pointer p-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>

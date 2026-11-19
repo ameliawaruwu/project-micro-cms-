@@ -43,7 +43,7 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
         
         {/* Left: Search */}
-        <div className="flex-1 flex items-center gap-3 sm:gap-6">
+        <div className="flex-none md:flex-1 flex items-center gap-3 sm:gap-6">
           {header.showSearch && (
             <NavSearchButton
               className="flex items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors"
@@ -56,8 +56,8 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
           />
         </div>
 
-        {/* Center: Logo */}
-        <div className="flex-[2] sm:flex-1 min-w-0 text-center flex flex-col items-center">
+        {/* Logo: di sudut kiri pada HP, di tengah pada desktop */}
+        <div className="order-first md:order-none flex-1 min-w-0 text-left md:text-center flex flex-col items-start md:items-center">
           {showLogo && (
             <a href="/" className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-wide text-[#2C2A29] max-w-full truncate">
               <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
@@ -71,7 +71,7 @@ export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean;
         </div>
 
         {/* Right: Actions */}
-        <div className="flex-1 flex items-center justify-end gap-6">
+        <div className="flex-none md:flex-1 flex items-center justify-end gap-6">
           {header.showCart && (
             <button data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'} className="text-[#6B6865] hover:text-[#2C2A29] transition-colors flex items-center gap-2 cursor-pointer">
               <div className="relative">
