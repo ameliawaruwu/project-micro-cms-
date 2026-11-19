@@ -6,6 +6,7 @@ import {
   formatRupiah,
   getProductCategories,
   productHref,
+  resolveSecondaryCta,
   resolveSectionCta,
   resolveSectionImage,
 } from '../../storefrontLinks';
@@ -24,6 +25,7 @@ export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
   const description = sectionOptions.description || product.description;
   const image = resolveSectionImage(sectionOptions) || product.image;
   const cta = resolveSectionCta(sectionOptions, isEn ? 'Buy Now →' : 'Beli Sekarang →', productHref(product));
+  const secondaryCta = resolveSecondaryCta(sectionOptions, isEn ? 'View Catalog' : 'Lihat Katalog', STORE_ROUTES.catalog);
 
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 md:px-12 bg-zinc-950 text-white relative overflow-hidden border-b border-zinc-900">
@@ -60,10 +62,10 @@ export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
               {cta.label}
             </a>
             <a
-              href={STORE_ROUTES.catalog}
+              href={secondaryCta.href}
               className="inline-block px-7 sm:px-8 py-3.5 sm:py-4 border border-zinc-700 hover:border-red-500 text-white font-extrabold uppercase tracking-widest text-xs sm:text-sm rounded-xl transition-colors"
             >
-              {isEn ? 'View Catalog' : 'Lihat Katalog'}
+              {secondaryCta.label}
             </a>
           </div>
         </div>
@@ -110,7 +112,7 @@ export const BoldCategoryTiles: React.FC<{ sectionOptions?: any; isMobile?: bool
                 {cat.name}
               </h3>
               <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-widest mt-2 relative z-10 group-hover:text-red-400 transition-colors">
-                {cat.count} produk →
+                {isEn ? `${cat.count} products →` : `${cat.count} produk →`}
               </span>
             </a>
           ))}
@@ -201,6 +203,7 @@ export const BoldLimitedRelease: React.FC<{ sectionOptions?: any }> = ({ section
       ? 'Our stock is limited. Contact us for the latest products or special orders.'
       : 'Stok produk kami terbatas. Hubungi kami untuk info produk terbaru atau pemesanan khusus.');
   const cta = resolveSectionCta(sectionOptions, isEn ? 'Shop Now' : 'Belanja Sekarang', STORE_ROUTES.catalog);
+  const secondaryCta = resolveSecondaryCta(sectionOptions, isEn ? 'Contact Us' : 'Hubungi Kami', STORE_ROUTES.contact);
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 bg-zinc-950 text-white text-center border-b border-zinc-900 relative overflow-hidden">
       <div className="relative z-10 max-w-2xl mx-auto space-y-5 sm:space-y-6">
@@ -221,10 +224,10 @@ export const BoldLimitedRelease: React.FC<{ sectionOptions?: any }> = ({ section
             {cta.label}
           </a>
           <a
-            href={STORE_ROUTES.contact}
+            href={secondaryCta.href}
             className="border border-zinc-700 hover:border-red-500 text-white px-7 py-3.5 font-extrabold uppercase text-xs tracking-wider rounded-xl transition-colors"
           >
-            {isEn ? 'Contact Us' : 'Hubungi Kami'}
+            {secondaryCta.label}
           </a>
         </div>
       </div>

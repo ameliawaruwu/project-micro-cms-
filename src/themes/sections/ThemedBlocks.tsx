@@ -3,7 +3,7 @@ import { ShieldCheck, Truck, CreditCard, MapPin, Mail, Phone, Clock, MessageCirc
 import { useCmsStore } from '../../cms/useCmsStore';
 import { getStorefrontThemeVars } from '../pages/storefrontTheme';
 import { getThemeContainer } from '../themeContainer';
-import { whatsAppChatLink } from '../sectionContent';
+import { defaultFeatureItems, resolveFeatureItems, whatsAppChatLink } from '../sectionContent';
 import { STORE_ROUTES, resolveSectionCta, resolveSectionImage } from '../storefrontLinks';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -75,22 +75,15 @@ export const ThemedPromoBanner: React.FC<ThemedBlockProps> = ({ sectionOptions =
   );
 };
 
-const BENEFITS_EN = [
-  { icon: ShieldCheck, title: 'Guaranteed Products', desc: 'Products are checked before shipping' },
-  { icon: Truck, title: 'Safe Shipping', desc: 'Neatly packed, shipped across Indonesia' },
-  { icon: CreditCard, title: 'Easy Payment', desc: 'Transfer, QRIS, or COD' },
-];
-
-const BENEFITS = [
-  { icon: ShieldCheck, title: 'Produk Terjamin', desc: 'Produk dicek sebelum dikirim' },
-  { icon: Truck, title: 'Pengiriman Aman', desc: 'Dikemas rapi ke seluruh Indonesia' },
-  { icon: CreditCard, title: 'Pembayaran Mudah', desc: 'Transfer, QRIS, atau COD' },
-];
+/** Ikon poin keunggulan, dipakai bergiliran sesuai urutan poin. */
+const BENEFIT_ICONS = [ShieldCheck, Truck, CreditCard];
 
 export const ThemedStoreBenefits: React.FC<ThemedBlockProps> = ({ sectionOptions = {}, themeId, accentColor }) => {
   const { isEn } = useLanguage();
   const heading = sectionOptions.heading || (isEn ? 'Why Shop With Us?' : 'Mengapa Belanja di Toko Kami?');
   const container = getThemeContainer(themeId);
+  // Poin keunggulan diisi di panel kanan ("Poin Keunggulan"); bawaan bila belum diubah.
+  const benefits = resolveFeatureItems(sectionOptions.features, defaultFeatureItems('store_benefits', themeId || '', isEn) || []);
   return (
     <ThemeScope themeId={themeId} accentColor={accentColor} className={`bg-[var(--sf-page)] ${container.outer}`}>
       <div className={`${container.inner} py-10 sm:py-14`}>
@@ -98,8 +91,10 @@ export const ThemedStoreBenefits: React.FC<ThemedBlockProps> = ({ sectionOptions
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-center text-[var(--sf-text)] mb-6 sm:mb-10">{heading}</h2>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
-          {(isEn ? BENEFITS_EN : BENEFITS).map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="flex sm:flex-col items-center sm:text-center gap-4 sm:gap-3 p-4 sm:p-6 rounded-[var(--sf-radius)] bg-[var(--sf-card)] border border-[var(--sf-border)]">
+          {benefits.map(({ title, desc }, index) => {
+            const Icon = BENEFIT_ICONS[index % BENEFIT_ICONS.length];
+            return (
+            <div key={index} className="flex sm:flex-col items-center sm:text-center gap-4 sm:gap-3 p-4 sm:p-6 rounded-[var(--sf-radius)] bg-[var(--sf-card)] border border-[var(--sf-border)]">
               <div className="w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-full flex items-center justify-center bg-[var(--sf-primary-soft)] text-[var(--sf-primary)]">
                 <Icon className="w-5 h-5" />
               </div>
@@ -108,7 +103,8 @@ export const ThemedStoreBenefits: React.FC<ThemedBlockProps> = ({ sectionOptions
                 <p className="text-xs sm:text-sm text-[var(--sf-text-soft)] mt-0.5">{desc}</p>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </ThemeScope>
@@ -186,7 +182,7 @@ export const ThemedStoreInfo: React.FC<ThemedBlockProps> = ({ sectionOptions = {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-[var(--sf-radius)] text-sm font-semibold bg-[var(--sf-primary)] text-[var(--sf-primary-contrast)] hover:opacity-90 transition-opacity w-full sm:w-auto"
             >
-              <MessageCircle className="w-4 h-4" /> Chat via WhatsApp
+              <MessageCircle className="w-4 h-4" /> {isEn ? 'Chat via WhatsApp' : 'Chat lewat WhatsApp'}
             </a>
           </div>
         )}

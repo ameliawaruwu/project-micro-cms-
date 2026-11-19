@@ -1,7 +1,7 @@
 import React from 'react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useSectionProducts } from '../../useSectionProducts';
-import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { STORE_ROUTES, formatRupiah, productHref, resolveExtraText, resolveSecondaryCta, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Galeri foto produk toko bergaya masonry; tidak dirender bila belum ada foto produk. */
@@ -84,7 +84,10 @@ export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile
   if (!image && !product) return null;
 
   const heading = sectionOptions.heading || (isEn ? 'Product Spotlight' : 'Sorotan Produk');
-  const title = sectionOptions.subheading || product?.name || (isEn ? 'Our Featured Pick' : 'Karya Pilihan Kami');
+  // Judul kartu: isian "Judul Kartu" di panel → nama produk → teks bawaan.
+  const customTitle = resolveExtraText(sectionOptions, 'cardTitle', '');
+  const title = customTitle || product?.name || (isEn ? 'Our Featured Pick' : 'Karya Pilihan Kami');
+  const secondaryCta = resolveSecondaryCta(sectionOptions, isEn ? 'All Products' : 'Semua Produk', STORE_ROUTES.catalog);
   const description =
     sectionOptions.description ||
     product?.description ||
@@ -119,7 +122,7 @@ export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile
           )}
           <div className="text-left min-w-0">
             <h3 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-yellow-300 break-words">{title}</h3>
-            {product && !sectionOptions.subheading && (
+            {product && !customTitle && (
               <p className="text-xl font-black mb-4">{formatRupiah(product.price)}</p>
             )}
             <p className="text-base sm:text-lg leading-relaxed font-medium opacity-90 mb-8 line-clamp-5">{description}</p>
@@ -131,10 +134,10 @@ export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile
                 {cta.label}
               </a>
               <a
-                href={STORE_ROUTES.catalog}
+                href={secondaryCta.href}
                 className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 border-2 border-white rounded-full font-bold uppercase tracking-wider text-sm hover:bg-white hover:text-blue-600 transition-colors"
               >
-                {isEn ? 'All Products' : 'Semua Produk'}
+                {secondaryCta.label}
               </a>
             </div>
           </div>

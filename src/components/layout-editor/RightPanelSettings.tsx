@@ -368,10 +368,23 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
     }
   };
 
+  /** Tema aktif yang dinormalisasi (elegant → luxury) untuk kolom isian khusus tema. */
+  const themeId = normalizeThemeId(activeThemeId);
+  /** Teks tambahan khusus tema yang tampil di pratinjau dan perlu kolom isian sendiri. */
+  const themeExtraField: { key: 'eyebrowText' | 'cardTitle'; label: string; hint: string; placeholder: string } | null =
+    selectedSection?.id === 'hero_banner' && themeId === 'modern'
+      ? { key: 'eyebrowText', label: isEn ? 'Small Label Above Title' : 'Label Kecil di Atas Judul', hint: isEn ? 'Leave empty to hide the label.' : 'Kosongkan untuk menyembunyikan label.', placeholder: isEn ? 'Example: New Collection' : 'Contoh: Koleksi Baru' }
+      : selectedSection?.id === 'hero_banner' && themeId === 'cute'
+        ? { key: 'eyebrowText', label: isEn ? 'Image Sticker Label' : 'Label Stiker Gambar', hint: isEn ? 'Not set: shows "New Arrivals". Clear it after typing to hide the sticker.' : 'Belum diisi: tampil "Produk Terbaru". Hapus isinya setelah diketik untuk menyembunyikan stiker.', placeholder: isEn ? 'New Arrivals' : 'Produk Terbaru' }
+        : (selectedSection?.id === 'floating_showcase' && themeId === 'creative') || (selectedSection?.id === 'lookbook' && themeId === 'fashion')
+          ? { key: 'cardTitle', label: isEn ? 'Card Title' : 'Judul Kartu', hint: isEn ? 'Leave empty to use the product name.' : 'Kosongkan untuk memakai nama produk.', placeholder: isEn ? 'Product name' : 'Nama produk' }
+          : null;
+
   const hasImage =
     Boolean(opts.imageUrl || opts.bannerUrl) ||
     [
       'hero_banner',
+      'editorial_campaign',
       'promo_banner',
       'image_with_text',
       'gallery',
@@ -940,9 +953,24 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             </div>
             )}
 
+            {themeExtraField && (
+              <div className="space-y-1 pt-4 border-t border-[#E1E3E5]">
+                <label className="text-[12px] font-bold text-[#202223]">{themeExtraField.label}</label>
+                <input
+                  type="text"
+                  maxLength={80}
+                  value={typeof (opts as any)[themeExtraField.key] === 'string' ? (opts as any)[themeExtraField.key] : ''}
+                  onChange={(e) => handleOptionChange({ [themeExtraField.key]: e.target.value } as any)}
+                  placeholder={themeExtraField.placeholder}
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                />
+                <p className="text-[11px] text-[#8C9196]">{themeExtraField.hint}</p>
+              </div>
+            )}
+
             {/* Sub-bagian halaman (mis. checkout_address) memakai id store_info tetapi bukan blok Info Toko. */}
             {sectionKey.startsWith(selectedSection.id) && (
-              <SectionContentFields sectionId={selectedSection.id} opts={opts} onChange={handleOptionChange} />
+              <SectionContentFields sectionId={selectedSection.id} opts={opts} onChange={handleOptionChange} themeId={themeId} />
             )}
 
             {/* ── COLLECTION GRID SPECIFIC SETTINGS ── */}
@@ -971,7 +999,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             )}
 
             {/* ── BUTTONS / CTA ── */}
-            {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' || selectedSection.id === 'signature_collection' || selectedSection.id === 'craftsmanship_story' || selectedSection.id === 'private_collection' || selectedSection.id === 'innovation_cta' || selectedSection.id === 'limited_release' || selectedSection.id === 'community_board' || selectedSection.id === 'latest_drop' || selectedSection.id === 'asymmetric_showcase' || selectedSection.id === 'collection_grid' || selectedSection.id === 'lookbook' || selectedSection.id === 'tech_features' || selectedSection.id === 'floating_showcase') && (
+            {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' || selectedSection.id === 'signature_collection' || selectedSection.id === 'craftsmanship_story' || selectedSection.id === 'private_collection' || selectedSection.id === 'innovation_cta' || selectedSection.id === 'limited_release' || selectedSection.id === 'community_board' || selectedSection.id === 'latest_drop' || selectedSection.id === 'asymmetric_showcase' || selectedSection.id === 'collection_grid' || selectedSection.id === 'lookbook' || selectedSection.id === 'tech_features' || selectedSection.id === 'floating_showcase' || selectedSection.id === 'editorial_campaign' || selectedSection.id === 'brand_story' || selectedSection.id === 'journal' || ((selectedSection.id === 'featured_products' || selectedSection.id === 'product_grid') && !['editorial', 'futuristic', 'bold'].includes(themeId))) && (
               <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
                 <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Main / Action Button' : 'Tombol Utama / Aksi'}</label>
                 <div className="space-y-2">
@@ -991,7 +1019,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   />
                 </div>
 
-                {selectedSection.id === 'hero_banner' && (
+                {(selectedSection.id === 'hero_banner' || selectedSection.id === 'latest_drop' || selectedSection.id === 'limited_release' || (selectedSection.id === 'floating_showcase' && (themeId === 'futuristic' || themeId === 'creative'))) && (
                   <div className="pt-3 space-y-2">
                     <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Secondary Button' : 'Tombol Sekunder'}</label>
                     <input

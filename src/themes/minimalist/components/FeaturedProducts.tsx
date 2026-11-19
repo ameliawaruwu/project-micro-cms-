@@ -3,7 +3,7 @@ import { useSectionProducts } from '../../useSectionProducts';
 import { MinimalistProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { STORE_ROUTES } from '../../storefrontLinks';
+import { STORE_ROUTES, resolveSectionCta } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, isMobile, isTablet }) => {
@@ -14,6 +14,8 @@ export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpda
   const title = sectionOptions.featuredTitle || sectionOptions.heading || (isEn ? 'Featured Products' : 'Produk Unggulan');
   const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || (isEn ? 'The best products from our store.' : 'Pilihan produk terbaik dari toko kami.');
   const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || (isEn ? 'View All' : 'Lihat Semua');
+  // Tautan tombol dari panel ("Tautan Tombol"); kosong/berbahaya → katalog.
+  const buttonHref = resolveSectionCta(sectionOptions, buttonText, STORE_ROUTES.catalog).href;
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-2',
@@ -54,7 +56,7 @@ export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpda
             </p>
           </div>
           <a 
-            href={STORE_ROUTES.catalog}
+            href={buttonHref}
             className="inline-flex items-center text-xs sm:text-sm font-medium uppercase tracking-widest text-gray-900 hover:text-gray-500 transition-colors shrink-0"
             onClick={(e) => { if (onUpdateSectionOptions) e.preventDefault(); }}
           >

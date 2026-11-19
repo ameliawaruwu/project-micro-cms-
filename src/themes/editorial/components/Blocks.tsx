@@ -76,7 +76,10 @@ export const EditorialCampaign: React.FC<{ sectionOptions?: any }> = ({ sectionO
   const heading = sectionOptions.heading || (isEn ? 'Curated Collection' : 'Koleksi Pilihan');
   const desc =
     sectionOptions.description ||
-    'Temukan produk-produk terbaik kami yang dipilih dengan cermat untuk Anda.';
+    (isEn
+      ? 'Discover our best products, carefully selected for you.'
+      : 'Temukan produk-produk terbaik kami yang dipilih dengan cermat untuk Anda.');
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'Shop Now' : 'Belanja Sekarang', STORE_ROUTES.catalog);
   // Gambar latar dekoratif: gambar merchant → banner toko → foto produk → gambar bawaan tema.
   const bgImage =
     sectionOptions.imageUrl ||
@@ -96,10 +99,10 @@ export const EditorialCampaign: React.FC<{ sectionOptions?: any }> = ({ sectionO
           {desc}
         </p>
         <a
-          href={STORE_ROUTES.catalog}
+          href={cta.href}
           className="inline-block mt-8 sm:mt-10 border-b border-white pb-1 uppercase tracking-[0.3em] text-[10px] md:text-xs hover:opacity-70 transition-opacity"
         >
-          {isEn ? 'Shop Now' : 'Belanja Sekarang'}
+          {cta.label}
         </a>
       </div>
     </section>
@@ -165,6 +168,7 @@ export const EditorialBrandStory: React.FC<{ sectionOptions?: any }> = ({ sectio
     (isEn
       ? 'We offer selected products with the best quality and friendly service. Thank you for shopping with us.'
       : 'Kami menghadirkan produk pilihan dengan kualitas terbaik dan pelayanan yang ramah. Terima kasih telah berbelanja di toko kami.');
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'Contact Us' : 'Hubungi Kami', STORE_ROUTES.contact);
 
   return (
     <section className="py-16 sm:py-32 md:py-48 px-4 sm:px-6 text-center max-w-4xl mx-auto">
@@ -173,10 +177,10 @@ export const EditorialBrandStory: React.FC<{ sectionOptions?: any }> = ({ sectio
         {desc}
       </p>
       <a
-        href={STORE_ROUTES.contact}
+        href={cta.href}
         className="inline-block mt-10 border-b border-gray-900 pb-1 uppercase tracking-[0.2em] text-[10px] font-medium hover:text-gray-500 hover:border-gray-500 transition-colors"
       >
-        {isEn ? 'Contact Us' : 'Hubungi Kami'}
+        {cta.label}
       </a>
       <div className="w-px h-16 sm:h-24 bg-gray-300 mx-auto mt-12 sm:mt-20"></div>
     </section>

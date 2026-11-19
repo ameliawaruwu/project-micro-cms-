@@ -6,17 +6,20 @@ import {
   DEFAULT_INGREDIENT_ITEMS,
   DEFAULT_SUSTAINABILITY_PILLARS,
   SustainabilityPillar,
+  defaultFeatureItems,
 } from '../../themes/sectionContent';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * Isian konten khusus untuk bagian yang memiliki daftar/field sendiri (di luar Judul &
- * Deskripsi umum): Bahan Baku Alami, Komitmen Keberlanjutan, dan Info Toko.
+ * Deskripsi umum): Bahan Baku Alami, Komitmen Keberlanjutan, Poin Keunggulan, dan Info Toko.
  */
 interface SectionContentFieldsProps {
   sectionId: string;
   opts: StoreSectionOptions;
   onChange: (patch: Partial<StoreSectionOptions>) => void;
+  /** Tema aktif (sudah dinormalisasi); poin bawaan berbeda per tema. */
+  themeId?: string;
 }
 
 const inputClass =
@@ -86,8 +89,15 @@ const IngredientStoryFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId
   );
 };
 
-const SustainabilityFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId'>> = ({ opts, onChange }) => {
-  const pillars: SustainabilityPillar[] = Array.isArray(opts.features) ? opts.features : DEFAULT_SUSTAINABILITY_PILLARS;
+/** Daftar poin judul + penjelasan (opts.features): Komitmen Keberlanjutan & Poin Keunggulan. */
+const FeatureListFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId' | 'themeId'> & {
+  defaults: SustainabilityPillar[];
+  title: string;
+  allowEmpty?: boolean;
+}> = ({ opts, onChange, defaults, title, allowEmpty }) => {
+  const saved = Array.isArray(opts.features) ? (opts.features as SustainabilityPillar[]) : null;
+  // Poin keunggulan yang dikosongkan semua kembali ke bawaan di toko, jadi panel juga menampilkan bawaan.
+  const pillars: SustainabilityPillar[] = saved && (allowEmpty || saved.length > 0) ? saved : defaults;
   const setPillars = (next: SustainabilityPillar[]) => onChange({ features: next });
   const updatePillar = (index: number, patch: Partial<SustainabilityPillar>) =>
     setPillars(pillars.map((p, i) => (i === index ? { ...p, ...patch } : p)));
@@ -95,7 +105,7 @@ const SustainabilityFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId'
 
   return (
     <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
-      <label className={labelClass}>{isEn ? 'Commitment Points' : 'Poin Komitmen'}</label>
+      <label className={labelClass}>{title}</label>
       {pillars.map((pillar, index) => (
         <div key={index} className="p-2.5 rounded-lg bg-[#F6F6F7] border border-[#E1E3E5] space-y-1.5">
           <div className="flex items-center gap-1.5">
@@ -159,12 +169,29 @@ const StoreInfoFields: React.FC<Omit<SectionContentFieldsProps, 'sectionId'>> = 
   );
 };
 
-export const SectionContentFields: React.FC<SectionContentFieldsProps> = ({ sectionId, ...rest }) => {
+export const SectionContentFields: React.FC<SectionContentFieldsProps> = ({ sectionId, themeId = '', ...rest }) => {
+  const { isEn } = useLanguage();
   switch (sectionId) {
     case 'ingredient_story':
       return <IngredientStoryFields {...rest} />;
     case 'sustainability':
-      return <SustainabilityFields {...rest} />;
+      return (
+        <FeatureListFields
+          {...rest}
+          defaults={DEFAULT_SUSTAINABILITY_PILLARS}
+          title={isEn ? 'Commitment Points' : 'Poin Komitmen'}
+          allowEmpty
+        />
+      );
+    case 'tech_features':
+    case 'store_benefits':
+      return (
+        <FeatureListFields
+          {...rest}
+          defaults={defaultFeatureItems(sectionId, themeId, isEn) || []}
+          title={isEn ? 'Benefit Points' : 'Poin Keunggulan'}
+        />
+      );
     case 'store_info':
       return <StoreInfoFields {...rest} />;
     default:

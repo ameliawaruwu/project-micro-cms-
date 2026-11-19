@@ -4,7 +4,7 @@ import { InlineEditableText } from '../../../components/layout-editor/InlineEdit
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { useThemeProductsSource } from '../../useSectionProducts';
-import { STORE_ROUTES } from '../../storefrontLinks';
+import { STORE_ROUTES, resolveExtraText } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ModernHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, accentColor = '#2563EB', isMobile, isTablet }) => {
@@ -15,7 +15,8 @@ export const ModernHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
   const bgImage = sectionOptions?.imageUrl || sectionOptions?.bannerUrl || (storeInfo as any)?.bannerUrl || products.find((p) => p.image)?.image || "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1200&q=80";
 
   const title = sectionOptions.heading || storeInfo?.name || (isEn ? 'Welcome to Our Store' : 'Selamat Datang di Toko Kami');
-  const subtitle = sectionOptions.subheading || sectionOptions.subtitle || (isEn ? 'Selected Products' : 'Produk Pilihan');
+  // Label kecil di atas judul: isian "Label Kecil di Atas Judul" (eyebrowText); dikosongkan = disembunyikan.
+  const subtitle = resolveExtraText(sectionOptions, 'eyebrowText', sectionOptions.subtitle || (isEn ? 'Selected Products' : 'Produk Pilihan'));
   const description = sectionOptions.description || storeInfo?.description || (isEn ? 'Discover the best products from our store at friendly prices.' : 'Temukan produk terbaik dari toko kami dengan harga bersahabat.');
   const hero = getHeroContent(sectionOptions, { buttonLabel: isEn ? 'Shop Now' : 'Belanja Sekarang', buttonLink: STORE_ROUTES.catalog, secondaryButtonLink: STORE_ROUTES.promo });
 
@@ -37,17 +38,19 @@ export const ModernHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
               {hero.badge}
             </span>
           )}
-          <span
-            className="inline-block w-fit text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-full mb-5"
-            style={{ backgroundColor: `${accentColor}1A`, color: accentColor }}
-          >
-            <InlineEditableText
-              tagName="span"
-              value={subtitle}
-              onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { subheading: val })}
-              readonly={!onUpdateSectionOptions}
-            />
-          </span>
+          {subtitle && (
+            <span
+              className="inline-block w-fit text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-full mb-5"
+              style={{ backgroundColor: `${accentColor}1A`, color: accentColor }}
+            >
+              <InlineEditableText
+                tagName="span"
+                value={subtitle}
+                onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { eyebrowText: val })}
+                readonly={!onUpdateSectionOptions}
+              />
+            </span>
+          )}
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 leading-[1.1] mb-5 break-words">
             <InlineEditableText

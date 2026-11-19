@@ -4,7 +4,7 @@ import { CuteProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useSectionProducts } from '../../useSectionProducts';
-import { STORE_ROUTES } from '../../storefrontLinks';
+import { STORE_ROUTES, resolveSectionCta } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, isMobile, isTablet }) => {
@@ -14,6 +14,8 @@ export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSect
   const title = sectionOptions.featuredTitle || sectionOptions.heading || (isEn ? 'Favorite Products' : 'Produk Favorit');
   const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || (isEn ? 'Most Loved 💖' : 'Paling Disukai 💖');
   const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || (isEn ? 'See More 🌸' : 'Lihat Lebih Banyak 🌸');
+  // Tautan tombol dari panel ("Tautan Tombol"); kosong/berbahaya → katalog.
+  const buttonHref = resolveSectionCta(sectionOptions, buttonText, STORE_ROUTES.catalog).href;
 
   const desiredCols = [2, 3, 4, 5, 6].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 4;
   const desktopColsMap: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-4', 6: 'grid-cols-4' };
@@ -71,7 +73,7 @@ export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSect
         
         <div className="mt-12 text-center">
           <a 
-            href={STORE_ROUTES.catalog}
+            href={buttonHref}
             className="inline-flex items-center justify-center px-6 sm:px-8 py-3.5 sm:py-4 bg-[#FF85A1] text-white text-base sm:text-lg font-black hover:bg-[#FF6B8B] hover:scale-105 transition-all duration-300 rounded-full border-4 border-[#FFF5F7] shadow-sm"
             onClick={(e) => { if (onUpdateSectionOptions) e.preventDefault(); }}
           >

@@ -3,7 +3,8 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useSectionProducts } from '../../useSectionProducts';
 import { sanitizeLinkHref } from '../../navMenu';
-import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { STORE_ROUTES, formatRupiah, productHref, resolveSecondaryCta, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { defaultFeatureItems, resolveFeatureItems } from '../../sectionContent';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Sorotan produk unggulan toko; tidak dirender bila toko belum punya produk. */
@@ -27,6 +28,7 @@ export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobi
   const description = sectionOptions.description || product.description;
   const image = resolveSectionImage(sectionOptions) || product.image;
   const cta = resolveSectionCta(sectionOptions, isEn ? 'View Details' : 'Lihat Detail', productHref(product));
+  const secondaryCta = resolveSecondaryCta(sectionOptions, isEn ? 'View Catalog' : 'Lihat Katalog', STORE_ROUTES.catalog);
 
   return (
     <section className="py-16 sm:py-24 md:py-32 px-4 sm:px-6 md:px-12 bg-[#050505] text-white overflow-hidden relative border-t border-gray-900">
@@ -50,10 +52,10 @@ export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobi
               {cta.label}
             </a>
             <a
-              href={STORE_ROUTES.catalog}
+              href={secondaryCta.href}
               className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 border border-gray-700 text-gray-300 hover:text-white hover:border-white text-sm sm:text-base font-bold uppercase tracking-widest transition-all duration-300"
             >
-              {isEn ? 'View Catalog' : 'Lihat Katalog'}
+              {secondaryCta.label}
             </a>
           </div>
         </div>
@@ -81,11 +83,8 @@ export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any; isMobile?:
     desktop: 'grid-cols-3',
     fallback: 'grid-cols-1 md:grid-cols-3',
   });
-  const features = [
-    isEn ? { title: 'Quality Products', desc: 'Every product is selected and checked before shipping.' } : { title: 'Produk Berkualitas', desc: 'Setiap produk dipilih dan diperiksa sebelum dikirim.' },
-    isEn ? { title: 'Fast Shipping', desc: 'Orders are processed promptly and shipped across Indonesia.' } : { title: 'Pengiriman Cepat', desc: 'Pesanan diproses segera dan dikirim ke seluruh Indonesia.' },
-    isEn ? { title: 'Secure Payment', desc: 'Transactions are protected with trusted payment methods.' } : { title: 'Pembayaran Aman', desc: 'Transaksi terlindungi dengan metode pembayaran tepercaya.' },
-  ];
+  // Poin keunggulan diisi di panel kanan ("Poin Keunggulan"); bawaan bila belum diubah.
+  const features = resolveFeatureItems(sectionOptions.features, defaultFeatureItems('tech_features', 'futuristic', isEn) || []);
   const description = sectionOptions.description || sectionOptions.subheading;
   const image = resolveSectionImage(sectionOptions);
   // Tombol hanya tampil bila merchant mengisi teks tombol di editor.
@@ -105,8 +104,8 @@ export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any; isMobile?:
           <img src={image} alt={sectionOptions.heading || ''} className="w-full max-h-[420px] object-cover mb-10 sm:mb-14 border border-gray-900" />
         )}
         <div className={`grid ${gridColsClass} gap-10 sm:gap-16`}>
-          {features.map((feature) => (
-            <div key={feature.title} className="border-l-2 border-purple-600 pl-6 sm:pl-8 py-2 relative group hover:-translate-y-2 transition-transform duration-300">
+          {features.map((feature, index) => (
+            <div key={index} className="border-l-2 border-purple-600 pl-6 sm:pl-8 py-2 relative group hover:-translate-y-2 transition-transform duration-300">
               <div className="absolute -left-[9px] top-0 w-4 h-4 bg-[#080808] border-2 border-purple-600 group-hover:bg-purple-600 transition-colors shadow-[0_0_10px_#A855F7]"></div>
               <h3 className="text-lg sm:text-xl font-black uppercase tracking-widest mb-3 text-white">{feature.title}</h3>
               <p className="text-gray-500 font-mono text-sm leading-relaxed">{feature.desc}</p>

@@ -3,7 +3,7 @@ import { ModernProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useSectionProducts } from '../../useSectionProducts';
-import { STORE_ROUTES } from '../../storefrontLinks';
+import { STORE_ROUTES, resolveSectionCta } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, accentColor = '#2563EB', isMobile, isTablet }) => {
@@ -13,6 +13,8 @@ export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSe
   const title = sectionOptions.featuredTitle || sectionOptions.heading || (isEn ? 'Selected Products' : 'Produk Pilihan');
   const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || (isEn ? 'Best sellers this week' : 'Terlaris minggu ini');
   const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || (isEn ? 'View All' : 'Lihat Semua');
+  // Tautan tombol dari panel ("Tautan Tombol"); kosong/berbahaya → katalog.
+  const buttonHref = resolveSectionCta(sectionOptions, buttonText, STORE_ROUTES.catalog).href;
 
   const desiredCols = sectionOptions.gridColumns && [2, 3, 4, 5, 6].includes(sectionOptions.gridColumns)
     ? sectionOptions.gridColumns
@@ -64,7 +66,7 @@ export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSe
           </div>
 
           <a
-            href={STORE_ROUTES.catalog}
+            href={buttonHref}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 text-sm font-semibold text-gray-700 hover:border-gray-300 transition-colors w-fit"
             onClick={(e) => { if (onUpdateSectionOptions) e.preventDefault(); }}
           >

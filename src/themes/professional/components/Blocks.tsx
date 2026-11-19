@@ -2,7 +2,8 @@ import React from 'react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useSectionProducts } from '../../useSectionProducts';
 import { AddToCartButton } from '../../storefrontCart';
-import { STORE_ROUTES, formatRupiah, productHref } from '../../storefrontLinks';
+import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta } from '../../storefrontLinks';
+import { defaultFeatureItems, resolveFeatureItems } from '../../sectionContent';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -10,20 +11,8 @@ export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobil
   const heading = sectionOptions.heading || (isEn ? 'Why Shop With Us?' : 'Mengapa Belanja di Toko Kami?');
   
   const description = sectionOptions.description || sectionOptions.subheading;
-  const customBenefits = Array.isArray(sectionOptions.features) && sectionOptions.features.length > 0 ? sectionOptions.features : null;
-  const benefits = customBenefits || (isEn
-    ? [
-        { title: 'Guaranteed Products', desc: 'Every product is checked before it is shipped to customers.' },
-        { title: 'Safe Shipping', desc: 'Neatly packed and shipped across Indonesia.' },
-        { title: 'Easy Payment', desc: 'Pay by transfer, QRIS, or COD.' },
-        { title: 'Tracked Orders', desc: 'Order status can be checked at any time.' },
-      ]
-    : [
-        { title: 'Produk Terjamin', desc: 'Setiap produk dicek sebelum dikirim ke pelanggan.' },
-        { title: 'Pengiriman Aman', desc: 'Dikemas rapi dan dikirim ke seluruh Indonesia.' },
-        { title: 'Pembayaran Mudah', desc: 'Bayar lewat transfer, QRIS, atau COD.' },
-        { title: 'Pesanan Terpantau', desc: 'Status pesanan bisa dicek kapan saja.' },
-      ]);
+  // Poin keunggulan diisi di panel kanan ("Poin Keunggulan"); bawaan bila belum diubah.
+  const benefits = resolveFeatureItems(sectionOptions.features, defaultFeatureItems('store_benefits', 'professional', isEn) || []);
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
@@ -62,6 +51,7 @@ export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?
   const products = useSectionProducts('professional', sectionOptions, { defaultCount: 8 });
   const heading = sectionOptions.heading || sectionOptions.featuredTitle || (isEn ? 'Product Catalog' : 'Katalog Produk');
   const subheading = sectionOptions.subheading || sectionOptions.featuredSubtitle || (isEn ? 'The best products from our store.' : 'Pilihan produk terbaik dari toko kami.');
+  const viewAllCta = resolveSectionCta(sectionOptions, isEn ? 'View All Products →' : 'Lihat Semua Produk →', STORE_ROUTES.catalog);
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-2',
@@ -81,10 +71,10 @@ export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?
             {subheading && <p className="text-sm text-gray-600">{subheading}</p>}
           </div>
           <a
-            href={STORE_ROUTES.catalog}
+            href={viewAllCta.href}
             className="inline-block w-fit shrink-0 px-5 py-2.5 text-sm font-semibold text-[#1E40AF] border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
           >
-            {isEn ? 'View All Products →' : 'Lihat Semua Produk →'}
+            {viewAllCta.label}
           </a>
         </div>
 
@@ -152,7 +142,9 @@ export const ProfessionalTestimonials: React.FC<{ sectionOptions?: any; isMobile
     const heading = sectionOptions.heading || (isEn ? 'Customer Satisfaction Is Our Priority' : 'Kepuasan Pelanggan Prioritas Kami');
     const desc =
       sectionOptions.description ||
-      'Ada pertanyaan tentang produk atau butuh penawaran khusus? Tim kami siap membantu Anda.';
+      (isEn
+        ? 'Have a question about our products or need a special quote? Our team is ready to help.'
+        : 'Ada pertanyaan tentang produk atau butuh penawaran khusus? Tim kami siap membantu Anda.');
     return (
       <section className="py-16 sm:py-24 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-16 text-center">

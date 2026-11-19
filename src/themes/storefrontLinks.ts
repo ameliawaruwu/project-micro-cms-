@@ -61,6 +61,33 @@ export function resolveSectionCta(
   return { label, href: href && href !== '#' && href !== '#all' ? href : fallbackHref };
 }
 
+/**
+ * Tombol kedua section ("Tombol Sekunder" di panel editor). Teks kosong memakai label bawaan;
+ * tautan kosong/berbahaya memakai tujuan bawaan.
+ */
+export function resolveSecondaryCta(
+  options: Record<string, any> | undefined,
+  fallbackLabel: string,
+  fallbackHref: string,
+): { label: string; href: string } {
+  const label = String(options?.secondaryButtonLabel || '').trim() || fallbackLabel;
+  const href = sanitizeLinkHref(options?.secondaryButtonLink);
+  return { label, href: href && href !== '#' && href !== '#all' ? href : fallbackHref };
+}
+
+/**
+ * Teks kecil tambahan section (label di atas judul, judul kartu). Bila belum pernah diisi, nilai
+ * lama `subheading` hanya dipakai jika berbeda dari deskripsi, karena kolom Deskripsi panel
+ * menulis keduanya sekaligus. Diisi kosong = sengaja disembunyikan.
+ */
+export function resolveExtraText(options: Record<string, any> | undefined, key: string, fallback: string): string {
+  const own = options?.[key];
+  if (typeof own === 'string') return own.trim();
+  const legacy = String(options?.subheading || '').trim();
+  if (legacy && legacy !== String(options?.description || '').trim()) return legacy;
+  return fallback;
+}
+
 /** Gambar section yang diunggah/dipilih merchant di editor; hanya URL http(s) atau path lokal. */
 export function resolveSectionImage(options: Record<string, any> | undefined): string {
   const url = String(options?.imageUrl || options?.bannerUrl || '').trim();

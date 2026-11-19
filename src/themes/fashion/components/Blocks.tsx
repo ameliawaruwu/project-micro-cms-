@@ -3,7 +3,7 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { useSectionProducts, useThemeProductsSource } from '../../useSectionProducts';
 import { AddToCartButton } from '../../storefrontCart';
-import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { STORE_ROUTES, formatRupiah, productHref, resolveExtraText, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Lookbook dari foto produk toko; tidak dirender bila belum ada produk bergambar. */
@@ -67,7 +67,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
             )}
             <div className="relative overflow-hidden min-h-[220px] flex-1 bg-gray-100 p-6 sm:p-8 flex flex-col justify-center items-center text-center">
               <h3 className="text-2xl sm:text-3xl font-serif italic mb-4 sm:mb-6 text-gray-900 break-words">
-                {sectionOptions.subheading || storeInfo?.name || (isEn ? 'Our Collection' : 'Koleksi Kami')}
+                {resolveExtraText(sectionOptions, 'cardTitle', '') || storeInfo?.name || (isEn ? 'Our Collection' : 'Koleksi Kami')}
               </h3>
               <p className="text-sm text-gray-600 leading-relaxed mb-6 sm:mb-8 max-w-xs line-clamp-4">
                 {sectionOptions.description || storeInfo?.description || (isEn ? 'Discover the best products designed for your lifestyle.' : 'Temukan pilihan produk terbaik yang dirancang untuk gaya hidup Anda.')}
@@ -106,6 +106,7 @@ export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?
   const { isEn } = useLanguage();
   const products = useSectionProducts('fashion', sectionOptions, { defaultCount: 4 });
   const heading = sectionOptions.heading || (isEn ? 'Best Sellers' : 'Produk Terlaris');
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View All' : 'Lihat Semua', STORE_ROUTES.catalog);
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-2',
@@ -122,10 +123,10 @@ export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?
         <div className="flex justify-between items-end gap-4 mb-10 sm:mb-16">
           <h2 className="min-w-0 break-words text-2xl sm:text-3xl md:text-4xl font-serif italic storefront-heading-section">{heading}</h2>
           <a
-            href={STORE_ROUTES.catalog}
+            href={cta.href}
             className="shrink-0 whitespace-nowrap text-[10px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 transition-colors"
           >
-            {isEn ? 'View All' : 'Lihat Semua'}
+            {cta.label}
           </a>
         </div>
 
