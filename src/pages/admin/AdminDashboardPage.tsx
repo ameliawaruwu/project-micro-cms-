@@ -49,6 +49,9 @@ import {
   getPaymentStatusLabel,
 } from './utils';
 import { sessionHeaders } from '../../services/supabaseClient';
+import { AdminStoreDetailPage } from './tabs/AdminStoreDetailPage';
+import { adminRoutePath, isAdminPath, parseAdminPath } from '../../utils/appRoutes';
+import { isPlatformHost, getStoreSlugFromHost } from '../../utils/domainRouting';
 
 interface AdminDashboardPageProps {
   currentUser?: User | null;
@@ -91,7 +94,57 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   const isSubAdmin = isSubAdminUmum || isSubAdminProduk || loggedInUser?.role === 'sub_admin';
 
-  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  // URL routing panel admin: /admin/<halaman>, /admin/toko/<storeId> (hanya host platform).
+  const onPlatformPanelHost = () =>
+    typeof window !== 'undefined' && isPlatformHost(window.location.hostname) && !getStoreSlugFromHost(window.location.hostname);
+  const initialRoute = React.useMemo(() => (onPlatformPanelHost() ? parseAdminPath(window.location.pathname) : null), []);
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialRoute?.tab || 'overview');
+  /** Halaman detail toko binaan (sub-admin) yang sedang dibuka; null = daftar toko. */
+  const [detailStoreId, setDetailStoreId] = useState<string | null>(initialRoute?.storeId || null);
+  const selectTab = React.useCallback((tab: AdminTab) => {
+    setDetailStoreId(null);
+    setActiveTab(tab);
+  }, []);
+  const openStoreDetail = React.useCallback((storeId: string) => {
+    setActiveTab('stores');
+    setDetailStoreId(storeId);
+  }, []);
+  // Perubahan otomatis sesaat setelah muat / Back-Forward memakai replace agar riwayat tidak terjebak.
+  const urlReplaceUntilRef = React.useRef(Date.now() + 1500);
+  const routeRef = React.useRef({ tab: activeTab, storeId: detailStoreId });
+  routeRef.current = { tab: activeTab, storeId: detailStoreId };
+
+  useEffect(() => {
+    if (!onPlatformPanelHost()) return;
+    const { pathname, search, hash } = window.location;
+    const target = adminRoutePath(activeTab, detailStoreId);
+    if (pathname === target) return;
+    const replace = !isAdminPath(pathname) || Date.now() < urlReplaceUntilRef.current;
+    if (replace) window.history.replaceState(window.history.state, '', `${target}${search}${hash}`);
+    else window.history.pushState({ lapakqAdminTab: activeTab }, '', target);
+  }, [activeTab, detailStoreId]);
+
+  useEffect(() => {
+    if (!onPlatformPanelHost()) return;
+    const onPop = () => {
+      urlReplaceUntilRef.current = Date.now() + 600;
+      const route = parseAdminPath(window.location.pathname);
+      if (route) {
+        setActiveTab(route.tab);
+        setDetailStoreId(route.storeId);
+      } else {
+        const cur = routeRef.current;
+        window.history.replaceState(window.history.state, '', adminRoutePath(cur.tab, cur.storeId));
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  // Halaman detail toko hanya untuk sub-admin; super admin tetap memakai modal detail.
+  useEffect(() => {
+    if (detailStoreId && (!isSubAdmin || activeTab !== 'stores')) setDetailStoreId(null);
+  }, [detailStoreId, isSubAdmin, activeTab]);
 
   // Hak akses ketat berdasarkan peran sub-admin:
   // - Sub Admin Utama: Dashboard, Kelola Toko Binaan (suspend/aktifkan), Halaman Komunitas, Anggota Komunitas
@@ -242,6 +295,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     }, 800);
   };
 
+  const [storesLoaded, setStoresLoaded] = useState(false);
   const loadData = async () => {
     try {
       const [
@@ -275,6 +329,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       setStats(adminService.getPlatformStats(fetchedStores, fetchedWithdrawals, fetchedOrders));
     } catch (err) {
       console.warn('Error loading admin data from database:', err);
+    } finally {
+      setStoresLoaded(true);
     }
   };
 
@@ -569,7 +625,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         },
         {
           id: 'community-members',
-          label: language === 'en' ? 'Community Members' : 'Anggota Komunitas',
+          label: language === 'en' ? 'Community Merchant Members' : 'Anggota Merchant Komunitas',
           icon: Users,
         },
         {
@@ -598,7 +654,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         },
         {
           id: 'community-members',
-          label: language === 'en' ? 'Community Members' : 'Anggota Komunitas',
+          label: language === 'en' ? 'Community Merchant Members' : 'Anggota Merchant Komunitas',
           icon: Users,
         },
         {
@@ -632,7 +688,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         },
         {
           id: 'community-members',
-          label: language === 'en' ? 'Community Members' : 'Anggota Komunitas',
+          label: language === 'en' ? 'Community Merchant Members' : 'Anggota Merchant Komunitas',
           icon: Users,
         },
         {
@@ -695,7 +751,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={selectTab}
         navItems={navItems}
         onBackToMerchant={onBackToMerchant}
         onLogout={onLogout}
@@ -717,7 +773,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           onOpenProfile={() => setIsProfileModalOpen(true)}
           onNotificationNavigate={(link) => {
             const target = navItems.find((item) => item.id === link);
-            if (target) setActiveTab(target.id);
+            if (target) selectTab(target.id);
           }}
         />
 
@@ -730,7 +786,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               withdrawals={activeWithdrawalsForAdmin}
               stores={activeStoresForAdmin}
               pendingDomainRequestsCount={isSubAdmin ? 0 : pendingDomainRequests.length}
-              setActiveTab={setActiveTab}
+              setActiveTab={selectTab}
               language={language}
               isSubAdmin={isSubAdmin}
               isSubAdminUmum={isSubAdminUmum}
@@ -755,7 +811,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               currentUser={loggedInUser}
               language={language}
               onShowToast={showToast}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => selectTab('overview')}
             />
           )}
 
@@ -765,7 +821,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               language={language}
               onShowToast={showToast}
               onTicketsChanged={refreshPendingTickets}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => selectTab('overview')}
             />
           )}
 
@@ -773,7 +829,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <AdminCommunityMembersTab
               language={language}
               onShowToast={(msg) => showToast(msg)}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => selectTab('overview')}
               canManage={isSubAdminUmum}
             />
           )}
@@ -784,7 +840,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               requesterRole={loggedInUser?.role === 'sub_admin' ? 'sub_admin' : isSubAdminUmum ? 'sub_admin_umum' : isSubAdminProduk ? 'community_admin' : 'sub_admin'}
               language={language}
               onShowToast={(msg) => showToast(msg)}
-              onNavigateDashboard={() => setActiveTab('overview')}
+              onNavigateDashboard={() => selectTab('overview')}
             />
           )}
 
@@ -796,7 +852,21 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             />
           )}
 
-          {activeTab === 'stores' && (
+          {activeTab === 'stores' && isSubAdmin && detailStoreId && (
+            <AdminStoreDetailPage
+              storeId={detailStoreId}
+              store={subAdminStores.find((s) => s.id === detailStoreId) || null}
+              storesLoaded={storesLoaded}
+              isSuspended={suspendedIds.includes(detailStoreId)}
+              isEn={isEn}
+              communityName={loggedInUser?.communityName}
+              canSeeOwnerEmail={isSubAdminUmum}
+              onBack={() => selectTab('stores')}
+              onNavigateOverview={() => selectTab('overview')}
+            />
+          )}
+
+          {activeTab === 'stores' && !(isSubAdmin && detailStoreId) && (
             <AdminStoresTab
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -805,10 +875,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               handleToggleSuspend={handleToggleSuspend}
               language={language}
               isEn={isEn}
-              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
               isSubAdmin={isSubAdmin}
               communityName={loggedInUser?.communityName}
               canManage={!isSubAdminProduk || isSubAdminUmum}
+              onOpenStoreDetail={isSubAdmin ? openStoreDetail : undefined}
+              canAddMembers={isSubAdminUmum}
+              onMembersChanged={loadData}
+              onShowToast={showToast}
             />
           )}
 
@@ -817,7 +891,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               language={language}
               onShowToast={(msg) => setToastMessage(msg)}
               onRequestUpdated={loadData}
-              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -831,7 +905,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               handleApproveWithdrawal={handleApproveWithdrawal}
               handleRejectWithdrawal={handleRejectWithdrawal}
               isEn={isEn}
-              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -853,7 +927,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               planForm={planForm}
               setPlanForm={setPlanForm}
               handleSavePlan={handleSavePlan}
-              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -879,7 +953,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               stores={activeStoresForAdmin}
               handleCopyResi={handleCopyResi}
               setSelectedAdminOrder={setSelectedAdminOrder}
-              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -887,7 +961,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
             <AdminTransactionsTab
               orders={activeOrdersForAdmin}
               isEn={isEn}
-              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -899,7 +973,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               handleSaveSettings={handleSaveSettings}
               handleTestApi={handleTestApi}
               testingService={testingService}
-              onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
               isSaving={isSavingSettings}
             />
           )}

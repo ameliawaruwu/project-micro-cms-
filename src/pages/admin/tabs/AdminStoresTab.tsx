@@ -22,6 +22,7 @@ import { formatRupiah } from '../../../utils/formatters';
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
 import { StoreDomainPanel } from '../../../components/admin/StoreDomainPanel';
 import { buildStoreLiveUrl, useStoreBaseDomain } from '../../../utils/storeDomain';
+import { AdminStoreLinkSearch } from '../components/AdminStoreLinkSearch';
 
 type PublishFilter = 'all' | 'published' | 'draft';
 
@@ -38,6 +39,12 @@ interface AdminStoresTabProps {
   communityName?: string;
   /** false = hanya lihat (Sub-Admin Produk): tanpa Suspend/Aktifkan. */
   canManage?: boolean;
+  /** Sub-admin: tombol Detail membuka halaman detail toko (rute /admin/toko/:id), bukan modal. */
+  onOpenStoreDetail?: (storeId: string) => void;
+  /** Sub-Admin Utama: tampilkan pencarian untuk menautkan toko ke komunitas. */
+  canAddMembers?: boolean;
+  onMembersChanged?: () => void | Promise<void>;
+  onShowToast?: (msg: string) => void;
 }
 
 export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
@@ -52,6 +59,10 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
   isSubAdmin = false,
   communityName,
   canManage = true,
+  onOpenStoreDetail,
+  canAddMembers = false,
+  onMembersChanged,
+  onShowToast,
 }) => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [copied, setCopied] = useState(false);
@@ -128,6 +139,15 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
           {filteredStores.length} {isEn ? 'Stores' : 'Toko Terdaftar'}
         </span>
       </div>
+
+      {canAddMembers && (
+        <AdminStoreLinkSearch
+          isEn={isEn}
+          linkedStoreIds={filteredStores.map((s) => s.id)}
+          onLinked={onMembersChanged}
+          onShowToast={onShowToast}
+        />
+      )}
 
       {/* Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -246,7 +266,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                     <td className="py-2.5 px-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
-                          onClick={() => setSelectedStore(store)}
+                          onClick={() => (onOpenStoreDetail ? onOpenStoreDetail(store.id) : setSelectedStore(store))}
                           className="px-2 py-1 rounded bg-[#F5E8EA] hover:bg-[#E8DDDE] text-[#66000E] border border-[#E8DDDE] text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
                           title={isEn ? 'View Store & Address Details' : 'Lihat Detail Toko & Alamat'}
                         >

@@ -8,6 +8,7 @@
  *   GET    /api/community/my                 komunitas toko saya
  * Sub-admin komunitas (sub_admin, sub_admin_umum, community_admin, sub_admin_produk):
  *   GET    /api/community/manage             daftar toko anggota komunitas sendiri
+ *   GET    /api/community/manage/stores/:storeId/products  produk toko binaan (halaman detail toko)
  * Hanya Sub-Admin Utama (sub_admin, sub_admin_umum) — Sub-Admin Produk hanya bisa melihat:
  *   GET    /api/community/manage/lookup?q=   cari toko (nama toko, tautan toko, atau email pemilik persis)
  *   POST   /api/community/manage/members     { storeId } tambahkan toko binaan ke komunitas
@@ -205,7 +206,8 @@ communityMembershipRouter.get('/manage', async (req: Request, res: Response) => 
     // Sub-Admin Produk hanya melihat nama toko & pemilik (tanpa email/kontak).
     const isLead = COMMUNITY_LEAD_ROLES.has(user.role);
     const members = await pool.query(
-      `SELECT s.id AS store_id, s.name AS store_name, s.slug, s.is_published, u.name AS owner_name, u.email AS owner_email,
+      `SELECT s.id AS store_id, s.name AS store_name, s.slug, s.is_published, s.logo_url, s.city,
+              u.name AS owner_name, u.email AS owner_email, u.avatar_url AS owner_avatar_url,
               m.source, m.joined_at
          FROM (
            SELECT id AS store_id, 'primary'::text AS source, created_at AS joined_at FROM stores WHERE community_id = $1
@@ -227,7 +229,10 @@ communityMembershipRouter.get('/manage', async (req: Request, res: Response) => 
           storeName: m.store_name,
           slug: m.slug,
           isPublished: !!m.is_published,
+          logoUrl: m.logo_url || null,
+          city: m.city || null,
           ownerName: m.owner_name,
+          ownerAvatarUrl: m.owner_avatar_url || null,
           ownerEmail: isLead ? m.owner_email : null,
           source: m.source,
           joinedAt: m.joined_at,
@@ -238,6 +243,58 @@ communityMembershipRouter.get('/manage', async (req: Request, res: Response) => 
   } catch (err: any) {
     console.error('[community GET /manage] Error:', err?.message);
     return fail(res, 500, 'Gagal memuat anggota komunitas.');
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /manage/stores/:storeId/products  (staf komunitas: produk satu toko binaan)
+// Hanya toko yang tercatat di komunitas staf (komunitas utama atau store_communities).
+// ---------------------------------------------------------------------------
+communityMembershipRouter.get('/manage/stores/:storeId/products', async (req: Request, res: Response) => {
+  const user = await requireCommunityStaff(req, res);
+  if (!user) return;
+  const storeId = String(req.params.storeId || '').trim();
+  if (!safeIdentifier(storeId)) return fail(res, 400, 'Toko tidak valid.');
+  try {
+    const member = await pool.query(
+      `SELECT 1 FROM stores WHERE id = $1 AND community_id = $2
+        UNION ALL
+       SELECT 1 FROM store_communities WHERE store_id = $1 AND community_id = $2
+        LIMIT 1`,
+      [storeId, user.communityId]
+    );
+    if (!member.rowCount) return fail(res, 404, 'Toko tidak ditemukan di komunitas Anda.');
+
+    const r = await pool.query(
+      `SELECT id, name, category, price, stock, status, image_url, images, created_at
+         FROM products
+        WHERE store_id = $1
+        ORDER BY created_at DESC
+        LIMIT 500`,
+      [storeId]
+    );
+    const firstImage = (row: any): string | null => {
+      if (row.image_url) return String(row.image_url);
+      const imgs = Array.isArray(row.images) ? row.images : [];
+      const first = imgs.find((x: unknown) => typeof x === 'string' && x);
+      return first ? String(first) : null;
+    };
+    return res.json({
+      success: true,
+      data: r.rows.map((p) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category || null,
+        price: Number(p.price) || 0,
+        stock: p.stock == null ? null : Number(p.stock),
+        status: p.status || 'Tersedia',
+        imageUrl: firstImage(p),
+        createdAt: p.created_at,
+      })),
+    });
+  } catch (err: any) {
+    console.error('[community GET /manage/stores/:id/products] Error:', err?.message);
+    return fail(res, 500, 'Gagal memuat produk toko.');
   }
 });
 
@@ -267,7 +324,7 @@ communityMembershipRouter.get('/manage/lookup', async (req: Request, res: Respon
     let rows: any[];
     if (EMAIL_REGEX.test(q)) {
       const r = await pool.query(
-        `SELECT s.id, s.name, s.slug, s.community_id, u.name AS owner_name
+        `SELECT s.id, s.name, s.slug, s.community_id, s.logo_url, s.city, u.name AS owner_name
            FROM stores s JOIN users u ON u.id = s.user_id
           WHERE lower(u.email) = $1
           ORDER BY s.created_at ASC LIMIT 10`,
@@ -276,7 +333,7 @@ communityMembershipRouter.get('/manage/lookup', async (req: Request, res: Respon
       rows = r.rows;
     } else if (urlMatch && SLUG_REGEX.test(q)) {
       const r = await pool.query(
-        `SELECT s.id, s.name, s.slug, s.community_id, u.name AS owner_name
+        `SELECT s.id, s.name, s.slug, s.community_id, s.logo_url, s.city, u.name AS owner_name
            FROM stores s LEFT JOIN users u ON u.id = s.user_id
           WHERE lower(s.slug) = $1 LIMIT 1`,
         [q]
@@ -290,7 +347,7 @@ communityMembershipRouter.get('/manage/lookup', async (req: Request, res: Respon
       }
       const like = `%${term.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
       const r = await pool.query(
-        `SELECT s.id, s.name, s.slug, s.community_id, u.name AS owner_name
+        `SELECT s.id, s.name, s.slug, s.community_id, s.logo_url, s.city, u.name AS owner_name
            FROM stores s LEFT JOIN users u ON u.id = s.user_id
           WHERE lower(s.name) LIKE $1 OR lower(s.slug) LIKE $1
           ORDER BY (lower(s.slug) = $2 OR lower(s.name) = $2) DESC,
@@ -314,6 +371,8 @@ communityMembershipRouter.get('/manage/lookup', async (req: Request, res: Respon
         storeId: r.id,
         storeName: r.name,
         slug: r.slug,
+        logoUrl: r.logo_url || null,
+        city: r.city || null,
         ownerName: r.owner_name,
         alreadyMember: r.community_id === user.communityId || inSecondary.has(r.id),
       })),

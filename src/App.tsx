@@ -52,6 +52,7 @@ import { cartService } from './services/cartService';
 import { formatRupiah } from './utils/formatters';
 import { getStoreSections } from './utils/layoutConstants';
 import { isPlatformHost, getStoreSlugFromHost } from './utils/domainRouting';
+import { merchantTabPath, parseMerchantPath, isDashboardPath, isAdminPath } from './utils/appRoutes';
 import { applyStoreBranding, resetDocumentBranding } from './utils/documentBranding';
 import { getShippingBlockReason, isCodMethod } from './utils/orderFlow';
 
@@ -242,6 +243,11 @@ export default function App() {
         searchParams.get('order_id')?.startsWith('BILL-')
       ) {
         return 'billing';
+      }
+      // Akses langsung /dashboard/<halaman> (refresh / tautan) di host platform
+      if (isPlatformHost(window.location.hostname) && !getStoreSlugFromHost(window.location.hostname)) {
+        const fromPath = parseMerchantPath(window.location.pathname);
+        if (fromPath) return fromPath;
       }
     }
     return 'beranda';
@@ -437,6 +443,7 @@ export default function App() {
     currentStore.communityId || currentStore.communityName || currentStore.extraCommunityIds?.length
   );
   const [hasCommunityMembership, setHasCommunityMembership] = useState(false);
+  const [communityMembershipChecked, setCommunityMembershipChecked] = useState(false);
   useEffect(() => {
     if (!user?.id || storeHasPrimaryCommunity) return;
     let cancelled = false;
@@ -447,6 +454,9 @@ export default function App() {
       })
       .catch(() => {
         if (!cancelled) setHasCommunityMembership(false);
+      })
+      .finally(() => {
+        if (!cancelled) setCommunityMembershipChecked(true);
       });
     return () => {
       cancelled = true;
@@ -461,8 +471,49 @@ export default function App() {
       : undefined;
 
   useEffect(() => {
-    if (activeTab === 'komunitas' && !showCommunityMenu) setActiveTab('beranda');
-  }, [activeTab, showCommunityMenu]);
+    // Tunggu data toko & keanggotaan termuat agar akses langsung /dashboard/komunitas tidak terlempar.
+    if (activeTab === 'komunitas' && !showCommunityMenu && !isStoreLoading && communityMembershipChecked) {
+      setActiveTab('beranda');
+    }
+  }, [activeTab, showCommunityMenu, isStoreLoading, communityMembershipChecked]);
+
+  // URL routing panel merchant: setiap tab punya path /dashboard/<halaman> (hanya host platform).
+  const isMerchantView = viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile';
+  // Perubahan tab otomatis sesaat setelah muat / Back-Forward memakai replace agar riwayat tidak terjebak.
+  const urlReplaceUntilRef = useRef(Date.now() + 1500);
+  const onPlatformPanelHost = () =>
+    typeof window !== 'undefined' && isPlatformHost(window.location.hostname) && !getStoreSlugFromHost(window.location.hostname);
+
+  useEffect(() => {
+    if (!onPlatformPanelHost()) return;
+    const { pathname, search, hash } = window.location;
+    if (isMerchantView) {
+      const target = merchantTabPath(activeTab);
+      if (pathname === target) return;
+      const replace = !isDashboardPath(pathname) || Date.now() < urlReplaceUntilRef.current;
+      if (replace) window.history.replaceState(window.history.state, '', `${target}${search}${hash}`);
+      else window.history.pushState({ lapakqTab: activeTab }, '', target);
+      return;
+    }
+    // Belum login / sudah keluar: jangan biarkan URL panel menempel di landing page.
+    if (viewMode === 'landing' && !authView && !isAuthLoading && !user && (isDashboardPath(pathname) || isAdminPath(pathname))) {
+      window.history.replaceState(window.history.state, '', '/');
+    }
+  }, [activeTab, isMerchantView, viewMode, authView, isAuthLoading, user]);
+
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+  useEffect(() => {
+    if (!isMerchantView || !onPlatformPanelHost()) return;
+    const onPop = () => {
+      urlReplaceUntilRef.current = Date.now() + 600;
+      const tab = parseMerchantPath(window.location.pathname);
+      if (tab) setActiveTab(tab);
+      else window.history.replaceState(window.history.state, '', merchantTabPath(activeTabRef.current));
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [isMerchantView]);
 
   // Initial Data Loading
   const loadData = async (targetStoreId?: string) => {

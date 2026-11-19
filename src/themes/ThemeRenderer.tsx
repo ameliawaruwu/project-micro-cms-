@@ -19,7 +19,9 @@ interface ThemeRendererProps {
 const resolveInitialPage = (store?: Store): string => {
   const params = new URLSearchParams(window.location.search);
   const pageParam = params.get('page');
-  const currentPath = window.location.pathname.toLowerCase();
+  // Path panel (/dashboard/produk, /admin/toko/...) bukan halaman toko: abaikan saat pratinjau di dashboard.
+  const rawPath = window.location.pathname.toLowerCase();
+  const currentPath = /^\/(dashboard|admin)(\/|$)/.test(rawPath) ? '/' : rawPath;
 
   if (pageParam) return pageParam;
   if (currentPath.includes('/katalog') || currentPath.includes('/products') || currentPath.includes('/catalog') || currentPath.includes('/produk')) return 'katalog';

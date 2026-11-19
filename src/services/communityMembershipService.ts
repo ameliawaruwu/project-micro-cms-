@@ -39,7 +39,10 @@ export interface ManagedMember {
   storeName: string;
   slug?: string;
   isPublished: boolean;
+  logoUrl?: string | null;
+  city?: string | null;
   ownerName?: string | null;
+  ownerAvatarUrl?: string | null;
   ownerEmail?: string | null;
   source: string;
   joinedAt?: string;
@@ -62,8 +65,22 @@ export interface StoreLookupResult {
   storeId: string;
   storeName: string;
   slug?: string;
+  logoUrl?: string | null;
+  city?: string | null;
   ownerName?: string | null;
   alreadyMember: boolean;
+}
+
+/** Produk toko binaan untuk halaman detail toko sub-admin (data dari server). */
+export interface ManagedStoreProduct {
+  id: string;
+  name: string;
+  category?: string | null;
+  price: number;
+  stock: number | null;
+  status: string;
+  imageUrl?: string | null;
+  createdAt?: string;
 }
 
 export interface ManageData {
@@ -96,6 +113,10 @@ export const communityMembershipService = {
   },
   async getManaged(): Promise<ManageData> {
     return (await call<{ data: ManageData }>('/manage')).data;
+  },
+  /** Staf komunitas: produk satu toko binaan (server memeriksa keanggotaan komunitas). */
+  async getStoreProducts(storeId: string): Promise<ManagedStoreProduct[]> {
+    return (await call<{ data: ManagedStoreProduct[] }>(`/manage/stores/${encodeURIComponent(storeId)}/products`)).data;
   },
   /** Sub-Admin Utama: cari toko lewat nama (sebagian), tautan toko, atau email pemilik (persis). */
   async lookupStore(q: string): Promise<StoreLookupResult[]> {
