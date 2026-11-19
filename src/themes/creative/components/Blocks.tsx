@@ -1,21 +1,21 @@
 import React from 'react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { useThemeProductsSource } from '../../useSectionProducts';
+import { useSectionProducts } from '../../useSectionProducts';
 import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Galeri foto produk toko bergaya masonry; tidak dirender bila belum ada foto produk. */
 export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const products = useThemeProductsSource('creative');
-  const items = products.filter((p) => p.image).slice(0, 9);
+  const { isEn } = useLanguage();
+  const items = useSectionProducts('creative', sectionOptions, { defaultCount: 9, requireImage: true });
   if (items.length === 0) return null;
 
-  const heading = sectionOptions.heading || 'Galeri Produk';
+  const heading = sectionOptions.heading || (isEn ? 'Product Gallery' : 'Galeri Produk');
   const description = sectionOptions.description || sectionOptions.subheading;
   const coverImage = resolveSectionImage(sectionOptions);
   // Tombol hanya tampil bila merchant mengisi teks tombol di editor.
   const hasCta = Boolean(sectionOptions.buttonLabel || sectionOptions.buttonText);
-  const cta = resolveSectionCta(sectionOptions, 'Lihat Koleksi', STORE_ROUTES.catalog);
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View Collection' : 'Lihat Koleksi', STORE_ROUTES.catalog);
   const columnsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'columns-2',
     tablet: 'columns-3',
@@ -27,6 +27,9 @@ export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boole
     <section className="py-12 sm:py-20 md:py-24 px-4 sm:px-6 md:px-12 bg-white relative overflow-hidden">
       <div className="absolute top-0 left-0 w-20 h-20 sm:w-32 sm:h-32 bg-yellow-300 rounded-br-[100px] z-0"></div>
       <div className="relative z-10 max-w-5xl mx-auto">
+        {sectionOptions.eyebrowText && (
+          <p className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-gray-500 mb-3">{sectionOptions.eyebrowText}</p>
+        )}
         <div className="flex items-center gap-4 sm:gap-8 mb-8 sm:mb-14">
           <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-black tracking-tighter break-words min-w-0">{heading}</h2>
           <div className="h-2 flex-1 min-w-[2rem] bg-black rounded-full"></div>
@@ -74,20 +77,23 @@ export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boole
 /** Sorotan satu produk toko dengan gaya kartu miring; tidak dirender tanpa gambar. */
 export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { isEn } = useLanguage();
-  const products = useThemeProductsSource('creative');
-  const product = products.find((p) => p.isFeatured && p.image) || products.find((p) => p.image) || products[0];
+  // Produk pertama dari pilihan editor (bila ada), selain itu produk unggulan bergambar.
+  const candidates = useSectionProducts('creative', sectionOptions, { defaultCount: 50, preferFeatured: true });
+  const product = candidates.find((p) => p.image) || candidates[0];
   const image = resolveSectionImage(sectionOptions) || product?.image;
   if (!image && !product) return null;
 
-  const heading = sectionOptions.heading || 'Sorotan Produk';
-  const title = sectionOptions.subheading || product?.name || 'Karya Pilihan Kami';
+  const heading = sectionOptions.heading || (isEn ? 'Product Spotlight' : 'Sorotan Produk');
+  const title = sectionOptions.subheading || product?.name || (isEn ? 'Our Featured Pick' : 'Karya Pilihan Kami');
   const description =
     sectionOptions.description ||
     product?.description ||
-    'Setiap produk kami pilih dengan teliti agar tampil beda dan berkesan untuk Anda.';
+    (isEn
+      ? 'Every product is carefully chosen to stand out and leave a lasting impression.'
+      : 'Setiap produk kami pilih dengan teliti agar tampil beda dan berkesan untuk Anda.');
   const cta = resolveSectionCta(
     sectionOptions,
-    product ? 'Lihat Produk' : 'Lihat Katalog',
+    product ? (isEn ? 'View Product' : 'Lihat Produk') : (isEn ? 'View Catalog' : 'Lihat Katalog'),
     product ? productHref(product) : STORE_ROUTES.catalog,
   );
   const gridColsClass = getDeviceClass(isMobile, isTablet, {

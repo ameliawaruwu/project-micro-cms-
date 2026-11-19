@@ -31,7 +31,8 @@ const ThemeScope: React.FC<{ themeId?: string; accentColor?: string; className?:
 );
 
 export const ThemedAnnouncement: React.FC<ThemedBlockProps> = ({ sectionOptions = {}, themeId, accentColor }) => {
-  const text = sectionOptions.announcementText || 'Selamat datang di toko kami';
+  const { isEn } = useLanguage();
+  const text = sectionOptions.announcementText || (isEn ? 'Welcome to our store' : 'Selamat datang di toko kami');
   return (
     <ThemeScope themeId={themeId} accentColor={accentColor}>
       <div className="w-full px-4 py-2 text-center text-[11px] sm:text-xs font-medium tracking-wide bg-[var(--sf-primary)] text-[var(--sf-primary-contrast)]">
@@ -42,11 +43,12 @@ export const ThemedAnnouncement: React.FC<ThemedBlockProps> = ({ sectionOptions 
 };
 
 export const ThemedPromoBanner: React.FC<ThemedBlockProps> = ({ sectionOptions = {}, themeId, accentColor }) => {
+  const { isEn } = useLanguage();
   const badge = sectionOptions.discountBadge;
-  const heading = sectionOptions.heading || 'Penawaran Spesial';
+  const heading = sectionOptions.heading || (isEn ? 'Special Offer' : 'Penawaran Spesial');
   const description = sectionOptions.description || '';
   // Tautan merchant disanitasi; bawaan membuka halaman katalog seperti menu navbar.
-  const cta = resolveSectionCta(sectionOptions, 'Lihat Katalog', STORE_ROUTES.catalog);
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View Catalog' : 'Lihat Katalog', STORE_ROUTES.catalog);
   const image = resolveSectionImage(sectionOptions);
   const container = getThemeContainer(themeId);
   return (
@@ -87,7 +89,7 @@ const BENEFITS = [
 
 export const ThemedStoreBenefits: React.FC<ThemedBlockProps> = ({ sectionOptions = {}, themeId, accentColor }) => {
   const { isEn } = useLanguage();
-  const heading = sectionOptions.heading || 'Mengapa Belanja di Toko Kami?';
+  const heading = sectionOptions.heading || (isEn ? 'Why Shop With Us?' : 'Mengapa Belanja di Toko Kami?');
   const container = getThemeContainer(themeId);
   return (
     <ThemeScope themeId={themeId} accentColor={accentColor} className={`bg-[var(--sf-page)] ${container.outer}`}>
@@ -152,7 +154,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ icon: Icon, title, value, hre
 export const ThemedStoreInfo: React.FC<ThemedBlockProps> = ({ sectionOptions = {}, themeId, accentColor }) => {
   const { isEn } = useLanguage();
   const storeInfo = useCmsStore((s) => s.storeInfo);
-  const heading = sectionOptions.heading || 'Kunjungi & Hubungi Toko Kami';
+  const heading = sectionOptions.heading || (isEn ? 'Visit & Contact Our Store' : 'Kunjungi & Hubungi Toko Kami');
   const description = pickText(sectionOptions.description);
   const address = pickText(sectionOptions.address, storeInfo?.address);
   const email = pickText(sectionOptions.email, storeInfo?.email);

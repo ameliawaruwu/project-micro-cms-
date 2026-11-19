@@ -10,14 +10,15 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
-  const products = useThemeProductsSource('fashion');
-  const items = products.filter((p) => p.image).slice(0, 2);
+  // Jumlah & pilihan produk mengikuti panel kanan editor (bawaan 2 produk bergambar).
+  const items = useSectionProducts('fashion', sectionOptions, { defaultCount: 2, requireImage: true });
   if (items.length === 0) return null;
 
   const heading = sectionOptions.heading || 'Lookbook';
-  const [main, second] = items;
+  const eyebrow = sectionOptions.eyebrowText || (isEn ? 'Style Inspiration' : 'Inspirasi Gaya');
+  const [main, second, ...rest] = items;
   const mainImage = resolveSectionImage(sectionOptions) || main.image;
-  const cta = resolveSectionCta(sectionOptions, 'Lihat Semua Produk', STORE_ROUTES.catalog);
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View All Products' : 'Lihat Semua Produk', STORE_ROUTES.catalog);
   const stackCols = isMobile || isTablet;
   const mainGridClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
@@ -27,12 +28,18 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
   });
   const col7Class = stackCols ? '' : 'md:col-span-7';
   const col5Class = stackCols ? '' : 'md:col-span-5';
+  const restGridClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
+    desktop: 'grid-cols-4',
+    fallback: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4',
+  });
 
   return (
     <section className="py-16 sm:py-24 md:py-32 bg-white text-[#18181B]">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12">
         <div className="text-center mb-10 sm:mb-16">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-4">Inspirasi Gaya</p>
+          {eyebrow && <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-4">{eyebrow}</p>}
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif italic break-words">{heading}</h2>
         </div>
 
@@ -60,10 +67,10 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
             )}
             <div className="relative overflow-hidden min-h-[220px] flex-1 bg-gray-100 p-6 sm:p-8 flex flex-col justify-center items-center text-center">
               <h3 className="text-2xl sm:text-3xl font-serif italic mb-4 sm:mb-6 text-gray-900 break-words">
-                {sectionOptions.subheading || storeInfo?.name || 'Koleksi Kami'}
+                {sectionOptions.subheading || storeInfo?.name || (isEn ? 'Our Collection' : 'Koleksi Kami')}
               </h3>
               <p className="text-sm text-gray-600 leading-relaxed mb-6 sm:mb-8 max-w-xs line-clamp-4">
-                {sectionOptions.description || storeInfo?.description || 'Temukan pilihan produk terbaik yang dirancang untuk gaya hidup Anda.'}
+                {sectionOptions.description || storeInfo?.description || (isEn ? 'Discover the best products designed for your lifestyle.' : 'Temukan pilihan produk terbaik yang dirancang untuk gaya hidup Anda.')}
               </p>
               <a
                 href={cta.href}
@@ -74,6 +81,21 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
             </div>
           </div>
         </div>
+
+        {rest.length > 0 && (
+          <div className={`grid ${restGridClass} gap-4 md:gap-8 mt-4 md:mt-8`}>
+            {rest.map((product) => (
+              <a key={product.id} href={productHref(product)} className="relative group overflow-hidden aspect-[4/5] block">
+                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                <div className="absolute bottom-4 left-4 right-4 text-white min-w-0">
+                  <p className="text-xs uppercase tracking-widest mb-1 line-clamp-1">{product.name}</p>
+                  <span className="text-xs border-b border-white pb-0.5">{isEn ? 'View Product' : 'Lihat Produk'}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -83,7 +105,7 @@ export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolea
 export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { isEn } = useLanguage();
   const products = useSectionProducts('fashion', sectionOptions, { defaultCount: 4 });
-  const heading = sectionOptions.heading || 'Produk Terlaris';
+  const heading = sectionOptions.heading || (isEn ? 'Best Sellers' : 'Produk Terlaris');
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-2',
@@ -136,15 +158,16 @@ export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?
 
 /** Banner promo; tombol membuka halaman Promo (sama dengan menu navbar). */
 export const FashionPromoBanner: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const products = useThemeProductsSource('fashion');
-  const heading = sectionOptions.heading || 'Promo Spesial';
-  const desc = sectionOptions.description || 'Dapatkan penawaran terbaik untuk produk pilihan kami.';
+  const heading = sectionOptions.heading || (isEn ? 'Special Promo' : 'Promo Spesial');
+  const desc = sectionOptions.description || (isEn ? 'Get the best deals on our selected products.' : 'Dapatkan penawaran terbaik untuk produk pilihan kami.');
   // Gambar latar dekoratif: unggahan merchant → foto produk toko → gambar bawaan.
   const bgImage =
     resolveSectionImage(sectionOptions) ||
     products.find((p) => p.image)?.image ||
     'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1600&q=80';
-  const cta = resolveSectionCta(sectionOptions, 'Lihat Promo', STORE_ROUTES.promo);
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View Promo' : 'Lihat Promo', STORE_ROUTES.promo);
   const badge = sectionOptions.discountBadge || sectionOptions.badgeText;
 
   return (

@@ -97,14 +97,15 @@ export const ProfessionalNavbar: React.FC<{ sectionOptions?: any; isMobile?: boo
 };
 
 export const ProfessionalHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const products = useThemeProductsSource('professional');
-  const heading = sectionOptions.heading || storeInfo?.name || 'Solusi Kebutuhan Usaha Anda';
-  const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || storeInfo?.description || 'Produk berkualitas dengan layanan profesional. Hubungi kami untuk penawaran terbaik sesuai kebutuhan Anda.';
+  const heading = sectionOptions.heading || storeInfo?.name || (isEn ? 'Solutions for Your Business Needs' : 'Solusi Kebutuhan Usaha Anda');
+  const subheading = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || storeInfo?.description || (isEn ? 'Quality products with professional service. Contact us for the best offer for your needs.' : 'Produk berkualitas dengan layanan profesional. Hubungi kami untuk penawaran terbaik sesuai kebutuhan Anda.');
   const hero = getHeroContent(sectionOptions, {
-    buttonLabel: 'Minta Penawaran',
+    buttonLabel: isEn ? 'Request a Quote' : 'Minta Penawaran',
     buttonLink: STORE_ROUTES.contact,
-    secondaryButtonLabel: 'Lihat Katalog',
+    secondaryButtonLabel: isEn ? 'View Catalog' : 'Lihat Katalog',
     secondaryButtonLink: STORE_ROUTES.catalog,
   });
   // Gambar hero: unggahan merchant → banner toko → foto produk pertama → gambar dekoratif bawaan.

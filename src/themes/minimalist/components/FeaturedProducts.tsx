@@ -4,14 +4,16 @@ import { MinimalistProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
 import { STORE_ROUTES } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const MinimalistFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const inEditor = typeof isMobile === 'boolean' || typeof isTablet === 'boolean';
   const products = useSectionProducts('minimalist', sectionOptions, { defaultCount: 4, inEditor });
 
-  const title = sectionOptions.featuredTitle || sectionOptions.heading || 'Produk Unggulan';
-  const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || 'Pilihan produk terbaik dari toko kami.';
-  const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || 'Lihat Semua';
+  const title = sectionOptions.featuredTitle || sectionOptions.heading || (isEn ? 'Featured Products' : 'Produk Unggulan');
+  const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || (isEn ? 'The best products from our store.' : 'Pilihan produk terbaik dari toko kami.');
+  const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || (isEn ? 'View All' : 'Lihat Semua');
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-2',

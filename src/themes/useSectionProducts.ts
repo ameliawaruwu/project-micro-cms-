@@ -39,10 +39,12 @@ export function useSectionProducts(
     defaultCount = 4,
     inEditor = false,
     preferFeatured = false,
-  }: { defaultCount?: number; inEditor?: boolean; preferFeatured?: boolean } = {}
+    requireImage = false,
+    maxCount,
+  }: { defaultCount?: number; inEditor?: boolean; preferFeatured?: boolean; requireImage?: boolean; maxCount?: number } = {}
 ): CmsProduct[] {
   const source = useThemeProductsSource(themeId, inEditor);
-  let list = [...source];
+  let list = requireImage ? source.filter((p) => !!p.image) : [...source];
 
   if (options.selectedCategoryId && options.selectedCategoryId !== 'all') {
     list = list.filter((p) => ((p as any).category || p.categoryName) === options.selectedCategoryId);
@@ -61,5 +63,6 @@ export function useSectionProducts(
   else if (options.sortOrder === 'price-desc') list.sort((a, b) => b.price - a.price);
   else if (options.sortOrder === 'name-asc') list.sort((a, b) => a.name.localeCompare(b.name));
 
-  return list.slice(0, options.productCount || defaultCount);
+  const wanted = Number(options.productCount) > 0 ? Number(options.productCount) : defaultCount;
+  return list.slice(0, maxCount ? Math.min(wanted, maxCount) : wanted);
 }

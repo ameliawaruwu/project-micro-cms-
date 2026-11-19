@@ -1,11 +1,13 @@
 import React from 'react';
 import { STORE_ROUTES, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ModernPromoBanner: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#2563EB' }) => {
-  const heading = sectionOptions.heading || "Diskon Spesial Minggu Ini";
-  const desc = sectionOptions.description || "Dapatkan penawaran terbaik untuk produk pilihan, waktu terbatas.";
+  const { isEn } = useLanguage();
+  const heading = sectionOptions.heading || (isEn ? "This Week's Special Discount" : 'Diskon Spesial Minggu Ini');
+  const desc = sectionOptions.description || (isEn ? 'Get the best deals on selected products, for a limited time.' : 'Dapatkan penawaran terbaik untuk produk pilihan, waktu terbatas.');
   // Tautan tombol dari merchant (disanitasi); bawaan membuka halaman promo seperti menu navbar.
-  const cta = resolveSectionCta(sectionOptions, 'Lihat Promo', STORE_ROUTES.promo);
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View Promo' : 'Lihat Promo', STORE_ROUTES.promo);
   const badge = sectionOptions.discountBadge || sectionOptions.badgeText;
   const bgImage = resolveSectionImage(sectionOptions);
 

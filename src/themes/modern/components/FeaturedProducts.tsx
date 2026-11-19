@@ -2,36 +2,17 @@ import React from 'react';
 import { ModernProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { useThemeProductsSource } from '../../useSectionProducts';
+import { useSectionProducts } from '../../useSectionProducts';
 import { STORE_ROUTES } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ModernFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, accentColor = '#2563EB', isMobile, isTablet }) => {
-  const allProducts = useThemeProductsSource('modern');
+  const { isEn } = useLanguage();
+  const products = useSectionProducts('modern', sectionOptions, { defaultCount: 4 });
 
-  let filteredProducts = [...allProducts];
-
-  if (sectionOptions.selectedCategoryId && sectionOptions.selectedCategoryId !== 'all') {
-    filteredProducts = filteredProducts.filter(p => ((p as any).category || p.categoryName) === sectionOptions.selectedCategoryId);
-  }
-
-  if (sectionOptions.selectedProductIds && sectionOptions.selectedProductIds.length > 0) {
-    filteredProducts = filteredProducts.filter(p => sectionOptions.selectedProductIds.includes(p.id));
-  }
-
-  if (sectionOptions.sortOrder === 'price-asc') {
-    filteredProducts.sort((a, b) => a.price - b.price);
-  } else if (sectionOptions.sortOrder === 'price-desc') {
-    filteredProducts.sort((a, b) => b.price - a.price);
-  } else if (sectionOptions.sortOrder === 'name-asc') {
-    filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  const limit = sectionOptions.productCount || 4;
-  const products = filteredProducts.slice(0, limit);
-
-  const title = sectionOptions.featuredTitle || sectionOptions.heading || "Produk Pilihan";
-  const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || "Terlaris minggu ini";
-  const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || "Lihat Semua";
+  const title = sectionOptions.featuredTitle || sectionOptions.heading || (isEn ? 'Selected Products' : 'Produk Pilihan');
+  const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || (isEn ? 'Best sellers this week' : 'Terlaris minggu ini');
+  const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || (isEn ? 'View All' : 'Lihat Semua');
 
   const desiredCols = sectionOptions.gridColumns && [2, 3, 4, 5, 6].includes(sectionOptions.gridColumns)
     ? sectionOptions.gridColumns

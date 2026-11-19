@@ -47,7 +47,7 @@ export const NatureNavbar: React.FC<{
   const showNav = sectionOptions.showNavMenu ?? true;
 
   const rawName = sectionOptions.heading || sectionOptions.storeName || storeInfo?.name;
-  const storeName = (!rawName || rawName === 'NEON//CORE Electronics') ? 'Toko Kami' : rawName;
+  const storeName = (!rawName || rawName === 'NEON//CORE Electronics') ? (isEn ? 'Our Store' : 'Toko Kami') : rawName;
   const rawSub = getHeaderSubtitle(sectionOptions, storeInfo?.description);
   const storeSubtitle = (!rawSub || rawSub.includes("Komponen Komputer") || rawSub.includes("PC Gaming") || rawSub.includes("GPU RTX"))
     ? undefined
@@ -134,17 +134,18 @@ export const NatureNavbar: React.FC<{
 };
 
 export const NatureHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const products = useThemeProductsSource('nature');
   const rawStoreName = sectionOptions.storeName || storeInfo?.name;
   const storeName = (!rawStoreName || rawStoreName === 'NEON//CORE Electronics') ? '' : rawStoreName;
-  const heading = sectionOptions.heading || storeName || 'Selamat Datang di Toko Kami';
+  const heading = sectionOptions.heading || storeName || (isEn ? 'Welcome to Our Store' : 'Selamat Datang di Toko Kami');
   const rawSub = sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || storeInfo?.description;
   const subheading = (!rawSub || rawSub.includes("Komponen Komputer") || rawSub.includes("PC Gaming") || rawSub.includes("GPU RTX"))
-    ? 'Temukan produk pilihan kami dengan kualitas terbaik dan harga bersahabat.'
+    ? (isEn ? 'Discover our selected products with the best quality and friendly prices.' : 'Temukan produk pilihan kami dengan kualitas terbaik dan harga bersahabat.')
     : rawSub;
   const hero = getHeroContent(sectionOptions, {
-    buttonLabel: 'Belanja Sekarang',
+    buttonLabel: isEn ? 'Shop Now' : 'Belanja Sekarang',
     buttonLink: STORE_ROUTES.catalog,
     secondaryButtonLink: STORE_ROUTES.promo,
   });
@@ -201,7 +202,7 @@ export const NatureFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOption
   const footerEmail = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
   const footerAddress = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
   const rawStoreName = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo?.name;
-  const storeName = (!rawStoreName || rawStoreName === 'NEON//CORE Electronics') ? 'Toko Kami' : rawStoreName;
+  const storeName = (!rawStoreName || rawStoreName === 'NEON//CORE Electronics') ? (isEn ? 'Our Store' : 'Toko Kami') : rawStoreName;
 
   const rawDesc = sectionOptions.subheading || sectionOptions.description || sectionOptions.subtitle || storeInfo?.description;
   const description = (!rawDesc || rawDesc.includes("Komponen Komputer") || rawDesc.includes("PC Gaming") || rawDesc.includes("GPU RTX Series"))

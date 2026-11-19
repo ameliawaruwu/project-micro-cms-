@@ -75,19 +75,20 @@ export const FashionNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptio
 };
 
 export const FashionHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const { storeInfo, products } = useCmsStore();
-  const heading = sectionOptions.heading || storeInfo?.name || 'Gaya Terbaik untuk Anda';
+  const heading = sectionOptions.heading || storeInfo?.name || (isEn ? 'The Best Style for You' : 'Gaya Terbaik untuk Anda');
   const subheading =
     sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content ||
-    storeInfo?.description || 'Temukan koleksi pilihan kami dan tampil percaya diri setiap hari.';
+    storeInfo?.description || (isEn ? 'Discover our curated collection and feel confident every day.' : 'Temukan koleksi pilihan kami dan tampil percaya diri setiap hari.');
   // Gambar latar: unggahan merchant → banner toko → foto produk pertama → gambar bawaan dekoratif.
   const bgImage =
     sectionOptions.imageUrl || sectionOptions.bannerUrl || (storeInfo as any)?.bannerUrl ||
     products.find((p) => p.image)?.image ||
     'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1600&q=80';
   const hero = getHeroContent(sectionOptions, {
-    badge: 'Koleksi Pilihan',
-    buttonLabel: 'Lihat Koleksi',
+    badge: isEn ? 'Curated Collection' : 'Koleksi Pilihan',
+    buttonLabel: isEn ? 'View Collection' : 'Lihat Koleksi',
     buttonLink: STORE_ROUTES.catalog,
   });
 

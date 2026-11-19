@@ -5,17 +5,19 @@ import { getDeviceClass } from '../../../utils/responsivePreview';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { useThemeProductsSource } from '../../useSectionProducts';
 import { STORE_ROUTES } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ModernHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, accentColor = '#2563EB', isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const products = useThemeProductsSource('modern');
   // Gambar hero: unggahan merchant → banner toko → foto produk pertama → gambar dekoratif bawaan.
   const bgImage = sectionOptions?.imageUrl || sectionOptions?.bannerUrl || (storeInfo as any)?.bannerUrl || products.find((p) => p.image)?.image || "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1200&q=80";
 
-  const title = sectionOptions.heading || storeInfo?.name || 'Selamat Datang di Toko Kami';
-  const subtitle = sectionOptions.subheading || sectionOptions.subtitle || "Produk Pilihan";
-  const description = sectionOptions.description || storeInfo?.description || 'Temukan produk terbaik dari toko kami dengan harga bersahabat.';
-  const hero = getHeroContent(sectionOptions, { buttonLabel: 'Belanja Sekarang', buttonLink: STORE_ROUTES.catalog, secondaryButtonLink: STORE_ROUTES.promo });
+  const title = sectionOptions.heading || storeInfo?.name || (isEn ? 'Welcome to Our Store' : 'Selamat Datang di Toko Kami');
+  const subtitle = sectionOptions.subheading || sectionOptions.subtitle || (isEn ? 'Selected Products' : 'Produk Pilihan');
+  const description = sectionOptions.description || storeInfo?.description || (isEn ? 'Discover the best products from our store at friendly prices.' : 'Temukan produk terbaik dari toko kami dengan harga bersahabat.');
+  const hero = getHeroContent(sectionOptions, { buttonLabel: isEn ? 'Shop Now' : 'Belanja Sekarang', buttonLink: STORE_ROUTES.catalog, secondaryButtonLink: STORE_ROUTES.promo });
 
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',

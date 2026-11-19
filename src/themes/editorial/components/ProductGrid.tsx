@@ -28,11 +28,13 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
   const storeSlug = useStorefrontSlug();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
+  // Penanda tab "Semua"; bukan teks tampilan agar tidak bentrok dengan kategori bernama "Semua".
+  const ALL_TAB = '__all__';
+  const [selectedCategory, setSelectedCategory] = useState<string>(ALL_TAB);
 
   // Options
-  const heading = sectionOptions.heading || 'Katalog Produk';
-  const subheading = sectionOptions.subheading || 'Koleksi Pilihan';
+  const heading = sectionOptions.heading || (isEn ? 'Product Catalog' : 'Katalog Produk');
+  const subheading = sectionOptions.subheading || (isEn ? 'Curated Collection' : 'Koleksi Pilihan');
   const productCount = sectionOptions.productCount || 12;
   const gridColumns = sectionOptions.gridColumns || 3;
   const showPrice = sectionOptions.showPrice !== false;
@@ -42,9 +44,10 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
   // Filter & sort
   let filtered = [...rawProducts];
 
-  // Specific selected products filter
-  if (sectionOptions.selectedProductIds && sectionOptions.selectedProductIds.length > 0) {
-    filtered = filtered.filter((p) => sectionOptions.selectedProductIds.includes(p.id));
+  // Specific selected products filter; pilihan usang (tidak ada yang cocok) diabaikan agar section tidak kosong.
+  const pickedIds: string[] = Array.isArray(sectionOptions.selectedProductIds) ? sectionOptions.selectedProductIds : [];
+  if (pickedIds.length > 0 && filtered.some((p) => pickedIds.includes(p.id))) {
+    filtered = filtered.filter((p) => pickedIds.includes(p.id));
   }
 
   // Selected Category filter
@@ -56,11 +59,11 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
 
   // Categories list
   const categories = [
-    'Semua',
+    ALL_TAB,
     ...Array.from(new Set(rawProducts.map((p: any) => p.category || p.categoryName).filter(Boolean))),
   ];
 
-  if (selectedCategory !== 'Semua') {
+  if (selectedCategory !== ALL_TAB) {
     filtered = filtered.filter(
       (p: any) => (p.category || p.categoryName) === selectedCategory
     );
@@ -147,7 +150,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
                         : 'text-[#706866] hover:text-[#241A1A]'
                     }`}
                   >
-                    {cat}
+                    {cat === ALL_TAB ? (isEn ? 'All' : 'Semua') : cat}
                   </button>
                 ))}
               </div>
@@ -196,7 +199,7 @@ export const EditorialProductGrid: React.FC<EditorialProductGridProps> = ({
                     )}
                     {product.isFeatured && (
                       <span className="absolute top-3 left-3 bg-[#241A1A] text-white text-[9px] uppercase tracking-widest px-2.5 py-1 font-sans">
-                        Pilihan
+                        {isEn ? 'Featured' : 'Pilihan'}
                       </span>
                     )}
                   </a>

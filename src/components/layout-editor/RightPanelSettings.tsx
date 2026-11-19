@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Store as StoreIcon,
   MapPin,
@@ -41,7 +41,10 @@ import { SectionContentFields } from './SectionContentFields';
 import { useCmsStore } from '../../cms/useCmsStore';
 import { storeService } from '../../services/storeService';
 import { mediaService } from '../../services/mediaService';
+import { productService } from '../../services/productService';
+import { isDemoProductId } from '../../utils/demoProducts';
 import { getFooterLogoType } from '../../themes/FooterBrand';
+import { normalizeThemeId } from '../../themes/ThemeRegistry';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 /** Kolom media sosial footer (dibaca tema lewat getFooterSocialLinks). */
@@ -75,11 +78,74 @@ interface RightPanelSettingsProps {
   onUpdateGlobalSettings?: (newSettings: any) => void;
   showGlobalSettings?: boolean;
   onUpdateStore?: (updates: Partial<Store>) => void;
+  /** Tema aktif editor; dipakai untuk jumlah produk bawaan tiap section. */
+  activeThemeId?: string;
 }
 
 
 /** Bagian yang menampilkan label badge; isinya diatur lewat field "Label Badge" di editor. */
+/** Section produk di panel kanan (filter kategori, jumlah, urutan, pilihan manual). */
+const PRODUCT_SECTION_IDS = [
+  'featured_products', 'product_grid', 'collection_grid', 'lookbook', 'signature_collection',
+  'asymmetric_showcase', 'latest_drop', 'floating_showcase', 'catalog', 'journal',
+  'community_board', 'product_comparison',
+];
+
+/** Section yang hanya menampilkan satu produk (produk pertama dari pilihan / unggulan). */
+const SINGLE_PRODUCT_SECTION_IDS = ['asymmetric_showcase', 'latest_drop', 'floating_showcase'];
+
+/** Batas atas slider jumlah produk per section (tabel perbandingan maksimal 4 kolom). */
+const PRODUCT_COUNT_MAX: Record<string, number> = { product_comparison: 4 };
+
+/**
+ * Jumlah produk bawaan bila merchant belum menggeser slider. Harus sama dengan `defaultCount`
+ * di komponen tema (src/themes/<tema>/components) agar angka di panel = jumlah yang tampil.
+ */
+function defaultSectionProductCount(sectionId: string, themeId: string, opts: any): number {
+  if (SINGLE_PRODUCT_SECTION_IDS.includes(sectionId)) return 1;
+  const gridCols = [2, 3, 4].includes(opts?.gridColumns) ? opts.gridColumns : 3;
+  switch (sectionId) {
+    case 'lookbook':
+      return themeId === 'creative' ? 9 : themeId === 'bold' ? 3 : 2;
+    case 'journal':
+    case 'product_comparison':
+      return 3;
+    case 'community_board':
+      return 4;
+    case 'collection_grid':
+      return 6;
+    case 'signature_collection':
+      return Number(opts?.limit) || 6;
+    default:
+      break;
+  }
+  switch (themeId) {
+    case 'luxury':
+      return Number(opts?.limit) || 6;
+    case 'futuristic':
+    case 'bold':
+      return gridCols;
+    case 'professional':
+      return 8;
+    case 'editorial':
+      return 12;
+    default:
+      return 4;
+  }
+}
+
 const BADGE_SECTION_IDS = ['hero_banner', 'promo_banner', 'newsletter', 'latest_drop', 'limited_release', 'asymmetric_showcase', 'floating_showcase'];
+
+/**
+ * Bagian bertulisan kecil di atas judul (mis. "KEAHLIAN ADILUHUNG"); diisi lewat field `eyebrowText`.
+ * Nilainya placeholder bawaan tema (id/en). `ingredient_story` punya field sendiri di SectionContentFields.
+ */
+const EYEBROW_SECTION_DEFAULTS: Record<string, { id: string; en: string }> = {
+  craftsmanship_story: { id: 'KEAHLIAN ADILUHUNG', en: 'FINE CRAFTSMANSHIP' },
+  private_collection: { id: 'Layanan Eksklusif', en: 'Exclusive Service' },
+  lookbook: { id: 'Pilihan Kami / Inspirasi Gaya', en: 'Our Picks / Style Inspiration' },
+  category_tiles: { id: 'Koleksi', en: 'Collection' },
+};
 export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   store,
   products,
@@ -95,15 +161,85 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   onUpdateGlobalSettings,
   showGlobalSettings,
   onUpdateStore,
+  activeThemeId,
 }) => {
   const cmsProducts = useCmsStore(state => state.products);
-  const updateProduct = useCmsStore(state => state.updateProduct);
+
+  // Draf editan produk per id. Input membaca draf ini (bukan prop `products` yang baru berubah
+  // setelah App mengambil ulang dari database), jadi ketikan tidak tertimpa nilai lama.
+  const [productEdits, setProductEdits] = useState<Record<string, Record<string, any>>>({});
+  const pendingProductSaves = useRef<Record<string, { timer: ReturnType<typeof setTimeout>; patch: Record<string, any> }>>({});
 
   // Jika merchant memiliki produk di daftar produk, gunakan produk merchant.
   // Jika belum menambahkan produk apapun, gunakan produk bawaan template.
-  const effectiveProducts = (products && products.length > 0)
+  const baseProducts = (products && products.length > 0)
     ? products
     : (cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || []));
+  const effectiveProducts = baseProducts.map((p: any) => (productEdits[p.id] ? { ...p, ...productEdits[p.id] } : p));
+  const realProductIds = new Set((products || []).map((p: any) => p.id).filter((id: string) => !isDemoProductId(id)));
+
+  const persistProductPatch = async (id: string, patch: Record<string, any>) => {
+    const updates: Record<string, any> = { storeId: store.id };
+    if (patch.name !== undefined && String(patch.name).trim()) updates.name = String(patch.name).trim();
+    if (patch.description !== undefined) updates.description = String(patch.description);
+    if (patch.category !== undefined) updates.category = String(patch.category).trim();
+    if (patch.imageUrl !== undefined) updates.imageUrl = String(patch.imageUrl).trim();
+    if (patch.price !== undefined && patch.price !== '' && Number.isFinite(Number(patch.price)) && Number(patch.price) >= 0) updates.price = Math.round(Number(patch.price));
+    if (patch.stock !== undefined && patch.stock !== '' && Number.isInteger(Number(patch.stock)) && Number(patch.stock) >= 0) updates.stock = Number(patch.stock);
+    if (Object.keys(updates).length <= 1) return;
+    try {
+      await productService.updateProduct(id, updates as any);
+      // Beri tahu App agar daftar produk (menu Produk & preview) memuat ulang data terbaru.
+      window.dispatchEvent(new Event('microcms_products_updated'));
+    } catch (err) {
+      console.warn('[Layout Editor] Gagal menyimpan produk:', err);
+    }
+  };
+
+  const flushProductSave = (id: string) => {
+    const pending = pendingProductSaves.current[id];
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    delete pendingProductSaves.current[id];
+    void persistProductPatch(id, pending.patch);
+  };
+
+  /** Ubah satu produk: draf & preview langsung, simpan ke database setelah jeda mengetik. */
+  const editProduct = (product: any, patch: Record<string, any>) => {
+    const id = product.id;
+    setProductEdits((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), ...patch } }));
+
+    // Preview tema membaca produk dari useCmsStore: perbarui lokal tanpa sinkron ke server.
+    useCmsStore.setState((state) => ({
+      products: state.products.map((cp) => {
+        if (cp.id !== id) return cp;
+        const next: any = { ...cp };
+        if (patch.name !== undefined) next.name = patch.name;
+        if (patch.description !== undefined) next.description = patch.description;
+        if (patch.category !== undefined) { next.categoryName = patch.category; next.categoryId = patch.category; }
+        if (patch.imageUrl !== undefined) { next.image = patch.imageUrl; next.images = patch.imageUrl ? [patch.imageUrl] : []; }
+        if (patch.price !== undefined && patch.price !== '') next.price = Number(patch.price) || 0;
+        if (patch.stock !== undefined && patch.stock !== '') next.stock = Number(patch.stock) || 0;
+        return next;
+      }),
+    }));
+
+    // Produk contoh template tidak disimpan ke database.
+    if (!realProductIds.has(id)) return;
+    const prevPending = pendingProductSaves.current[id];
+    if (prevPending) clearTimeout(prevPending.timer);
+    const merged = { ...(prevPending?.patch || {}), ...patch };
+    pendingProductSaves.current[id] = { patch: merged, timer: setTimeout(() => flushProductSave(id), 800) };
+  };
+
+  // Simpan editan yang belum tersimpan saat panel ditutup / pindah toko, lalu kosongkan draf.
+  useEffect(() => {
+    setProductEdits({});
+    return () => {
+      Object.keys(pendingProductSaves.current).forEach((id) => flushProductSave(id));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.id]);
   const [showImagePresets, setShowImagePresets] = useState(false);
   const [customImageUrlInput, setCustomImageUrlInput] = useState('');
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -786,6 +922,21 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   />
                 </div>
               )}
+
+              {EYEBROW_SECTION_DEFAULTS[selectedSection.id] && (
+                <div className="space-y-1">
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Small Label Above Title' : 'Label Kecil di Atas Judul'}</label>
+                  <input
+                    type="text"
+                    maxLength={60}
+                    value={(opts as any).eyebrowText ?? (opts as any).eyebrow ?? ''}
+                    onChange={(e) => handleOptionChange({ eyebrowText: e.target.value, eyebrow: e.target.value } as any)}
+                    placeholder={isEn ? EYEBROW_SECTION_DEFAULTS[selectedSection.id].en : EYEBROW_SECTION_DEFAULTS[selectedSection.id].id}
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                  />
+                  <p className="text-[11px] text-[#8C9196]">{isEn ? 'Leave empty to use the theme\'s default label.' : 'Kosongkan untuk memakai label bawaan tema.'}</p>
+                </div>
+              )}
             </div>
             )}
 
@@ -1098,16 +1249,14 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             )}
 
             {/* ── KATALOG PRODUK / FEATURED PRODUCTS SPECIFIC SETTINGS (TAB KONTEN) ── */}
-            {([
-              'featured_products',
-              'product_grid',
-              'collection_grid',
-              'lookbook',
-              'signature_collection',
-              'asymmetric_showcase',
-              'latest_drop',
-              'catalog',
-            ].includes(selectedSection.id) || selectedSection.id.includes('product')) && (
+            {(PRODUCT_SECTION_IDS.includes(selectedSection.id) || selectedSection.id.includes('product')) && (() => {
+              const isSingleProduct = SINGLE_PRODUCT_SECTION_IDS.includes(selectedSection.id);
+              const countMax = PRODUCT_COUNT_MAX[selectedSection.id] || 20;
+              const shownCount = Math.min(
+                countMax,
+                Number(opts.productCount) || defaultSectionProductCount(selectedSection.id, normalizeThemeId(activeThemeId), opts),
+              );
+              return (
               <div className="space-y-4 pt-4 border-t border-[#E1E3E5]">
                 {/* Filter Kategori */}
                 <div className="space-y-1.5">
@@ -1124,24 +1273,37 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   </select>
                 </div>
 
-                {/* Jumlah Produk Slider */}
+                {/* Jumlah Produk Slider (section satu produk tidak memakai jumlah) */}
+                {isSingleProduct ? (
+                  <p className="text-[11px] text-[#6D7175] bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg px-3 py-2">
+                    {isEn
+                      ? 'This section shows one product: the first product you select below, or your featured product if none is selected.'
+                      : 'Bagian ini menampilkan satu produk: produk pertama yang Anda pilih di bawah, atau produk unggulan bila belum ada yang dipilih.'}
+                  </p>
+                ) : (
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
                     <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Number of Products Shown' : 'Jumlah Produk Ditampilkan'}</label>
                     <span className="text-[11px] font-bold text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded">
-                      {isEn ? `${opts.productCount || 4} Products` : `${opts.productCount || 4} Produk`}
+                      {isEn ? `${shownCount} Products` : `${shownCount} Produk`}
                     </span>
                   </div>
                   <input
                     type="range"
                     min="1"
-                    max="20"
+                    max={countMax}
                     step="1"
-                    value={opts.productCount || 4}
-                    onChange={(e) => handleOptionChange({ productCount: parseInt(e.target.value) })}
+                    value={shownCount}
+                    onChange={(e) => handleOptionChange({ productCount: parseInt(e.target.value, 10) })}
                     className="w-full h-1.5 bg-[#E1E3E5] rounded-lg appearance-none cursor-pointer"
                   />
+                  <p className="text-[10px] text-[#8C9196]">
+                    {isEn
+                      ? 'Products without a photo are skipped in gallery sections; fewer products appear if the store has fewer.'
+                      : 'Pada bagian galeri, produk tanpa foto dilewati; produk tampil lebih sedikit bila jumlah produk toko kurang.'}
+                  </p>
                 </div>
+                )}
 
                 {/* Urutan Produk */}
                 <div className="space-y-1.5">
@@ -1208,13 +1370,6 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     {effectiveProducts.map((product: any) => {
                       const isExpanded = expandedProductId === product.id;
 
-                      const handleSaveProduct = (updated: any) => {
-                        updateProduct(updated, store.id);
-                        if (onUpdateStore && (store as any).products) {
-                          const newProds = (store as any).products.map((p: any) => p.id === updated.id ? { ...p, ...updated } : p);
-                          (onUpdateStore as any)({ products: newProds });
-                        }
-                      };
 
                       return (
                         <div key={product.id} className="bg-[#FAF7F7] border border-[#E1E3E5] rounded-xl overflow-hidden shadow-2xs transition">
@@ -1253,7 +1408,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                 <input
                                   type="text"
                                   value={product.name || ''}
-                                  onChange={(e) => handleSaveProduct({ ...product, name: e.target.value })}
+                                  onChange={(e) => editProduct(product, { name: e.target.value })}
+                                  onBlur={() => flushProductSave(product.id)}
                                   placeholder={isEn ? 'Product Name' : 'Nama Produk'}
                                   className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
                                 />
@@ -1265,7 +1421,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                 <textarea
                                   rows={2}
                                   value={product.description || ''}
-                                  onChange={(e) => handleSaveProduct({ ...product, description: e.target.value })}
+                                  onChange={(e) => editProduct(product, { description: e.target.value })}
+                                  onBlur={() => flushProductSave(product.id)}
                                   placeholder={isEn ? 'Short product description...' : 'Deskripsi singkat produk...'}
                                   className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
                                 />
@@ -1277,8 +1434,10 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                   <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Price (Rp)' : 'Harga (Rp)'}</label>
                                   <input
                                     type="number"
-                                    value={product.price || 0}
-                                    onChange={(e) => handleSaveProduct({ ...product, price: Number(e.target.value) })}
+                                    min={0}
+                                    value={product.price ?? ''}
+                                    onChange={(e) => editProduct(product, { price: e.target.value })}
+                                    onBlur={() => flushProductSave(product.id)}
                                     className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
                                   />
                                 </div>
@@ -1286,8 +1445,11 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                   <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Stock' : 'Stok'}</label>
                                   <input
                                     type="number"
-                                    value={product.stock ?? 10}
-                                    onChange={(e) => handleSaveProduct({ ...product, stock: Number(e.target.value) })}
+                                    min={0}
+                                    step={1}
+                                    value={product.stock ?? ''}
+                                    onChange={(e) => editProduct(product, { stock: e.target.value })}
+                                    onBlur={() => flushProductSave(product.id)}
                                     className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
                                   />
                                 </div>
@@ -1298,8 +1460,9 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                 <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Category' : 'Kategori'}</label>
                                 <input
                                   type="text"
-                                  value={product.categoryName || product.category || ''}
-                                  onChange={(e) => handleSaveProduct({ ...product, categoryName: e.target.value, category: e.target.value })}
+                                  value={product.category ?? product.categoryName ?? ''}
+                                  onChange={(e) => editProduct(product, { category: e.target.value, categoryName: e.target.value })}
+                                  onBlur={() => flushProductSave(product.id)}
                                   placeholder={isEn ? 'Category (e.g. Clothing, Art, Food)' : 'Kategori (mis: Pakaian, Seni, Makanan)'}
                                   className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
                                 />
@@ -1330,7 +1493,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                       setUploadingProductId(product.id);
                                       try {
                                         const url = await mediaService.uploadImage(file, 'product', store.id);
-                                        handleSaveProduct({ ...product, image: url, imageUrl: url });
+                                        editProduct(product, { image: url, imageUrl: url });
+                                        flushProductSave(product.id);
                                       } catch (err: any) {
                                         setProductUploadError({ id: product.id, message: err?.message || (isEn ? 'Failed to upload photo.' : 'Gagal mengupload foto.') });
                                       } finally {
@@ -1341,7 +1505,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                                   <input
                                     type="text"
                                     value={product.image || product.imageUrl || ''}
-                                    onChange={(e) => handleSaveProduct({ ...product, image: e.target.value, imageUrl: e.target.value })}
+                                    onChange={(e) => editProduct(product, { image: e.target.value, imageUrl: e.target.value })}
+                                    onBlur={() => flushProductSave(product.id)}
                                     className="flex-1 min-w-0 px-2.5 py-1.5 text-[11px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
                                     placeholder={isEn ? 'Or enter a Photo URL' : 'Atau masukkan URL Foto'}
                                   />
@@ -1358,7 +1523,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   </div>
                 </div>
               </div>
-            )}
+              );
+            })()}
         </div>
       </div>
     </aside>

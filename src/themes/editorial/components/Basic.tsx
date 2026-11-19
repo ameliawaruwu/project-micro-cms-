@@ -168,17 +168,18 @@ export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolea
 };
 
 export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const products = useThemeProductsSource('editorial');
-  const heading = sectionOptions.heading || storeInfo?.name || 'Selamat Datang';
+  const heading = sectionOptions.heading || storeInfo?.name || (isEn ? 'Welcome' : 'Selamat Datang');
   const subheading =
     sectionOptions.subheading ||
     sectionOptions.description ||
     storeInfo?.description ||
-    'Temukan produk pilihan terbaik dari toko kami.';
+    (isEn ? 'Discover the best products from our store.' : 'Temukan produk pilihan terbaik dari toko kami.');
   const hero = getHeroContent(sectionOptions, {
-    badge: sectionOptions.announcementText || 'Koleksi Terbaru',
-    buttonLabel: 'Lihat Koleksi',
+    badge: sectionOptions.announcementText || (isEn ? 'New Collection' : 'Koleksi Terbaru'),
+    buttonLabel: isEn ? 'View Collection' : 'Lihat Koleksi',
     buttonLink: STORE_ROUTES.catalog,
     secondaryButtonLink: STORE_ROUTES.promo,
   });

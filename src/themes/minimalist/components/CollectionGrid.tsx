@@ -4,6 +4,7 @@ import { getDeviceClass, resolveResponsiveClasses } from '../../../utils/respons
 import { useSectionProducts } from '../../useSectionProducts';
 import { sanitizeLinkHref } from '../../navMenu';
 import { STORE_ROUTES } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const MinimalistCollectionGrid: React.FC<{
   sectionOptions?: any;
@@ -11,11 +12,12 @@ export const MinimalistCollectionGrid: React.FC<{
   isTablet?: boolean;
   deviceMode?: 'desktop' | 'tablet' | 'mobile';
 }> = ({ sectionOptions = {}, isMobile, isTablet, deviceMode }) => {
+  const { isEn } = useLanguage();
   const inEditor = typeof isMobile === 'boolean' || typeof isTablet === 'boolean';
   const rc = (cls: string) => resolveResponsiveClasses(cls, inEditor ? deviceMode || 'desktop' : undefined);
   const products = useSectionProducts('minimalist', sectionOptions, { defaultCount: 6, inEditor });
 
-  const title = sectionOptions.heading || 'Koleksi Pilihan';
+  const title = sectionOptions.heading || (isEn ? 'Curated Collection' : 'Koleksi Pilihan');
   // Tautan "#"/"#all" (nilai lama template) atau tidak aman → halaman Katalog.
   const customHref = sanitizeLinkHref(sectionOptions.buttonLink);
   const buttonHref = customHref && customHref !== '#' && customHref !== '#all' ? customHref : STORE_ROUTES.catalog;
@@ -53,7 +55,7 @@ export const MinimalistCollectionGrid: React.FC<{
           href={buttonHref}
           className="shrink-0 whitespace-nowrap text-xs font-medium tracking-wide uppercase text-gray-900 hover:text-gray-500 transition-colors group"
         >
-          {sectionOptions.buttonLabel || 'Lihat Semua'}
+          {sectionOptions.buttonLabel || (isEn ? 'View All' : 'Lihat Semua')}
           <span className="block max-w-0 group-hover:max-w-full transition-all duration-500 h-[1px] bg-gray-900 mt-1"></span>
         </a>
       </div>

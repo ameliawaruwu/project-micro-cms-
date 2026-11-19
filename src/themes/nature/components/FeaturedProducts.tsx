@@ -2,8 +2,9 @@ import React from 'react';
 import { NatureProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { useThemeProductsSource } from '../../useSectionProducts';
+import { useSectionProducts } from '../../useSectionProducts';
 import { STORE_ROUTES } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const NatureFeaturedProducts: React.FC<{ 
   sectionOptions?: any; 
@@ -13,33 +14,12 @@ export const NatureFeaturedProducts: React.FC<{
   isMobile?: boolean;
   isTablet?: boolean;
 }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, readonly = false, isMobile, isTablet }) => {
-  const allProducts = useThemeProductsSource('nature');
-  
-  // Dynamic product filtering and sorting
-  let filteredProducts = [...allProducts];
-  
-  if (sectionOptions.selectedCategoryId && sectionOptions.selectedCategoryId !== 'all') {
-    filteredProducts = filteredProducts.filter(p => ((p as any).category || p.categoryName) === sectionOptions.selectedCategoryId);
-  }
+  const { isEn } = useLanguage();
+  const products = useSectionProducts('nature', sectionOptions, { defaultCount: 4 });
 
-  if (sectionOptions.selectedProductIds && sectionOptions.selectedProductIds.length > 0) {
-    filteredProducts = filteredProducts.filter(p => sectionOptions.selectedProductIds.includes(p.id));
-  }
-
-  if (sectionOptions.sortOrder === 'price-asc') {
-    filteredProducts.sort((a, b) => a.price - b.price);
-  } else if (sectionOptions.sortOrder === 'price-desc') {
-    filteredProducts.sort((a, b) => b.price - a.price);
-  } else if (sectionOptions.sortOrder === 'name-asc') {
-    filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  const limit = sectionOptions.productCount || 4;
-  const products = filteredProducts.slice(0, limit);
-
-  const title = sectionOptions.featuredTitle || sectionOptions.heading || "Panen Segar Pilihan";
-  const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || "Produk terbaik pilihan toko kami";
-  const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || "Lihat Semua Produk";
+  const title = sectionOptions.featuredTitle || sectionOptions.heading || (isEn ? 'Fresh Harvest Picks' : 'Panen Segar Pilihan');
+  const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || (isEn ? 'The best products picked by our store' : 'Produk terbaik pilihan toko kami');
+  const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || (isEn ? 'View All Products' : 'Lihat Semua Produk');
 
   const desiredCols = [2, 3, 4, 5, 6].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 4;
   const desktopColsMap: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-4', 6: 'grid-cols-4' };

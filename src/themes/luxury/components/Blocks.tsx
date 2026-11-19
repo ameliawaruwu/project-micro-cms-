@@ -101,12 +101,12 @@ export const LuxuryCraftsmanship: React.FC<{ sectionOptions?: any; isMobile?: bo
     || sectionOptions.heading === "Craftsmanship";
   const heading = isDefaultHeading ? defaultHeading : sectionOptions.heading;
 
-  const isDefaultEyebrow = !sectionOptions.eyebrow 
-    || sectionOptions.eyebrow === "Savoir-Faire" 
-    || sectionOptions.eyebrow === "SAVOIR-FAIRE"
-    || sectionOptions.eyebrow === "FINE CRAFTSMANSHIP" 
-    || sectionOptions.eyebrow === "KEAHLIAN ADILUHUNG";
-  const eyebrow = isDefaultEyebrow ? defaultEyebrow : sectionOptions.eyebrow;
+  const isDefaultEyebrow = !(sectionOptions.eyebrowText || sectionOptions.eyebrow) 
+    || (sectionOptions.eyebrowText || sectionOptions.eyebrow) === "Savoir-Faire" 
+    || (sectionOptions.eyebrowText || sectionOptions.eyebrow) === "SAVOIR-FAIRE"
+    || (sectionOptions.eyebrowText || sectionOptions.eyebrow) === "FINE CRAFTSMANSHIP" 
+    || (sectionOptions.eyebrowText || sectionOptions.eyebrow) === "KEAHLIAN ADILUHUNG";
+  const eyebrow = isDefaultEyebrow ? defaultEyebrow : (sectionOptions.eyebrowText || sectionOptions.eyebrow);
 
   const currentDesc = sectionOptions.description || sectionOptions.subheading || sectionOptions.content;
   const isDefaultDesc = !currentDesc
@@ -190,12 +190,12 @@ export const LuxuryPrivateCollection: React.FC<{ sectionOptions?: any }> = ({ se
     || sectionOptions.heading === "Layanan Belanja Personal";
   const heading = isDefaultHeading ? defaultHeading : sectionOptions.heading;
 
-  const isDefaultEyebrow = !sectionOptions.eyebrow 
-    || sectionOptions.eyebrow === "Exclusive Access" 
-    || sectionOptions.eyebrow === "Akses Eksklusif"
-    || sectionOptions.eyebrow === "Exclusive Service"
-    || sectionOptions.eyebrow === "Layanan Eksklusif";
-  const eyebrow = isDefaultEyebrow ? defaultEyebrow : sectionOptions.eyebrow;
+  const isDefaultEyebrow = !(sectionOptions.eyebrowText || sectionOptions.eyebrow) 
+    || (sectionOptions.eyebrowText || sectionOptions.eyebrow) === "Exclusive Access" 
+    || (sectionOptions.eyebrowText || sectionOptions.eyebrow) === "Akses Eksklusif"
+    || (sectionOptions.eyebrowText || sectionOptions.eyebrow) === "Exclusive Service"
+    || (sectionOptions.eyebrowText || sectionOptions.eyebrow) === "Layanan Eksklusif";
+  const eyebrow = isDefaultEyebrow ? defaultEyebrow : (sectionOptions.eyebrowText || sectionOptions.eyebrow);
 
   const currentDesc = sectionOptions.description || sectionOptions.subheading || sectionOptions.content;
   const isDefaultDesc = !currentDesc

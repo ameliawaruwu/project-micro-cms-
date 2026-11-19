@@ -1,16 +1,20 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { resolveSectionImage } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const MinimalistBrandPhilosophy: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
   
-  const heading = sectionOptions.heading || 'Tentang Kami';
+  const heading = sectionOptions.heading || (isEn ? 'About Us' : 'Tentang Kami');
   // Bawaan: deskripsi toko; bila kosong, kalimat umum dengan nama toko.
   const content =
     sectionOptions.description ||
     storeInfo?.description ||
-    `${storeInfo?.name || 'Kami'} menghadirkan produk pilihan yang sederhana, berkualitas, dan dibuat untuk menemani keseharian Anda.`;
+    (isEn
+      ? `${storeInfo?.name || 'We'} offer${storeInfo?.name ? 's' : ''} simple, quality products made to accompany your everyday life.`
+      : `${storeInfo?.name || 'Kami'} menghadirkan produk pilihan yang sederhana, berkualitas, dan dibuat untuk menemani keseharian Anda.`);
   const image = resolveSectionImage(sectionOptions);
   
   return (

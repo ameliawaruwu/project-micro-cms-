@@ -2,17 +2,18 @@ import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { ElegantProductCard } from './ProductCard';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { useThemeProductsSource } from '../../useSectionProducts';
+import { useSectionProducts } from '../../useSectionProducts';
 import { STORE_ROUTES } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ElegantFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const allProducts = useThemeProductsSource('elegant');
-  // Produk unggulan toko; bila belum ada yang ditandai unggulan, tampilkan produk terbaru.
-  const featured = allProducts.filter(p => p.isFeatured);
-  const products = (featured.length > 0 ? featured : allProducts).slice(0, 3);
-  const eyebrow = sectionOptions.subheading || 'Pilihan Kami';
-  const heading = sectionOptions.heading || 'Produk Unggulan';
-  const buttonLabel = sectionOptions.buttonLabel || sectionOptions.buttonText || 'Lihat Semua Koleksi';
+  const { isEn } = useLanguage();
+  // Pilihan & jumlah produk dari panel kanan editor; tanpa pilihan manual utamakan produk unggulan.
+  const products = useSectionProducts('elegant', sectionOptions, { defaultCount: 3, preferFeatured: true });
+  const eyebrow = sectionOptions.eyebrowText || (isEn ? 'Our Picks' : 'Pilihan Kami');
+  const description = sectionOptions.description || sectionOptions.featuredSubtitle;
+  const heading = sectionOptions.heading || (isEn ? 'Featured Products' : 'Produk Unggulan');
+  const buttonLabel = sectionOptions.buttonLabel || sectionOptions.buttonText || (isEn ? 'View All Collections' : 'Lihat Semua Koleksi');
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-2',
@@ -33,6 +34,9 @@ export const ElegantFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-normal text-[#2C2A29] mb-6 italic break-words">
             {heading}
           </h2>
+          {description && (
+            <p className="max-w-xl text-sm sm:text-base text-[#6B6865] font-sans font-light leading-relaxed mb-6">{description}</p>
+          )}
           <div className="w-px h-16 bg-[#2C2A29]/30"></div>
         </div>
 

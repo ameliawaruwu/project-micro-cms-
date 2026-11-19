@@ -6,16 +6,24 @@ import { STORE_ROUTES, formatRupiah, productHref } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ProfessionalStoreBenefits: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const heading = sectionOptions.heading || "Mengapa Belanja di Toko Kami?";
+  const { isEn } = useLanguage();
+  const heading = sectionOptions.heading || (isEn ? 'Why Shop With Us?' : 'Mengapa Belanja di Toko Kami?');
   
   const description = sectionOptions.description || sectionOptions.subheading;
   const customBenefits = Array.isArray(sectionOptions.features) && sectionOptions.features.length > 0 ? sectionOptions.features : null;
-  const benefits = customBenefits || [
-    { title: "Produk Terjamin", desc: "Setiap produk dicek sebelum dikirim ke pelanggan." },
-    { title: "Pengiriman Aman", desc: "Dikemas rapi dan dikirim ke seluruh Indonesia." },
-    { title: "Pembayaran Mudah", desc: "Bayar lewat transfer, QRIS, atau COD." },
-    { title: "Pesanan Terpantau", desc: "Status pesanan bisa dicek kapan saja." }
-  ];
+  const benefits = customBenefits || (isEn
+    ? [
+        { title: 'Guaranteed Products', desc: 'Every product is checked before it is shipped to customers.' },
+        { title: 'Safe Shipping', desc: 'Neatly packed and shipped across Indonesia.' },
+        { title: 'Easy Payment', desc: 'Pay by transfer, QRIS, or COD.' },
+        { title: 'Tracked Orders', desc: 'Order status can be checked at any time.' },
+      ]
+    : [
+        { title: 'Produk Terjamin', desc: 'Setiap produk dicek sebelum dikirim ke pelanggan.' },
+        { title: 'Pengiriman Aman', desc: 'Dikemas rapi dan dikirim ke seluruh Indonesia.' },
+        { title: 'Pembayaran Mudah', desc: 'Bayar lewat transfer, QRIS, atau COD.' },
+        { title: 'Pesanan Terpantau', desc: 'Status pesanan bisa dicek kapan saja.' },
+      ]);
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
@@ -52,8 +60,8 @@ export const ProfessionalProductGrid: React.FC<{ sectionOptions?: any; isMobile?
   const { isEn } = useLanguage();
   // Produk mengikuti pengaturan panel editor (kategori, produk pilihan, urutan, jumlah).
   const products = useSectionProducts('professional', sectionOptions, { defaultCount: 8 });
-  const heading = sectionOptions.heading || sectionOptions.featuredTitle || "Katalog Produk";
-  const subheading = sectionOptions.subheading || sectionOptions.featuredSubtitle || "Pilihan produk terbaik dari toko kami.";
+  const heading = sectionOptions.heading || sectionOptions.featuredTitle || (isEn ? 'Product Catalog' : 'Katalog Produk');
+  const subheading = sectionOptions.subheading || sectionOptions.featuredSubtitle || (isEn ? 'The best products from our store.' : 'Pilihan produk terbaik dari toko kami.');
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-2',
@@ -141,7 +149,7 @@ export const ProfessionalTestimonials: React.FC<{ sectionOptions?: any; isMobile
   });
 
   if (testimonials.length === 0) {
-    const heading = sectionOptions.heading || 'Kepuasan Pelanggan Prioritas Kami';
+    const heading = sectionOptions.heading || (isEn ? 'Customer Satisfaction Is Our Priority' : 'Kepuasan Pelanggan Prioritas Kami');
     const desc =
       sectionOptions.description ||
       'Ada pertanyaan tentang produk atau butuh penawaran khusus? Tim kami siap membantu Anda.';
@@ -169,7 +177,7 @@ export const ProfessionalTestimonials: React.FC<{ sectionOptions?: any; isMobile
     );
   }
 
-  const heading = sectionOptions.heading || 'Apa Kata Pelanggan Kami';
+  const heading = sectionOptions.heading || (isEn ? 'What Our Customers Say' : 'Apa Kata Pelanggan Kami');
   return (
     <section className="py-16 sm:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-16 text-center">

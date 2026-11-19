@@ -87,15 +87,16 @@ export const FuturisticNavbar: React.FC<{ sectionOptions?: any; accentColor?: st
 };
 
 export const FuturisticHero: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#A855F7' }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const products = useThemeProductsSource('futuristic');
-  const heading = sectionOptions.heading || storeInfo?.name || 'Teknologi Masa Depan';
+  const heading = sectionOptions.heading || storeInfo?.name || (isEn ? 'Future Technology' : 'Teknologi Masa Depan');
   const subheading =
     sectionOptions.subheading || sectionOptions.subtitle || sectionOptions.description || sectionOptions.content ||
-    storeInfo?.description || 'Temukan produk pilihan terbaik dengan teknologi terkini dari toko kami.';
+    storeInfo?.description || (isEn ? 'Discover the best products with the latest technology from our store.' : 'Temukan produk pilihan terbaik dengan teknologi terkini dari toko kami.');
   const hero = getHeroContent(sectionOptions, {
-    badge: 'Koleksi Terbaru',
-    buttonLabel: 'Lihat Katalog',
+    badge: isEn ? 'New Collection' : 'Koleksi Terbaru',
+    buttonLabel: isEn ? 'View Catalog' : 'Lihat Katalog',
     buttonLink: STORE_ROUTES.catalog,
   });
   // Gambar latar: unggahan merchant → banner toko → foto produk pertama → gambar bawaan dekoratif.
@@ -153,7 +154,7 @@ export const FuturisticHero: React.FC<{ sectionOptions?: any; accentColor?: stri
 
 export const FuturisticFeaturedProducts: React.FC<{ sectionOptions?: any; accentColor?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, accentColor = '#A855F7', isMobile, isTablet }) => {
   const { isEn } = useLanguage();
-  const title = sectionOptions.featuredTitle || sectionOptions.heading || 'Produk Unggulan';
+  const title = sectionOptions.featuredTitle || sectionOptions.heading || (isEn ? 'Featured Products' : 'Produk Unggulan');
   const desiredCols = [2, 3, 4].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 3;
   // Ikuti pengaturan editor (kategori, produk pilihan, urutan, jumlah); tanpa pilihan manual
   // produk unggulan toko didahulukan.

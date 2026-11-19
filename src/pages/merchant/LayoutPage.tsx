@@ -1764,6 +1764,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               <RightPanelSettings
                 store={currentStore}
                 products={displayProducts}
+                activeThemeId={activeThemeId}
                 selectedSection={selectedSection}
                 onUpdateSectionOptions={handleUpdateSectionOptions}
                 onUpdateStore={handleUpdateStore}

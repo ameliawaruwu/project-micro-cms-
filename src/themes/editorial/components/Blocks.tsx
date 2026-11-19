@@ -1,14 +1,14 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { useThemeProductsSource } from '../../useSectionProducts';
+import { useThemeProductsSource, useSectionProducts } from '../../useSectionProducts';
 import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Lookbook dua foto produk toko; tidak dirender bila belum ada foto produk. */
 export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const products = useThemeProductsSource('editorial');
-  const items = products.filter((p) => p.image).slice(0, 2);
+  const { isEn } = useLanguage();
+  const items = useSectionProducts('editorial', sectionOptions, { defaultCount: 2, requireImage: true });
   const mainGridClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-1',
@@ -27,17 +27,20 @@ export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: bool
   });
   if (items.length === 0) return null;
 
-  const heading = sectionOptions.heading || 'Galeri Produk';
+  const eyebrow = sectionOptions.eyebrowText || (isEn ? 'Our Picks' : 'Pilihan Kami');
+  const heading = sectionOptions.heading || (isEn ? 'Product Gallery' : 'Galeri Produk');
   const desc =
     sectionOptions.description ||
-    'Lihat lebih dekat produk pilihan kami, dirangkai untuk menemani gaya dan kebutuhan Anda sehari-hari.';
-  const cta = resolveSectionCta(sectionOptions, 'Lihat Koleksi', STORE_ROUTES.catalog);
+    (isEn
+      ? 'Take a closer look at our selected products, curated for your everyday style and needs.'
+      : 'Lihat lebih dekat produk pilihan kami, dirangkai untuk menemani gaya dan kebutuhan Anda sehari-hari.');
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View Collection' : 'Lihat Koleksi', STORE_ROUTES.catalog);
 
   return (
     <section className="py-12 sm:py-20 md:py-24 px-4 sm:px-6 md:px-12 max-w-[1400px] mx-auto bg-[#fafafa]">
       <div className={`grid ${mainGridClass} gap-8 md:gap-16 items-center`}>
         <div className={`${colSpanTextClass} ${orderTextClass} min-w-0`}>
-          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-6">Pilihan Kami</p>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-6">{eyebrow}</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif italic mb-6 sm:mb-8 text-gray-900 break-words">{heading}</h2>
           <p className="text-gray-600 leading-loose mb-8 sm:mb-12 font-light text-sm md:text-base">{desc}</p>
           <a
@@ -50,7 +53,7 @@ export const EditorialLookbook: React.FC<{ sectionOptions?: any; isMobile?: bool
         <div className={`${colSpanImgClass} ${orderImgClass}`}>
           <div className={`grid ${imgPairGridClass} gap-3 sm:gap-4 md:gap-6 max-w-2xl mx-auto`}>
             {items.map((p, i) => (
-              <a key={p.id} href={productHref(p)} className={`block overflow-hidden ${i === 1 ? 'mt-6 sm:mt-10 md:mt-12' : ''}`}>
+              <a key={p.id} href={productHref(p)} className={`block overflow-hidden ${i % 2 === 1 ? 'mt-6 sm:mt-10 md:mt-12' : ''}`}>
                 <img
                   src={p.image}
                   alt={p.name}
@@ -70,7 +73,7 @@ export const EditorialCampaign: React.FC<{ sectionOptions?: any }> = ({ sectionO
   const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const products = useThemeProductsSource('editorial');
-  const heading = sectionOptions.heading || 'Koleksi Pilihan';
+  const heading = sectionOptions.heading || (isEn ? 'Curated Collection' : 'Koleksi Pilihan');
   const desc =
     sectionOptions.description ||
     'Temukan produk-produk terbaik kami yang dipilih dengan cermat untuk Anda.';
@@ -105,8 +108,8 @@ export const EditorialCampaign: React.FC<{ sectionOptions?: any }> = ({ sectionO
 
 /** Sorotan satu produk toko dengan tata letak asimetris. */
 export const EditorialAsymmetricShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const products = useThemeProductsSource('editorial');
-  const product = products.find((p) => p.isFeatured) || products[2] || products[0];
+  const { isEn } = useLanguage();
+  const product = useSectionProducts('editorial', sectionOptions, { defaultCount: 1, preferFeatured: true })[0];
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -121,7 +124,7 @@ export const EditorialAsymmetricShowcase: React.FC<{ sectionOptions?: any; isMob
   const heading = sectionOptions.heading || product.name;
   const description = sectionOptions.description || product.description;
   const image = resolveSectionImage(sectionOptions) || product.image;
-  const cta = resolveSectionCta(sectionOptions, 'Lihat Detail', productHref(product));
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View Details' : 'Lihat Detail', productHref(product));
 
   return (
     <section className={`py-16 sm:py-24 md:py-40 px-4 sm:px-6 md:px-12 max-w-[1400px] mx-auto flex ${flexDirClass} items-end gap-10 sm:gap-16 md:gap-24`}>
@@ -133,7 +136,7 @@ export const EditorialAsymmetricShowcase: React.FC<{ sectionOptions?: any; isMob
       )}
       <div className={`${textWidthClass} min-w-0 pb-4 sm:pb-12 md:pb-24 md:pr-12`}>
         <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-6 sm:mb-8 font-medium">
-          {sectionOptions.badgeText || 'Produk Unggulan'}
+          {sectionOptions.badgeText || (isEn ? 'Featured Products' : 'Produk Unggulan')}
         </p>
         <h3 className="text-3xl sm:text-4xl md:text-5xl font-serif mb-6 sm:mb-8 text-gray-900 leading-tight break-words">{heading}</h3>
         {description && (
@@ -155,11 +158,13 @@ export const EditorialAsymmetricShowcase: React.FC<{ sectionOptions?: any; isMob
 export const EditorialBrandStory: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
-  const heading = sectionOptions.heading || 'Tentang Kami';
+  const heading = sectionOptions.heading || (isEn ? 'About Us' : 'Tentang Kami');
   const desc =
     sectionOptions.description ||
     storeInfo?.description ||
-    'Kami menghadirkan produk pilihan dengan kualitas terbaik dan pelayanan yang ramah. Terima kasih telah berbelanja di toko kami.';
+    (isEn
+      ? 'We offer selected products with the best quality and friendly service. Thank you for shopping with us.'
+      : 'Kami menghadirkan produk pilihan dengan kualitas terbaik dan pelayanan yang ramah. Terima kasih telah berbelanja di toko kami.');
 
   return (
     <section className="py-16 sm:py-32 md:py-48 px-4 sm:px-6 text-center max-w-4xl mx-auto">
@@ -181,8 +186,7 @@ export const EditorialBrandStory: React.FC<{ sectionOptions?: any }> = ({ sectio
 /** Sorotan beberapa produk toko bergaya jurnal; tidak dirender bila belum ada foto produk. */
 export const EditorialJournal: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { isEn } = useLanguage();
-  const products = useThemeProductsSource('editorial');
-  const items = products.filter((p) => p.image).slice(0, 3);
+  const items = useSectionProducts('editorial', sectionOptions, { defaultCount: 3, requireImage: true });
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-2',
@@ -191,8 +195,8 @@ export const EditorialJournal: React.FC<{ sectionOptions?: any; isMobile?: boole
   });
   if (items.length === 0) return null;
 
-  const heading = sectionOptions.heading || 'Sorotan Produk';
-  const cta = resolveSectionCta(sectionOptions, 'Lihat Semua Produk', STORE_ROUTES.catalog);
+  const heading = sectionOptions.heading || (isEn ? 'Product Highlights' : 'Sorotan Produk');
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View All Products' : 'Lihat Semua Produk', STORE_ROUTES.catalog);
 
   return (
     <section className="py-16 sm:py-32 bg-white px-4 sm:px-6 md:px-12 border-t border-gray-100">

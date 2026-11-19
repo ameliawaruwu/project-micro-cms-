@@ -8,13 +8,15 @@ import {
   nonEmptyStrings,
   SustainabilityPillar,
 } from '../../sectionContent';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const NatureIngredientStory: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const products = useThemeProductsSource('nature');
   // Gambar: unggahan merchant → foto produk pertama toko → gambar dekoratif bawaan.
   const imageSrc = sectionOptions.imageUrl || sectionOptions.bannerUrl || products.find((p) => p.image)?.image || 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=80';
-  const heading = sectionOptions.heading || 'Cerita di Balik Produk Kami';
-  const desc = sectionOptions.description || 'Setiap produk kami pilih dengan teliti dari bahan berkualitas, diproses dengan hati-hati, dan disiapkan agar sampai ke tangan Anda dalam kondisi terbaik.';
+  const heading = sectionOptions.heading || (isEn ? 'The Story Behind Our Products' : 'Cerita di Balik Produk Kami');
+  const desc = sectionOptions.description || (isEn ? 'Every product is carefully selected from quality materials, handled with care, and prepared to reach you in the best condition.' : 'Setiap produk kami pilih dengan teliti dari bahan berkualitas, diproses dengan hati-hati, dan disiapkan agar sampai ke tangan Anda dalam kondisi terbaik.');
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -61,7 +63,8 @@ export const NatureIngredientStory: React.FC<{ sectionOptions?: any; isMobile?: 
 };
 
 export const NatureSustainability: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const heading = sectionOptions.heading || 'Komitmen Kami';
+  const { isEn } = useLanguage();
+  const heading = sectionOptions.heading || (isEn ? 'Our Commitment' : 'Komitmen Kami');
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
     tablet: 'grid-cols-1',

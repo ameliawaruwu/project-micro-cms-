@@ -3,17 +3,19 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { STORE_ROUTES } from '../../storefrontLinks';
 import { useThemeProductsSource } from '../../useSectionProducts';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const ElegantHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const products = useThemeProductsSource('elegant');
   const hero = getHeroContent(sectionOptions, {
-    badge: 'Koleksi Terbaru',
-    buttonLabel: 'Lihat Koleksi',
+    badge: isEn ? 'New Collection' : 'Koleksi Terbaru',
+    buttonLabel: isEn ? 'View Collection' : 'Lihat Koleksi',
     buttonLink: STORE_ROUTES.catalog,
     secondaryButtonLink: STORE_ROUTES.promo,
   });
-  const heading = sectionOptions?.heading || storeInfo?.name || 'Selamat Datang';
+  const heading = sectionOptions?.heading || storeInfo?.name || (isEn ? 'Welcome' : 'Selamat Datang');
   const subheading =
     sectionOptions?.subheading ||
     sectionOptions?.subtitle ||

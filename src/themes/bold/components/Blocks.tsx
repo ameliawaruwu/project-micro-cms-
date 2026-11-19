@@ -1,6 +1,6 @@
 import React from 'react';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { useThemeProductsSource } from '../../useSectionProducts';
+import { useSectionProducts, useThemeProductsSource } from '../../useSectionProducts';
 import {
   STORE_ROUTES,
   formatRupiah,
@@ -13,16 +13,17 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Produk unggulan: produk pertama toko. Tidak dirender bila toko belum punya produk. */
 export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const products = useThemeProductsSource('bold');
-  const product = products.find((p) => p.isFeatured) || products[0];
+  const { isEn } = useLanguage();
+  // Produk pertama dari pilihan editor (bila ada), selain itu produk unggulan / produk pertama.
+  const product = useSectionProducts('bold', sectionOptions, { defaultCount: 1, preferFeatured: true })[0];
   if (!product) return null;
 
   // Teks, gambar & tombol dari editor; bila kosong memakai data produk unggulan.
-  const badge = sectionOptions.badgeText || 'Produk Unggulan';
+  const badge = sectionOptions.badgeText || (isEn ? 'Featured Product' : 'Produk Unggulan');
   const heading = sectionOptions.heading || product.name;
   const description = sectionOptions.description || product.description;
   const image = resolveSectionImage(sectionOptions) || product.image;
-  const cta = resolveSectionCta(sectionOptions, 'Beli Sekarang →', productHref(product));
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'Buy Now →' : 'Beli Sekarang →', productHref(product));
 
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 md:px-12 bg-zinc-950 text-white relative overflow-hidden border-b border-zinc-900">
@@ -62,7 +63,7 @@ export const BoldLatestDrop: React.FC<{ sectionOptions?: any }> = ({ sectionOpti
               href={STORE_ROUTES.catalog}
               className="inline-block px-7 sm:px-8 py-3.5 sm:py-4 border border-zinc-700 hover:border-red-500 text-white font-extrabold uppercase tracking-widest text-xs sm:text-sm rounded-xl transition-colors"
             >
-              Lihat Katalog
+              {isEn ? 'View Catalog' : 'Lihat Katalog'}
             </a>
           </div>
         </div>
@@ -89,9 +90,9 @@ export const BoldCategoryTiles: React.FC<{ sectionOptions?: any; isMobile?: bool
     <section className="bg-zinc-950 py-14 sm:py-16 px-4 sm:px-6 border-b border-zinc-900">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8 sm:mb-10">
-          <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-2">{isEn ? 'Collection' : 'Koleksi'}</h2>
+          <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-2">{sectionOptions.eyebrowText || (isEn ? 'Collection' : 'Koleksi')}</h2>
           <p className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
-            {sectionOptions.heading || 'Belanja per Kategori'}
+            {sectionOptions.heading || (isEn ? 'Shop by Category' : 'Belanja per Kategori')}
           </p>
         </div>
         <div className={`grid ${gridColsClass} gap-3 sm:gap-5`}>
@@ -122,11 +123,10 @@ export const BoldCategoryTiles: React.FC<{ sectionOptions?: any; isMobile?: bool
 /** Galeri foto dari produk toko (atau banner yang diunggah merchant). */
 export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
   const { isEn } = useLanguage();
-  const products = useThemeProductsSource('bold');
-  const items = products.filter((p) => p.image).slice(0, 3);
+  const items = useSectionProducts('bold', sectionOptions, { defaultCount: 3, requireImage: true });
   if (items.length === 0) return null;
 
-  const heading = sectionOptions.heading || 'Galeri Produk';
+  const heading = sectionOptions.heading || (isEn ? 'Product Gallery' : 'Galeri Produk');
   const description = sectionOptions.description;
   const cta = sectionOptions.buttonLabel || sectionOptions.buttonText ? resolveSectionCta(sectionOptions, '', STORE_ROUTES.catalog) : null;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
@@ -145,6 +145,9 @@ export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 bg-zinc-950 text-white border-b border-zinc-900">
       <div className="max-w-6xl mx-auto text-center">
+        {sectionOptions.eyebrowText && (
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-2">{sectionOptions.eyebrowText}</p>
+        )}
         <h2 className={`text-3xl sm:text-5xl font-black uppercase tracking-tight text-white break-words ${description ? 'mb-4' : 'mb-10 sm:mb-12'}`}>
           {heading}
         </h2>
@@ -191,16 +194,18 @@ export const BoldLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
 /** Ajakan menghubungi toko untuk info produk terbaru. */
 export const BoldLimitedRelease: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { isEn } = useLanguage();
-  const heading = sectionOptions.heading || 'Jangan Sampai Kehabisan';
+  const heading = sectionOptions.heading || (isEn ? "Don't Miss Out" : 'Jangan Sampai Kehabisan');
   const desc =
     sectionOptions.description ||
-    'Stok produk kami terbatas. Hubungi kami untuk info produk terbaru atau pemesanan khusus.';
-  const cta = resolveSectionCta(sectionOptions, 'Belanja Sekarang', STORE_ROUTES.catalog);
+    (isEn
+      ? 'Our stock is limited. Contact us for the latest products or special orders.'
+      : 'Stok produk kami terbatas. Hubungi kami untuk info produk terbaru atau pemesanan khusus.');
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'Shop Now' : 'Belanja Sekarang', STORE_ROUTES.catalog);
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 bg-zinc-950 text-white text-center border-b border-zinc-900 relative overflow-hidden">
       <div className="relative z-10 max-w-2xl mx-auto space-y-5 sm:space-y-6">
         <span className="px-4 py-1.5 bg-red-600/10 border border-red-500/30 text-red-500 font-extrabold text-xs uppercase tracking-widest rounded-full inline-block">
-          {sectionOptions.badgeText || 'Stok Terbatas'}
+          {sectionOptions.badgeText || (isEn ? 'Limited Stock' : 'Stok Terbatas')}
         </span>
         <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white break-words">
           {heading}
@@ -229,11 +234,11 @@ export const BoldLimitedRelease: React.FC<{ sectionOptions?: any }> = ({ section
 
 /** Etalase mini: foto produk toko yang langsung membuka detail produk. */
 export const BoldCommunityBoard: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const products = useThemeProductsSource('bold');
-  const items = products.filter((p) => p.image).slice(0, 4);
+  const { isEn } = useLanguage();
+  const items = useSectionProducts('bold', sectionOptions, { defaultCount: 4, requireImage: true });
   if (items.length === 0) return null;
 
-  const heading = sectionOptions.heading || 'Pilihan Pelanggan';
+  const heading = sectionOptions.heading || (isEn ? 'Customer Favorites' : 'Pilihan Pelanggan');
   const description = sectionOptions.description;
   const cta = sectionOptions.buttonLabel || sectionOptions.buttonText ? resolveSectionCta(sectionOptions, '', STORE_ROUTES.catalog) : null;
   const gridColsClass = getDeviceClass(isMobile, isTablet, {

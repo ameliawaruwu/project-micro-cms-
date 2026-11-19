@@ -3,36 +3,17 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { CuteProductCard } from './ProductCard';
 import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { useThemeProductsSource } from '../../useSectionProducts';
+import { useSectionProducts } from '../../useSectionProducts';
 import { STORE_ROUTES } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const CuteFeaturedProducts: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, isMobile, isTablet }) => {
-  const allProducts = useThemeProductsSource('cute');
-  // Dynamic product filtering and sorting
-  let filteredProducts = [...allProducts];
-  
-  if (sectionOptions.selectedCategoryId && sectionOptions.selectedCategoryId !== 'all') {
-    filteredProducts = filteredProducts.filter(p => ((p as any).category || p.categoryName) === sectionOptions.selectedCategoryId);
-  }
+  const { isEn } = useLanguage();
+  const products = useSectionProducts('cute', sectionOptions, { defaultCount: 4 });
 
-  if (sectionOptions.selectedProductIds && sectionOptions.selectedProductIds.length > 0) {
-    filteredProducts = filteredProducts.filter(p => sectionOptions.selectedProductIds.includes(p.id));
-  }
-
-  if (sectionOptions.sortOrder === 'price-asc') {
-    filteredProducts.sort((a, b) => a.price - b.price);
-  } else if (sectionOptions.sortOrder === 'price-desc') {
-    filteredProducts.sort((a, b) => b.price - a.price);
-  } else if (sectionOptions.sortOrder === 'name-asc') {
-    filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  const limit = sectionOptions.productCount || 4;
-  const products = filteredProducts.slice(0, limit);
-
-  const title = sectionOptions.featuredTitle || sectionOptions.heading || "Produk Favorit";
-  const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || "Paling Disukai 💖";
-  const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || "Lihat Lebih Banyak 🌸";
+  const title = sectionOptions.featuredTitle || sectionOptions.heading || (isEn ? 'Favorite Products' : 'Produk Favorit');
+  const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || (isEn ? 'Most Loved 💖' : 'Paling Disukai 💖');
+  const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || (isEn ? 'See More 🌸' : 'Lihat Lebih Banyak 🌸');
 
   const desiredCols = [2, 3, 4, 5, 6].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 4;
   const desktopColsMap: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-4', 6: 'grid-cols-4' };

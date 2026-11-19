@@ -3,19 +3,21 @@ import { useCmsStore } from '../../../cms/useCmsStore';
 import { getHeroContent, HeroActionLink } from '../../heroContent';
 import { useThemeProductsSource } from '../../useSectionProducts';
 import { STORE_ROUTES } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const MinimalistHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
 
   const products = useThemeProductsSource('minimalist');
 
-  const heading = sectionOptions.heading || storeInfo?.name || 'Selamat Datang';
+  const heading = sectionOptions.heading || storeInfo?.name || (isEn ? 'Welcome' : 'Selamat Datang');
   const subheading =
     sectionOptions.subheading || sectionOptions.description || storeInfo?.description ||
-    'Temukan produk pilihan terbaik untuk kebutuhan sehari-hari Anda.';
+    (isEn ? 'Discover the best products for your everyday needs.' : 'Temukan produk pilihan terbaik untuk kebutuhan sehari-hari Anda.');
   const hero = getHeroContent(sectionOptions, {
-    badge: 'Koleksi Pilihan',
-    buttonLabel: 'Lihat Koleksi',
+    badge: isEn ? 'Curated Collection' : 'Koleksi Pilihan',
+    buttonLabel: isEn ? 'View Collection' : 'Lihat Koleksi',
     buttonLink: STORE_ROUTES.catalog,
   });
   // Gambar latar: unggahan merchant → banner toko → foto produk pertama → gambar bawaan dekoratif.

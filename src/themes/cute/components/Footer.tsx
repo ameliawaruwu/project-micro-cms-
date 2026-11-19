@@ -6,8 +6,10 @@ import { getNavMenuItems } from '../../navMenu';
 import { FooterLegalLinks } from '../../FooterLegalLinks';
 import { FooterBrand } from '../../FooterBrand';
 import { FooterSocialLinks } from '../../FooterSocialLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
 
@@ -16,7 +18,10 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
   const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address;
   const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
   const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
-  const copyrightText = sectionOptions.copyrightText || `Dibuat dengan 💖 oleh ${storeName} © ${new Date().getFullYear()}`;
+  const copyrightText = sectionOptions.copyrightText ||
+    (isEn
+      ? `Made with 💖 by ${storeName} © ${new Date().getFullYear()}`
+      : `Dibuat dengan 💖 oleh ${storeName} © ${new Date().getFullYear()}`);
 
   const gridColsClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'grid-cols-1',
@@ -66,7 +71,7 @@ export const CuteFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; is
         {/* Contact */}
         <div className={`flex flex-col ${itemsAlignClass}`}>
           <h4 className="text-lg font-black text-gray-800 mb-6 bg-white px-4 py-1 rounded-full border-2 border-[#FFD1DC] inline-block">
-            Sapa Kami! 💌
+            {isEn ? 'Say Hi! 💌' : 'Sapa Kami! 💌'}
           </h4>
           <ul className="space-y-4 font-bold text-gray-600">
             {address && <li className="bg-white px-4 py-2 rounded-2xl border-2 border-[#FFD1DC] inline-block w-full break-words">{address}</li>}

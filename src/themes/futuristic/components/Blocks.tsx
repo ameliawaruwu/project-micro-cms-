@@ -1,15 +1,16 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
 import { getDeviceClass } from '../../../utils/responsivePreview';
-import { useThemeProductsSource } from '../../useSectionProducts';
+import { useSectionProducts } from '../../useSectionProducts';
 import { sanitizeLinkHref } from '../../navMenu';
 import { STORE_ROUTES, formatRupiah, productHref, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 /** Sorotan produk unggulan toko; tidak dirender bila toko belum punya produk. */
 export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
-  const products = useThemeProductsSource('futuristic');
-  const product = products.find((p) => p.isFeatured) || products[0];
+  const { isEn } = useLanguage();
+  // Produk pertama dari pilihan editor (bila ada), selain itu produk unggulan / produk pertama.
+  const product = useSectionProducts('futuristic', sectionOptions, { defaultCount: 1, preferFeatured: true })[0];
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -25,14 +26,14 @@ export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobi
   const heading = sectionOptions.heading || product.name;
   const description = sectionOptions.description || product.description;
   const image = resolveSectionImage(sectionOptions) || product.image;
-  const cta = resolveSectionCta(sectionOptions, 'Lihat Detail', productHref(product));
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View Details' : 'Lihat Detail', productHref(product));
 
   return (
     <section className="py-16 sm:py-24 md:py-32 px-4 sm:px-6 md:px-12 bg-[#050505] text-white overflow-hidden relative border-t border-gray-900">
       <div className={`max-w-6xl mx-auto flex ${flexDirClass} items-center`}>
         <div className={`${halfWidthClass} relative z-20 min-w-0 ${prClass}`}>
           <div className="inline-block px-3 py-1 bg-purple-900/40 border border-purple-500/50 text-purple-400 text-xs font-mono mb-6 uppercase tracking-widest backdrop-blur-sm">
-            {sectionOptions.badgeText || 'Produk Unggulan'}
+            {sectionOptions.badgeText || (isEn ? 'Featured Products' : 'Produk Unggulan')}
           </div>
           <h2 className="text-3xl sm:text-5xl lg:text-7xl font-black uppercase tracking-tighter mb-4 sm:mb-6 text-white drop-shadow-lg break-words">
             {heading}
@@ -52,7 +53,7 @@ export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobi
               href={STORE_ROUTES.catalog}
               className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 border border-gray-700 text-gray-300 hover:text-white hover:border-white text-sm sm:text-base font-bold uppercase tracking-widest transition-all duration-300"
             >
-              Lihat Katalog
+              {isEn ? 'View Catalog' : 'Lihat Katalog'}
             </a>
           </div>
         </div>
@@ -89,7 +90,7 @@ export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any; isMobile?:
   const image = resolveSectionImage(sectionOptions);
   // Tombol hanya tampil bila merchant mengisi teks tombol di editor.
   const hasCta = Boolean(sectionOptions.buttonLabel || sectionOptions.buttonText);
-  const cta = resolveSectionCta(sectionOptions, 'Belanja Sekarang', STORE_ROUTES.catalog);
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'Shop Now' : 'Belanja Sekarang', STORE_ROUTES.catalog);
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 md:px-12 bg-[#080808] text-white border-y border-gray-900 relative">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/10 via-[#080808] to-[#080808]"></div>
@@ -130,10 +131,11 @@ export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any; isMobile?:
 /** Perbandingan produk toko (kategori & harga); butuh minimal dua produk. */
 export const FuturisticProductComparison: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
   const { isEn } = useLanguage();
-  const products = useThemeProductsSource('futuristic').slice(0, 3);
+  // Maksimal 4 produk agar tabel tetap terbaca; jumlah & pilihan dari panel kanan editor.
+  const products = useSectionProducts('futuristic', sectionOptions, { defaultCount: 3, maxCount: 4 });
   if (products.length < 2) return null;
 
-  const colsClass = products.length === 3 ? 'grid-cols-4' : 'grid-cols-3';
+  const colsClass = ({ 2: 'grid-cols-3', 3: 'grid-cols-4', 4: 'grid-cols-5' } as Record<number, string>)[products.length];
   const rows: { label: string; value: (p: (typeof products)[number]) => string }[] = [
     { label: isEn ? 'Category' : 'Kategori', value: (p) => p.categoryName || '-' },
     { label: isEn ? 'Price' : 'Harga', value: (p) => formatRupiah(p.price) },
@@ -142,10 +144,10 @@ export const FuturisticProductComparison: React.FC<{ sectionOptions?: any }> = (
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 md:px-12 bg-[#050505] text-white text-center">
       <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-widest mb-4 break-words">
-        {sectionOptions.heading || 'Bandingkan Produk'}
+        {sectionOptions.heading || (isEn ? 'Compare Products' : 'Bandingkan Produk')}
       </h2>
       <p className="text-purple-500 font-mono mb-10 sm:mb-16 tracking-widest text-xs sm:text-sm">
-        {sectionOptions.subheading || 'Pilih produk yang paling sesuai untuk Anda'}
+        {sectionOptions.subheading || (isEn ? 'Choose the product that suits you best' : 'Pilih produk yang paling sesuai untuk Anda')}
       </p>
       <div className="max-w-4xl mx-auto bg-[#0a0a0a] border border-gray-800 rounded-lg p-4 sm:p-8 shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-x-auto">
         <div className={`grid ${colsClass} gap-2 sm:gap-4 font-mono text-[11px] sm:text-sm uppercase text-purple-400 mb-4 sm:mb-6 border-b border-gray-800 pb-4 tracking-wider min-w-[320px]`}>
@@ -171,10 +173,14 @@ export const FuturisticProductComparison: React.FC<{ sectionOptions?: any }> = (
 
 /** Ajakan belanja; tombol membuka katalog (atau tautan yang diisi merchant). */
 export const FuturisticInnovationCta: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore((state) => state.storeInfo);
-  const heading = sectionOptions.heading || 'Siap Upgrade Gaya Anda?';
-  const desc = sectionOptions.description || `Jelajahi koleksi lengkap ${storeInfo?.name || 'kami'} sekarang.`;
-  const buttonLabel = sectionOptions.buttonLabel || 'Belanja Sekarang';
+  const heading = sectionOptions.heading || (isEn ? 'Ready to Upgrade Your Style?' : 'Siap Upgrade Gaya Anda?');
+  const desc = sectionOptions.description ||
+    (isEn
+      ? `Explore the full collection of ${storeInfo?.name || 'our store'} now.`
+      : `Jelajahi koleksi lengkap ${storeInfo?.name || 'kami'} sekarang.`);
+  const buttonLabel = sectionOptions.buttonLabel || (isEn ? 'Shop Now' : 'Belanja Sekarang');
   const customHref = sanitizeLinkHref(sectionOptions.buttonLink);
   const buttonHref = customHref && customHref !== '#' ? customHref : STORE_ROUTES.catalog;
   const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1600&q=80';

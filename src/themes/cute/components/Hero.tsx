@@ -18,13 +18,13 @@ export const CuteHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTa
     (storeInfo as any)?.bannerUrl ||
     products.find((p) => p.image)?.image ||
     'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80';
-  const heading = sectionOptions?.heading || storeInfo?.name || 'Selamat Datang! 💖';
+  const heading = sectionOptions?.heading || storeInfo?.name || (isEn ? 'Welcome! 💖' : 'Selamat Datang! 💖');
   const subheading =
     sectionOptions?.subheading ||
     sectionOptions?.subtitle ||
     sectionOptions?.description ||
     storeInfo?.description ||
-    'Temukan produk pilihan terbaik dari toko kami.';
+    (isEn ? 'Discover the best products from our store.' : 'Temukan produk pilihan terbaik dari toko kami.');
   const flexDirClass = getDeviceClass(isMobile, isTablet, {
     mobile: 'flex-col',
     tablet: 'flex-col',
@@ -32,8 +32,8 @@ export const CuteHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTa
     fallback: 'flex-col md:flex-row',
   });
   const hero = getHeroContent(sectionOptions, {
-    badge: '✨ Selamat Datang',
-    buttonLabel: 'Mulai Belanja!',
+    badge: isEn ? '✨ Welcome' : '✨ Selamat Datang',
+    buttonLabel: isEn ? 'Start Shopping!' : 'Mulai Belanja!',
     buttonLink: STORE_ROUTES.catalog,
     secondaryButtonLink: STORE_ROUTES.promo,
   });

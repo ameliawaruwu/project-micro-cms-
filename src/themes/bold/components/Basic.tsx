@@ -80,18 +80,19 @@ export const BoldNavbar: React.FC<{ sectionOptions?: any; onUpdateSectionOptions
 };
 
 export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?: any; sectionKey?: string }> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
-  const heading = sectionOptions.heading || storeInfo?.name || 'Selamat Datang';
+  const heading = sectionOptions.heading || storeInfo?.name || (isEn ? 'Welcome' : 'Selamat Datang');
   const subheading =
     sectionOptions.subheading ||
     sectionOptions.description ||
     storeInfo?.description ||
-    'Temukan produk pilihan terbaik dari toko kami.';
+    (isEn ? 'Discover the best products from our store.' : 'Temukan produk pilihan terbaik dari toko kami.');
   const hero = getHeroContent(sectionOptions, {
-    badge: 'Koleksi Terbaru',
-    buttonLabel: 'Lihat Katalog',
+    badge: isEn ? 'New Collection' : 'Koleksi Terbaru',
+    buttonLabel: isEn ? 'View Catalog' : 'Lihat Katalog',
     buttonLink: STORE_ROUTES.catalog,
-    secondaryButtonLabel: 'Lihat Promo',
+    secondaryButtonLabel: isEn ? 'View Promo' : 'Lihat Promo',
     secondaryButtonLink: STORE_ROUTES.promo,
   });
   const products = useThemeProductsSource('bold');
@@ -173,7 +174,7 @@ export const BoldHero: React.FC<{ sectionOptions?: any; onUpdateSectionOptions?:
           {[...Array(10)].map((_, i) => (
             <span key={i} className="mx-8 flex items-center gap-3">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-              {heading} — {hero.badge || 'Koleksi Terbaru'}
+              {heading} — {hero.badge || (isEn ? 'New Collection' : 'Koleksi Terbaru')}
             </span>
           ))}
         </div>

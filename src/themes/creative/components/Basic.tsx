@@ -86,15 +86,16 @@ export const CreativeNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean
 };
 
 export const CreativeHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const products = useThemeProductsSource('creative');
-  const heading = sectionOptions.heading || storeInfo?.name || 'Selamat Datang';
+  const heading = sectionOptions.heading || storeInfo?.name || (isEn ? 'Welcome' : 'Selamat Datang');
   const subheading =
     sectionOptions.heroSubtitle ??
     sectionOptions.description ??
     sectionOptions.subheading ??
     sectionOptions.content ??
-    (storeInfo?.description || 'Temukan produk pilihan terbaik dari toko kami.');
+    (storeInfo?.description || (isEn ? 'Discover the best products from our store.' : 'Temukan produk pilihan terbaik dari toko kami.'));
   // Tanpa banner dari merchant, pakai foto produk toko sendiri sebelum gambar bawaan tema.
   const bgImage =
     sectionOptions.imageUrl ||
@@ -103,7 +104,7 @@ export const CreativeHero: React.FC<{ sectionOptions?: any; isMobile?: boolean; 
     products.find((p) => p.image)?.image ||
     'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1600&q=80';
   const hero = getHeroContent(sectionOptions, {
-    buttonLabel: 'Lihat Katalog',
+    buttonLabel: isEn ? 'View Catalog' : 'Lihat Katalog',
     buttonLink: STORE_ROUTES.catalog,
     secondaryButtonLink: STORE_ROUTES.promo,
   });
