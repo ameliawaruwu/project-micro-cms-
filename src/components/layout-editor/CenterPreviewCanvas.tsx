@@ -121,7 +121,10 @@ interface CenterPreviewCanvasProps {
   isLiveStorefront?: boolean;
   activeThemeId?: ThemeId;
   activePage?: string;
-  onPageChange?: (page: string) => void;
+  /** productId diisi saat membuka detail produk (dipakai storefront live untuk URL /produk/<slug>). */
+  onPageChange?: (page: string, productId?: string) => void;
+  /** Produk dari URL (/produk/<slug>) saat storefront live dibuka/di-navigasi lewat Back/Forward. */
+  routeProductId?: string;
 }
 
 const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
@@ -145,6 +148,7 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
   activeThemeId,
   activePage = 'homepage',
   onPageChange,
+  routeProductId,
 }) => {
   /** Device untuk komponen tema/halaman: undefined di storefront publik agar breakpoint asli berlaku. */
   const childDeviceMode = isLiveStorefront ? undefined : deviceMode;
@@ -152,11 +156,15 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('Semua');
   const [searchPreviewQuery, setSearchPreviewQuery] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(routeProductId || null);
+
+  React.useEffect(() => {
+    if (routeProductId) setSelectedProductId(routeProductId);
+  }, [routeProductId]);
 
   const openProductDetail = (productId: string) => {
     setSelectedProductId(productId);
-    if (onPageChange) onPageChange('product');
+    if (onPageChange) onPageChange('product', productId);
   };
 
   const typography = store.layoutSettings?.globalThemeSettings?.typography;
@@ -221,15 +229,15 @@ const CenterPreviewCanvasInner: React.FC<CenterPreviewCanvasProps> = ({
 
     // 1. Detail produk (dicek sebelum katalog agar /produk/:slug tidak dianggap katalog)
     if (cleanHref.includes('/product/') || cleanHref.includes('/produk/')) {
-      const parts = cleanHref.split('/');
-      const slugOrId = parts[parts.length - 1] || '';
-      const matched = products?.find(p => p.slug === slugOrId || p.id === slugOrId);
-      if (matched) {
-        setSelectedProductId(matched.id);
-      } else if (slugOrId) {
-        setSelectedProductId(slugOrId);
-      }
-      if (onPageChange) onPageChange('product');
+      // Ambil slug asli (bukan versi huruf kecil) agar cocok dengan p.slug/p.id.
+      const rawParts = (href || '').trim().split(/[?#]/)[0].split('/');
+      let slugOrId = rawParts[rawParts.length - 1] || '';
+      try { slugOrId = decodeURIComponent(slugOrId); } catch { /* biarkan apa adanya */ }
+      const matched = products?.find(p => p.slug === slugOrId || p.id === slugOrId)
+        || products?.find(p => String(p.slug || '').toLowerCase() === slugOrId.toLowerCase());
+      const productId = matched ? matched.id : slugOrId || undefined;
+      if (productId) setSelectedProductId(productId);
+      if (onPageChange) onPageChange('product', productId);
       return;
     }
 
