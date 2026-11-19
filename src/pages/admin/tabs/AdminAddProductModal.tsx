@@ -60,6 +60,10 @@ export const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ open
   const set = (key: keyof typeof emptyForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  /** Kolom angka: hanya digit yang diterima (huruf, titik, koma, minus dibuang). */
+  const setDigits = (key: keyof typeof emptyForm, maxLen = 10) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, [key]: e.target.value.replace(/\D/g, '').slice(0, maxLen) }));
+
   const addImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     e.target.value = '';
@@ -200,19 +204,19 @@ export const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ open
             </div>
             <div>
               <label className={labelClass}>{isEn ? 'Weight (grams)' : 'Berat (gram)'} *</label>
-              <input className={fieldClass} inputMode="numeric" value={form.weightGrams} onChange={set('weightGrams')} />
+              <input className={fieldClass} inputMode="numeric" pattern="[0-9]*" autoComplete="off" value={form.weightGrams} onChange={setDigits('weightGrams', 5)} />
             </div>
             <div>
               <label className={labelClass}>{isEn ? 'Price (Rp)' : 'Harga jual (Rp)'} *</label>
-              <input className={fieldClass} inputMode="numeric" value={form.price} onChange={set('price')} />
+              <input className={fieldClass} inputMode="numeric" pattern="[0-9]*" autoComplete="off" value={form.price} onChange={setDigits('price', 10)} />
             </div>
             <div>
               <label className={labelClass}>{isEn ? 'Strikethrough price (optional)' : 'Harga coret (opsional)'}</label>
-              <input className={fieldClass} inputMode="numeric" value={form.originalPrice} onChange={set('originalPrice')} />
+              <input className={fieldClass} inputMode="numeric" pattern="[0-9]*" autoComplete="off" value={form.originalPrice} onChange={setDigits('originalPrice', 10)} />
             </div>
             <div>
               <label className={labelClass}>{isEn ? 'Stock' : 'Stok'} *</label>
-              <input className={fieldClass} inputMode="numeric" value={form.stock} onChange={set('stock')} />
+              <input className={fieldClass} inputMode="numeric" pattern="[0-9]*" autoComplete="off" value={form.stock} onChange={setDigits('stock', 7)} />
             </div>
           </div>
           <div>
