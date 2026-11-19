@@ -221,20 +221,20 @@ export const useCmsStore = create<CmsState>((set, get) => ({
       return { products: newProducts };
     });
 
-    // Bidirectional sync to merchant ProductService
+    // Sinkron ke database hanya untuk produk toko yang sudah ada. Produk contoh template
+    // (preview editor) cukup diubah di layar: dulu update yang gagal membuat produk baru,
+    // sehingga produk contoh (mis. "Signature Calfskin Tote Bag") ikut tersimpan ke toko.
+    if (isDemoProductId(updatedProduct.id)) return;
     try {
       productService.updateProduct(updatedProduct.id, {
+        ...(storeId ? { storeId } : {}),
         name: updatedProduct.name,
         price: updatedProduct.price,
         imageUrl: updatedProduct.image,
         category: updatedProduct.categoryName,
         description: updatedProduct.description,
         stock: updatedProduct.stock,
-      }).catch(() => {
-        // If product didn't exist in productService yet, create it
-        const newMerchantProd = cmsProductToProduct(updatedProduct, storeId);
-        productService.createProduct(storeId, newMerchantProd).catch(() => {});
-      });
+      }).catch(err => console.warn('[useCmsStore] updateProduct sync error:', err));
     } catch (e) {}
   },
 
@@ -255,7 +255,8 @@ export const useCmsStore = create<CmsState>((set, get) => ({
       return { products: newProducts };
     });
 
-    // Bidirectional sync to merchant ProductService
+    // Produk contoh template dan toko tanpa ID tidak pernah disimpan ke database.
+    if (!storeId || isDemoProductId(newProduct.id)) return;
     try {
       const merchantProduct = cmsProductToProduct(newProduct, storeId);
       productService.createProduct(storeId, merchantProduct)
