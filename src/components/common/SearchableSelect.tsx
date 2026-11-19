@@ -60,6 +60,9 @@ function normalize(text: string): string {
 }
 
 const LIST_MAX_HEIGHT = 260;
+const LIST_MIN_HEIGHT = 120;
+/** Tinggi kolom pencarian + bingkai popover + jarak ke tepi layar. */
+const POPOVER_CHROME = 64;
 
 const SearchableSelect: React.FC<SearchableSelectProps> = ({
   value,
@@ -86,6 +89,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(-1);
   const [position, setPosition] = useState<React.CSSProperties>({});
+  const [listHeight, setListHeight] = useState(LIST_MAX_HEIGHT);
 
   const options = useMemo(() => parseOptions(children), [children]);
   const current = value === undefined || value === null ? '' : String(value);
@@ -107,13 +111,21 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     const rect = btn.getBoundingClientRect();
     const width = Math.max(rect.width, 220);
     const left = Math.min(rect.left, window.innerWidth - width - 8);
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUp = spaceBelow < LIST_MAX_HEIGHT + 60 && rect.top > spaceBelow;
+    const viewportH = window.visualViewport?.height || window.innerHeight;
+    const spaceBelow = viewportH - rect.bottom;
+    const spaceAbove = rect.top;
+    const openUp = spaceBelow < LIST_MAX_HEIGHT + POPOVER_CHROME && spaceAbove > spaceBelow;
+    // Daftar dipendekkan agar popover (termasuk kolom cari) selalu utuh di dalam layar.
+    const room = (openUp ? spaceAbove : spaceBelow) - POPOVER_CHROME;
+    setListHeight(Math.max(LIST_MIN_HEIGHT, Math.min(LIST_MAX_HEIGHT, room)));
     setPosition({
       position: 'fixed',
       left: Math.max(8, left),
       width,
-      ...(openUp ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 }),
+      ...(openUp
+        ? { bottom: Math.max(8, window.innerHeight - rect.top + 4) }
+        : { top: rect.bottom + 4 }),
+      maxHeight: viewportH - 16,
       zIndex: 2147483000,
       fontFamily: window.getComputedStyle(btn).fontFamily,
     });
@@ -258,9 +270,9 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
         <div
           ref={popoverRef}
           style={position}
-          className="overflow-hidden rounded-xl border border-gray-200 bg-white text-left text-[13px] text-gray-900 shadow-xl"
+          className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white text-left text-[13px] text-gray-900 shadow-xl"
         >
-          <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2">
+          <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2">
             <Search className="h-4 w-4 shrink-0 text-gray-400" />
             <input
               ref={searchRef}
@@ -274,7 +286,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
               className="w-full bg-transparent text-[13px] text-gray-900 placeholder:text-gray-400 outline-none"
             />
           </div>
-          <div ref={listRef} id={listboxId} role="listbox" className="overflow-y-auto py-1" style={{ maxHeight: LIST_MAX_HEIGHT }}>
+          <div ref={listRef} id={listboxId} role="listbox" className="min-h-0 overflow-y-auto py-1" style={{ maxHeight: listHeight }}>
             {filtered.length === 0 && (
               <p className="px-3 py-2 text-gray-500">{isEn ? 'No results found' : 'Tidak ada hasil'}</p>
             )}

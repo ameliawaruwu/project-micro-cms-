@@ -145,6 +145,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
+  // Token sesi disimpan di localStorage (dipakai bersama semua tab). Bila akun berganti atau
+  // keluar di tab lain, muat ulang tab ini agar tampilan selalu sesuai akun yang dipakai server
+  // (mencegah publikasi/simpan ditolak "tidak berhak" karena token milik akun lain).
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== 'microcms_auth_user' && e.key !== 'lapakq_session_token' && e.key !== null) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        let nextId: string | null = null;
+        try {
+          const raw = localStorage.getItem('microcms_auth_user');
+          nextId = raw ? String(JSON.parse(raw)?.id || '') || null : null;
+        } catch {}
+        const currentId = user?.id ? String(user.id) : null;
+        if (nextId !== currentId) window.location.reload();
+      }, 400);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      if (timer) clearTimeout(timer);
+    };
+  }, [user?.id]);
+
   const loginWithGoogle = async (intent: 'login' | 'register' = 'login') => {
     setIsLoading(true);
     try {

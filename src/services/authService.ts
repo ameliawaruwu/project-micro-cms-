@@ -248,6 +248,10 @@ class AuthService {
       }
       dbUser = data.user;
       setSessionToken(data.session_token);
+      // Sesi Google lama (akun lain) jangan sampai mengambil alih saat halaman dimuat ulang.
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch {}
       // Simpan di memori untuk konfirmasi aksi super admin (buat/ubah password akun lain).
       adminCredential = dbUser.role === 'admin' ? { email: cleanEmail, password } : null;
     }
@@ -878,6 +882,20 @@ class AuthService {
     // Sesi sah = token yang dikenali database (bukan sekadar data di localStorage).
     try {
       const { data, error } = await supabase.rpc('session_me');
+      if (!error && data?.success && data.user?.id && userId && String(data.user.id) !== String(userId)) {
+        // Token sesi milik akun lain (mis. login akun berbeda di tab lain menimpa token bersama).
+        // Tampilan akun ini tidak lagi cocok dengan hak server -> minta masuk ulang.
+        // Sesi DB tidak diakhiri karena masih dipakai akun yang sedang aktif di tab lain.
+        console.warn('[authService] Token sesi milik akun lain. Silakan masuk ulang.');
+        localStorage.removeItem(AUTH_USER_KEY);
+        localStorage.removeItem(AUTH_MERCHANT_KEY);
+        localStorage.removeItem(AUTH_STORE_KEY);
+        localStorage.removeItem(ACTIVE_STORE_ID_KEY);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth_session_invalidated'));
+        }
+        return false;
+      }
       if (!error && data && data.success === false) {
         console.warn('[authService] Sesi tidak valid atau kedaluwarsa. Silakan masuk ulang.');
         await this.logout();
