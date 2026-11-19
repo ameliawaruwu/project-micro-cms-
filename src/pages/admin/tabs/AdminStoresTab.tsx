@@ -269,16 +269,18 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                           </button>
                         )}
 
-                        {store.isPublished && (
-                          <LiveStoreLink
-                            store={store}
-                            customDomain={domainOf(store)}
-                            title={isEn ? 'Open live website' : 'Buka website live'}
-                            className="p-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-600 transition"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </LiveStoreLink>
-                        )}
+                        <LiveStoreLink
+                          store={store}
+                          customDomain={domainOf(store)}
+                          title={
+                            store.isPublished
+                              ? (isEn ? 'Open live website' : 'Buka website live')
+                              : (isEn ? 'Open website (not published yet)' : 'Buka website (belum terbit)')
+                          }
+                          className="p-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-600 transition"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </LiveStoreLink>
                         {canManage && (
                         <button
                           onClick={() => handleToggleSuspend(store.id, store.name)}
@@ -595,9 +597,13 @@ const LiveStoreLink: React.FC<{
   children: React.ReactNode;
 }> = ({ store, customDomain, className, title, children }) => {
   const { domain } = useStoreBaseDomain(store);
+  // Toko draf belum punya subdomain aktif; buka lewat alamat toko di domain platform.
+  const href = store.isPublished
+    ? buildStoreLiveUrl(store.slug, domain, customDomain)
+    : `${window.location.origin}/?toko=${encodeURIComponent(store.slug)}`;
   return (
     <a
-      href={buildStoreLiveUrl(store.slug, domain, customDomain)}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       title={title}
