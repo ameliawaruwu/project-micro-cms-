@@ -1,4 +1,4 @@
-import { Product } from '../types';
+import { Product, ProductStatus } from '../types';
 import { calculateProductStatus } from '../utils/formatters';
 import { supabase } from './supabaseClient';
 import { idService } from './idService';
@@ -322,6 +322,42 @@ class ProductService {
     }
 
     return updatedProduct;
+  }
+
+  /**
+   * Nonaktifkan / aktifkan kembali produk langsung di database (dipakai panel admin).
+   * Hak akses dijaga RLS products_update_manager (pemilik, admin, atau Sub-Admin Produk komunitasnya).
+   * Saat diaktifkan, status dihitung ulang dari stok di database, bukan dari browser.
+   */
+  async setProductActive(id: string, storeId: string, active: boolean): Promise<ProductStatus> {
+    let status: ProductStatus = 'Nonaktif';
+    if (active) {
+      const { data: row, error: readError } = await supabase
+        .from('products')
+        .select('stock')
+        .eq('id', id)
+        .eq('store_id', storeId)
+        .maybeSingle();
+      if (readError || !row) throw new Error(readError?.message || 'Produk tidak ditemukan');
+      status = calculateProductStatus(Number(row.stock) || 0);
+    }
+    const { data, error } = await supabase
+      .from('products')
+      .update({ status })
+      .eq('id', id)
+      .eq('store_id', storeId)
+      .select('id');
+    if (error) throw new Error(error.message);
+    // RLS menolak tanpa error: 0 baris berarti tidak berhak.
+    if (!data || data.length === 0) throw new Error('Tidak berhak mengubah produk ini');
+
+    const products = this.getStoredProducts(storeId);
+    const idx = products.findIndex((p) => p.id === id);
+    if (idx !== -1) {
+      products[idx] = { ...products[idx], status };
+      this.saveProducts(storeId, products);
+    }
+    return status;
   }
 
   /** Helper: cari storeId dari produk di localStorage (semua partisi) */

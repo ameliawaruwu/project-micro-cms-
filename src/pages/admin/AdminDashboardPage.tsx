@@ -94,11 +94,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
 
   // Hak akses ketat berdasarkan peran sub-admin:
-  // - Sub Admin Utama: Dashboard, Halaman Komunitas, Anggota Komunitas (tambah toko binaan & setujui permintaan)
-  // - Sub Admin Produk: Dashboard, Toko Binaan, Produk (tambah produk ke toko binaan), Anggota Komunitas (lihat saja)
+  // - Sub Admin Utama: Dashboard, Kelola Toko Binaan (suspend/aktifkan), Halaman Komunitas, Anggota Komunitas
+  // - Sub Admin Produk: Dashboard, Data Toko Binaan (lihat saja), Produk (tambah & nonaktifkan), Anggota Komunitas (lihat saja)
   useEffect(() => {
     if (isSubAdminUmum) {
-      if (activeTab !== 'overview' && activeTab !== 'communities' && activeTab !== 'my-tickets' && activeTab !== 'community-members') {
+      if (activeTab !== 'overview' && activeTab !== 'stores' && activeTab !== 'communities' && activeTab !== 'my-tickets' && activeTab !== 'community-members') {
         setActiveTab('overview');
       }
     } else if (isSubAdminProduk) {
@@ -295,6 +295,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   }, []);
 
   const handleToggleSuspend = async (storeId: string, storeName: string) => {
+    // Suspend toko hanya untuk admin platform & Sub-Admin Utama; Sub-Admin Produk hanya melihat.
+    if (isSubAdminProduk && !isSubAdminUmum) return;
     const suspend = !suspendedIds.includes(storeId);
     try {
       await adminService.setStoreSuspension(storeId, suspend);
@@ -555,6 +557,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           icon: LayoutDashboard,
         },
         {
+          id: 'stores',
+          label: language === 'en' ? 'Managed Stores' : 'Kelola Toko Binaan',
+          icon: StoreIcon,
+          count: subAdminStores.length,
+        },
+        {
           id: 'communities',
           label: language === 'en' ? 'Community Page' : 'Halaman Komunitas',
           icon: Users,
@@ -579,7 +587,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         },
         {
           id: 'stores',
-          label: language === 'en' ? 'Managed Stores' : 'Kelola Toko Binaan',
+          label: language === 'en' ? 'Member Stores' : 'Data Toko Binaan',
           icon: StoreIcon,
           count: subAdminStores.length,
         },
@@ -738,6 +746,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               language={language}
               isSubAdmin={isSubAdmin}
               canAddProduct={isSubAdminProduk && !!loggedInUser?.communityId}
+              canToggleStatus={isSubAdminProduk || !isSubAdmin}
             />
           )}
 
@@ -799,6 +808,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               onNavigateOverview={() => setActiveTab(isSubAdminProduk ? 'stores' : 'overview')}
               isSubAdmin={isSubAdmin}
               communityName={loggedInUser?.communityName}
+              canManage={!isSubAdminProduk || isSubAdminUmum}
             />
           )}
 

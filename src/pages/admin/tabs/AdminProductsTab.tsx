@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { storeInCommunity } from '../../../utils/communityMembership';
-import { Package, Search, Trash2, Store as StoreIcon, Loader2, Plus } from 'lucide-react';
+import { Package, Search, Trash2, Store as StoreIcon, Loader2, Plus, EyeOff, Eye } from 'lucide-react';
 import { Product, Store, User } from '../../../types';
 import { productService } from '../../../services/productService';
 import { storeService } from '../../../services/storeService';
@@ -14,6 +14,8 @@ interface AdminProductsTabProps {
   isSubAdmin?: boolean;
   /** Sub-Admin Produk: boleh menambah produk ke toko binaan komunitasnya. */
   canAddProduct?: boolean;
+  /** Boleh menonaktifkan / mengaktifkan kembali produk (Sub-Admin Produk & admin platform). */
+  canToggleStatus?: boolean;
 }
 
 export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
@@ -22,6 +24,7 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
   language = 'id',
   isSubAdmin = false,
   canAddProduct = false,
+  canToggleStatus = false,
 }) => {
   const isEn = language === 'en';
 
@@ -37,6 +40,7 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const notify = (msg: string) => {
     if (onShowToast) onShowToast(msg);
@@ -106,8 +110,8 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
       const matchesStore = selectedStoreFilter === 'all' || p.storeId === selectedStoreFilter;
       const matchesStatus =
         selectedStatusFilter === 'all' ||
-        ((selectedStatusFilter === 'active' && (p.status === 'Tersedia' || p.stock > 0))) ||
-        ((selectedStatusFilter === 'out_of_stock' && (p.status === 'Habis' || p.stock <= 0))) ||
+        ((selectedStatusFilter === 'active' && p.status !== 'Nonaktif' && (p.status === 'Tersedia' || p.stock > 0))) ||
+        ((selectedStatusFilter === 'out_of_stock' && p.status !== 'Nonaktif' && (p.status === 'Habis' || p.stock <= 0))) ||
         ((selectedStatusFilter === 'inactive' && p.status === 'Nonaktif'));
 
       const matchesCategory = selectedCategoryFilter === 'all' || p.category === selectedCategoryFilter;
@@ -124,6 +128,26 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
     const totalValue = products.reduce((acc, p) => acc + p.price * p.stock, 0);
     return { total, active, lowStock, totalValue };
   }, [products]);
+
+  // Handler: Nonaktifkan / aktifkan kembali produk (status dihitung ulang dari stok di database)
+  const handleToggleActive = async (p: Product) => {
+    const activate = p.status === 'Nonaktif';
+    setTogglingId(p.id);
+    try {
+      const status = await productService.setProductActive(p.id, p.storeId, activate);
+      setProducts((prev) => prev.map((x) => (x.id === p.id ? { ...x, status } : x)));
+      notify(
+        activate
+          ? (isEn ? `Product "${p.name}" reactivated` : `Produk "${p.name}" diaktifkan kembali`)
+          : (isEn ? `Product "${p.name}" deactivated and hidden from the store` : `Produk "${p.name}" dinonaktifkan dan disembunyikan dari toko`)
+      );
+    } catch (err: any) {
+      console.error('[AdminProductsTab] Toggle status error:', err);
+      notify(isEn ? 'Failed to change product status.' : 'Gagal mengubah status produk.');
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   // Handlers: Hapus Produk
   const handleConfirmDelete = async () => {
@@ -290,9 +314,10 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
               <tbody className="divide-y divide-gray-100 font-medium">
                 {filteredProducts.map((p) => {
                   const store = storesById.get(p.storeId);
-                  const isOutOfStock = p.stock <= 0 || p.status === 'Habis';
+                  const isInactive = p.status === 'Nonaktif';
+                  const isOutOfStock = !isInactive && (p.stock <= 0 || p.status === 'Habis');
                   return (
-                    <tr key={p.id} className="hover:bg-gray-50/80 transition-colors">
+                    <tr key={p.id} className={`hover:bg-gray-50/80 transition-colors ${isInactive ? 'opacity-60' : ''}`}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
@@ -349,7 +374,7 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
                           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
                             {isEn ? 'Out of Stock' : 'Habis'}
                           </span>
-                        ) : p.status === 'Nonaktif' ? (
+                        ) : isInactive ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
                             {isEn ? 'Inactive' : 'Nonaktif'}
                           </span>
@@ -361,6 +386,30 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {canToggleStatus && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(p)}
+                              disabled={togglingId === p.id}
+                              className={`px-2 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer disabled:opacity-50 ${
+                                isInactive
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                  : 'bg-white border border-gray-200 hover:bg-gray-100 text-gray-700'
+                              }`}
+                              title={isInactive
+                                ? (isEn ? 'Show this product in the store again' : 'Tampilkan lagi produk ini di toko')
+                                : (isEn ? 'Hide this product from the store' : 'Sembunyikan produk ini dari toko')}
+                            >
+                              {togglingId === p.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : isInactive ? (
+                                <Eye className="w-3.5 h-3.5" />
+                              ) : (
+                                <EyeOff className="w-3.5 h-3.5" />
+                              )}
+                              <span>{isInactive ? (isEn ? 'Activate' : 'Aktifkan') : (isEn ? 'Deactivate' : 'Nonaktifkan')}</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => setProductToDelete(p)}
                             className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition cursor-pointer"

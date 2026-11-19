@@ -36,6 +36,8 @@ interface AdminStoresTabProps {
   onNavigateOverview?: () => void;
   isSubAdmin?: boolean;
   communityName?: string;
+  /** false = hanya lihat (Sub-Admin Produk): tanpa Suspend/Aktifkan. */
+  canManage?: boolean;
 }
 
 export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
@@ -49,6 +51,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
   onNavigateOverview,
   isSubAdmin = false,
   communityName,
+  canManage = true,
 }) => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [copied, setCopied] = useState(false);
@@ -107,10 +110,19 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
             <StoreIcon className="w-5 h-5 text-[#66000E]" />
             <span>
               {isSubAdmin
-                ? (communityName ? (isEn ? `Manage Member Stores — ${communityName}` : `Kelola Lapak Binaan — ${communityName}`) : (isEn ? 'Manage Member Stores' : 'Kelola Toko Binaan'))
+                ? (canManage
+                  ? (communityName ? (isEn ? `Manage Member Stores — ${communityName}` : `Kelola Lapak Binaan — ${communityName}`) : (isEn ? 'Manage Member Stores' : 'Kelola Toko Binaan'))
+                  : (communityName ? (isEn ? `Member Stores — ${communityName}` : `Data Lapak Binaan — ${communityName}`) : (isEn ? 'Member Stores' : 'Data Toko Binaan')))
                 : (isEn ? 'Manage Stores' : 'Kelola Toko')}
             </span>
           </h1>
+          {!canManage && (
+            <p className="text-xs text-gray-500 mt-1">
+              {isEn
+                ? 'View only. Store suspension is handled by the main sub-admin.'
+                : 'Hanya lihat. Suspend toko dikelola oleh sub admin utama.'}
+            </p>
+          )}
         </div>
         <span className="text-xs font-medium text-gray-600 px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 self-start sm:self-auto">
           {filteredStores.length} {isEn ? 'Stores' : 'Toko Terdaftar'}
@@ -267,6 +279,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                             <ExternalLink className="w-3.5 h-3.5" />
                           </LiveStoreLink>
                         )}
+                        {canManage && (
                         <button
                           onClick={() => handleToggleSuspend(store.id, store.name)}
                           className={`px-2 py-1 rounded font-medium text-[11px] transition cursor-pointer ${
@@ -277,6 +290,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                         >
                           {isSuspended ? (isEn ? 'Activate' : 'Aktifkan') : (isEn ? 'Suspend' : 'Suspend')}
                         </button>
+                        )}
                       </div>
                     </td>
                   </tr>
