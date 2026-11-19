@@ -1,6 +1,6 @@
 import React from 'react';
 import { Store, Product } from '../types';
-import { getStoreSectionsForPage } from '../utils/layoutConstants';
+import { getStoreSectionsForPage, getLayoutLogoUrl } from '../utils/layoutConstants';
 import { CenterPreviewCanvas } from '../components/layout-editor/CenterPreviewCanvas';
 import { THEME_DATA_MAP } from './themeData';
 import { normalizeThemeId } from './ThemeRegistry';
@@ -88,10 +88,10 @@ export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = 
       // Toko tidak menyimpan email publik; kosongkan agar email contoh tema tidak tampil.
       email: '',
       phone: store?.phoneWhatsApp || '',
-      // Logo gambar toko (stores.logo_url) dipakai navbar tema bila header belum punya logo sendiri.
-      logoUrl: store?.logoUrl || '',
+      // Logo gambar toko (stores.logo_url, atau logo header halaman mana pun) dipakai navbar tema di semua halaman.
+      logoUrl: store?.logoUrl || getLayoutLogoUrl(store?.layoutSettings),
     });
-  }, [products, store?.name, store?.description, store?.address, store?.phoneWhatsApp, store?.logoUrl]);
+  }, [products, store?.name, store?.description, store?.address, store?.phoneWhatsApp, store?.logoUrl, store?.layoutSettings]);
 
   // Guard: if no store, render a fallback (after hooks)
   if (!store || !store.id) {

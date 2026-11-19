@@ -791,6 +791,29 @@ const withSharedChrome = (
     return { ...sec, options: { ...sec.options, ...homeSection.options } };
   });
 
+/**
+ * Logo gambar yang diunggah merchant lewat pengaturan header. Logo adalah identitas toko,
+ * jadi berlaku untuk semua halaman: header beranda didahulukan, lalu header halaman lain.
+ * Data lama bisa menyimpan logo hanya di header sebagian halaman (mis. beranda kosong),
+ * sehingga tanpa ini logo tampil di Katalog tetapi hilang di Beranda.
+ */
+export const getLayoutLogoUrl = (layoutSettings?: StoreLayoutSettings): string => {
+  if (!layoutSettings) return '';
+  const headerLogo = (sections?: StoreSectionConfig[]) => {
+    const header = sections?.find((s) => s.id === 'header');
+    const url = (header?.options as any)?.logoUrl;
+    return typeof url === 'string' ? url.trim() : '';
+  };
+  const pages = Array.isArray(layoutSettings.pages) ? layoutSettings.pages : [];
+  const home = pages.find((p) => p.id === 'homepage' || p.slug === 'homepage');
+  const ordered = [home, ...pages.filter((p) => p !== home)];
+  for (const page of ordered) {
+    const url = headerLogo(page?.sections);
+    if (url) return url;
+  }
+  return headerLogo(layoutSettings.sections);
+};
+
 export const getStoreSectionsForPage = (
   layoutSettings?: StoreLayoutSettings,
   pageId: string = 'homepage'
