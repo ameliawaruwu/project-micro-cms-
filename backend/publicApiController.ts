@@ -282,6 +282,8 @@ export function sanitizeStore(row: any) {
     communityName: row.community_name || null,
     communityMemberRef: row.community_member_ref || null,
     isPublished: Boolean(row.is_published),
+    // Ditangguhkan admin LapakQ / Sub-Admin Utama: storefront terkunci, mitra tidak boleh memajangnya.
+    isSuspended: Boolean(row.is_suspended),
     customDomain: row.custom_domain || null,
     storeUrl: storeUrlOf(row),
     createdAt: row.created_at,
@@ -437,6 +439,12 @@ export async function storeInCommunity(storeId: string, primaryCommunityId: stri
     return Boolean(data);
   }
 }
+
+/** Akses partner (key terikat komunitas) atau master: boleh melihat toko draf/ditangguhkan beserta statusnya. */
+const isPrivilegedAccess = (req: Request) => Boolean(req.apiAuth?.communityId || req.apiAuth?.isMaster);
+
+/** Predikat SQL: toko tidak ditangguhkan. Publik anonim tidak melihat toko ditangguhkan maupun produknya. */
+const sqlNotSuspended = (alias: string) => `COALESCE(${alias}is_suspended, false) = false`;
 
 /** ID seluruh toko komunitas, untuk jalur fallback Supabase. */
 async function communityStoreIdsFallback(communityId: string): Promise<string[]> {
@@ -749,6 +757,7 @@ publicApiRouter.get('/communities/:id/stores', requireApiKey, enforceRateLimit, 
 
     try {
       let query = `SELECT * FROM stores WHERE ${sqlInCommunity('stores.', '$1')}`;
+      if (!isPrivilegedAccess(req)) query += ` AND ${sqlNotSuspended('stores.')}`;
       const params: any[] = [realCommunityId];
       let pIdx = 2;
 
@@ -777,6 +786,7 @@ publicApiRouter.get('/communities/:id/stores', requireApiKey, enforceRateLimit, 
         .select('*', { count: 'exact' })
         .in('id', ids.length ? ids : ['__none__']);
 
+      if (!isPrivilegedAccess(req)) sQuery = sQuery.or('is_suspended.is.null,is_suspended.eq.false');
       if (category) sQuery = sQuery.ilike('category', category);
       if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,slug.ilike.%${safeSearchTerm(search)}%`);
 
@@ -841,6 +851,7 @@ publicApiRouter.get('/communities/:id/products', requireApiKey, enforceRateLimit
         JOIN stores s ON p.store_id = s.id
         WHERE ${sqlInCommunity('s.', '$1')}
       `;
+      if (!isPrivilegedAccess(req)) query += ` AND ${sqlNotSuspended('s.')}`;
       const params: any[] = [realCommunityId];
       let pIdx = 2;
 
@@ -975,6 +986,7 @@ publicApiRouter.get('/stores', requireApiKey, enforceRateLimit, async (req: Requ
         query += ` AND is_published = $${pIdx++}`;
         params.push(filterPublished);
       }
+      if (!isPrivileged) query += ` AND ${sqlNotSuspended('')}`;
       if (category) {
         query += ` AND LOWER(category) = LOWER($${pIdx++})`;
         params.push(category);
@@ -1000,6 +1012,7 @@ publicApiRouter.get('/stores', requireApiKey, enforceRateLimit, async (req: Requ
         sQuery = sQuery.in('id', ids.length ? ids : ['__none__']);
       }
       if (filterPublished !== undefined) sQuery = sQuery.eq('is_published', filterPublished);
+      if (!isPrivileged) sQuery = sQuery.or('is_suspended.is.null,is_suspended.eq.false');
       if (category) sQuery = sQuery.ilike('category', category);
       if (search) sQuery = sQuery.or(`name.ilike.%${safeSearchTerm(search)}%,slug.ilike.%${safeSearchTerm(search)}%`);
 
@@ -1074,6 +1087,9 @@ publicApiRouter.get('/stores/:id', requireApiKey, enforceRateLimit, async (req: 
     if (!row.is_published && !isPartnerAccess && !isMasterAccess) {
       return sendError(res, 404, 'NOT_FOUND', 'Toko belum dipublikasikan.');
     }
+    if (row.is_suspended && !isPartnerAccess && !isMasterAccess) {
+      return sendError(res, 404, 'NOT_FOUND', 'Toko sedang ditangguhkan.');
+    }
 
     await attachStoreBaseDomains([row]);
     const sanitized = sanitizeStore(row);
@@ -1125,6 +1141,9 @@ publicApiRouter.get('/stores/:storeId/products', requireApiKey, enforceRateLimit
     const isMasterAccess = Boolean(req.apiAuth?.isMaster);
     if (!storeRow.is_published && !isPartnerAccess && !isMasterAccess) {
       return sendError(res, 404, 'NOT_FOUND', 'Toko belum dipublikasikan.');
+    }
+    if (storeRow.is_suspended && !isPartnerAccess && !isMasterAccess) {
+      return sendError(res, 404, 'NOT_FOUND', 'Toko sedang ditangguhkan.');
     }
 
     // 2. Pagination query parameters (Poin 2.2)
@@ -1244,6 +1263,7 @@ publicApiRouter.get('/products', requireApiKey, enforceRateLimit, async (req: Re
         query += ` AND ${sqlInCommunity('s.', `$${pIdx++}`)}`;
         params.push(effectiveCommunityId);
       }
+      if (!isPrivilegedAccess(req)) query += ` AND ${sqlNotSuspended('s.')}`;
       if (storeId) {
         query += ` AND p.store_id = $${pIdx++}`;
         params.push(storeId);
@@ -1356,12 +1376,12 @@ publicApiRouter.get('/products/:id', requireApiKey, enforceRateLimit, async (req
     // Community scoping & publication check
     let storeRow: any = null;
     try {
-      const stRes = await pool.query('SELECT community_id, is_published FROM stores WHERE id = $1 LIMIT 1', [row.store_id]);
+      const stRes = await pool.query('SELECT community_id, is_published, is_suspended FROM stores WHERE id = $1 LIMIT 1', [row.store_id]);
       if (stRes.rows.length > 0) storeRow = stRes.rows[0];
     } catch {
       const { data } = await supabaseClient
         .from('stores')
-        .select('community_id, is_published')
+        .select('community_id, is_published, is_suspended')
         .eq('id', row.store_id)
         .maybeSingle();
       storeRow = data;
@@ -1374,6 +1394,9 @@ publicApiRouter.get('/products/:id', requireApiKey, enforceRateLimit, async (req
       const isPrivileged = Boolean(req.apiAuth?.communityId || req.apiAuth?.isMaster);
       if (!storeRow.is_published && !isPrivileged) {
         return sendError(res, 404, 'NOT_FOUND', 'Produk tidak ditemukan (toko belum dipublikasikan).');
+      }
+      if (storeRow.is_suspended && !isPrivileged) {
+        return sendError(res, 404, 'NOT_FOUND', 'Produk tidak ditemukan (toko sedang ditangguhkan).');
       }
     }
 

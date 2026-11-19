@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { Community, CommunityTurnoverInvoice, Store, Order, User } from '../../../types';
 import { communityService } from '../../../services/communityService';
+import { communityMembershipService } from '../../../services/communityMembershipService';
 import { storeService } from '../../../services/storeService';
 import { adminService } from '../../../services/adminService';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -226,11 +227,17 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
   const handleAssignStore = async () => {
     if (!selectedStoreToAssign) return;
     try {
-      await communityService.assignStoreToCommunity(
-        selectedStoreToAssign,
-        activeCommunity.id,
-        activeCommunity.name
-      );
+      // Staf komunitas lewat server: hanya Sub-Admin Utama yang boleh, dan catatan
+      // "dikeluarkan" (community_store_removals) ikut dihapus. Super admin tetap langsung.
+      if (isSubAdmin) {
+        await communityMembershipService.addMember(selectedStoreToAssign);
+      } else {
+        await communityService.assignStoreToCommunity(
+          selectedStoreToAssign,
+          activeCommunity.id,
+          activeCommunity.name
+        );
+      }
 
       const refreshedStores = await storeService.getStores();
       setStores(refreshedStores);
@@ -263,7 +270,12 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
       onConfirm: async () => {
         setIsConfirmLoading(true);
         try {
-          await communityService.removeStoreFromCommunity(storeId, activeCommunity.id);
+          // Staf komunitas lewat server agar toko tercatat "dikeluarkan" (portal & partner API ikut sinkron).
+          if (isSubAdmin) {
+            await communityMembershipService.removeMember(storeId);
+          } else {
+            await communityService.removeStoreFromCommunity(storeId, activeCommunity.id);
+          }
           const refreshedStores = await storeService.getStores();
           setStores(refreshedStores);
           setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
