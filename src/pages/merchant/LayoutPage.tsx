@@ -29,6 +29,7 @@ import { THEME_DATA_MAP } from '../../themes/themeData';
 import { normalizeThemeId } from '../../themes/ThemeRegistry';
 import { resolveThemeForSections, HIDDEN_SECTION_IDS } from '../../themes/sectionResolver';
 import { storeService } from '../../services/storeService';
+import { loadThemeDrafts, saveThemeDrafts } from '../../services/themeDraftService';
 import { fetchStoreBaseDomain } from '../../utils/storeDomain';
 import { fitDeviceModeToViewport, getViewportDeviceMode, type PreviewDeviceMode } from '../../utils/responsivePreview';
 import { ScaledDeviceFrame, DEVICE_DESIGN_WIDTH } from '../../components/layout-editor/ScaledDeviceFrame';
@@ -703,6 +704,90 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       console.error('Failed to persist saved themes:', e);
     }
   }, [savedThemes, savedThemesStorageKey]);
+
+  // Sinkronisasi Pustaka tema dengan database (store_theme_drafts) agar daftar draf & statusnya
+  // sama di semua perangkat. DB = sumber kebenaran; localStorage hanya cache per perangkat.
+  // Penulisan ke DB baru diizinkan setelah DB toko ini berhasil dibaca (themeDraftsSyncedStoreId),
+  // supaya cache lama di perangkat lain tidak menimpa draf terbaru.
+  const [themeDraftsSyncedStoreId, setThemeDraftsSyncedStoreId] = useState('');
+  const savedThemesRef = useRef(savedThemes);
+  savedThemesRef.current = savedThemes;
+  const activeTemplateIdRef = useRef<string | undefined>(currentStore.layoutSettings?.activeTemplateId);
+  activeTemplateIdRef.current = currentStore.layoutSettings?.activeTemplateId;
+  const lastDraftStoreIdRef = useRef('');
+  const lastPushedDraftsRef = useRef('');
+
+  useEffect(() => {
+    setThemeDraftsSyncedStoreId('');
+    const storeId = currentStore.id;
+    const userId = user?.id;
+    const previousStoreId = lastDraftStoreIdRef.current;
+    lastDraftStoreIdRef.current = storeId || '';
+    if (!storeId || !userId) return;
+
+    const listKey = `microcms_saved_themes_${userId}_${storeId}`;
+    const choseKey = `microcms_user_chose_theme_${userId}_${storeId}`;
+    const isValidDraft = (t: any) => Boolean(t && t.id && t.storeTemplate && t.storeTemplate.id);
+    let cancelled = false;
+
+    loadThemeDrafts(storeId).then((res) => {
+      if (cancelled) return;
+      if (res.status === 'error') return; // gagal baca → jangan menimpa DB dengan cache lokal
+
+      let drafts: SavedThemeItem[];
+      if (res.status === 'ok') {
+        drafts = res.drafts.filter(isValidDraft) as SavedThemeItem[];
+        lastPushedDraftsRef.current = JSON.stringify(drafts);
+      } else {
+        // Belum ada di DB: unggah draf perangkat ini (cache lokal toko ini, draf yang baru dibuat
+        // saat toko dibuat, atau template yang sedang terbit).
+        let local: SavedThemeItem[] = [];
+        try {
+          const parsed = JSON.parse(localStorage.getItem(listKey) || '[]');
+          if (Array.isArray(parsed)) local = parsed.filter(isValidDraft);
+        } catch {}
+        if (local.length === 0 && !previousStoreId) local = savedThemesRef.current.filter(isValidDraft);
+        if (local.length === 0 && activeTemplateIdRef.current) {
+          const tmpl = TEMPLATE_GALLERY_ITEMS.find(
+            (t) => t.id === activeTemplateIdRef.current || t.storeTemplate.id === activeTemplateIdRef.current
+          );
+          if (tmpl) local = [{ ...tmpl, updatedAt: new Date().toISOString() }];
+        }
+        drafts = local;
+        lastPushedDraftsRef.current = '';
+      }
+
+      try {
+        if (drafts.length > 0) {
+          localStorage.setItem(choseKey, 'true');
+          localStorage.setItem(listKey, JSON.stringify(drafts));
+        } else {
+          localStorage.removeItem(listKey);
+        }
+      } catch {}
+      setSavedThemes(drafts);
+      setEditingDraftId((prev) => (drafts.some((t) => t.id === prev) ? prev : drafts[0]?.id || ''));
+      setThemeDraftsSyncedStoreId(storeId);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentStore.id, user?.id]);
+
+  // Simpan perubahan Pustaka tema ke DB (debounce agar ketikan/geser slider tidak membanjiri request).
+  useEffect(() => {
+    const storeId = currentStore.id;
+    if (!storeId || themeDraftsSyncedStoreId !== storeId) return;
+    const serialized = JSON.stringify(savedThemes);
+    if (serialized === lastPushedDraftsRef.current) return;
+    const timer = window.setTimeout(() => {
+      saveThemeDrafts(storeId, savedThemes).then((ok) => {
+        if (ok) lastPushedDraftsRef.current = serialized;
+      });
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [savedThemes, currentStore.id, themeDraftsSyncedStoreId]);
 
   // Helper: Trigger store creation ONLY when merchant explicitly picks or creates a template
   const ensureStoreExistsForTemplate = async (template: TemplateGalleryItem): Promise<Store> => {
