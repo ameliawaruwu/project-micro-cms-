@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useState, useEffect } from 'react';
 import { Building2, X, AlertCircle } from 'lucide-react';
 import { ShippingBranch } from '../../types';
@@ -352,7 +353,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
               <label className={labelClass}>
                 {t('branch_form_province', 'Provinsi')} <span className="text-[#B42318]">*</span>
               </label>
-              <select
+              <SearchableSelect
                 required
                 value={provinceId}
                 onChange={(e) => void handleProvinceChange(e.target.value)}
@@ -365,13 +366,13 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 {provinces.map((p) => (
                   <option key={p.id} value={p.id}>{toTitle(p.name)}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
             <div>
               <label className={labelClass}>
                 {t('branch_form_city', 'Kota / Kab')} <span className="text-[#B42318]">*</span>
               </label>
-              <select
+              <SearchableSelect
                 required
                 value={regencyId}
                 onChange={(e) => void handleRegencyChange(e.target.value)}
@@ -388,13 +389,13 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 {regencies.map((r) => (
                   <option key={r.id} value={r.id}>{toTitle(r.name)}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
             <div>
               <label className={labelClass}>
                 {t('branch_form_subdistrict', 'Kecamatan')} <span className="text-[#B42318]">*</span>
               </label>
-              <select
+              <SearchableSelect
                 required
                 value={districtId}
                 onChange={(e) => void handleDistrictChange(e.target.value)}
@@ -411,14 +412,14 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                 {districts.map((d) => (
                   <option key={d.id} value={d.id}>{toTitle(d.name)}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
             <div>
               <label className={labelClass}>
                 {t('branch_form_postal_code', 'Kode Pos')} <span className="text-[#B42318]">*</span>
               </label>
               {postalCodes.length > 0 ? (
-                <select
+                <SearchableSelect
                   required
                   value={postalCode}
                   onChange={(e) => setPostalCode(e.target.value)}
@@ -433,7 +434,7 @@ export const BranchFormModal: React.FC<BranchFormModalProps> = ({
                       {p.code}{p.village ? ` (${toTitle(p.village)})` : ''}
                     </option>
                   ))}
-                </select>
+                </SearchableSelect>
               ) : (
                 <input
                   type="text"

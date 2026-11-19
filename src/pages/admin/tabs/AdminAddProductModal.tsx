@@ -1,3 +1,4 @@
+import SearchableSelect from '../../../components/common/SearchableSelect';
 import React, { useEffect, useState } from 'react';
 import { ImagePlus, Loader2, Plus, X } from 'lucide-react';
 import { Store } from '../../../types';
@@ -179,14 +180,14 @@ export const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ open
         <form id="admin-add-product-form" onSubmit={submit} className="space-y-3">
           <div>
             <label className={labelClass}>{isEn ? 'Member store' : 'Toko binaan'} *</label>
-            <select className={fieldClass} value={form.storeId} onChange={set('storeId')}>
+            <SearchableSelect className={fieldClass} value={form.storeId} onChange={set('storeId')}>
               <option value="">{isEn ? '— Choose store —' : '— Pilih toko —'}</option>
               {stores.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
           <div>
             <label className={labelClass}>{isEn ? 'Product name' : 'Nama produk'} *</label>

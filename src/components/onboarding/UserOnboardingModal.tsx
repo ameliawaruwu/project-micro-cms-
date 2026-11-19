@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Store as StoreIcon,
@@ -226,7 +227,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 {isEn ? 'Category' : 'Kategori UMKM'}
               </label>
-              <select
+              <SearchableSelect
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-2.5 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-[#66000E] focus:ring-3 focus:ring-[#66000E]/10 transition-all cursor-pointer"
@@ -237,7 +238,7 @@ export const UserOnboardingModal: React.FC<UserOnboardingModalProps> = ({
                     {cat}
                   </option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
 
             <div>

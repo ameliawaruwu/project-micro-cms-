@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React from 'react';
 import {
   Building2,
@@ -64,7 +65,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
         </div>
 
         {branches.length > 1 ? (
-          <select
+          <SearchableSelect
             value={selectedBranch?.id || ''}
             onChange={(e) => {
               const b = branches.find((item) => item.id === e.target.value);
@@ -77,7 +78,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
                 {b.branchName} — {b.city} (PIC: {b.picName})
               </option>
             ))}
-          </select>
+          </SearchableSelect>
         ) : (
           <p className="font-bold text-xs text-[#1F1F1F]">{selectedBranch?.branchName}</p>
         )}
@@ -104,7 +105,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
         </div>
 
         {/* Courier Select Dropdown */}
-        <select
+        <SearchableSelect
           value={selectedCourier ? `${selectedCourier.courier_code}:${selectedCourier.courier_service_code}` : ''}
           onChange={(e) => {
             const c = availableCouriers.find((item) => `${item.courier_code}:${item.courier_service_code}` === e.target.value);
@@ -117,7 +118,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
               {c.courier_name} - {c.courier_service_name} ({c.available_for_drop_off && c.available_for_pickup ? 'Drop-off & Pick-up' : c.available_for_drop_off ? (isEn ? 'Drop-off only' : 'Hanya Drop-off') : (isEn ? 'Pick-up only' : 'Hanya Pick-up')})
             </option>
           ))}
-        </select>
+        </SearchableSelect>
 
         {/* Quick Selection Pills */}
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -277,7 +278,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
               <label className="block text-[10px] font-semibold uppercase text-[#777777] mb-1">
                 {isEn ? 'Pickup Time Slot *' : 'Slot Waktu Penjemputan *'}
               </label>
-              <select
+              <SearchableSelect
                 value={pickupTimeSlot}
                 onChange={(e) => setPickupTimeSlot(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:border-[#66000E]"
@@ -285,7 +286,7 @@ export const ShipmentFulfillmentForm: React.FC<ShipmentFulfillmentFormProps> = (
                 <option value="09:00 - 12:00">{isEn ? 'Morning (09:00 - 12:00 WIB)' : 'Pagi (09:00 - 12:00 WIB)'}</option>
                 <option value="13:00 - 16:00">{isEn ? 'Afternoon (13:00 - 16:00 WIB)' : 'Siang (13:00 - 16:00 WIB)'}</option>
                 <option value="16:00 - 19:00">{isEn ? 'Evening (16:00 - 19:00 WIB)' : 'Sore (16:00 - 19:00 WIB)'}</option>
-              </select>
+              </SearchableSelect>
             </div>
           </div>
 

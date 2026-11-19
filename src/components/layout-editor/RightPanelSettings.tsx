@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Store as StoreIcon,
@@ -1289,7 +1290,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 {/* Filter Kategori */}
                 <div className="space-y-1.5">
                   <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Product Category Filter' : 'Filter Kategori Produk'}</label>
-                  <select
+                  <SearchableSelect
                     value={opts.selectedCategoryId || 'all'}
                     onChange={(e) => handleOptionChange({ selectedCategoryId: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
@@ -1298,7 +1299,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     {Array.from(new Set(effectiveProducts.map((p: any) => p.category || p.categoryName).filter(Boolean))).map((cat: any) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
-                  </select>
+                  </SearchableSelect>
                 </div>
 
                 {/* Jumlah Produk Slider (section satu produk tidak memakai jumlah) */}
@@ -1336,7 +1337,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 {/* Urutan Produk */}
                 <div className="space-y-1.5">
                   <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Product Order' : 'Urutan Produk'}</label>
-                  <select
+                  <SearchableSelect
                     value={opts.sortOrder || 'default'}
                     onChange={(e) => handleOptionChange({ sortOrder: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
@@ -1346,7 +1347,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     <option value="price-desc">{isEn ? 'Price: High to Low' : 'Harga: Termahal ke Termurah'}</option>
                     <option value="name-asc">{isEn ? 'Product Name: A - Z' : 'Nama Produk: A - Z'}</option>
                     <option value="newest">{isEn ? 'Newest Products' : 'Produk Terbaru'}</option>
-                  </select>
+                  </SearchableSelect>
                 </div>
 
                 {/* Manual Product Selection (Pick Specific Products) */}

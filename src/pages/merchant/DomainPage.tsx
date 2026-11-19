@@ -1,3 +1,4 @@
+import SearchableSelect from '../../components/common/SearchableSelect';
 import React, { useState, useEffect, useRef } from 'react';
 import { Store } from '../../types';
 import {
@@ -631,7 +632,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                         placeholder={t('domain_input_placeholder', 'nama-brand-kamu')}
                         className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm outline-none font-medium text-[#241A1A] bg-white placeholder:text-[#706866]"
                       />
-                      <select
+                      <SearchableSelect
                         value={selectedTld}
                         onChange={(e) => setSelectedTld(e.target.value)}
                         className="px-3 py-2.5 text-xs sm:text-sm font-bold bg-[#FAF7F7] text-[#241A1A] border-l border-[#E5E0DD] outline-none cursor-pointer hover:bg-white transition"
@@ -641,7 +642,7 @@ export const DomainPage: React.FC<DomainPageProps> = ({
                             {tld}
                           </option>
                         ))}
-                      </select>
+                      </SearchableSelect>
                     </div>
                   </div>
 

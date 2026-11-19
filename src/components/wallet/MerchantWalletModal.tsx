@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -231,7 +232,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                     <Building2 className="w-3.5 h-3.5" />
                   </div>
-                  <select
+                  <SearchableSelect
                     value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
                     className="w-full pl-8.5 pr-8 py-2 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 appearance-none transition cursor-pointer shadow-2xs"
@@ -241,7 +242,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
                         {isEn && b.id === 'Bank Lainnya' ? 'Other Bank' : b.name}
                       </option>
                     ))}
-                  </select>
+                  </SearchableSelect>
                   <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
                     <ChevronDown className="w-3.5 h-3.5" />
                   </div>

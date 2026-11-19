@@ -1,3 +1,4 @@
+import SearchableSelect from '../../../components/common/SearchableSelect';
 import React, { useState, useMemo, useEffect } from 'react';
 import { storeInCommunity } from '../../../utils/communityMembership';
 import {
@@ -1617,7 +1618,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1.5">{isEn ? 'Select Store *' : 'Pilih Toko / Lapak *'}</label>
-              <select
+              <SearchableSelect
                 value={selectedStoreToAssign}
                 onChange={(e) => setSelectedStoreToAssign(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-xs font-medium text-gray-900 focus:outline-none focus:border-[#66000E] cursor-pointer"
@@ -1630,7 +1631,7 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       {s.name} ({s.slug}.lapakq.com) {s.communityName ? (isEn ? `[Also in: ${s.communityName}]` : `[Juga di: ${s.communityName}]`) : (isEn ? '[Independent Store]' : '[Toko Mandiri]')}
                     </option>
                   ))}
-              </select>
+              </SearchableSelect>
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
@@ -1782,14 +1783,14 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                           </span>
                         </div>
                       ) : (
-                        <select
+                        <SearchableSelect
                           value={editForm.status}
                           onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
                           className="w-full px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs focus:outline-none focus:border-[#66000E]"
                         >
                           <option value="active">{isEn ? 'Active' : 'Aktif'}</option>
                           <option value="inactive">{isEn ? 'Inactive' : 'Nonaktif'}</option>
-                        </select>
+                        </SearchableSelect>
                       )}
                     </div>
 

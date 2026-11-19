@@ -1,3 +1,4 @@
+import SearchableSelect from '../../components/common/SearchableSelect';
 import React, { useState, useMemo } from 'react';
 import {
   CreditCard,
@@ -543,7 +544,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                 <label className="block text-xs font-bold text-[#241A1A] mb-1.5">
                   Bank / E-Wallet *
                 </label>
-                <select
+                <SearchableSelect
                   value={manualBankName}
                   onChange={(e) => {
                     setManualBankName(e.target.value);
@@ -556,7 +557,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
                       {isEn && b === 'Lainnya / Bank Daerah' ? 'Other / Regional Bank' : b}
                     </option>
                   ))}
-                </select>
+                </SearchableSelect>
               </div>
 
               {/* Nomor Rekening */}
@@ -763,7 +764,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               />
             </div>
 
-            <select
+            <SearchableSelect
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="py-2 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#241A1A] focus:outline-none focus:border-[#66000E] cursor-pointer"
@@ -775,7 +776,7 @@ export const PaymentListPage: React.FC<PaymentListPageProps> = ({
               <option value="qris_ewallet">{isEn ? 'Dynamic QRIS & E-Wallet' : 'QRIS Dinamis & E-Wallet'}</option>
               <option value="credit_card">{isEn ? 'Credit Card' : 'Kartu Kredit'}</option>
               <option value="retail_paylater">{isEn ? 'Retail & PayLater' : 'Gerai Retail & PayLater'}</option>
-            </select>
+            </SearchableSelect>
           </div>
 
           {/* List of Channels */}

@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   X,
@@ -569,7 +570,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                           </button>
                         )}
                       </div>
-                      <select
+                      <SearchableSelect
                         value={discountPercent || '0'}
                         onChange={handleDiscountDropdownChange}
                         className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs sm:text-sm font-normal text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/10 cursor-pointer"
@@ -585,7 +586,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                             {pct}%
                           </option>
                         ))}
-                      </select>
+                      </SearchableSelect>
                     </div>
                   </div>
 
@@ -647,7 +648,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       </button>
                     </div>
                   ) : (
-                    <select
+                    <SearchableSelect
                       value={category}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -664,7 +665,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         </option>
                       ))}
                       <option value="new">{isEn ? '+ Add New Category...' : '+ Tambah Kategori Baru...'}</option>
-                    </select>
+                    </SearchableSelect>
                   )}
                 </div>
 

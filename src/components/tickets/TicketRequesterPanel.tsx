@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, ChevronDown, Inbox, Loader2, RefreshCw, MessageSquare } from 'lucide-react';
 import { SupportAgentIcon } from '../common/icons/SupportAgentIcon';
@@ -226,19 +227,19 @@ export const TicketRequesterPanel: React.FC<TicketRequesterPanelProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>{isEn ? 'Category' : 'Kategori'}</label>
-              <select className={fieldClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as TicketCategory })}>
+              <SearchableSelect className={fieldClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as TicketCategory })}>
                 {(Object.keys(CATEGORY_LABELS) as TicketCategory[]).map((c) => (
                   <option key={c} value={c}>{CATEGORY_LABELS[c][isEn ? 'en' : 'id']}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
             <div>
               <label className={labelClass}>{isEn ? 'Priority' : 'Prioritas'}</label>
-              <select className={fieldClass} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value as TicketPriority })}>
+              <SearchableSelect className={fieldClass} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value as TicketPriority })}>
                 {(Object.keys(PRIORITY_LABELS) as TicketPriority[]).map((p) => (
                   <option key={p} value={p}>{PRIORITY_LABELS[p][isEn ? 'en' : 'id']}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
           </div>
           <div>

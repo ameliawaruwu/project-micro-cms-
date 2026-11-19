@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Loader2, X, AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
 import type { Store } from '../../types';
@@ -116,11 +117,11 @@ export const StoreDomainPanel: React.FC<StoreDomainPanelProps> = ({ store, curre
             </label>
             <label className="min-w-0">
               <span className="block text-[11px] text-gray-500">{isEn ? 'Domain (from Kroombox Panel)' : 'Domain (dari Kroombox Panel)'}</span>
-              <select value={parent} onChange={(e) => setParent(e.target.value)} className={`${fieldClass} max-w-[14rem]`}>
+              <SearchableSelect value={parent} onChange={(e) => setParent(e.target.value)} className={`${fieldClass} max-w-[14rem]`}>
                 {parents.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </label>
             <div className="min-w-0">
               <p className="text-[11px] text-gray-500">{isEn ? 'Result' : 'Hasil'}</p>

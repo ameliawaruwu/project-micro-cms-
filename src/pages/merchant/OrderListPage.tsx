@@ -1,3 +1,4 @@
+import SearchableSelect from '../../components/common/SearchableSelect';
 import React, { useState, useMemo } from 'react';
 import { Search, ShoppingBag } from 'lucide-react';
 import { Order, ShippingStatus } from '../../types';
@@ -112,7 +113,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
 
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
           {/* Payment Method Filter */}
-          <select
+          <SearchableSelect
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
             aria-label={isEn ? 'Filter payment method' : 'Filter metode pembayaran'}
@@ -122,10 +123,10 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
             <option value="QRIS">QRIS Instant</option>
             <option value="VA">Virtual Account</option>
             <option value="Transfer">{isEn ? 'Bank Transfer' : 'Transfer Bank'}</option>
-          </select>
+          </SearchableSelect>
 
           {/* Courier Filter */}
-          <select
+          <SearchableSelect
             value={courierFilter}
             onChange={(e) => setCourierFilter(e.target.value)}
             aria-label={isEn ? 'Filter courier' : 'Filter kurir ekspedisi'}
@@ -136,7 +137,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
             <option value="JNE">JNE</option>
             <option value="SiCepat">SiCepat</option>
             <option value="GoSend">GoSend</option>
-          </select>
+          </SearchableSelect>
         </div>
       </div>
 

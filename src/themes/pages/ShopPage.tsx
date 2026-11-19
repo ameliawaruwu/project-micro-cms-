@@ -1,3 +1,4 @@
+import SearchableSelect from '../../components/common/SearchableSelect';
 import React, { useState, useMemo } from 'react';
 import { ThemeSchema } from '../schema';
 import { Product } from '../../types';
@@ -265,7 +266,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               {/* Sort Selector */}
               <div className="flex items-center gap-2">
                 <div className="relative w-full">
-                  <select
+                  <SearchableSelect
                     value={sortBy}
                     onChange={(e: any) => setSortBy(e.target.value)}
                     aria-label={isEn ? 'Sort Products' : 'Urutkan Produk'}
@@ -276,7 +277,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                     <option value="price-desc">{isEn ? 'PRICE: HIGHEST' : 'HARGA: TERMAHAL'}</option>
                     <option value="discount">{isEn ? 'BIGGEST DISCOUNT' : 'DISKON TERBESAR'}</option>
                     <option value="newest">{isEn ? 'NEWEST PRODUCTS' : 'PRODUK TERBARU'}</option>
-                  </select>
+                  </SearchableSelect>
                   <ChevronDown className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
@@ -447,7 +448,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               {/* Sort Selector */}
               <div className={rc("flex items-center gap-3 w-full md:w-auto justify-end font-sans text-xs")}>
                 <span className={rc("text-gray-500 hidden sm:inline")}>{isEn ? 'Sort:' : 'Urutkan:'}</span>
-                <select
+                <SearchableSelect
                   value={sortBy}
                   onChange={(e: any) => setSortBy(e.target.value)}
                   aria-label={isEn ? 'Sort Collection' : 'Urutkan Koleksi'}
@@ -458,7 +459,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   <option value="price-desc">{isEn ? 'Price: High to Low' : 'Harga: Tinggi ke Rendah'}</option>
                   <option value="discount">{isEn ? 'Promos & Discounts' : 'Promo & Diskon'}</option>
                   <option value="newest">{isEn ? 'Newest Collection' : 'Koleksi Terbaru'}</option>
-                </select>
+                </SearchableSelect>
               </div>
             </div>
 
@@ -608,7 +609,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
               <div className={rc("flex items-center justify-end gap-3 font-sans text-xs w-full md:w-auto")}>
                 <span className="text-[#7D6E63]">{isEn ? 'Sort:' : 'Urutkan:'}</span>
-                <select
+                <SearchableSelect
                   value={sortBy}
                   onChange={(e: any) => setSortBy(e.target.value)}
                   aria-label={isEn ? "Sort Luxury Collection" : "Urutkan Koleksi Mewah"}
@@ -618,7 +619,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   <option value="price-asc">{isEn ? 'Price: Low to High' : 'Harga: Rendah ke Tinggi'}</option>
                   <option value="price-desc">{isEn ? 'Price: High to Low' : 'Harga: Tinggi ke Rendah'}</option>
                   <option value="discount">{isEn ? 'Special Offers' : 'Promo Istimewa'}</option>
-                </select>
+                </SearchableSelect>
               </div>
             </div>
 
@@ -750,7 +751,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               <div className="flex items-center gap-2 shrink-0">
                 <ArrowUpDown className="w-4 h-4 text-gray-400" />
                 <span className="text-xs font-medium text-gray-500">{isEn ? 'Sort:' : 'Urutkan:'}</span>
-                <select
+                <SearchableSelect
                   value={sortBy}
                   onChange={(e: any) => setSortBy(e.target.value)}
                   aria-label={isEn ? 'Sort Products' : 'Urutkan Produk'}
@@ -761,7 +762,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                   <option value="price-desc">{isEn ? 'Highest Price' : 'Harga Tertinggi'}</option>
                   <option value="discount">{isEn ? 'Biggest Discount' : 'Diskon Terbesar'}</option>
                   <option value="newest">{isEn ? 'Newest' : 'Terbaru'}</option>
-                </select>
+                </SearchableSelect>
               </div>
             </div>
 
@@ -892,7 +893,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 </button>
               )}
             </div>
-            <select
+            <SearchableSelect
               value={sortBy}
               onChange={(e: any) => setSortBy(e.target.value)}
               aria-label={isEn ? 'Sort Store Products' : 'Urutkan Produk Toko'}
@@ -903,7 +904,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               <option value="price-desc">{isEn ? 'Price: High to Low' : 'Harga Tertinggi'}</option>
               <option value="discount">{isEn ? 'Biggest Discount' : 'Diskon Terbesar'}</option>
               <option value="newest">{isEn ? 'Newest' : 'Terbaru'}</option>
-            </select>
+            </SearchableSelect>
           </div>
 
           {/* Category Filter */}

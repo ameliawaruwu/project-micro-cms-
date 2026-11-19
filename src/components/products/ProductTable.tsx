@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React from 'react';
 import { Edit2, Trash2, Plus, Search, Eye, Image as ImageIcon } from 'lucide-react';
 import { Product } from '../../types';
@@ -57,7 +58,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
           </div>
 
           {/* Category Filter */}
-          <select
+          <SearchableSelect
             value={selectedCategory}
             onChange={(e) => onCategoryChange(e.target.value)}
             aria-label={isEn ? 'Filter category' : 'Filter kategori'}
@@ -69,7 +70,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 {c}
               </option>
             ))}
-          </select>
+          </SearchableSelect>
         </div>
 
         {/* Primary CTA */}

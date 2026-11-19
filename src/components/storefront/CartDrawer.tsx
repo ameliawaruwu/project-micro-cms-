@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -604,7 +605,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="block text-[11px] font-semibold text-[#706866] mb-1">{isEn ? 'Destination City *' : 'Kota Tujuan *'}</label>
-                    <select
+                    <SearchableSelect
                       value={city}
                       onChange={(e) => {
                         const selectedCity = e.target.value;
@@ -626,7 +627,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           {c.name} ({c.province})
                         </option>
                       ))}
-                    </select>
+                    </SearchableSelect>
                   </div>
 
                   <div>

@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useState, useEffect } from 'react';
 import {
   Truck,
@@ -162,7 +163,7 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
           </div>
 
           <div className="relative">
-            <select
+            <SearchableSelect
               value={currentBranch?.id || ''}
               onChange={(e) => handleBranchSelect(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
@@ -172,7 +173,7 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
                   {b.branchName} — {b.city} ({isEn ? 'Postal Code' : 'Kode Pos'}: {b.postalCode}) {b.isDefault ? (isEn ? '★ Main' : '★ Utama') : ''}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           {currentBranch && (

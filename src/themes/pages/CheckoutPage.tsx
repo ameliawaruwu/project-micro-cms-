@@ -1,3 +1,4 @@
+import SearchableSelect from '../../components/common/SearchableSelect';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ThemeSchema } from '../schema';
 import { Product, OrderItem, Order, BiteshipRateOption, StorePaymentConfig } from '../../types';
@@ -1095,7 +1096,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         {isLoadingProvinces && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
-                        <select
+                        <SearchableSelect
                           value={selectedProvinceId}
                           onChange={(e) => handleProvinceChange(e.target.value)}
                           className="w-full appearance-none px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-medium text-[var(--sf-text)] bg-[var(--sf-card)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition cursor-pointer pr-9 shadow-2xs"
@@ -1106,7 +1107,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                               {p.name}
                             </option>
                           ))}
-                        </select>
+                        </SearchableSelect>
                         <ChevronDown className="w-3.5 h-3.5 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
@@ -1117,7 +1118,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         {isLoadingRegencies && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
-                        <select
+                        <SearchableSelect
                           disabled={!selectedProvinceId || isLoadingRegencies}
                           value={selectedRegencyId}
                           onChange={(e) => handleRegencyChange(e.target.value)}
@@ -1139,7 +1140,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                               {r.name}
                             </option>
                           ))}
-                        </select>
+                        </SearchableSelect>
                         <ChevronDown className="w-3.5 h-3.5 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
@@ -1153,7 +1154,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         {isLoadingDistricts && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
-                        <select
+                        <SearchableSelect
                           disabled={!selectedRegencyId || isLoadingDistricts}
                           value={selectedDistrictId}
                           onChange={(e) => handleDistrictChange(e.target.value)}
@@ -1175,7 +1176,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                               {d.name}
                             </option>
                           ))}
-                        </select>
+                        </SearchableSelect>
                         <ChevronDown className="w-3.5 h-3.5 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
@@ -1186,7 +1187,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         {isLoadingVillages && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                       </label>
                       <div className="relative">
-                        <select
+                        <SearchableSelect
                           disabled={!selectedDistrictId || isLoadingVillages}
                           value={selectedVillageId}
                           onChange={(e) => handleVillageChange(e.target.value)}
@@ -1208,7 +1209,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                               {v.name}
                             </option>
                           ))}
-                        </select>
+                        </SearchableSelect>
                         <ChevronDown className="w-3.5 h-3.5 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                     </div>
@@ -1221,7 +1222,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       {isLoadingPostalCodes && <Loader2 className="w-3 h-3 animate-spin text-[var(--sf-primary)]" />}
                     </label>
                     <div className="relative">
-                      <select
+                      <SearchableSelect
                         disabled={!selectedVillageId || isLoadingPostalCodes}
                         value={selectedPostalCode}
                         onChange={(e) => handlePostalCodeChange(e.target.value)}
@@ -1245,7 +1246,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                             {item.code} {item.district ? `(${item.village}, Kec. ${item.district})` : `(${item.village})`}
                           </option>
                         ))}
-                      </select>
+                      </SearchableSelect>
                       <ChevronDown className="w-3.5 h-3.5 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
@@ -1381,7 +1382,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                   <div className="space-y-2">
                     <div className="relative">
-                      <select
+                      <SearchableSelect
                         value={selectedPaymentId}
                         onChange={(e) => setSelectedPaymentId(e.target.value)}
                         className="w-full appearance-none px-3.5 py-2.5 rounded-[var(--sf-radius)] border border-[var(--sf-border)] text-xs font-semibold text-[var(--sf-text)] bg-[var(--sf-card)] focus:outline-none focus:ring-2 focus:ring-[var(--sf-primary)] focus:border-transparent transition cursor-pointer pr-9 shadow-2xs"
@@ -1391,7 +1392,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                             {opt.name}
                           </option>
                         ))}
-                      </select>
+                      </SearchableSelect>
                       <ChevronDown className="w-4 h-4 text-[var(--sf-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
 

@@ -1,3 +1,4 @@
+import SearchableSelect from '../../components/common/SearchableSelect';
 import React, { useState, useEffect } from 'react';
 import { Save, Phone, MapPin, Store as StoreIcon, ExternalLink, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Store } from '../../types';
@@ -655,7 +656,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#666666] mb-1">
                   {t('store_category', 'Kategori Usaha UMKM')} <span className="text-[#66000E]">*</span>
                 </label>
-                <select
+                <SearchableSelect
                   required
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -667,7 +668,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       {t(UMKM_CATEGORY_KEYS[cat] || '', cat)}
                     </option>
                   ))}
-                </select>
+                </SearchableSelect>
               </div>
 
               {/* Nomor WhatsApp Toko */}
@@ -767,7 +768,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     <span>{t('store_province', 'Provinsi')} <span className="text-[#66000E]">*</span></span>
                     {loadingProvinces && <Loader2 className="w-3 h-3 animate-spin text-[#66000E]" />}
                   </label>
-                  <select
+                  <SearchableSelect
                     required
                     value={selectedProvinceId}
                     onChange={handleProvinceChange}
@@ -782,7 +783,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     {formData.province && !provinces.some((p) => p.id === selectedProvinceId) && (
                       <option value="custom-prov">{formData.province}</option>
                     )}
-                  </select>
+                  </SearchableSelect>
                 </div>
 
                 {/* Dropdown Kabupaten / Kota */}
@@ -791,7 +792,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     <span>{t('store_city', 'Kabupaten / Kota')} <span className="text-[#66000E]">*</span></span>
                     {loadingRegencies && <Loader2 className="w-3 h-3 animate-spin text-[#66000E]" />}
                   </label>
-                  <select
+                  <SearchableSelect
                     required
                     disabled={!selectedProvinceId && regencies.length === 0}
                     value={selectedRegencyId}
@@ -811,7 +812,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     {formData.city && !regencies.some((r) => r.id === selectedRegencyId) && (
                       <option value="custom-city">{formData.city}</option>
                     )}
-                  </select>
+                  </SearchableSelect>
                 </div>
               </div>
 
@@ -823,7 +824,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     <span>{t('store_district', 'Kecamatan')} <span className="text-[#66000E]">*</span></span>
                     {loadingDistricts && <Loader2 className="w-3 h-3 animate-spin text-[#66000E]" />}
                   </label>
-                  <select
+                  <SearchableSelect
                     required
                     disabled={!selectedRegencyId && districts.length === 0}
                     value={selectedDistrictId}
@@ -843,7 +844,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     {formData.district && !districts.some((d) => d.id === selectedDistrictId) && (
                       <option value="custom-dist">{formData.district}</option>
                     )}
-                  </select>
+                  </SearchableSelect>
                 </div>
 
                 {/* Dropdown Desa / Kelurahan */}
@@ -852,7 +853,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     <span>{t('store_village', 'Desa / Kelurahan')} <span className="text-[#66000E]">*</span></span>
                     {loadingVillages && <Loader2 className="w-3 h-3 animate-spin text-[#66000E]" />}
                   </label>
-                  <select
+                  <SearchableSelect
                     required
                     disabled={!selectedDistrictId && villages.length === 0}
                     value={selectedVillageId}
@@ -872,7 +873,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     {(formData.village || formData.subdistrict) && !villages.some((v) => v.id === selectedVillageId) && (
                       <option value="custom-vill">{formData.village || formData.subdistrict}</option>
                     )}
-                  </select>
+                  </SearchableSelect>
                 </div>
 
                 {/* Kode Pos (Dropdown Pilihan) */}
@@ -883,7 +884,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       <Loader2 className="w-3 h-3 animate-spin text-[#66000E]" />
                     )}
                   </label>
-                  <select
+                  <SearchableSelect
                     required
                     disabled={!selectedVillageId && postalCodes.length === 0}
                     value={formData.postalCode}
@@ -907,7 +908,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     {formData.postalCode && !postalCodes.some((p) => p.code === formData.postalCode) && (
                       <option value={formData.postalCode}>{formData.postalCode}</option>
                     )}
-                  </select>
+                  </SearchableSelect>
                 </div>
               </div>
 

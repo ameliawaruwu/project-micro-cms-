@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { adminDomainService } from '../../services/adminDomainService';
@@ -50,13 +51,13 @@ export const PanelDomainSelect: React.FC<PanelDomainSelectProps> = ({ value, onC
 
   return (
     <div className="space-y-1">
-      <select value={value} onChange={(e) => onChange(e.target.value)} disabled={loading} className={className}>
+      <SearchableSelect value={value} onChange={(e) => onChange(e.target.value)} disabled={loading} className={className}>
         <option value="">{loading ? (isEn ? 'Loading panel domains…' : 'Memuat domain panel…') : (isEn ? `${defaultDomain} (default)` : `${defaultDomain} (bawaan)`)}</option>
         {domains.map((d) => (
           <option key={d} value={d}>{d}</option>
         ))}
         {unknownCurrent && <option value={value}>{value} {isEn ? '(not registered in panel)' : '(tidak terdaftar di panel)'}</option>}
-      </select>
+      </SearchableSelect>
       {error && (
         <p className="flex items-start gap-1 text-[11px] text-red-600"><AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" /> {error}</p>
       )}

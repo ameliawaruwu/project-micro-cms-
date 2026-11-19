@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useState } from 'react';
 import {
   CheckCircle2,
@@ -423,14 +424,14 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                       <span className="block text-[11px] font-semibold text-[#555555] mb-1">
                         {isEn ? 'Default Parcel Handover Method' : 'Metode Penyerahan Paket Default'}
                       </span>
-                      <select
+                      <SearchableSelect
                         value={defaultHandoff}
                         onChange={(e) => setDefaultHandoff(e.target.value as 'pickup' | 'drop_off')}
                         className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[#E5E0DD] bg-white text-[#1F1F1F] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15"
                       >
                         <option value="pickup">{isEn ? 'Pick-up (Courier Collects from Store Warehouse)' : 'Pick-up (Kurir Datang Menjemput ke Gudang Toko)'}</option>
                         <option value="drop_off">{isEn ? 'Drop-off (Drop Parcel Yourself at Outlet / Counter)' : 'Drop-off (Antar Paket Mandiri ke Gerai / Counter)'}</option>
-                      </select>
+                      </SearchableSelect>
                     </div>
 
                     {/* Toggle Asuransi Pengiriman */}

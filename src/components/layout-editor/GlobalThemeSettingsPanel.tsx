@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useEffect } from 'react';
 import {
   Palette,
@@ -155,7 +156,7 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
           <div className="space-y-3">
             <div className="space-y-1.5">
               <label className="text-[11px] font-semibold text-[#6D7175]">{isEn ? 'Heading Font (Titles)' : 'Font Heading (Judul)'}</label>
-              <select
+              <SearchableSelect
                 value={safeTypography.headingFont || 'Inter'}
                 onChange={(e) => updateTypography({ headingFont: e.target.value })}
                 className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[13px] text-[#202223] font-medium"
@@ -165,12 +166,12 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
                     {font.name} ({font.category})
                   </option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
             
             <div className="space-y-1.5">
               <label className="text-[11px] font-semibold text-[#6D7175]">{isEn ? 'Body Font (Text & Content)' : 'Font Tubuh (Isi & Konten)'}</label>
-              <select
+              <SearchableSelect
                 value={safeTypography.bodyFont || 'Inter'}
                 onChange={(e) => updateTypography({ bodyFont: e.target.value })}
                 className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] bg-white text-[13px] text-[#202223] font-medium"
@@ -180,7 +181,7 @@ export const GlobalThemeSettingsPanel: React.FC<GlobalThemeSettingsPanelProps> =
                     {font.name} ({font.category})
                   </option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
           </div>
         </div>

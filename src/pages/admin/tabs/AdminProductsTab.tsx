@@ -1,3 +1,4 @@
+import SearchableSelect from '../../../components/common/SearchableSelect';
 import React, { useState, useEffect, useMemo } from 'react';
 import { storeInCommunity } from '../../../utils/communityMembership';
 import { Package, Search, Trash2, Store as StoreIcon, Loader2, Plus, EyeOff, Eye } from 'lucide-react';
@@ -237,7 +238,7 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Filter Toko */}
-          <select
+          <SearchableSelect
             value={selectedStoreFilter}
             onChange={(e) => setSelectedStoreFilter(e.target.value)}
             className="px-2.5 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-[#66000E] text-gray-700 font-medium"
@@ -248,10 +249,10 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
                 {s.name} ({s.slug})
               </option>
             ))}
-          </select>
+          </SearchableSelect>
 
           {/* Filter Status */}
-          <select
+          <SearchableSelect
             value={selectedStatusFilter}
             onChange={(e) => setSelectedStatusFilter(e.target.value)}
             className="px-2.5 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-[#66000E] text-gray-700 font-medium"
@@ -260,11 +261,11 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
             <option value="active">{isEn ? 'Active' : 'Aktif'}</option>
             <option value="out_of_stock">{isEn ? 'Out of Stock' : 'Habis / Stok Kosong'}</option>
             <option value="inactive">{isEn ? 'Inactive' : 'Nonaktif'}</option>
-          </select>
+          </SearchableSelect>
 
           {/* Filter Kategori */}
           {categories.length > 0 && (
-            <select
+            <SearchableSelect
               value={selectedCategoryFilter}
               onChange={(e) => setSelectedCategoryFilter(e.target.value)}
               className="px-2.5 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-[#66000E] text-gray-700 font-medium"
@@ -275,7 +276,7 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
                   {c}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           )}
         </div>
       </div>

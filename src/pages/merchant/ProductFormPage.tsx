@@ -1,3 +1,4 @@
+import SearchableSelect from '../../components/common/SearchableSelect';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ArrowLeft,
@@ -592,7 +593,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <select
+                    <SearchableSelect
                       value={category}
                       onChange={(e) => {
                         if (e.target.value === '__new__') {
@@ -610,7 +611,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                         </option>
                       ))}
                       <option value="__new__">{isEn ? '+ Add New Category...' : '+ Tambah Kategori Baru...'}</option>
-                    </select>
+                    </SearchableSelect>
                   )}
                 </div>
               </div>

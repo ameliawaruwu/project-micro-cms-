@@ -1,3 +1,4 @@
+import SearchableSelect from '../../../components/common/SearchableSelect';
 import React, { useEffect, useMemo, useState } from 'react';
 import { UserCog, UserPlus, Search, Inbox, Loader2, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { Community, User } from '../../../types';
@@ -339,17 +340,17 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
           </div>
           <div>
             <label className={labelClass}>{isEn ? 'Role' : 'Peran'}</label>
-            <select className={fieldClass} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as ManagedRole })}>
+            <SearchableSelect className={fieldClass} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as ManagedRole })}>
               {roleOptions.map((r) => (
                 <option key={r.value} value={r.value}>{roleLabels[r.value] || r.label}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
         </div>
         {needsCommunity && (
           <div>
             <label className={labelClass}>{isEn ? 'Community' : 'Komunitas'}</label>
-            <select className={fieldClass} value={form.communityId} onChange={(e) => setForm({ ...form, communityId: e.target.value })}>
+            <SearchableSelect className={fieldClass} value={form.communityId} onChange={(e) => setForm({ ...form, communityId: e.target.value })}>
               <option value="">{isEn ? 'Select community' : 'Pilih komunitas'}</option>
               {editing?.communityId && !communities.some((c) => c.id === editing.communityId) && (
                 <option value={editing.communityId}>{editing.communityName || editing.communityId}</option>
@@ -357,7 +358,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({ currentUser, langu
               {communities.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
         )}
         <div>
