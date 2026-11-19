@@ -97,7 +97,7 @@ export const communityMembershipService = {
   async getManaged(): Promise<ManageData> {
     return (await call<{ data: ManageData }>('/manage')).data;
   },
-  /** Sub-Admin Utama: cari toko lewat slug/tautan atau email pemilik (kecocokan persis). */
+  /** Sub-Admin Utama: cari toko lewat nama (sebagian), tautan toko, atau email pemilik (persis). */
   async lookupStore(q: string): Promise<StoreLookupResult[]> {
     return (await call<{ data: StoreLookupResult[] }>(`/manage/lookup?q=${encodeURIComponent(q)}`)).data;
   },

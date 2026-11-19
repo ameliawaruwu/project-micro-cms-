@@ -9,7 +9,7 @@
  * Sub-admin komunitas (sub_admin, sub_admin_umum, community_admin, sub_admin_produk):
  *   GET    /api/community/manage             daftar toko anggota komunitas sendiri
  * Hanya Sub-Admin Utama (sub_admin, sub_admin_umum) — Sub-Admin Produk hanya bisa melihat:
- *   GET    /api/community/manage/lookup?q=   cari toko (slug/tautan persis atau email pemilik persis)
+ *   GET    /api/community/manage/lookup?q=   cari toko (nama toko, tautan toko, atau email pemilik persis)
  *   POST   /api/community/manage/members     { storeId } tambahkan toko binaan ke komunitas
  *   DELETE /api/community/manage/members/:storeId  keluarkan toko dari komunitas
  *     (produknya otomatis tidak muncul lagi di API publik komunitas, mis. landing page GMPS)
@@ -27,7 +27,7 @@ export const communityMembershipRouter = Router();
 const COMMUNITY_STAFF_ROLES = new Set(['sub_admin', 'sub_admin_umum', 'community_admin', 'sub_admin_produk']);
 /** Sub-Admin Utama: satu-satunya staf komunitas yang boleh menambah/mengeluarkan toko binaan. */
 const COMMUNITY_LEAD_ROLES = new Set(['sub_admin', 'sub_admin_umum']);
-const LOOKUP_LIMIT_PER_MIN = 30;
+const LOOKUP_LIMIT_PER_MIN = 60;
 const ADD_LIMIT_PER_MIN = 20;
 const SLUG_REGEX = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
 const EMAIL_REGEX = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
@@ -249,8 +249,8 @@ communityMembershipRouter.post('/manage/requests/:id/reject', (_req: Request, re
 
 // ---------------------------------------------------------------------------
 // GET /manage/lookup?q=  (Sub-Admin Utama: cari toko untuk ditambahkan)
-// Hanya kecocokan persis (slug/tautan toko atau email pemilik) agar daftar toko & pemilik
-// tidak bisa ditelusuri; email pemilik tidak dikembalikan.
+// Nama toko (sebagian, maks 20 hasil), tautan toko persis, atau email pemilik persis.
+// Email pemilik tidak pernah dikembalikan.
 // ---------------------------------------------------------------------------
 communityMembershipRouter.get('/manage/lookup', async (req: Request, res: Response) => {
   const user = await requireCommunityLead(req, res);
@@ -274,7 +274,7 @@ communityMembershipRouter.get('/manage/lookup', async (req: Request, res: Respon
         [q]
       );
       rows = r.rows;
-    } else if (SLUG_REGEX.test(q)) {
+    } else if (urlMatch && SLUG_REGEX.test(q)) {
       const r = await pool.query(
         `SELECT s.id, s.name, s.slug, s.community_id, u.name AS owner_name
            FROM stores s LEFT JOIN users u ON u.id = s.user_id
@@ -283,7 +283,23 @@ communityMembershipRouter.get('/manage/lookup', async (req: Request, res: Respon
       );
       rows = r.rows;
     } else {
-      return fail(res, 400, 'Masukkan slug/tautan toko atau email pemilik secara lengkap.');
+      // Cari berdasarkan nama toko (atau slug) sebagian; minimal 2 karakter, maks 20 hasil.
+      const term = q.slice(0, 100);
+      if (term.length < 2) {
+        return fail(res, 400, 'Ketik minimal 2 karakter nama toko.');
+      }
+      const like = `%${term.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      const r = await pool.query(
+        `SELECT s.id, s.name, s.slug, s.community_id, u.name AS owner_name
+           FROM stores s LEFT JOIN users u ON u.id = s.user_id
+          WHERE lower(s.name) LIKE $1 OR lower(s.slug) LIKE $1
+          ORDER BY (lower(s.slug) = $2 OR lower(s.name) = $2) DESC,
+                   (lower(s.name) LIKE $3) DESC,
+                   s.name ASC
+          LIMIT 20`,
+        [like, term, `${term.replace(/[\\%_]/g, (c) => `\\${c}`)}%`]
+      );
+      rows = r.rows;
     }
 
     const ids = rows.map((r) => r.id);

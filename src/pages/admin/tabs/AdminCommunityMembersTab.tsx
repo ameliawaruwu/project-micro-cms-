@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Users, Loader2, RefreshCw, Search, Plus, UserMinus, Store as StoreIcon } from 'lucide-react';
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
 import {
@@ -64,20 +64,42 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
     setAddError(null);
   };
 
-  const runLookup = async (e?: React.FormEvent) => {
+  const lookupSeq = useRef(0);
+  const searchStores = useCallback(
+    async (raw: string) => {
+      const term = raw.trim();
+      const seq = ++lookupSeq.current;
+      if (term.length < 2) {
+        setLookupResults(null);
+        setLookupLoading(false);
+        return;
+      }
+      setLookupLoading(true);
+      setAddError(null);
+      try {
+        const found = await communityMembershipService.lookupStore(term);
+        if (seq === lookupSeq.current) setLookupResults(found);
+      } catch (err: any) {
+        if (seq !== lookupSeq.current) return;
+        setLookupResults(null);
+        setAddError(err?.message || (isEn ? 'Search failed.' : 'Pencarian gagal.'));
+      } finally {
+        if (seq === lookupSeq.current) setLookupLoading(false);
+      }
+    },
+    [isEn]
+  );
+
+  // Daftar toko muncul otomatis saat mengetik nama toko.
+  useEffect(() => {
+    if (!addOpen) return;
+    const t = window.setTimeout(() => searchStores(lookupQuery), 400);
+    return () => window.clearTimeout(t);
+  }, [addOpen, lookupQuery, searchStores]);
+
+  const runLookup = (e?: React.FormEvent) => {
     e?.preventDefault();
-    const term = lookupQuery.trim();
-    if (!term) return;
-    setLookupLoading(true);
-    setAddError(null);
-    try {
-      setLookupResults(await communityMembershipService.lookupStore(term));
-    } catch (err: any) {
-      setLookupResults(null);
-      setAddError(err?.message || (isEn ? 'Search failed.' : 'Pencarian gagal.'));
-    } finally {
-      setLookupLoading(false);
-    }
+    searchStores(lookupQuery);
   };
 
   const addStore = async (r: StoreLookupResult) => {
@@ -274,15 +296,15 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
         >
           <p className="text-xs text-[#706866] leading-relaxed">
             {isEn
-              ? 'Enter the full store link/slug (e.g. tokoku or tokoku.lapakq.com) or the exact owner email.'
-              : 'Masukkan tautan/slug toko secara lengkap (mis. tokoku atau tokoku.lapakq.com) atau email pemilik toko.'}
+              ? 'Type the store name (at least 2 characters), then choose the store from the list. The exact owner email also works.'
+              : 'Ketik nama toko (minimal 2 karakter), lalu pilih toko dari daftar. Bisa juga dengan email pemilik secara lengkap.'}
           </p>
           <form onSubmit={runLookup} className="flex gap-2">
             <input
               className={`${fieldClass} flex-1 min-w-0`}
               maxLength={254}
-              placeholder={isEn ? 'Store slug or owner email' : 'Slug toko atau email pemilik'}
-              aria-label={isEn ? 'Store slug or owner email' : 'Slug toko atau email pemilik'}
+              placeholder={isEn ? 'Store name, e.g. Kopi Santri' : 'Nama toko, mis. Kopi Santri'}
+              aria-label={isEn ? 'Search store by name' : 'Cari toko berdasarkan nama'}
               value={lookupQuery}
               onChange={(e) => setLookupQuery(e.target.value)}
               autoFocus
@@ -296,7 +318,7 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
             <p className="text-xs text-[#A8A09D] text-center py-3">{isEn ? 'No store found.' : 'Toko tidak ditemukan.'}</p>
           )}
           {lookupResults && lookupResults.length > 0 && (
-            <ul className="divide-y divide-[#F0ECEA] border border-[#F0ECEA] rounded-lg">
+            <ul className="divide-y divide-[#F0ECEA] border border-[#F0ECEA] rounded-lg max-h-80 overflow-y-auto">
               {lookupResults.map((r) => (
                 <li key={r.storeId} className="px-3 py-2.5 flex items-center gap-3">
                   <StoreIcon className="w-4 h-4 text-[#A8A09D] shrink-0" />
