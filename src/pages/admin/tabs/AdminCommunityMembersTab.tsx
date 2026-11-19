@@ -130,7 +130,11 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
         <div className="min-w-0">
           <h1 className="text-lg font-semibold text-[#1F1F1F]">{isEn ? 'Community Members' : 'Anggota Komunitas'}</h1>
           <p className="text-xs text-[#706866] mt-0.5">
-            {isEn
+            {!canManage
+              ? isEn
+                ? 'List of member stores in your community (view only).'
+                : 'Daftar toko anggota komunitas Anda (hanya lihat).'
+              : isEn
               ? 'Stores in your community. Stores are added by the community lead, or automatically when the owner email matches the portal. Only member stores appear on the community portal.'
               : 'Toko yang tergabung di komunitas Anda. Toko ditambahkan oleh Sub-Admin Utama, atau otomatis bila email pemilik cocok dengan portal. Hanya produk toko anggota yang tampil di portal komunitas.'}
           </p>
@@ -193,15 +197,23 @@ export const AdminCommunityMembersTab: React.FC<AdminCommunityMembersTabProps> =
                     )}
                   </p>
                   <p className="text-[11px] text-[#A8A09D] truncate">
-                    {m.slug ? `${m.slug}.lapakq.com · ` : ''}
-                    {m.ownerName || '-'}
-                    {m.ownerEmail ? ` · ${m.ownerEmail}` : ''}
+                    {canManage ? (
+                      <>
+                        {m.slug ? `${m.slug}.lapakq.com · ` : ''}
+                        {m.ownerName || '-'}
+                        {m.ownerEmail ? ` · ${m.ownerEmail}` : ''}
+                      </>
+                    ) : (
+                      `${isEn ? 'Owner' : 'Pemilik'}: ${m.ownerName || '-'}`
+                    )}
                   </p>
                 </div>
-                <p className="text-[11px] text-[#706866] sm:text-right">
-                  {membershipSourceLabel(m.source, isEn)}
-                  {m.joinedAt ? ` · ${formatDate(m.joinedAt)}` : ''}
-                </p>
+                {canManage && (
+                  <p className="text-[11px] text-[#706866] sm:text-right">
+                    {membershipSourceLabel(m.source, isEn)}
+                    {m.joinedAt ? ` · ${formatDate(m.joinedAt)}` : ''}
+                  </p>
+                )}
                 {canManage && (
                   <button
                     type="button"

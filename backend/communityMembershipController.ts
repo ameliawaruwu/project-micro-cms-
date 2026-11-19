@@ -202,6 +202,8 @@ communityMembershipRouter.get('/manage', async (req: Request, res: Response) => 
   if (!user) return;
   try {
     const cid = user.communityId;
+    // Sub-Admin Produk hanya melihat nama toko & pemilik (tanpa email/kontak).
+    const isLead = COMMUNITY_LEAD_ROLES.has(user.role);
     const members = await pool.query(
       `SELECT s.id AS store_id, s.name AS store_name, s.slug, s.is_published, u.name AS owner_name, u.email AS owner_email,
               m.source, m.joined_at
@@ -226,7 +228,7 @@ communityMembershipRouter.get('/manage', async (req: Request, res: Response) => 
           slug: m.slug,
           isPublished: !!m.is_published,
           ownerName: m.owner_name,
-          ownerEmail: m.owner_email,
+          ownerEmail: isLead ? m.owner_email : null,
           source: m.source,
           joinedAt: m.joined_at,
         })),
