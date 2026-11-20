@@ -38,7 +38,7 @@ import { communityMembershipService } from '../../../services/communityMembershi
 import { storeService } from '../../../services/storeService';
 import { adminService } from '../../../services/adminService';
 import { useLanguage } from '../../../contexts/LanguageContext';
-import { DEFAULT_BASE_DOMAIN } from '../../../utils/storeDomain';
+import { DEFAULT_BASE_DOMAIN, buildStoreLiveUrl } from '../../../utils/storeDomain';
 import { PanelDomainSelect } from '../../../components/admin/PanelDomainSelect';
 
 interface AdminCommunitiesTabProps {
@@ -1174,14 +1174,17 @@ export const AdminCommunitiesTab: React.FC<AdminCommunitiesTabProps> = ({
                       <td className="py-3.5 px-4 text-center">
                         <div className="inline-flex items-center gap-1.5">
                           {st.isPublished && (
-                            <button
-                              type="button"
-                              onClick={() => onOpenStorefront && onOpenStorefront(st.slug)}
+                            // Buka alamat toko yang sudah terbit (subdomain / domain kustom), bukan pratinjau.
+                            <a
+                              href={buildStoreLiveUrl(st.slug, activeCommunity.baseDomain || DEFAULT_BASE_DOMAIN, st.customDomain)}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               title={isEn ? 'Open Online Store' : 'Buka Toko Online'}
+                              aria-label={isEn ? 'Open Online Store' : 'Buka Toko Online'}
                               className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition cursor-pointer"
                             >
                               <ExternalLink className="w-4 h-4" />
-                            </button>
+                            </a>
                           )}
 
                           <button

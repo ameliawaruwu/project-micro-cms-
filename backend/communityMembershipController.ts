@@ -473,9 +473,21 @@ communityMembershipRouter.delete('/manage/members/:storeId', async (req: Request
       'DELETE FROM store_communities WHERE store_id = $1 AND community_id = $2 RETURNING store_id',
       [storeId, user.communityId]
     );
+    // Toko lama bisa masih menyimpan ID komunitas yang sudah tidak ada (sebelum migrasi ID) dengan
+    // nama komunitas yang sama; panel menampilkannya sebagai anggota (cocok nama), jadi ikut dilepas.
     const primary = await client.query(
-      `UPDATE stores SET community_id = NULL, community_name = NULL, updated_at = now()
-        WHERE id = $1 AND community_id = $2 RETURNING id`,
+      `UPDATE stores s SET community_id = NULL, community_name = NULL, updated_at = now()
+        WHERE s.id = $1
+          AND (
+            s.community_id = $2
+            OR (
+              s.community_id IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM communities c WHERE c.id = s.community_id)
+              AND lower(btrim(s.community_name)) =
+                  (SELECT lower(btrim(c2.name)) FROM communities c2 WHERE c2.id = $2)
+            )
+          )
+        RETURNING s.id`,
       [storeId, user.communityId]
     );
     if (secondary.rows.length === 0 && primary.rows.length === 0) {

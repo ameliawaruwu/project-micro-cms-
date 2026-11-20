@@ -535,7 +535,17 @@ class CommunityService {
     const store = (await storeService.getStores()).find((s) => s.id === storeId);
     if (!store) throw new Error('Toko tidak ditemukan.');
     await removeExtraMembership(storeId, communityId);
-    if (store.communityId !== communityId) return;
+    if (store.communityId !== communityId) {
+      // Toko lama bisa menyimpan ID komunitas yang sudah tidak ada dengan nama komunitas yang sama
+      // (panel mencocokkannya lewat nama). Hanya itu yang ikut dilepas; komunitas lain tidak disentuh.
+      if (!store.communityId || !store.communityName) return;
+      const { data: rows } = await supabase.from('communities').select('id, name').in('id', [communityId, store.communityId]);
+      const target = (rows || []).find((r: any) => r.id === communityId);
+      const staleId = !(rows || []).some((r: any) => r.id === store.communityId);
+      const sameName =
+        !!target?.name && target.name.trim().toLowerCase() === store.communityName.trim().toLowerCase();
+      if (!staleId || !sameName) return;
+    }
 
     const nextId = (store.extraCommunityIds || []).find((c) => c !== communityId) || null;
     let nextName: string | null = null;
