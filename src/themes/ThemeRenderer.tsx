@@ -37,8 +37,14 @@ const resolveInitialRoute = (store?: Store): StorefrontRoute => {
 /** Navigasi toko boleh menulis URL hanya di storefront (bukan di path panel dashboard/admin). */
 const canWriteStoreUrl = () => !/^\/(dashboard|admin)(\/|$)/i.test(window.location.pathname);
 
-export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products = NO_PRODUCTS }) => {
+export const ThemeRenderer: React.FC<ThemeRendererProps> = ({ store, products: allProducts = NO_PRODUCTS }) => {
   const { isEn } = useLanguage();
+  // Produk yang dinonaktifkan (oleh merchant atau Sub-Admin Produk) tidak tampil di toko:
+  // tidak di beranda, katalog, pencarian, maupun lewat URL /produk/<slug>.
+  const products = React.useMemo(
+    () => allProducts.filter((p) => p.status !== 'Nonaktif'),
+    [allProducts]
+  );
   // ✅ Hooks MUST be called unconditionally at the top — before any early returns
   const initialRoute = React.useMemo(() => resolveInitialRoute(store), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [activePage, setActivePage] = React.useState<string>(initialRoute.page);

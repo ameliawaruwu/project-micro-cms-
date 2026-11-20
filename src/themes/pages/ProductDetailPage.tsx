@@ -74,7 +74,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   const displayProducts = (products && products.length > 0) ? products : (cmsProducts && cmsProducts.length > 0 ? (cmsProducts as any[]) : []);
 
-  const foundProduct = displayProducts?.find(p => p.id === id || p.slug === id) || displayProducts[0];
+  // Di toko publik, ID/slug yang tidak cocok (mis. produk dinonaktifkan) tidak boleh jatuh ke produk lain;
+  // fallback ke produk pertama hanya untuk editor/pratinjau atau bila belum ada produk yang dipilih.
+  const matchedProduct = id ? displayProducts?.find(p => p.id === id || p.slug === id) : undefined;
+  const foundProduct = matchedProduct || (id && deviceMode === undefined ? undefined : displayProducts[0]);
   // Di toko publik, jangan tampilkan produk contoh bila produk tidak ditemukan.
   const productMissing = !foundProduct && deviceMode === undefined;
   const product = foundProduct || {
