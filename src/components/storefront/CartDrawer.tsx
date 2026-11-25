@@ -42,6 +42,7 @@ import {
 } from '../../services/paymentChannelService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CourierSelector } from '../shipping/CourierSelector';
+import { useCheckoutVoucher, CheckoutVoucherBox } from './CheckoutVoucherBox';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -117,6 +118,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     return channels.length > 0 ? channels : DEFAULT_MIDTRANS_CHANNELS.filter((c) => c.isEnabled);
   });
   const [selectedChannelId, setSelectedChannelId] = useState<string>('qris');
+  // Voucher promo toko: potongan final dihitung ulang place_order dari harga di database.
+  const voucher = useCheckoutVoucher(
+    store?.id,
+    items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+    cartService.getTotal(items)
+  );
   const [channelCategoryFilter, setChannelCategoryFilter] = useState<
     'all' | 'qris_ewallet' | 'virtual_account' | 'credit_card' | 'retail_paylater'
   >('all');
@@ -216,7 +223,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     : items.length > 0
     ? 15000
     : 0;
-  const grandTotal = subtotal + shippingCost;
+  const discountAmount = voucher.discount;
+  const grandTotal = subtotal - discountAmount + shippingCost;
 
   // Virtual Account number generator based on channel and customer phone
   const getVaNumber = (channelId: string): string => {
@@ -276,7 +284,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       items: orderItems,
       subtotal,
       shippingCost,
-      discount: 0,
+      discount: discountAmount,
+      voucherCode: voucher.code,
       grandTotal,
       paymentMethod: finalMethod as PaymentMethod,
       paymentStatus: 'Belum Dibayar',
@@ -852,6 +861,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </>
                 )}
               </div>
+              {/* Voucher Promo */}
+              {store?.id && (
+                <CheckoutVoucherBox voucher={voucher} tone="classic" className="pt-3 border-t border-[#E5E0DD]" />
+              )}
             </div>
 
             {/* Bottom Action */}
@@ -861,6 +874,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <span>{isEn ? 'Product Subtotal:' : 'Subtotal Produk:'}</span>
                   <span>{formatRupiah(subtotal)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex items-center justify-between text-emerald-700">
+                    <span>Voucher {voucher.code || ''}:</span>
+                    <span className="font-semibold">- {formatRupiah(discountAmount)}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-[#706866]">
                   <span>{isEn ? 'Shipping Cost' : 'Ongkos Kirim'} ({courier}):</span>
                   <span>{formatRupiah(shippingCost)}</span>
@@ -904,6 +923,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     {name} ({phone})
                   </span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex items-center justify-between text-emerald-700">
+                    <span>Voucher {voucher.code || ''}:</span>
+                    <span className="font-semibold">- {formatRupiah(discountAmount)}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span>{isEn ? 'Courier & Destination:' : 'Kurir & Tujuan:'}</span>
                   <span className="font-medium text-[#241A1A]">
