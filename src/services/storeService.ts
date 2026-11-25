@@ -7,6 +7,7 @@ import { mediaService } from './mediaService';
 import { billingPlanService } from './billingPlanService';
 import { DEFAULT_MANUAL_INSTRUCTIONS } from '../utils/manualPayment';
 import { pgrstValue, pgrstLikeValue } from '../utils/postgrestFilter';
+import { getLayoutLogoUrl } from '../utils/layoutConstants';
 
 const STORE_KEY = 'microcms_stores_v2';
 const ACTIVE_STORE_KEY = 'microcms_active_store_id';
@@ -616,6 +617,17 @@ class StoreService {
         delete (combinedThemeSettings as any).isPublished;
         dbUpdates.theme_settings = combinedThemeSettings;
         stores[index].layoutSettings = combinedThemeSettings;
+
+        // WHY: logo yang diunggah di header layout adalah logo toko. Katalog komunitas, API publik, dan
+        // daftar toko membaca stores.logo_url, jadi tanpa sinkron ini mereka menampilkan inisial nama.
+        // Logo header kosong tidak menghapus logo_url yang sudah ada.
+        if (updates.logoUrl === undefined && updates.layoutSettings !== undefined) {
+          const headerLogo = getLayoutLogoUrl(combinedThemeSettings as any);
+          if (headerLogo && headerLogo !== (stores[index].logoUrl || '')) {
+            dbUpdates.logo_url = headerLogo;
+            stores[index].logoUrl = headerLogo;
+          }
+        }
       }
 
       // Ownership-enforced Supabase update:
