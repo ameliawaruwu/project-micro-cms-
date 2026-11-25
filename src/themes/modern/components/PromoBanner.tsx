@@ -1,6 +1,7 @@
 import React from 'react';
 import { STORE_ROUTES, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { StoreVoucherList } from '../../sections/StoreVoucherList';
 
 export const ModernPromoBanner: React.FC<{ sectionOptions?: any; accentColor?: string }> = ({ sectionOptions = {}, accentColor = '#2563EB' }) => {
   const { isEn } = useLanguage();
@@ -32,6 +33,7 @@ export const ModernPromoBanner: React.FC<{ sectionOptions?: any; accentColor?: s
           >
             {cta.label}
           </a>
+          <StoreVoucherList variant="onDark" className="mt-8" />
         </div>
       </div>
     </section>

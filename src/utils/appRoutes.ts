@@ -24,6 +24,7 @@ const MERCHANT_SEGMENTS: Record<MerchantTab, string> = {
   integrasi: 'integrasi',
   tiket: 'tiket',
   pesan: 'pesan',
+  voucher: 'voucher',
   komunitas: 'komunitas',
 } as Record<MerchantTab, string>;
 

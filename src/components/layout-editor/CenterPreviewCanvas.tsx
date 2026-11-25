@@ -2980,7 +2980,7 @@ export const CenterPreviewCanvas: React.FC<CenterPreviewCanvasProps> = (props) =
   // Tema yang sesuai dengan bagian-bagian layout (koreksi tema aktif yang tidak sinkron).
   const effectiveThemeId = resolveThemeForSections(props.activeThemeId, visibleSections.map((sec) => sec.id));
   return (
-    <StorefrontContext.Provider value={{ storeSlug: props.store?.slug || '' }}>
+    <StorefrontContext.Provider value={{ storeSlug: props.store?.slug || '', storeId: props.store?.id || '' }}>
       <CenterPreviewCanvasInner {...props} sections={visibleSections} activeThemeId={effectiveThemeId} />
       <StorefrontToast />
     </StorefrontContext.Provider>

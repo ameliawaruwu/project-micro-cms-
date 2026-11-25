@@ -5,6 +5,7 @@ import { useSectionProducts, useThemeProductsSource } from '../../useSectionProd
 import { AddToCartButton } from '../../storefrontCart';
 import { STORE_ROUTES, formatRupiah, productHref, resolveExtraText, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { StoreVoucherList } from '../../sections/StoreVoucherList';
 
 /** Lookbook dari foto produk toko; tidak dirender bila belum ada produk bergambar. */
 export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
@@ -190,6 +191,7 @@ export const FashionPromoBanner: React.FC<{ sectionOptions?: any }> = ({ section
         >
           {cta.label}
         </a>
+        <StoreVoucherList variant="onDark" className="mt-8" />
       </div>
     </section>
   );

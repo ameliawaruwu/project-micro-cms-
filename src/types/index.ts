@@ -506,6 +506,8 @@ export interface Order {
   subtotal: number;
   shippingCost: number;
   discount: number;
+  /** Kode voucher yang dipakai pembeli; potongannya dihitung server (place_order). */
+  voucherCode?: string;
   grandTotal: number;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
@@ -586,6 +588,7 @@ export type MerchantTab =
   | 'integrasi'
   | 'tiket'
   | 'pesan'
+  | 'voucher'
   | 'komunitas';
 
 export type TimeFilter = 'Hari Ini' | '7 Hari' | '30 Hari' | 'Tahun Ini';

@@ -334,8 +334,16 @@ orderRouter.post('/orders/place', async (req: Request, res: Response) => {
       origin_branch_id: quote.b,
     };
 
+    // Kode voucher opsional; potongannya dihitung ulang di place_order dari harga di database.
+    const voucherCode = String(body.voucherCode ?? '').trim().toUpperCase();
+    if (voucherCode && !/^[A-Z0-9_-]{3,32}$/.test(voucherCode)) {
+      return res.status(400).json({ success: false, code: 'VOUCHER_INVALID', message: 'Kode voucher tidak ditemukan.' });
+    }
+
     const result = await pool.query(
-      'SELECT public.place_order($1, $2::jsonb, $3::jsonb, $4::jsonb, $5, $6) AS result',
+      voucherCode
+        ? 'SELECT public.place_order($1, $2::jsonb, $3::jsonb, $4::jsonb, $5, $6, $7) AS result'
+        : 'SELECT public.place_order($1, $2::jsonb, $3::jsonb, $4::jsonb, $5, $6) AS result',
       [
         storeId,
         JSON.stringify({
@@ -348,6 +356,7 @@ orderRouter.post('/orders/place', async (req: Request, res: Response) => {
         JSON.stringify(shipping),
         clean(body.paymentMethod, 120) || 'Manual',
         body.notes ? clean(body.notes, 2000) : null,
+        ...(voucherCode ? [voucherCode] : []),
       ]
     );
     const order = result.rows[0]?.result;

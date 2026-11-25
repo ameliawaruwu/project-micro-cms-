@@ -15,13 +15,29 @@ interface ProductMobileCardProps {
 
 export const ProductMobileCard: React.FC<ProductMobileCardProps> = ({
   products,
+  onAddProduct,
   onEditProduct,
 }) => {
-  const { language, t } = useLanguage();
-  const isEn = language === 'en';
+  const { t } = useLanguage();
 
   return (
     <div className="space-y-3 pb-20 font-sans">
+      {/* Tombol tambah produk (di desktop ada di header ProductTable) */}
+      <button
+        type="button"
+        onClick={onAddProduct}
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-[#66000E] hover:bg-[#4D000A] text-white font-semibold text-sm shadow-2xs transition cursor-pointer"
+      >
+        <Plus className="w-4 h-4" />
+        <span>{t('add_product', 'Tambah Produk')}</span>
+      </button>
+
+      {products.length === 0 && (
+        <p className="text-center text-xs text-[#706866] py-8">
+          {t('no_products_found', 'Tidak ada produk yang cocok')}
+        </p>
+      )}
+
       {/* List of Mobile Product Cards */}
       {products.map((prod) => (
         <div

@@ -27,6 +27,8 @@ import { cartService } from '../../services/cartService';
 import { getEnrichedCatalog, CatalogProduct } from '../catalogData';
 import { getShopThemeStyle, getShopAccent } from './shopThemeStyles';
 import { addProductToCart } from '../storefrontCart';
+import { StoreVoucherList } from '../sections/StoreVoucherList';
+import { getStorefrontThemeVars } from './storefrontTheme';
 
 interface ShopPageProps {
   themeData?: ThemeSchema;
@@ -997,6 +999,13 @@ export const ShopPage: React.FC<ShopPageProps> = ({
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
       
+      {/* Halaman Promo: voucher toko yang bisa ditukar di checkout (kosong = tidak tampil). */}
+      {promoOnly && (
+        <div style={getStorefrontThemeVars(activeThemeId, accentColor || store?.layoutSettings?.primaryAccent)}>
+          <StoreVoucherList storeId={store?.id} className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6" />
+        </div>
+      )}
+
       <div className="flex-1">{renderThemeContent()}</div>
 
       {CustomFooter ? (

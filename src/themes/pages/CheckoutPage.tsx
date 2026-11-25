@@ -26,6 +26,8 @@ import {
   Copy,
   MessageCircle,
   ExternalLink,
+  TicketPercent,
+  X,
 } from 'lucide-react';
 import { orderService } from '../../services/orderService';
 import { DEFAULT_MANUAL_INSTRUCTIONS } from '../../utils/manualPayment';
@@ -46,6 +48,7 @@ import {
 import { wilayahService, WilayahItem, PostalCodeItem } from '../../services/wilayahService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { customerService } from '../../services/customerService';
+import { voucherService, VoucherPreview, voucherReasonText } from '../../services/voucherService';
 
 export function mapPaymentIdToDuitkuMethod(paymentId: string): string {
   const p = (paymentId || '').toLowerCase();
@@ -317,8 +320,56 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
   }, [displayedRates]);
 
+  // Voucher promo: perkiraan potongan dari database (preview_store_voucher); potongan final
+  // dihitung ulang oleh place_order saat pesanan dibuat.
+  const [voucherInput, setVoucherInput] = useState('');
+  const [appliedVoucher, setAppliedVoucher] = useState<VoucherPreview | null>(null);
+  const [voucherError, setVoucherError] = useState('');
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const cartSignature = sampleItems.map((s) => `${s.id}:${s.quantity || 1}`).join('|');
+
+  const applyVoucher = async (code: string = voucherInput) => {
+    if (!store?.id || !code.trim()) return;
+    setVoucherLoading(true);
+    setVoucherError('');
+    try {
+      const res = await voucherService.preview(
+        store.id,
+        code,
+        sampleItems.map((s) => ({ productId: s.id, quantity: s.quantity || 1 }))
+      );
+      if (res.valid) {
+        setAppliedVoucher(res);
+        setVoucherInput(res.code || code);
+      } else {
+        setAppliedVoucher(null);
+        setVoucherError(
+          voucherReasonText(res.reason, isEn, res.minPurchase ? `Rp ${res.minPurchase.toLocaleString('id-ID')}` : undefined)
+        );
+      }
+    } catch {
+      setAppliedVoucher(null);
+      setVoucherError(isEn ? 'Could not check the voucher. Please try again.' : 'Gagal memeriksa voucher. Silakan coba lagi.');
+    } finally {
+      setVoucherLoading(false);
+    }
+  };
+
+  const removeVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherError('');
+    setVoucherInput('');
+  };
+
+  // Isi keranjang berubah: hitung ulang potongan voucher yang sedang dipakai.
+  useEffect(() => {
+    if (appliedVoucher?.code) void applyVoucher(appliedVoucher.code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartSignature]);
+
+  const discountAmount = appliedVoucher?.valid ? Math.min(appliedVoucher.discount, subtotal) : 0;
   const shippingFee = selectedRate ? selectedRate.price : 0;
-  const total = subtotal + shippingFee;
+  const total = subtotal - discountAmount + shippingFee;
   const cartTotal = total;
 
   // Store payment configuration (COD, Manual QRIS/Bank, Payment Gateway)
@@ -651,7 +702,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       items: orderItems,
       subtotal,
       shippingCost: shippingFee,
-      discount: 0,
+      discount: discountAmount,
+      voucherCode: appliedVoucher?.valid ? appliedVoucher.code : undefined,
       grandTotal: total,
       paymentMethod: methodDesc as any,
       paymentStatus: 'Belum Dibayar',
@@ -745,6 +797,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       const orderKey = JSON.stringify([
         sampleItems.map((s) => [s.id, s.quantity || 1]),
         shippingFee,
+        appliedVoucher?.code || '',
         selectedPaymentId,
         customerName.trim(),
         customerPhone.trim(),
@@ -1434,12 +1487,78 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </div>
                 </div>
 
+                {/* 3b. VOUCHER PROMO */}
+                {store?.id && (
+                  <div className="pt-3 border-t border-[var(--sf-border)] space-y-2">
+                    <p className="flex items-center gap-1.5 text-xs font-bold text-[var(--sf-text)]">
+                      <TicketPercent className="w-4 h-4 text-[var(--sf-primary)]" />
+                      {isEn ? 'Promo Voucher' : 'Voucher Promo'}
+                    </p>
+                    {appliedVoucher?.valid ? (
+                      <div className="flex items-start justify-between gap-2 rounded-[var(--sf-radius)] border border-emerald-200 bg-emerald-50 px-3 py-2">
+                        <div className="min-w-0 text-xs">
+                          <p className="font-bold text-emerald-800 font-mono">{appliedVoucher.code}</p>
+                          <p className="text-emerald-700">
+                            {appliedVoucher.title ? `${appliedVoucher.title} · ` : ''}
+                            {isEn ? 'You save' : 'Hemat'} Rp {discountAmount.toLocaleString('id-ID')}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={removeVoucher}
+                          aria-label={isEn ? 'Remove voucher' : 'Hapus voucher'}
+                          title={isEn ? 'Remove voucher' : 'Hapus voucher'}
+                          className="p-1 rounded-md text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={voucherInput}
+                          onChange={(e) => {
+                            setVoucherInput(e.target.value.toUpperCase().replace(/\s+/g, '').slice(0, 32));
+                            setVoucherError('');
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              void applyVoucher();
+                            }
+                          }}
+                          placeholder={isEn ? 'Enter voucher code' : 'Masukkan kode voucher'}
+                          aria-label={isEn ? 'Voucher code' : 'Kode voucher'}
+                          className="flex-1 min-w-0 px-3 py-2 text-xs font-mono uppercase rounded-[var(--sf-radius)] border border-[var(--sf-border)] bg-transparent text-[var(--sf-text)] focus:outline-none focus:border-[var(--sf-primary)]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void applyVoucher()}
+                          disabled={voucherLoading || !voucherInput.trim()}
+                          className="px-3 py-2 text-xs font-bold rounded-[var(--sf-radius)] bg-[var(--sf-primary)] text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                        >
+                          {voucherLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                          {isEn ? 'Apply' : 'Pakai'}
+                        </button>
+                      </div>
+                    )}
+                    {voucherError && <p className="text-[11px] text-red-600">{voucherError}</p>}
+                  </div>
+                )}
+
                 {/* 4. ORDER TOTAL BREAKDOWN */}
                 <div className="pt-3 border-t border-[var(--sf-border)] space-y-2 text-xs text-[var(--sf-text-soft)]">
                   <div className="flex justify-between">
                     <span>{isEn ? 'Product Subtotal' : 'Subtotal Produk'}</span>
                     <span className="font-semibold text-[var(--sf-text)]">Rp {subtotal.toLocaleString('id-ID')}</span>
                   </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-emerald-700">
+                      <span>Voucher {appliedVoucher?.code || ''}</span>
+                      <span className="font-semibold">- Rp {discountAmount.toLocaleString('id-ID')}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span>{isEn ? 'Shipping Cost' : 'Biaya Pengiriman'}</span>
                     <span className="font-semibold text-[var(--sf-text)]">

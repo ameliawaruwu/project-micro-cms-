@@ -6,12 +6,14 @@ import { Product } from '../types';
 import { isEnglishPreferred, useLanguage } from '../contexts/LanguageContext';
 
 /**
- * Konteks toko untuk komponen tema (navbar, kartu produk): slug toko dipakai sebagai kunci keranjang.
+ * Konteks toko untuk komponen tema (navbar, kartu produk): slug toko dipakai sebagai kunci keranjang,
+ * ID toko dipakai section yang membaca data toko (mis. voucher promo).
  * Dipasang oleh CenterPreviewCanvas (editor & toko live).
  */
-export const StorefrontContext = createContext<{ storeSlug: string }>({ storeSlug: '' });
+export const StorefrontContext = createContext<{ storeSlug: string; storeId?: string }>({ storeSlug: '' });
 
 export const useStorefrontSlug = () => useContext(StorefrontContext).storeSlug;
+export const useStorefrontStoreId = () => useContext(StorefrontContext).storeId || '';
 
 export const CART_UPDATED_EVENT = 'cart_updated';
 const TOAST_EVENT = 'storefront_toast';

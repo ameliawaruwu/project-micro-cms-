@@ -6,6 +6,7 @@ import { getThemeContainer } from '../themeContainer';
 import { defaultFeatureItems, resolveFeatureItems, whatsAppChatLink } from '../sectionContent';
 import { STORE_ROUTES, resolveSectionCta, resolveSectionImage } from '../storefrontLinks';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { StoreVoucherList } from './StoreVoucherList';
 
 /**
  * Bagian umum (Pengumuman, Banner Promo, Keunggulan Toko, Info Toko) yang bisa ditambahkan
@@ -69,6 +70,7 @@ export const ThemedPromoBanner: React.FC<ThemedBlockProps> = ({ sectionOptions =
           >
             {cta.label}
           </a>
+          <StoreVoucherList className="relative mt-4 max-w-2xl" />
         </div>
       </div>
     </ThemeScope>

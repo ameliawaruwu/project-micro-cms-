@@ -15,6 +15,7 @@ import {
   Users,
   Globe,
   ExternalLink,
+  TicketPercent,
 } from 'lucide-react';
 import { SupportAgentIcon } from '../common/icons/SupportAgentIcon';
 import { MerchantTab } from '../../types';
@@ -42,9 +43,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
   // 4 Menu Utama Paling Penting untuk Operasional Sehari-hari
   const primaryItems = [
-    { id: 'beranda' as MerchantTab, label: t('nav_dashboard', 'Beranda'), icon: LayoutDashboard },
-    { id: 'pesanan' as MerchantTab, label: t('nav_orders', 'Pesanan'), icon: ShoppingBag, badge: pendingOrdersCount },
+    // Label & urutan mengikuti Sidebar desktop agar nama fitur sama di semua ukuran layar.
+    { id: 'beranda' as MerchantTab, label: t('nav_dashboard', 'Dashboard'), icon: LayoutDashboard },
     { id: 'produk' as MerchantTab, label: t('nav_products', 'Produk'), icon: Package },
+    { id: 'pesanan' as MerchantTab, label: t('nav_orders', 'Pesanan'), icon: ShoppingBag, badge: pendingOrdersCount },
     { id: 'pengiriman' as MerchantTab, label: t('nav_shipping', 'Pengiriman'), icon: Truck },
   ];
 
@@ -52,13 +54,25 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const secondaryItems = [
     {
       id: 'layout' as MerchantTab,
-      label: t('bottomnav_store_design', 'Desain & Layout Toko'),
+      label: t('nav_layout', 'Layout Toko'),
       desc: t('bottomnav_store_design_desc', 'Atur banner, hero, & tampilan toko'),
       icon: LayoutTemplate,
     },
     {
+      id: 'voucher' as MerchantTab,
+      label: t('nav_vouchers', 'Voucher Promo'),
+      desc: t('bottomnav_vouchers_desc', 'Kode diskon untuk checkout'),
+      icon: TicketPercent,
+    },
+    {
+      id: 'domain' as MerchantTab,
+      label: 'Domain',
+      desc: isEn ? 'Connect a custom domain to your store' : 'Hubungkan domain sendiri ke toko',
+      icon: Globe,
+    },
+    {
       id: 'pembayaran' as MerchantTab,
-      label: t('bottomnav_payment_methods', 'Metode Pembayaran'),
+      label: t('nav_payment', 'Pembayaran'),
       desc: t('bottomnav_payment_methods_desc', 'Kelola QRIS, VA, dan rekening pencairan'),
       icon: CreditCard,
     },
@@ -86,13 +100,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     },
     {
       id: 'pengaturan' as MerchantTab,
-      label: t('bottomnav_store_settings', 'Pengaturan Toko'),
+      label: t('nav_settings', 'Pengaturan'),
       desc: t('bottomnav_store_settings_desc', 'Nama toko, logo, kontak WA, & profil'),
       icon: Settings,
     },
   ];
 
-  const isSecondaryActive = ['layout', 'pembayaran', 'komunitas', 'pesan', 'tiket', 'pengaturan'].includes(activeTab);
+  const isSecondaryActive = ['layout', 'voucher', 'domain', 'pembayaran', 'komunitas', 'pesan', 'tiket', 'pengaturan'].includes(activeTab);
 
   const handleSelectTab = (tab: MerchantTab) => {
     onTabChange(tab);
@@ -115,7 +129,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-[#E5E0DD]">
               <div className="flex items-center gap-2 text-[#241A1A]">
                 <Store className="w-5 h-5 text-[#66000E]" />
-                <h4 className="font-semibold text-sm">{t('bottomnav_more', 'Fitur & Pengaturan Toko')}</h4>
+                <h4 className="font-semibold text-sm">{isEn ? 'Store Features & Settings' : 'Fitur & Pengaturan Toko'}</h4>
               </div>
               <button
                 onClick={() => setIsMoreMenuOpen(false)}

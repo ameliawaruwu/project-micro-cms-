@@ -111,7 +111,8 @@ function mapSupabaseRowToOrder(row: any): Order {
     items,
     subtotal,
     shippingCost: Number(row.shipping_cost || 0),
-    discount: 0,
+    discount: Number(row.discount_amount || 0),
+    voucherCode: row.voucher_code || undefined,
     grandTotal: Number(row.total_amount || subtotal),
     paymentMethod: row.payment_method || 'Manual',
     paymentStatus,
@@ -271,6 +272,7 @@ class OrderService {
           },
           paymentMethod: orderData.paymentMethod || 'Manual',
           notes: orderData.notes || null,
+          voucherCode: orderData.voucherCode || undefined,
         }),
       });
     } catch {

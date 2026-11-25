@@ -30,6 +30,7 @@ import {
   Search,
   EyeOff,
   Loader2,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   Store,
@@ -82,6 +83,7 @@ import { LayoutPage } from './pages/merchant/LayoutPage';
 import { DomainPage } from './pages/merchant/DomainPage';
 import { TicketRequesterPanel } from './components/tickets/TicketRequesterPanel';
 import { MessagesPage } from './pages/merchant/MessagesPage';
+import { VoucherPage } from './pages/merchant/VoucherPage';
 import { KomunitasPage } from './pages/merchant/KomunitasPage';
 import { communityMembershipService } from './services/communityMembershipService';
 
@@ -2212,13 +2214,40 @@ export default function App() {
               onNavigateAuth={() => setAuthView('login')}
               onShowToast={addToast}
               onNotificationNavigate={(link, storeId) => {
-                const tabs: MerchantTab[] = ['beranda', 'produk', 'pesanan', 'layout', 'domain', 'pembayaran', 'pengiriman', 'pengaturan', 'profil', 'integrasi', 'pesan', 'tiket', 'komunitas'];
+                const tabs: MerchantTab[] = ['beranda', 'produk', 'pesanan', 'layout', 'domain', 'pembayaran', 'pengiriman', 'pengaturan', 'profil', 'integrasi', 'pesan', 'voucher', 'tiket', 'komunitas'];
                 if (!tabs.includes(link as MerchantTab)) return;
                 if (storeId && storeId !== currentStore.id) handleSelectStore(storeId);
                 setActiveTab(link as MerchantTab);
                 if (link !== 'produk') { setIsProductFormModalOpen(false); setProductToEdit(null); }
               }}
             />
+
+            {/* Tanda toko ditangguhkan (suspend oleh Sub-Admin Utama / admin platform) */}
+            {currentStore?.isSuspended && (
+              <div
+                role="alert"
+                className="shrink-0 flex items-start gap-2.5 px-3 sm:px-5 py-2.5 bg-red-50 border-b border-red-200 text-red-800 font-poppins"
+              >
+                <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0 text-red-600" />
+                <div className="flex-1 min-w-0 text-xs leading-relaxed">
+                  <p className="font-semibold">
+                    {isEn ? 'This store is suspended' : 'Toko ini sedang ditangguhkan'}
+                  </p>
+                  <p>
+                    {isEn
+                      ? 'Buyers cannot open your store or place orders until it is reactivated by your community manager or the platform admin.'
+                      : 'Pembeli tidak bisa membuka toko atau memesan sampai toko diaktifkan kembali oleh pengelola komunitas atau admin platform.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('tiket')}
+                  className="shrink-0 text-xs font-semibold text-red-700 underline underline-offset-2 hover:text-red-900 cursor-pointer"
+                >
+                  {isEn ? 'Contact support' : 'Hubungi bantuan'}
+                </button>
+              </div>
+            )}
 
             {/* Main Content Area */}
             <main
@@ -2366,6 +2395,14 @@ export default function App() {
               {/* TAB: TIKET BANTUAN */}
               {activeTab === 'komunitas' && showCommunityMenu && (
                 <KomunitasPage
+                  onShowToast={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
+                />
+              )}
+
+              {activeTab === 'voucher' && (
+                <VoucherPage
+                  storeId={currentStore?.id}
                   onShowToast={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
                 />

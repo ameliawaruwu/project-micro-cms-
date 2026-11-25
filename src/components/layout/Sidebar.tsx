@@ -17,6 +17,7 @@ import {
   Crown,
   Users,
   ExternalLink,
+  TicketPercent,
 } from 'lucide-react';
 import { SupportAgentIcon } from '../common/icons/SupportAgentIcon';
 import { MerchantTab, Store as StoreType } from '../../types';
@@ -93,6 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'beranda' as MerchantTab, label: t('nav_dashboard', 'Dashboard'), icon: LayoutDashboard },
     { id: 'produk' as MerchantTab, label: t('nav_products', 'Produk'), icon: Package },
     { id: 'pesanan' as MerchantTab, label: t('nav_orders', 'Pesanan'), icon: ShoppingBag, badge: pendingOrdersCount },
+    { id: 'voucher' as MerchantTab, label: t('nav_vouchers', 'Voucher Promo'), icon: TicketPercent },
     { 
       id: 'website', 
       label: 'Website', 

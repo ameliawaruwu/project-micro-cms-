@@ -69,6 +69,20 @@ export const notificationText = (n: AppNotification, isEn: boolean): Text => {
       return isEn
         ? { title: 'Your store joined a community', body: `"${str(d.store)}" is now a member store of ${str(d.community)}.` }
         : { title: 'Toko Anda bergabung dengan komunitas', body: `"${str(d.store)}" kini menjadi toko binaan komunitas ${str(d.community)}.` };
+    case 'community_removed':
+      return isEn
+        ? { title: 'Your store was removed from a community', body: `"${str(d.store)}" is no longer a member store of ${str(d.community)}. It stays published at its own address.` }
+        : { title: 'Toko Anda dikeluarkan dari komunitas', body: `"${str(d.store)}" tidak lagi menjadi toko binaan komunitas ${str(d.community)}. Toko tetap terbit di alamatnya sendiri.` };
+    case 'store_suspended': {
+      const by = ROLE_LABEL[str(d.actor_role, '')] ? pick(ROLE_LABEL, d.actor_role, isEn) : isEn ? 'the platform admin' : 'admin platform';
+      return isEn
+        ? { title: 'Your store has been suspended', body: `"${str(d.store)}" was suspended by ${by}. Buyers cannot open it or place orders. Contact your community manager or open a support ticket.` }
+        : { title: 'Toko Anda ditangguhkan', body: `"${str(d.store)}" ditangguhkan oleh ${by}. Pembeli tidak bisa membuka toko atau memesan. Hubungi pengelola komunitas atau ajukan tiket bantuan.` };
+    }
+    case 'store_unsuspended':
+      return isEn
+        ? { title: 'Your store is active again', body: `"${str(d.store)}" has been reactivated and is open to buyers.` }
+        : { title: 'Toko Anda aktif kembali', body: `"${str(d.store)}" sudah diaktifkan kembali dan bisa diakses pembeli.` };
     case 'community_store_added':
       return isEn
         ? { title: 'New member store', body: `"${str(d.store)}" joined ${str(d.community)}. You can now add its products.` }
