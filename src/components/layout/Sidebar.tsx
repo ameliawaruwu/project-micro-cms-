@@ -164,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto font-poppins">
+      <nav className="flex-1 px-2 py-2 space-y-1 overflow-y-auto font-poppins">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.isParent 
@@ -177,7 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div key={item.id} className="space-y-0.5">
                 <button
                   onClick={() => setIsWebsiteMenuExpanded(!isWebsiteMenuExpanded)}
-                  className={`w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
+                  className={`w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg text-sm font-medium font-poppins transition-colors group relative cursor-pointer ${
                     isActive
                       ? 'bg-[#F5E8EA] text-[#66000E] font-semibold'
                       : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
@@ -186,7 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     <Icon
-                      className={`w-4 h-4 shrink-0 transition-colors ${
+                      className={`w-[18px] h-[18px] shrink-0 transition-colors ${
                         isActive ? 'text-[#66000E]' : 'text-gray-400 group-hover:text-[#66000E]'
                       }`}
                     />
@@ -194,9 +194,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                   {showLabel && (
                     isWebsiteMenuExpanded ? (
-                      <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-[#66000E] opacity-70' : 'text-gray-400 group-hover:text-[#66000E] opacity-50'}`} />
+                      <ChevronDown className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[#66000E] opacity-70' : 'text-gray-400 group-hover:text-[#66000E] opacity-50'}`} />
                     ) : (
-                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-[#66000E] opacity-70' : 'text-gray-400 group-hover:text-[#66000E] opacity-50'}`} />
+                      <ChevronRight className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[#66000E] opacity-70' : 'text-gray-400 group-hover:text-[#66000E] opacity-50'}`} />
                     )
                   )}
                 </button>
@@ -209,7 +209,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <button
                           key={child.id}
                           onClick={() => handleItemClick(child.id)}
-                          className={`w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium font-poppins transition-colors cursor-pointer ${
+                          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[0.8125rem] font-medium font-poppins transition-colors cursor-pointer ${
                             isChildActive
                               ? 'text-[#66000E] font-semibold bg-[#F5E8EA]'
                               : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
@@ -226,18 +226,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         rel="noopener noreferrer"
                         onClick={() => onCloseMobile?.()}
                         title={liveStoreUrl.replace(/^https:\/\//, '')}
-                        className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs font-medium font-poppins transition-colors text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]"
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[0.8125rem] font-medium font-poppins transition-colors text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]"
                       >
                         <span className="flex-1 text-left truncate">{isEn ? 'View Website' : 'Lihat Website'}</span>
-                        <ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                        <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-60" />
                       </a>
                     ) : (
                       <div
-                        className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs font-poppins text-gray-400 cursor-not-allowed"
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[0.8125rem] font-poppins text-gray-400 cursor-not-allowed"
                         title={isEn ? 'Publish your store from Store Layout to make the website accessible' : 'Terbitkan toko dari Layout Toko agar website bisa diakses'}
                       >
                         <span className="flex-1 text-left truncate">{isEn ? 'View Website' : 'Lihat Website'}</span>
-                        <span className="text-[9px] uppercase tracking-wide shrink-0">{isEn ? 'Draft' : 'Draf'}</span>
+                        <span className="text-[10px] uppercase tracking-wide shrink-0">{isEn ? 'Draft' : 'Draf'}</span>
                       </div>
                     )}
                   </div>
@@ -250,7 +250,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => handleItemClick(item.id as MerchantTab)}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm font-medium font-poppins transition-colors group relative cursor-pointer ${
                 isActive
                   ? 'bg-[#F5E8EA] text-[#66000E] font-semibold'
                   : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
@@ -258,7 +258,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title={isCollapsed && !isOpenMobile ? item.label : undefined}
             >
               <Icon
-                className={`w-4 h-4 shrink-0 transition-colors ${
+                className={`w-[18px] h-[18px] shrink-0 transition-colors ${
                   isActive ? 'text-[#66000E]' : 'text-gray-400 group-hover:text-[#66000E]'
                 }`}
               />
@@ -267,7 +267,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               {item.badge !== undefined && item.badge > 0 && (
                 <span
-                  className={`text-[10px] font-medium px-1.5 py-0.2 rounded shrink-0 ${
+                  className={`text-[11px] font-medium px-1.5 py-0.5 rounded shrink-0 ${
                     isActive ? 'bg-[#66000E] text-white' : 'bg-[#F5E8EA] text-[#66000E]'
                   } ${isCollapsed && !isOpenMobile ? 'absolute -top-1 -right-1' : ''}`}
                 >
@@ -290,10 +290,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               if (onLogout) onLogout();
               if (onCloseMobile) onCloseMobile();
             }}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 transition cursor-pointer"
+            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 transition cursor-pointer"
             title={t('nav_logout', 'Keluar')}
           >
-            <LogOut className="w-3.5 h-3.5 text-gray-400" />
+            <LogOut className="w-[18px] h-[18px] text-gray-400" />
             <span className="truncate">{t('nav_logout', 'Keluar')}</span>
           </button>
         ) : (
@@ -301,10 +301,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={onLogout}
-              className="w-7 h-7 rounded-lg text-gray-400 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 flex items-center justify-center transition cursor-pointer"
+              className="w-9 h-9 rounded-lg text-gray-400 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 flex items-center justify-center transition cursor-pointer"
               title={t('nav_logout', 'Keluar')}
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-[18px] h-[18px]" />
             </button>
           </div>
         )}
@@ -318,7 +318,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside
         id="sidebar-navigation-desktop"
         className={`hidden lg:flex relative h-full flex-col justify-between z-30 transition-all duration-200 border-r border-gray-200 shrink-0 bg-white ${
-          isCollapsed ? 'w-14' : 'w-52'
+          isCollapsed ? 'w-16' : 'w-60'
         }`}
       >
         {sidebarContent}
@@ -349,7 +349,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <aside
             id="sidebar-navigation-mobile"
-            className="fixed top-0 left-0 bottom-0 w-56 max-w-[80vw] h-full shadow-xl z-50 animate-in slide-in-from-left duration-200 border-r border-gray-200 bg-white"
+            className="fixed top-0 left-0 bottom-0 w-64 max-w-[85vw] h-full shadow-xl z-50 animate-in slide-in-from-left duration-200 border-r border-gray-200 bg-white"
           >
             {sidebarContent}
           </aside>
