@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   LayoutDashboard,
   Package,
@@ -30,6 +30,7 @@ import {
   Search,
   EyeOff,
   Loader2,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   Store,
@@ -39,7 +40,6 @@ import {
   MerchantTab,
   ViewMode,
   ShippingStatus,
-  CourierType,
   CartItem,
   StoreLayoutSettings,
 } from './types';
@@ -53,15 +53,21 @@ import { cartService } from './services/cartService';
 import { formatRupiah } from './utils/formatters';
 import { getStoreSections } from './utils/layoutConstants';
 import { isPlatformHost, getStoreSlugFromHost } from './utils/domainRouting';
+import { merchantTabPath, parseMerchantPath, isDashboardPath, isAdminPath } from './utils/appRoutes';
+import { applyStoreBranding, resetDocumentBranding } from './utils/documentBranding';
+import { getShippingBlockReason, isCodMethod } from './utils/orderFlow';
 
 // Layout & Common Components
 import { Sidebar } from './components/layout/Sidebar';
+import { useStoreBaseDomain, buildStoreLiveUrl } from './utils/storeDomain';
 import { TopBar } from './components/layout/TopBar';
 import { BottomNav } from './components/layout/BottomNav';
+import { DashboardFooter } from './components/layout/DashboardFooter';
 import { Toast, ToastMessage } from './components/common/Toast';
 import { ShareStoreModal } from './components/common/ShareStoreModal';
 import { SupportChatbotModal } from './components/common/SupportChatbotModal';
 import { DeviceSimulatorFrame } from './components/common/DeviceSimulatorFrame';
+import { ScaledDeviceFrame, DEVICE_DESIGN_WIDTH } from './components/layout-editor/ScaledDeviceFrame';
 
 // Merchant Pages
 import { DashboardPage } from './pages/merchant/DashboardPage';
@@ -75,6 +81,11 @@ import { IntegrationListPage } from './pages/merchant/IntegrationListPage';
 import { SettingsPage } from './pages/merchant/SettingsPage';
 import { LayoutPage } from './pages/merchant/LayoutPage';
 import { DomainPage } from './pages/merchant/DomainPage';
+import { TicketRequesterPanel } from './components/tickets/TicketRequesterPanel';
+import { MessagesPage } from './pages/merchant/MessagesPage';
+import { VoucherPage } from './pages/merchant/VoucherPage';
+import { KomunitasPage } from './pages/merchant/KomunitasPage';
+import { communityMembershipService } from './services/communityMembershipService';
 
 // Admin Pages
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
@@ -92,8 +103,8 @@ import { ShippingModal } from './components/shipping/ShippingModal';
 import { ReceiptModal } from './components/orders/ReceiptModal';
 import { OrderDetailModal } from './components/orders/OrderDetailModal';
 import { MerchantWalletModal } from './components/wallet/MerchantWalletModal';
+import { WALLET_ENABLED } from './config/features';
 import { UpgradePlanModal } from './components/billing/UpgradePlanModal';
-import { StoreNameSetupModal } from './components/common/StoreNameSetupModal';
 import { KroomifyLogo } from './components/common/KroomifyLogo';
 
 // Storefront Components
@@ -104,14 +115,27 @@ import { CartDrawer } from './components/storefront/CartDrawer';
 import { StoreNotFoundPage } from './components/storefront/StoreNotFoundPage';
 import { ThemeRenderer } from './themes/ThemeRenderer';
 import { normalizeThemeId } from './themes/ThemeRegistry';
+import { THEME_DATA_MAP } from './themes/themeData';
 import { useCmsStore } from './cms/useCmsStore';
+import { filterRealProducts } from './utils/demoProducts';
+import { useLanguage, isEnglishPreferred } from './contexts/LanguageContext';
+
+const isAnyAdminRole = (role?: string) =>
+  role === 'admin' ||
+  role === 'sub_admin' ||
+  role === 'sub_admin_umum' ||
+  role === 'community_admin' ||
+  role === 'sub_admin_produk';
 
 export default function App() {
   // Auth Context Hook
   const { user, store: authStore, isAuthenticated, isLoading: isAuthLoading, logout } = useAuth();
+  const { isEn } = useLanguage();
 
   // State: Authentication View
   const [authView, setAuthView] = useState<'login' | 'register' | 'forgot_password' | null>(null);
+  // Nama toko yang diketik di hero landing, dipakai sebagai isian awal form daftar.
+  const [pendingStoreName, setPendingStoreName] = useState('');
   const [registeredEmailForLogin, setRegisteredEmailForLogin] = useState<string>('');
 
   useEffect(() => {
@@ -122,12 +146,28 @@ export default function App() {
       }
     };
     const handleGoogleSuccess = (e: any) => {
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const isStorefrontOrPreview = params && (
+        params.get('preview') === 'true' ||
+        Boolean(params.get('previewTheme')) ||
+        Boolean(params.get('toko')) ||
+        Boolean(params.get('store'))
+      );
+
       const gUser = e.detail?.user;
-      const targetMode = gUser?.role === 'admin' ? 'admin' : 'merchant-desktop';
-      setViewMode(targetMode);
-      setAuthView(null);
+      const isNewUser = e.detail?.isNewUser;
+      const isGoogleAdmin = isAnyAdminRole(gUser?.role);
+      const targetMode = isGoogleAdmin ? 'admin' : 'merchant-desktop';
+
+      if (!isStorefrontOrPreview) {
+        setViewMode(targetMode);
+        setAuthView(null);
+        const en = isEnglishPreferred();
+        addToast(isNewUser
+          ? (en ? 'Google account created successfully!' : 'Akun Google berhasil dibuat!')
+          : (en ? 'Signed in with Google successfully!' : 'Berhasil masuk dengan akun Google!'));
+      }
       loadData();
-      addToast('Berhasil masuk dengan akun Google!');
     };
 
     const handleSessionInvalidated = () => {
@@ -139,7 +179,9 @@ export default function App() {
     };
 
     const handleGoogleUnregistered = (e: any) => {
-      const msg = e.detail?.message || `Akun Google (${e.detail?.email || 'ini'}) belum terdaftar. Silakan lakukan registrasi terlebih dahulu.`;
+      const msg = e.detail?.message || (isEnglishPreferred()
+        ? `This Google account${e.detail?.email ? ` (${e.detail.email})` : ''} is not registered yet. Please sign up first.`
+        : `Akun Google (${e.detail?.email || 'ini'}) belum terdaftar. Silakan lakukan registrasi terlebih dahulu.`);
       console.warn('[App] Akun Google belum terdaftar:', e.detail?.email);
       setViewMode('landing');
       setAuthView('login');
@@ -165,7 +207,7 @@ export default function App() {
   const [activeStore, setActiveStore] = useState<Store | null>(() => {
     if (typeof window !== 'undefined') {
       // 0. Cek Injected Store dari SitePackager (Production Live Storefront)
-      const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
+      const injectedStore = ((window as any).__LAPAKQ_INITIAL_STORE__ || (window as any).__KROOMIFY_INITIAL_STORE__);
       if (injectedStore && (injectedStore.id || injectedStore.slug)) {
         if (injectedStore.layoutSettings?.activeThemeId) {
           const normalizedTheme = normalizeThemeId(injectedStore.layoutSettings.activeThemeId);
@@ -180,6 +222,7 @@ export default function App() {
           const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
           if (draftStr) {
             const draft = JSON.parse(draftStr);
+            if (!draft.id) draft.id = 'preview-store-id';
             if (draft.layoutSettings?.activeThemeId) {
               const normalizedTheme = normalizeThemeId(draft.layoutSettings.activeThemeId);
               useCmsStore.getState().loadThemeData(normalizedTheme);
@@ -193,13 +236,30 @@ export default function App() {
     }
     return null;
   });
-  const [activeTab, setActiveTab] = useState<MerchantTab>('beranda');
+  const [activeTab, setActiveTab] = useState<MerchantTab>(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (
+        searchParams.get('billing_return') === 'true' ||
+        searchParams.get('merchantOrderId')?.startsWith('BILL-') ||
+        searchParams.get('order_id')?.startsWith('BILL-')
+      ) {
+        return 'billing';
+      }
+      // Akses langsung /dashboard/<halaman> (refresh / tautan) di host platform
+      if (isPlatformHost(window.location.hostname) && !getStoreSlugFromHost(window.location.hostname)) {
+        const fromPath = parseMerchantPath(window.location.pathname);
+        if (fromPath) return fromPath;
+      }
+    }
+    return 'beranda';
+  });
   
   // Inisialisasi viewMode langsung dari session tersimpan untuk mencegah flicker Landing Page saat reload
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== 'undefined') {
-      const injectedSlug = (window as any).__KROOMIFY_STORE_SLUG__;
-      const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
+      const injectedSlug = ((window as any).__LAPAKQ_STORE_SLUG__ || (window as any).__KROOMIFY_STORE_SLUG__);
+      const injectedStore = ((window as any).__LAPAKQ_INITIAL_STORE__ || (window as any).__KROOMIFY_INITIAL_STORE__);
       if (injectedSlug || injectedStore) {
         return 'storefront-live';
       }
@@ -227,6 +287,7 @@ export default function App() {
         'cart', 'keranjang',
         'checkout',
         'orders', 'pesanan',
+        'lacak', 'track',
         'profile', 'profil',
         'thank_you', 'terima-kasih'
       ];
@@ -240,7 +301,8 @@ export default function App() {
 
     const cachedUser = authService.getCurrentUser().user;
     if (cachedUser) {
-      return cachedUser.role === 'admin' ? 'admin' : 'merchant-desktop';
+      const isAnyAdmin = isAnyAdminRole(cachedUser.role);
+      return isAnyAdmin ? 'admin' : 'merchant-desktop';
     }
     return 'landing';
   });
@@ -252,7 +314,7 @@ export default function App() {
   // State: Core Data
   const [products, setProducts] = useState<Product[]>(() => {
     if (typeof window !== 'undefined') {
-      const injectedProds = (window as any).__KROOMIFY_INITIAL_PRODUCTS__;
+      const injectedProds = ((window as any).__LAPAKQ_INITIAL_PRODUCTS__ || (window as any).__KROOMIFY_INITIAL_PRODUCTS__);
       if (Array.isArray(injectedProds) && injectedProds.length > 0) {
         useCmsStore.getState().setProductsFromMerchant(injectedProds as any);
         return injectedProds;
@@ -306,10 +368,13 @@ export default function App() {
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [orderToPrint, setOrderToPrint] = useState<Order | null>(null);
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<Order | null>(null);
+  // Modal detail selalu memakai data terbaru dari daftar pesanan (ikut perubahan realtime).
+  const liveSelectedOrder = selectedOrderDetail
+    ? orders.find((o) => o.id === selectedOrderDetail.id) ?? selectedOrderDetail
+    : null;
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [isUpgradePlanModalOpen, setIsUpgradePlanModalOpen] = useState(false);
-  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('500000');
   const [bankAccount, setBankAccount] = useState('BCA - 8920192811');
 
@@ -334,8 +399,6 @@ export default function App() {
       addToast(message, type);
     };
     window.addEventListener('toast_notification', handleToastNotification);
-    const handleOpenOnboarding = () => setIsOnboardingModalOpen(true);
-    window.addEventListener('open_store_onboarding', handleOpenOnboarding);
 
     const handleStoreCreated = (e: any) => {
       if (e.detail) {
@@ -345,10 +408,13 @@ export default function App() {
     };
     window.addEventListener('microcms_store_created', handleStoreCreated);
 
+    const handleOpenCart = () => setIsCartOpen(true);
+    window.addEventListener('open_cart', handleOpenCart);
+
     return () => {
       window.removeEventListener('toast_notification', handleToastNotification);
-      window.removeEventListener('open_store_onboarding', handleOpenOnboarding);
       window.removeEventListener('microcms_store_created', handleStoreCreated);
+      window.removeEventListener('open_cart', handleOpenCart);
     };
   }, []);
 
@@ -373,6 +439,84 @@ export default function App() {
 
   const currentStore = activeStore || EMPTY_STORE;
 
+  // Menu Komunitas hanya untuk toko yang sudah tergabung di komunitas (mis. ditambahkan sub-admin).
+  // Merchant mandiri tidak melihat halaman Komunitas.
+  const storeHasPrimaryCommunity = Boolean(
+    currentStore.communityId || currentStore.communityName || currentStore.extraCommunityIds?.length
+  );
+  const [hasCommunityMembership, setHasCommunityMembership] = useState(false);
+  const [communityMembershipChecked, setCommunityMembershipChecked] = useState(false);
+  useEffect(() => {
+    if (!user?.id || storeHasPrimaryCommunity) return;
+    let cancelled = false;
+    communityMembershipService
+      .getMine()
+      .then((data) => {
+        if (!cancelled) setHasCommunityMembership(data.memberships.length > 0);
+      })
+      .catch(() => {
+        if (!cancelled) setHasCommunityMembership(false);
+      })
+      .finally(() => {
+        if (!cancelled) setCommunityMembershipChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, currentStore.id, storeHasPrimaryCommunity]);
+  const showCommunityMenu = storeHasPrimaryCommunity || hasCommunityMembership;
+  // Alamat website toko yang sudah terbit (menu "Lihat Website")
+  const { domain: liveBaseDomain } = useStoreBaseDomain(activeStore || null);
+  const liveStoreUrl =
+    activeStore?.isPublished && activeStore.slug
+      ? buildStoreLiveUrl(activeStore.slug, liveBaseDomain, activeStore.customDomain)
+      : undefined;
+
+  useEffect(() => {
+    // Tunggu data toko & keanggotaan termuat agar akses langsung /dashboard/komunitas tidak terlempar.
+    if (activeTab === 'komunitas' && !showCommunityMenu && !isStoreLoading && communityMembershipChecked) {
+      setActiveTab('beranda');
+    }
+  }, [activeTab, showCommunityMenu, isStoreLoading, communityMembershipChecked]);
+
+  // URL routing panel merchant: setiap tab punya path /dashboard/<halaman> (hanya host platform).
+  const isMerchantView = viewMode === 'merchant-desktop' || viewMode === 'merchant-mobile';
+  // Perubahan tab otomatis sesaat setelah muat / Back-Forward memakai replace agar riwayat tidak terjebak.
+  const urlReplaceUntilRef = useRef(Date.now() + 1500);
+  const onPlatformPanelHost = () =>
+    typeof window !== 'undefined' && isPlatformHost(window.location.hostname) && !getStoreSlugFromHost(window.location.hostname);
+
+  useEffect(() => {
+    if (!onPlatformPanelHost()) return;
+    const { pathname, search, hash } = window.location;
+    if (isMerchantView) {
+      const target = merchantTabPath(activeTab);
+      if (pathname === target) return;
+      const replace = !isDashboardPath(pathname) || Date.now() < urlReplaceUntilRef.current;
+      if (replace) window.history.replaceState(window.history.state, '', `${target}${search}${hash}`);
+      else window.history.pushState({ lapakqTab: activeTab }, '', target);
+      return;
+    }
+    // Belum login / sudah keluar: jangan biarkan URL panel menempel di landing page.
+    if (viewMode === 'landing' && !authView && !isAuthLoading && !user && (isDashboardPath(pathname) || isAdminPath(pathname))) {
+      window.history.replaceState(window.history.state, '', '/');
+    }
+  }, [activeTab, isMerchantView, viewMode, authView, isAuthLoading, user]);
+
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+  useEffect(() => {
+    if (!isMerchantView || !onPlatformPanelHost()) return;
+    const onPop = () => {
+      urlReplaceUntilRef.current = Date.now() + 600;
+      const tab = parseMerchantPath(window.location.pathname);
+      if (tab) setActiveTab(tab);
+      else window.history.replaceState(window.history.state, '', merchantTabPath(activeTabRef.current));
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [isMerchantView]);
+
   // Initial Data Loading
   const loadData = async (targetStoreId?: string) => {
     if (isAuthLoading) return;
@@ -380,24 +524,24 @@ export default function App() {
       return;
     }
     try {
-      // 0. Cek jika ada preloaded store dari site packager (Prioritaskan selalu di awal agar storefront instan termuat tanpa flicker)
-      const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
-      const injectedProducts = (window as any).__KROOMIFY_INITIAL_PRODUCTS__;
-      if (injectedStore && (injectedStore.id || injectedStore.slug)) {
+      // 0. Cek jika ada preloaded store dari site packager (Hanya untuk storefront publik tanpa login)
+      const injectedStore = ((window as any).__LAPAKQ_INITIAL_STORE__ || (window as any).__KROOMIFY_INITIAL_STORE__);
+      const injectedProducts = ((window as any).__LAPAKQ_INITIAL_PRODUCTS__ || (window as any).__KROOMIFY_INITIAL_PRODUCTS__);
+      if (!user && injectedStore && (injectedStore.id || injectedStore.slug)) {
         const hydratedStore: Store = {
           ...injectedStore,
           isPublished: injectedStore.isPublished !== undefined ? Boolean(injectedStore.isPublished) : (injectedStore.is_published !== undefined ? Boolean(injectedStore.is_published) : true),
         };
         setActiveStore(hydratedStore);
         setStores([hydratedStore]);
-        if (Array.isArray(injectedProducts) && injectedProducts.length > 0) {
-          setProducts(injectedProducts);
-          useCmsStore.getState().setProductsFromMerchant(injectedProducts as any);
-        } else if (hydratedStore.id) {
-          const storeProducts = await productService.getProductsByStore(hydratedStore.id);
-          setProducts(storeProducts);
-          useCmsStore.getState().setProductsFromMerchant(storeProducts);
-        }
+        // Produk live selalu diambil dari database (sinkron dengan menu Produk). Salinan produk
+        // saat publish hanya cadangan bila database tidak bisa dihubungi. Produk contoh template dibuang.
+        const dbProducts = hydratedStore.id ? await productService.getProductsByStore(hydratedStore.id) : [];
+        const liveProducts = filterRealProducts(
+          dbProducts.length > 0 ? dbProducts : Array.isArray(injectedProducts) ? injectedProducts : []
+        );
+        setProducts(liveProducts as any);
+        useCmsStore.getState().setProductsFromMerchant(liveProducts as any);
         const initialCart = cartService.getCart(hydratedStore.slug);
         setCartItems(initialCart);
         setIsStoreLoading(false);
@@ -417,7 +561,7 @@ export default function App() {
           tokoParam = getStoreSlugFromHost(window.location.hostname) || undefined;
         }
 
-        // JIKA HOST ADALAH PLATFORM UTAMA (kroomify.kroombox.com / localhost) DAN TANPA PARAMETER TOKO:
+        // JIKA HOST ADALAH PLATFORM UTAMA (lapakq.com / kroomify.kroombox.com / localhost) DAN TANPA PARAMETER TOKO:
         // Tetap di landing page, JANGAN muat allStores[0] sebagai activeStore!
         if (!tokoParam && (viewMode === 'landing' || isPlatformHost(window.location.hostname))) {
           setActiveStore(EMPTY_STORE);
@@ -480,16 +624,35 @@ export default function App() {
         return;
       }
 
+      const isAnyAdmin = isAnyAdminRole(user.role);
+      if (isAnyAdmin) {
+        setActiveStore(EMPTY_STORE);
+        setStores([]);
+        setIsStoreLoading(false);
+        return;
+      }
+
       let userStores = await storeService.getStoresForUser(user.id);
-      setStores(userStores);
 
       if (userStores.length === 0) {
-        setActiveStore(EMPTY_STORE);
-        setProducts([]);
-        setOrders([]);
-        setIntegrations([]);
-        useCmsStore.getState().setProductsFromMerchant([]);
-        return;
+        // Otomatis buat toko awal untuk merchant baru tanpa nama default
+        const newStore = await storeService.createStore({
+          merchantId: user.id,
+          name: '',
+          slug: '',
+          phoneWhatsApp: user.phoneWhatsApp || '',
+          plan: '', // Belum klaim paket
+          onboarding: {
+            storeNameSet: false,
+            productUploaded: false,
+            paymentConnected: false,
+          },
+        });
+        userStores = [newStore];
+        setStores([newStore]);
+        setActiveStore(newStore);
+      } else {
+        setStores(userStores);
       }
 
       let current: Store | undefined;
@@ -519,6 +682,19 @@ export default function App() {
         setOrders(storeOrders);
         setIntegrations(storeIntegrations);
         setCartItems(initialCart);
+
+        // Pop up onboarding harus tetap terbuka jika merchant belum menyelesaikan setup toko & klaim paket
+        const isStoreSetupDone = Boolean(
+          finalStore &&
+          finalStore.name &&
+          finalStore.name.trim() !== '' &&
+          !finalStore.name.startsWith('Toko usr_') &&
+          finalStore.onboarding?.storeNameSet &&
+          finalStore.plan &&
+          finalStore.plan.trim() !== ''
+        );
+
+        // Onboarding modal dinonaktifkan: merchant langsung dapat mengakses dashboard
       }
     } catch (err) {
       console.error('Error loading store data:', err);
@@ -545,12 +721,13 @@ export default function App() {
       'cart', 'keranjang',
       'checkout',
       'orders', 'pesanan',
+      'lacak', 'track',
       'profile', 'profil',
       'thank_you', 'terima-kasih'
     ];
 
     const hostStoreSlug = getStoreSlugFromHost(window.location.hostname);
-    let tokoParam = params.get('toko') || params.get('store') || hostStoreSlug || (window as any).__KROOMIFY_STORE_SLUG__;
+    let tokoParam = params.get('toko') || params.get('store') || hostStoreSlug || ((window as any).__LAPAKQ_STORE_SLUG__ || (window as any).__KROOMIFY_STORE_SLUG__);
     const storeSlugFromPath = (pathSlug && !KNOWN_PAGE_ROUTES.includes(pathSlug.toLowerCase())) ? pathSlug : null;
     if (!tokoParam && storeSlugFromPath && !isPlatformHost(window.location.hostname)) {
       tokoParam = storeSlugFromPath;
@@ -577,7 +754,7 @@ export default function App() {
       }
     }
 
-    if (previewThemeParam || editThemeParam || modeParam === 'editor') {
+    if (editThemeParam || modeParam === 'editor') {
       const loggedUser = authService.getCurrentUser().user;
       if (loggedUser) {
         storeService.getStoresForUser(loggedUser.id).then((userStores) => {
@@ -602,6 +779,37 @@ export default function App() {
       return;
     }
 
+    if (previewThemeParam) {
+      setViewMode('storefront-live');
+      setIsStoreLoading(false);
+      setStoreNotFound(false);
+      const normalizedTheme = normalizeThemeId(previewThemeParam);
+      useCmsStore.getState().loadThemeData(normalizedTheme);
+      if (tokoParam) {
+        storeService.getStoreBySlug(tokoParam).then((targetStore) => {
+          if (targetStore) {
+            setActiveStore({
+              ...targetStore,
+              isPublished: true,
+              layoutSettings: {
+                ...targetStore.layoutSettings,
+                activeThemeId: normalizedTheme,
+                themeStyle: normalizedTheme,
+              }
+            });
+            Promise.all([
+              productService.getProductsByStore(targetStore.id),
+              orderService.getOrdersByStore(targetStore.id),
+            ]).then(([storeProducts, storeOrders]) => {
+              setProducts(storeProducts);
+              setOrders(storeOrders);
+            }).catch(() => {});
+          }
+        });
+      }
+      return;
+    }
+
     if (params.get('preview') === 'true' || tokoParam || modeParam === 'storefront' || isKnownRoute) {
       setViewMode('storefront-live');
       
@@ -611,7 +819,9 @@ export default function App() {
           const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
           if (draftStr) {
             const draftStore = JSON.parse(draftStr);
+            draftStore.id = draftStore.id || 'preview-store-id';
             setActiveStore(draftStore);
+            setStoreNotFound(false);
 
             if (draftStore.layoutSettings?.activeThemeId) {
               const normalizedTheme = normalizeThemeId(draftStore.layoutSettings.activeThemeId);
@@ -623,23 +833,30 @@ export default function App() {
             if (savedProdsStr) {
               try {
                 initialProducts = JSON.parse(savedProdsStr);
-                useCmsStore.setState({ products: initialProducts });
               } catch (e) {}
             } else if (draftStore.products) {
               initialProducts = draftStore.products;
-              useCmsStore.setState({ products: initialProducts });
             }
+
+            initialProducts = (initialProducts || []).filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
+            useCmsStore.setState({ products: initialProducts });
             
-            Promise.all([
-              productService.getProductsByStore(draftStore.id),
-              orderService.getOrdersByStore(draftStore.id),
-            ]).then(([storeProducts, storeOrders]) => {
-              const initialCart = cartService.getCart(draftStore.slug);
-              setProducts(initialProducts.length > 0 ? initialProducts : storeProducts);
-              setOrders(storeOrders);
-              setCartItems(initialCart);
+            if (draftStore.id) {
+              Promise.all([
+                productService.getProductsByStore(draftStore.id),
+                orderService.getOrdersByStore(draftStore.id),
+              ]).then(([storeProducts, storeOrders]) => {
+                const initialCart = cartService.getCart(draftStore.slug);
+                setProducts(initialProducts.length > 0 ? initialProducts : storeProducts);
+                setOrders(storeOrders);
+                setCartItems(initialCart);
+                setIsStoreLoading(false);
+              }).catch(() => {
+                setIsStoreLoading(false);
+              });
+            } else {
               setIsStoreLoading(false);
-            });
+            }
             return;
           }
         } catch (e) {
@@ -649,7 +866,7 @@ export default function App() {
 
       if (tokoParam) {
         // Cek dulu apakah data store yang diinjeksi sudah cocok untuk slug ini
-        const injectedStore = (window as any).__KROOMIFY_INITIAL_STORE__;
+        const injectedStore = ((window as any).__LAPAKQ_INITIAL_STORE__ || (window as any).__KROOMIFY_INITIAL_STORE__);
         if (injectedStore && (injectedStore.slug?.toLowerCase() === tokoParam.toLowerCase() || injectedStore.id === tokoParam)) {
           const hydratedStore: Store = {
             ...injectedStore,
@@ -682,7 +899,7 @@ export default function App() {
             setIsStoreLoading(false);
           } else {
             // Jika fetch gagal atau offline, cek apakah injectedStore tersedia sebelum menandai not found
-            const inj = (window as any).__KROOMIFY_INITIAL_STORE__;
+            const inj = ((window as any).__LAPAKQ_INITIAL_STORE__ || (window as any).__KROOMIFY_INITIAL_STORE__);
             if (inj && (inj.slug?.toLowerCase() === tokoParam.toLowerCase() || inj.id === tokoParam)) {
               setActiveStore({
                 ...inj,
@@ -727,6 +944,7 @@ export default function App() {
   }, []);
 
   // Live cross-tab & in-tab sync listener for Preview mode
+  const lastDraftStrRef = useRef<string>('');
   useEffect(() => {
     const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
     if (!isPreview) return;
@@ -734,21 +952,27 @@ export default function App() {
     const syncPreviewData = () => {
       try {
         const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
-        if (draftStr) {
+        if (draftStr && draftStr !== lastDraftStrRef.current) {
+          lastDraftStrRef.current = draftStr;
           const draftStore = JSON.parse(draftStr);
+          draftStore.id = draftStore.id || 'preview-store-id';
           setActiveStore(draftStore);
+          setStoreNotFound(false);
 
           const savedProds = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
+          let parsedProds: any[] = [];
           if (savedProds) {
             try {
-              const parsed = JSON.parse(savedProds);
-              useCmsStore.setState({ products: parsed });
-              setProducts(parsed);
+              parsedProds = JSON.parse(savedProds);
             } catch (e) {}
           } else if (draftStore.products) {
-            useCmsStore.setState({ products: draftStore.products });
-            setProducts(draftStore.products);
+            parsedProds = draftStore.products;
           }
+
+          parsedProds = (parsedProds || []).filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
+
+          useCmsStore.setState({ products: parsedProds });
+          setProducts(parsedProds);
 
           if (draftStore.layoutSettings?.activeThemeId) {
             const normalizedTheme = normalizeThemeId(draftStore.layoutSettings.activeThemeId);
@@ -774,15 +998,30 @@ export default function App() {
     }
   }, [isAuthenticated, authStore, user?.id, isAuthLoading]);
 
+  // Judul tab & favicon: storefront memakai nama & logo toko, selain itu LapakQ.
+  useEffect(() => {
+    const isStorefrontView =
+      viewMode === 'storefront' || viewMode === 'storefront-live' || viewMode === 'storefront-phone';
+    if (isStorefrontView && activeStore?.name) {
+      applyStoreBranding(activeStore);
+    } else {
+      resetDocumentBranding();
+    }
+  }, [viewMode, activeStore?.name, activeStore?.logoUrl]);
+
   // Real-time synchronization for orders via Supabase WebSocket
   useEffect(() => {
     if (!activeStore?.id) return;
 
     const unsubscribe = orderService.subscribeToOrderChanges(activeStore.id, (updatedOrder) => {
       setOrders((prev) =>
-        prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
+        prev.some((o) => o.id === updatedOrder.id)
+          ? prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder, items: o.items.length ? o.items : updatedOrder.items } : o))
+          : [updatedOrder, ...prev]
       );
-      addToast(`Status pesanan #${updatedOrder.orderNumber} terupdate secara real-time!`, 'info');
+      addToast(isEnglishPreferred()
+        ? `Order #${updatedOrder.orderNumber} status updated in real time!`
+        : `Status pesanan #${updatedOrder.orderNumber} terupdate secara real-time!`, 'info');
     });
 
     const handleOrderCreated = (e: any) => {
@@ -832,7 +1071,9 @@ export default function App() {
       setStores((prev) => prev.map((s) => (s.id === updatedStore.id ? { ...s, ...updatedStore } : s)));
 
       if (updatedStore.isPublished === false && viewMode === 'storefront-live') {
-        addToast('⚠️ Toko ini baru saja ditarik dari publikasi (unpublish) oleh pemilik toko.', 'info');
+        addToast(isEnglishPreferred()
+          ? '⚠️ This store was just unpublished by its owner.'
+          : '⚠️ Toko ini baru saja ditarik dari publikasi (unpublish) oleh pemilik toko.', 'info');
       }
     });
 
@@ -843,7 +1084,10 @@ export default function App() {
 
   // Route Users: Jika login arahkan ke dashboard, jika tidak login / akun dihapus kembalikan ke landing page
   useEffect(() => {
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === 'true') {
+    if (typeof window !== 'undefined' && (
+      new URLSearchParams(window.location.search).get('preview') === 'true' ||
+      Boolean(new URLSearchParams(window.location.search).get('previewTheme'))
+    )) {
       return;
     }
 
@@ -856,7 +1100,7 @@ export default function App() {
 
     if (!isAuthLoading) {
       if (user && viewMode === 'landing') {
-        if (user.role === 'admin') {
+        if (isAnyAdminRole(user.role)) {
           setViewMode('admin');
         } else {
           setViewMode('merchant-desktop');
@@ -876,7 +1120,7 @@ export default function App() {
     const userStores = await storeService.getStoresForUser(user.id);
     const target = userStores.find((s) => s.id === storeId);
     if (!target) {
-      addToast('Anda tidak memiliki izin mengakses toko ini.', 'error');
+      addToast(isEn ? 'You do not have permission to access this store.' : 'Anda tidak memiliki izin mengakses toko ini.', 'error');
       return;
     }
 
@@ -930,7 +1174,7 @@ export default function App() {
   // Handlers for Products
   const handleOpenAddProduct = () => {
     if (!activeStore || !activeStore.id) {
-      addToast('Silakan atur nama dan profil toko Anda di Pengaturan Toko terlebih dahulu.', 'info');
+      addToast(isEn ? 'Please set up your store name and profile in Store Settings first.' : 'Silakan atur nama dan profil toko Anda di Pengaturan Toko terlebih dahulu.', 'info');
       setActiveTab('pengaturan');
       return;
     }
@@ -966,24 +1210,24 @@ export default function App() {
       useCmsStore.getState().setProductsFromMerchant(next);
       return next;
     });
-    addToast(`Produk "${created.name}" berhasil disalin.`);
+    addToast(isEn ? `Product "${created.name}" duplicated successfully.` : `Produk "${created.name}" berhasil disalin.`);
   };
 
   const handleSyncProducts = async () => {
     if (!activeStore) return;
-    addToast('Menyinkronkan produk ke database Supabase Cloud...');
+    addToast(isEn ? 'Syncing products to the Supabase Cloud database...' : 'Menyinkronkan produk ke database Supabase Cloud...');
     const res = await productService.syncAllLocalToCloud(activeStore.id);
     if (res.success) {
-      addToast(`Berhasil! ${res.count} produk tersinkron ke database Supabase Cloud.`);
+      addToast(isEn ? `Done! ${res.count} products synced to the Supabase Cloud database.` : `Berhasil! ${res.count} produk tersinkron ke database Supabase Cloud.`);
       await loadData();
     } else {
-      addToast(`Gagal sinkron: ${res.error}`, 'error');
+      addToast(isEn ? `Sync failed: ${res.error}` : `Gagal sinkron: ${res.error}`, 'error');
     }
   };
 
   const handleSaveProduct = async (data: any) => {
     if (!activeStore || !activeStore.id) {
-      addToast('Toko belum dibuat. Silakan lengkapi profil toko di Pengaturan Toko terlebih dahulu.', 'error');
+      addToast(isEn ? 'Store not created yet. Please complete your store profile in Store Settings first.' : 'Toko belum dibuat. Silakan lengkapi profil toko di Pengaturan Toko terlebih dahulu.', 'error');
       setIsProductFormModalOpen(false);
       setActiveTab('pengaturan');
       return;
@@ -997,7 +1241,7 @@ export default function App() {
           useCmsStore.getState().setProductsFromMerchant(next);
           return next;
         });
-        addToast(`Produk "${updated.name}" berhasil diperbarui.`);
+        addToast(isEn ? `Product "${updated.name}" updated successfully.` : `Produk "${updated.name}" berhasil diperbarui.`);
       } else {
         const res = await productService.createProduct(activeStore.id, data);
         const created = res.product;
@@ -1007,15 +1251,19 @@ export default function App() {
           return next;
         });
         if (res.syncedToCloud) {
-          addToast(`Produk "${created.name}" berhasil disimpan & tersinkron ke cloud!`);
+          addToast(isEn ? `Product "${created.name}" saved & synced to the cloud!` : `Produk "${created.name}" berhasil disimpan & tersinkron ke cloud!`);
         } else {
-          addToast(`Produk "${created.name}" tersimpan di perangkat ini. Error cloud: ${res.cloudError || 'tidak diketahui'}`, 'info');
+          addToast(isEn
+            ? `Product "${created.name}" saved on this device. Cloud error: ${res.cloudError || 'unknown'}`
+            : `Produk "${created.name}" tersimpan di perangkat ini. Error cloud: ${res.cloudError || 'tidak diketahui'}`, 'info');
         }
       }
       setIsProductFormModalOpen(false);
       setProductToEdit(null);
     } catch (err: any) {
-      addToast(`Gagal menyimpan produk: ${err?.message || 'Terjadi kesalahan. Coba lagi.'}`, 'error');
+      addToast(isEn
+        ? `Failed to save product: ${err?.message || 'Something went wrong. Please try again.'}`
+        : `Gagal menyimpan produk: ${err?.message || 'Terjadi kesalahan. Coba lagi.'}`, 'error');
     } finally {
       setIsSavingProduct(false);
     }
@@ -1032,20 +1280,30 @@ export default function App() {
   const handleConfirmDeleteProduct = async () => {
     if (!productToDelete) return;
     setIsDeletingProduct(true);
+    const targetId = productToDelete.id;
+    const targetStoreId = productToDelete.storeId || currentStore.id;
+    const targetName = productToDelete.name;
+
+    // Update state secara optimistik dan instan di antarmuka
+    setProducts((prev) => {
+      const next = prev.filter((p) => p.id !== targetId);
+      useCmsStore.getState().setProductsFromMerchant(next);
+      return next;
+    });
+    if (selectedMerchantProduct?.id === targetId) {
+      setSelectedMerchantProduct(null);
+    }
+    setProductToDelete(null);
+
     try {
-      await productService.deleteProduct(productToDelete.id);
-      setProducts((prev) => {
-        const next = prev.filter((p) => p.id !== productToDelete.id);
-        useCmsStore.getState().setProductsFromMerchant(next);
-        return next;
-      });
-      if (selectedMerchantProduct?.id === productToDelete.id) {
-        setSelectedMerchantProduct(null);
-      }
-      addToast(`Produk "${productToDelete.name}" berhasil dihapus.`);
-      setProductToDelete(null);
+      await productService.deleteProduct(targetId, targetStoreId);
+      addToast(isEn ? `Product "${targetName}" deleted successfully.` : `Produk "${targetName}" berhasil dihapus.`);
     } catch (err: any) {
-      addToast(`Gagal menghapus produk: ${err.message}`, 'error');
+      addToast(isEn ? `Failed to delete product: ${err.message}` : `Gagal menghapus produk: ${err.message}`, 'error');
+      if (targetStoreId) {
+        const fresh = await productService.getProductsByStore(targetStoreId);
+        setProducts(fresh);
+      }
     } finally {
       setIsDeletingProduct(false);
     }
@@ -1061,20 +1319,19 @@ export default function App() {
       useCmsStore.getState().setProductsFromMerchant(next);
       return next;
     });
-    addToast(`Stok ${prod.name} diperbarui menjadi ${newStock}.`);
+    addToast(isEn ? `Stock for ${prod.name} updated to ${newStock}.` : `Stok ${prod.name} diperbarui menjadi ${newStock}.`);
   };
 
   // Handlers for Orders
   const handleOpenProcessShipping = (order: Order) => {
+    const blockReason = getShippingBlockReason(order);
+    if (blockReason) {
+      addToast(blockReason, 'error');
+      return;
+    }
     setSelectedOrderDetail(null);
     setOrderToShip(order);
     setIsShippingModalOpen(true);
-  };
-
-  const handleConfirmShipping = async (orderId: string, courier: CourierType, resi: string) => {
-    const updated = await orderService.processShipment(orderId, courier, resi);
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
-    addToast(`Pesanan #${updated.orderNumber} berhasil diproses dengan resi ${updated.resiNumber}.`);
   };
 
   const handlePrintReceipt = (order: Order) => {
@@ -1083,10 +1340,104 @@ export default function App() {
     setIsReceiptModalOpen(true);
   };
 
+  const replaceOrder = (updated: Order) => {
+    setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+    setSelectedOrderDetail((prev) => (prev && prev.id === updated.id ? updated : prev));
+  };
+
+  // COD: merchant menyetujui pesanan sebelum diatur pengirimannya (Baru -> Diproses).
+  const handleConfirmCodOrder = async (orderId: string) => {
+    try {
+      const updated = await orderService.updateOrderStatus(orderId, 'Diproses', undefined, currentStore?.id);
+      replaceOrder(updated);
+      addToast(isEn ? `COD order #${updated.orderNumber} confirmed. Please arrange shipping.` : `Pesanan COD #${updated.orderNumber} dikonfirmasi. Silakan atur pengiriman.`);
+    } catch (err: any) {
+      addToast(err?.message || (isEn ? 'Failed to confirm order.' : 'Gagal mengonfirmasi pesanan.'), 'error');
+    }
+  };
+
   const handleMarkCompleted = async (orderId: string) => {
-    const updated = await orderService.updateOrderStatus(orderId, 'Selesai');
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
-    addToast(`Pesanan #${updated.orderNumber} telah ditandai Selesai.`);
+    try {
+      let updated = await orderService.updateOrderStatus(orderId, 'Selesai', undefined, currentStore?.id);
+      // Uang COD diterima saat barang tiba, jadi pembayarannya otomatis lunas.
+      if (isCodMethod(updated.paymentMethod) && updated.paymentStatus !== 'Sudah Dibayar') {
+        updated = await orderService.updatePaymentStatus(orderId, 'Sudah Dibayar', currentStore?.id);
+      }
+      replaceOrder(updated);
+      addToast(isEn ? `Order #${updated.orderNumber} marked as Completed.` : `Pesanan #${updated.orderNumber} telah ditandai Selesai.`);
+    } catch (err: any) {
+      addToast(err?.message || (isEn ? 'Failed to mark order as completed.' : 'Gagal menandai pesanan selesai.'), 'error');
+    }
+  };
+
+  const handleVerifyPayment = async (orderId: string) => {
+    try {
+      const updated = await orderService.updatePaymentStatus(orderId, 'Sudah Dibayar', currentStore?.id);
+      replaceOrder(updated);
+      addToast(isEn ? `Payment for order #${updated.orderNumber} marked as paid.` : `Pembayaran pesanan #${updated.orderNumber} ditandai lunas.`);
+      const emailResult = await orderService.notifyOrderPaid(orderId);
+      if (emailResult === 'sent') {
+        addToast(isEn
+          ? 'Confirmation email with order number & tracking link sent to the customer.'
+          : 'Email konfirmasi berisi nomor pesanan & tautan lacak terkirim ke pembeli.');
+      } else if (emailResult === 'no_email') {
+        addToast(isEn
+          ? 'Customer has no email address, so no confirmation email was sent.'
+          : 'Pembeli tidak mencantumkan email, jadi email konfirmasi tidak dikirim.', 'info');
+      } else if (emailResult === 'mailer_not_configured' || emailResult === 'failed') {
+        addToast(isEn ? 'Confirmation email could not be sent.' : 'Email konfirmasi gagal dikirim.', 'error');
+      }
+    } catch (err: any) {
+      addToast(err?.message || (isEn ? 'Failed to mark payment as paid.' : 'Gagal menandai pembayaran lunas.'), 'error');
+    }
+  };
+
+  // Pembatalan oleh penjual: diputuskan server (POST /api/orders/cancel), bukan update langsung.
+  const handleCancelOrder = async (orderId: string, reason: string): Promise<boolean> => {
+    const target = orders.find((o) => o.id === orderId) || selectedOrderDetail;
+    const result = await orderService.cancelOrderAsMerchant(orderId, reason, currentStore?.id);
+    if (!result.success) {
+      const messages: Record<string, [string, string]> = {
+        shipped: ['Pesanan sudah dikirim, tidak bisa dibatalkan.', 'The order has already been shipped and cannot be cancelled.'],
+        insufficient_balance: [
+          'Dana pesanan ini sudah ditarik dari saldo toko. Hubungi admin LapakQ untuk membatalkannya.',
+          'The funds for this order were already withdrawn from your store balance. Contact LapakQ admin to cancel it.',
+        ],
+        already_cancelled: ['Pesanan ini sudah dibatalkan.', 'This order has already been cancelled.'],
+        rate_limited: ['Terlalu banyak percobaan. Coba lagi beberapa menit lagi.', 'Too many attempts. Please try again in a few minutes.'],
+        forbidden: ['Anda tidak berhak mengelola pesanan ini.', 'You are not allowed to manage this order.'],
+        network: ['Tidak dapat terhubung ke server. Periksa koneksi Anda.', 'Could not reach the server. Check your connection.'],
+      };
+      const pair = result.code ? messages[result.code] : undefined;
+      addToast(pair ? (isEn ? pair[1] : pair[0]) : (isEn ? 'Failed to cancel the order.' : 'Gagal membatalkan pesanan.'), 'error');
+      if (result.code === 'already_cancelled' && target) {
+        replaceOrder({ ...target, shippingStatus: 'Dibatalkan' });
+      }
+      return false;
+    }
+
+    if (target) {
+      replaceOrder({
+        ...target,
+        shippingStatus: 'Dibatalkan',
+        cancelledAt: new Date().toISOString(),
+        cancelReason: reason || undefined,
+        cancelledBy: 'merchant',
+      });
+    }
+    const number = target?.orderNumber ? `#${target.orderNumber} ` : '';
+    addToast(isEn ? `Order ${number}has been cancelled.` : `Pesanan ${number}telah dibatalkan.`);
+    if (result.wasPaid) {
+      addToast(
+        result.balanceReversed
+          ? (isEn
+            ? 'The order amount was deducted from your store balance. Please refund the buyer manually.'
+            : 'Nominal pesanan dikurangi dari saldo toko. Silakan kembalikan dana ke pembeli secara manual.')
+          : (isEn ? 'This order was paid. Please refund the buyer manually.' : 'Pesanan ini sudah dibayar. Silakan kembalikan dana ke pembeli secara manual.'),
+        'info'
+      );
+    }
+    return true;
   };
 
   // Handlers for Store Settings & Wallet
@@ -1098,6 +1449,12 @@ export default function App() {
 
   const handleCreateStoreFromSettings = async (data: Partial<Store>) => {
     if (!user) return;
+    if (stores && stores.length > 0 && stores[0].id) {
+      addToast(isEn
+        ? 'Your account already has a registered store. Each account may only have one store.'
+        : 'Akun Anda sudah memiliki toko terdaftar. Satu akun hanya diperbolehkan memiliki satu toko.', 'error');
+      return;
+    }
     try {
       const newStore = await storeService.createStore({
         merchantId: user.id,
@@ -1126,10 +1483,10 @@ export default function App() {
       setStores([newStore]);
       localStorage.setItem('microcms_auth_store', JSON.stringify(newStore));
       localStorage.setItem('microcms_active_store_id', newStore.id);
-      addToast(`🎉 Toko "${newStore.name}" berhasil dibuat!`);
+      addToast(isEn ? `🎉 Store "${newStore.name}" created successfully!` : `🎉 Toko "${newStore.name}" berhasil dibuat!`);
     } catch (err) {
       console.error('Error creating store:', err);
-      addToast('Gagal membuat toko. Silakan coba lagi.', 'error');
+      addToast(isEn ? 'Failed to create store. Please try again.' : 'Gagal membuat toko. Silakan coba lagi.', 'error');
     }
   };
 
@@ -1138,7 +1495,11 @@ export default function App() {
     const updated = await storeService.updateStore(activeStore.id, { layoutSettings }, user?.id);
     setActiveStore(updated);
     setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-    addToast('Tata letak halaman toko berhasil disimpan!');
+    addToast(
+      updated.isPublished
+        ? (isEn ? 'Store website updated! Visitors now see the latest layout.' : 'Website toko diperbarui! Pengunjung kini melihat tampilan terbaru.')
+        : (isEn ? 'Store page layout saved successfully!' : 'Tata letak halaman toko berhasil disimpan!')
+    );
   };
 
   const handlePublishStore = async (storeId?: string) => {
@@ -1146,17 +1507,18 @@ export default function App() {
     if (!targetId) return;
     // Validasi ownership: pastikan toko yang di-publish milik user yang sedang login
     if (storeId && activeStore?.id && storeId !== activeStore.id) {
-      addToast('Akses ditolak: Anda tidak dapat mempublikasikan toko milik merchant lain.', 'error');
+      addToast(isEn ? "Access denied: you cannot publish another merchant's store." : 'Akses ditolak: Anda tidak dapat mempublikasikan toko milik merchant lain.', 'error');
       return;
     }
+
     try {
       const updated = await storeService.setPublishedStatus(targetId, true, user?.id);
       setActiveStore(updated);
       setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-      addToast('🎉 Selamat! Toko online Anda resmi dipublikasikan dan live!');
+      addToast(isEn ? '🎉 Congratulations! Your online store is now published and live!' : '🎉 Selamat! Toko online Anda resmi dipublikasikan dan live!');
     } catch (err: any) {
       console.error('Error publishing store:', err);
-      addToast(err?.message || 'Gagal mempublikasikan toko.', 'error');
+      addToast(err?.message || (isEn ? 'Failed to publish store.' : 'Gagal mempublikasikan toko.'), 'error');
     }
   };
 
@@ -1165,17 +1527,17 @@ export default function App() {
     if (!targetId) return;
     // Validasi ownership: pastikan toko yang di-unpublish milik user yang sedang login
     if (storeId && activeStore?.id && storeId !== activeStore.id) {
-      addToast('Akses ditolak: Anda tidak dapat mengubah status toko milik merchant lain.', 'error');
+      addToast(isEn ? "Access denied: you cannot change the status of another merchant's store." : 'Akses ditolak: Anda tidak dapat mengubah status toko milik merchant lain.', 'error');
       return;
     }
     try {
       const updated = await storeService.setPublishedStatus(targetId, false, user?.id);
       setActiveStore(updated);
       setStores((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-      addToast('Toko online berhasil di-unpublish (kembali menjadi draf).', 'info');
+      addToast(isEn ? 'Online store unpublished (back to draft).' : 'Toko online berhasil di-unpublish (kembali menjadi draf).', 'info');
     } catch (err: any) {
       console.error('Error unpublishing store:', err);
-      addToast(err?.message || 'Gagal membatalkan publikasi toko.', 'error');
+      addToast(err?.message || (isEn ? 'Failed to unpublish store.' : 'Gagal membatalkan publikasi toko.'), 'error');
     }
   };
 
@@ -1184,13 +1546,13 @@ export default function App() {
     if (!activeStore) return;
     const amt = Number(withdrawAmount) || 0;
     if (amt <= 0 || amt > activeStore.balance) {
-      alert('Jumlah penarikan tidak valid atau melebihi saldo aktif.');
+      alert(isEn ? 'Invalid withdrawal amount or it exceeds the active balance.' : 'Jumlah penarikan tidak valid atau melebihi saldo aktif.');
       return;
     }
     const { newBalance } = await storeService.withdrawBalance(activeStore.id, amt);
     setActiveStore({ ...activeStore, balance: newBalance });
     setWithdrawModalOpen(false);
-    addToast(`Penarikan dana ${formatRupiah(amt)} berhasil diproses ke rekening!`);
+    addToast(isEn ? `Withdrawal of ${formatRupiah(amt)} processed to your account!` : `Penarikan dana ${formatRupiah(amt)} berhasil diproses ke rekening!`);
   };
 
   // Handlers for Cart & Public Storefront
@@ -1198,7 +1560,7 @@ export default function App() {
     if (!activeStore) return;
     const newItems = cartService.addToCart(activeStore.slug, product, quantity);
     setCartItems([...newItems]);
-    addToast(`${quantity}x ${product.name} dimasukkan ke keranjang!`);
+    addToast(isEn ? `${quantity}x ${product.name} added to cart!` : `${quantity}x ${product.name} dimasukkan ke keranjang!`);
   };
 
   const handleBuyNow = (product: Product, quantity = 1) => {
@@ -1218,13 +1580,13 @@ export default function App() {
     if (!activeStore) return;
     const newItems = cartService.removeFromCart(activeStore.slug, productId);
     setCartItems([...newItems]);
-    addToast('Item dihapus dari keranjang.');
+    addToast(isEn ? 'Item removed from cart.' : 'Item dihapus dari keranjang.');
   };
 
   const handleOrderSuccess = (newOrder: Order) => {
     setOrders((prev) => [newOrder, ...prev]);
     setCartItems([]);
-    addToast(`Pesanan #${newOrder.orderNumber} berhasil dibuat!`);
+    addToast(isEn ? `Order #${newOrder.orderNumber} created successfully!` : `Pesanan #${newOrder.orderNumber} berhasil dibuat!`);
   };
 
   // Handlers for Integrations
@@ -1254,7 +1616,7 @@ export default function App() {
     }
     setAuthView(null);
     setViewMode('merchant-desktop');
-    addToast('Mode Merchant MicroCMS Aktif!', 'info');
+    addToast(isEn ? 'MicroCMS Merchant Mode Active!' : 'Mode Merchant MicroCMS Aktif!', 'info');
   };
 
   const handleLaunchStorefrontDemo = async () => {
@@ -1272,7 +1634,7 @@ export default function App() {
     }
     setAuthView(null);
     setViewMode('storefront');
-    addToast('Mode Toko Online Pembeli (Storefront) Aktif!', 'info');
+    addToast(isEn ? 'Buyer Online Store (Storefront) Mode Active!' : 'Mode Toko Online Pembeli (Storefront) Aktif!', 'info');
   };
 
   // 0. AUTH LOADING SPLASH: Mencegah flicker LandingPage saat session sedang diverifikasi
@@ -1283,7 +1645,7 @@ export default function App() {
           <KroomifyLogo className="h-10 w-auto" />
           <div className="flex items-center gap-2.5 text-sm font-medium text-[#706866]">
             <Loader2 className="w-4 h-4 animate-spin text-[#66000E]" />
-            <span>Memverifikasi sesi toko...</span>
+            <span>{isEn ? 'Verifying store session...' : 'Memverifikasi sesi toko...'}</span>
           </div>
         </div>
       </div>
@@ -1293,7 +1655,8 @@ export default function App() {
   // LANDING PAGE VIEW (Hanya untuk user yang belum terotentikasi)
   if (viewMode === 'landing' && authView === null) {
     if (isAuthenticated && user) {
-      setViewMode(user.role === 'admin' ? 'admin' : 'merchant-desktop');
+      const isAnyAdmin = isAnyAdminRole(user.role);
+      setViewMode(isAnyAdmin ? 'admin' : 'merchant-desktop');
       return null;
     }
     return (
@@ -1303,11 +1666,17 @@ export default function App() {
             setAuthView('login');
           }}
           onNavigateRegister={() => {
+            setPendingStoreName('');
+            setAuthView('register');
+          }}
+          onRegisterWithStoreName={(storeName) => {
+            setPendingStoreName(storeName);
             setAuthView('register');
           }}
           onNavigateDashboard={() => {
             if (user) {
-              setViewMode(user.role === 'admin' ? 'admin' : 'merchant-desktop');
+              const isAnyAdmin = isAnyAdminRole(user.role);
+              setViewMode(isAnyAdmin ? 'admin' : 'merchant-desktop');
             } else {
               setAuthView('login');
             }
@@ -1326,12 +1695,13 @@ export default function App() {
     return (
       <>
         <RegisterPage
+          initialStoreName={pendingStoreName}
           onSuccess={(registeredEmail) => {
             if (registeredEmail) {
               setRegisteredEmailForLogin(registeredEmail);
             }
             setAuthView('login');
-            addToast('Akun berhasil didaftarkan! Silakan masuk dengan kata sandi Anda.', 'success');
+            addToast(isEn ? 'Account registered! Please log in with your password.' : 'Akun berhasil didaftarkan! Silakan masuk dengan kata sandi Anda.', 'success');
           }}
           onNavigateLogin={() => setAuthView('login')}
           onNavigateLanding={() => {
@@ -1351,14 +1721,26 @@ export default function App() {
           initialEmail={registeredEmailForLogin}
           onSuccess={() => {
             const currentUser = authService.getCurrentUser().user || user;
-            const targetMode = currentUser?.role === 'admin' ? 'admin' : 'merchant-desktop';
+            const isAnyAdmin = isAnyAdminRole(currentUser?.role);
+            const targetMode = isAnyAdmin ? 'admin' : 'merchant-desktop';
             setViewMode(targetMode);
             setAuthView(null);
             if (targetMode === 'admin') {
-              addToast('Selamat datang di Super Admin Panel!');
+              if (currentUser?.role === 'sub_admin_umum') {
+                addToast(currentUser?.communityName
+                  ? (isEn ? `Welcome to the ${currentUser.communityName} Community Page!` : `Selamat datang di Halaman Komunitas ${currentUser.communityName}!`)
+                  : (isEn ? 'Welcome, Community General Admin!' : 'Selamat datang Admin Umum Komunitas!'));
+              } else if (currentUser?.role === 'community_admin' || currentUser?.role === 'sub_admin_produk' || currentUser?.role === 'sub_admin') {
+                addToast(currentUser?.communityName
+                  ? (isEn ? `Welcome to the ${currentUser.communityName} Store & Product Portal!` : `Selamat datang di Portal Toko & Produk ${currentUser.communityName}!`)
+                  : (isEn ? 'Welcome, Community Product Admin!' : 'Selamat datang Admin Produk Komunitas!'));
+              } else {
+                addToast(isEn ? 'Welcome to the Super Admin Panel!' : 'Selamat datang di Super Admin Panel!');
+              }
             } else {
               loadData();
-              addToast('Berhasil masuk ke Dashboard Toko!');
+              addToast(isEn ? 'Signed in to the Store Dashboard!' : 'Berhasil masuk ke Dashboard Toko!');
+              // Merchant langsung diarahkan ke Dashboard tanpa popup onboarding modal
             }
           }}
           onNavigateRegister={() => setAuthView('register')}
@@ -1390,20 +1772,33 @@ export default function App() {
 
   // Render Public Storefront Content (Using New Dynamic Theme Engine)
   const renderStorefrontContent = () => {
-    const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
-    const isPublished = Boolean(currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published);
+    const isPreview = Boolean(
+      new URLSearchParams(window.location.search).get('preview') === 'true' ||
+      Boolean(new URLSearchParams(window.location.search).get('previewTheme'))
+    );
+    const isOwner = Boolean(user && activeStore && activeStore.id === currentStore?.id && !isAnyAdminRole(user.role));
+    const isPublished = Boolean(
+      isPreview || (currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published)
+    );
 
-    // Jika toko belum dipublikasikan atau toko belum ada dan bukan di mode preview
-    if ((!currentStore || !currentStore.id || !isPublished) && !isPreview) {
-      const isOwner = user && activeStore && activeStore.id === currentStore?.id;
-      const isAdmin = user && user.role === 'admin';
+    // Toko yang disuspend admin tertutup untuk publik; hanya pengguna yang login boleh melihat pratinjaunya.
+    const isBlockedBySuspension = Boolean(currentStore?.isSuspended) && !(isPreview && user);
+
+    // Jika toko belum dipublikasikan, disuspend, atau belum ada (dan BUKAN di mode pratinjau)
+    if (!currentStore || !currentStore.id || (!isPublished && !isPreview) || isBlockedBySuspension) {
+      const isAdmin = Boolean(user && isAnyAdminRole(user.role));
       return (
         <StoreNotFoundPage
           store={currentStore}
           slug={currentStore?.slug}
           isOwner={Boolean(isOwner)}
           isAdmin={Boolean(isAdmin)}
-          onGoToDashboard={() => setViewMode('merchant-desktop')}
+          onGoToDashboard={() => {
+            if (typeof window !== 'undefined') {
+              window.history.replaceState({}, '', window.location.pathname);
+            }
+            setViewMode('merchant-desktop');
+          }}
           onGoToAdmin={() => setViewMode('admin')}
           onPublishStore={() => currentStore?.id && handlePublishStore(currentStore.id)}
         />
@@ -1418,7 +1813,7 @@ export default function App() {
       <div className="min-h-screen bg-[#FAF7F7] flex flex-col items-center justify-center font-sans">
         <div className="flex flex-col items-center gap-3">
           <div className="w-9 h-9 border-3 border-[#66000E] border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-xs font-semibold text-[#706866] tracking-wide">Memuat...</span>
+          <span className="text-xs font-semibold text-[#706866] tracking-wide">{isEn ? 'Loading...' : 'Memuat...'}</span>
         </div>
       </div>
     );
@@ -1436,21 +1831,21 @@ export default function App() {
               <span className="truncate">
                 {currentStore?.name ? (
                   <>
-                    Pratinjau: <strong>{currentStore.name}</strong>
+                    {isEn ? 'Preview: ' : 'Pratinjau: '}<strong>{currentStore.name}</strong>
                     {!currentStore.isPublished && (
                       <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                        Belum Publish
+                        {isEn ? 'Not Published' : 'Belum Publish'}
                       </span>
                     )}
                   </>
                 ) : (
-                  <>Toko Tidak Ditemukan</>
+                  <>{isEn ? 'Store Not Found' : 'Toko Tidak Ditemukan'}</>
                 )}
               </span>
             </div>
 
-            {/* Viewport device switcher */}
-            <div className="flex items-center gap-1 bg-white/10 p-0.5 rounded-xl border border-white/15">
+            {/* Viewport device switcher: tidak berguna di HP (layarnya sudah selebar ponsel), jadi disembunyikan. */}
+            <div className="hidden sm:flex items-center gap-1 bg-white/10 p-0.5 rounded-xl border border-white/15">
               <button
                 type="button"
                 onClick={() => setStorefrontDeviceMode('desktop')}
@@ -1458,7 +1853,7 @@ export default function App() {
                     ? 'bg-[#FFD358] text-[#002A45] shadow-xs'
                     : 'text-white/80 hover:text-white'
                   }`}
-                title="Mode Desktop"
+                title={isEn ? 'Desktop Mode' : 'Mode Desktop'}
               >
                 <Monitor className="w-3.5 h-3.5" />
                 <span className="hidden md:inline">Desktop</span>
@@ -1470,7 +1865,7 @@ export default function App() {
                     ? 'bg-[#FFD358] text-[#002A45] shadow-xs'
                     : 'text-white/80 hover:text-white'
                   }`}
-                title="Mode Tablet"
+                title={isEn ? 'Tablet Mode' : 'Mode Tablet'}
               >
                 <Tablet className="w-3.5 h-3.5" />
                 <span className="hidden md:inline">Tablet</span>
@@ -1482,10 +1877,10 @@ export default function App() {
                     ? 'bg-[#FFD358] text-[#002A45] shadow-xs'
                     : 'text-white/80 hover:text-white'
                   }`}
-                title="Mode Ponsel"
+                title={isEn ? 'Phone Mode' : 'Mode Ponsel'}
               >
                 <Smartphone className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Ponsel</span>
+                <span className="hidden md:inline">{isEn ? 'Phone' : 'Ponsel'}</span>
               </button>
             </div>
 
@@ -1493,15 +1888,15 @@ export default function App() {
               <button
                 onClick={() => setViewMode('storefront-live')}
                 className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer text-xs transition"
-                title="Buka toko penuh tanpa frame simulator"
+                title={isEn ? 'Open the full store without the simulator frame' : 'Buka toko penuh tanpa frame simulator'}
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Layar Penuh</span>
+                <span className="hidden sm:inline">{isEn ? 'Full Screen' : 'Layar Penuh'}</span>
               </button>
 
               <button
                 onClick={() => {
-                  if (user?.role === 'admin') {
+                  if (isAnyAdminRole(user?.role)) {
                     setViewMode('admin');
                   } else {
                     setViewMode('merchant-desktop');
@@ -1510,7 +1905,7 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg bg-[#FFD358] hover:bg-[#FFB915] text-[#002A45] font-extrabold flex items-center gap-1 shadow-xs cursor-pointer text-xs"
               >
                 <Monitor className="w-3.5 h-3.5" />
-                <span>{user?.role === 'admin' ? 'Ke Admin' : 'Kembali'}</span>
+                <span>{isAnyAdminRole(user?.role) ? (isEn ? 'To Admin' : 'Ke Admin') : (isEn ? 'Back' : 'Kembali')}</span>
               </button>
             </div>
           </div>
@@ -1522,13 +1917,9 @@ export default function App() {
                 : 'p-3 sm:p-6 bg-[#0D1520]'
               }`}
           >
-            <div
-              className={`w-full transition-all duration-300 mx-auto ${storefrontDeviceMode === 'desktop'
-                  ? 'w-full max-w-none'
-                  : storefrontDeviceMode === 'tablet'
-                    ? 'max-w-[768px]'
-                    : 'max-w-[390px]'
-                }`}
+            <ScaledDeviceFrame
+              designWidth={DEVICE_DESIGN_WIDTH[storefrontDeviceMode]}
+              fillWhenWider={storefrontDeviceMode === 'desktop'}
             >
               <div
                 className={`bg-white transition-all overflow-hidden flex flex-col ${storefrontDeviceMode === 'mobile'
@@ -1566,23 +1957,43 @@ export default function App() {
                   </div>
                 )}
               </div>
-            </div>
+            </ScaledDeviceFrame>
           </div>
         </div>
       )}
 
       {/* 2. PURE STANDALONE STOREFRONT (100% FULL SCREEN - NO PREVIEW / NO FRAMES) */}
       {viewMode === 'storefront-live' && (() => {
-        const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
-        const isPublished = Boolean(currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published);
+        const isPreview = 
+          new URLSearchParams(window.location.search).get('preview') === 'true' ||
+          Boolean(new URLSearchParams(window.location.search).get('previewTheme'));
+        const isPublished = Boolean(isPreview || (currentStore?.isPublished !== undefined ? currentStore.isPublished : (currentStore as any)?.is_published));
 
         // Jika store belum terbaca dan masih dalam status loading
         if (!currentStore?.id && isStoreLoading && !storeNotFound) {
+          if (isPreview) {
+            try {
+              const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
+              if (draftStr) {
+                const draft = JSON.parse(draftStr);
+                const draftHydrated = {
+                  ...draft,
+                  id: draft.id || 'preview-store-id',
+                  isPublished: true,
+                };
+                return (
+                  <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative flex flex-col">
+                    <ThemeRenderer store={draftHydrated} products={products.length > 0 ? products : draftHydrated.products || []} />
+                  </div>
+                );
+              }
+            } catch (e) {}
+          }
           return (
             <div className="flex items-center justify-center min-h-screen bg-white">
               <div className="flex flex-col items-center gap-3 text-gray-400">
                 <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm font-medium">Memuat toko...</span>
+                <span className="text-sm font-medium">{isEn ? 'Loading store...' : 'Memuat toko...'}</span>
               </div>
             </div>
           );
@@ -1590,6 +2001,24 @@ export default function App() {
 
         // Jika store tidak ditemukan atau gagal dimuat (mencegah loading terus menerus)
         if (!currentStore?.id || storeNotFound) {
+          if (isPreview) {
+            try {
+              const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
+              if (draftStr) {
+                const draft = JSON.parse(draftStr);
+                const draftHydrated = {
+                  ...draft,
+                  id: draft.id || 'preview-store-id',
+                  isPublished: true,
+                };
+                return (
+                  <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative flex flex-col">
+                    <ThemeRenderer store={draftHydrated} products={products.length > 0 ? products : draftHydrated.products || []} />
+                  </div>
+                );
+              }
+            } catch (e) {}
+          }
           const hostSlug = getStoreSlugFromHost(window.location.hostname);
           const currentUrlSlug = new URLSearchParams(window.location.search).get('toko') || hostSlug || 'toko';
           return (
@@ -1599,10 +2028,14 @@ export default function App() {
               isOwner={false}
               isAdmin={false}
               onGoToDashboard={() => {
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState({}, '', window.location.pathname);
+                }
                 if (isPlatformHost(window.location.hostname)) {
-                  setViewMode(user ? (user.role === 'admin' ? 'admin' : 'merchant-desktop') : 'landing');
+                  const isAnyAdmin = user && isAnyAdminRole(user.role);
+                  setViewMode(user ? (isAnyAdmin ? 'admin' : 'merchant-desktop') : 'landing');
                 } else {
-                  window.location.href = 'https://kroomify.kroombox.com';
+                  window.location.href = 'https://lapakq.com';
                 }
               }}
               onGoToAdmin={() => setViewMode('admin')}
@@ -1611,17 +2044,25 @@ export default function App() {
           );
         }
 
-        // Jika toko belum dipublikasikan atau sedang di-unpublish dan pengunjung bukan di mode preview
-        if (!isPublished && !isPreview) {
+        // Toko yang disuspend admin tertutup untuk publik; hanya pengguna yang login boleh melihat pratinjaunya.
+        const isBlockedBySuspension = Boolean(currentStore.isSuspended) && !(isPreview && user);
+
+        // Jika toko belum dipublikasikan, sedang di-unpublish, atau disuspend dan pengunjung bukan di mode preview
+        if ((!isPublished && !isPreview) || isBlockedBySuspension) {
           const isOwner = user && activeStore && activeStore.id === currentStore.id;
-          const isAdmin = user && user.role === 'admin';
+          const isAdmin = user && isAnyAdminRole(user.role);
           return (
             <StoreNotFoundPage
               store={currentStore}
               slug={currentStore.slug}
               isOwner={Boolean(isOwner)}
               isAdmin={Boolean(isAdmin)}
-              onGoToDashboard={() => setViewMode('merchant-desktop')}
+              onGoToDashboard={() => {
+            if (typeof window !== 'undefined') {
+              window.history.replaceState({}, '', window.location.pathname);
+            }
+            setViewMode('merchant-desktop');
+          }}
               onGoToAdmin={() => setViewMode('admin')}
               onPublishStore={() => handlePublishStore(currentStore.id)}
             />
@@ -1629,18 +2070,18 @@ export default function App() {
         }
 
         return (
-          <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative">
+          <div className="min-h-screen w-full bg-white text-[#241A1A] font-sans relative flex flex-col">
             {/* Owner Draft / Preview Banner in Preview Mode */}
             {isPreview && (
               <div className="bg-amber-500 text-white text-xs font-semibold px-4 py-2 text-center flex items-center justify-between sm:justify-center gap-3 sticky top-0 z-50 shadow-xs">
-                <span>⚠️ Mode Pratinjau: Menampilkan tampilan toko dan tata letak yang sedang diedit.</span>
+                <span>{isEn ? '⚠️ Preview Mode: showing the store design and layout being edited.' : '⚠️ Mode Pratinjau: Menampilkan tampilan toko dan tata letak yang sedang diedit.'}</span>
                 <div className="flex items-center gap-2">
                   {!isPublished && user && (
                     <button
                       onClick={() => handlePublishStore(currentStore.id)}
                       className="px-2.5 py-1 bg-white text-amber-900 rounded-lg text-[11px] font-bold hover:bg-amber-50 cursor-pointer transition shadow-2xs"
                     >
-                      Publikasikan Sekarang
+                      {isEn ? 'Publish Now' : 'Publikasikan Sekarang'}
                     </button>
                   )}
                   <button
@@ -1648,35 +2089,43 @@ export default function App() {
                       if (window.opener) {
                         window.close();
                       } else {
+                        if (typeof window !== 'undefined') {
+                          window.history.replaceState({}, '', window.location.pathname);
+                        }
                         setViewMode('merchant-desktop');
                         setActiveTab('layout');
                       }
                     }}
                     className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-semibold cursor-pointer transition border border-amber-400/40 shadow-2xs"
                   >
-                    Kembali ke Editor
+                    {isEn ? 'Back to Editor' : 'Kembali ke Editor'}
                   </button>
                 </div>
               </div>
             )}
-            {/* Subtle Floating Switcher back to Dashboard */}
-            {new URLSearchParams(window.location.search).get('preview') !== 'true' && (
-              <div className="fixed bottom-4 left-4 z-50">
-                <button
-                  onClick={() => {
-                    if (user?.role === 'admin') {
-                      setViewMode('admin');
-                    } else {
-                      setViewMode('merchant-desktop');
-                    }
-                  }}
-                  className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
-                  title={user?.role === 'admin' ? 'Kembali ke Admin Panel' : 'Kembali ke Dashboard Merchant'}
-                >
-                  <Monitor className="w-3.5 h-3.5" />
-                  <span>{user?.role === 'admin' ? 'Admin Panel' : 'Dashboard'}</span>
-                </button>
-              </div>
+            {/* Subtle Floating Switcher back to Dashboard (TIDAK DITAMPILKAN jika toko sudah di-deploy atau diakses oleh pembeli) */}
+            {(!isPlatformHost(window.location.hostname) || Boolean(getStoreSlugFromHost(window.location.hostname))) ? null : (
+              Boolean(user && (isAnyAdminRole(user.role) || (activeStore && activeStore.id === currentStore.id))) &&
+              new URLSearchParams(window.location.search).get('preview') !== 'true' && (
+                <div className="fixed bottom-4 left-4 z-50">
+                  <button
+                    onClick={() => {
+                      if (isAnyAdminRole(user?.role)) {
+                        setViewMode('admin');
+                      } else {
+                        setViewMode('merchant-desktop');
+                      }
+                    }}
+                    className="px-3 py-2 rounded-xl bg-[#241A1A]/80 hover:bg-[#241A1A] backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-white/10 opacity-40 hover:opacity-100"
+                    title={isAnyAdminRole(user?.role)
+                      ? (isEn ? 'Back to Admin Panel' : 'Kembali ke Admin Panel')
+                      : (isEn ? 'Back to Merchant Dashboard' : 'Kembali ke Dashboard Merchant')}
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    <span>{isAnyAdminRole(user?.role) ? 'Admin Panel' : 'Dashboard'}</span>
+                  </button>
+                </div>
+              )
             )}
             {renderStorefrontContent()}
           </div>
@@ -1686,16 +2135,16 @@ export default function App() {
       {/* 3. PUBLIC STOREFRONT PHONE SIMULATOR */}
       {viewMode === 'storefront-phone' && (
         <DeviceSimulatorFrame
-          title={`Toko Online ${currentStore.name}`}
+          title={isEn ? `${currentStore.name} Online Store` : `Toko Online ${currentStore.name}`}
           urlPath={`microcms.id/${currentStore.slug}`}
-          onClose={() => setViewMode(user?.role === 'admin' ? 'admin' : 'merchant-desktop')}
+          onClose={() => setViewMode(isAnyAdminRole(user?.role) ? 'admin' : 'merchant-desktop')}
         >
           {renderStorefrontContent()}
         </DeviceSimulatorFrame>
       )}
 
       {/* 4. SUPER ADMIN DASHBOARD VIEW */}
-      {viewMode === 'admin' && Boolean(user && user.role === 'admin') && (
+      {viewMode === 'admin' && Boolean(user && isAnyAdminRole(user.role)) && (
         <AdminDashboardPage
           currentUser={user}
           onOpenStorefront={async (slug) => {
@@ -1730,7 +2179,9 @@ export default function App() {
             activeTab={activeTab}
             pendingOrdersCount={pendingOrdersCount}
             activeStore={currentStore}
-            userName={user?.name || 'Pemilik Toko'}
+            showCommunityMenu={showCommunityMenu}
+            liveStoreUrl={liveStoreUrl}
+            userName={user?.name || (isEn ? 'Store Owner' : 'Pemilik Toko')}
             isCollapsed={isSidebarCollapsed}
             isOpenMobile={mobileSidebarOpen}
             onCloseMobile={() => setMobileSidebarOpen(false)}
@@ -1761,26 +2212,64 @@ export default function App() {
               onCreateNewStore={() => setAuthView('register')}
               onLogout={handleLogout}
               onNavigateAuth={() => setAuthView('login')}
+              onShowToast={addToast}
+              onNotificationNavigate={(link, storeId) => {
+                const tabs: MerchantTab[] = ['beranda', 'produk', 'pesanan', 'layout', 'domain', 'pembayaran', 'pengiriman', 'pengaturan', 'profil', 'integrasi', 'pesan', 'voucher', 'tiket', 'komunitas'];
+                if (!tabs.includes(link as MerchantTab)) return;
+                if (storeId && storeId !== currentStore.id) handleSelectStore(storeId);
+                setActiveTab(link as MerchantTab);
+                if (link !== 'produk') { setIsProductFormModalOpen(false); setProductToEdit(null); }
+              }}
             />
+
+            {/* Tanda toko ditangguhkan (suspend oleh Sub-Admin Utama / admin platform) */}
+            {currentStore?.isSuspended && (
+              <div
+                role="alert"
+                className="shrink-0 flex items-start gap-2.5 px-3 sm:px-5 py-2.5 bg-red-50 border-b border-red-200 text-red-800 font-poppins"
+              >
+                <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0 text-red-600" />
+                <div className="flex-1 min-w-0 text-xs leading-relaxed">
+                  <p className="font-semibold">
+                    {isEn ? 'This store is suspended' : 'Toko ini sedang ditangguhkan'}
+                  </p>
+                  <p>
+                    {isEn
+                      ? 'Buyers cannot open your store or place orders until it is reactivated by your community manager or the platform admin.'
+                      : 'Pembeli tidak bisa membuka toko atau memesan sampai toko diaktifkan kembali oleh pengelola komunitas atau admin platform.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('tiket')}
+                  className="shrink-0 text-xs font-semibold text-red-700 underline underline-offset-2 hover:text-red-900 cursor-pointer"
+                >
+                  {isEn ? 'Contact support' : 'Hubungi bantuan'}
+                </button>
+              </div>
+            )}
 
             {/* Main Content Area */}
             <main
               className={`flex-1 ${activeTab === 'layout'
                   ? 'w-full h-full p-0 m-0 overflow-hidden'
-                  : 'p-3.5 sm:p-6 lg:p-8 pb-24 lg:pb-8 max-w-7xl w-full mx-auto space-y-5 sm:space-y-6 overflow-y-auto custom-scrollbar'
+                  : 'flex flex-col *:shrink-0 p-3 sm:p-5 lg:p-6 pb-16 lg:pb-6 max-w-6xl w-full mx-auto space-y-3.5 sm:space-y-4 overflow-y-auto custom-scrollbar'
                 }`}
             >
               {/* TAB 1: BERANDA / DASHBOARD */}
               {activeTab === 'beranda' && (
                 <DashboardPage
+                  currentUser={user}
+                  onShowNotification={addToast}
                   store={currentStore}
+                  isStoreLoading={isStoreLoading}
                   orders={orders}
                   products={products}
                   onNavigateTab={setActiveTab}
                   onOpenAddProduct={handleOpenAddProduct}
                   onOpenStorefront={() => setViewMode('storefront')}
                   onOpenShareStore={() => setIsShareModalOpen(true)}
-                  onOpenWithdraw={() => setWithdrawModalOpen(true)}
+                  onOpenWithdraw={WALLET_ENABLED ? () => setWithdrawModalOpen(true) : undefined}
                   onSelectOrder={(ord) => setSelectedOrderDetail(ord)}
                   onCreateStore={user && !activeStore?.id ? () => setActiveTab('pengaturan') : undefined}
                   onPublishStore={() => handlePublishStore(currentStore.id)}
@@ -1823,6 +2312,7 @@ export default function App() {
                   onProcessShipping={handleOpenProcessShipping}
                   onPrintReceipt={handlePrintReceipt}
                   onMarkCompleted={handleMarkCompleted}
+                  onConfirmCodOrder={handleConfirmCodOrder}
                   onSelectOrder={(ord) => setSelectedOrderDetail(ord)}
                   onShowNotification={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
@@ -1851,6 +2341,7 @@ export default function App() {
               {activeTab === 'domain' && (
                 <DomainPage
                   store={currentStore}
+                  onUpdateStore={handleUpdateStore}
                   onNavigateBilling={() => setActiveTab('billing')}
                   onNavigateDashboard={() => setActiveTab('beranda')}
                 />
@@ -1860,6 +2351,7 @@ export default function App() {
               {activeTab === 'pembayaran' && (
                 <PaymentListPage
                   store={currentStore}
+                  onUpdateStore={handleUpdateStore}
                   onNavigateBilling={() => setActiveTab('billing')}
                   onShowNotification={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
@@ -1883,6 +2375,7 @@ export default function App() {
               {activeTab === 'integrasi' && (
                 <PaymentListPage
                   store={currentStore}
+                  onUpdateStore={handleUpdateStore}
                   onNavigateBilling={() => setActiveTab('billing')}
                   onShowNotification={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
@@ -1899,6 +2392,41 @@ export default function App() {
                 />
               )}
 
+              {/* TAB: TIKET BANTUAN */}
+              {activeTab === 'komunitas' && showCommunityMenu && (
+                <KomunitasPage
+                  onShowToast={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
+                />
+              )}
+
+              {activeTab === 'voucher' && (
+                <VoucherPage
+                  storeId={currentStore?.id}
+                  onShowToast={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
+                />
+              )}
+
+              {activeTab === 'pesan' && (
+                <MessagesPage
+                  storeId={currentStore?.id}
+                  storeName={currentStore?.name}
+                  onShowToast={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
+                />
+              )}
+
+              {activeTab === 'tiket' && (
+                <TicketRequesterPanel
+                  user={user}
+                  store={currentStore?.id ? { id: currentStore.id, name: currentStore.name } : null}
+                  requesterRole="merchant"
+                  onShowToast={addToast}
+                  onNavigateDashboard={() => setActiveTab('beranda')}
+                />
+              )}
+
               {/* TAB 8: PENGATURAN / PROFIL TOKO */}
               {activeTab === 'pengaturan' && (
                 <SettingsPage
@@ -1906,19 +2434,24 @@ export default function App() {
                   onUpdateStore={handleUpdateStore}
                   onCreateStore={user && !activeStore?.id ? handleCreateStoreFromSettings : undefined}
                   onPublishStore={() => handlePublishStore(currentStore.id)}
-                  onOpenWithdraw={() => setWithdrawModalOpen(true)}
+                  onOpenWithdraw={WALLET_ENABLED ? () => setWithdrawModalOpen(true) : undefined}
                   onOpenShareModal={() => setIsShareModalOpen(true)}
                   onNavigateBilling={() => setActiveTab('billing')}
                   onShowNotification={addToast}
                   onNavigateDashboard={() => setActiveTab('beranda')}
                 />
               )}
+
+              {/* Footer dasbor (tidak di editor layout yang memenuhi layar) */}
+              {activeTab !== 'layout' && <DashboardFooter panelLabel={isEn ? 'Merchant Panel' : 'Panel Merchant'} />}
             </main>
 
             {/* Mobile Bottom Navigation */}
             <BottomNav
               activeTab={activeTab}
               pendingOrdersCount={pendingOrdersCount}
+              showCommunityMenu={showCommunityMenu}
+              liveStoreUrl={liveStoreUrl}
               onTabChange={(tab) => {
                 setActiveTab(tab);
                 if (tab !== 'produk') { setIsProductFormModalOpen(false); setProductToEdit(null); }
@@ -1940,7 +2473,7 @@ export default function App() {
       {/* 2. Custom Alert Dialog: Confirm Delete Product */}
       <ConfirmDeleteModal
         isOpen={Boolean(productToDelete)}
-        title="Hapus Produk?"
+        title={isEn ? 'Delete Product?' : 'Hapus Produk?'}
         itemName={productToDelete?.name}
         isDeleting={isDeletingProduct}
         onConfirm={handleConfirmDeleteProduct}
@@ -1959,19 +2492,25 @@ export default function App() {
           const updated = await productService.updateProduct(id, { status: newStatus });
           setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
           setSelectedMerchantProduct(updated);
-          addToast(`Status produk diubah menjadi "${newStatus}".`);
+          const statusLabelEn: Record<string, string> = { Tersedia: 'Available', 'Hampir Habis': 'Low Stock', Habis: 'Out of Stock', Nonaktif: 'Inactive' };
+          addToast(isEn
+            ? `Product status changed to "${statusLabelEn[newStatus] || newStatus}".`
+            : `Status produk diubah menjadi "${newStatus}".`);
         }}
       />
 
       {/* 4. Order Detail Modal with Stepper & Info (Base Modal z-50) */}
       <OrderDetailModal
-        order={selectedOrderDetail}
+        order={liveSelectedOrder}
         store={currentStore}
         isOpen={Boolean(selectedOrderDetail)}
         onClose={() => setSelectedOrderDetail(null)}
         onProcessShipping={handleOpenProcessShipping}
         onPrintReceipt={handlePrintReceipt}
         onMarkCompleted={handleMarkCompleted}
+        onConfirmCodOrder={handleConfirmCodOrder}
+        onVerifyPayment={handleVerifyPayment}
+        onCancelOrder={handleCancelOrder}
         onShowNotification={addToast}
       />
 
@@ -2024,14 +2563,14 @@ export default function App() {
           setIsChatbotOpen(false);
         }}
         onOpenAddProduct={handleOpenAddProduct}
-        onOpenWithdraw={() => setWithdrawModalOpen(true)}
+        onOpenWithdraw={WALLET_ENABLED ? () => setWithdrawModalOpen(true) : undefined}
         onOpenShareStore={() => setIsShareModalOpen(true)}
         onOpenStorefront={() => setViewMode('storefront')}
       />
 
       {/* 9. Merchant Wallet & Payout Modal */}
       <MerchantWalletModal
-        isOpen={withdrawModalOpen}
+        isOpen={WALLET_ENABLED && withdrawModalOpen}
         onClose={() => setWithdrawModalOpen(false)}
         store={currentStore}
         onBalanceUpdated={() => loadData(currentStore.id)}
@@ -2044,33 +2583,10 @@ export default function App() {
         store={currentStore}
         onPlanUpgraded={async (newPlan) => {
           await loadData(currentStore.id);
-          addToast(`Toko berhasil di-upgrade ke Paket ${newPlan.toUpperCase()}!`);
+          addToast(isEn ? `Store upgraded to the ${newPlan.toUpperCase()} plan!` : `Toko berhasil di-upgrade ke Paket ${newPlan.toUpperCase()}!`);
         }}
       />
 
-      {/* 11. Store Name Onboarding Modal (for new Google users or stores with placeholder names) */}
-      <StoreNameSetupModal
-        isOpen={isOnboardingModalOpen && !isAuthLoading && !!currentStore?.id}
-        currentStore={currentStore}
-        onSave={async (name, slug) => {
-          try {
-            const updated = await storeService.updateStore(currentStore.id, {
-              name,
-              slug,
-              onboarding: {
-                ...currentStore.onboarding,
-                storeNameSet: true,
-              },
-            }, user?.id);
-            setActiveStore(updated);
-            setIsOnboardingModalOpen(false);
-            addToast(`🎉 Nama toko "${updated.name}" berhasil disimpan!`);
-          } catch (err: any) {
-            addToast('Gagal menyimpan nama toko: ' + (err?.message || err), 'error');
-          }
-        }}
-        onCancel={() => setIsOnboardingModalOpen(false)}
-      />
 
       {/* Global Toast Notification Container */}
       <Toast toasts={toasts} onDismiss={removeToast} />

@@ -23,9 +23,9 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
   const totalLowStock = count !== undefined ? count : lowStockItems.length;
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E5E0DD] p-4 sm:p-5 shadow-2xs font-sans text-left transition-all hover:border-[#66000E]/20">
+    <div className="h-full flex flex-col bg-white rounded-2xl border border-[#E5E0DD] p-4 sm:p-5 lg:p-6 shadow-2xs font-sans text-left transition-all hover:border-[#66000E]/20">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#E5E0DD]">
+      <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-[#E5E0DD]">
         <div className="flex items-center gap-2.5">
           <div
             className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
@@ -57,9 +57,9 @@ export const StockAlertCard: React.FC<StockAlertCardProps> = ({
       </div>
 
       {/* Stock List / Empty State */}
-      <div className="divide-y divide-[#E5E0DD]/70 my-1 min-h-[140px] flex flex-col justify-center">
+      <div className="flex-1 divide-y divide-[#E5E0DD]/70 my-1 min-h-[140px] flex flex-col">
         {totalLowStock === 0 || lowStockItems.length === 0 ? (
-          <div className="py-6 text-center text-xs text-[#706866] flex flex-col items-center justify-center">
+          <div className="flex-1 py-6 text-center text-xs text-[#706866] flex flex-col items-center justify-center">
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-2 text-emerald-600">
               <PackageX className="w-5 h-5" />
             </div>

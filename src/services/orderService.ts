@@ -1,6 +1,42 @@
 import { Order, ShippingStatus, CourierType, PaymentStatus, OrderItem } from '../types';
-import { supabase } from './supabaseClient';
-import { idService } from './idService';
+import { supabase, getSessionToken, sessionHeaders } from './supabaseClient';
+import { mediaService } from './mediaService';
+
+/** Data pesanan yang boleh dilihat pembeli lewat halaman Lacak Pesanan (tanpa alamat / kontak). */
+export interface TrackedOrder {
+  orderNumber: string;
+  createdAt: string;
+  updatedAt?: string;
+  paymentMethod: string;
+  isPaid: boolean;
+  paymentConfirmedAt?: string;
+  paidAt?: string;
+  orderStatus: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  shippedAt?: string;
+  cancelledAt?: string;
+  cancelReason?: string;
+  cancelledBy?: 'buyer' | 'merchant' | 'system';
+  courier: string;
+  courierService?: string;
+  trackingNumber?: string;
+  shippingCity?: string;
+  shippingCost: number;
+  totalAmount: number;
+  items: Array<{ name: string; image?: string; variant?: string; price: number; quantity: number; subtotal: number }>;
+}
+
+export type TrackOrderResult =
+  | { status: 'found'; order: TrackedOrder }
+  | { status: 'not_found' | 'locked' | 'invalid' };
+
+/** Hasil pembatalan pesanan lewat server. `code` dipakai frontend untuk memilih pesan dua bahasa. */
+export interface CancelOrderResult {
+  success: boolean;
+  code?: string;
+  message?: string;
+  wasPaid?: boolean;
+  balanceReversed?: boolean;
+}
 
 // ============================================================
 // MERCHANT DATA ISOLATION: localStorage dipartisi per storeId
@@ -75,10 +111,14 @@ function mapSupabaseRowToOrder(row: any): Order {
     items,
     subtotal,
     shippingCost: Number(row.shipping_cost || 0),
-    discount: 0,
+    discount: Number(row.discount_amount || 0),
+    voucherCode: row.voucher_code || undefined,
     grandTotal: Number(row.total_amount || subtotal),
     paymentMethod: row.payment_method || 'Manual',
     paymentStatus,
+    paymentConfirmedAt: row.payment_confirmed_at || undefined,
+    paymentProofUrl: row.payment_proof_url || undefined,
+    paidAt: row.paid_at || undefined,
     courier: (row.shipping_courier as CourierType) || 'J&T',
     courierCode: row.courier_code || undefined,
     courierService: row.shipping_service || row.courier_service || undefined,
@@ -87,6 +127,14 @@ function mapSupabaseRowToOrder(row: any): Order {
     shippingStatus,
     createdAt: row.created_at || new Date().toISOString(),
     shippedAt: row.shipped_at || undefined,
+    cancelledAt: row.cancelled_at || undefined,
+    cancelReason: row.cancel_reason || undefined,
+    cancelledBy:
+      row.cancelled_by === 'buyer' || row.cancelled_by === 'merchant' || row.cancelled_by === 'system'
+        ? row.cancelled_by
+        : undefined,
+    pickupTime: row.pickup_time || undefined,
+    updatedAt: row.updated_at || undefined,
     notes: row.notes || undefined,
     shippingLabelUrl: row.shipping_label_url || undefined,
     shippingMethod: row.shipping_method || undefined,
@@ -142,6 +190,10 @@ class OrderService {
 
     let storeOrders = this.getStoredOrders(storeId);
 
+    // Pesanan hanya bisa dibaca pengelola toko yang login (RLS). Pengunjung tanpa sesi
+    // memakai salinan lokal agar cache-nya tidak terhapus oleh hasil kosong.
+    if (!getSessionToken()) return storeOrders;
+
     // Fetch from Supabase PostgreSQL Database (filter by store_id)
     try {
       const { data, error } = await supabase
@@ -183,93 +235,87 @@ class OrderService {
     return orders.find((o) => o.id === id);
   }
 
+  /**
+   * Buat pesanan lewat server (`POST /api/orders/place` → `place_order`): harga, total, nomor
+   * pesanan, dan status (selalu belum dibayar) ditentukan database; ongkir hanya diterima dari
+   * tarif bertanda tangan server (`shippingQuote`), jadi tidak bisa diubah dari browser.
+   * Status lunas & saldo toko hanya diubah server setelah gateway pembayaran mengonfirmasi.
+   */
   async createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt'>): Promise<Order> {
-    const orders = this.getStoredOrders(orderData.storeId);
-    const orderNumber = `KB-${Math.floor(1000 + Math.random() * 9000)}`;
-    const orderId = await idService.generateNextId('orders');
-    const newOrder: Order = {
-      ...orderData,
-      id: orderId,
-      orderNumber,
-      createdAt: new Date().toISOString(),
-    };
-
-    // 1. Save locally for instantaneous response (partisi per storeId)
-    orders.unshift(newOrder);
-    this.saveOrders(orderData.storeId, orders);
-
-    // 2. Persist to Supabase Database
+    if (!orderData.shippingQuote) {
+      throw new Error('Tarif ongkir belum dikonfirmasi server. Silakan pilih ulang kurir pengiriman.');
+    }
+    let res: Response;
     try {
-      const dbPaymentStatus = newOrder.paymentStatus === 'Sudah Dibayar' ? 'paid' : 'unpaid';
-      let dbOrderStatus = 'pending';
-      if (newOrder.shippingStatus === 'Dikirim') dbOrderStatus = 'shipped';
-      else if (newOrder.shippingStatus === 'Selesai') dbOrderStatus = 'delivered';
-      else if (newOrder.shippingStatus === 'Dibatalkan') dbOrderStatus = 'cancelled';
-      else if (newOrder.shippingStatus === 'Diproses') dbOrderStatus = 'processing';
-
-      const { error: orderErr } = await supabase.from('orders').insert([
-        {
-          id: newOrder.id,
-          store_id: newOrder.storeId,
-          order_number: newOrder.orderNumber,
-          customer_name: newOrder.customerName,
-          customer_phone: newOrder.customerPhone,
-          customer_email: newOrder.customerEmail || null,
-          shipping_address: newOrder.customerAddress,
-          shipping_city: newOrder.customerCity || 'Indonesia',
-          shipping_courier: newOrder.courier || 'Kurir Toko',
-          shipping_service: newOrder.courierService || 'Reguler',
-          shipping_cost: newOrder.shippingCost || 0,
-          tracking_number: newOrder.resiNumber || newOrder.trackingNumber || null,
-          total_amount: newOrder.grandTotal,
-          payment_method: newOrder.paymentMethod || 'Manual',
-          payment_status: dbPaymentStatus,
-          order_status: dbOrderStatus,
-          notes: newOrder.notes || null,
-          destination_address: newOrder.customerAddress,
-          destination_postal_code: newOrder.customerPostalCode || null,
-          created_at: newOrder.createdAt,
-          updated_at: new Date().toISOString(),
-        },
-      ]);
-
-      if (orderErr) {
-        console.warn('[Supabase Database] Error inserting order:', orderErr);
-      } else {
-        console.log(`[Supabase Database] Pesanan ${newOrder.orderNumber} tersimpan di cloud!`);
-      }
-
-      // Insert items
-      if (newOrder.items && newOrder.items.length > 0) {
-        const dbItems = await Promise.all(
-          newOrder.items.map(async (it) => {
-            const itemId = await idService.generateNextId('order_items');
-            return {
-              id: itemId,
-              order_id: newOrder.id,
-              product_id: it.productId || null,
-              product_name: it.productName,
-              product_image: it.productImage || null,
-              price: it.price,
-              quantity: it.quantity,
-              subtotal: it.subtotal,
-              variant_info: it.variantName || null,
-            };
-          })
-        );
-
-        const { error: itemsErr } = await supabase.from('order_items').insert(dbItems);
-        if (itemsErr) {
-          console.warn('[Supabase Database] Error inserting order_items:', itemsErr);
-        } else {
-          console.log(`[Supabase Database] ${dbItems.length} item pesanan tersimpan di cloud!`);
-        }
-      }
-    } catch (err) {
-      console.warn('[Supabase Database] Gagal sinkron pesanan ke cloud:', err);
+      res = await fetch('/api/orders/place', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId: orderData.storeId,
+          customer: {
+            name: orderData.customerName,
+            phone: orderData.customerPhone,
+            email: orderData.customerEmail || null,
+            address: orderData.customerAddress,
+          },
+          items: (orderData.items || []).map((it) => ({
+            productId: it.productId,
+            quantity: it.quantity,
+            variantInfo: it.variantName || null,
+          })),
+          shipping: {
+            quote: orderData.shippingQuote,
+            city: orderData.customerCity || null,
+            courier: orderData.courier || null,
+            service: orderData.courierService || null,
+            postal_code: orderData.customerPostalCode || null,
+          },
+          paymentMethod: orderData.paymentMethod || 'Manual',
+          notes: orderData.notes || null,
+          voucherCode: orderData.voucherCode || undefined,
+        }),
+      });
+    } catch {
+      throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda lalu coba lagi.');
+    }
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok || !result?.order) {
+      console.error('[orderService] Gagal membuat pesanan:', result);
+      throw new Error(result?.message || 'Gagal membuat pesanan. Silakan coba lagi.');
     }
 
+    const newOrder = mapSupabaseRowToOrder(result.order);
+    // Simpan di perangkat pembeli agar halaman status pesanan tetap bisa menampilkannya.
+    const orders = this.getStoredOrders(orderData.storeId);
+    orders.unshift(newOrder);
+    this.saveOrders(orderData.storeId, orders);
     return newOrder;
+  }
+
+  /**
+   * Minta server memeriksa status transaksi ke payment gateway; bila lunas, server menandai
+   * pesanan dibayar dan menambah saldo toko (sekali saja).
+   */
+  async confirmGatewayPayment(order: Order, merchantOrderId: string): Promise<boolean> {
+    try {
+      const res = await fetch('/api/orders/confirm-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id, merchantOrderId }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || !result?.paid) return false;
+    } catch (err) {
+      console.warn('[orderService] confirm-payment gagal:', err);
+      return false;
+    }
+    const orders = this.getStoredOrders(order.storeId);
+    const index = orders.findIndex((o) => o.id === order.id);
+    if (index !== -1) {
+      orders[index] = { ...orders[index], paymentStatus: 'Sudah Dibayar', shippingStatus: 'Diproses' };
+      this.saveOrders(order.storeId, orders);
+    }
+    return true;
   }
 
   async updateOrderStatus(orderId: string, shippingStatus: ShippingStatus, resiNumber?: string, storeId?: string): Promise<Order> {
@@ -318,6 +364,88 @@ class OrderService {
     return orders[index];
   }
 
+  /**
+   * Minta server mengirim email "pembayaran diterima" ke pembeli (nomor pesanan, nomor HP,
+   * rincian, tautan lacak). Mengembalikan kode hasil dari server, mis. 'sent' atau 'no_email'.
+   */
+  async notifyOrderPaid(orderId: string): Promise<string> {
+    try {
+      const res = await fetch('/api/orders/notify-paid', {
+        method: 'POST',
+        headers: sessionHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      return typeof data?.result === 'string' ? data.result : 'failed';
+    } catch {
+      return 'failed';
+    }
+  }
+
+  /** Batalkan pesanan lewat server (status & saldo hanya diubah database). */
+  private async postCancel(payload: Record<string, unknown>, withSession: boolean): Promise<CancelOrderResult> {
+    try {
+      const res = await fetch('/api/orders/cancel', {
+        method: 'POST',
+        headers: withSession
+          ? sessionHeaders({ 'Content-Type': 'application/json' })
+          : { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      return {
+        success: res.ok && data?.success === true,
+        code: typeof data?.code === 'string' ? data.code : res.ok ? undefined : 'failed',
+        message: typeof data?.message === 'string' ? data.message : undefined,
+        wasPaid: Boolean(data?.wasPaid),
+        balanceReversed: Boolean(data?.balanceReversed),
+      };
+    } catch {
+      return { success: false, code: 'network' };
+    }
+  }
+
+  /** Penjual membatalkan pesanan (perlu sesi login dengan hak kelola toko). */
+  async cancelOrderAsMerchant(orderId: string, reason: string, storeId?: string): Promise<CancelOrderResult> {
+    const result = await this.postCancel({ orderId, reason }, true);
+    if (result.success) {
+      const orders = this.getStoredOrders(storeId);
+      const index = orders.findIndex((o) => o.id === orderId);
+      if (index !== -1) {
+        orders[index] = {
+          ...orders[index],
+          shippingStatus: 'Dibatalkan',
+          cancelledAt: new Date().toISOString(),
+          cancelReason: reason.trim() || undefined,
+          cancelledBy: 'merchant',
+        };
+        this.saveOrders(storeId || orders[index].storeId, orders);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Pembeli tanpa login meminta pembatalan: server memverifikasi nomor pesanan + nomor HP lalu
+   * mengirim email ke penjual. Status pesanan tidak berubah; penjual yang membatalkan.
+   */
+  async requestCancellation(storeId: string, orderNumber: string, phone: string, reason: string): Promise<{ success: boolean; code?: string }> {
+    try {
+      const res = await fetch('/api/orders/cancel-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeId, orderNumber, phone, reason }),
+      });
+      const data = await res.json().catch(() => ({}));
+      return {
+        success: res.ok && data?.success === true,
+        code: typeof data?.code === 'string' ? data.code : res.ok ? undefined : 'failed',
+      };
+    } catch {
+      return { success: false, code: 'network' };
+    }
+  }
+
   async updatePaymentStatus(orderId: string, paymentStatus: PaymentStatus, storeId?: string): Promise<Order> {
     const orders = this.getStoredOrders(storeId);
     const index = orders.findIndex((o) => o.id === orderId);
@@ -356,96 +484,114 @@ class OrderService {
     return orders[index];
   }
 
-  async processShipment(orderId: string, courier: CourierType, resiNumber?: string, storeId?: string): Promise<Order> {
-    const autoResi = resiNumber || `${courier.toUpperCase()}${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+  /**
+   * Pembeli mengunggah bukti transfer QRIS / rekening toko. Sekaligus menandai "sudah konfirmasi";
+   * status lunas tetap ditentukan merchant setelah mencocokkan bukti dengan mutasi.
+   */
+  async submitPaymentProof(
+    orderId: string,
+    storeId: string,
+    orderNumber: string,
+    file: File,
+  ): Promise<{ url: string; paymentConfirmedAt: string }> {
+    const result = await mediaService.uploadPaymentProof(file, orderId, orderNumber);
+
     const orders = this.getStoredOrders(storeId);
     const index = orders.findIndex((o) => o.id === orderId);
-    if (index === -1) throw new Error('Pesanan tidak ditemukan');
-
-    const resolvedStoreId = storeId || orders[index].storeId;
-
-    orders[index] = {
-      ...orders[index],
-      courier,
-      resiNumber: autoResi,
-      trackingNumber: autoResi,
-      shippingStatus: 'Dikirim',
-      shippedAt: new Date().toISOString(),
-    };
-    this.saveOrders(resolvedStoreId, orders);
-
-    try {
-      let query = supabase.from('orders').update({
-        order_status: 'shipped',
-        shipping_courier: courier,
-        tracking_number: autoResi,
-        shipped_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).eq('id', orderId);
-      if (resolvedStoreId) query = query.eq('store_id', resolvedStoreId); // ownership check
-      await query;
-    } catch (err) {
-      console.warn('[Supabase Database] processShipment sync notice:', err);
+    if (index !== -1) {
+      orders[index] = { ...orders[index], paymentConfirmedAt: result.paymentConfirmedAt, paymentProofUrl: result.url };
+      this.saveOrders(storeId, orders);
     }
-
-    return orders[index];
+    return result;
   }
 
-  async processShipmentWithBiteship(params: {
-    orderId: string;
-    courier?: CourierType;
-    courierCode?: string;
-    courierService?: string;
-    trackingNumber: string;
-    shippingLabelUrl?: string;
-    shippingMethod?: 'pickup' | 'drop_off';
-    originBranchId?: string;
-    pickupTime?: string;
-    storeId?: string;
-  }): Promise<Order> {
-    const orders = this.getStoredOrders(params.storeId);
-    const index = orders.findIndex((o) => o.id === params.orderId);
-    if (index === -1) throw new Error('Pesanan tidak ditemukan');
+  /** Pesanan yang pernah dibuat dari perangkat ini (salinan lokal), terbaru lebih dulu. */
+  getLocalOrders(storeId: string): Order[] {
+    if (!storeId) return [];
+    return [...this.getStoredOrders(storeId)].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }
 
-    const current = orders[index];
-    const resolvedStoreId = params.storeId || current.storeId;
-    const updatedOrder: Order = {
-      ...current,
-      courier: params.courier || current.courier,
-      courierCode: params.courierCode || current.courierCode || params.courier?.toLowerCase(),
-      courierService: params.courierService || current.courierService,
-      resiNumber: params.trackingNumber,
-      trackingNumber: params.trackingNumber,
-      shippingLabelUrl: params.shippingLabelUrl || current.shippingLabelUrl,
-      shippingMethod: params.shippingMethod || current.shippingMethod || 'drop_off',
-      originBranchId: params.originBranchId || current.originBranchId,
-      pickupTime: params.pickupTime || current.pickupTime,
-      shippingStatus: 'ready_to_ship',
-      shippedAt: new Date().toISOString(),
-    };
-
-    orders[index] = updatedOrder;
-    this.saveOrders(resolvedStoreId, orders);
-
-    try {
-      let query = supabase.from('orders').update({
-        order_status: 'processing',
-        tracking_number: params.trackingNumber,
-        shipping_label_url: params.shippingLabelUrl || null,
-        shipping_method: params.shippingMethod || 'drop_off',
-        origin_branch_id: params.originBranchId || null,
-        pickup_time: params.pickupTime || null,
-        courier_code: params.courierCode || null,
-        courier_service: params.courierService || null,
-        updated_at: new Date().toISOString(),
-      }).eq('id', params.orderId);
-      if (resolvedStoreId) query = query.eq('store_id', resolvedStoreId); // ownership check
-      await query;
-    } catch (err) {
-      console.warn('[Supabase Database] processShipmentWithBiteship sync notice:', err);
+  /**
+   * Lacak pesanan tanpa login: nomor pesanan + nomor WhatsApp saat checkout harus cocok.
+   * Server hanya mengembalikan status, kurir/resi, dan isi pesanan (tanpa alamat / kontak).
+   */
+  async trackOrder(storeId: string, orderNumber: string, phone: string): Promise<TrackOrderResult> {
+    const { data, error } = await supabase.rpc('track_order', {
+      p_store_id: storeId,
+      p_order_number: orderNumber,
+      p_phone: phone,
+    });
+    if (error) {
+      console.error('[Supabase Database] Gagal melacak pesanan:', error);
+      throw new Error('Gagal memuat status pesanan. Silakan coba lagi.');
+    }
+    const result = (data || {}) as { status?: string; order?: any };
+    if (result.status !== 'found' || !result.order) {
+      const status = result.status === 'locked' || result.status === 'invalid' ? result.status : 'not_found';
+      return { status };
     }
 
-    return updatedOrder;
+    const row = result.order;
+    const tracked: TrackedOrder = {
+      orderNumber: String(row.order_number || ''),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at || undefined,
+      paymentMethod: String(row.payment_method || ''),
+      isPaid: row.payment_status === 'paid',
+      paymentConfirmedAt: row.payment_confirmed_at || undefined,
+      paidAt: row.paid_at || undefined,
+      orderStatus: (row.order_status || 'pending') as TrackedOrder['orderStatus'],
+      shippedAt: row.shipped_at || undefined,
+      cancelledAt: row.cancelled_at || undefined,
+      cancelReason: row.cancel_reason || undefined,
+      cancelledBy:
+        row.cancelled_by === 'buyer' || row.cancelled_by === 'merchant' || row.cancelled_by === 'system'
+          ? row.cancelled_by
+          : undefined,
+      courier: String(row.shipping_courier || row.courier_code || ''),
+      courierService: row.courier_service || undefined,
+      trackingNumber: row.tracking_number || undefined,
+      shippingCity: row.shipping_city || undefined,
+      shippingCost: Number(row.shipping_cost) || 0,
+      totalAmount: Number(row.total_amount) || 0,
+      items: (Array.isArray(row.items) ? row.items : []).map((item: any) => ({
+        name: String(item.product_name || ''),
+        image: item.product_image || undefined,
+        variant: item.variant_info || undefined,
+        price: Number(item.price) || 0,
+        quantity: Number(item.quantity) || 0,
+        subtotal: Number(item.subtotal) || 0,
+      })),
+    };
+
+    this.syncLocalStatus(storeId, tracked);
+    return { status: 'found', order: tracked };
+  }
+
+  /** Perbarui salinan lokal pembeli agar halaman riwayat ikut menampilkan status terbaru. */
+  private syncLocalStatus(storeId: string, tracked: TrackedOrder) {
+    const orders = this.getStoredOrders(storeId);
+    const index = orders.findIndex((o) => o.orderNumber === tracked.orderNumber);
+    if (index === -1) return;
+    const shippingStatus: Record<TrackedOrder['orderStatus'], ShippingStatus> = {
+      pending: 'Baru',
+      processing: 'Diproses',
+      shipped: 'Dikirim',
+      delivered: 'Selesai',
+      cancelled: 'Dibatalkan',
+    };
+    orders[index] = {
+      ...orders[index],
+      paymentStatus: tracked.isPaid ? 'Sudah Dibayar' : orders[index].paymentStatus,
+      paymentConfirmedAt: tracked.paymentConfirmedAt || orders[index].paymentConfirmedAt,
+      shippingStatus: shippingStatus[tracked.orderStatus] || orders[index].shippingStatus,
+      resiNumber: tracked.trackingNumber || orders[index].resiNumber,
+      trackingNumber: tracked.trackingNumber || orders[index].trackingNumber,
+      shippedAt: tracked.shippedAt || orders[index].shippedAt,
+    };
+    this.saveOrders(storeId, orders);
   }
 
   async getDashboardMetrics(storeId: string): Promise<{
@@ -484,31 +630,28 @@ class OrderService {
             table: 'orders',
             filter: `store_id=eq.${storeId}`,
           },
-          (payload: any) => {
-            if (payload?.new && payload.new.id) {
-              const row = payload.new;
-              // Pastikan hanya proses event untuk storeId yang benar
-              if (row.store_id !== storeId) return;
-              const stored = this.getStoredOrders(storeId);
-              const idx = stored.findIndex((o) => o.id === row.id);
-              if (idx !== -1) {
-                const merged: Order = {
-                  ...stored[idx],
-                  shippingStatus: row.shipping_status || stored[idx].shippingStatus,
-                  resiNumber: row.tracking_number || stored[idx].resiNumber,
-                  trackingNumber: row.tracking_number || stored[idx].trackingNumber,
-                  shippingLabelUrl: row.shipping_label_url || stored[idx].shippingLabelUrl,
-                  shippingMethod: row.shipping_method || stored[idx].shippingMethod,
-                  courierCode: row.courier_code || stored[idx].courierCode,
-                  courierService: row.courier_service || stored[idx].courierService,
-                  pickupTime: row.pickup_time || stored[idx].pickupTime,
-                  shippedAt: row.shipped_at || stored[idx].shippedAt,
-                };
-                stored[idx] = merged;
-                this.saveOrders(storeId, stored);
-                onUpdate(merged);
-              }
+          async (payload: any) => {
+            const row = payload?.new;
+            if (!row?.id || row.store_id !== storeId) return;
+            const stored = this.getStoredOrders(storeId);
+            const idx = stored.findIndex((o) => o.id === row.id);
+            let next: Order;
+            if (idx !== -1) {
+              // Baris realtime tidak membawa order_items; pakai item yang sudah tersimpan.
+              next = { ...stored[idx], ...mapSupabaseRowToOrder(row), items: stored[idx].items };
+              stored[idx] = next;
+            } else {
+              // Pesanan baru: ambil lengkap dengan itemnya (RLS tetap berlaku).
+              const { data, error } = await supabase
+                .from('orders')
+                .select('*, order_items(*)')
+                .eq('id', row.id)
+                .maybeSingle();
+              next = mapSupabaseRowToOrder(!error && data ? data : row);
+              stored.unshift(next);
             }
+            this.saveOrders(storeId, stored);
+            onUpdate(next);
           }
         )
         .subscribe();

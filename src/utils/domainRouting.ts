@@ -1,10 +1,12 @@
 /**
  * Utility functions for domain detection and storefront routing.
- * Differentiates between Kroomify platform hosts (Landing page / CMS Dashboard)
+ * Differentiates between LapakQ platform hosts (Landing page / CMS Dashboard)
  * and dedicated merchant storefronts (<slug>.kroombox.com or custom domains).
  */
 
 const PLATFORM_DOMAINS = new Set([
+  'lapakq.com',
+  'www.lapakq.com',
   'kroomify.kroombox.com',
   'www.kroomify.kroombox.com',
   'kroombox.com',
@@ -24,6 +26,7 @@ const PLATFORM_DOMAINS = new Set([
 ]);
 
 const RESERVED_SUBDOMAINS = new Set([
+  'lapakq',
   'kroomify',
   'panel',
   'api',
@@ -39,7 +42,7 @@ const RESERVED_SUBDOMAINS = new Set([
 ]);
 
 /**
- * Checks whether the current host is a primary Kroomify CMS platform host.
+ * Checks whether the current host is a primary LapakQ CMS platform host.
  * On platform hosts, the default view is Landing Page (guest) or Merchant Dashboard (logged in).
  */
 export function isPlatformHost(hostname?: string): boolean {
@@ -74,7 +77,7 @@ export function isPlatformHost(hostname?: string): boolean {
  */
 export function getStoreSlugFromHost(hostname?: string): string | null {
   if (typeof window !== 'undefined') {
-    const injectedSlug = (window as any).__KROOMIFY_STORE_SLUG__;
+    const injectedSlug = ((window as any).__LAPAKQ_STORE_SLUG__ || (window as any).__KROOMIFY_STORE_SLUG__);
     if (injectedSlug && typeof injectedSlug === 'string' && injectedSlug.trim()) {
       return injectedSlug.trim().toLowerCase();
     }
@@ -91,7 +94,7 @@ export function getStoreSlugFromHost(hostname?: string): string | null {
   }
 
   // Multi-tenant base domains
-  const BASE_DOMAINS = ['.kroombox.com', '.kromify.id', '.mykolab.store'];
+  const BASE_DOMAINS = ['.lapakq.com', '.kroombox.com', '.gmpsbandung.org', '.kromify.id', '.mykolab.store'];
   for (const base of BASE_DOMAINS) {
     if (host.endsWith(base)) {
       const sub = host.slice(0, -base.length);

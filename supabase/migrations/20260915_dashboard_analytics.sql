@@ -68,7 +68,7 @@ BEGIN
     v_low_stock_count := COALESCE(v_low_stock_count, 0);
 
     -- 5. Low Stock Items Details (Up to 5 items)
-    SELECT COALESCE(json_agg(row_to_json(lsi)), '[]'::jsonb)
+    SELECT COALESCE(jsonb_agg(to_jsonb(lsi)), '[]'::jsonb)
     INTO v_low_stock_items
     FROM (
         SELECT id, name, price, stock, image_url, category
@@ -81,7 +81,7 @@ BEGIN
     ) lsi;
 
     -- 6. Recent 5 Orders with Customer & Summary Details
-    SELECT COALESCE(json_agg(row_to_json(ro)), '[]'::jsonb)
+    SELECT COALESCE(jsonb_agg(to_jsonb(ro)), '[]'::jsonb)
     INTO v_recent_orders 
     FROM (
         SELECT 
@@ -96,7 +96,7 @@ BEGIN
             shipping_courier,
             created_at,
             (
-                SELECT COALESCE(json_agg(json_build_object(
+                SELECT COALESCE(jsonb_agg(jsonb_build_object(
                     'product_id', product_id,
                     'product_name', product_name, 
                     'price', price,
@@ -113,7 +113,7 @@ BEGIN
         LIMIT 5
     ) ro;
 
-    RETURN json_build_object(
+    RETURN jsonb_build_object(
         'balance', v_balance,
         'incoming_orders', v_incoming_orders,
         'today_sales', v_today_sales,

@@ -1,52 +1,30 @@
 import {
-  CourierType,
   BiteshipRateOption,
-  CreateShipmentPayload,
   CreateShipmentResult,
   ShippingBranch,
   AvailableCourier,
 } from '../types';
-import { supabase } from './supabaseClient';
+import { supabase, sessionHeaders } from './supabaseClient';
 import { branchService } from './branchService';
+import { getApiEndpoint } from '../utils/apiConfig';
+import {
+  simulateCourierRates,
+  zoneCourierRates,
+  INDONESIAN_CITIES,
+  type ShippingRate,
+  type CityOption,
+} from '../utils/shippingFormulas';
 
-export interface ShippingRate {
-  courier: CourierType;
-  serviceName: string;
-  etd: string;
-  cost: number;
-  description: string;
-  badge?: string;
-  courierCode?: string;
-  courierServiceCode?: string;
+export type { ShippingRate, CityOption } from '../utils/shippingFormulas';
+export { INDONESIAN_CITIES } from '../utils/shippingFormulas';
+
+/** ok=true → `result` terisi; ok=false → `code` (+ `providerMessage` dari kurir). */
+export interface CreateShipmentResponse {
+  ok: boolean;
+  result?: CreateShipmentResult;
+  code?: string;
+  providerMessage?: string;
 }
-
-export interface CityOption {
-  id: string;
-  name: string;
-  province: string;
-  postalCode: string;
-  zone: 'jabodetabek' | 'jawa' | 'luar_jawa';
-}
-
-export const INDONESIAN_CITIES: CityOption[] = [
-  { id: 'jkt-selatan', name: 'Jakarta Selatan', province: 'DKI Jakarta', postalCode: '12730', zone: 'jabodetabek' },
-  { id: 'jkt-pusat', name: 'Jakarta Pusat', province: 'DKI Jakarta', postalCode: '10110', zone: 'jabodetabek' },
-  { id: 'jkt-barat', name: 'Jakarta Barat', province: 'DKI Jakarta', postalCode: '11460', zone: 'jabodetabek' },
-  { id: 'bogor', name: 'Kota Bogor', province: 'Jawa Barat', postalCode: '16111', zone: 'jabodetabek' },
-  { id: 'depok', name: 'Kota Depok', province: 'Jawa Barat', postalCode: '16411', zone: 'jabodetabek' },
-  { id: 'tangerang', name: 'Kota Tangerang', province: 'Banten', postalCode: '15111', zone: 'jabodetabek' },
-  { id: 'bekasi', name: 'Kota Bekasi', province: 'Jawa Barat', postalCode: '17111', zone: 'jabodetabek' },
-  { id: 'bandung', name: 'Kota Bandung', province: 'Jawa Barat', postalCode: '40111', zone: 'jawa' },
-  { id: 'semarang', name: 'Kota Semarang', province: 'Jawa Tengah', postalCode: '50131', zone: 'jawa' },
-  { id: 'solo', name: 'Kota Solo / Surakarta', province: 'Jawa Tengah', postalCode: '57111', zone: 'jawa' },
-  { id: 'pekalongan', name: 'Kota Pekalongan', province: 'Jawa Tengah', postalCode: '51111', zone: 'jawa' },
-  { id: 'jogja', name: 'DI Yogyakarta', province: 'DI Yogyakarta', postalCode: '55111', zone: 'jawa' },
-  { id: 'surabaya', name: 'Kota Surabaya', province: 'Jawa Timur', postalCode: '60293', zone: 'jawa' },
-  { id: 'malang', name: 'Kota Malang', province: 'Jawa Timur', postalCode: '65111', zone: 'jawa' },
-  { id: 'denpasar', name: 'Kota Denpasar', province: 'Bali', postalCode: '80111', zone: 'luar_jawa' },
-  { id: 'medan', name: 'Kota Medan', province: 'Sumatera Utara', postalCode: '20111', zone: 'luar_jawa' },
-  { id: 'makassar', name: 'Kota Makassar', province: 'Sulawesi Selatan', postalCode: '90111', zone: 'luar_jawa' },
-];
 
 export const shippingService = {
   getCities(): CityOption[] {
@@ -54,70 +32,107 @@ export const shippingService = {
   },
 
   /**
-   * Panggil Supabase Edge Function 'get-available-couriers' untuk mengambil daftar ekspedisi Biteship
+   * Minta tarif bertanda tangan ke server (`POST /api/shipping/quote`). Berat dihitung server
+   * dari data produk. `rates: null` berarti server tak terjangkau (pakai perkiraan lokal).
+   */
+  async requestQuotes(body: Record<string, unknown>): Promise<{ rates: any[] | null; error?: string }> {
+    try {
+      const res = await fetch('/api/shipping/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json?.success && Array.isArray(json.rates)) return { rates: json.rates };
+      if (res.status >= 400 && res.status < 500 && json?.message) return { rates: [], error: String(json.message) };
+    } catch (err) {
+      console.warn('[shippingService] /api/shipping/quote gagal:', err);
+    }
+    return { rates: null };
+  },
+
+  /**
+   * Tarif kurir (per kode pos) untuk halaman checkout pembeli. Tarif dengan `quote` wajib dipakai
+   * saat membuat pesanan; bila server tak terjangkau, tarif ditampilkan dari rumus lokal tanpa
+   * `quote` (pesanan ditolak sampai tarif sah didapat).
+   */
+  async getCheckoutRates(params: {
+    storeId: string;
+    items: Array<{ productId: string; quantity: number }>;
+    destinationPostalCode: string;
+    couriers?: string;
+    fallbackWeightGrams: number;
+  }): Promise<{ rates: BiteshipRateOption[]; signed: boolean; error?: string }> {
+    const result = await this.requestQuotes({
+      storeId: params.storeId,
+      items: params.items,
+      destinationPostalCode: params.destinationPostalCode,
+      couriers: params.couriers,
+      mode: 'postal',
+    });
+    if (result.rates) return { rates: result.rates as BiteshipRateOption[], signed: true, error: result.error };
+    return {
+      signed: false,
+      rates: simulateCourierRates('12730', params.destinationPostalCode, params.fallbackWeightGrams),
+    };
+  },
+
+  /** Tarif zona (per kota) untuk keranjang cepat, bertanda tangan server seperti getCheckoutRates. */
+  async getZoneCheckoutRates(params: {
+    storeId: string;
+    items: Array<{ productId: string; quantity: number }>;
+    destinationCity: string;
+    fallbackWeightGrams: number;
+  }): Promise<{ rates: ShippingRate[]; signed: boolean; error?: string }> {
+    const result = await this.requestQuotes({
+      storeId: params.storeId,
+      items: params.items,
+      destinationCity: params.destinationCity,
+      mode: 'zone',
+    });
+    if (result.rates) return { rates: result.rates as ShippingRate[], signed: true, error: result.error };
+    return { signed: false, rates: zoneCourierRates(params.destinationCity, params.fallbackWeightGrams) };
+  },
+
+  /**
+   * Daftar layanan kurir Biteship dari server (`GET /api/shipping/couriers`), lengkap dengan
+   * metode serah terima yang benar-benar didukung. Tidak ada daftar cadangan: bila gagal,
+   * kembalikan daftar kosong agar merchant tidak memilih metode yang akan ditolak kurir.
    */
   async getAvailableCouriers(): Promise<AvailableCourier[]> {
     try {
-      const { data, error } = await supabase.functions.invoke('get-available-couriers');
-      if (!error && data?.success && Array.isArray(data.couriers) && data.couriers.length > 0) {
-        return data.couriers;
+      const res = await fetch(getApiEndpoint('/api/shipping/couriers'), {
+        headers: sessionHeaders(),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.success && Array.isArray(data.couriers)) {
+        return data.couriers as AvailableCourier[];
       }
     } catch (err) {
-      console.warn('[Supabase Edge Function] get-available-couriers fallback:', err);
+      console.warn('[shippingService] getAvailableCouriers failed:', err);
     }
+    return [];
+  },
 
-    return [
-      {
-        courier_name: 'J&T Express',
-        courier_code: 'jnt',
-        courier_service_name: 'EZ Regular',
-        courier_service_code: 'ez',
-        available_for_drop_off: true,
-        available_for_pickup: true,
-        tier: 'standard',
-        description: 'Layanan reguler dengan jaringan jemput & antar terluas',
-      },
-      {
-        courier_name: 'SiCepat Ekspres',
-        courier_code: 'sicepat',
-        courier_service_name: 'SIUNTUNG / Reguler',
-        courier_service_code: 'siuntung',
-        available_for_drop_off: true,
-        available_for_pickup: true,
-        tier: 'standard',
-        description: 'Pick-up cepat kurir ke gudang tanpa minimum paket',
-      },
-      {
-        courier_name: 'JNE Logistics',
-        courier_code: 'jne',
-        courier_service_name: 'REG (Reguler)',
-        courier_service_code: 'reg',
-        available_for_drop_off: true,
-        available_for_pickup: true,
-        tier: 'standard',
-        description: 'Jaringan gerai drop counter terbanyak hingga pelosok kecamatan',
-      },
-      {
-        courier_name: 'Anteraja',
-        courier_code: 'anteraja',
-        courier_service_name: 'Regular Service',
-        courier_service_code: 'reg',
-        available_for_drop_off: true,
-        available_for_pickup: true,
-        tier: 'standard',
-        description: 'Layanan pengiriman terpercaya dengan jemput kurir Satria',
-      },
-      {
-        courier_name: 'GoSend',
-        courier_code: 'gosend',
-        courier_service_name: 'Instant Motor',
-        courier_service_code: 'instant',
-        available_for_drop_off: false,
-        available_for_pickup: true,
-        tier: 'instant',
-        description: 'Driver motor jemput dan antar langsung hari ini',
-      },
-    ];
+  /**
+   * Layanan kurir untuk rute pesanan ini beserta metode yang didukung (Pick-up/Drop-off),
+   * dicek server ke Rates API Biteship. Mengembalikan [] bila gagal.
+   */
+  async getRouteCouriers(orderId: string, originBranchId?: string): Promise<AvailableCourier[]> {
+    try {
+      const res = await fetch(getApiEndpoint('/api/shipping/route-couriers'), {
+        method: 'POST',
+        headers: sessionHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ orderId, originBranchId: originBranchId || undefined }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.success && Array.isArray(data.couriers)) {
+        return data.couriers as AvailableCourier[];
+      }
+    } catch (err) {
+      console.warn('[shippingService] getRouteCouriers failed:', err);
+    }
+    return [];
   },
 
   /**
@@ -141,7 +156,18 @@ export const shippingService = {
     }
 
     const packageWeight = Math.max(100, weight || 500);
-    const originPostal = branch?.postalCode || '12730';
+
+    // Asal pengiriman: kode pos cabang utama toko; jika toko belum punya cabang, pakai kode pos toko.
+    let originPostal = branch?.postalCode || '';
+    if (!originPostal && storeId) {
+      try {
+        const { data: storeRow } = await supabase.from('stores').select('postal_code').eq('id', storeId).maybeSingle();
+        originPostal = (storeRow?.postal_code || '').trim();
+      } catch {
+        // abaikan, pakai fallback di bawah
+      }
+    }
+    if (!originPostal) originPostal = '12730';
 
     // 1. Coba via Supabase Edge Function
     try {
@@ -167,7 +193,8 @@ export const shippingService = {
 
     // 2. Gunakan proxy server internal /api/shipping/rates untuk keamanan API key
     try {
-      const proxyRes = await fetch('/api/shipping/rates', {
+      const endpoint = getApiEndpoint('/api/shipping/rates');
+      const proxyRes = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -207,61 +234,7 @@ export const shippingService = {
     }
 
     // 3. Fallback simulation bila Edge Function belum dideploy atau Biteship offline / sandbox balance 0
-    const isNearby = String(originPostal).slice(0, 2) === String(destinationPostalCode).slice(0, 2);
-    const weightKg = Math.max(1, Math.ceil(weight / 1000));
-
-    const simulatedRates: BiteshipRateOption[] = [
-      {
-        courier_name: 'J&T Express',
-        courier_code: 'jnt',
-        courier_service_name: 'EZ Regular',
-        courier_service_code: 'ez',
-        tier: 'standard',
-        description: 'Layanan reguler dengan jaringan jemput & antar terluas',
-        service_type: 'standard',
-        shipping_type: 'parcel',
-        price: (isNearby ? 11000 : 18000) * weightKg,
-        etd: isNearby ? '1-2 Hari' : '2-3 Hari',
-        badge: 'Paling Populer',
-      },
-      {
-        courier_name: 'SiCepat Ekspres',
-        courier_code: 'sicepat',
-        courier_service_name: 'SIUNTUNG / Reguler',
-        courier_service_code: 'siuntung',
-        tier: 'standard',
-        description: 'Pick-up cepat kurir ke gudang tanpa minimum paket',
-        service_type: 'standard',
-        shipping_type: 'parcel',
-        price: (isNearby ? 12000 : 19000) * weightKg,
-        etd: isNearby ? '1 Hari' : '2-3 Hari',
-      },
-      {
-        courier_name: 'JNE',
-        courier_code: 'jne',
-        courier_service_name: 'REG (Reguler)',
-        courier_service_code: 'reg',
-        tier: 'standard',
-        description: 'Jaringan gerai fisik terbanyak hingga pelosok kecamatan',
-        service_type: 'standard',
-        shipping_type: 'parcel',
-        price: (isNearby ? 13000 : 20000) * weightKg,
-        etd: isNearby ? '1-2 Hari' : '2-4 Hari',
-      },
-      {
-        courier_name: 'J&T Express',
-        courier_code: 'jnt',
-        courier_service_name: 'SUPER Express',
-        courier_service_code: 'super',
-        tier: 'express',
-        description: 'Pengiriman kilat garansi sampai besok',
-        service_type: 'express',
-        shipping_type: 'parcel',
-        price: (isNearby ? 19000 : 28000) * weightKg,
-        etd: '1 Hari',
-        badge: 'Kilat Prioritas',
-      },
-    ];
+    const simulatedRates = simulateCourierRates(originPostal, destinationPostalCode, weight);
 
     return {
       rates: simulatedRates,
@@ -270,153 +243,46 @@ export const shippingService = {
   },
 
   /**
-   * Panggil Supabase Edge Function 'create-shipment' untuk booking & generate resi Biteship
+   * Pesan kurir & resi lewat server (`POST /api/shipping/create-shipment`). Server memeriksa sesi,
+   * hak kelola toko, status bayar, lalu memesan ke Biteship dengan data dari database dan
+   * menyimpan resinya. Tidak ada resi simulasi: bila gagal, hasilnya berisi kode galat.
    */
-  async createShipment(
-    payload: CreateShipmentPayload & { origin_branch_id?: string; notes?: string }
-  ): Promise<CreateShipmentResult> {
-    // 1. Coba panggil via Supabase Edge Function
+  async createShipment(params: {
+    orderId: string;
+    deliveryType: 'pickup' | 'drop_off';
+    pickupDate?: string;
+    pickupTime?: string;
+    originBranchId?: string;
+    courierCode: string;
+    courierService: string;
+  }): Promise<CreateShipmentResponse> {
     try {
-      const { data, error } = await supabase.functions.invoke('create-shipment', {
-        body: payload,
+      const res = await fetch(getApiEndpoint('/api/shipping/create-shipment'), {
+        method: 'POST',
+        headers: sessionHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(params),
       });
-
-      if (!error && data?.success) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.success && data.trackingNumber) {
         return {
-          success: true,
-          tracking_number: data.tracking_number,
-          shipping_label_url: data.shipping_label_url,
-          status: data.shipping_status || 'ready_to_ship',
-          message: data.message,
+          ok: true,
+          result: {
+            success: true,
+            tracking_number: String(data.trackingNumber),
+            shipping_label_url: data.trackingUrl ? String(data.trackingUrl) : '',
+            status: String(data.status || 'confirmed'),
+            pickup_scheduled: data.pickupScheduled !== false,
+          },
         };
       }
-    } catch (err) {
-      console.warn('[Supabase Edge Function] create-shipment fallback:', err);
+      return {
+        ok: false,
+        code: String(data?.code || (res.status === 401 ? 'unauthorized' : res.status === 403 ? 'forbidden' : 'failed')),
+        providerMessage: data?.providerMessage ? String(data.providerMessage) : undefined,
+      };
+    } catch {
+      return { ok: false, code: 'network' };
     }
-
-    // 2. Panggil langsung API resmi Biteship jika API Key aktif
-    try {
-      const apiKey =
-        (import.meta as any).env?.VITE_BITESHIP_API_KEY ||
-        (import.meta as any).env?.BITESHIP_API_KEY ||
-        '';
-
-      if (apiKey && apiKey.startsWith('biteship_')) {
-        const branches = await branchService.getBranches();
-        const branch =
-          branches.find((b) => b.id === payload.origin_branch_id) ||
-          branches.find((b) => b.isDefault) ||
-          branches[0];
-
-        let customerName = 'utiy';
-        let customerPhone = '081223344556';
-        let customerAddress = 'Telkom University Bandung';
-        let customerPostal = 40257;
-        let itemTitle = 'Pesanan Produk Toko';
-        let itemValue = 185000;
-
-        try {
-          const rawOrders = localStorage.getItem('microcms_orders_v1');
-          if (rawOrders) {
-            const list = JSON.parse(rawOrders);
-            const found = list.find((o: any) => o.id === payload.order_id);
-            if (found) {
-              customerName = found.customerName || customerName;
-              customerPhone = found.customerPhone || customerPhone;
-              customerAddress = found.customerAddress || customerAddress;
-              customerPostal = Number(found.customerPostalCode || customerPostal);
-              if (found.items && found.items[0]) {
-                itemTitle = found.items[0].productName || itemTitle;
-                itemValue = found.items[0].price || itemValue;
-              }
-            }
-          }
-        } catch {
-          // ignore
-        }
-
-        const courierComp = (payload.courier_code || 'jnt').toLowerCase().includes('jne')
-          ? 'jne'
-          : (payload.courier_code || 'jnt').toLowerCase().includes('sicepat')
-          ? 'sicepat'
-          : 'jnt';
-
-        const courierType = (payload.courier_service || 'ez').toLowerCase().includes('reg')
-          ? 'reg'
-          : (payload.courier_service || 'ez').toLowerCase().includes('siuntung')
-          ? 'siuntung'
-          : 'ez';
-
-        const biteshipRes = await fetch('https://api.biteship.com/v1/orders', {
-          method: 'POST',
-          headers: {
-            Authorization: apiKey.startsWith('Bearer ') ? apiKey : `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            origin_contact_name: branch?.picName || 'Gudang Pusat Jakarta',
-            origin_contact_phone: branch?.picPhone || '081298765432',
-            origin_address: branch?.address || 'Jl. Kemang Raya No. 42',
-            origin_postal_code: Number(branch?.postalCode || 12730),
-            destination_contact_name: customerName,
-            destination_contact_phone: customerPhone,
-            destination_address: customerAddress,
-            destination_postal_code: customerPostal,
-            courier_company: courierComp,
-            courier_type: courierType,
-            delivery_type: 'now',
-            items: [
-              {
-                name: itemTitle,
-                value: itemValue,
-                quantity: 1,
-                weight: 500,
-              },
-            ],
-          }),
-        });
-
-        if (biteshipRes.ok) {
-          const biteshipData = await biteshipRes.json();
-          if (biteshipData.success) {
-            const waybill =
-              biteshipData.courier?.waybill_id ||
-              biteshipData.courier?.tracking_id ||
-              biteshipData.id;
-            const trackingUrl =
-              biteshipData.courier?.link ||
-              `https://track.biteship.com/${biteshipData.courier?.tracking_id}?environment=development`;
-
-            return {
-              success: true,
-              tracking_number: waybill,
-              shipping_label_url: trackingUrl,
-              status: 'ready_to_ship',
-              message: 'Resi resmi Biteship berhasil diterbitkan & terhubung langsung ke tracking!',
-            };
-          }
-        }
-      }
-    } catch (apiDirectErr) {
-      console.warn('[Direct Biteship API] createShipment fallback:', apiDirectErr);
-    }
-
-    // 3. Fallback simulation bila server offline
-    const prefix = 'WYB-';
-    const randomDigits = Math.floor(100000000000 + Math.random() * 900000000000);
-    const trackingNumber = `${prefix}${randomDigits}`;
-    const labelUrl = `https://track.biteship.com/hbiQdAcnePHcyl2k1DdUek6d?environment=development`;
-
-    return {
-      success: true,
-      tracking_number: trackingNumber,
-      shipping_label_url: labelUrl,
-      status: 'ready_to_ship',
-      message:
-        payload.delivery_type === 'pickup'
-          ? 'Penjemputan paket oleh kurir berhasil dijadwalkan!'
-          : 'Resi pengiriman drop-off berhasil diterbitkan.',
-    };
   },
 
   calculateRates(
@@ -424,91 +290,6 @@ export const shippingService = {
     destinationCity: string = 'Jakarta Selatan',
     weightGrams: number = 500
   ): ShippingRate[] {
-    const weightKg = Math.max(1, Math.ceil(weightGrams / 1000));
-    const dest =
-      INDONESIAN_CITIES.find((c) => c.name.toLowerCase().includes(destinationCity.toLowerCase())) ||
-      INDONESIAN_CITIES[0];
-
-    let jntBase = 15000;
-    let jneBase = 16000;
-    let sicepatBase = 18000;
-    let gosendAvailable = false;
-
-    if (dest.zone === 'jabodetabek') {
-      jntBase = 12000;
-      jneBase = 13000;
-      sicepatBase = 15000;
-      gosendAvailable = true;
-    } else if (dest.zone === 'jawa') {
-      jntBase = 16000;
-      jneBase = 17000;
-      sicepatBase = 20000;
-    } else {
-      jntBase = 28000;
-      jneBase = 30000;
-      sicepatBase = 35000;
-    }
-
-    const rates: ShippingRate[] = [
-      {
-        courier: 'J&T',
-        serviceName: 'EZ Regular',
-        etd: dest.zone === 'jabodetabek' ? '1 Hari' : dest.zone === 'jawa' ? '1 - 2 Hari' : '2 - 3 Hari',
-        cost: jntBase * weightKg,
-        description: `Tarif reguler untuk ${weightGrams} gram (${weightKg} kg)`,
-        badge: 'Paling Populer',
-        courierCode: 'jnt',
-        courierServiceCode: 'ez',
-      },
-      {
-        courier: 'SiCepat',
-        serviceName: 'BEST Sameday / Express',
-        etd: dest.zone === 'jabodetabek' ? 'Besok Pagi' : '1 - 2 Hari',
-        cost: sicepatBase * weightKg,
-        description: `Layanan kilat prioritas kota ${dest.name}`,
-        courierCode: 'sicepat',
-        courierServiceCode: 'best',
-      },
-      {
-        courier: 'JNE',
-        serviceName: 'REG (Reguler)',
-        etd: dest.zone === 'jabodetabek' ? '1 - 2 Hari' : '2 - 4 Hari',
-        cost: jneBase * weightKg,
-        description: `Jangkauan terluas hingga pelosok kecamatan`,
-        courierCode: 'jne',
-        courierServiceCode: 'reg',
-      },
-    ];
-
-    if (gosendAvailable) {
-      rates.push({
-        courier: 'GoSend',
-        serviceName: 'Instant Delivery Motor',
-        etd: '1 - 2 Jam',
-        cost: 25000,
-        description: 'Kurir langsung kirim ke alamat hari ini',
-        badge: 'Instan Cepat',
-        courierCode: 'gosend',
-        courierServiceCode: 'instant',
-      });
-    }
-
-    return rates;
-  },
-
-  generateResi(courier: CourierType): string {
-    const randomDigits = Math.floor(1000000000 + Math.random() * 9000000000);
-    switch (courier) {
-      case 'J&T':
-        return `JT${randomDigits}`;
-      case 'JNE':
-        return `JNE${randomDigits}`;
-      case 'SiCepat':
-        return `00${randomDigits}`;
-      case 'GoSend':
-        return `GK-${Math.floor(100000 + Math.random() * 900000)}`;
-      default:
-        return `EXP-${randomDigits}`;
-    }
+    return zoneCourierRates(destinationCity, weightGrams);
   },
 };

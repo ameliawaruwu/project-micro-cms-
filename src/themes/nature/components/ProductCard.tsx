@@ -1,0 +1,106 @@
+import React from 'react';
+import { CmsProduct } from '../../../cms/mockCmsData';
+import { useCmsStore } from '../../../cms/useCmsStore';
+import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
+import { InlineEditableImage } from '../../../components/layout-editor/InlineEditableImage';
+import { AddToCartButton } from '../../storefrontCart';
+import { formatRupiah, productHref } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
+
+interface ProductCardProps {
+  product: CmsProduct;
+  options?: any;
+  readonly?: boolean;
+}
+
+export const NatureProductCard: React.FC<ProductCardProps> = ({ product, options = {}, readonly = false }) => {
+  const { isEn } = useLanguage();
+  const updateProduct = useCmsStore(state => state.updateProduct);
+
+  const showPrice = options.showPrice !== false;
+  const showCategory = options.showCategory !== false;
+  const showBadge = options.showBadge !== false;
+  const showRating = options.showRating !== false;
+  const showAddToCart = options.showAddToCart !== false;
+  const showStockBadge = options.showStockBadge !== false;
+  const href = productHref(product);
+  // Di editor, klik dipakai untuk mengedit teks/gambar sehingga tautan tidak dijalankan.
+  const handleLinkClick = (e: React.MouseEvent) => { if (!readonly) e.preventDefault(); };
+
+  return (
+    <div className="group block min-w-0 font-serif">
+      <div className={`bg-white rounded-2xl p-3 shadow-xs border border-[#E8E4DB] flex flex-col h-full justify-between transition-all duration-300 ${readonly ? '' : 'hover:shadow-lg hover:-translate-y-1'}`}>
+        <div>
+          <a href={href} onClick={handleLinkClick} className="block relative aspect-square overflow-hidden rounded-xl bg-[#F9F6F0] mb-3.5 border border-[#E8E4DB]/60">
+            {product.image && (
+              <InlineEditableImage
+                src={product.image}
+                alt={product.name}
+                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                onUpdateImage={(newUrl) => updateProduct({ ...product, image: newUrl })}
+                readonly={readonly}
+              />
+            )}
+            {showBadge && product.isNew && (
+              <div className="absolute top-2 left-2 bg-[#2C3B2D] text-[#F9F6F0] text-[10px] font-sans font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-xs">
+                Baru
+              </div>
+            )}
+            {showStockBadge && product.stock !== undefined && (
+              <div className="absolute bottom-2 right-2 bg-black/60 text-white font-sans text-[9px] font-medium px-2 py-0.5 rounded-full backdrop-blur-xs">
+                Stok {product.stock}
+              </div>
+            )}
+          </a>
+          
+          <div className="px-1 text-center pb-2 min-w-0">
+            {showCategory && product.categoryName && (
+              <div className="bg-[#F0F4EF] text-[#3B4D3C] font-sans text-[10px] font-medium px-2.5 py-0.5 rounded-md inline-block mb-1.5 border border-[#E0E8DF]">
+                <InlineEditableText
+                  tagName="span"
+                  value={product.categoryName}
+                  readonly={readonly}
+                  onSave={(val) => updateProduct({ ...product, categoryName: val })}
+                />
+              </div>
+            )}
+
+            <h3 className="text-xs sm:text-sm md:text-base font-serif font-bold text-[#2C3B2D] line-clamp-2 break-words mb-1 group-hover:text-[#166534] transition-colors storefront-card-title">
+              <a href={href} onClick={handleLinkClick}>
+              <InlineEditableText
+                tagName="span"
+                value={product.name}
+                readonly={readonly}
+                onSave={(val) => updateProduct({ ...product, name: val })}
+              />
+              </a>
+            </h3>
+
+            {showPrice && (
+              <div className="font-sans font-bold text-xs sm:text-sm md:text-base text-[#166534] mb-3 storefront-card-price">
+                <InlineEditableText
+                  tagName="span"
+                  value={formatRupiah(product.price)}
+                  readonly={readonly}
+                  onSave={(val) => {
+                    const num = parseInt(val.replace(/[^0-9]/g, ''), 10);
+                    if (!isNaN(num)) updateProduct({ ...product, price: num });
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {showAddToCart && (
+          <AddToCartButton
+            product={product}
+            className="w-full min-w-0 whitespace-nowrap py-2 sm:py-2.5 px-2 sm:px-3 bg-[#2C3B2D] hover:bg-[#1E2A1F] text-[#F9F6F0] font-sans text-xs font-medium rounded-xl transition duration-200 flex items-center justify-center gap-1.5 shadow-2xs active:scale-98 cursor-pointer"
+          >
+            <span>{isEn ? '+ Cart' : '+ Keranjang'}</span>
+          </AddToCartButton>
+        )}
+      </div>
+    </div>
+  );
+};

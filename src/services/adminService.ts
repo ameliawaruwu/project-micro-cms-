@@ -1,12 +1,22 @@
 import { Store, WithdrawalRequest, AdminPlatformStats, Order, PlatformSettings } from '../types';
+import { withExtraMemberships } from '../utils/communityMembership';
 import { supabase } from './supabaseClient';
 import { storeService } from './storeService';
+import { authService } from './authService';
+import { getPlatformLogo, loadPlatformLogo, setPlatformLogo } from './platformLogoService';
 
 const WITHDRAWALS_KEY = 'microcms_admin_withdrawals_v2';
-const STORE_SUSPENSIONS_KEY = 'microcms_admin_suspended_stores_v1';
+/** Kunci lama: status suspend dulu disimpan di browser. Kini hanya dibersihkan. */
+const LEGACY_STORE_SUSPENSIONS_KEY = 'microcms_admin_suspended_stores_v1';
 const STORES_CACHE_KEY = 'microcms_admin_stores_v2';
 const ORDERS_CACHE_KEY = 'microcms_admin_orders_v2';
 const SETTINGS_KEY = 'microcms_admin_settings_v1';
+
+/** Kolom platform_settings yang boleh dibaca browser (tanpa kunci rahasia). */
+const PUBLIC_SETTINGS_COLUMNS =
+  'id, midtrans_environment, midtrans_merchant_id, midtrans_client_key, biteship_enabled, biteship_origin_city, ' +
+  'wa_gateway_enabled, wa_sender_phone, platform_fee_percent, payout_min_amount, payout_bank_fee, ' +
+  'auto_approve_payout_under, maintenance_mode, updated_at, payment_gateway_enabled';
 
 class AdminService {
   private getStoredWithdrawals(): WithdrawalRequest[] {
@@ -24,39 +34,24 @@ class AdminService {
     localStorage.setItem(WITHDRAWALS_KEY, JSON.stringify(list));
   }
 
-  getSuspendedStoreIds(): string[] {
-    const raw = localStorage.getItem(STORE_SUSPENSIONS_KEY);
-    if (!raw) return [];
-    try {
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
+  /**
+   * Menangguhkan (suspend = true) atau mengaktifkan kembali toko. Status hanya
+   * disimpan di kolom stores.is_suspended; RLS & trigger database yang menentukan
+   * siapa yang boleh mengubahnya. Melempar error bila ditolak atau toko tidak ada.
+   */
+  async setStoreSuspension(storeId: string, suspend: boolean): Promise<void> {
+    const { data, error } = await supabase
+      .from('stores')
+      .update({ is_suspended: suspend })
+      .eq('id', storeId)
+      .select('id, is_suspended');
 
-  async toggleStoreSuspension(storeId: string): Promise<boolean> {
-    const suspended = this.getSuspendedStoreIds();
-    let updated: string[];
-    const isCurrentlySuspended = suspended.includes(storeId);
-    if (isCurrentlySuspended) {
-      updated = suspended.filter((id) => id !== storeId);
-    } else {
-      updated = [...suspended, storeId];
+    if (error) {
+      throw new Error(error.message || 'Gagal memperbarui status toko.');
     }
-    localStorage.setItem(STORE_SUSPENSIONS_KEY, JSON.stringify(updated));
-
-    // Update in Supabase
-    try {
-      await supabase
-        .from('stores')
-        .update({ is_suspended: !isCurrentlySuspended })
-        .eq('id', storeId);
-    } catch (err) {
-      console.warn('Failed to sync store suspension in Supabase:', err);
+    if (!data || data.length === 0) {
+      throw new Error('Status toko tidak dapat diubah. Pastikan Anda berwenang mengelola toko ini.');
     }
-
-    return !isCurrentlySuspended;
   }
 
   getAllStores(): Store[] {
@@ -104,7 +99,9 @@ class AdminService {
         currency: 'IDR',
         balance: Number(s.balance || 0),
         plan: s.plan || 'free',
-        isPublished: s.is_published ?? true,
+        communityId: s.community_id || s.theme_settings?.communityId || undefined,
+        communityName: s.community_name || s.theme_settings?.communityName || undefined,
+        isPublished: Boolean(s.is_published),
         isSuspended: Boolean(s.is_suspended),
         onboarding: {
           storeNameSet: Boolean(s.name),
@@ -114,14 +111,11 @@ class AdminService {
         createdAt: s.created_at || new Date().toISOString(),
       }));
 
-      // Sync suspended list with DB state
-      const suspendedFromDb = mapped.filter((s) => s.isSuspended).map((s) => s.id);
-      if (suspendedFromDb.length > 0) {
-        localStorage.setItem(STORE_SUSPENSIONS_KEY, JSON.stringify(suspendedFromDb));
-      }
+      localStorage.removeItem(LEGACY_STORE_SUSPENSIONS_KEY);
 
-      localStorage.setItem(STORES_CACHE_KEY, JSON.stringify(mapped));
-      return mapped;
+      const withMemberships = await withExtraMemberships(mapped);
+      localStorage.setItem(STORES_CACHE_KEY, JSON.stringify(withMemberships));
+      return withMemberships;
     } catch (err) {
       console.warn('Network error fetching stores:', err);
       return this.getAllStores();
@@ -166,81 +160,34 @@ class AdminService {
     }
   }
 
-  async approveWithdrawal(id: string): Promise<boolean> {
+  /**
+   * Proses penarikan oleh super admin lewat RPC (database memverifikasi sesi admin, mengubah status
+   * secara atomik, dan mengembalikan saldo toko bila ditolak).
+   */
+  private async processWithdrawal(id: string, approve: boolean): Promise<boolean> {
+    const { data, error } = await supabase.rpc('admin_process_withdrawal', {
+      p_withdrawal_id: id,
+      p_approve: approve,
+    });
+    if (error || !data?.success) {
+      throw new Error(data?.message || 'Gagal memproses penarikan dana. Coba lagi.');
+    }
     const list = this.getStoredWithdrawals();
     const target = list.find((w) => w.id === id);
-    const processedAt = new Date().toISOString();
-
     if (target) {
-      target.status = 'approved';
-      target.processedAt = processedAt;
+      target.status = approve ? 'approved' : 'rejected';
+      target.processedAt = new Date().toISOString();
       this.saveWithdrawals(list);
     }
-
-    // Sync to Supabase
-    try {
-      await supabase
-        .from('withdrawals')
-        .update({ status: 'approved', processed_at: processedAt })
-        .eq('id', id);
-
-      await supabase
-        .from('wallet_transactions')
-        .update({ status: 'completed' })
-        .eq('reference_id', id);
-    } catch (err) {
-      console.warn('Failed to update approved withdrawal in Supabase:', err);
-    }
-
     return true;
   }
 
+  async approveWithdrawal(id: string): Promise<boolean> {
+    return this.processWithdrawal(id, true);
+  }
+
   async rejectWithdrawal(id: string): Promise<boolean> {
-    const list = this.getStoredWithdrawals();
-    const target = list.find((w) => w.id === id);
-    const processedAt = new Date().toISOString();
-
-    if (target) {
-      target.status = 'rejected';
-      target.processedAt = processedAt;
-      this.saveWithdrawals(list);
-
-      // Refund store balance
-      try {
-        const { data: storeData } = await supabase
-          .from('stores')
-          .select('balance')
-          .eq('id', target.storeId)
-          .single();
-
-        if (storeData) {
-          const newBalance = Number(storeData.balance || 0) + target.amount;
-          await supabase
-            .from('stores')
-            .update({ balance: newBalance })
-            .eq('id', target.storeId);
-        }
-      } catch (err) {
-        console.warn('Failed to refund store balance in Supabase:', err);
-      }
-    }
-
-    // Sync to Supabase
-    try {
-      await supabase
-        .from('withdrawals')
-        .update({ status: 'rejected', processed_at: processedAt })
-        .eq('id', id);
-
-      await supabase
-        .from('wallet_transactions')
-        .update({ status: 'rejected' })
-        .eq('reference_id', id);
-    } catch (err) {
-      console.warn('Failed to update rejected withdrawal in Supabase:', err);
-    }
-
-    return true;
+    return this.processWithdrawal(id, false);
   }
 
   async updateStorePlan(storeId: string, newPlan: string): Promise<boolean> {
@@ -355,9 +302,12 @@ class AdminService {
       midtransEnvironment: ((import.meta as any).env?.VITE_MIDTRANS_ENV as any) || 'sandbox',
       midtransMerchantId: (import.meta as any).env?.VITE_MIDTRANS_MERCHANT_ID || '',
       midtransClientKey: (import.meta as any).env?.VITE_MIDTRANS_CLIENT_KEY || '',
-      midtransServerKey: (import.meta as any).env?.MIDTRANS_SERVER_KEY || '',
+      midtransServerKey: '',
+      duitkuEnvironment: ((import.meta as any).env?.VITE_DUITKU_ENV as any) || 'sandbox',
+      duitkuMerchantCode: (import.meta as any).env?.VITE_DUITKU_MERCHANT_CODE || (import.meta as any).env?.DUITKU_MERCHANT_CODE || '',
+      duitkuApiKey: '',
       biteshipEnabled: true,
-      biteshipApiKey: (import.meta as any).env?.VITE_BITESHIP_API_KEY || (import.meta as any).env?.BITESHIP_API_KEY || '',
+      biteshipApiKey: '',
       biteshipOriginCity: 'Jakarta Selatan',
       waGatewayEnabled: false,
       waGatewayApiKey: (import.meta as any).env?.VITE_FONNTE_TOKEN || '',
@@ -367,12 +317,15 @@ class AdminService {
       payoutBankFee: 2500,
       autoApprovePayoutUnder: 500000,
       maintenanceMode: false,
+      paymentGatewayEnabled: true,
+      ...getPlatformLogo(),
     };
 
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return defaultSettings;
     try {
-      return { ...defaultSettings, ...JSON.parse(raw) };
+      // Logo selalu dari cache logo agar simpan pengaturan tidak menimpa logo dengan nilai usang.
+      return { ...defaultSettings, ...JSON.parse(raw), ...getPlatformLogo() };
     } catch {
       return defaultSettings;
     }
@@ -381,21 +334,37 @@ class AdminService {
   async fetchPlatformSettingsFromDatabase(): Promise<PlatformSettings> {
     const current = this.getPlatformSettings();
     try {
-      const { data, error } = await supabase
+      // Hanya kolom publik: kunci rahasia (midtrans_server_key, dsb.) hanya bisa dibaca server.
+      const { data: rawData, error } = await supabase
         .from('platform_settings')
-        .select('*')
+        .select(PUBLIC_SETTINGS_COLUMNS)
         .limit(1)
         .maybeSingle();
+      const data: any = rawData;
+
+      // Logo dibaca terpisah agar pengaturan lain tetap termuat walau kolom logo belum dimigrasi.
+      const logo = await loadPlatformLogo(true);
+      // QRIS domain juga dibaca terpisah (kolom dari migrasi 20261113).
+      const { data: qrisRow } = await supabase
+        .from('platform_settings')
+        .select('domain_qris_url')
+        .limit(1)
+        .maybeSingle();
+      const domainQrisUrl = String((qrisRow as any)?.domain_qris_url || current.domainQrisUrl || '');
 
       if (error || !data) {
-        return current;
+        return { ...current, ...logo, domainQrisUrl };
       }
 
       const mapped: PlatformSettings = {
         midtransEnvironment: (data.midtrans_environment as any) || current.midtransEnvironment,
         midtransMerchantId: data.midtrans_merchant_id || current.midtransMerchantId,
         midtransClientKey: data.midtrans_client_key || current.midtransClientKey,
-        midtransServerKey: data.midtrans_server_key || current.midtransServerKey,
+        // Kunci rahasia tidak pernah dikirim ke browser.
+        midtransServerKey: '',
+        duitkuEnvironment: current.duitkuEnvironment,
+        duitkuMerchantCode: current.duitkuMerchantCode,
+        duitkuApiKey: '',
         biteshipEnabled: data.biteship_enabled ?? current.biteshipEnabled,
         biteshipApiKey: current.biteshipApiKey,
         biteshipOriginCity: data.biteship_origin_city || current.biteshipOriginCity,
@@ -407,6 +376,10 @@ class AdminService {
         payoutBankFee: Number(data.payout_bank_fee || current.payoutBankFee),
         autoApprovePayoutUnder: Number(data.auto_approve_payout_under || current.autoApprovePayoutUnder),
         maintenanceMode: Boolean(data.maintenance_mode),
+        paymentGatewayEnabled: data.payment_gateway_enabled !== undefined ? Boolean(data.payment_gateway_enabled) : (current.paymentGatewayEnabled ?? true),
+        logoUrl: logo.logoUrl,
+        logoIconUrl: logo.logoIconUrl,
+        domainQrisUrl,
       };
 
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(mapped));
@@ -418,30 +391,56 @@ class AdminService {
   }
 
   async savePlatformSettings(settings: PlatformSettings): Promise<void> {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    const sanitized = { ...settings, midtransServerKey: '', duitkuApiKey: '', biteshipApiKey: '' };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(sanitized));
 
     try {
-      await supabase
-        .from('platform_settings')
-        .update({
-          midtrans_environment: settings.midtransEnvironment,
-          midtrans_merchant_id: settings.midtransMerchantId,
-          midtrans_client_key: settings.midtransClientKey,
-          midtrans_server_key: settings.midtransServerKey,
-          biteship_enabled: settings.biteshipEnabled,
-          biteship_origin_city: settings.biteshipOriginCity,
-          wa_gateway_enabled: settings.waGatewayEnabled,
-          wa_sender_phone: settings.waSenderPhone,
-          platform_fee_percent: settings.platformFeePercent,
-          payout_min_amount: settings.payoutMinAmount,
-          payout_bank_fee: settings.payoutBankFee,
-          auto_approve_payout_under: settings.autoApprovePayoutUnder,
-          maintenance_mode: settings.maintenanceMode,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', 'SET001');
+      const updatePayload: any = {
+        payment_gateway_enabled: settings.paymentGatewayEnabled ?? true,
+        platform_fee_percent: settings.platformFeePercent,
+        payout_min_amount: settings.payoutMinAmount,
+        payout_bank_fee: settings.payoutBankFee,
+        auto_approve_payout_under: settings.autoApprovePayoutUnder,
+        maintenance_mode: settings.maintenanceMode,
+        biteship_enabled: settings.biteshipEnabled,
+        biteship_origin_city: settings.biteshipOriginCity,
+        wa_gateway_enabled: settings.waGatewayEnabled,
+        wa_sender_phone: settings.waSenderPhone,
+        midtrans_environment: settings.midtransEnvironment,
+        midtrans_merchant_id: settings.midtransMerchantId,
+        midtrans_client_key: settings.midtransClientKey,
+        // String kosong = kembali ke logo bawaan.
+        logo_url: settings.logoUrl || '',
+        logo_icon_url: settings.logoIconUrl || '',
+        domain_qris_url: settings.domainQrisUrl || '',
+        updated_at: new Date().toISOString(),
+      };
+      // Kunci rahasia hanya dikirim bila super admin mengisinya (untuk mengganti kunci).
+      if (settings.midtransServerKey && settings.midtransServerKey.trim()) {
+        updatePayload.midtrans_server_key = settings.midtransServerKey.trim();
+      }
+      if (settings.waGatewayApiKey && settings.waGatewayApiKey.trim()) {
+        updatePayload.wa_gateway_api_key = settings.waGatewayApiKey.trim();
+      }
+      delete updatePayload.updated_at;
+      // Ditulis lewat RPC yang memverifikasi super admin (tabel tidak bisa diubah langsung).
+      // Sesi login super admin sudah cukup; password di memori hanya cadangan dan hilang saat reload.
+      const admin = authService.peekAdminCredential();
+      const { data: res, error } = await supabase.rpc('admin_update_platform_settings', {
+        p_admin_email: admin?.email || '',
+        p_admin_password: admin?.password || '',
+        p_settings: updatePayload,
+      });
+
+      if (error || !res?.success) {
+        const message = res?.message || error?.message || 'Gagal menyimpan pengaturan platform.';
+        console.error('Failed to sync platform settings to Supabase:', message);
+        throw new Error(message);
+      }
+      setPlatformLogo({ logoUrl: settings.logoUrl || '', logoIconUrl: settings.logoIconUrl || '' });
     } catch (err) {
       console.warn('Failed to sync platform settings to Supabase:', err);
+      throw err;
     }
   }
 
@@ -449,9 +448,7 @@ class AdminService {
     const currentStores = stores || this.getAllStores();
     const currentWithdrawals = withdrawals || this.getStoredWithdrawals();
     const currentOrders = orders || this.getAllOrders();
-    const suspended = this.getSuspendedStoreIds();
-
-    const activeStores = currentStores.filter((s) => !suspended.includes(s.id) && !s.isSuspended).length;
+    const activeStores = currentStores.filter((s) => !s.isSuspended).length;
     const proSubscribers = currentStores.filter((s) => s.plan && s.plan !== 'free').length;
 
     // GMV from real paid orders, or aggregate balance of real stores

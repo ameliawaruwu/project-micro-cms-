@@ -1,0 +1,96 @@
+import React from 'react';
+import { NatureProductCard } from './ProductCard';
+import { InlineEditableText } from '../../../components/layout-editor/InlineEditableText';
+import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useSectionProducts } from '../../useSectionProducts';
+import { STORE_ROUTES, resolveSectionCta } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
+
+export const NatureFeaturedProducts: React.FC<{ 
+  sectionOptions?: any; 
+  onUpdateSectionOptions?: any; 
+  sectionKey?: string;
+  readonly?: boolean;
+  isMobile?: boolean;
+  isTablet?: boolean;
+}> = ({ sectionOptions = {}, onUpdateSectionOptions, sectionKey, readonly = false, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
+  const products = useSectionProducts('nature', sectionOptions, { defaultCount: 4 });
+
+  const title = sectionOptions.featuredTitle || sectionOptions.heading || (isEn ? 'Fresh Harvest Picks' : 'Panen Segar Pilihan');
+  const subtitle = sectionOptions.featuredSubtitle || sectionOptions.subheading || (isEn ? 'The best products picked by our store' : 'Produk terbaik pilihan toko kami');
+  const buttonText = sectionOptions.buttonLabel || sectionOptions.buttonText || (isEn ? 'View All Products' : 'Lihat Semua Produk');
+  // Tautan tombol dari panel ("Tautan Tombol"); kosong/berbahaya → katalog.
+  const buttonHref = resolveSectionCta(sectionOptions, buttonText, STORE_ROUTES.catalog).href;
+
+  const desiredCols = [2, 3, 4, 5, 6].includes(sectionOptions.gridColumns) ? sectionOptions.gridColumns : 4;
+  const desktopColsMap: Record<number, string> = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-4', 6: 'grid-cols-4' };
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
+    desktop: desktopColsMap[desiredCols],
+    fallback:
+      desiredCols === 2 ? 'grid-cols-2 sm:grid-cols-2' :
+      desiredCols === 3 ? 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3' :
+      desiredCols === 5 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' :
+      desiredCols === 6 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6' :
+      'grid-cols-2 sm:grid-cols-2 lg:grid-cols-4',
+  });
+
+  if (products.length === 0) return null;
+
+  return (
+    <section className="w-full py-14 sm:py-20 px-4 sm:px-6 font-serif bg-[#FBF9F5] relative overflow-hidden border-b border-[#E8E4DB]/60">
+      <div className="max-w-6xl mx-auto relative z-10">
+        <div className="text-center mb-12">
+          {sectionOptions.imageUrl && (
+            <img 
+              src={sectionOptions.imageUrl} 
+              alt="" 
+              className="w-full h-48 md:h-64 object-cover rounded-2xl mb-8 border border-[#E8E4DB] shadow-sm"
+            />
+          )}
+          <div className="inline-block px-3.5 py-1 bg-[#E8F5E9] text-[#166534] border border-[#C8E6C9] font-sans text-xs font-semibold rounded-full mb-3 tracking-wide">
+            <InlineEditableText
+              tagName="span"
+              value={subtitle}
+              readonly={readonly}
+              onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { featuredSubtitle: val })}
+            />
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-serif font-bold text-[#2C3B2D] tracking-tight break-words">
+            <InlineEditableText
+              tagName="span"
+              value={title}
+              readonly={readonly}
+              onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { featuredTitle: val })}
+            />
+          </h2>
+        </div>
+
+        {/* Product Grid */}
+        <div className={`grid ${gridColsClass} gap-4 sm:gap-6`}>
+          {products.map((product) => (
+            <NatureProductCard key={product.id} product={product} options={sectionOptions} readonly={readonly} />
+          ))}
+        </div>
+
+        {/* Bottom CTA Button */}
+        <div className="mt-10 sm:mt-14 text-center">
+          <a
+            href={buttonHref}
+            onClick={(e) => { if (!readonly) e.preventDefault(); }}
+            className="inline-flex items-center justify-center px-8 py-3 bg-[#2C3B2D] hover:bg-[#1E2A1F] text-[#F9F6F0] font-sans text-sm font-medium rounded-full hover:shadow-md transition-all duration-300"
+          >
+            <InlineEditableText
+              tagName="span"
+              value={buttonText}
+              readonly={readonly}
+              onSave={(val) => onUpdateSectionOptions && sectionKey && onUpdateSectionOptions(sectionKey, { buttonLabel: val })}
+            />
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+};

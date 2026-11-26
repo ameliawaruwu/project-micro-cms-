@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Pencil } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface InlineEditableTextProps {
   value: string;
@@ -16,7 +17,7 @@ interface InlineEditableTextProps {
 
 export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
   value,
-  placeholder = 'Klik untuk mengedit...',
+  placeholder: placeholderProp,
   onSave,
   className = '',
   multiline = false,
@@ -26,6 +27,8 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
   showEditHint = true,
   readonly = false,
 }) => {
+  const { isEn } = useLanguage();
+  const placeholder = placeholderProp ?? (isEn ? 'Click to edit...' : 'Klik untuk mengedit...');
   const [isEditing, setIsEditing] = useState(false);
   const [draftValue, setDraftValue] = useState(value);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -116,7 +119,7 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
           : 'hover:bg-black/5 hover:ring-1 hover:ring-[#2271B1]/30'
       } ${className}`}
       style={style}
-      title="Klik untuk mengedit teks langsung"
+      title={isEn ? 'Click to edit the text directly' : 'Klik untuk mengedit teks langsung'}
     >
       <span className={!draftValue ? 'opacity-50 italic' : ''}>
         {draftValue || placeholder}

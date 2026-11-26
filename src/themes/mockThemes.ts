@@ -45,7 +45,7 @@ export const mockThemes: Record<string, ThemeLibraryItem> = {
           layout: 'image-left',
           title: 'The Origin',
           content: 'Every piece starts with a raw, untouched material sourced from the depths of the earth. We believe in preserving the natural beauty and embracing the flaws.',
-          imageUrl: 'https://images.unsplash.com/photo-1610444558231-10cbfb2bc8e2?w=800&auto=format&fit=crop'
+          imageUrl: 'https://images.unsplash.com/photo-1530968033775-2c92736b131e?w=800&auto=format&fit=crop'
         }
       },
       'grid-ed': {
@@ -182,7 +182,7 @@ export const mockThemes: Record<string, ThemeLibraryItem> = {
   compact: {
     themeId: 'compact-01',
     name: 'Modern Catalog',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1555529733-0e670560f4e1?q=80&w=1200&auto=format&fit=crop',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200&auto=format&fit=crop',
     settings: {
       primaryColor: '#0055FF',
       backgroundColor: '#F3F4F6',
@@ -250,7 +250,7 @@ export const mockThemes: Record<string, ThemeLibraryItem> = {
           subheading: 'Curated essentials for your everyday.',
           ctaText: 'Explore',
           ctaLink: '/products',
-          imageUrl: 'https://images.unsplash.com/photo-1515347619152-166299d25fb2?w=1200&auto=format&fit=crop',
+          imageUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&auto=format&fit=crop',
           overlayOpacity: 20
         }
       },

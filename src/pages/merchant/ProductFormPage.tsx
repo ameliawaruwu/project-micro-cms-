@@ -1,3 +1,4 @@
+import SearchableSelect from '../../components/common/SearchableSelect';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ArrowLeft,
@@ -29,6 +30,20 @@ export const DEFAULT_PRODUCT_CATEGORIES = [
   'Otomotif',
   'Umum',
 ];
+
+/** Label English untuk kategori bawaan (nilai yang disimpan tetap versi Indonesia). */
+const DEFAULT_PRODUCT_CATEGORY_EN: Record<string, string> = {
+  'Pakaian & Fashion': 'Clothing & Fashion',
+  'Makanan & Minuman': 'Food & Beverages',
+  'Kesehatan & Kecantikan': 'Health & Beauty',
+  'Elektronik & Gadget': 'Electronics & Gadgets',
+  'Aksesoris & Perhiasan': 'Accessories & Jewelry',
+  'Rumah Tangga & Dapur': 'Household & Kitchen',
+  'Hobi, Mainan & Koleksi': 'Hobbies, Toys & Collectibles',
+  'Buku & Alat Tulis': 'Books & Stationery',
+  'Otomotif': 'Automotive',
+  'Umum': 'General',
+};
 
 export const compressProductImage = (
   file: File,
@@ -85,7 +100,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
   onBack,
   onSave,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const isEditing = Boolean(productToEdit);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -179,20 +194,20 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
   const processFiles = (files: File[]) => {
     const validFiles = files.filter((f) => f.type.startsWith('image/'));
     if (validFiles.length === 0) {
-      setErrorMsg('Harap pilih file gambar yang valid (JPG, PNG, WEBP).');
+      setErrorMsg(isEn ? 'Please choose a valid image file (JPG, PNG, WEBP).' : 'Harap pilih file gambar yang valid (JPG, PNG, WEBP).');
       return;
     }
 
     const oversized = validFiles.some((f) => f.size > 5 * 1024 * 1024);
     if (oversized) {
-      setErrorMsg('Ukuran setiap file foto maksimal 5 MB.');
+      setErrorMsg(isEn ? 'Each photo must be 5 MB or smaller.' : 'Ukuran setiap file foto maksimal 5 MB.');
       return;
     }
 
     setErrorMsg('');
     const remainingSlots = 5 - images.length;
     if (remainingSlots <= 0) {
-      setErrorMsg('Maksimal 5 foto untuk satu produk.');
+      setErrorMsg(isEn ? 'Maximum 5 photos per product.' : 'Maksimal 5 foto untuk satu produk.');
       return;
     }
 
@@ -263,24 +278,24 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
     setErrorMsg('');
 
     if (images.length === 0) {
-      setErrorMsg('Silakan pilih dan upload minimal 1 foto produk dari perangkat Anda.');
+      setErrorMsg(isEn ? 'Please choose and upload at least 1 product photo from your device.' : 'Silakan pilih dan upload minimal 1 foto produk dari perangkat Anda.');
       return;
     }
 
     if (!name.trim()) {
-      setErrorMsg('Nama produk wajib diisi.');
+      setErrorMsg(isEn ? 'Product name is required.' : 'Nama produk wajib diisi.');
       return;
     }
 
     const price = parseNumber(priceDisplay);
     if (!price || price <= 0) {
-      setErrorMsg('Harga jual harus lebih dari Rp 0.');
+      setErrorMsg(isEn ? 'Selling price must be more than Rp 0.' : 'Harga jual harus lebih dari Rp 0.');
       return;
     }
 
     const finalCategory = category === '__new__' ? customCategory.trim() : category;
     if (!finalCategory) {
-      setErrorMsg('Kategori produk wajib dipilih atau diisi.');
+      setErrorMsg(isEn ? 'Please choose or enter a product category.' : 'Kategori produk wajib dipilih atau diisi.');
       return;
     }
 
@@ -300,7 +315,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
 
       await onSave(payload);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Gagal menyimpan produk. Silakan coba lagi.');
+      setErrorMsg(err.message || (isEn ? 'Failed to save product. Please try again.' : 'Gagal menyimpan produk. Silakan coba lagi.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -313,7 +328,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
         <Breadcrumb
           items={[
             { label: t('nav_products', 'Produk'), onClick: onBack },
-            { label: isEditing ? `${t('edit_product_title', 'Edit Produk')}: ${name || 'Produk'}` : t('add_product_title', 'Tambah Produk Baru'), isActive: true },
+            { label: isEditing ? `${t('edit_product_title', 'Edit Produk')}: ${name || (isEn ? 'Product' : 'Produk')}` : t('add_product_title', 'Tambah Produk Baru'), isActive: true },
           ]}
         />
 
@@ -323,7 +338,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
               type="button"
               onClick={onBack}
               className="p-2 rounded-xl border border-[#E5E0DD] bg-white text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer shrink-0 shadow-2xs"
-              title="Kembali"
+              title={isEn ? 'Back' : 'Kembali'}
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
@@ -403,13 +418,13 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                   <div className="relative flex-1 min-h-[220px] rounded-2xl overflow-hidden bg-[#FAF7F7] border-2 border-[#E5E0DD] group">
                     <img
                       src={currentPreviewImage}
-                      alt="Preview Produk"
+                      alt={isEn ? 'Product preview' : 'Preview Produk'}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
 
                     {/* Active index badge */}
                     <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-xs text-white text-[10px] font-bold tracking-wide">
-                      {activeImageIndex === 0 ? t('cover_photo', 'Foto Sampul (Utama)') : `Foto #${activeImageIndex + 1}`}
+                      {activeImageIndex === 0 ? t('cover_photo', 'Foto Sampul (Utama)') : (isEn ? `Photo #${activeImageIndex + 1}` : `Foto #${activeImageIndex + 1}`)}
                     </div>
                   </div>
 
@@ -427,7 +442,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                       type="button"
                       onClick={() => handleRemoveSpecificImage(activeImageIndex)}
                       className="py-2 px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[36px]"
-                      title="Hapus foto ini"
+                      title={isEn ? 'Remove this photo' : 'Hapus foto ini'}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>{t('delete', 'Hapus')}</span>
@@ -481,7 +496,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                         : 'border-[#E5E0DD] hover:border-[#706866]'
                     }`}
                   >
-                    <img src={img} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img src={img} alt={isEn ? `Photo ${idx + 1}` : `Foto ${idx + 1}`} className="w-full h-full object-cover" />
                     {idx === 0 && (
                       <span className="absolute bottom-0 inset-x-0 bg-[#66000E] text-white text-[8px] font-bold text-center py-0.5 leading-none">
                         {t('main_badge', 'Utama')}
@@ -494,7 +509,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                         handleRemoveSpecificImage(idx);
                       }}
                       className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-xs"
-                      title="Hapus foto ini"
+                      title={isEn ? 'Remove this photo' : 'Hapus foto ini'}
                     >
                       <X className="w-2.5 h-2.5" />
                     </button>
@@ -507,10 +522,10 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="w-14 h-14 rounded-xl border-2 border-dashed border-[#D1C9C5] hover:border-[#66000E] bg-[#FAF7F7] hover:bg-[#F9EDEF] text-[#706866] hover:text-[#66000E] flex flex-col items-center justify-center gap-0.5 shrink-0 transition cursor-pointer"
-                    title="Upload foto lainnya"
+                    title={isEn ? 'Upload more photos' : 'Upload foto lainnya'}
                   >
                     <Plus className="w-4 h-4" />
-                    <span className="text-[9px] font-bold">Tambah</span>
+                    <span className="text-[9px] font-bold">{isEn ? 'Add' : 'Tambah'}</span>
                   </button>
                 )}
               </div>
@@ -559,12 +574,12 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                           autoFocus
                           value={customCategory}
                           onChange={(e) => setCustomCategory(e.target.value)}
-                          placeholder="Tulis nama kategori baru..."
+                          placeholder={isEn ? 'Enter a new category name...' : 'Tulis nama kategori baru...'}
                           className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-[#66000E] bg-white text-[#241A1A] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 transition"
                         />
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] text-[#706866]">Kategori kustom baru</span>
+                        <span className="text-[11px] text-[#706866]">{isEn ? 'New custom category' : 'Kategori kustom baru'}</span>
                         <button
                           type="button"
                           onClick={() => {
@@ -578,7 +593,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <select
+                    <SearchableSelect
                       value={category}
                       onChange={(e) => {
                         if (e.target.value === '__new__') {
@@ -592,11 +607,11 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                     >
                       {availableCategories.map((cat) => (
                         <option key={cat} value={cat}>
-                          {cat}
+                          {isEn ? DEFAULT_PRODUCT_CATEGORY_EN[cat] || cat : cat}
                         </option>
                       ))}
-                      <option value="__new__">+ Tambah Kategori Baru...</option>
-                    </select>
+                      <option value="__new__">{isEn ? '+ Add New Category...' : '+ Tambah Kategori Baru...'}</option>
+                    </SearchableSelect>
                   )}
                 </div>
               </div>
@@ -631,7 +646,7 @@ export const ProductFormPage: React.FC<ProductFormPageProps> = ({
                   min="0"
                   value={stockDisplay}
                   onChange={(e) => setStockDisplay(e.target.value)}
-                  placeholder="0"
+                  placeholder={isEn ? 'Example: 10' : 'Contoh: 10'}
                   className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] text-[#241A1A] focus:bg-white focus:outline-none focus:border-[#66000E] transition"
                 />
               </div>

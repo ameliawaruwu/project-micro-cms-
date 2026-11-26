@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Sparkles,
 } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface DemoPreviewModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export const DemoPreviewModal: React.FC<DemoPreviewModalProps> = ({
   onLaunchFullDemo,
   onNavigateRegister,
 }) => {
+  const { isEn } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -41,20 +43,20 @@ export const DemoPreviewModal: React.FC<DemoPreviewModalProps> = ({
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#F5E8EA] border border-[#E8DDDE] text-[#66000E] text-[11px] font-bold mb-1.5">
               <Sparkles className="w-3 h-3 text-[#66000E]" />
-              <span>Simulasi 1 Menit</span>
+              <span>{isEn ? '1-Minute Simulation' : 'Simulasi 1 Menit'}</span>
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-[#241A1A] tracking-tight">
-              Lihat Kroomify dalam 1 Menit
+              {isEn ? 'See LapakQ in 1 Minute' : 'Lihat LapakQ dalam 1 Menit'}
             </h3>
             <p className="text-xs sm:text-sm text-[#706866] mt-0.5">
-              Cara termudah kelola toko online Anda dari HP atau laptop.
+              {isEn ? 'The easiest way to run your online store from your phone or laptop.' : 'Cara termudah kelola toko online Anda dari HP atau laptop.'}
             </p>
           </div>
 
           <button
             onClick={onClose}
             className="p-1.5 rounded-xl text-[#706866] hover:text-[#241A1A] hover:bg-white transition cursor-pointer border border-transparent hover:border-[#E5E0DD]"
-            aria-label="Tutup pratinjau"
+            aria-label={isEn ? 'Close preview' : 'Tutup pratinjau'}
           >
             <X className="w-5 h-5" />
           </button>
@@ -69,10 +71,10 @@ export const DemoPreviewModal: React.FC<DemoPreviewModalProps> = ({
             </div>
             <div>
               <h4 className="text-xs sm:text-sm font-bold text-[#241A1A]">
-                Tambah Produk dengan Cepat
+                {isEn ? 'Add Products Quickly' : 'Tambah Produk dengan Cepat'}
               </h4>
               <p className="text-[11px] sm:text-xs text-[#706866] mt-0.5">
-                Upload foto, tulis harga dan stok dalam hitungan detik. Katalog otomatis siap dibagikan ke WhatsApp & Medsos.
+                {isEn ? 'Upload photos, set price and stock in seconds. Your catalog is instantly ready to share on WhatsApp & social media.' : 'Upload foto, tulis harga dan stok dalam hitungan detik. Katalog otomatis siap dibagikan ke WhatsApp & Medsos.'}
               </p>
             </div>
           </div>
@@ -84,10 +86,10 @@ export const DemoPreviewModal: React.FC<DemoPreviewModalProps> = ({
             </div>
             <div>
               <h4 className="text-xs sm:text-sm font-bold text-[#241A1A]">
-                Terima Pesanan & Pembayaran Otomatis
+                {isEn ? 'Receive Orders & Payments Automatically' : 'Terima Pesanan & Pembayaran Otomatis'}
               </h4>
               <p className="text-[11px] sm:text-xs text-[#706866] mt-0.5">
-                Pembeli bisa bayar via QRIS atau Transfer Bank. Status pesanan dan cetak resi kurir otomatis terupdate.
+                {isEn ? 'Buyers can pay via QRIS or bank transfer. Order status and courier receipts update automatically.' : 'Pembeli bisa bayar via QRIS atau Transfer Bank. Status pesanan dan cetak resi kurir otomatis terupdate.'}
               </p>
             </div>
           </div>
@@ -99,10 +101,10 @@ export const DemoPreviewModal: React.FC<DemoPreviewModalProps> = ({
             </div>
             <div>
               <h4 className="text-xs sm:text-sm font-bold text-[#241A1A]">
-                Pantau Penjualan Tanpa Ribet
+                {isEn ? 'Track Sales Effortlessly' : 'Pantau Penjualan Tanpa Ribet'}
               </h4>
               <p className="text-[11px] sm:text-xs text-[#706866] mt-0.5">
-                Lihat omset harian, cek stok menipis, dan kelola pelanggan langsung dalam satu dashboard praktis.
+                {isEn ? 'See daily revenue, check low stock, and manage customers in one handy dashboard.' : 'Lihat omset harian, cek stok menipis, dan kelola pelanggan langsung dalam satu dashboard praktis.'}
               </p>
             </div>
           </div>
@@ -118,7 +120,7 @@ export const DemoPreviewModal: React.FC<DemoPreviewModalProps> = ({
             className="w-full sm:w-auto px-4 py-2.5 min-h-[46px] rounded-xl border border-[#E5E0DD] bg-white hover:bg-[#FAF7F7] hover:border-[#66000E] text-[#241A1A] font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-2xs"
           >
             <Play className="w-3.5 h-3.5 fill-[#66000E] text-[#66000E]" />
-            <span>Jelajahi Demo Lengkap</span>
+            <span>{isEn ? 'Explore Full Demo' : 'Jelajahi Demo Lengkap'}</span>
           </button>
 
           <button
@@ -128,7 +130,7 @@ export const DemoPreviewModal: React.FC<DemoPreviewModalProps> = ({
             }}
             className="w-full sm:w-auto px-5 py-2.5 min-h-[46px] rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition cursor-pointer active:scale-95"
           >
-            <span>Mulai Buka Toko Gratis</span>
+            <span>{isEn ? 'Open Your Store for Free' : 'Mulai Buka Toko Gratis'}</span>
             <ArrowRight className="w-4 h-4 text-white" />
           </button>
         </div>

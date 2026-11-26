@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useState } from 'react';
 import {
   CheckCircle2,
@@ -40,26 +41,31 @@ const CONCISE_DESCRIPTIONS: Record<string, { id: string; en: string }> = {
 // Preset available services for each courier provider
 const COURIER_SERVICES_PRESETS: Record<
   string,
-  { code: string; name: string; desc: string; badge?: string }[]
+  {
+    code: string;
+    name: { id: string; en: string };
+    desc: { id: string; en: string };
+    badge?: { id: string; en: string };
+  }[]
 > = {
   jnt: [
-    { code: 'ez', name: 'EZ (Reguler)', desc: 'Pengiriman reguler standar 2-3 hari kerja ke seluruh Indonesia', badge: 'Terpopuler' },
-    { code: 'super', name: 'J&T Super', desc: 'Layanan kilat esok hari sampai dengan garansi pengantaran', badge: 'Kilat' },
-    { code: 'economy', name: 'J&T Economy', desc: 'Pengiriman hemat ekonomis dengan tarif lebih bersahabat', badge: 'Hemat' },
+    { code: 'ez', name: { id: 'EZ (Reguler)', en: 'EZ (Regular)' }, desc: { id: 'Pengiriman reguler standar 2-3 hari kerja ke seluruh Indonesia', en: 'Standard regular delivery in 2-3 business days across Indonesia' }, badge: { id: 'Terpopuler', en: 'Most Popular' } },
+    { code: 'super', name: { id: 'J&T Super', en: 'J&T Super' }, desc: { id: 'Layanan kilat esok hari sampai dengan garansi pengantaran', en: 'Next-day express service with delivery guarantee' }, badge: { id: 'Kilat', en: 'Express' } },
+    { code: 'economy', name: { id: 'J&T Economy', en: 'J&T Economy' }, desc: { id: 'Pengiriman hemat ekonomis dengan tarif lebih bersahabat', en: 'Economical delivery with friendlier rates' }, badge: { id: 'Hemat', en: 'Saver' } },
   ],
   jne: [
-    { code: 'reg', name: 'REG (Reguler)', desc: 'Jaringan pengiriman terluas ke pelosok nusantara (1-3 hari)', badge: 'Standar' },
-    { code: 'yes', name: 'YES (Yakin Esok Sampai)', desc: 'Layanan prioritas tiba esok hari termasuk hari libur', badge: 'Prioritas' },
-    { code: 'jtr', name: 'JTR (Trucking/Kargo)', desc: 'Pengiriman kargo untuk paket berbobot berat (>10 kg)', badge: 'Kargo' },
+    { code: 'reg', name: { id: 'REG (Reguler)', en: 'REG (Regular)' }, desc: { id: 'Jaringan pengiriman terluas ke pelosok nusantara (1-3 hari)', en: 'Widest delivery network across the archipelago (1-3 days)' }, badge: { id: 'Standar', en: 'Standard' } },
+    { code: 'yes', name: { id: 'YES (Yakin Esok Sampai)', en: 'YES (Next Day Delivery)' }, desc: { id: 'Layanan prioritas tiba esok hari termasuk hari libur', en: 'Priority next-day arrival, including holidays' }, badge: { id: 'Prioritas', en: 'Priority' } },
+    { code: 'jtr', name: { id: 'JTR (Trucking/Kargo)', en: 'JTR (Trucking/Cargo)' }, desc: { id: 'Pengiriman kargo untuk paket berbobot berat (>10 kg)', en: 'Cargo delivery for heavy parcels (>10 kg)' }, badge: { id: 'Kargo', en: 'Cargo' } },
   ],
   sicepat: [
-    { code: 'halu', name: 'HALU (Hemat)', desc: 'Tarif ongkir hemat khusus e-commerce (mulai Rp 5.000)', badge: 'Ekonomis' },
-    { code: 'siuntung', name: 'SIUNTUNG (Reguler)', desc: 'Pengiriman reguler cepat tanpa minimum jumlah paket', badge: 'Reguler' },
-    { code: 'best', name: 'BEST (Sameday)', desc: 'Paket sampai di hari yang sama khusus kota-kota besar', badge: 'Sameday' },
+    { code: 'halu', name: { id: 'HALU (Hemat)', en: 'HALU (Saver)' }, desc: { id: 'Tarif ongkir hemat khusus e-commerce (mulai Rp 5.000)', en: 'Budget shipping rates for e-commerce (from Rp 5.000)' }, badge: { id: 'Ekonomis', en: 'Economy' } },
+    { code: 'siuntung', name: { id: 'SIUNTUNG (Reguler)', en: 'SIUNTUNG (Regular)' }, desc: { id: 'Pengiriman reguler cepat tanpa minimum jumlah paket', en: 'Fast regular delivery with no minimum parcel count' }, badge: { id: 'Reguler', en: 'Regular' } },
+    { code: 'best', name: { id: 'BEST (Sameday)', en: 'BEST (Sameday)' }, desc: { id: 'Paket sampai di hari yang sama khusus kota-kota besar', en: 'Same-day arrival in major cities' }, badge: { id: 'Sameday', en: 'Sameday' } },
   ],
   gosend: [
-    { code: 'instant', name: 'Instant (1-2 Jam)', desc: 'Driver motor point-to-point langsung antar tanpa delay', badge: 'Kilat' },
-    { code: 'sameday', name: 'Same Day (6-8 Jam)', desc: 'Pengantaran di hari yang sama dengan tarif hemat', badge: 'Hemat' },
+    { code: 'instant', name: { id: 'Instant (1-2 Jam)', en: 'Instant (1-2 Hours)' }, desc: { id: 'Driver motor point-to-point langsung antar tanpa delay', en: 'Point-to-point motorcycle driver, delivered without delay' }, badge: { id: 'Kilat', en: 'Express' } },
+    { code: 'sameday', name: { id: 'Same Day (6-8 Jam)', en: 'Same Day (6-8 Hours)' }, desc: { id: 'Pengantaran di hari yang sama dengan tarif hemat', en: 'Same-day delivery at a budget rate' }, badge: { id: 'Hemat', en: 'Saver' } },
   ],
 };
 
@@ -108,14 +114,14 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
         autoInsurance,
         defaultHandoff,
       });
-      onShowNotification(`Preferensi layanan ${integration.name} berhasil diperbarui!`);
+      onShowNotification(isEn ? `${integration.name} service preferences updated!` : `Preferensi layanan ${integration.name} berhasil diperbarui!`);
     } else {
       // Simpan konfigurasi payment gateway
       onSaveConfig(integration.id, {
         apiKey,
         merchantId,
       });
-      onShowNotification(`Pengaturan kredensial ${integration.name} berhasil disimpan.`);
+      onShowNotification(isEn ? `${integration.name} credential settings saved.` : `Pengaturan kredensial ${integration.name} berhasil disimpan.`);
     }
 
     setShowConfigModal(false);
@@ -126,8 +132,8 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
     if (!isLocked) {
       onShowNotification(
         integration.isConnected
-          ? `${integration.name} dinonaktifkan.`
-          : `${integration.name} berhasil diaktifkan!`
+          ? (isEn ? `${integration.name} deactivated.` : `${integration.name} dinonaktifkan.`)
+          : (isEn ? `${integration.name} activated successfully!` : `${integration.name} berhasil diaktifkan!`)
       );
     }
   };
@@ -243,7 +249,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
             ) : isLocked ? (
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#777777] bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-xl">
                 <Lock className="w-3 h-3 text-[#777777]" />
-                <span>Nonaktif</span>
+                <span>{isEn ? 'Inactive' : 'Nonaktif'}</span>
               </span>
             ) : (
               <span className="text-[11px] font-semibold text-[#027A48] bg-[#ECFDF3] border border-[#ABEFC6] px-2.5 py-1 rounded-xl">
@@ -267,15 +273,15 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                 <div>
                   <h3 className="font-bold text-sm sm:text-base text-[#1F1F1F]">
                     {isBiteship
-                      ? 'Integrasi Biteship Aggregator'
+                      ? (isEn ? 'Biteship Aggregator Integration' : 'Integrasi Biteship Aggregator')
                       : isShipping
-                      ? `Pengaturan Layanan ${integration.name}`
-                      : `Kredensial ${integration.name}`}
+                      ? (isEn ? `${integration.name} Service Settings` : `Pengaturan Layanan ${integration.name}`)
+                      : (isEn ? `${integration.name} Credentials` : `Kredensial ${integration.name}`)}
                   </h3>
                   <p className="text-[11px] text-[#777777]">
                     {isShipping
-                      ? 'Dikelola otomatis via Biteship Aggregator API'
-                      : 'Koneksi payment gateway transaksi'}
+                      ? (isEn ? 'Managed automatically via the Biteship Aggregator API' : 'Dikelola otomatis via Biteship Aggregator API')
+                      : (isEn ? 'Transaction payment gateway connection' : 'Koneksi payment gateway transaksi')}
                   </p>
                 </div>
               </div>
@@ -296,26 +302,34 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                   <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border border-[#BBF7D0] space-y-2">
                     <div className="flex items-center gap-2 text-[#166534] font-bold text-xs">
                       <CheckCircle2 className="w-4 h-4 text-[#16a34a]" />
-                      <span>Koneksi Biteship Berjalan Normal</span>
+                      <span>{isEn ? 'Biteship Connection Running Normally' : 'Koneksi Biteship Berjalan Normal'}</span>
                     </div>
                     <p className="text-[11px] text-[#15803d] leading-relaxed">
-                      Sistem Micro CMS menggunakan <strong>1 API Key terpusat</strong> pada environment backend (<code className="bg-white px-1.5 py-0.5 rounded border border-[#BBF7D0] font-mono">BITESHIP_API_KEY</code>). Anda tidak perlu mendaftar akun atau memasukkan Merchant ID per kurir secara manual.
+                      {isEn ? (
+                        <>
+                          The Micro CMS system uses <strong>1 centralized API Key</strong> in the backend environment (<code className="bg-white px-1.5 py-0.5 rounded border border-[#BBF7D0] font-mono">BITESHIP_API_KEY</code>). You do not need to register an account or enter a Merchant ID for each courier manually.
+                        </>
+                      ) : (
+                        <>
+                          Sistem Micro CMS menggunakan <strong>1 API Key terpusat</strong> pada environment backend (<code className="bg-white px-1.5 py-0.5 rounded border border-[#BBF7D0] font-mono">BITESHIP_API_KEY</code>). Anda tidak perlu mendaftar akun atau memasukkan Merchant ID per kurir secara manual.
+                        </>
+                      )}
                     </p>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-[#F9F9F9] border border-[#E5E0DD] space-y-2.5">
                     <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-[#777777]">Status Autentikasi:</span>
+                      <span className="text-[#777777]">{isEn ? 'Authentication Status:' : 'Status Autentikasi:'}</span>
                       <span className="font-semibold text-[#027A48] bg-[#ECFDF3] px-2 py-0.5 rounded border border-[#ABEFC6]">
-                        Aktif (.env Terpasang)
+                        {isEn ? 'Active (.env Installed)' : 'Aktif (.env Terpasang)'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-[#777777]">Mode API:</span>
+                      <span className="text-[#777777]">{isEn ? 'API Mode:' : 'Mode API:'}</span>
                       <span className="font-semibold text-[#1F1F1F]">Sandbox & Live Production</span>
                     </div>
                     <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-[#777777]">Cakupan Kurir:</span>
+                      <span className="text-[#777777]">{isEn ? 'Courier Coverage:' : 'Cakupan Kurir:'}</span>
                       <span className="font-semibold text-[#1F1F1F]">J&T, JNE, SiCepat, GoSend, POS, Anteraja</span>
                     </div>
                   </div>
@@ -327,7 +341,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                       rel="noopener noreferrer"
                       className="flex-1 py-2.5 px-3 rounded-xl border border-[#E5E0DD] bg-white hover:bg-[#F7F7F7] text-[#1F1F1F] font-semibold text-xs flex items-center justify-center gap-1.5 transition"
                     >
-                      <span>Buka Dashboard Biteship</span>
+                      <span>{isEn ? 'Open Biteship Dashboard' : 'Buka Dashboard Biteship'}</span>
                       <ExternalLink className="w-3.5 h-3.5 text-[#777777]" />
                     </a>
                     <a
@@ -336,7 +350,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                       rel="noopener noreferrer"
                       className="py-2.5 px-3 rounded-xl border border-[#E5E0DD] text-[#555555] hover:bg-[#F7F7F7] font-semibold text-xs flex items-center justify-center gap-1.5 transition"
                     >
-                      <span>Dokumentasi API</span>
+                      <span>{isEn ? 'API Documentation' : 'Dokumentasi API'}</span>
                     </a>
                   </div>
                 </div>
@@ -347,7 +361,9 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                   <div className="p-3 bg-[#F5E8EA] border border-[#E8DDDE] rounded-2xl flex items-start gap-2.5 text-[#66000E]">
                     <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
                     <p className="text-[11px] leading-relaxed">
-                      Kredensial API telah terhubung otomatis melalui Biteship. Atur opsi layanan di bawah ini untuk menentukan layanan yang dapat dipilih oleh pembeli saat checkout.
+                      {isEn
+                        ? 'API credentials are connected automatically via Biteship. Configure the service options below to choose which services buyers can select at checkout.'
+                        : 'Kredensial API telah terhubung otomatis melalui Biteship. Atur opsi layanan di bawah ini untuk menentukan layanan yang dapat dipilih oleh pembeli saat checkout.'}
                     </p>
                   </div>
 
@@ -355,7 +371,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                   <div>
                     <label className="block text-xs font-bold text-[#1F1F1F] mb-2 flex items-center gap-1.5">
                       <Layers className="w-3.5 h-3.5 text-[#66000E]" />
-                      <span>Pilihan Layanan Pengiriman Aktif</span>
+                      <span>{isEn ? 'Active Shipping Service Options' : 'Pilihan Layanan Pengiriman Aktif'}</span>
                     </label>
 
                     <div className="space-y-2">
@@ -380,14 +396,14 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                               />
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <span className="font-bold text-xs text-[#1F1F1F]">{svc.name}</span>
+                                  <span className="font-bold text-xs text-[#1F1F1F]">{isEn ? svc.name.en : svc.name.id}</span>
                                   {svc.badge && (
                                     <span className="text-[9px] font-semibold bg-[#F5E8EA] border border-[#E8DDDE] text-[#66000E] px-1.5 py-0.2 rounded">
-                                      {svc.badge}
+                                      {isEn ? svc.badge.en : svc.badge.id}
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-[11px] text-[#555555] mt-0.5">{svc.desc}</p>
+                                <p className="text-[11px] text-[#555555] mt-0.5">{isEn ? svc.desc.en : svc.desc.id}</p>
                               </div>
                             </div>
                           </div>
@@ -400,32 +416,34 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                   <div className="pt-2 border-t border-[#E5E0DD] space-y-3">
                     <label className="block text-xs font-bold text-[#1F1F1F] flex items-center gap-1.5">
                       <Truck className="w-3.5 h-3.5 text-[#66000E]" />
-                      <span>Pengaturan Operasional & Penjemputan</span>
+                      <span>{isEn ? 'Operations & Pickup Settings' : 'Pengaturan Operasional & Penjemputan'}</span>
                     </label>
 
                     {/* Tipe Penyerahan Default */}
                     <div>
                       <span className="block text-[11px] font-semibold text-[#555555] mb-1">
-                        Metode Penyerahan Paket Default
+                        {isEn ? 'Default Parcel Handover Method' : 'Metode Penyerahan Paket Default'}
                       </span>
-                      <select
+                      <SearchableSelect
                         value={defaultHandoff}
                         onChange={(e) => setDefaultHandoff(e.target.value as 'pickup' | 'drop_off')}
                         className="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-[#E5E0DD] bg-white text-[#1F1F1F] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15"
                       >
-                        <option value="pickup">Pick-up (Kurir Datang Menjemput ke Gudang Toko)</option>
-                        <option value="drop_off">Drop-off (Antar Paket Mandiri ke Gerai / Counter)</option>
-                      </select>
+                        <option value="pickup">{isEn ? 'Pick-up (Courier Collects from Store Warehouse)' : 'Pick-up (Kurir Datang Menjemput ke Gudang Toko)'}</option>
+                        <option value="drop_off">{isEn ? 'Drop-off (Drop Parcel Yourself at Outlet / Counter)' : 'Drop-off (Antar Paket Mandiri ke Gerai / Counter)'}</option>
+                      </SearchableSelect>
                     </div>
 
                     {/* Toggle Asuransi Pengiriman */}
                     <div className="p-3 bg-[#F9F9F9] rounded-2xl border border-[#E5E0DD] flex items-center justify-between">
                       <div>
                         <span className="font-bold text-xs text-[#1F1F1F] block">
-                          Asuransi Pengiriman Otomatis
+                          {isEn ? 'Automatic Shipping Insurance' : 'Asuransi Pengiriman Otomatis'}
                         </span>
                         <span className="text-[11px] text-[#666666]">
-                          Aktifkan proteksi ganti rugi jika barang hilang / rusak saat ekspedisi.
+                          {isEn
+                            ? 'Enable compensation protection if items are lost / damaged in transit.'
+                            : 'Aktifkan proteksi ganti rugi jika barang hilang / rusak saat ekspedisi.'}
                         </span>
                       </div>
                       <button
@@ -472,7 +490,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                     </label>
                     <input
                       type="text"
-                      placeholder="Contoh: M-1092819"
+                      placeholder={isEn ? 'Example: M-1092819' : 'Contoh: M-1092819'}
                       value={merchantId}
                       onChange={(e) => setMerchantId(e.target.value)}
                       className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-[#E5E0DD] bg-white text-[#1F1F1F] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15"
@@ -485,7 +503,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                     </label>
                     <input
                       type="password"
-                      placeholder="Masukkan Server Key..."
+                      placeholder={isEn ? 'Enter Server Key...' : 'Masukkan Server Key...'}
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-[#E5E0DD] bg-white text-[#1F1F1F] focus:outline-none focus:border-[#66000E] focus:ring-2 focus:ring-[#66000E]/15"
@@ -498,13 +516,13 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                       onClick={() => setShowConfigModal(false)}
                       className="px-4 py-2.5 min-h-[40px] rounded-xl border border-[#E5E0DD] text-xs font-semibold text-[#555555] hover:bg-[#F7F7F7] transition cursor-pointer"
                     >
-                      Batal
+                      {isEn ? 'Cancel' : 'Batal'}
                     </button>
                     <button
                       type="submit"
                       className="px-5 py-2.5 min-h-[40px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white text-xs font-semibold shadow-xs transition cursor-pointer"
                     >
-                      Simpan Kredensial
+                      {isEn ? 'Save Credentials' : 'Simpan Kredensial'}
                     </button>
                   </div>
                 </form>

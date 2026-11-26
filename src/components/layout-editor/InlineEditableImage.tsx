@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Image as ImageIcon, Sparkles, Trash2, Camera } from 'lucide-react';
 import { ImagePickerModal } from './ImagePickerModal';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface InlineEditableImageProps {
   src?: string;
@@ -16,15 +17,18 @@ interface InlineEditableImageProps {
 
 export const InlineEditableImage: React.FC<InlineEditableImageProps> = ({
   src,
-  alt = 'Image',
+  alt: altProp,
   className = 'w-full h-full object-cover',
   containerClassName = '',
-  title = 'Ganti Gambar',
+  title: titleProp,
   onUpdateImage,
   onRemoveImage,
   isSelected = false,
   readonly = false,
 }) => {
+  const { isEn } = useLanguage();
+  const alt = altProp ?? (isEn ? 'Image' : 'Gambar');
+  const title = titleProp ?? (isEn ? 'Change Image' : 'Ganti Gambar');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -32,7 +36,15 @@ export const InlineEditableImage: React.FC<InlineEditableImageProps> = ({
     if (!src) return null;
     return (
       <div className={containerClassName}>
-        <img src={src} alt={alt} className={className} referrerPolicy="no-referrer" />
+        <img 
+          src={src} 
+          alt={alt} 
+          className={className} 
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80';
+          }}
+        />
       </div>
     );
   }
@@ -47,7 +59,7 @@ export const InlineEditableImage: React.FC<InlineEditableImageProps> = ({
           e.stopPropagation();
           setIsModalOpen(true);
         }}
-        title="Klik untuk mengganti gambar ini"
+        title={isEn ? 'Click to change this image' : 'Klik untuk mengganti gambar ini'}
       >
         {src ? (
           <img
@@ -55,11 +67,14 @@ export const InlineEditableImage: React.FC<InlineEditableImageProps> = ({
             alt={alt}
             className={`${className} transition-all duration-200 group-hover/image-edit:brightness-90`}
             referrerPolicy="no-referrer"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80';
+            }}
           />
         ) : (
           <div className="w-full h-full min-h-[120px] bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-4 text-slate-400 text-xs">
             <Camera className="w-6 h-6 mb-1 text-slate-400" />
-            <span>Klik untuk tambah gambar</span>
+            <span>{isEn ? 'Click to add an image' : 'Klik untuk tambah gambar'}</span>
           </div>
         )}
 
@@ -71,7 +86,7 @@ export const InlineEditableImage: React.FC<InlineEditableImageProps> = ({
         >
           <div className="bg-slate-900/90 backdrop-blur-md text-white text-[11px] font-semibold px-3 py-1.5 rounded-xl shadow-xl flex items-center gap-2 border border-white/20 animate-in zoom-in-95 duration-100">
             <ImageIcon className="w-3.5 h-3.5 text-amber-300" />
-            <span>Ganti Gambar</span>
+            <span>{isEn ? 'Change Image' : 'Ganti Gambar'}</span>
           </div>
         </div>
 

@@ -5,7 +5,8 @@ interface QuickActionProps {
   onAddProduct: () => void;
   onViewOrders: () => void;
   onShareStore: () => void;
-  onWithdraw: () => void;
+  /** Tidak diisi = tombol Tarik Saldo disembunyikan (mis. fitur dompet nonaktif). */
+  onWithdraw?: () => void;
 }
 
 export const QuickAction: React.FC<QuickActionProps> = ({
@@ -15,7 +16,7 @@ export const QuickAction: React.FC<QuickActionProps> = ({
   onWithdraw,
 }) => {
   return (
-    <div id="quick-actions-bar" className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 font-sans w-full max-w-full">
+    <div id="quick-actions-bar" className={`grid grid-cols-2 ${onWithdraw ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-2.5 sm:gap-3 font-sans w-full max-w-full`}>
       
       {/* 1. Tambah Produk */}
       <button
@@ -60,6 +61,7 @@ export const QuickAction: React.FC<QuickActionProps> = ({
       </button>
 
       {/* 4. Tarik Saldo */}
+      {onWithdraw && (
       <button
         onClick={onWithdraw}
         className="flex items-center gap-2 sm:gap-2.5 p-2.5 sm:p-3 rounded-xl bg-white hover:bg-[#FAF7F7] border border-[#E5E0DD] hover:border-emerald-500 text-[#241A1A] font-medium text-xs sm:text-sm shadow-2xs transition text-left cursor-pointer min-h-[46px] min-w-0"
@@ -72,6 +74,7 @@ export const QuickAction: React.FC<QuickActionProps> = ({
           <span className="text-[10px] text-[#706866] font-normal mt-0.5 block truncate">Transfer rekening</span>
         </div>
       </button>
+      )}
     </div>
   );
 };

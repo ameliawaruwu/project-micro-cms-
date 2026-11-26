@@ -4,7 +4,10 @@ export interface User {
   email: string;
   phoneWhatsApp: string;
   avatarUrl?: string;
-  role: 'merchant' | 'admin' | 'buyer';
+  role: 'merchant' | 'admin' | 'sub_admin' | 'sub_admin_umum' | 'community_admin' | 'sub_admin_produk' | 'buyer';
+  communityId?: string;
+  communityName?: string;
+  baseDomain?: string;
   createdAt: string;
 }
 
@@ -301,9 +304,30 @@ export interface StoreLayoutSettings {
   [key: string]: any;
 }
 
+export interface StorePaymentConfig {
+  enableCod: boolean;
+  codInstructions?: string;
+  enableManualTransfer: boolean;
+  manualQrisImageUrl?: string;
+  manualBankName?: string;
+  manualBankAccountNumber?: string;
+  manualBankAccountHolder?: string;
+  manualInstructions?: string;
+  enablePaymentGateway: boolean;
+  gatewayProvider?: 'midtrans' | 'duitku';
+}
+
 export interface Store {
   id: string;
   merchantId?: string;
+  /** Komunitas utama (stores.community_id). */
+  communityId?: string;
+  communityName?: string;
+  /** Komunitas tambahan (tabel store_communities), di luar komunitas utama. */
+  extraCommunityIds?: string[];
+  baseDomain?: string;
+  paymentConfig?: StorePaymentConfig;
+
   name: string;
   slug: string;
   tagline: string;
@@ -423,6 +447,8 @@ export interface BiteshipRateOption {
   price: number;
   etd: string;
   badge?: string;
+  /** Tanda tangan server atas tarif ini (dari /api/shipping/quote); wajib saat membuat pesanan. */
+  quote?: string;
 }
 
 export interface AvailableCourier {
@@ -450,6 +476,8 @@ export interface CreateShipmentResult {
   shipping_label_url: string;
   status: string;
   message?: string;
+  /** false bila jadwal jemput ditolak kurir dan resi dipesan untuk dijemput secepatnya. */
+  pickup_scheduled?: boolean;
 }
 
 export interface OrderItem {
@@ -478,18 +506,32 @@ export interface Order {
   subtotal: number;
   shippingCost: number;
   discount: number;
+  /** Kode voucher yang dipakai pembeli; potongannya dihitung server (place_order). */
+  voucherCode?: string;
   grandTotal: number;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+  /** Waktu pembeli menekan "Saya Sudah Bayar" (QRIS / transfer langsung), menunggu dicek merchant. */
+  paymentConfirmedAt?: string;
+  /** URL CDN foto bukti transfer yang diunggah pembeli (QRIS / transfer langsung). */
+  paymentProofUrl?: string;
+  /** Waktu pembayaran dinyatakan lunas (gateway / ditandai penjual). */
+  paidAt?: string;
   courier: CourierType;
   courierCode?: string;
   courierService?: string;
   originBranchId?: string;
+  /** Token tarif ongkir bertanda tangan server; hanya dipakai saat membuat pesanan. */
+  shippingQuote?: string;
   shippingMethod?: ShippingMethod;
   resiNumber?: string;
   trackingNumber?: string;
   shippingOrderId?: string;
   shippingLabelUrl?: string;
+  cancelledAt?: string;
+  cancelReason?: string;
+  /** 'system' = dibatalkan otomatis karena batas bayar 24 jam habis. */
+  cancelledBy?: 'buyer' | 'merchant' | 'system';
   pickupTime?: string;
   destinationAddress?: string;
   destinationPostalCode?: string;
@@ -497,6 +539,7 @@ export interface Order {
   shippingStatus: ShippingStatus;
   createdAt: string;
   shippedAt?: string;
+  updatedAt?: string;
   notes?: string;
 }
 
@@ -542,7 +585,11 @@ export type MerchantTab =
   | 'billing'
   | 'pengaturan'
   | 'profil'
-  | 'integrasi';
+  | 'integrasi'
+  | 'tiket'
+  | 'pesan'
+  | 'voucher'
+  | 'komunitas';
 
 export type TimeFilter = 'Hari Ini' | '7 Hari' | '30 Hari' | 'Tahun Ini';
 
@@ -595,11 +642,19 @@ export interface AdminPlatformStats {
 }
 
 export interface PlatformSettings {
-  // Midtrans Payment Gateway
+  paymentGatewayEnabled?: boolean;
+  // Midtrans Payment Gateway (Legacy)
   midtransEnvironment: 'sandbox' | 'production';
   midtransMerchantId: string;
   midtransClientKey: string;
   midtransServerKey: string;
+
+
+  // Duitku Payment Gateway
+  duitkuEnvironment?: 'sandbox' | 'production';
+  duitkuMerchantCode?: string;
+  duitkuApiKey?: string;
+
 
   // Biteship / RajaOngkir Courier API
   biteshipEnabled: boolean;
@@ -617,6 +672,12 @@ export interface PlatformSettings {
   payoutBankFee: number;
   autoApprovePayoutUnder: number;
   maintenanceMode: boolean;
+
+  // Logo platform (URL CDN); kosong = logo bawaan
+  logoUrl?: string;
+  logoIconUrl?: string;
+  // Gambar QRIS platform untuk pembayaran invoice domain (URL CDN); kosong = belum diatur
+  domainQrisUrl?: string;
 }
 
 export interface BillingPlan {
@@ -634,6 +695,42 @@ export interface BillingPlan {
   sortOrder: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface Community {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  subAdminName?: string;
+  subAdminEmail?: string;
+  subAdminPhone?: string;
+  coordinatorName: string;
+  coordinatorEmail: string;
+  coordinatorPhone: string;
+  turnoverFeePercent: number; // Persentase tagihan omset (contoh: 2.5%)
+  logoUrl?: string;
+  baseDomain?: string;
+  status: 'active' | 'pending' | 'inactive';
+  merchantCount?: number;
+  totalTurnover?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CommunityTurnoverInvoice {
+  id: string;
+  communityId: string;
+  communityName: string;
+  invoiceNumber: string;
+  period: string; // misal 'Oktober 2026'
+  totalTurnover: number;
+  feePercent: number;
+  totalBilled: number;
+  status: 'unpaid' | 'paid';
+  dueDate: string;
+  paidAt?: string;
+  createdAt: string;
 }
 
 export interface BillingSubscription {

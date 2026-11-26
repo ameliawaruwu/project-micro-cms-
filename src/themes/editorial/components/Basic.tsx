@@ -1,89 +1,291 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { Search, ShoppingBag, MessageCircle, Menu, X } from 'lucide-react';
+import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { StoreLogo } from '../../StoreLogo';
+import { CartCount } from '../../storefrontCart';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
+import { getHeroContent, HeroActionLink } from '../../heroContent';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
+import { STORE_ROUTES } from '../../storefrontLinks';
+import { useThemeProductsSource } from '../../useSectionProducts';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
-export const EditorialNavbar: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const EditorialNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const { storeInfo, navigation } = useCmsStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isDesktopPreview = !isMobile && !isTablet;
+  const showDesktopTagline = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
+  const showHamburger = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex',
+    tablet: 'flex',
+    desktop: 'hidden',
+    fallback: 'md:hidden flex',
+  });
+  const showDesktopNavRow = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
+  const showMobileDrawer = !isDesktopPreview;
+
   const showLogo = sectionOptions.showLogo ?? true;
-  
+  const showNav = sectionOptions.showNavMenu ?? true;
+  const { positionClass, showSearch, showCart } = getHeaderDisplay(sectionOptions);
+
+  const rawTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeTitle = rawTitle;
+  const leftSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
+
+  const navItems = getNavMenuItems(sectionOptions);
+
   return (
-    <nav className="w-full px-6 md:px-12 py-8 flex flex-col md:flex-row justify-between items-center bg-[#fafafa] border-b border-gray-200">
-      <div className="w-full md:w-1/3 flex justify-center md:justify-start mb-6 md:mb-0">
-        <div className="text-xs font-medium tracking-[0.2em] uppercase text-gray-500">
-          The Journal
+    <header className={`w-full bg-[#FAFAFA] border-b border-gray-200/90 font-serif ${positionClass} transition-all`}>
+      {/* Top Tier: Editorial Masthead */}
+      <div className="w-full px-5 sm:px-8 md:px-12 py-5 sm:py-6 flex items-center justify-between gap-4">
+        {/* Left: Magazine / Editorial Tagline */}
+        <div className={`w-1/4 ${showDesktopTagline} items-center justify-start min-w-0`}>
+          <span className="text-[10px] lg:text-[11px] font-sans font-medium tracking-[0.25em] uppercase text-gray-500 truncate" title={leftSubtitle}>
+            {leftSubtitle}
+          </span>
+        </div>
+
+        {/* Mobile Hamburger */}
+        <div data-sf-mobile-nav="" className={`${showHamburger} items-center`}>
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-1.5 -ml-1 text-gray-900 hover:text-gray-600 rounded-lg transition-colors cursor-pointer"
+            aria-label={mobileMenuOpen ? (isEn ? 'Close menu' : 'Tutup menu') : (isEn ? 'Open menu' : 'Buka menu')}
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+
+        {/* Brand: di sudut kiri pada HP, di tengah pada desktop */}
+        <div className="flex-1 flex flex-col justify-center items-start text-left md:items-center md:text-center px-0 md:px-2 min-w-0">
+          {showLogo && (
+            <a
+              href="/"
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif italic tracking-tight text-gray-950 hover:opacity-80 transition-opacity truncate max-w-full inline-block py-0.5"
+              title={storeTitle}
+            >
+              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-10 sm:h-14">{storeTitle}</StoreLogo>
+            </a>
+          )}
+          {leftSubtitle && (
+            <span className="text-[10px] sm:text-[11px] font-sans font-medium tracking-[0.25em] uppercase text-gray-500 truncate max-w-full">
+              {leftSubtitle}
+            </span>
+          )}
+        </div>
+
+        {/* Right: Actions / Utilities */}
+        <div className="w-1/4 flex items-center justify-end gap-3 sm:gap-5 text-gray-800 shrink-0 font-sans">
+          {showSearch && (
+            <button
+              type="button"
+              data-href="/katalog"
+              aria-label={isEn ? 'Search products' : 'Cari produk'}
+              className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] hover:text-black transition-colors cursor-pointer"
+              title={isEn ? 'Search products' : 'Cari produk'}
+            >
+              <Search className="w-4 h-4 text-gray-700" />
+              <span className="hidden lg:inline">{isEn ? 'Search' : 'Cari'}</span>
+            </button>
+          )}
+
+
+          <NavTrackOrderButton
+            className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] hover:text-black transition-colors"
+            iconClassName="w-4 h-4 text-gray-700"
+            label={<span className="hidden lg:inline">{isEn ? 'Track' : 'Lacak'}</span>}
+          />
+          {showCart && (
+            <button
+              type="button"
+              data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'}
+              className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] hover:text-black transition-colors relative cursor-pointer"
+              title={isEn ? 'Shopping Cart' : 'Keranjang Belanja'}
+            >
+              <ShoppingBag className="w-4 h-4 text-gray-800" />
+              <span className="w-4 h-4 rounded-full bg-black text-white text-[9px] font-bold flex items-center justify-center -ml-0.5">
+                <CartCount />
+              </span>
+            </button>
+          )}
         </div>
       </div>
-      
-      <div className="w-full md:w-1/3 flex justify-center mb-6 md:mb-0">
-        {showLogo && (
-          <a href="/" className="text-3xl md:text-5xl font-serif italic tracking-tight text-gray-900">
-            {storeInfo.name}
-          </a>
-        )}
-      </div>
 
-      <div className="w-full md:w-1/3 flex justify-center md:justify-end gap-6 md:gap-8">
-        {navigation.map(nav => (
-          <a key={nav.id} href={nav.route} className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-gray-900 hover:text-gray-500 transition-colors">
-            {nav.label}
-          </a>
-        ))}
-        <button className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-gray-900 hover:text-gray-500 transition-colors">
-          Search
-        </button>
-      </div>
-    </nav>
+      {/* Bottom Tier: Centered Navigation Links (Desktop) */}
+      {showNav && navItems.length > 0 && (
+        <div className={`${showDesktopNavRow} w-full border-t border-gray-200/60 px-6 py-3 items-center justify-center gap-6 lg:gap-10 overflow-x-auto no-scrollbar font-sans`}>
+          {navItems.map((nav: any) => (
+            <a
+              key={nav.id}
+              href={nav.route}
+              className="text-[10px] lg:text-[11px] uppercase tracking-[0.25em] text-gray-600 hover:text-black font-medium transition-colors whitespace-nowrap py-0.5 relative group"
+            >
+              {nav.label}
+              <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-black transition-all duration-300 group-hover:w-full"></span>
+            </a>
+          ))}
+        </div>
+      )}
+
+      {/* Mobile Drawer Menu */}
+      {mobileMenuOpen && showMobileDrawer && (
+        <div data-sf-mobile-nav="" className="border-t border-gray-200 bg-[#FAFAFA] px-4 sm:px-6 py-5 space-y-4 font-sans animate-in slide-in-from-top-2 duration-200">
+          <div className="text-[10px] tracking-[0.2em] uppercase text-gray-400 font-semibold border-b border-gray-200 pb-2">
+            {leftSubtitle}
+          </div>
+          <div className="flex flex-col space-y-3">
+            {navItems.map((nav: any) => (
+              <a
+                key={nav.id}
+                href={nav.route}
+                className="text-xs uppercase tracking-[0.2em] text-gray-800 hover:text-black font-medium py-1"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {nav.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </header>
   );
 };
 
 export const EditorialHero: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const heading = sectionOptions.heading || "Autumn / Winter";
-  const announcementText = sectionOptions.announcementText || "The New Collection";
-  const bgImage = sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1600&q=80";
+  const { isEn } = useLanguage();
+  const storeInfo = useCmsStore(state => state.storeInfo);
+  const products = useThemeProductsSource('editorial');
+  const heading = sectionOptions.heading || storeInfo?.name || (isEn ? 'Welcome' : 'Selamat Datang');
+  const subheading =
+    sectionOptions.subheading ||
+    sectionOptions.description ||
+    storeInfo?.description ||
+    (isEn ? 'Discover the best products from our store.' : 'Temukan produk pilihan terbaik dari toko kami.');
+  const hero = getHeroContent(sectionOptions, {
+    badge: sectionOptions.announcementText || (isEn ? 'New Collection' : 'Koleksi Terbaru'),
+    buttonLabel: isEn ? 'View Collection' : 'Lihat Koleksi',
+    buttonLink: STORE_ROUTES.catalog,
+    secondaryButtonLink: STORE_ROUTES.promo,
+  });
+  // Tanpa banner dari merchant, pakai foto produk toko sendiri sebelum gambar bawaan tema.
+  const bgImage =
+    sectionOptions.imageUrl ||
+    sectionOptions.bannerUrl ||
+    (storeInfo as any)?.bannerUrl ||
+    products.find((p) => p.image)?.image ||
+    'https://images.unsplash.com/photo-1445205170230-053b83016050?w=1600&q=80';
 
   return (
-    <section className="relative w-full h-[85vh] flex flex-col items-center justify-center bg-[#fafafa] overflow-hidden">
+    <section className="relative w-full min-h-[70vh] sm:h-[85vh] flex flex-col items-center justify-center bg-[#fafafa] overflow-hidden">
       <div className="absolute inset-0 p-4 md:p-8">
         <div className="w-full h-full relative overflow-hidden bg-gray-200">
-          <img 
-            src={bgImage} 
-            alt="Editorial Campaign" 
+          <img
+            src={bgImage}
+            alt=""
             className="w-full h-full object-cover grayscale-[30%] hover:grayscale-0 transition-all duration-1000 scale-105"
           />
           <div className="absolute inset-0 bg-black/20"></div>
         </div>
       </div>
-      
-      <div className="z-10 text-center text-white mix-blend-difference mt-auto mb-24 pointer-events-none">
-        <p className="text-[10px] md:text-xs uppercase tracking-[0.4em] mb-6 md:mb-8 font-medium">
-          {announcementText}
-        </p>
-        <h1 className="text-5xl md:text-8xl lg:text-[10rem] font-serif italic leading-none">
+
+      <div className="z-10 text-center text-white mix-blend-difference mt-auto mb-16 sm:mb-24 pt-24 pointer-events-none px-4 max-w-full">
+        {hero.badge && (
+          <p className="text-[10px] md:text-xs uppercase tracking-[0.4em] mb-6 md:mb-8 font-medium">
+            {hero.badge}
+          </p>
+        )}
+        <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-[10rem] font-serif italic leading-none break-words">
           {heading}
         </h1>
+        {subheading && (
+          <p className="text-sm md:text-base lg:text-xl font-serif italic mt-6 max-w-xl mx-auto opacity-90 leading-relaxed line-clamp-4">
+            {subheading}
+          </p>
+        )}
+        <div className="pointer-events-auto mt-8 flex flex-wrap gap-6 justify-center">
+          <HeroActionLink
+            action={hero.primary}
+            className="inline-block text-[10px] md:text-xs uppercase tracking-[0.3em] pb-1 border-b border-white hover:opacity-70 transition-opacity"
+          />
+          {hero.secondary && (
+            <HeroActionLink
+              action={hero.secondary}
+              className="inline-block text-[10px] md:text-xs uppercase tracking-[0.3em] pb-1 border-b border-white/40 hover:opacity-70 transition-opacity"
+            />
+          )}
+        </div>
       </div>
     </section>
   );
 };
 
-export const EditorialFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const EditorialFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name}`;
+  const rawTitle = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo?.name;
+  const storeTitle = rawTitle;
+  const storeDesc = sectionOptions.description !== undefined ? sectionOptions.description : (sectionOptions.tagline || storeInfo?.description);
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo?.address;
+  const footerNavItems = getNavMenuItems(sectionOptions);
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo?.email;
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeTitle || ''}. ${isEn ? 'All rights reserved.' : 'Hak cipta dilindungi.'}`;
+  const footerFlexClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
 
   return (
-    <footer className="w-full px-6 md:px-12 py-24 bg-gray-900 text-white flex flex-col items-center">
-      <h2 className="text-4xl md:text-5xl font-serif italic mb-12">{storeInfo.name}</h2>
-      <div className="flex flex-col md:flex-row gap-8 md:gap-16 text-center mb-16">
-        <div>
-          <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-4">Headquarters</p>
-          <p className="text-xs uppercase tracking-widest text-gray-300 max-w-xs">{storeInfo.address}</p>
+    <footer className="w-full px-5 sm:px-6 md:px-12 py-16 sm:py-24 bg-gray-900 text-white flex flex-col items-center">
+      <FooterBrand sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-14 sm:h-16 mx-auto mb-4">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif italic mb-4 text-center break-words max-w-full">{storeTitle}</h2>
+      </FooterBrand>
+      {(sectionOptions.description || storeInfo?.description) && (
+        <p className="text-xs md:text-sm font-serif italic text-gray-400 max-w-md text-center mb-10 leading-relaxed">
+          {sectionOptions.description || storeInfo?.description}
+        </p>
+      )}
+      <nav className="flex flex-wrap justify-center gap-x-8 gap-y-3 mb-10 text-[10px] uppercase tracking-[0.3em] text-gray-400">
+        {footerNavItems.map((nav) => (
+          <a key={nav.id} href={nav.route} className="hover:text-white transition-colors">{nav.label}</a>
+        ))}
+      </nav>
+      {(address || email) && (
+        <div className={`flex ${footerFlexClass} gap-8 md:gap-16 text-center mb-10`}>
+          {address && (
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-3">{isEn ? 'Address' : 'Alamat'}</p>
+              <p className="text-xs uppercase tracking-widest text-gray-300 max-w-xs break-words">{address}</p>
+            </div>
+          )}
+          {email && (
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-3">Email</p>
+              <a href={`mailto:${email}`} className="block text-xs uppercase tracking-widest text-gray-300 hover:text-white break-all">{email}</a>
+            </div>
+          )}
         </div>
-        <div>
-          <p className="text-[9px] uppercase tracking-[0.3em] text-gray-500 mb-4">Inquiries</p>
-          <p className="text-xs uppercase tracking-widest text-gray-300">{storeInfo.email}</p>
-        </div>
-      </div>
+      )}
+      <FooterSocialLinks sectionOptions={sectionOptions} className="justify-center mb-10" itemClassName="rounded-none border border-gray-700 text-gray-400 hover:text-white hover:border-gray-400" />
       <div className="w-full max-w-lg h-[1px] bg-gray-800 mb-8"></div>
-      <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{copyrightText}</p>
+      <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} /></p>
     </footer>
   );
 };

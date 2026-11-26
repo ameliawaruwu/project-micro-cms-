@@ -6,12 +6,14 @@ import {
   Tag,
   Receipt,
   Info,
+  AlertTriangle,
 } from 'lucide-react';
 import { Order, Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ShippingLabelView } from './receipt/ShippingLabelView';
 import { InvoiceA4View } from './receipt/InvoiceA4View';
 import { ThermalReceiptView } from './receipt/ThermalReceiptView';
+import { storeAddressLine, useOrderWeightGrams } from './receipt/receiptData';
 
 interface ReceiptModalProps {
   order: Order | null;
@@ -28,12 +30,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
 
   // Smart default: if order has resi, default to shipping label, else invoice A4
   const [format, setFormat] = useState<PrintFormat>(
     order?.resiNumber ? 'shipping_label' : 'invoice_a4'
   );
+
+  const weightGrams = useOrderWeightGrams(isOpen ? order : null);
 
   if (!isOpen || !order) return null;
 
@@ -41,10 +45,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     window.print();
   };
 
-  const courierName = (order.courier || 'J&T').toUpperCase();
-  const courierService = order.courierService || 'EZ (Reguler)';
-  const resiNumber = order.resiNumber || order.trackingNumber || 'AUTO-PICKUP';
+  // Hanya data pesanan asli; tidak ada kurir/resi pengganti.
+  const courierName = (order.courier || '').toUpperCase() || '-';
+  const courierService = order.courierService || '';
+  const resiNumber = order.resiNumber || order.trackingNumber || '';
   const isCOD = order.paymentMethod === 'COD';
+  const hasStoreAddress = storeAddressLine(store) !== '';
 
   return (
     <div id="modal-receipt" className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs font-poppins">
@@ -58,6 +64,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             </div>
             <button
               onClick={onClose}
+              aria-label={isEn ? 'Close' : 'Tutup'}
               className="p-1.5 rounded-lg text-[#777777] hover:text-[#1F1F1F] hover:bg-[#EAEAEA] transition cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -106,6 +113,17 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             </button>
           </div>
 
+          {!hasStoreAddress && (
+            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] p-2.5 rounded-xl leading-relaxed">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>
+                {isEn
+                  ? 'Store address is empty, so the sender address is not printed. Fill it in Store Settings.'
+                  : 'Alamat toko belum diisi, jadi alamat pengirim tidak tercetak. Lengkapi di Pengaturan Toko.'}
+              </span>
+            </div>
+          )}
+
           {/* Helpful PDF / Print instruction note */}
           <div className="flex items-start gap-2 bg-[#F5E8EA] border border-[#E8DDDE] text-[#706866] text-[11px] p-2.5 rounded-xl leading-relaxed">
             <Info className="w-3.5 h-3.5 text-[#66000E] shrink-0 mt-0.5" />
@@ -126,6 +144,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               courierService={courierService}
               resiNumber={resiNumber}
               isCOD={isCOD}
+              weightGrams={weightGrams}
             />
           )}
 

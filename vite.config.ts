@@ -1,10 +1,55 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
 import { defineConfig, Plugin } from 'vite';
 import dotenv from 'dotenv';
+import nodeCrypto from 'crypto';
 
 dotenv.config();
+
+async function getDevMidtransConfig() {
+  let serverKey = (process.env.MIDTRANS_SERVER_KEY || '').trim();
+  let clientKey = (process.env.VITE_MIDTRANS_CLIENT_KEY || '').trim();
+  let env = (process.env.VITE_MIDTRANS_ENV || 'sandbox').trim().toLowerCase();
+
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const resp = await fetch(`${supabaseUrl}/rest/v1/platform_settings?select=midtrans_environment,midtrans_server_key,midtrans_client_key&limit=1`, {
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
+      });
+      if (resp.ok) {
+        const rows = await resp.json();
+        if (Array.isArray(rows) && rows[0]) {
+          const dbRow = rows[0];
+          if (dbRow.midtrans_server_key && dbRow.midtrans_server_key.trim()) {
+            serverKey = dbRow.midtrans_server_key.trim();
+          }
+          if (dbRow.midtrans_client_key && dbRow.midtrans_client_key.trim()) {
+            clientKey = dbRow.midtrans_client_key.trim();
+          }
+          if (dbRow.midtrans_environment && dbRow.midtrans_environment.trim()) {
+            env = dbRow.midtrans_environment.trim().toLowerCase();
+          }
+        }
+      }
+    } catch {
+      // Fallback silently
+    }
+  }
+
+  serverKey = serverKey.replace(/^["']|["']$/g, '').trim();
+  clientKey = clientKey.replace(/^["']|["']$/g, '').trim();
+  env = env.replace(/^["']|["']$/g, '').trim().toLowerCase();
+
+  return { serverKey, clientKey, env };
+}
 
 function midtransDevPlugin(): Plugin {
   return {
@@ -25,12 +70,18 @@ function midtransDevPlugin(): Plugin {
 
         req.on('end', async () => {
           try {
-            const data = JSON.parse(body || '{}');
-            const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
+            let data: any = {};
+            try {
+              data = JSON.parse(body || '{}');
+            } catch {
+              data = {};
+            }
+
+            const { serverKey, env } = await getDevMidtransConfig();
             if (!serverKey) {
               res.statusCode = 500;
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'MIDTRANS_SERVER_KEY tidak ditemukan di .env' }));
+              res.end(JSON.stringify({ error: 'MIDTRANS_SERVER_KEY tidak ditemukan di .env atau database' }));
               return;
             }
 
@@ -55,7 +106,6 @@ function midtransDevPlugin(): Plugin {
             const sanitizedPhone = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
             const sanitizedEmail = String(data.customerEmail || 'customer@example.com').trim().slice(0, 100);
 
-            const env = process.env.VITE_MIDTRANS_ENV || 'sandbox';
             const apiUrl =
               env === 'production'
                 ? 'https://app.midtrans.com/snap/v1/transactions'
@@ -94,11 +144,24 @@ function midtransDevPlugin(): Plugin {
 
             res.setHeader('Content-Type', 'application/json');
             if (!midtransRes.ok) {
+              let errorMsg = 'Midtrans API Error';
+              if (Array.isArray(midtransData?.error_messages) && midtransData.error_messages.length > 0) {
+                errorMsg = midtransData.error_messages.join(', ');
+              } else if (midtransData?.status_message) {
+                errorMsg = midtransData.status_message;
+              } else if (midtransData?.error === 'Unauthorized' || midtransRes.status === 401) {
+                errorMsg = 'Kunci MIDTRANS_SERVER_KEY tidak valid atau belum diotorisasi di Midtrans (401 Unauthorized)';
+              } else if (typeof midtransData?.error === 'string') {
+                errorMsg = midtransData.error;
+              } else if (typeof midtransData?.message === 'string') {
+                errorMsg = midtransData.message;
+              }
+
               res.statusCode = midtransRes.status;
               res.end(
                 JSON.stringify({
                   error: true,
-                  message: midtransData.error_messages ? midtransData.error_messages.join(', ') : 'Midtrans API Error',
+                  message: errorMsg,
                   details: midtransData,
                 })
               );
@@ -118,6 +181,112 @@ function midtransDevPlugin(): Plugin {
             res.end(JSON.stringify({ error: true, message: err?.message || 'Internal Server Error' }));
           }
         });
+      });
+
+      // Endpoint Cek Status Pembayaran Midtrans Dev Server
+      server.middlewares.use('/api/midtrans/status', async (req, res) => {
+        const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+        const orderId = url.searchParams.get('orderId');
+        if (!orderId) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: true, message: 'orderId parameter is required' }));
+          return;
+        }
+
+        try {
+          const { serverKey, env } = await getDevMidtransConfig();
+          const apiUrl =
+            env === 'production'
+              ? `https://api.midtrans.com/v2/${encodeURIComponent(orderId)}/status`
+              : `https://api.sandbox.midtrans.com/v2/${encodeURIComponent(orderId)}/status`;
+
+          const statusRes = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Basic ${Buffer.from(serverKey + ':').toString('base64')}`,
+            },
+          });
+
+          const statusData = await statusRes.json();
+          res.statusCode = statusRes.status;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(statusData));
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: true, message: err?.message || 'Failed checking status' }));
+        }
+      });
+
+      // Endpoint Tes Ping & Diagnosa Kunci Midtrans
+      server.middlewares.use('/api/midtrans/test-ping', async (_req, res) => {
+        try {
+          const { serverKey, env } = await getDevMidtransConfig();
+          if (!serverKey) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, message: 'MIDTRANS_SERVER_KEY belum disetel di .env atau database' }));
+            return;
+          }
+
+          const apiUrl =
+            env === 'production'
+              ? 'https://app.midtrans.com/snap/v1/transactions'
+              : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
+
+          const testRes = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              Authorization: `Basic ${Buffer.from(serverKey + ':').toString('base64')}`,
+            },
+            body: JSON.stringify({
+              transaction_details: {
+                order_id: `PING-TEST-${Date.now()}`,
+                gross_amount: 10000,
+              },
+            }),
+          });
+
+          const data = await testRes.json();
+          res.statusCode = testRes.status;
+          res.setHeader('Content-Type', 'application/json');
+          if (testRes.ok && data.token) {
+            res.end(
+              JSON.stringify({
+                success: true,
+                message: `Koneksi Midtrans ${env.toUpperCase()} BERHASIL! Token Snap berhasil dibuat.`,
+                env,
+                maskedKey: serverKey.slice(0, 12) + '...',
+              })
+            );
+          } else if (testRes.status === 401) {
+            res.end(
+              JSON.stringify({
+                success: false,
+                message: `Server Key Midtrans ${env.toUpperCase()} ditolak (401 Unauthorized). Silakan periksa Server Key di dashboard Midtrans (Settings > Access Keys). Pastikan IP Whitelist kosong.`,
+                env,
+                details: data,
+              })
+            );
+          } else {
+            res.end(
+              JSON.stringify({
+                success: false,
+                message: data.message || (Array.isArray(data.error_messages) ? data.error_messages.join(', ') : 'Respon gagal dari Midtrans'),
+                env,
+                details: data,
+              })
+            );
+          }
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: false, message: err?.message || 'Gagal menghubungi server Midtrans' }));
+        }
       });
 
       // Endpoint Webhook Notifikasi Midtrans dengan Verifikasi Signature SHA-512
@@ -261,7 +430,536 @@ function midtransDevPlugin(): Plugin {
   };
 }
 
+async function getDevDuitkuConfig(): Promise<{ merchantCode: string; apiKey: string; env: 'sandbox' | 'production' }> {
+  let merchantCode = process.env.DUITKU_MERCHANT_CODE || '';
+  let apiKey = process.env.DUITKU_API_KEY || '';
+  let env: 'sandbox' | 'production' = (process.env.DUITKU_ENV as any) === 'production' ? 'production' : 'sandbox';
+
+  // Baca ulang file .env dari disk secara langsung agar tidak perlu restart dev server
+  try {
+    const envPath = path.resolve(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const parsed = dotenv.parse(fs.readFileSync(envPath, 'utf8'));
+      if (parsed.DUITKU_MERCHANT_CODE) merchantCode = parsed.DUITKU_MERCHANT_CODE;
+      if (parsed.DUITKU_API_KEY) apiKey = parsed.DUITKU_API_KEY;
+      if (parsed.DUITKU_ENV) env = parsed.DUITKU_ENV.toLowerCase() === 'production' ? 'production' : 'sandbox';
+    }
+  } catch {}
+
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const resp = await fetch(`${supabaseUrl}/rest/v1/platform_settings?select=*&limit=1`, {
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
+      });
+      if (resp.ok) {
+        const rows = await resp.json();
+        if (Array.isArray(rows) && rows[0]) {
+          const dbRow = rows[0];
+          if (dbRow.duitku_merchant_code && dbRow.duitku_merchant_code.trim()) {
+            merchantCode = dbRow.duitku_merchant_code.trim();
+          }
+          if (dbRow.duitku_api_key && dbRow.duitku_api_key.trim()) {
+            apiKey = dbRow.duitku_api_key.trim();
+          }
+          if (dbRow.duitku_environment && dbRow.duitku_environment.trim()) {
+            env = dbRow.duitku_environment.trim().toLowerCase() === 'production' ? 'production' : 'sandbox';
+          }
+        }
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  merchantCode = merchantCode.replace(/^["']|["']$/g, '').trim();
+  apiKey = apiKey.replace(/^["']|["']$/g, '').trim();
+
+  return { merchantCode, apiKey, env };
+}
+
+function duitkuDevPlugin(): Plugin {
+  return {
+    name: 'duitku-dev-server',
+    configureServer(server) {
+      // 1. Get Payment Methods
+      server.middlewares.use('/api/duitku/payment-methods', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+
+        let body = '';
+        req.on('data', (chunk) => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const { merchantCode, apiKey, env } = await getDevDuitkuConfig();
+            if (!merchantCode || !apiKey) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: 'DUITKU_MERCHANT_CODE atau DUITKU_API_KEY belum disetel' }));
+              return;
+            }
+
+            const rawAmount = Number(data.amount || 10000);
+            const amount = isNaN(rawAmount) || rawAmount <= 0 ? 10000 : Math.round(rawAmount);
+
+            const now = new Date();
+            const pad = (n: number) => String(n).padStart(2, '0');
+            const datetime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+            const stringToSign = `${merchantCode}${amount}${datetime}${apiKey}`;
+            const signature = nodeCrypto.createHash('sha256').update(stringToSign).digest('hex');
+
+            const apiUrl =
+              env === 'production'
+                ? 'https://passport.duitku.com/webapi/api/merchant/paymentmethod/getpaymentmethod'
+                : 'https://sandbox.duitku.com/webapi/api/merchant/paymentmethod/getpaymentmethod';
+
+            const resp = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                merchantcode: merchantCode,
+                amount: String(amount),
+                datetime,
+                signature,
+              }),
+            });
+
+            const resData = await resp.json();
+            res.statusCode = resp.status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(resData));
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: true, message: err?.message || 'Gagal mengambil metode pembayaran Duitku' }));
+          }
+        });
+      });
+
+      // 2. Create Invoice / Inquiry
+      server.middlewares.use('/api/duitku/create-invoice', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Method not allowed' }));
+          return;
+        }
+
+        let body = '';
+        req.on('data', (chunk) => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const { merchantCode, apiKey, env } = await getDevDuitkuConfig();
+            if (!merchantCode || !apiKey) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: 'DUITKU_MERCHANT_CODE atau DUITKU_API_KEY belum dikonfigurasi di .env atau Pengaturan Admin.' }));
+              return;
+            }
+
+            const rawAmount = Number(data.grossAmount || data.paymentAmount);
+            if (isNaN(rawAmount) || rawAmount <= 0) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: 'Nominal transaksi tidak valid' }));
+              return;
+            }
+
+            const paymentAmount = Math.round(rawAmount);
+            const merchantOrderId = String(data.orderId || `ORDER-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 50);
+            const productDetails = String(data.productDetails || 'Pembayaran Toko').slice(0, 255);
+            const customerVaName = String(data.customerName || 'Pelanggan').slice(0, 20);
+            const email = String(data.customerEmail || 'customer@example.com').trim().slice(0, 100);
+            const phoneNumber = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
+            let paymentMethod = String(data.paymentMethod || '').trim();
+            if (!paymentMethod) {
+              paymentMethod = 'SP'; // Default ShopeePay QRIS
+            } else {
+              const pmUpper = paymentMethod.toUpperCase();
+              const KNOWN_DUITKU_CODES = ['SP', 'NQ', 'SQ', 'BC', 'M2', 'BR', 'I1', 'BT', 'B1', 'BV', 'NC', 'VA', 'A1', 'AG', 'S1', 'OV', 'DA', 'LA', 'SA', 'VC', 'FT', 'IR'];
+              if (KNOWN_DUITKU_CODES.includes(pmUpper)) {
+                paymentMethod = pmUpper;
+              } else {
+                const pmLower = paymentMethod.toLowerCase();
+                if (pmLower.includes('qris') || pmLower.includes('gopay') || pmLower.includes('shopee')) {
+                  paymentMethod = 'SP';
+                } else if (pmLower.includes('bca') || pmLower === 'bca_va') {
+                  paymentMethod = 'BC';
+                } else if (pmLower.includes('bri')) {
+                  paymentMethod = 'BR';
+                } else if (pmLower.includes('mandiri') || pmLower.includes('echannel')) {
+                  paymentMethod = 'M2';
+                } else if (pmLower.includes('bni')) {
+                  paymentMethod = 'I1';
+                } else if (pmLower.includes('permata')) {
+                  paymentMethod = 'BT';
+                } else if (pmLower.includes('cimb')) {
+                  paymentMethod = 'B1';
+                } else if (pmLower.includes('bsi')) {
+                  paymentMethod = 'BV';
+                } else if (pmLower.includes('maybank')) {
+                  paymentMethod = 'VA';
+                } else {
+                  paymentMethod = 'SP';
+                }
+              }
+            }
+
+            const stringToSign = `${merchantCode}${merchantOrderId}${paymentAmount}${apiKey}`;
+            const signature = nodeCrypto.createHash('md5').update(stringToSign).digest('hex');
+
+            const appUrl = (process.env.APP_URL || 'https://lapakq.com').replace(/\/$/, '');
+            const callbackUrl = `${appUrl}/api/payment/callback`;
+            const returnUrl = merchantOrderId.startsWith('BILL-')
+              ? `${appUrl}/?billing_return=true&merchantOrderId=${encodeURIComponent(merchantOrderId)}`
+              : `${appUrl}/`;
+
+            const apiUrl =
+              env === 'production'
+                ? 'https://passport.duitku.com/webapi/api/merchant/v2/inquiry'
+                : 'https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry';
+
+            const payload: any = {
+              merchantCode,
+              paymentAmount: String(paymentAmount),
+              paymentMethod,
+              merchantOrderId,
+              productDetails,
+              additionalParam: '',
+              merchantUserInfo: '',
+              customerVaName,
+              email,
+              phoneNumber,
+              itemDetails: Array.isArray(data.items) && data.items.length > 0
+                ? data.items.map((it: any) => ({
+                    name: String(it.name || 'Item').slice(0, 50),
+                    price: Math.round(Number(it.price || 0)),
+                    quantity: Math.max(1, Math.round(Number(it.quantity || 1))),
+                  }))
+                : [
+                    {
+                      name: productDetails.slice(0, 50),
+                      price: paymentAmount,
+                      quantity: 1,
+                    },
+                  ],
+              customerDetail: {
+                firstName: customerVaName,
+                lastName: '',
+                email,
+                phoneNumber,
+              },
+              callbackUrl,
+              returnUrl,
+              signature,
+              expiryPeriod: 15,
+            };
+
+            const duitkuRes = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+
+            const duitkuData = await duitkuRes.json();
+            if (!duitkuRes.ok || (duitkuData.statusCode && duitkuData.statusCode !== '00')) {
+              const errorMsg = duitkuData.statusMessage || duitkuData.Message || 'Gagal memproses transaksi di Duitku';
+              res.statusCode = duitkuRes.ok ? 400 : duitkuRes.status;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: errorMsg, details: duitkuData }));
+              return;
+            }
+
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              success: true,
+              reference: duitkuData.reference,
+              paymentUrl: duitkuData.paymentUrl,
+              vaNumber: duitkuData.vaNumber,
+              qrString: duitkuData.qrString,
+              amount: duitkuData.amount,
+              statusCode: duitkuData.statusCode,
+              statusMessage: duitkuData.statusMessage,
+            }));
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: true, message: err?.message || 'Internal Server Error' }));
+          }
+        });
+      });
+
+      // 3. Check Status
+      server.middlewares.use('/api/duitku/check-status', async (req, res) => {
+        let body = '';
+        req.on('data', (chunk) => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const merchantOrderId = data.merchantOrderId || '';
+            if (!merchantOrderId) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: 'Parameter merchantOrderId wajib diisi' }));
+              return;
+            }
+
+            const { merchantCode, apiKey, env } = await getDevDuitkuConfig();
+            if (!merchantCode || !apiKey) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: true, message: 'DUITKU_MERCHANT_CODE belum disetel' }));
+              return;
+            }
+
+            const stringToSign = `${merchantCode}${merchantOrderId}${apiKey}`;
+            const signature = nodeCrypto.createHash('md5').update(stringToSign).digest('hex');
+
+            const apiUrl =
+              env === 'production'
+                ? 'https://passport.duitku.com/webapi/api/merchant/transactionStatus'
+                : 'https://sandbox.duitku.com/webapi/api/merchant/transactionStatus';
+
+            const statusRes = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({
+                merchantCode,
+                merchantOrderId,
+                signature,
+              }).toString(),
+            });
+
+            const statusData = await statusRes.json();
+            res.statusCode = statusRes.status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(statusData));
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: true, message: err?.message || 'Gagal cek status Duitku' }));
+          }
+        });
+      });
+
+      // 4. Test Connection
+      server.middlewares.use('/api/duitku/test-connection', async (_req, res) => {
+        try {
+          const { merchantCode, apiKey, env } = await getDevDuitkuConfig();
+          if (!merchantCode || !apiKey) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, message: 'Kredensial Duitku belum lengkap di .env atau database.' }));
+            return;
+          }
+
+          const now = new Date();
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const datetime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+          const stringToSign = `${merchantCode}10000${datetime}${apiKey}`;
+          const signature = nodeCrypto.createHash('sha256').update(stringToSign).digest('hex');
+
+          const apiUrl =
+            env === 'production'
+              ? 'https://passport.duitku.com/webapi/api/merchant/paymentmethod/getpaymentmethod'
+              : 'https://sandbox.duitku.com/webapi/api/merchant/paymentmethod/getpaymentmethod';
+
+          const pingRes = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              merchantcode: merchantCode,
+              amount: '10000',
+              datetime,
+              signature,
+            }),
+          });
+
+
+          const pingData = await pingRes.json();
+          if (pingRes.ok && pingData.responseCode === '00') {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              success: true,
+              message: `Koneksi Duitku ${env.toUpperCase()} BERHASIL! Saluran pembayaran aktif terdeteksi.`,
+              env,
+              channelCount: Array.isArray(pingData.paymentFee) ? pingData.paymentFee.length : 0,
+            }));
+          } else {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+              success: false,
+              message: pingData.responseMessage || pingData.Message || 'Respon ditolak oleh Duitku. Periksa Merchant Code dan API Key.',
+              details: pingData,
+            }));
+          }
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: false, message: err?.message || 'Gagal menghubungi server Duitku' }));
+        }
+      });
+
+      // 5. Callback Webhook Duitku (Dev Server)
+      const callbackPaths = ['/api/payment/callback', '/api/callback', '/api/duitku/callback'];
+      callbackPaths.forEach((path) => {
+        server.middlewares.use(path, async (req, res) => {
+          if (req.method !== 'POST') {
+            res.statusCode = 405;
+            res.end('Method Not Allowed');
+            return;
+          }
+
+          let body = '';
+          req.on('data', (chunk) => {
+            body += chunk;
+          });
+
+          req.on('end', async () => {
+            try {
+              let parsedBody: any = {};
+              try {
+                parsedBody = JSON.parse(body);
+              } catch {
+                parsedBody = Object.fromEntries(new URLSearchParams(body));
+              }
+
+              const { merchantCode: receivedCode, amount, merchantOrderId, signature, resultCode } = parsedBody;
+              const { merchantCode, apiKey } = await getDevDuitkuConfig();
+
+              if (!merchantOrderId || !amount || !signature) {
+                res.statusCode = 400;
+                res.end('Bad Parameter');
+                return;
+              }
+
+              const code = receivedCode || merchantCode;
+              const md5Signature = nodeCrypto.createHash('md5').update(`${code}${amount}${merchantOrderId}${apiKey}`).digest('hex');
+              const sha256Signature = nodeCrypto.createHash('sha256').update(`${code}${amount}${merchantOrderId}${apiKey}`).digest('hex');
+
+              const isValid =
+                signature.toLowerCase() === md5Signature.toLowerCase() ||
+                signature.toLowerCase() === sha256Signature.toLowerCase();
+
+              if (!isValid) {
+                res.statusCode = 400;
+                res.end('Wrong Signature');
+                return;
+              }
+
+              if (resultCode === '00') {
+                const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+                const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+
+                if (supabaseUrl && supabaseAnonKey) {
+                  try {
+                    const subRes = await fetch(
+                      `${supabaseUrl}/rest/v1/store_subscriptions?or=(order_id.eq.${encodeURIComponent(merchantOrderId)},invoice_number.eq.${encodeURIComponent(merchantOrderId)},id.eq.${encodeURIComponent(merchantOrderId)})`,
+                      {
+                        headers: {
+                          apikey: supabaseAnonKey,
+                          Authorization: `Bearer ${supabaseAnonKey}`,
+                        },
+                      }
+                    );
+                    if (subRes.ok) {
+                      const subs = await subRes.json();
+                      if (Array.isArray(subs) && subs.length > 0) {
+                        const sub = subs[0];
+                        const paidAt = new Date().toISOString();
+                        const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+                        await fetch(`${supabaseUrl}/rest/v1/store_subscriptions?id=eq.${encodeURIComponent(sub.id)}`, {
+                          method: 'PATCH',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            apikey: supabaseAnonKey,
+                            Authorization: `Bearer ${supabaseAnonKey}`,
+                          },
+                          body: JSON.stringify({
+                            status: 'paid',
+                            paid_at: paidAt,
+                            expires_at: expiresAt,
+                            order_id: merchantOrderId,
+                          }),
+                        });
+
+                        if (sub.store_id) {
+                          let planSlug = 'personal';
+                          const pName = (sub.plan_name || sub.plan_id || '').toLowerCase();
+                          if (pName.includes('community') || pName.includes('scale') || pName.includes('pln003')) {
+                            planSlug = 'community';
+                          } else if (pName.includes('personal') || pName.includes('pro') || pName.includes('pln002')) {
+                            planSlug = 'personal';
+                          }
+
+                          await fetch(`${supabaseUrl}/rest/v1/stores?id=eq.${encodeURIComponent(sub.store_id)}`, {
+                            method: 'PATCH',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              apikey: supabaseAnonKey,
+                              Authorization: `Bearer ${supabaseAnonKey}`,
+                            },
+                            body: JSON.stringify({
+                              plan: planSlug,
+                              updated_at: paidAt,
+                            }),
+                          });
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    console.warn('[Vite Duitku Callback Error]', e);
+                  }
+
+                  // Update product order if any
+                  await fetch(`${supabaseUrl}/rest/v1/orders?order_number=eq.${encodeURIComponent(merchantOrderId)}`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      apikey: supabaseAnonKey,
+                      Authorization: `Bearer ${supabaseAnonKey}`,
+                    },
+                    body: JSON.stringify({
+                      payment_status: 'paid',
+                      order_status: 'processing',
+                      updated_at: new Date().toISOString(),
+                    }),
+                  }).catch(() => {});
+                }
+              }
+
+              res.statusCode = 200;
+              res.end('Success');
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.end(err?.message || 'Internal Error');
+            }
+          });
+        });
+      });
+    },
+  };
+}
+
 // Backend Proxy untuk Biteship API (Menyembunyikan BITESHIP_API_KEY dari browser client)
+
 function shippingDevPlugin(): Plugin {
   return {
     name: 'shipping-dev-server',
@@ -419,12 +1117,31 @@ function emailDevPlugin(): Plugin {
             }
 
             const nodemailer = await import('nodemailer');
+            const dnsMod = await import('dns');
             const isGmail = smtpEmail.toLowerCase().includes('@gmail.com');
+            const smtpHostname = isGmail ? 'smtp.gmail.com' : 'smtp.ethereal.email';
+
+            // Nodemailer v10 melakukan resolusi DNS sendiri (resolve4 + resolve6) lalu memilih
+            // alamat secara ACAK, sehingga opsi `family: 4` diabaikan dan bisa memicu
+            // "ENETUNREACH" di jaringan tanpa route IPv6 keluar. Resolve IPv4 manual & connect
+            // langsung ke IP tsb, sembari tetap kirim `servername` asli untuk verifikasi TLS.
+            const smtpHostIpv4: string = await new Promise((resolve, reject) => {
+              dnsMod.resolve4(smtpHostname, (err, addresses) => {
+                if (err || !addresses || !addresses.length) {
+                  return reject(err || new Error(`Gagal resolve alamat IPv4 untuk ${smtpHostname}`));
+                }
+                resolve(addresses[0]);
+              });
+            });
+
             const transporter = nodemailer.createTransport({
-              host: isGmail ? 'smtp.gmail.com' : 'smtp.ethereal.email',
+              host: smtpHostIpv4,
               port: 587,
               secure: false,
               requireTLS: true,
+              tls: {
+                servername: smtpHostname,
+              },
               auth: {
                 user: smtpEmail,
                 pass: smtpPassword,
@@ -432,7 +1149,7 @@ function emailDevPlugin(): Plugin {
             });
 
             const info = await transporter.sendMail({
-              from: `"Kroomify" <${smtpEmail}>`,
+              from: `"LapakQ" <${smtpEmail}>`,
               to: String(to).trim(),
               subject: String(subject).trim(),
               html: String(html),
@@ -682,6 +1399,7 @@ export default defineConfig(() => {
     plugins: [
       react(),
       tailwindcss(),
+      duitkuDevPlugin(),
       midtransDevPlugin(),
       shippingDevPlugin(),
       emailDevPlugin(),
@@ -702,6 +1420,16 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      // Endpoint /api yang tidak ditangani plugin dev di atas (mis. /api/media/upload,
+      // /api/deploy/*, /api/auth/*) diteruskan ke backend Express. Tanpa ini Vite membalas 404.
+      // Ganti target lewat DEV_API_PROXY_TARGET (mis. http://localhost:5055 untuk server lokal).
+      proxy: {
+        '/api': {
+          target: (process.env.DEV_API_PROXY_TARGET || 'https://lapakq.com').trim(),
+          changeOrigin: true,
+          secure: true,
+        },
+      },
     },
   };
 });

@@ -10,6 +10,7 @@ import {
 import { Product, ProductStatus } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
 import { StockBadge } from './StockBadge';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onStatusChange,
   onToggleStatus,
 }) => {
+  const { isEn } = useLanguage();
   if (!isOpen || !product) return null;
 
   const handleStatusChangeInternal = (id: string, status: ProductStatus) => {
@@ -41,11 +43,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     if (onStatusChange) onStatusChange(id, status);
   };
 
-  const publicUrl = `https://kroomify.id/${storeSlug}/product/${product.slug || product.id}`;
+  const publicUrl = `https://lapakq.com/${storeSlug}/product/${product.slug || product.id}`;
 
   const copyProductLink = () => {
     navigator.clipboard?.writeText(publicUrl);
-    alert('Tautan produk berhasil disalin!');
+    alert(isEn ? 'Product link copied!' : 'Tautan produk berhasil disalin!');
   };
 
   return (
@@ -55,13 +57,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* Top bar */}
         <div className="flex items-center justify-between pb-4 border-b border-[#E5E0DD]">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#706866]">Rincian Produk</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#706866]">{isEn ? 'Product Details' : 'Rincian Produk'}</span>
             <StockBadge status={product.status} stock={product.stock} />
           </div>
           <button
             onClick={onClose}
             className="p-1.5 rounded-xl text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer border border-transparent hover:border-[#E5E0DD]"
-            aria-label="Tutup rincian"
+            aria-label={isEn ? 'Close details' : 'Tutup rincian'}
           >
             <X className="w-5 h-5" />
           </button>
@@ -84,7 +86,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               className="w-full py-2.5 px-3 rounded-xl bg-[#FAF7F7] hover:bg-[#F5E8EA] border border-[#E5E0DD] hover:border-[#66000E] text-xs font-bold text-[#241A1A] hover:text-[#66000E] flex items-center justify-center gap-2 transition cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span>Salin Link Produk</span>
+              <span>{isEn ? 'Copy Product Link' : 'Salin Link Produk'}</span>
             </button>
           </div>
 
@@ -103,7 +105,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-[#FAF7F7] border border-[#E5E0DD]">
               <div>
                 <span className="text-[10px] font-bold text-[#706866] uppercase tracking-wider block mb-0.5">
-                  {product.originalPrice && product.originalPrice > product.price ? 'Harga Jual (Setelah Diskon)' : 'Harga Jual'}
+                  {product.originalPrice && product.originalPrice > product.price
+                    ? (isEn ? 'Selling Price (After Discount)' : 'Harga Jual (Setelah Diskon)')
+                    : (isEn ? 'Selling Price' : 'Harga Jual')}
                 </span>
                 <span className="text-lg sm:text-xl font-bold text-[#66000E]">
                   {formatRupiah(product.price)}
@@ -111,13 +115,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 {product.originalPrice && product.originalPrice > product.price && (
                   <div className="flex flex-col gap-0.5 mt-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-[#706866]">Harga Regular:</span>
+                      <span className="text-[10px] text-[#706866]">{isEn ? 'Regular Price:' : 'Harga Regular:'}</span>
                       <span className="text-[11px] text-[#706866] line-through font-semibold">
                         {formatRupiah(product.originalPrice)}
                       </span>
                     </div>
                     <span className="inline-flex items-center self-start text-[9px] font-bold text-white bg-[#66000E] px-1.5 py-0.5 rounded-full shadow-2xs">
-                      Hemat {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% ({formatRupiah(product.originalPrice - product.price)})
+                      {isEn ? 'Save' : 'Hemat'} {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% ({formatRupiah(product.originalPrice - product.price)})
                     </span>
                   </div>
                 )}
@@ -125,13 +129,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
               <div>
                 <span className="text-[10px] font-bold text-[#706866] uppercase tracking-wider block mb-0.5">
-                  Sisa Stok
+                  {isEn ? 'Stock Left' : 'Sisa Stok'}
                 </span>
                 <span className="text-lg sm:text-xl font-bold text-[#241A1A]">
                   {product.stock} <span className="text-xs font-normal text-[#706866]">Unit</span>
                 </span>
                 <span className="text-[11px] text-[#706866] block mt-0.5 font-medium">
-                  Berat: {product.weightGrams || 250}g
+                  {isEn ? 'Weight' : 'Berat'}: {product.weightGrams || 250}g
                 </span>
               </div>
             </div>
@@ -139,10 +143,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             {/* Description */}
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#241A1A] mb-1">
-                Deskripsi Produk
+                {isEn ? 'Product Description' : 'Deskripsi Produk'}
               </h4>
               <p className="text-xs text-[#706866] leading-relaxed max-h-24 overflow-y-auto pr-1">
-                {product.description || 'Tidak ada deskripsi untuk produk ini.'}
+                {product.description || (isEn ? 'No description for this product.' : 'Tidak ada deskripsi untuk produk ini.')}
               </p>
             </div>
 
@@ -150,10 +154,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <div className="p-3 rounded-xl bg-[#F5E8EA] border border-[#E8DDDE] flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-[#66000E]" />
-                <span className="font-bold text-[#66000E]">Total Terjual</span>
+                <span className="font-bold text-[#66000E]">{isEn ? 'Total Sold' : 'Total Terjual'}</span>
               </div>
               <span className="font-bold text-[#66000E]">
-                {product.salesCount || 14} Transaksi
+                {product.salesCount || 14} {isEn ? 'Transactions' : 'Transaksi'}
               </span>
             </div>
           </div>
@@ -166,7 +170,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             onClick={onClose}
             className="px-5 py-2 min-h-[38px] rounded-xl bg-[#FAF7F7] hover:bg-[#E5E0DD] text-[#241A1A] font-semibold text-xs border border-[#E5E0DD] transition cursor-pointer"
           >
-            Tutup
+            {isEn ? 'Close' : 'Tutup'}
           </button>
         </div>
       </div>

@@ -8,32 +8,34 @@ import {
   XCircle,
   Shuffle,
 } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export const ProblemSection: React.FC = () => {
+  const { isEn } = useLanguage();
   const problems = [
     {
       icon: Shuffle,
-      title: 'Terlalu Banyak Aplikasi',
-      description: 'Harus berpindah-pindah platform untuk mengelola toko, catat chat, cek mutasi bank, dan order kurir.',
-      tag: 'Bikin Pusing',
+      title: isEn ? 'Too Many Apps' : 'Terlalu Banyak Aplikasi',
+      description: isEn ? 'Constantly switching platforms to manage the store, log chats, check bank statements, and book couriers.' : 'Harus berpindah-pindah platform untuk mengelola toko, catat chat, cek mutasi bank, dan order kurir.',
+      tag: isEn ? 'Overwhelming' : 'Bikin Pusing',
     },
     {
       icon: Code,
-      title: 'Pembuatan Rumit & Mahal',
-      description: 'Sistem e-commerce di pasaran terasa terlalu teknis, mahal, dan butuh keahlian coding.',
-      tag: 'Terlalu Teknis',
+      title: isEn ? 'Complex & Expensive Setup' : 'Pembuatan Rumit & Mahal',
+      description: isEn ? 'E-commerce systems on the market feel too technical, expensive, and require coding skills.' : 'Sistem e-commerce di pasaran terasa terlalu teknis, mahal, dan butuh keahlian coding.',
+      tag: isEn ? 'Too Technical' : 'Terlalu Teknis',
     },
     {
       icon: FileQuestion,
-      title: 'Pesanan Tercecer',
-      description: 'Pesanan dari berbagai chat WhatsApp dan media sosial tercecer dan sulit dipantau statusnya.',
-      tag: 'Rentan Terlewat',
+      title: isEn ? 'Scattered Orders' : 'Pesanan Tercecer',
+      description: isEn ? 'Orders from WhatsApp chats and social media get scattered and are hard to track.' : 'Pesanan dari berbagai chat WhatsApp dan media sosial tercecer dan sulit dipantau statusnya.',
+      tag: isEn ? 'Easily Missed' : 'Rentan Terlewat',
     },
     {
       icon: SlidersHorizontal,
-      title: 'Pengelolaan Membingungkan',
-      description: 'Fitur berbelit-belit dan menu yang rumit membuat waktu Anda habis hanya untuk setting toko.',
-      tag: 'Boros Waktu',
+      title: isEn ? 'Confusing Management' : 'Pengelolaan Membingungkan',
+      description: isEn ? 'Convoluted features and complex menus eat up your time just setting up the store.' : 'Fitur berbelit-belit dan menu yang rumit membuat waktu Anda habis hanya untuk setting toko.',
+      tag: isEn ? 'Time Wasting' : 'Boros Waktu',
     },
   ];
 
@@ -45,13 +47,13 @@ export const ProblemSection: React.FC = () => {
         <div className="text-center max-w-2xl mx-auto mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-semibold mb-4 shadow-2xs">
             <AlertCircle className="w-3.5 h-3.5" />
-            <span>Tantangan Nyata Jualan Online</span>
+            <span>{isEn ? 'Real Challenges of Selling Online' : 'Tantangan Nyata Jualan Online'}</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#241A1A] tracking-tight leading-snug mb-3">
-            Jualan Online Seharusnya Tidak Serumit Itu.
+            {isEn ? "Selling Online Shouldn't Be That Complicated." : 'Jualan Online Seharusnya Tidak Serumit Itu.'}
           </h2>
           <p className="text-[#5F5652] text-sm sm:text-base leading-relaxed font-normal">
-            Banyak pemilik UMKM terbebani oleh sistem e-commerce yang rumit dan membingungkan sebelum sempat menghasilkan transaksi optimal.
+            {isEn ? 'Many SME owners are burdened by complex, confusing e-commerce systems before they ever reach optimal sales.' : 'Banyak pemilik UMKM terbebani oleh sistem e-commerce yang rumit dan membingungkan sebelum sempat menghasilkan transaksi optimal.'}
           </p>
         </div>
 
@@ -85,7 +87,7 @@ export const ProblemSection: React.FC = () => {
 
                 <div className="pt-4 mt-4 border-t border-[#E8DDDE]/60 flex items-center gap-1.5 text-xs text-[#66000E] font-medium">
                   <XCircle className="w-3.5 h-3.5" />
-                  <span>Sering dialami UMKM</span>
+                  <span>{isEn ? 'Common for SMEs' : 'Sering dialami UMKM'}</span>
                 </div>
               </div>
             );

@@ -9,10 +9,12 @@ import {
   X,
   ChevronRight,
   ExternalLink,
+  Store as StoreIcon,
 } from 'lucide-react';
 import { Store as StoreType, StoreSectionOptions, NavMenuItem } from '../../types';
 import { generateWhatsAppLink } from '../../utils/formatters';
 import { DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface StoreHeaderProps {
   store: StoreType;
@@ -44,6 +46,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
   onOpenCart,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isEn } = useLanguage();
 
   const opts: StoreSectionOptions = headerOptions || {};
   const sticky = opts.stickyHeader !== false;
@@ -58,7 +61,6 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
       : DEFAULT_LANDING_NAV_ITEMS;
   const showSearchBar = opts.showSearchBar !== false;
   const showCartBadge = opts.showCartBadge !== false;
-  const showWhatsAppButton = opts.showWhatsAppButton !== false;
 
   const isBrandStyle = style === 'brand';
   const isMinimalStyle = style === 'minimal';
@@ -106,7 +108,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
           <span className="truncate max-w-2xl">
             {topNoticeText || (
               <>
-                Toko Online Resmi <strong>{store.name}</strong> • Pengiriman Aman Seluruh Indonesia
+                {isEn ? 'Official Online Store' : 'Toko Online Resmi'} <strong>{store.name}</strong> • {isEn ? 'Safe Shipping Across Indonesia' : 'Pengiriman Aman Seluruh Indonesia'}
               </>
             )}
           </span>
@@ -117,7 +119,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3 sm:gap-4">
         {/* Brand / Logo & Name */}
         <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 mr-4 lg:mr-8">
-          {showLogo && (
+          {showLogo && store.logoUrl && !store.logoUrl.includes('unsplash.com') ? (
             <div
               className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl overflow-hidden shadow-2xs shrink-0 border ${
                 isBrandStyle ? 'border-white/30 bg-white/10' : 'border-[#EAEAEA] bg-[#F7F7F7]'
@@ -130,7 +132,15 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
                 referrerPolicy="no-referrer"
               />
             </div>
-          )}
+          ) : showLogo ? (
+            <div
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl overflow-hidden shadow-2xs shrink-0 border flex items-center justify-center font-bold text-xs ${
+                isBrandStyle ? 'border-white/30 bg-white/10 text-white' : 'border-[#EAEAEA] bg-[#F7F7F7] text-[#66000E]'
+              }`}
+            >
+              <StoreIcon className="w-5 h-5" />
+            </div>
+          ) : null}
           <div className="min-w-0">
             <a
               href="#beranda"
@@ -184,7 +194,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
             />
             <input
               type="text"
-              placeholder="Cari produk di toko..."
+              placeholder={isEn ? 'Search store products...' : 'Cari produk di toko...'}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className={`w-full pl-9 pr-3 py-2 rounded-xl text-xs transition focus:outline-none focus:ring-2 ${
@@ -198,25 +208,6 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
 
         {/* Action Buttons: WhatsApp, Cart, Mobile Menu Toggle */}
         <div className="flex items-center gap-2 shrink-0">
-          {showWhatsAppButton && (
-            <a
-              href={generateWhatsAppLink(
-                store.phoneWhatsApp,
-                `Halo ${store.name}, saya ingin bertanya mengenai katalog produk online.`
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-xs transition border cursor-pointer ${
-                isBrandStyle
-                  ? 'bg-white/15 text-white hover:bg-white/25 border-white/20'
-                  : 'bg-[#ECFDF3] hover:bg-[#D1FADF] text-[#027A48] border-[#ABEFC6]'
-              }`}
-              title="Chat Toko via WhatsApp"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              <span>Chat Toko</span>
-            </a>
-          )}
 
           {/* Cart Button */}
           {showCartBadge && (
@@ -229,10 +220,10 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
                   : 'bg-[#66000E] text-white hover:bg-[#801010]'
               }`}
               style={!isBrandStyle ? { backgroundColor: primaryAccent } : undefined}
-              title="Buka Keranjang Belanja"
+              title={isEn ? 'Open Shopping Cart' : 'Buka Keranjang Belanja'}
             >
               <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
-              <span className="hidden sm:inline">Keranjang</span>
+              <span className="hidden sm:inline">{isEn ? 'Cart' : 'Keranjang'}</span>
               {cartCount > 0 && (
                 <span
                   className={`w-4.5 h-4.5 rounded-full text-[10px] font-bold flex items-center justify-center ${
@@ -255,7 +246,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
                   ? 'text-white border-white/20 hover:bg-white/15'
                   : 'text-[#4A4240] border-[#E5E0DD] hover:bg-[#FAF7F7]'
               }`}
-              title="Buka Menu"
+              title={isEn ? 'Open Menu' : 'Buka Menu'}
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -274,7 +265,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
             />
             <input
               type="text"
-              placeholder="Cari produk di toko..."
+              placeholder={isEn ? 'Search store products...' : 'Cari produk di toko...'}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className={`w-full pl-9 pr-3 py-2 rounded-xl text-xs transition focus:outline-none ${
@@ -297,7 +288,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
           }`}
         >
           <div className="text-[10px] font-bold uppercase tracking-wider text-white/70 mb-1">
-            Navigasi Halaman
+            {isEn ? 'Page Navigation' : 'Navigasi Halaman'}
           </div>
           {navItems.map((item) => (
             <a
@@ -314,22 +305,6 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
               <ChevronRight className="w-3.5 h-3.5 opacity-50" />
             </a>
           ))}
-          {showWhatsAppButton && (
-            <div className="pt-2">
-              <a
-                href={generateWhatsAppLink(
-                  store.phoneWhatsApp,
-                  `Halo ${store.name}, saya ingin bertanya mengenai katalog produk online.`
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2 rounded-xl bg-[#ECFDF3] text-[#027A48] font-bold text-xs border border-[#ABEFC6]"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Hubungi via WhatsApp</span>
-              </a>
-            </div>
-          )}
         </div>
       )}
 
@@ -355,7 +330,7 @@ export const StoreHeader: React.FC<StoreHeaderProps> = ({
                 : 'text-[#555555] hover:bg-[#F7F7F7] hover:text-[#1F1F1F]'
             }`}
           >
-            Semua Produk
+            {isEn ? 'All Products' : 'Semua Produk'}
           </button>
           {categories.map((cat) => (
             <button

@@ -31,7 +31,7 @@ interface StoreLocationPickerMapProps {
 
 const createCustomPin = () => {
   return L.divIcon({
-    className: 'kroomify-pin-wrapper',
+    className: 'lapakq-pin-wrapper',
     html: `
       <div style="position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -100%);">
         <div style="width: 34px; height: 34px; background: #66000E; border: 2.5px solid #FFFFFF; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 6px 16px rgba(102,0,14,0.45); display: flex; align-items: center; justify-content: center;">
@@ -52,7 +52,7 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
   onChangeCoordinates,
   onLocationSelect,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -214,7 +214,7 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
   // Ambil lokasi akurat melalui sensor GPS / Geolocation
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
-      setGeoError('Perangkat atau browser Anda tidak mendukung fitur deteksi lokasi GPS.');
+      setGeoError(isEn ? 'Your device or browser does not support GPS location detection.' : 'Perangkat atau browser Anda tidak mendukung fitur deteksi lokasi GPS.');
       return;
     }
 
@@ -237,13 +237,13 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
       },
       (error) => {
         setIsLocating(false);
-        let msg = 'Gagal mendeteksi lokasi GPS.';
+        let msg = isEn ? 'Failed to detect GPS location.' : 'Gagal mendeteksi lokasi GPS.';
         if (error.code === error.PERMISSION_DENIED) {
-          msg = 'Izin akses lokasi ditolak. Harap izinkan akses lokasi pada browser Anda.';
+          msg = isEn ? 'Location permission denied. Please allow location access in your browser.' : 'Izin akses lokasi ditolak. Harap izinkan akses lokasi pada browser Anda.';
         } else if (error.code === error.POSITION_UNAVAILABLE) {
-          msg = 'Informasi lokasi perangkat saat ini tidak tersedia.';
+          msg = isEn ? 'Device location information is currently unavailable.' : 'Informasi lokasi perangkat saat ini tidak tersedia.';
         } else if (error.code === error.TIMEOUT) {
-          msg = 'Waktu permintaan lokasi habis. Silakan coba kembali.';
+          msg = isEn ? 'Location request timed out. Please try again.' : 'Waktu permintaan lokasi habis. Silakan coba kembali.';
         }
         setGeoError(msg);
       },
@@ -444,7 +444,7 @@ export const StoreLocationPickerMap: React.FC<StoreLocationPickerMapProps> = ({
           className="absolute bottom-2.5 left-2.5 z-20 bg-white/95 hover:bg-white px-2.5 py-1.5 rounded-lg border border-gray-200 shadow-xs flex items-center gap-1 text-[11px] font-semibold text-gray-800 transition cursor-pointer"
         >
           <ExternalLink className="w-3 h-3 text-[#66000E]" />
-          <span>{t('map_open_gmaps', 'Buka di Google Maps')} ({currentLat.toFixed(4)}, {currentLng.toFixed(4)})</span>
+          <span>{isEn ? 'Open in Google Maps' : 'Buka di Google Maps'} ({currentLat.toFixed(4)}, {currentLng.toFixed(4)})</span>
         </a>
       </div>
     </div>

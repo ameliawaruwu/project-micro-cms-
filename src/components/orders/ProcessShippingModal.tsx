@@ -16,7 +16,7 @@ export const ProcessShippingModal: React.FC<ProcessShippingModalProps> = ({
   onClose,
   onConfirmShipping,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [selectedCourier, setSelectedCourier] = useState<CourierType>(order?.courier || 'J&T');
   const [resiNumber, setResiNumber] = useState('');
   const [isGenerated, setIsGenerated] = useState(false);
@@ -24,10 +24,10 @@ export const ProcessShippingModal: React.FC<ProcessShippingModalProps> = ({
   if (!isOpen || !order) return null;
 
   const couriers: { id: CourierType; name: string; estimate: string; badge: string }[] = [
-    { id: 'J&T', name: 'J&T Express', estimate: 'Pick-up otomatis ke toko', badge: 'Auto Pick-up' },
-    { id: 'JNE', name: 'JNE Logistics', estimate: 'Drop di agen terdekat', badge: 'Jaringan Luas' },
-    { id: 'SiCepat', name: 'SiCepat Ekspres', estimate: 'Pick-up kurir gratis', badge: 'Cepat' },
-    { id: 'GoSend', name: 'GoSend Instant', estimate: 'Driver motor datang 15 mnt', badge: 'Instant 1 Jam' },
+    { id: 'J&T', name: 'J&T Express', estimate: isEn ? 'Automatic pick-up at store' : 'Pick-up otomatis ke toko', badge: 'Auto Pick-up' },
+    { id: 'JNE', name: 'JNE Logistics', estimate: isEn ? 'Drop at nearest agent' : 'Drop di agen terdekat', badge: isEn ? 'Wide Network' : 'Jaringan Luas' },
+    { id: 'SiCepat', name: 'SiCepat Ekspres', estimate: isEn ? 'Free courier pick-up' : 'Pick-up kurir gratis', badge: isEn ? 'Fast' : 'Cepat' },
+    { id: 'GoSend', name: 'GoSend Instant', estimate: isEn ? 'Motorbike driver arrives in 15 min' : 'Driver motor datang 15 mnt', badge: isEn ? 'Instant 1 Hour' : 'Instant 1 Jam' },
   ];
 
   const handleGenerateResi = () => {
@@ -124,7 +124,7 @@ export const ProcessShippingModal: React.FC<ProcessShippingModalProps> = ({
             </div>
             <input
               type="text"
-              placeholder="Contoh: JT8891029312"
+              placeholder={isEn ? 'Example: JT8891029312' : 'Contoh: JT8891029312'}
               value={resiNumber}
               onChange={(e) => setResiNumber(e.target.value)}
               className="w-full px-4 py-2.5 rounded-xl border border-[#E5E0DD] bg-white text-xs font-mono font-semibold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E]"

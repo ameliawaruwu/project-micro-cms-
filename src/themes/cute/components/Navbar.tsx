@@ -1,41 +1,92 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
-import { Search, ShoppingBag, Menu, Heart } from 'lucide-react';
+import { ShoppingBag, Heart } from 'lucide-react';
+import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { NavSearchButton } from '../../NavSearchButton';
+import { StoreLogo } from '../../StoreLogo';
+import { CartCount } from '../../storefrontCart';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
-export const CuteNavbar: React.FC = () => {
+export const CuteNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore((state) => state.storeInfo);
-  const navigation = useCmsStore((state) => state.navigation);
+  const header = getHeaderDisplay(sectionOptions);
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
+  // Pengaturan header merchant: sembunyikan logo/nama toko atau menu navigasi bila dimatikan.
+  const showLogo = sectionOptions.showLogo ?? true;
+  const navItems = (sectionOptions.showNavMenu ?? true) ? getNavMenuItems(sectionOptions) : [];
+  // Logo di sudut kiri; di HP ikon aksi berada di sebelah kanan logo.
+  const navFlexClass = 'flex-row';
+  const logoAlignClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'items-start text-left',
+    tablet: 'items-start text-left',
+    desktop: 'items-center text-center',
+    fallback: 'items-start text-left md:items-center md:text-center',
+  });
+  const showHeartBadge = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
+  const navGapClass = isMobile || isTablet ? 'gap-4' : 'gap-4 md:gap-0';
+  const showMobileBar = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex',
+    tablet: 'flex',
+    desktop: 'hidden',
+    fallback: 'md:hidden flex',
+  });
+  const logoFlexNoneClass = isMobile || isTablet ? 'flex-1' : 'flex-1 md:flex-none';
+  const showDesktopNav = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
 
   return (
-    <header className="w-full bg-[#FFF5F7] border-b-4 border-[#FFD1DC] py-4 px-6 sticky top-0 z-50 font-['Outfit',sans-serif] rounded-b-3xl shadow-sm">
-      <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-4 md:gap-0 justify-between">
+    <header className={`w-full bg-[#FFF5F7] border-b-4 border-[#FFD1DC] py-4 px-4 sm:px-6 ${header.positionClass} font-['Outfit',sans-serif] rounded-b-3xl shadow-sm`}>
+      <div className={`max-w-5xl mx-auto flex ${navFlexClass} items-center ${navGapClass} justify-between`}>
         
         {/* Mobile top bar */}
-        <div className="w-full md:hidden flex justify-between items-center">
-          <button className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm">
-            <Menu className="w-5 h-5" />
-          </button>
-          <button className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm relative">
-            <ShoppingBag className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 bg-[#FF85A1] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-              0
-            </span>
-          </button>
+        <div className={`order-last shrink-0 ${showMobileBar} justify-end items-center gap-2`}>
+          {header.showSearch && (
+            <NavSearchButton className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm" iconClassName="w-5 h-5" />
+          )}
+          <NavTrackOrderButton className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm" iconClassName="w-5 h-5" />
+          {header.showCart && (
+            <button data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'} className="p-2 text-[#FF85A1] bg-white rounded-xl shadow-sm relative cursor-pointer">
+              <ShoppingBag className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 bg-[#FF85A1] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <CartCount />
+              </span>
+            </button>
+          )}
         </div>
 
-        {/* Center: Logo */}
-        <div className="flex-1 md:flex-none text-center flex flex-col items-center group cursor-pointer">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-2 group-hover:-translate-y-1 transition-transform">
+        {/* Logo: di sudut kiri pada HP, di tengah pada desktop */}
+        <div className={`${logoFlexNoneClass} min-w-0 ${logoAlignClass} flex flex-col group cursor-pointer`}>
+          <div className={`${showHeartBadge} w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm mb-2 group-hover:-translate-y-1 transition-transform`}>
             <Heart className="w-6 h-6 text-[#FF85A1] fill-[#FF85A1]" />
           </div>
-          <a href="/" className="text-2xl font-black text-[#FF85A1] tracking-tight">
-            {storeInfo.name}
-          </a>
+          {showLogo && (
+            <a href="/" className="text-xl sm:text-2xl font-black text-[#FF85A1] tracking-tight max-w-full break-words">
+              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
+            </a>
+          )}
+          {storeSubtitle && (
+            <span className="text-xs font-semibold text-[#FF85A1]/80 mt-0.5 max-w-[200px] truncate">
+              {storeSubtitle}
+            </span>
+          )}
         </div>
 
         {/* Center: Desktop Navigation */}
-        <nav className="hidden md:flex items-center justify-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm">
-          {navigation.filter(n => n.isActive).map((nav) => (
+        <nav className={`${showDesktopNav} items-center justify-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm`}>
+          {navItems.map((nav) => (
             <a
               key={nav.id}
               href={nav.route}
@@ -47,19 +98,32 @@ export const CuteNavbar: React.FC = () => {
         </nav>
 
         {/* Right: Actions */}
-        <div className="hidden md:flex items-center gap-3">
-          <button className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm">
-            <Search className="w-5 h-5" />
-          </button>
-          <button className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm relative">
-            <ShoppingBag className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 bg-[#FF85A1] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">
-              0
-            </span>
-          </button>
+        <div className={`${showDesktopNav} items-center gap-3`}>
+          {header.showSearch && (
+            <NavSearchButton
+              className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm"
+              iconClassName="w-5 h-5"
+            />
+          )}
+          <NavTrackOrderButton className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm" iconClassName="w-5 h-5" />
+          {header.showCart && (
+            <button data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'} className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF85A1] hover:bg-[#FF85A1] hover:text-white transition-colors shadow-sm relative cursor-pointer">
+              <ShoppingBag className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 bg-[#FF85A1] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white">
+                <CartCount />
+              </span>
+            </button>
+          )}
         </div>
 
       </div>
+      <nav className={`${showMobileBar} flex-wrap justify-center gap-2 mt-3`}>
+        {navItems.map((nav) => (
+          <a key={nav.id} href={nav.route} className="px-3 py-1.5 rounded-xl bg-white text-xs font-bold text-[#FF85A1] shadow-sm">
+            {nav.label}
+          </a>
+        ))}
+      </nav>
     </header>
   );
 };

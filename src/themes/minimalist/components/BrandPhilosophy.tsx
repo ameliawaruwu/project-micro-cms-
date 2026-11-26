@@ -1,11 +1,21 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { resolveSectionImage } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 export const MinimalistBrandPhilosophy: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
   const { storeInfo } = useCmsStore();
   
-  const heading = sectionOptions.heading || "Our Philosophy";
-  const content = sectionOptions.description || `"At ${storeInfo.name}, we believe in the beauty of simplicity. Our objects are designed not just to occupy space, but to enhance your daily rituals. Every curve, every material is thoughtfully chosen to bring calm and purpose to your living environment."`;
+  const heading = sectionOptions.heading || (isEn ? 'About Us' : 'Tentang Kami');
+  // Bawaan: deskripsi toko; bila kosong, kalimat umum dengan nama toko.
+  const content =
+    sectionOptions.description ||
+    storeInfo?.description ||
+    (isEn
+      ? `${storeInfo?.name || 'We'} offer${storeInfo?.name ? 's' : ''} simple, quality products made to accompany your everyday life.`
+      : `${storeInfo?.name || 'Kami'} menghadirkan produk pilihan yang sederhana, berkualitas, dan dibuat untuk menemani keseharian Anda.`);
+  const image = resolveSectionImage(sectionOptions);
   
   return (
     <section className="w-full max-w-full py-10 sm:py-16 md:py-28 px-4 sm:px-6 max-w-4xl mx-auto text-center bg-white box-border overflow-hidden">
@@ -13,6 +23,7 @@ export const MinimalistBrandPhilosophy: React.FC<{ sectionOptions?: any }> = ({ 
       <p className="text-sm sm:text-lg md:text-2xl lg:text-3xl leading-relaxed text-gray-800 font-light max-w-3xl mx-auto break-words">
         {content}
       </p>
+      {image && <img src={image} alt={heading} className="w-full max-h-[420px] object-cover mt-8 sm:mt-12" />}
       <div className="w-10 sm:w-12 h-[1px] bg-gray-300 mx-auto mt-6 sm:mt-10"></div>
     </section>
   );

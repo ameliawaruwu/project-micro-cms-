@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Pencil } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface InlineEditableButtonProps {
   label: string;
@@ -22,6 +23,7 @@ export const InlineEditableButton: React.FC<InlineEditableButtonProps> = ({
   isSelected = false,
   readonly = false,
 }) => {
+  const { isEn } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [draftLabel, setDraftLabel] = useState(label);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -73,7 +75,7 @@ export const InlineEditableButton: React.FC<InlineEditableButtonProps> = ({
           onBlur={handleCommit}
           onKeyDown={handleKeyDown}
           className="px-2.5 py-1 text-xs text-slate-900 font-bold bg-transparent outline-none min-w-[120px] text-center"
-          placeholder="Teks tombol..."
+          placeholder={isEn ? 'Button text...' : 'Teks tombol...'}
         />
       </div>
     );
@@ -87,7 +89,7 @@ export const InlineEditableButton: React.FC<InlineEditableButtonProps> = ({
         style={style}
       >
         {iconPosition === 'left' && icon}
-        <span className="truncate">{draftLabel || 'Tombol'}</span>
+        <span className="truncate">{draftLabel || (isEn ? 'Button' : 'Tombol')}</span>
         {iconPosition === 'right' && icon}
       </button>
     );
@@ -99,10 +101,10 @@ export const InlineEditableButton: React.FC<InlineEditableButtonProps> = ({
       onClick={handleStartEdit}
       className={`relative group/btn-edit cursor-pointer transition-all duration-150 ${className}`}
       style={style}
-      title="Klik untuk mengubah label tombol"
+      title={isEn ? 'Click to change the button label' : 'Klik untuk mengubah label tombol'}
     >
       {iconPosition === 'left' && icon}
-      <span className="truncate">{draftLabel || 'Tombol'}</span>
+      <span className="truncate">{draftLabel || (isEn ? 'Button' : 'Tombol')}</span>
       {iconPosition === 'right' && icon}
 
       {/* Subtle hover edit pen */}

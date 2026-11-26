@@ -40,7 +40,7 @@ export const initialIntegrations: Integration[] = [
     type: 'payment',
     provider: 'stripe',
     name: 'Stripe International Card',
-    logo: 'https://images.unsplash.com/photo-1556742049-0a67e5572293?w=100&auto=format&fit=crop&q=80',
+    logo: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=100&auto=format&fit=crop&q=80',
     description: 'Terima pembayaran kartu kredit & debit internasional (Visa, Mastercard, AMEX) untuk ekspor produk.',
     isConnected: true,
     statusText: 'Terhubung & Aktif',

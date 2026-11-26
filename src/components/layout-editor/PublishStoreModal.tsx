@@ -26,7 +26,10 @@ import { Store } from '../../types';
 import { domainRequestService, DomainRequest } from '../../services/domainRequestService';
 import { billingPlanService } from '../../services/billingPlanService';
 import { storeService } from '../../services/storeService';
+import { useStoreBaseDomain } from '../../utils/storeDomain';
 import confetti from 'canvas-confetti';
+import { sessionHeaders } from '../../services/supabaseClient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface PublishStoreModalProps {
   isOpen: boolean;
@@ -48,11 +51,6 @@ interface DeployStage {
   status: 'pending' | 'running' | 'success' | 'failed';
 }
 
-const BASE_DOMAINS = [
-  { value: 'kroombox.com', label: '.kroombox.com', tag: 'Default Edge' },
-  { value: 'kromify.id', label: '.kromify.id', tag: 'Official Store' },
-  { value: 'mykolab.store', label: '.mykolab.store', tag: 'Fast CDN' },
-];
 
 export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
   isOpen,
@@ -64,6 +62,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
   onPublish,
   onUnpublish,
 }) => {
+  const { isEn } = useLanguage();
   const [step, setStep] = useState<PublishModalStep>('choose_domain');
   const [copied, setCopied] = useState(false);
   const [domainRequest, setDomainRequest] = useState<DomainRequest | null>(null);
@@ -71,7 +70,12 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   // Subdomain selection & regeneration states
   const [randomSubdomain, setRandomSubdomain] = useState('');
-  const [selectedBaseDomain, setSelectedBaseDomain] = useState('kroombox.com');
+  // Toko anggota komunitas memakai domain komunitasnya; toko tanpa komunitas memakai lapakq.com.
+  const {
+    domain: selectedBaseDomain,
+    communityName: domainCommunityName,
+    loading: isBaseDomainLoading,
+  } = useStoreBaseDomain(store);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Auto Deploy states
@@ -146,6 +150,9 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   // Handle Auto Deploy Execution
   const startAutoDeploySimulation = async () => {
+    // Langganan di muka dinonaktifkan: Publikasi toko terbuka penuh untuk semua merchant
+    const isPaidPlan = true;
+
     setDeployError(null);
     setStep('auto_deploy');
     setDeployProgress(10);
@@ -157,110 +164,90 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
     const primaryDomain = `${cleanSlug}.${selectedBaseDomain}`;
     const targetHost = cleanCustomDomain || primaryDomain;
 
-    const initialStages: DeployStage[] = [
-      { id: '1', name: 'Persiapan Webroot & Katalog', detail: 'Mengemas build SPA, template tema, store.json & produk', status: 'running' },
-      { id: '2', name: 'Konfigurasi Web Gateway & Vhost', detail: `Menerbitkan virtual host Nginx port 8080 untuk ${targetHost}`, status: 'pending' },
-      { id: '3', name: 'Cloudflare Anycast DNS & Tunnel', detail: 'Rute Ingress Cloudflare Tunnel & perambatan edge', status: 'pending' },
-      { id: '4', name: 'Health Check & Smoke Test', detail: 'Verifikasi endpoint live respon HTTP 200 OK', status: 'pending' },
-    ];
-
-    setDeployStages(initialStages);
-    const now = () => new Date().toLocaleTimeString('id-ID');
-    setTerminalLogs([
-      `[${now()}] INITIATE: Dispatching deployment pipeline for storeId="${store.id}" (${cleanSlug})`,
-      `[${now()}] TARGET: ${primaryDomain}${cleanCustomDomain ? ` + ${cleanCustomDomain}` : ''}`,
-      `[${now()}] STEP 1: Bundling store theme, hydration tokens & catalog...`,
+    // Only real steps are shown: the server reports each one, nothing is ticked on a timer.
+    // WHY: a timer marked Nginx/Tunnel/smoke test "done" while the store host had no DNS yet.
+    setDeployStages([
+      { id: '1', name: isEn ? 'Registering store address' : 'Mendaftarkan alamat toko', detail: targetHost, status: 'running' },
+      { id: '2', name: isEn ? 'Public DNS' : 'DNS publik', detail: isEn ? 'Waiting for the domain to resolve' : 'Menunggu domain ter-resolve', status: 'pending' },
+      { id: '3', name: isEn ? 'HTTPS access test' : 'Uji akses HTTPS', detail: `https://${primaryDomain}`, status: 'pending' },
     ]);
+    const now = () => new Date().toLocaleTimeString(isEn ? 'en-US' : 'id-ID');
+    setTerminalLogs([
+      isEn
+        ? `[${now()}] Registering ${primaryDomain}${cleanCustomDomain ? ` + ${cleanCustomDomain}` : ''} with the server...`
+        : `[${now()}] Mendaftarkan ${primaryDomain}${cleanCustomDomain ? ` + ${cleanCustomDomain}` : ''} ke server...`,
+      isEn
+        ? `[${now()}] The server is checking public DNS and HTTPS access (max. ±45 seconds).`
+        : `[${now()}] Server memeriksa DNS publik dan akses HTTPS (maks. ±45 detik).`,
+    ]);
+    setDeployProgress(30);
 
-    // Visual progress ticker while backend works
-    let stepCount = 0;
-    const progressTimer = setInterval(() => {
-      stepCount++;
-      if (stepCount === 1) {
-        setDeployProgress(35);
-        setDeployStages((prev) =>
-          prev.map((s, idx) => (idx === 0 ? { ...s, status: 'success' } : idx === 1 ? { ...s, status: 'running' } : s))
-        );
-        setTerminalLogs((prev) => [
-          ...prev,
-          `[${now()}] STEP 2: Writing Nginx reverse proxy configuration & running syntax test...`,
-        ]);
-      } else if (stepCount === 2) {
-        setDeployProgress(65);
-        setDeployStages((prev) =>
-          prev.map((s, idx) => (idx <= 1 ? { ...s, status: 'success' } : idx === 2 ? { ...s, status: 'running' } : s))
-        );
-        setTerminalLogs((prev) => [
-          ...prev,
-          `[${now()}] STEP 3: Connecting hostname to Cloudflare Anycast Tunnel network...`,
-        ]);
-      } else if (stepCount === 3) {
-        setDeployProgress(85);
-        setDeployStages((prev) =>
-          prev.map((s, idx) => (idx <= 2 ? { ...s, status: 'success' } : idx === 3 ? { ...s, status: 'running' } : s))
-        );
-        setTerminalLogs((prev) => [
-          ...prev,
-          `[${now()}] STEP 4: Executing edge smoke test probe...`,
-        ]);
-      }
-    }, 750);
+    const serverStages = (raw: unknown): DeployStage[] =>
+      Array.isArray(raw)
+        ? raw.map((s: any, idx: number) => ({
+            id: String(idx + 1),
+            name: String(s?.name || ''),
+            detail: String(s?.detail || ''),
+            status: s?.status === 'success' || s?.status === 'failed' ? s.status : 'pending',
+          }))
+        : [];
 
     try {
       const response = await fetch('/api/deploy/publish', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: sessionHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           storeId: store.id,
           slug: cleanSlug,
           baseDomain: selectedBaseDomain,
           customDomain: cleanCustomDomain,
-          store: {
-            ...store,
-            slug: cleanSlug,
-            isPublished: true,
-            customDomain: cleanCustomDomain || store.customDomain,
-            domainStatus: cleanCustomDomain ? 'connected' : store.domainStatus,
-          },
-          products: products || [],
         }),
       });
 
-      clearInterval(progressTimer);
-      const resData = await response.json();
-
-      if (!response.ok || !resData.success) {
-        throw new Error(resData.error || resData.message || 'Gagal mempublikasikan toko');
-      }
-
-      setDeployProgress(100);
-      setDeployStages((prev) => prev.map((s) => ({ ...s, status: 'success' })));
+      const resData = await response.json().catch(() => ({}));
+      const reported = serverStages(resData.stages);
+      if (reported.length) setDeployStages(reported);
       setTerminalLogs((prev) => [
         ...prev,
-        `[${now()}] SUCCESS: ${resData.message || 'Toko online berhasil live!'}`,
-        `[${now()}] LIVE_URL: ${resData.customDomainUrl || resData.primaryUrl || `https://${primaryDomain}`}`,
+        ...reported.map((s) => `[${now()}] ${s.name}: ${s.status.toUpperCase()} — ${s.detail}`),
       ]);
 
-      // Update store state and persist
-      try {
-        await storeService.updateStore(
-          store.id,
-          {
-            slug: cleanSlug,
-            isPublished: true,
-            customDomain: cleanCustomDomain || store.customDomain,
-            domainStatus: cleanCustomDomain ? 'connected' : store.domainStatus,
-          },
-          store.merchantId
-        );
-        await storeService.setPublishedStatus(store.id, true, store.merchantId);
-      } catch (e) {
-        console.warn('Sync store slug warning:', e);
+      if (!response.ok || !resData.success) {
+        if (!reported.length) {
+          setDeployStages((prev) => prev.map((s) => (s.status === 'running' ? { ...s, status: 'failed' } : s)));
+        }
+        if (resData.code === 'DOMAIN_QUOTA_FULL') {
+          throw new Error(
+            isEn
+              ? `The address quota for ${selectedBaseDomain} is full on the hosting panel. Contact the LapakQ admin to raise this domain's quota.`
+              : `Kuota alamat di domain ${selectedBaseDomain} sudah penuh di server panel. Hubungi admin LapakQ agar kuota domain ini ditambah.`
+          );
+        }
+        throw new Error(resData.error || resData.message || (isEn ? 'Failed to publish the store' : 'Gagal mempublikasikan toko'));
       }
+
+      setDeployProgress(90);
+      // The store is only marked live once its address answered; a failed save is reported, not hidden.
+      await storeService.updateStore(
+        store.id,
+        {
+          slug: cleanSlug,
+          isPublished: true,
+          customDomain: cleanCustomDomain || store.customDomain,
+          domainStatus: cleanCustomDomain ? (resData.customDomainUrl ? 'connected' : 'pending') : store.domainStatus,
+        },
+        store.merchantId
+      );
+      await storeService.setPublishedStatus(store.id, true, store.merchantId);
+
+      setDeployProgress(100);
+      setTerminalLogs((prev) => [
+        ...prev,
+        `[${now()}] LIVE: ${resData.customDomainUrl || resData.primaryUrl}`,
+      ]);
 
       if (onPublish) onPublish();
 
-      // Trigger celebration confetti
       setTimeout(() => {
         try {
           confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
@@ -268,12 +255,8 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
         setStep('published');
       }, 500);
     } catch (err: any) {
-      clearInterval(progressTimer);
-      const errMsg = err?.message || 'Terjadi kesalahan saat memproses deployment';
+      const errMsg = err?.message || (isEn ? 'An error occurred while publishing' : 'Terjadi kesalahan saat memproses publikasi');
       setDeployError(errMsg);
-      setDeployStages((prev) =>
-        prev.map((s) => (s.status === 'running' ? { ...s, status: 'failed', detail: errMsg } : s))
-      );
       setTerminalLogs((prev) => [
         ...prev,
         `[${now()}] ERROR: ${errMsg}`,
@@ -283,7 +266,6 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
   if (!isOpen) return null;
 
-  const isFreePlan = !store.plan || store.plan === 'free' || store.plan === 'free_trial';
   const hasActiveCustomDomain = !!(
     (store.customDomain && store.domainStatus === 'connected') ||
     domainRequest?.status === 'active' ||
@@ -325,29 +307,34 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
               ) : step === 'auto_deploy' ? (
                 <Rocket className="w-5 h-5 text-blue-600 animate-pulse" />
-              ) : step === 'confirm_subdomain' ? (
-                <Sparkles className="w-5 h-5 text-[#66000E]" />
               ) : (
                 <Globe className="w-5 h-5 text-[#66000E]" />
               )}
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-[#241A1A]">
-                {step === 'choose_domain' && 'Pilih Alamat Domain Toko'}
-                {step === 'confirm_subdomain' && 'Konfirmasi Pemilihan Subdomain'}
-                {step === 'auto_deploy' && 'Auto Deploying ke API Eksternal...'}
-                {step === 'published' && 'Toko Berhasil Dipublikasikan'}
+                {step === 'choose_domain'
+                  ? (isEn ? 'Choose Store Domain Address' : 'Pilih Alamat Domain Toko')
+                  : step === 'confirm_subdomain'
+                  ? (isEn ? 'Confirm Subdomain Choice' : 'Konfirmasi Pemilihan Subdomain')
+                  : step === 'auto_deploy'
+                  ? (isEn ? 'Auto Deploying to External API...' : 'Auto Deploying ke API Eksternal...')
+                  : (isEn ? 'Store Published Successfully' : 'Toko Berhasil Dipublikasikan')}
               </h2>
               <p className="text-[11px] text-[#706866]">
-                {step === 'choose_domain' && 'Tentukan jenis alamat yang ingin digunakan untuk toko online Anda'}
-                {step === 'confirm_subdomain' && 'Periksa subdomain otomatis atau acak ulang untuk kombinasi baru'}
-                {step === 'auto_deploy' && 'Sinkronisasi otomatis ke Kroombox Edge Network v2.1'}
-                {step === 'published' && 'Website toko Anda kini online dan dapat diakses pembeli'}
+                {step === 'choose_domain'
+                  ? (isEn ? 'Choose the type of address for your online store' : 'Tentukan jenis alamat yang ingin digunakan untuk toko online Anda')
+                  : step === 'confirm_subdomain'
+                  ? (isEn ? 'Check the automatic subdomain or shuffle for a new combination' : 'Periksa subdomain otomatis atau acak ulang untuk kombinasi baru')
+                  : step === 'auto_deploy'
+                  ? (isEn ? 'Registering the address, then making sure the store actually opens' : 'Mendaftarkan alamat lalu memastikan toko benar-benar bisa dibuka')
+                  : (isEn ? 'Your store website is now online and accessible to buyers' : 'Website toko Anda kini online dan dapat diakses pembeli')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
+            aria-label={isEn ? 'Close' : 'Tutup'}
             className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -380,21 +367,16 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                     <Globe className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs sm:text-sm font-bold text-gray-900">
-                        Domain Random (Subdomain Otomatis)
-                      </h4>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Gratis &amp; Cepat
-                      </span>
-                    </div>
+                    <h4 className="text-xs sm:text-sm font-bold text-gray-900">
+                      {isEn ? 'Random Domain' : 'Domain Random'}
+                    </h4>
                     <p className="text-[11px] text-gray-500 truncate mt-0.5 font-mono">
                       {randomSubdomain || store.slug
                         ? `https://${randomSubdomain || store.slug}.${selectedBaseDomain}`
-                        : `https://[nama-toko].${selectedBaseDomain}`}
+                        : (isEn ? `https://[store-name].${selectedBaseDomain}` : `https://[nama-toko].${selectedBaseDomain}`)}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-1">
-                      Bisa diacak ulang (regenerate) di tahap konfirmasi berikutnya.
+                      {isEn ? 'You can shuffle it again in the next confirmation step.' : 'Bisa diacak ulang di tahap konfirmasi berikutnya.'}
                     </p>
                   </div>
                 </div>
@@ -426,25 +408,14 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                         : 'bg-gray-100 text-gray-500'
                     }`}
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <Globe className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs sm:text-sm font-bold text-gray-900">Custom Domain Pribadi</h4>
-                      {hasActiveCustomDomain ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          Aktif
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                          .com / .id
-                        </span>
-                      )}
-                    </div>
+                    <h4 className="text-xs sm:text-sm font-bold text-gray-900">{isEn ? 'Personal Custom Domain' : 'Custom Domain Pribadi'}</h4>
                     <p className="text-[11px] text-gray-500 truncate mt-0.5">
                       {hasActiveCustomDomain
                         ? `https://${activeCustomDomainName}`
-                        : 'Gunakan nama domain brand bisnis Anda sendiri'}
+                        : (isEn ? 'Use your own business brand domain name' : 'Gunakan nama domain brand bisnis Anda sendiri')}
                     </p>
                   </div>
                 </div>
@@ -462,7 +433,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
               {/* Tautan Atur Domain jika belum terhubung */}
               {selectedDomainType === 'custom' && !hasActiveCustomDomain && onNavigateDomain && (
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between gap-3 text-xs animate-in fade-in duration-200">
-                  <span className="text-gray-600 text-[11px]">Belum memiliki domain sendiri terhubung?</span>
+                  <span className="text-gray-600 text-[11px]">{isEn ? "Don't have your own domain connected yet?" : 'Belum memiliki domain sendiri terhubung?'}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -471,31 +442,9 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                     }}
                     className="font-bold text-[#66000E] hover:underline flex items-center gap-1 cursor-pointer shrink-0 text-xs"
                   >
-                    <span>Atur di Menu Domain</span>
+                    <span>{isEn ? 'Set Up in Domain Menu' : 'Atur di Menu Domain'}</span>
                     <ArrowRight className="w-3 h-3" />
                   </button>
-                </div>
-              )}
-
-              {/* Notifikasi Paket Free */}
-              {isFreePlan && (
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-2 text-xs text-amber-900">
-                  <div className="flex items-center gap-2">
-                    <Lock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                    <span className="font-medium text-[11px]">Paket Free (Mode Sandbox/Preview)</span>
-                  </div>
-                  {onNavigateBilling && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        onNavigateBilling();
-                      }}
-                      className="font-bold text-amber-800 hover:underline shrink-0 cursor-pointer text-xs"
-                    >
-                      Upgrade
-                    </button>
-                  )}
                 </div>
               )}
             </div>
@@ -508,8 +457,8 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
               <div className="bg-gradient-to-br from-[#FAF7F7] to-rose-50/40 p-4 rounded-2xl border border-[#E5E0DD] space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-[#706866] uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#66000E]" />
-                    <span>Subdomain Random Terpilih</span>
+                    <Globe className="w-3.5 h-3.5 text-[#66000E]" />
+                    <span>{isEn ? 'Selected Store Subdomain' : 'Subdomain Toko Terpilih'}</span>
                   </span>
                   <div className="flex items-center gap-1.5">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
@@ -522,8 +471,8 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 {/* Subdomain Input & Regenerate Button */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 flex items-center bg-white border-2 border-[#D5CEC8] focus-within:border-[#66000E] rounded-xl px-3 py-2 shadow-2xs transition-colors">
-                      <span className="text-xs font-semibold text-gray-400 select-none">https://</span>
+                    <div className="flex-1 min-w-0 flex items-center bg-white border border-[#D5CEC8] focus-within:border-[#66000E] focus-within:ring-1 focus-within:ring-[#66000E] rounded-xl px-3 py-2 shadow-2xs transition-colors">
+                      <span className="text-xs font-medium text-gray-400 select-none shrink-0">https://</span>
                       <input
                         type="text"
                         value={randomSubdomain}
@@ -532,10 +481,10 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                             e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
                           )
                         }
-                        className="flex-1 text-xs font-bold text-gray-900 outline-none px-1 font-mono"
-                        placeholder="nama-subdomain"
+                        className="w-full min-w-0 text-xs font-bold text-gray-900 outline-none px-1.5 font-mono"
+                        placeholder={isEn ? 'subdomain-name' : 'nama-subdomain'}
                       />
-                      <span className="text-xs font-semibold text-gray-400 select-none">
+                      <span className="text-xs font-medium text-gray-500 select-none shrink-0">
                         .{selectedBaseDomain}
                       </span>
                     </div>
@@ -545,55 +494,42 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                       type="button"
                       onClick={handleRegenerateSubdomain}
                       disabled={isRegenerating}
-                      title="Acak ulang subdomain"
-                      className="px-3.5 py-2 rounded-xl bg-white hover:bg-rose-50 border-2 border-gray-200 hover:border-[#66000E] text-[#66000E] text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
+                      title={isEn ? 'Shuffle subdomain' : 'Acak ulang subdomain'}
+                      className="px-3 py-2 rounded-xl bg-white hover:bg-rose-50 border border-gray-200 hover:border-[#66000E] text-[#66000E] text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
                     >
                       <RotateCcw
-                        className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`}
+                        className={`w-3.5 h-3.5 shrink-0 ${isRegenerating ? 'animate-spin' : ''}`}
                       />
-                      <span>Acak Ulang</span>
+                      <span className="whitespace-nowrap">{isEn ? 'Shuffle' : 'Acak Ulang'}</span>
                     </button>
                   </div>
                   <p className="text-[10px] text-gray-500">
-                    Klik <strong>Acak Ulang</strong> untuk mendapatkan variasi nama acak baru, atau sesuaikan langsung kata di atas.
+                    {isEn ? (
+                      <>Click <strong>Shuffle</strong> to get a new random name variation, or edit the word above directly.</>
+                    ) : (
+                      <>Klik <strong>Acak Ulang</strong> untuk mendapatkan variasi nama acak baru, atau sesuaikan langsung kata di atas.</>
+                    )}
                   </p>
                 </div>
 
-                {/* Pilihan Ekstensi Base Domain */}
+                {/* Domain Jaringan */}
                 <div className="space-y-1.5 pt-1">
-                  <label className="text-[11px] font-bold text-gray-700">Pilih Domain Jaringan:</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {BASE_DOMAINS.map((dom) => (
-                      <button
-                        key={dom.value}
-                        type="button"
-                        onClick={() => setSelectedBaseDomain(dom.value)}
-                        className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
-                          selectedBaseDomain === dom.value
-                            ? 'border-[#66000E] bg-white shadow-xs ring-1 ring-[#66000E]'
-                            : 'border-gray-200 bg-white/60 hover:bg-white text-gray-600'
-                        }`}
-                      >
-                        <div className="text-[11px] font-bold text-gray-900 font-mono truncate">
-                          {dom.label}
-                        </div>
-                        <div className="text-[9px] text-gray-500">{dom.tag}</div>
-                      </button>
-                    ))}
+                  <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Network Domain:' : 'Domain Jaringan:'}</label>
+                  <div className="p-2.5 rounded-xl border border-[#66000E] bg-white shadow-xs ring-1 ring-[#66000E] flex items-center justify-between gap-2">
+                    <div className="text-xs font-bold text-gray-900 font-mono truncate">
+                      {isBaseDomainLoading ? (isEn ? 'Checking community domain…' : 'Memeriksa domain komunitas…') : `.${selectedBaseDomain}`}
+                    </div>
+                    {!isBaseDomainLoading && (
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F5E8EA] text-[#66000E]">
+                        {domainCommunityName ? (isEn ? `${domainCommunityName} community domain` : `Domain komunitas ${domainCommunityName}`) : (isEn ? 'Default domain' : 'Domain default')}
+                      </span>
+                    )}
                   </div>
-                </div>
-              </div>
-
-              {/* Info Auto Deploy Eksternal */}
-              <div className="p-3.5 bg-blue-50/60 border border-blue-200 rounded-xl flex items-start gap-2.5 text-xs text-blue-950">
-                <div className="p-1.5 bg-blue-100 rounded-lg text-blue-700 shrink-0 mt-0.5">
-                  <Zap className="w-3.5 h-3.5" />
-                </div>
-                <div className="space-y-1 text-[11px] leading-relaxed">
-                  <span className="font-bold text-blue-900 block">Fitur Auto Deploy Terintegrasi</span>
-                  <span>
-                    Setelah Anda mengonfirmasi subdomain ini, sistem akan otomatis mengeksekusi pipeline deployment melalui <strong>API Eksternal Kroombox</strong>, mengalokasikan DNS Anycast, dan mengaktifkan toko secara live.
-                  </span>
+                  <p className="text-[10px] text-gray-500">
+                    {domainCommunityName
+                      ? (isEn ? "Community member stores automatically use their community's domain." : 'Toko anggota komunitas otomatis memakai domain komunitasnya.')
+                      : (isEn ? 'Stores without a community use the default domain lapakq.com.' : 'Toko tanpa komunitas memakai domain default lapakq.com.')}
+                  </p>
                 </div>
               </div>
             </div>
@@ -646,10 +582,10 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                       </div>
                     </div>
                     <span className="text-[10px] uppercase font-bold shrink-0">
-                      {stage.status === 'success' && <span className="text-emerald-600">Done</span>}
-                      {stage.status === 'running' && <span className="text-blue-600">Running</span>}
-                      {stage.status === 'failed' && <span className="text-rose-600">Error</span>}
-                      {stage.status === 'pending' && <span className="text-gray-400">Wait</span>}
+                      {stage.status === 'success' && <span className="text-emerald-600">{isEn ? 'Done' : 'Selesai'}</span>}
+                      {stage.status === 'running' && <span className="text-blue-600">{isEn ? 'Running' : 'Berjalan'}</span>}
+                      {stage.status === 'failed' && <span className="text-rose-600">{isEn ? 'Error' : 'Gagal'}</span>}
+                      {stage.status === 'pending' && <span className="text-gray-400">{isEn ? 'Wait' : 'Tunggu'}</span>}
                     </span>
                   </div>
                 ))}
@@ -686,11 +622,20 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
               <div className="space-y-1">
                 <h3 className="text-base sm:text-lg font-bold text-[#241A1A]">
-                  Selamat! Toko Online Anda Resmi Live
+                  {isEn ? 'Congratulations! Your Online Store Is Officially Live' : 'Selamat! Toko Online Anda Resmi Live'}
                 </h3>
                 <p className="text-xs text-[#706866] max-w-sm mx-auto leading-relaxed">
-                  Subdomain terkonfirmasi dan seluruh katalog untuk{' '}
-                  <span className="font-bold text-[#241A1A]">{store.name}</span> telah selesai dideploy ke jaringan cloud publik.
+                  {isEn ? (
+                    <>
+                      The subdomain is confirmed and the full catalog for{' '}
+                      <span className="font-bold text-[#241A1A]">{store.name}</span> has been deployed to the public cloud network.
+                    </>
+                  ) : (
+                    <>
+                      Subdomain terkonfirmasi dan seluruh katalog untuk{' '}
+                      <span className="font-bold text-[#241A1A]">{store.name}</span> telah selesai dideploy ke jaringan cloud publik.
+                    </>
+                  )}
                 </p>
               </div>
 
@@ -698,7 +643,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
               <div className="bg-[#FAF7F7] rounded-xl p-4 border border-[#EBE5E2] text-left space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-[#706866] uppercase tracking-wider">
-                    Alamat Website Resmi
+                    {isEn ? 'Official Website Address' : 'Alamat Website Resmi'}
                   </span>
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                     <ShieldCheck className="w-3 h-3" />
@@ -718,17 +663,17 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                         ? 'bg-emerald-600 text-white'
                         : 'bg-gray-100 hover:bg-gray-200 text-[#241A1A]'
                     }`}
-                    title="Salin Tautan"
+                    title={isEn ? 'Copy Link' : 'Salin Tautan'}
                   >
                     {copied ? (
                       <>
                         <Check className="w-3.5 h-3.5" />
-                        <span>Tersalin!</span>
+                        <span>{isEn ? 'Copied!' : 'Tersalin!'}</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-3.5 h-3.5" />
-                        <span>Salin</span>
+                        <span>{isEn ? 'Copy' : 'Salin'}</span>
                       </>
                     )}
                   </button>
@@ -743,7 +688,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#706866] hover:text-[#241A1A] hover:bg-[#F2EDEA] border border-[#E5E0DD] transition cursor-pointer flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Atur Ulang Domain / Deploy</span>
+                  <span>{isEn ? 'Reconfigure Domain / Deploy' : 'Atur Ulang Domain / Deploy'}</span>
                 </button>
                 {onUnpublish && (
                   <button
@@ -753,10 +698,10 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                       onClose();
                     }}
                     className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 hover:bg-rose-50 border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
-                    title="Tarik publikasi toko dan kembalikan ke status draf"
+                    title={isEn ? 'Unpublish the store and return it to draft status' : 'Tarik publikasi toko dan kembalikan ke status draf'}
                   >
                     <EyeOff className="w-3.5 h-3.5 text-rose-600" />
-                    <span>Tarik Publikasi (Unpublish)</span>
+                    <span>{isEn ? 'Unpublish Store' : 'Tarik Publikasi (Unpublish)'}</span>
                   </button>
                 )}
               </div>
@@ -767,7 +712,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
 
         {/* ═══════════ MODAL FOOTER ACTIONS ═══════════ */}
         <div className="p-4 border-t border-[#EBE5E2] bg-[#FAF7F7] shrink-0">
-          {/* Footer Step 1: choose_domain */}
+          {/* Footer choose_domain */}
           {step === 'choose_domain' && (
             <div className="flex items-center justify-between gap-3">
               <button
@@ -775,38 +720,26 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 text-xs font-semibold text-[#706866] hover:text-[#241A1A] hover:bg-white rounded-xl transition cursor-pointer"
               >
-                Batal
+                {isEn ? 'Cancel' : 'Batal'}
               </button>
 
-              {isFreePlan ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    if (onNavigateBilling) onNavigateBilling();
-                  }}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Upgrade Paket untuk Publikasi</span>
-                </button>
-              ) : selectedDomainType === 'random' ? (
+              {selectedDomainType === 'random' ? (
                 <button
                   type="button"
                   onClick={() => setStep('confirm_subdomain')}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-lg shadow-2xs transition active:scale-[0.98] cursor-pointer"
                 >
-                  <span>Lanjut ke Konfirmasi Subdomain</span>
+                  <span>{isEn ? 'Continue' : 'Lanjutkan'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={startAutoDeploySimulation}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-lg shadow-2xs transition active:scale-[0.98] cursor-pointer"
                 >
                   <Rocket className="w-3.5 h-3.5" />
-                  <span>Publikasikan dengan Custom Domain</span>
+                  <span>{isEn ? 'Publish Store' : 'Publikasikan Toko'}</span>
                 </button>
               )}
             </div>
@@ -818,19 +751,20 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
               <button
                 type="button"
                 onClick={() => setStep('choose_domain')}
-                className="px-4 py-2 text-xs font-semibold text-[#706866] hover:text-[#241A1A] hover:bg-white rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-2 text-xs font-medium text-[#706866] hover:text-[#241A1A] hover:bg-white rounded-lg transition cursor-pointer flex items-center gap-1.5"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Kembali</span>
+                <span>{isEn ? 'Back' : 'Kembali'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={startAutoDeploySimulation}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer"
+                disabled={isBaseDomainLoading}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-lg shadow-2xs transition active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-wait"
               >
                 <Rocket className="w-3.5 h-3.5" />
-                <span>Konfirmasi Subdomain &amp; Mulai Auto Deploy</span>
+                <span>{isEn ? 'Confirm & Start Deploy' : 'Konfirmasi & Mulai Deploy'}</span>
               </button>
             </div>
           )}
@@ -842,8 +776,15 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 <>
                   <span className="text-xs text-rose-600 font-semibold flex items-center gap-1.5">
                     <X className="w-3.5 h-3.5" />
-                    <span className="truncate max-w-[280px]">{deployError}</span>
+                    <span className="break-words">{deployError}</span>
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => startAutoDeploySimulation()}
+                    className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition cursor-pointer shrink-0"
+                  >
+                    {isEn ? 'Try again' : 'Coba lagi'}
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -852,14 +793,14 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                     }}
                     className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition cursor-pointer"
                   >
-                    Kembali
+                    {isEn ? 'Back' : 'Kembali'}
                   </button>
                 </>
               ) : (
                 <div className="flex items-center justify-center py-1 w-full">
                   <span className="text-xs text-gray-500 font-medium flex items-center gap-2">
                     <Wifi className="w-3.5 h-3.5 text-blue-500 animate-pulse" />
-                    <span>Sinkronisasi otomatis ke cloud sedang berjalan, harap tunggu...</span>
+                    <span>{isEn ? 'Checking DNS and store access, please wait (max. ±1 minute)...' : 'Memeriksa DNS dan akses toko, harap tunggu (maks. ±1 menit)...'}</span>
                   </span>
                 </div>
               )}
@@ -874,7 +815,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2.5 text-xs font-semibold text-[#706866] hover:text-[#241A1A] hover:bg-white rounded-xl transition cursor-pointer"
               >
-                Selesai
+                {isEn ? 'Done' : 'Selesai'}
               </button>
               <a
                 href={liveStoreUrl}
@@ -884,7 +825,7 @@ export const PublishStoreModal: React.FC<PublishStoreModalProps> = ({
                 className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-[#66000E] to-[#990014] hover:from-[#55000C] hover:to-[#800010] rounded-xl shadow-2xs transition cursor-pointer"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span>Kunjungi Toko</span>
+                <span>{isEn ? 'Visit Store' : 'Kunjungi Toko'}</span>
               </a>
             </div>
           )}

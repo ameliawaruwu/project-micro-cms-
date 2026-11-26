@@ -10,6 +10,8 @@ import { AdminTab, AdminNavItem } from '../types';
 import { KroomifyLogo } from '../../../components/common/KroomifyLogo';
 
 interface AdminSidebarProps {
+  isSubAdmin?: boolean;
+  subAdminTitle?: string;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
   activeTab: AdminTab;
@@ -29,6 +31,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onBackToMerchant,
   onLogout,
   language,
+  isSubAdmin,
+  subAdminTitle,
 }) => {
   return (
     <>
@@ -43,18 +47,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       {/* SIDEBAR DRAWER (FIXED) */}
       <aside
         className={`h-screen bg-white border-r border-gray-200 flex flex-col justify-between z-40 transition-all duration-300 ease-in-out shrink-0 ${
-          isSidebarOpen ? 'w-60' : 'w-16'
+          isSidebarOpen ? 'w-64' : 'w-16'
         }`}
       >
-        <div className={`p-3 flex flex-col h-full overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'w-60' : 'w-16'}`}>
+        <div className={`p-3 flex flex-col h-full overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-16'}`}>
           {/* Brand Header */}
           <div className={`flex items-center pb-3.5 border-b border-gray-100 ${isSidebarOpen ? 'justify-between' : 'justify-center flex-col gap-2'}`}>
             <div className={`flex items-center gap-2.5 ${!isSidebarOpen ? 'justify-center' : ''}`}>
-              <KroomifyLogo
-                size="sm"
-                showText={isSidebarOpen}
-                badge="ADMIN"
-              />
+              <KroomifyLogo size="sm" showText={isSidebarOpen} />
             </div>
 
             <button
@@ -67,7 +67,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </div>
 
           {/* Navigation Links */}
-          <nav className="mt-3 space-y-1 flex-1 overflow-y-auto font-poppins">
+          <nav className="mt-3 space-y-1.5 flex-1 overflow-y-auto font-poppins">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -76,8 +76,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   title={!isSidebarOpen ? item.label : undefined}
-                  className={`w-full flex items-center rounded-md text-xs font-medium font-poppins transition cursor-pointer relative group ${
-                    isSidebarOpen ? 'justify-between px-2.5 py-2' : 'justify-center p-2'
+                  className={`w-full flex items-center rounded-lg text-sm font-medium font-poppins transition cursor-pointer relative group ${
+                    isSidebarOpen ? 'justify-between px-3 py-2.5' : 'justify-center p-2.5'
                   } ${
                     isActive
                       ? 'bg-[#F5E8EA] text-[#66000E] font-semibold'
@@ -85,7 +85,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   }`}
                 >
                   <div className={`flex items-center ${isSidebarOpen ? 'gap-2.5 min-w-0' : 'justify-center'}`}>
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#66000E]' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                    <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-[#66000E]' : 'text-gray-400 group-hover:text-gray-600'}`} />
                     {isSidebarOpen && <span className="truncate">{item.label}</span>}
                   </div>
 
@@ -93,7 +93,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   {item.badge !== undefined && (
                     isSidebarOpen ? (
                       <span
-                        className={`px-1.5 py-0.2 rounded text-[10px] font-bold shrink-0 ${
+                        className={`px-1.5 py-0.5 rounded text-[11px] font-bold shrink-0 ${
                           isActive ? 'bg-[#66000E] text-white' : 'bg-[#F5E8EA] text-[#66000E]'
                         }`}
                       >
@@ -114,11 +114,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <button
                 onClick={onBackToMerchant}
                 title={!isSidebarOpen ? (language === 'en' ? 'Merchant Mode' : 'Mode Merchant') : undefined}
-                className={`w-full flex items-center rounded-md text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200/80 transition cursor-pointer ${
-                  isSidebarOpen ? 'gap-2 px-2.5 py-1.5' : 'justify-center p-2'
+                className={`w-full flex items-center rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200/80 transition cursor-pointer ${
+                  isSidebarOpen ? 'gap-2.5 px-3 py-2' : 'justify-center p-2.5'
                 }`}
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                <ArrowLeft className="w-4 h-4 text-gray-500 shrink-0" />
                 {isSidebarOpen && <span>{language === 'en' ? 'Merchant Mode' : 'Mode Merchant'}</span>}
               </button>
             )}
@@ -127,11 +127,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <button
                 onClick={onLogout}
                 title={!isSidebarOpen ? (language === 'en' ? 'Logout' : 'Keluar') : undefined}
-                className={`w-full flex items-center rounded-md text-xs font-medium text-gray-500 hover:text-red-600 hover:bg-red-50/50 transition cursor-pointer ${
-                  isSidebarOpen ? 'gap-2 px-2.5 py-1.5' : 'justify-center p-2'
+                className={`w-full flex items-center rounded-lg text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50/50 transition cursor-pointer ${
+                  isSidebarOpen ? 'gap-2.5 px-3 py-2' : 'justify-center p-2.5'
                 }`}
               >
-                <LogOut className="w-3.5 h-3.5 shrink-0" />
+                <LogOut className="w-4 h-4 shrink-0" />
                 {isSidebarOpen && <span>{language === 'en' ? 'Logout' : 'Keluar'}</span>}
               </button>
             )}

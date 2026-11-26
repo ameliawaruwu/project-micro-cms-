@@ -20,9 +20,9 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
     },
     categories: [
       { id: "mc1", name: "Ceramics", slug: "ceramics", image: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=800&q=80" },
-      { id: "mc2", name: "Textiles", slug: "textiles", image: "https://images.unsplash.com/photo-1584346535787-83d47d4e5f7f?w=800&q=80" },
+      { id: "mc2", name: "Textiles", slug: "textiles", image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80" },
       { id: "mc3", name: "Lighting", slug: "lighting", image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800&q=80" },
-      { id: "mc4", name: "Woodwork", slug: "woodwork", image: "https://images.unsplash.com/photo-1618684992925-508544e31fb0?w=800&q=80" }
+      { id: "mc4", name: "Woodwork", slug: "woodwork", image: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&q=80" }
     ],
     products: [
       {
@@ -34,14 +34,14 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "mp2", name: "Woven Organic Linen Cushion", slug: "linen-cushion", price: 250000,
-        image: "https://images.unsplash.com/photo-1584346535787-83d47d4e5f7f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
         categoryId: "mc2", categoryName: "Textiles",
         description: "Pure organic linen cushion cover with concealed metal zipper.",
         status: "active", isFeatured: true, isNew: false, stock: 30
       },
       {
         id: "mp3", name: "Solid Oak Serving Tray", slug: "oak-tray", price: 320000,
-        image: "https://images.unsplash.com/photo-1618684992925-508544e31fb0?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&q=80",
         categoryId: "mc4", categoryName: "Woodwork",
         description: "Minimalist solid oak serving tray finished with natural beeswax.",
         status: "active", isFeatured: false, isNew: true, stock: 15
@@ -128,7 +128,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "mod_p4", name: "MagSafe 10000mAh Powerbank", slug: "magsafe-powerbank", price: 490000,
-        image: "https://images.unsplash.com/photo-1609592424074-12ec313e648f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80",
         categoryId: "mod_c3", categoryName: "Workspace",
         description: "Fast wireless magnetic charging power bank with aluminum body.",
         status: "active", isFeatured: true, isNew: false, stock: 80
@@ -309,7 +309,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "lp7", name: "Chronograph Tourbillon Rose Gold", slug: "tourbillon-watch", price: 65000000,
-        image: "https://images.unsplash.com/photo-1547996160-012745cc5836?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80",
         categoryId: "lc2", categoryName: "Timepieces",
         description: "Limited-edition rose gold skeleton tourbillon timepiece with alligator strap.",
         status: "active", isFeatured: true, isNew: true, stock: 1
@@ -489,163 +489,164 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
     ]
   },
 
-  // 7. NATURE (RIMBA BOTANICALS - Natural Skincare & Organic Wellness)
+  // 7. NATURE / GREEN MARKET (GREEN MARKET - Fresh Produce & Organic Farm)
   nature: {
     storeInfo: {
-      name: "RIMBA BOTANICALS",
-      description: "Botanical Skincare. Pure ingredients, eco-friendly rituals & organic wellness.",
-      address: "Jalan Hanoman, Ubud, Bali",
-      email: "hello@rimbabotanicals.com",
-      phone: "+62 813 9999 8888",
-      socials: { instagram: "@rimba.botanicals" }
+      name: "GREEN MARKET INDONESIA",
+      description: "Pasar pangan segar dan organik langsung dari mitra petani lokal. Sayuran hidroponik, buah segar pilihan, madu murni, dan hasil tani berkualitas tinggi.",
+      address: "Jalan Kebun Hijau No. 12, Lembang, Bandung",
+      email: "halo@greenmarket.id",
+      phone: "+62 812 8888 7777",
+      socials: { instagram: "@greenmarket.id" }
     },
     categories: [
-      { id: "nc1", name: "Face Rituals", slug: "face", image: "https://images.unsplash.com/photo-1629198688000-71f23e745b6e?w=800&q=80" },
-      { id: "nc2", name: "Body & Bath", slug: "body", image: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=800&q=80" },
-      { id: "nc3", name: "Elixirs & Oils", slug: "elixirs", image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=800&q=80" }
+      { id: "nc1", name: "Sayur Segar & Hidroponik", slug: "sayur-segar", image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80" },
+      { id: "nc2", name: "Buah Organik Pilihan", slug: "buah-organik", image: "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=800&q=80" },
+      { id: "nc3", name: "Madu & Pangan Alami", slug: "madu-pangan", image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=800&q=80" }
     ],
     products: [
       {
-        id: "np1", name: "Botanical Elixir Face Oil 30ml", slug: "face-oil", price: 280000,
-        image: "https://images.unsplash.com/photo-1629198688000-71f23e745b6e?w=800&q=80",
-        categoryId: "nc3", categoryName: "Elixirs & Oils",
-        description: "Nourishing blend of 7 organic cold-pressed botanical seed oils & wild rosehip.",
+        id: "np1", name: "Alpukat Mentega Super 1 Kg", slug: "alpukat-mentega", price: 45000,
+        image: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=800&q=80",
+        categoryId: "nc2", categoryName: "Buah Organik Pilihan",
+        description: "Alpukat mentega matang pohon dengan daging buah tebal, lembut, dan kaya nutrisi alami.",
         status: "active", isFeatured: true, isNew: true, stock: 40
       },
       {
-        id: "np2", name: "Volcanic Forest Clay Mask", slug: "clay-mask", price: 185000,
-        image: "https://images.unsplash.com/photo-1570194065650-d99fb4b8ccb0?w=800&q=80",
-        categoryId: "nc1", categoryName: "Face Rituals",
-        description: "Purifying volcanic ash clay enriched with organic matcha green tea & kaolin.",
+        id: "np2", name: "Bayam Hijau Hidroponik 250g", slug: "bayam-hidroponik", price: 18000,
+        image: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=800&q=80",
+        categoryId: "nc1", categoryName: "Sayur Segar & Hidroponik",
+        description: "Bayam hijau segar tanpa pestisida kimiawi, ditanam dengan metode hidroponik ramah lingkungan.",
         status: "active", isFeatured: true, isNew: false, stock: 50
       },
       {
-        id: "np3", name: "Lemongrass & Ginger Body Wash", slug: "body-wash", price: 150000,
-        image: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=800&q=80",
-        categoryId: "nc2", categoryName: "Body & Bath",
-        description: "Sulfate-free hydrating body wash infused with essential Bali lemongrass oils.",
+        id: "np3", name: "Madu Hutan Murni Liar 500ml", slug: "madu-hutan-murni", price: 120000,
+        image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=800&q=80",
+        categoryId: "nc3", categoryName: "Madu & Pangan Alami",
+        description: "Madu hutan murni lebah liar asli tanpa pemanis tambahan, dipanen langsung dari hutan nusantara.",
         status: "active", isFeatured: false, isNew: true, stock: 35
       },
       {
-        id: "np4", name: "Gentle Green Tea Facial Cleanser", slug: "cleanser", price: 195000,
-        image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=800&q=80",
-        categoryId: "nc1", categoryName: "Face Rituals",
-        description: "Low-pH soothing facial gel cleanser formulated for sensitive organic skin.",
+        id: "np4", name: "Tomat Cherry Manis Organik 500g", slug: "tomat-cherry", price: 28000,
+        image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&q=80",
+        categoryId: "nc1", categoryName: "Sayur Segar & Hidroponik",
+        description: "Tomat cherry manis renyah kaya antioksidan dan vitamin C, dipetik segar saat pesanan tiba.",
         status: "active", isFeatured: true, isNew: false, stock: 60
       },
       {
-        id: "np5", name: "Herbal Hydrating Body Lotion", slug: "body-lotion", price: 210000,
-        image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&q=80",
-        categoryId: "nc2", categoryName: "Body & Bath",
-        description: "Rich shea butter body cream scented with natural lavender and eucalyptus.",
+        id: "np5", name: "Apel Malang Manis Segar 1 Kg", slug: "apel-malang", price: 35000,
+        image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=800&q=80",
+        categoryId: "nc2", categoryName: "Buah Organik Pilihan",
+        description: "Apel segar kebun Malang dengan tekstur renyah dan perpaduan rasa manis-asam segar alami.",
         status: "active", isFeatured: true, isNew: true, stock: 45
       },
       {
-        id: "np6", name: "Natural Botanical Soap Bar", slug: "soap-bar", price: 65000,
-        image: "https://images.unsplash.com/photo-1607006482172-464817a0225d?w=800&q=80",
-        categoryId: "nc2", categoryName: "Body & Bath",
-        description: "Cold-processed handmade soap bar with exfoliating coconut husk.",
+        id: "np6", name: "Beras Merah Organik 2 Kg", slug: "beras-merah", price: 55000,
+        image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&q=80",
+        categoryId: "nc3", categoryName: "Madu & Pangan Alami",
+        description: "Beras merah organik tinggi serat dan rendah indeks glikemik dari kelompok tani binaan.",
         status: "active", isFeatured: false, isNew: false, stock: 80
       },
       {
-        id: "np7", name: "Brightening Vitamin C Serum", slug: "vit-c-serum", price: 320000,
-        image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800&q=80",
-        categoryId: "nc3", categoryName: "Elixirs & Oils",
-        description: "15% L-Ascorbic Acid Serum enriched with ferulic acid & aloe vera juice.",
-        status: "active", isFeatured: true, isNew: true, stock: 25
+        id: "np7", name: "Wortel Brastagi Manis 1 Kg", slug: "wortel-brastagi", price: 22000,
+        image: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&q=80",
+        categoryId: "nc1", categoryName: "Sayur Segar & Hidroponik",
+        description: "Wortel manis segar tanah vulkanik Brastagi, cocok untuk jus sehat dan aneka masakan keluarga.",
+        status: "active", isFeatured: true, isNew: true, stock: 30
       },
       {
-        id: "np8", name: "Rose Water Facial Hydrosol Mist", slug: "rose-mist", price: 145000,
-        image: "https://images.unsplash.com/photo-1512290900673-700230217039?w=800&q=80",
-        categoryId: "nc1", categoryName: "Face Rituals",
-        description: "Pure steam-distilled Damask rose water mist to refresh and hydrate skin.",
+        id: "np8", name: "Jeruk Peras Segar Manis 1 Kg", slug: "jeruk-peras", price: 32000,
+        image: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=800&q=80",
+        categoryId: "nc2", categoryName: "Buah Organik Pilihan",
+        description: "Jeruk peras manis banyak air kaya vitamin C murni untuk daya tahan tubuh harian.",
         status: "active", isFeatured: false, isNew: false, stock: 50
       }
     ],
     navigation: [
-      { id: "nn1", label: "Apothecary", route: "/katalog", order: 1, isActive: true },
-      { id: "nn2", label: "Ingredients", route: "/tentang", order: 2, isActive: true },
-      { id: "nn3", label: "Rituals", route: "/berita", order: 3, isActive: true }
+      { id: "nn1", label: "Pasar Segar", route: "/katalog", order: 1, isActive: true },
+      { id: "nn2", label: "Mitra Petani", route: "/tentang", order: 2, isActive: true },
+      { id: "nn3", label: "Edukasi Organik", route: "/berita", order: 3, isActive: true }
     ]
   },
 
-  // 8. CREATIVE (KREATIV LAB - Art Prints, Stationery & Creative Goods)
+  // 8. CREATIVE (Art Supplies, Canvas, Brushes & Drawing Tools)
   creative: {
     storeInfo: {
-      name: "KREATIV LAB",
-      description: "Art Prints, Creative Stationery & Design Objects for Curious Minds.",
-      address: "Art District Bldg 12, Yogyakarta",
-      email: "hello@kreativlab.id",
-      phone: "+62 811 2222 3333",
-      socials: { instagram: "@kreativ.lab" }
+      name: "",
+      description: "Pusat perlengkapan seni rupa, cat lukis, kuas, kanvas, dan alat gambar berkualitas tinggi untuk para seniman.",
+      address: "Creative Studio Hub, Art District",
+      email: "hello@creativestudio.com",
+      phone: "+62 812 3456 7890",
+      socials: { instagram: "@creative.artsupplies" }
     },
     categories: [
-      { id: "crt_c1", name: "Art Prints", slug: "art-prints", image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80" },
-      { id: "crt_c2", name: "Stationery", slug: "stationery", image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&q=80" },
-      { id: "crt_c3", name: "Creative Objects", slug: "objects", image: "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&q=80" }
+      { id: "art_c1", name: "Cat Lukis & Pigmen", slug: "cat-lukis", image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&q=80" },
+      { id: "art_c2", name: "Kuas & Palet", slug: "kuas-palet", image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80" },
+      { id: "art_c3", name: "Kanvas & Easel", slug: "kanvas-easel", image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80" },
+      { id: "art_c4", name: "Alat Gambar & Sketsa", slug: "alat-sketsa", image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=800&q=80" }
     ],
     products: [
       {
-        id: "crt_p1", name: "Abstract Geometry Risograph Print A3", slug: "art-print-riso", price: 240000,
+        id: "art_p1", name: "Set Cat Akrilik Artist Grade 24 Warna", slug: "set-cat-akrilik-24-warna", price: 185000,
+        image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&q=80",
+        categoryId: "art_c1", categoryName: "Cat Lukis & Pigmen",
+        description: "Cat akrilik pigmen tinggi dengan saturasi pekat, cepat kering, dan tahan luntur untuk berbagai media lukis.",
+        status: "active", isFeatured: true, isNew: true, stock: 45
+      },
+      {
+        id: "art_p2", name: "Set Kuas Lukis Nylon Bulu Halus (12 Pcs)", slug: "set-kuas-lukis-nylon", price: 125000,
+        image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80",
+        categoryId: "art_c2", categoryName: "Kuas & Palet",
+        description: "Set kuas lukis berbagai ukuran (flat, round, filbert) dengan bulu nylon sintetis elastis dan gagang kayu kokoh.",
+        status: "active", isFeatured: true, isNew: false, stock: 60
+      },
+      {
+        id: "art_p3", name: "Kanvas Lukis Stretched Canvas 40x50 cm", slug: "stretched-canvas-40x50", price: 65000,
         image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80",
-        categoryId: "crt_c1", categoryName: "Art Prints",
-        description: "Limited edition 3-color risograph print on 250gsm archival cotton paper.",
-        status: "active", isFeatured: true, isNew: true, stock: 25
+        categoryId: "art_c3", categoryName: "Kanvas & Easel",
+        description: "Kanvas katun 100% dengan triple gesso primer, siap pakai untuk cat minyak dan cat akrilik.",
+        status: "active", isFeatured: true, isNew: true, stock: 80
       },
       {
-        id: "crt_p2", name: "Clothbound Designer Grid Journal", slug: "grid-journal", price: 185000,
-        image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&q=80",
-        categoryId: "crt_c2", categoryName: "Stationery",
-        description: "Hardcover 160-page bullet grid journal with fountain pen friendly paper.",
-        status: "active", isFeatured: true, isNew: false, stock: 40
+        id: "art_p4", name: "Drawing Pencil Set Grade 2H - 8B (12 Pensil)", slug: "drawing-pencil-set", price: 85000,
+        image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=800&q=80",
+        categoryId: "art_c4", categoryName: "Alat Gambar & Sketsa",
+        description: "Set pensil grafit profesional untuk shading, arsir halus, dan sketsa detail dengan lead padat anti patah.",
+        status: "active", isFeatured: false, isNew: false, stock: 75
       },
       {
-        id: "crt_p3", name: "Hand-Thrown Clay Terracotta Vase", slug: "terracotta-vase", price: 380000,
-        image: "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&q=80",
-        categoryId: "crt_c3", categoryName: "Creative Objects",
-        description: "Unique hand-thrown pottery vase with raw clay finish and organic texture.",
-        status: "active", isFeatured: true, isNew: true, stock: 10
+        id: "art_p5", name: "Set Cat Minyak Oil Color Classic 12 Tabung", slug: "cat-minyak-oil-color-12", price: 210000,
+        image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&q=80",
+        categoryId: "art_c1", categoryName: "Cat Lukis & Pigmen",
+        description: "Cat minyak bertekstur kental dengan pigmen murni untuk teknik impasto maupun glaze transparan.",
+        status: "active", isFeatured: true, isNew: true, stock: 30
       },
       {
-        id: "crt_p4", name: "Sculptural Wave Soy Wax Candle", slug: "wave-candle", price: 175000,
-        image: "https://images.unsplash.com/photo-1603006905003-be475563bc59?w=800&q=80",
-        categoryId: "crt_c3", categoryName: "Creative Objects",
-        description: "Hand-poured pillar candle shaped in wave geometry, unscented soy blend.",
-        status: "active", isFeatured: false, isNew: true, stock: 40
+        id: "art_p6", name: "Standing Tripod Wooden Easel Kayu Pinus", slug: "standing-wooden-easel", price: 195000,
+        image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80",
+        categoryId: "art_c3", categoryName: "Kanvas & Easel",
+        description: "Kuda-kuda lukis (easel) kayu pinus solid setinggi 150 cm yang dapat diatur kemiringan dan tingginya.",
+        status: "active", isFeatured: true, isNew: false, stock: 25
       },
       {
-        id: "fp5_crt", name: "Brass Geometric Desk Ruler Set", slug: "brass-ruler", price: 150000,
-        image: "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=800&q=80",
-        categoryId: "crt_c2", categoryName: "Stationery",
-        description: "Solid raw brass 15cm ruler and triangle set that develops a unique patina.",
-        status: "active", isFeatured: false, isNew: false, stock: 35
+        id: "art_p7", name: "Palet Cat Kayu Oval Tradisional Artist", slug: "palet-cat-kayu-oval", price: 45000,
+        image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80",
+        categoryId: "art_c2", categoryName: "Kuas & Palet",
+        description: "Palet kayu oval ergonomis dengan lubang ibu jari untuk kenyamanan melukis berjam-jam.",
+        status: "active", isFeatured: false, isNew: false, stock: 50
       },
       {
-        id: "fp6_crt", name: "Enamel Pins Illustration Set (3x)", slug: "enamel-pins", price: 120000,
-        image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800&q=80",
-        categoryId: "crt_c3", categoryName: "Creative Objects",
-        description: "Set of 3 custom hard enamel lapel pins featuring original illustrations.",
-        status: "active", isFeatured: true, isNew: false, stock: 50
-      },
-      {
-        id: "fp7_crt", name: "Botanical Illustration Postcard Box", slug: "postcard-box", price: 165000,
-        image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800&q=80",
-        categoryId: "crt_c2", categoryName: "Stationery",
-        description: "Box of 20 unique botanical postcards printed on textured watercolor paper.",
-        status: "active", isFeatured: false, isNew: true, stock: 30
-      },
-      {
-        id: "fp8_crt", name: "Hand-Woven Tapestry Wall Art", slug: "tapestry-art", price: 490000,
-        image: "https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=800&q=80",
-        categoryId: "crt_c3", categoryName: "Creative Objects",
-        description: "Hand-woven cotton fringe hanging banner with wooden dowel support.",
-        status: "active", isFeatured: true, isNew: false, stock: 8
+        id: "art_p8", name: "Buku Sketsa Sketchbook Spiral A4 200 GSM", slug: "sketchbook-spiral-a4", price: 75000,
+        image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=800&q=80",
+        categoryId: "art_c4", categoryName: "Alat Gambar & Sketsa",
+        description: "Kertas acid-free tebal 200 GSM cocok untuk cat air, gouache, marker, dan pensil gambar.",
+        status: "active", isFeatured: false, isNew: true, stock: 90
       }
     ],
     navigation: [
-      { id: "crt_n1", label: "Gallery", route: "/katalog", order: 1, isActive: true },
-      { id: "crt_n2", label: "Workshops", route: "/berita", order: 2, isActive: true },
-      { id: "crt_n3", label: "About Studio", route: "/tentang", order: 3, isActive: true }
+      { id: "art_n1", label: "Katalog Alat Seni", route: "/katalog", order: 1, isActive: true },
+      { id: "art_n2", label: "Galeri & Inspirasi", route: "/berita", order: 2, isActive: true },
+      { id: "art_n3", label: "Tentang Studio", route: "/tentang", order: 3, isActive: true }
     ]
   },
 
@@ -661,7 +662,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
     },
     categories: [
       { id: "pro_c1", name: "Executive Gear", slug: "executive", image: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&q=80" },
-      { id: "pro_c2", name: "Ergonomics", slug: "ergonomics", image: "https://images.unsplash.com/photo-1580481072645-022f9a6d8310?w=800&q=80" },
+      { id: "pro_c2", name: "Ergonomics", slug: "ergonomics", image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&q=80" },
       { id: "pro_c3", name: "Desk Accessories", slug: "desk-acc", image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&q=80" }
     ],
     products: [
@@ -674,7 +675,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "pro_p2", name: "Ergonomic Executive Mesh Chair", slug: "ergo-chair", price: 3450000,
-        image: "https://images.unsplash.com/photo-1580481072645-022f9a6d8310?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&q=80",
         categoryId: "pro_c2", categoryName: "Ergonomics",
         description: "High-back breathable mesh office chair with 4D lumbar support & headrest.",
         status: "active", isFeatured: true, isNew: true, stock: 15
@@ -702,7 +703,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "pro_p6", name: "Felt & Vegan Leather Desk Pad", slug: "desk-pad", price: 260000,
-        image: "https://images.unsplash.com/photo-1609592424074-12ec313e648f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1593640495253-23196b27a87f?w=800&q=80",
         categoryId: "pro_c3", categoryName: "Desk Accessories",
         description: "Waterproof dual-sided desk blotter mat 90cm x 45cm for keyboard & mouse.",
         status: "active", isFeatured: false, isNew: false, stock: 60
@@ -847,7 +848,7 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "cute_p4", name: "Fluffy Bunny Zip Pencil Case", slug: "bunny-pencil-case", price: 95000,
-        image: "https://images.unsplash.com/photo-1584346535787-83d47d4e5f7f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=800&q=80",
         categoryId: "cute_c1", categoryName: "Plushies & Toys",
         description: "Soft plush zip pouch for pens, makeup brushes or trinkets.",
         status: "active", isFeatured: true, isNew: false, stock: 100
@@ -861,21 +862,21 @@ export const THEME_DATA_MAP: Record<string, ThemeData> = {
       },
       {
         id: "cute_p6", name: "Strawberry Fluffy Bed Socks", slug: "strawberry-socks", price: 55000,
-        image: "https://images.unsplash.com/photo-1584346535787-83d47d4e5f7f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=800&q=80",
         categoryId: "cute_c2", categoryName: "Desk & Gifts",
         description: "Ultra cozy micro-fleece sleeping socks with embroidery details.",
         status: "active", isFeatured: false, isNew: true, stock: 120
       },
       {
         id: "cute_p7", name: "Kawaii Animals Vinyl Sticker Pack", slug: "sticker-pack", price: 45000,
-        image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80",
         categoryId: "cute_c2", categoryName: "Desk & Gifts",
         description: "Pack of 50 waterproof vinyl stickers for laptops, bottles & journals.",
         status: "active", isFeatured: false, isNew: false, stock: 150
       },
       {
         id: "cute_p8", name: "Soft Cloud Reading Floor Pillow", slug: "cloud-pillow", price: 245000,
-        image: "https://images.unsplash.com/photo-1584346535787-83d47d4e5f7f?w=800&q=80",
+        image: "https://images.unsplash.com/photo-1567016432779-094069958ea5?w=800&q=80",
         categoryId: "cute_c1", categoryName: "Plushies & Toys",
         description: "Large cloud-shaped floor cushion in pastel lavender plush fabric.",
         status: "active", isFeatured: true, isNew: false, stock: 25

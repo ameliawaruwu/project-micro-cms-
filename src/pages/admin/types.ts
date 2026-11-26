@@ -4,12 +4,18 @@ import { User, Store, WithdrawalRequest, AdminPlatformStats, Order, BillingPlan,
 export type AdminTab =
   | 'overview'
   | 'stores'
+  | 'products'
+  | 'communities'
+  | 'community-members'
   | 'domain-requests'
   | 'withdrawals'
   | 'plans'
   | 'orders-shipping'
   | 'transactions'
-  | 'settings';
+  | 'settings'
+  | 'users'
+  | 'tickets'
+  | 'my-tickets';
 
 export interface AdminNavItem {
   id: AdminTab;

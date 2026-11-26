@@ -1,5 +1,10 @@
-import React, { useState, useRef } from 'react';
+import SearchableSelect from '../common/SearchableSelect';
+import React, { useState, useRef, useEffect } from 'react';
 import {
+  Store as StoreIcon,
+  MapPin,
+  Share2,
+  Shield,
   Sliders,
   Type,
   Image as ImageIcon,
@@ -24,6 +29,8 @@ import {
   FileText,
   SlidersHorizontal,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   ArrowUp,
   ArrowDown,
   Upload,
@@ -31,10 +38,34 @@ import {
 import { Store, StoreSectionConfig, StoreSectionOptions } from '../../types';
 import { CURATED_BANNER_PRESETS, DEFAULT_LANDING_NAV_ITEMS } from '../../utils/layoutConstants';
 import { GlobalThemeSettingsPanel } from './GlobalThemeSettingsPanel';
+import { SectionContentFields } from './SectionContentFields';
 import { useCmsStore } from '../../cms/useCmsStore';
+import { storeService } from '../../services/storeService';
+import { mediaService } from '../../services/mediaService';
+import { productService } from '../../services/productService';
+import { isDemoProductId } from '../../utils/demoProducts';
+import { getFooterLogoType } from '../../themes/FooterBrand';
+import { normalizeThemeId } from '../../themes/ThemeRegistry';
+import { useLanguage } from '../../contexts/LanguageContext';
+
+/** Kolom media sosial footer (dibaca tema lewat getFooterSocialLinks). */
+const FOOTER_SOCIAL_FIELDS = [
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'tiktok', label: 'TikTok' },
+  { key: 'twitter', label: 'X / Twitter' },
+  { key: 'facebook', label: 'Facebook' },
+  { key: 'youtube', label: 'YouTube' },
+] as const;
+
+/** Kolom tautan legal footer (dibaca tema lewat getFooterLegalLinks). */
+const getFooterLegalFields = (isEn: boolean) => [
+  { textKey: 'privacyPolicyText', urlKey: 'privacyPolicyUrl', label: isEn ? 'Privacy Policy' : 'Kebijakan Privasi' },
+  { textKey: 'termsOfServiceText', urlKey: 'termsOfServiceUrl', label: isEn ? 'Terms & Conditions' : 'Syarat & Ketentuan' },
+] as const;
 
 interface RightPanelSettingsProps {
   store: Store;
+  products?: any[];
   selectedSection: StoreSectionConfig | null;
   onUpdateSectionOptions: (key: string, newOptions: Partial<StoreSectionOptions>) => void;
   onUpdateSectionTitle: (key: string, newTitle: string) => void;
@@ -47,10 +78,78 @@ interface RightPanelSettingsProps {
   globalSettings?: any;
   onUpdateGlobalSettings?: (newSettings: any) => void;
   showGlobalSettings?: boolean;
+  onUpdateStore?: (updates: Partial<Store>) => void;
+  /** Tema aktif editor; dipakai untuk jumlah produk bawaan tiap section. */
+  activeThemeId?: string;
 }
 
+
+/** Bagian yang menampilkan label badge; isinya diatur lewat field "Label Badge" di editor. */
+/** Section produk di panel kanan (filter kategori, jumlah, urutan, pilihan manual). */
+const PRODUCT_SECTION_IDS = [
+  'featured_products', 'product_grid', 'collection_grid', 'lookbook', 'signature_collection',
+  'asymmetric_showcase', 'latest_drop', 'floating_showcase', 'catalog', 'journal',
+  'community_board', 'product_comparison',
+];
+
+/** Section yang hanya menampilkan satu produk (produk pertama dari pilihan / unggulan). */
+const SINGLE_PRODUCT_SECTION_IDS = ['asymmetric_showcase', 'latest_drop', 'floating_showcase'];
+
+/** Batas atas slider jumlah produk per section (tabel perbandingan maksimal 4 kolom). */
+const PRODUCT_COUNT_MAX: Record<string, number> = { product_comparison: 4 };
+
+/**
+ * Jumlah produk bawaan bila merchant belum menggeser slider. Harus sama dengan `defaultCount`
+ * di komponen tema (src/themes/<tema>/components) agar angka di panel = jumlah yang tampil.
+ */
+function defaultSectionProductCount(sectionId: string, themeId: string, opts: any): number {
+  if (SINGLE_PRODUCT_SECTION_IDS.includes(sectionId)) return 1;
+  const gridCols = [2, 3, 4].includes(opts?.gridColumns) ? opts.gridColumns : 3;
+  switch (sectionId) {
+    case 'lookbook':
+      return themeId === 'creative' ? 9 : themeId === 'bold' ? 3 : 2;
+    case 'journal':
+    case 'product_comparison':
+      return 3;
+    case 'community_board':
+      return 4;
+    case 'collection_grid':
+      return 6;
+    case 'signature_collection':
+      return Number(opts?.limit) || 6;
+    default:
+      break;
+  }
+  switch (themeId) {
+    case 'luxury':
+      return Number(opts?.limit) || 6;
+    case 'futuristic':
+    case 'bold':
+      return gridCols;
+    case 'professional':
+      return 8;
+    case 'editorial':
+      return 12;
+    default:
+      return 4;
+  }
+}
+
+const BADGE_SECTION_IDS = ['hero_banner', 'promo_banner', 'newsletter', 'latest_drop', 'limited_release', 'asymmetric_showcase', 'floating_showcase'];
+
+/**
+ * Bagian bertulisan kecil di atas judul (mis. "KEAHLIAN ADILUHUNG"); diisi lewat field `eyebrowText`.
+ * Nilainya placeholder bawaan tema (id/en). `ingredient_story` punya field sendiri di SectionContentFields.
+ */
+const EYEBROW_SECTION_DEFAULTS: Record<string, { id: string; en: string }> = {
+  craftsmanship_story: { id: 'KEAHLIAN ADILUHUNG', en: 'FINE CRAFTSMANSHIP' },
+  private_collection: { id: 'Layanan Eksklusif', en: 'Exclusive Service' },
+  lookbook: { id: 'Pilihan Kami / Inspirasi Gaya', en: 'Our Picks / Style Inspiration' },
+  category_tiles: { id: 'Koleksi', en: 'Collection' },
+};
 export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   store,
+  products,
   selectedSection,
   onUpdateSectionOptions,
   onToggleVisibility,
@@ -62,16 +161,105 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
   globalSettings,
   onUpdateGlobalSettings,
   showGlobalSettings,
+  onUpdateStore,
+  activeThemeId,
 }) => {
   const cmsProducts = useCmsStore(state => state.products);
-  const updateProduct = useCmsStore(state => state.updateProduct);
+
+  // Draf editan produk per id. Input membaca draf ini (bukan prop `products` yang baru berubah
+  // setelah App mengambil ulang dari database), jadi ketikan tidak tertimpa nilai lama.
+  const [productEdits, setProductEdits] = useState<Record<string, Record<string, any>>>({});
+  const pendingProductSaves = useRef<Record<string, { timer: ReturnType<typeof setTimeout>; patch: Record<string, any> }>>({});
+
+  // Jika merchant memiliki produk di daftar produk, gunakan produk merchant.
+  // Jika belum menambahkan produk apapun, gunakan produk bawaan template.
+  const baseProducts = (products && products.length > 0)
+    ? products
+    : (cmsProducts && cmsProducts.length > 0 ? cmsProducts : ((store as any).products || []));
+  const effectiveProducts = baseProducts.map((p: any) => (productEdits[p.id] ? { ...p, ...productEdits[p.id] } : p));
+  const realProductIds = new Set((products || []).map((p: any) => p.id).filter((id: string) => !isDemoProductId(id)));
+
+  const persistProductPatch = async (id: string, patch: Record<string, any>) => {
+    const updates: Record<string, any> = { storeId: store.id };
+    if (patch.name !== undefined && String(patch.name).trim()) updates.name = String(patch.name).trim();
+    if (patch.description !== undefined) updates.description = String(patch.description);
+    if (patch.category !== undefined) updates.category = String(patch.category).trim();
+    if (patch.imageUrl !== undefined) updates.imageUrl = String(patch.imageUrl).trim();
+    if (patch.price !== undefined && patch.price !== '' && Number.isFinite(Number(patch.price)) && Number(patch.price) >= 0) updates.price = Math.round(Number(patch.price));
+    if (patch.stock !== undefined && patch.stock !== '' && Number.isInteger(Number(patch.stock)) && Number(patch.stock) >= 0) updates.stock = Number(patch.stock);
+    if (Object.keys(updates).length <= 1) return;
+    try {
+      await productService.updateProduct(id, updates as any);
+      // Beri tahu App agar daftar produk (menu Produk & preview) memuat ulang data terbaru.
+      window.dispatchEvent(new Event('microcms_products_updated'));
+    } catch (err) {
+      console.warn('[Layout Editor] Gagal menyimpan produk:', err);
+    }
+  };
+
+  const flushProductSave = (id: string) => {
+    const pending = pendingProductSaves.current[id];
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    delete pendingProductSaves.current[id];
+    void persistProductPatch(id, pending.patch);
+  };
+
+  /** Ubah satu produk: draf & preview langsung, simpan ke database setelah jeda mengetik. */
+  const editProduct = (product: any, patch: Record<string, any>) => {
+    const id = product.id;
+    setProductEdits((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), ...patch } }));
+
+    // Preview tema membaca produk dari useCmsStore: perbarui lokal tanpa sinkron ke server.
+    useCmsStore.setState((state) => ({
+      products: state.products.map((cp) => {
+        if (cp.id !== id) return cp;
+        const next: any = { ...cp };
+        if (patch.name !== undefined) next.name = patch.name;
+        if (patch.description !== undefined) next.description = patch.description;
+        if (patch.category !== undefined) { next.categoryName = patch.category; next.categoryId = patch.category; }
+        if (patch.imageUrl !== undefined) { next.image = patch.imageUrl; next.images = patch.imageUrl ? [patch.imageUrl] : []; }
+        if (patch.price !== undefined && patch.price !== '') next.price = Number(patch.price) || 0;
+        if (patch.stock !== undefined && patch.stock !== '') next.stock = Number(patch.stock) || 0;
+        return next;
+      }),
+    }));
+
+    // Produk contoh template tidak disimpan ke database.
+    if (!realProductIds.has(id)) return;
+    const prevPending = pendingProductSaves.current[id];
+    if (prevPending) clearTimeout(prevPending.timer);
+    const merged = { ...(prevPending?.patch || {}), ...patch };
+    pendingProductSaves.current[id] = { patch: merged, timer: setTimeout(() => flushProductSave(id), 800) };
+  };
+
+  // Simpan editan yang belum tersimpan saat panel ditutup / pindah toko, lalu kosongkan draf.
+  useEffect(() => {
+    setProductEdits({});
+    return () => {
+      Object.keys(pendingProductSaves.current).forEach((id) => flushProductSave(id));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.id]);
   const [showImagePresets, setShowImagePresets] = useState(false);
   const [customImageUrlInput, setCustomImageUrlInput] = useState('');
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoError, setLogoError] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState('');
+  const [uploadingProductId, setUploadingProductId] = useState<string | null>(null);
+  const [productUploadError, setProductUploadError] = useState<{ id: string; message: string } | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const footerLogoInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingFooterLogo, setIsUploadingFooterLogo] = useState(false);
+  const [footerLogoError, setFooterLogoError] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [newMenuLabel, setNewMenuLabel] = useState('');
   const [newMenuHref, setNewMenuHref] = useState('');
   const [showAddMenuForm, setShowAddMenuForm] = useState(false);
+  const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isEn } = useLanguage();
 
   // If no section is selected, show Global Theme Settings
   if (!selectedSection || showGlobalSettings) {
@@ -93,7 +281,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             <div className="w-7 h-7 rounded flex items-center justify-center bg-[#F1F8FF] text-[#2C6ECB]">
               <Palette className="w-4 h-4" />
             </div>
-            <h2 className="text-[13px] font-bold text-[#202223]">Pengaturan Tema</h2>
+            <h2 className="text-[13px] font-bold text-[#202223]">{isEn ? 'Theme Settings' : 'Pengaturan Tema'}</h2>
           </div>
         </div>
 
@@ -102,16 +290,16 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
           <div className="space-y-2.5">
             <label className="text-[13px] font-bold text-[#202223] flex items-center gap-1.5">
               <Paintbrush className="w-3.5 h-3.5" />
-              Aksen Warna Utama
+              {isEn ? 'Primary Accent Color' : 'Aksen Warna Utama'}
             </label>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { name: 'Biru (Default)', color: '#2C6ECB' },
+                { name: isEn ? 'Blue (Default)' : 'Biru (Default)', color: '#2C6ECB' },
                 { name: 'Maroon', color: '#66000E' },
                 { name: 'Emerald', color: '#027A48' },
                 { name: 'Amber', color: '#B54708' },
-                { name: 'Hitam', color: '#1A1A1A' },
-                { name: 'Ungu', color: '#7C3AED' },
+                { name: isEn ? 'Black' : 'Hitam', color: '#1A1A1A' },
+                { name: isEn ? 'Purple' : 'Ungu', color: '#7C3AED' },
               ].map((c) => (
                 <button
                   key={c.color}
@@ -140,17 +328,17 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
           <div className="space-y-2.5 pt-4 border-t border-[#E1E3E5]">
             <label className="text-[13px] font-bold text-[#202223] flex items-center gap-1.5">
               <Type className="w-3.5 h-3.5" />
-              Tipografi
+              {isEn ? 'Typography' : 'Tipografi'}
             </label>
             <div className="p-3 rounded-xl bg-[#F6F6F7] border border-[#E1E3E5] text-center">
-              <p className="text-[11px] text-[#8C9196]">Tipografi diatur secara global pada level tema.</p>
+              <p className="text-[11px] text-[#8C9196]">{isEn ? 'Typography is set globally at the theme level.' : 'Tipografi diatur secara global pada level tema.'}</p>
             </div>
           </div>
 
           <div className="p-3 rounded-lg bg-[#F1F8FF] border border-[#BAE0FF] flex gap-2">
             <Sparkles className="w-4 h-4 text-[#2C6ECB] shrink-0 mt-0.5" />
             <span className="text-[11px] text-[#202223] leading-relaxed">
-              Pilih sebuah section dari panel kiri atau klik di kanvas untuk menyesuaikan konten spesifik.
+              {isEn ? 'Select a section from the left panel or click on the canvas to customize specific content.' : 'Pilih sebuah section dari panel kiri atau klik di kanvas untuk menyesuaikan konten spesifik.'}
             </span>
           </div>
         </div>
@@ -165,24 +353,39 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
     onUpdateSectionOptions(sectionKey, newOpts);
   };
 
-  const handleLocalFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLocalFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl) {
-          handleOptionChange({ imageUrl: dataUrl, bannerUrl: dataUrl });
-        }
-      };
-      reader.readAsDataURL(file);
+    e.target.value = '';
+    if (!file) return;
+    setImageUploadError('');
+    setIsUploadingImage(true);
+    try {
+      const url = await mediaService.uploadImage(file, 'layout', store?.id || undefined);
+      handleOptionChange({ imageUrl: url, bannerUrl: url });
+    } catch (err: any) {
+      setImageUploadError(err?.message || (isEn ? 'Failed to upload image.' : 'Gagal mengupload gambar.'));
+    } finally {
+      setIsUploadingImage(false);
     }
   };
+
+  /** Tema aktif yang dinormalisasi (elegant → luxury) untuk kolom isian khusus tema. */
+  const themeId = normalizeThemeId(activeThemeId);
+  /** Teks tambahan khusus tema yang tampil di pratinjau dan perlu kolom isian sendiri. */
+  const themeExtraField: { key: 'eyebrowText' | 'cardTitle'; label: string; hint: string; placeholder: string } | null =
+    selectedSection?.id === 'hero_banner' && themeId === 'modern'
+      ? { key: 'eyebrowText', label: isEn ? 'Small Label Above Title' : 'Label Kecil di Atas Judul', hint: isEn ? 'Leave empty to hide the label.' : 'Kosongkan untuk menyembunyikan label.', placeholder: isEn ? 'Example: New Collection' : 'Contoh: Koleksi Baru' }
+      : selectedSection?.id === 'hero_banner' && themeId === 'cute'
+        ? { key: 'eyebrowText', label: isEn ? 'Image Sticker Label' : 'Label Stiker Gambar', hint: isEn ? 'Not set: shows "New Arrivals". Clear it after typing to hide the sticker.' : 'Belum diisi: tampil "Produk Terbaru". Hapus isinya setelah diketik untuk menyembunyikan stiker.', placeholder: isEn ? 'New Arrivals' : 'Produk Terbaru' }
+        : (selectedSection?.id === 'floating_showcase' && themeId === 'creative') || (selectedSection?.id === 'lookbook' && themeId === 'fashion')
+          ? { key: 'cardTitle', label: isEn ? 'Card Title' : 'Judul Kartu', hint: isEn ? 'Leave empty to use the product name.' : 'Kosongkan untuk memakai nama produk.', placeholder: isEn ? 'Product name' : 'Nama produk' }
+          : null;
 
   const hasImage =
     Boolean(opts.imageUrl || opts.bannerUrl) ||
     [
       'hero_banner',
+      'editorial_campaign',
       'promo_banner',
       'image_with_text',
       'gallery',
@@ -191,7 +394,6 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
       'lookbook',
       'brand_story',
       'ingredient_story',
-      'sustainability',
       'latest_drop',
       'floating_showcase',
       'signature_collection',
@@ -235,7 +437,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
               type="button"
               onClick={() => onDuplicateSection(sectionKey)}
               className="p-1.5 rounded text-[#8C9196] hover:text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer"
-              title="Duplikasi"
+              title={isEn ? 'Duplicate' : 'Duplikasi'}
             >
               <Copy className="w-3.5 h-3.5" />
             </button>
@@ -243,7 +445,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
               type="button"
               onClick={() => onDeleteSection(sectionKey)}
               className="p-1.5 rounded text-[#8C9196] hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
-              title="Hapus"
+              title={isEn ? 'Delete' : 'Hapus'}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -259,7 +461,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             {/* ── IMAGE SECTION ── */}
             {hasImage && (
               <div className="space-y-2">
-                <label className="text-[12px] font-bold text-[#202223]">Gambar Utama</label>
+                <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Main Image' : 'Gambar Utama'}</label>
 
                 {currentImageUrl ? (
                   <div className="relative rounded-lg overflow-hidden aspect-video border border-[#E1E3E5] bg-[#F6F6F7]">
@@ -272,7 +474,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       <button
                         onClick={() => handleOptionChange({ imageUrl: '', bannerUrl: '' })}
                         className="p-2 bg-white rounded-full text-red-600 hover:scale-105 transition cursor-pointer"
-                        title="Hapus Gambar"
+                        title={isEn ? 'Remove Image' : 'Hapus Gambar'}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -284,8 +486,8 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     className="aspect-video rounded-lg border-2 border-dashed border-[#E1E3E5] bg-[#F6F6F7] hover:bg-[#F1F8FF] hover:border-[#2C6ECB] transition cursor-pointer flex flex-col items-center justify-center gap-2 p-3 text-center"
                   >
                     <Upload className="w-6 h-6 text-[#2C6ECB]" />
-                    <span className="text-[11px] font-bold text-[#2C6ECB]">Upload Foto dari Perangkat / Galeri</span>
-                    <span className="text-[10px] text-[#8C9196]">Atau klik tombol Upload di bawah</span>
+                    <span className="text-[11px] font-bold text-[#2C6ECB]">{isEn ? 'Upload Photo from Device / Gallery' : 'Upload Foto dari Perangkat / Galeri'}</span>
+                    <span className="text-[10px] text-[#8C9196]">{isEn ? 'Or click the Upload button below' : 'Atau klik tombol Upload di bawah'}</span>
                   </div>
                 )}
 
@@ -296,16 +498,18 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                   onChange={handleLocalFileUpload}
                   className="hidden"
                 />
+                {imageUploadError && <p className="text-[11px] text-red-600">{imageUploadError}</p>}
 
                 <div className="grid grid-cols-3 gap-1.5 pt-1">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="py-1.5 px-2 rounded-lg border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center justify-center gap-1 shrink-0"
-                    title="Upload gambar dari galeri HP atau komputer"
+                    title={isEn ? 'Upload an image from your phone gallery or computer' : 'Upload gambar dari galeri HP atau komputer'}
+                    disabled={isUploadingImage}
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>Upload</span>
+                    <span>{isUploadingImage ? (isEn ? 'Uploading...' : 'Mengupload...') : 'Upload'}</span>
                   </button>
                   <button
                     type="button"
@@ -316,7 +520,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${showImagePresets ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
                       }`}
                   >
-                    Pilih Galeri
+                    {isEn ? 'Choose Gallery' : 'Pilih Galeri'}
                   </button>
                   <button
                     type="button"
@@ -327,7 +531,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition cursor-pointer truncate ${showUrlInput ? 'border-[#202223] bg-[#202223] text-white' : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
                       }`}
                   >
-                    Input URL
+                    {isEn ? 'Enter URL' : 'Input URL'}
                   </button>
                 </div>
 
@@ -362,7 +566,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       className="w-full py-2 px-3 rounded-lg border-2 border-dashed border-[#2C6ECB]/40 bg-[#F1F8FF] hover:bg-[#2C6ECB]/10 text-[11px] font-bold text-[#2C6ECB] flex items-center justify-center gap-2 transition cursor-pointer"
                     >
                       <Upload className="w-4 h-4" />
-                      <span>+ Upload Foto Sendiri dari Perangkat</span>
+                      <span>{isEn ? '+ Upload Your Own Photo from Device' : '+ Upload Foto Sendiri dari Perangkat'}</span>
                     </button>
                     <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
                       {CURATED_BANNER_PRESETS.map((preset) => (
@@ -383,21 +587,302 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
               </div>
             )}
 
-            {/* ── TEXT CONTENT ── */}
+            {/* ── FOOTER DEDICATED FULL SETTINGS ── */}
+            {selectedSection.id === 'footer' ? (
+              <div className="space-y-4 pt-1">
+                {/* 1. Identitas Brand Footer */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
+                    <StoreIcon className="w-3.5 h-3.5 text-[#2C6ECB]" />
+                    <span className="text-[12px] font-bold text-[#202223]">{isEn ? 'Footer Brand Identity' : 'Identitas Brand Footer'}</span>
+                  </div>
+
+                  {/* Logo footer: teks (nama toko) atau gambar */}
+                  {(() => {
+                    const footerLogoType = getFooterLogoType(opts);
+                    const footerLogoPreview = (opts as any).footerLogoUrl || store.logoUrl || '';
+                    return (
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Footer Logo' : 'Logo Footer'}</label>
+                        <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-[#F1F2F3]" role="radiogroup" aria-label={isEn ? 'Footer logo type' : 'Jenis logo footer'}>
+                          {([
+                            { value: 'text', label: isEn ? 'Text' : 'Teks', Icon: Type },
+                            { value: 'image', label: isEn ? 'Image' : 'Gambar', Icon: ImageIcon },
+                          ] as const).map(({ value, label, Icon }) => (
+                            <button
+                              key={value}
+                              type="button"
+                              role="radio"
+                              aria-checked={footerLogoType === value}
+                              onClick={() => handleOptionChange({ footerLogoType: value } as any)}
+                              className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[12px] font-semibold cursor-pointer transition-colors ${
+                                footerLogoType === value ? 'bg-white text-[#202223] shadow-sm' : 'text-[#6D7175] hover:text-[#202223]'
+                              }`}
+                            >
+                              <Icon className="w-3.5 h-3.5" />
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {footerLogoType === 'image' && (
+                          <div className="p-3 rounded-lg border border-[#E1E3E5] bg-white space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[12px] font-semibold text-[#202223]">{isEn ? 'Footer Image Logo' : 'Logo Gambar Footer'}</span>
+                              <span className="text-[10px] text-[#6D7175]">{isEn ? 'PNG/JPG/WEBP, max. 2 MB' : 'PNG/JPG/WEBP, maks. 2 MB'}</span>
+                            </div>
+                            <input
+                              ref={footerLogoInputRef}
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                e.target.value = '';
+                                if (!file) return;
+                                setFooterLogoError('');
+                                if (!file.type.startsWith('image/')) {
+                                  setFooterLogoError((isEn ? 'File must be an image.' : 'File harus berupa gambar.'));
+                                  return;
+                                }
+                                if (file.size > 2 * 1024 * 1024) {
+                                  setFooterLogoError((isEn ? 'Logo size must be at most 2 MB.' : 'Ukuran logo maksimal 2 MB.'));
+                                  return;
+                                }
+                                if (!store?.id) {
+                                  setFooterLogoError((isEn ? 'Store is not ready yet, please try again.' : 'Toko belum siap, coba lagi.'));
+                                  return;
+                                }
+                                setIsUploadingFooterLogo(true);
+                                try {
+                                  const url = await storeService.uploadStoreImage(store.id, file, 'logo');
+                                  handleOptionChange({ footerLogoUrl: url } as any);
+                                } catch (err: any) {
+                                  setFooterLogoError(err?.message || (isEn ? 'Failed to upload logo.' : 'Gagal mengupload logo.'));
+                                } finally {
+                                  setIsUploadingFooterLogo(false);
+                                }
+                              }}
+                            />
+                            {footerLogoPreview ? (
+                              <div className="flex items-center gap-3">
+                                <div className="w-24 h-14 rounded-md border border-[#E1E3E5] bg-[repeating-conic-gradient(#F1F2F3_0%_25%,#FFFFFF_0%_50%)] [background-size:12px_12px] flex items-center justify-center overflow-hidden">
+                                  <img src={footerLogoPreview} alt={isEn ? 'Footer logo' : 'Logo footer'} className="max-w-full max-h-full object-contain" />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <button
+                                    type="button"
+                                    disabled={isUploadingFooterLogo}
+                                    onClick={() => footerLogoInputRef.current?.click()}
+                                    className="px-2.5 py-1 rounded-md border border-[#E1E3E5] text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] disabled:opacity-60 cursor-pointer"
+                                  >
+                                    {isUploadingFooterLogo ? (isEn ? 'Uploading...' : 'Mengupload...') : (opts as any).footerLogoUrl ? (isEn ? 'Change Logo' : 'Ganti Logo') : (isEn ? 'Upload Custom Logo' : 'Upload Logo Khusus')}
+                                  </button>
+                                  {(opts as any).footerLogoUrl && (
+                                    <button
+                                      type="button"
+                                      disabled={isUploadingFooterLogo}
+                                      onClick={() => handleOptionChange({ footerLogoUrl: '' } as any)}
+                                      className="px-2.5 py-1 rounded-md border border-red-200 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60 cursor-pointer"
+                                    >
+                                      {isEn ? 'Remove Logo' : 'Hapus Logo'}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={isUploadingFooterLogo}
+                                onClick={() => footerLogoInputRef.current?.click()}
+                                className="w-full py-3 rounded-md border-2 border-dashed border-[#C9CCCF] text-[12px] font-semibold text-[#2C6ECB] hover:border-[#2C6ECB] hover:bg-[#F1F8FF] disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>{isUploadingFooterLogo ? (isEn ? 'Uploading logo...' : 'Mengupload logo...') : 'Upload Logo'}</span>
+                              </button>
+                            )}
+                            <p className="text-[11px] text-[#6D7175]">
+                              {(opts as any).footerLogoUrl
+                                ? (isEn ? 'This logo is only used in the footer.' : 'Logo ini hanya dipakai di footer.')
+                                : footerLogoPreview
+                                  ? (isEn ? 'Using the header logo. Upload a custom logo if the footer needs another version (e.g. a white logo for a dark footer).' : 'Memakai logo header. Upload logo khusus bila footer butuh versi lain (mis. logo putih untuk footer gelap).')
+                                  : (isEn ? 'No logo yet: the footer shows the store name until a logo is uploaded.' : 'Belum ada logo: footer tetap menampilkan nama toko sampai logo diupload.')}
+                            </p>
+                            {footerLogoError && <p className="text-[11px] font-semibold text-red-600">{footerLogoError}</p>}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Store Name / Footer Title' : 'Nama Toko / Judul Footer'}</label>
+                    <input
+                      type="text"
+                      value={opts.storeName || opts.heading || opts.title || store.name || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleOptionChange({ storeName: val, heading: val, title: val });
+                        useCmsStore.getState().updateStoreInfo({ name: val });
+                        if (onUpdateStore) onUpdateStore({ name: val });
+                      }}
+                      placeholder={isEn ? 'Store name in footer...' : 'Nama Toko di Footer...'}
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Footer Description / Tagline' : 'Deskripsi / Tagline Footer'}</label>
+                    <textarea
+                      rows={3}
+                      value={opts.description !== undefined ? opts.description : (store.description || '')}
+                      onChange={(e) => {
+                        // Hanya milik footer: tidak disinkronkan ke deskripsi toko agar tidak
+                        // ikut mengubah subjudul header/hero.
+                        const val = e.target.value;
+                        handleOptionChange({ description: val, tagline: val, subheading: val });
+                      }}
+                      placeholder={isEn ? 'Write a short description or store slogan...' : 'Tuliskan deskripsi singkat atau slogan toko...'}
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Informasi Kontak & Alamat Fisik */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
+                    <MapPin className="w-3.5 h-3.5 text-[#2C6ECB]" />
+                    <span className="text-[12px] font-bold text-[#202223]">{isEn ? 'Contact & Physical Address' : 'Kontak & Alamat Fisik'}</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Store Address' : 'Alamat Toko'}</label>
+                    <textarea
+                      rows={2}
+                      value={opts.address !== undefined ? opts.address : (store.address || '')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleOptionChange({ address: val });
+                        useCmsStore.getState().updateStoreInfo({ address: val });
+                        if (onUpdateStore) onUpdateStore({ address: val });
+                      }}
+                      placeholder={isEn ? 'Street address, city, province...' : 'Alamat jalan, kota, provinsi...'}
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Store Contact Email' : 'Email Kontak Toko'}</label>
+                      <input
+                        type="email"
+                        value={opts.email !== undefined ? opts.email : ((store as any).email || '')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleOptionChange({ email: val });
+                          useCmsStore.getState().updateStoreInfo({ email: val });
+                          if (onUpdateStore) onUpdateStore({ email: val } as any);
+                        }}
+                        placeholder={isEn ? 'contact@store.com' : 'kontak@toko.com'}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                      />
+                    </div>
+                    <p className="text-[11px] text-gray-500">{isEn ? 'Buyers contact the store through this email (shown in the footer).' : 'Pembeli menghubungi toko lewat email ini (tampil di footer).'}</p>
+                  </div>
+                </div>
+
+                {/* 3. Tautan Media Sosial */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
+                    <Share2 className="w-3.5 h-3.5 text-[#2C6ECB]" />
+                    <span className="text-[12px] font-bold text-[#202223]">{isEn ? 'Social Media Links' : 'Tautan Media Sosial'}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {FOOTER_SOCIAL_FIELDS.map(({ key, label }) => (
+                      <div key={key} className="space-y-1">
+                        <label className="text-[11px] font-bold text-gray-700">{label}</label>
+                        <input
+                          type="text"
+                          value={opts[key] !== undefined ? opts[key] : (opts.socials?.[key] || '')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleOptionChange({ [key]: val, socials: { ...(opts.socials || {}), [key]: val } });
+                          }}
+                          placeholder={isEn ? '@username or URL' : '@username atau URL'}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-gray-500">{isEn ? 'Leave empty to hide that social media icon.' : 'Kosongkan untuk menyembunyikan ikon media sosial tersebut.'}</p>
+                </div>
+
+                {/* 4. Hak Cipta & Kebijakan */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-1.5 pb-1 border-b border-[#E1E3E5]">
+                    <Shield className="w-3.5 h-3.5 text-[#2C6ECB]" />
+                    <span className="text-[12px] font-bold text-[#202223]">{isEn ? 'Copyright & Legal' : 'Hak Cipta & Legalitas'}</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Copyright Text' : 'Teks Hak Cipta (Copyright)'}</label>
+                    <input
+                      type="text"
+                      value={opts.copyrightText !== undefined ? opts.copyrightText : `© ${new Date().getFullYear()} ${opts.storeName || store.name || 'Toko'}. All rights reserved.`}
+                      onChange={(e) => handleOptionChange({ copyrightText: e.target.value })}
+                      placeholder={isEn ? '© 2026 Store Name...' : '© 2026 Nama Toko...'}
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                    />
+                  </div>
+
+                  {getFooterLegalFields(isEn).map(({ textKey, urlKey, label }) => (
+                    <div key={textKey} className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-gray-700">{label}</label>
+                        <input
+                          type="text"
+                          value={opts[textKey] ?? ''}
+                          onChange={(e) => handleOptionChange({ [textKey]: e.target.value })}
+                          placeholder={label}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-gray-700">{isEn ? `${label} Link` : `Link ${label}`}</label>
+                        <input
+                          type="text"
+                          value={opts[urlKey] ?? ''}
+                          onChange={(e) => handleOptionChange({ [urlKey]: e.target.value })}
+                          placeholder="https://..."
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E1E3E5] text-[12px] text-[#202223] focus:border-[#2C6ECB]"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-gray-500">{isEn ? 'Legal links appear next to the footer copyright when their text or link is filled in. Links can be https://, /page, or #section; if the link is empty, it points to the Home page. Leave both empty to hide.' : 'Tautan legal tampil di samping hak cipta footer bila teks atau link-nya diisi. Link boleh https://, /halaman, atau #bagian; bila link kosong, tautan diarahkan ke Beranda. Kosongkan keduanya untuk menyembunyikan.'}</p>
+                </div>
+              </div>
+            ) : (
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[12px] font-bold text-[#202223]">Teks Judul</label>
+                <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Title Text' : 'Teks Judul'}</label>
                 <input
                   type="text"
-                  value={opts.heading || opts.featuredTitle || opts.announcementText || opts.testimonialsTitle || opts.newsletterTitle || ''}
+                  value={opts.heading || opts.featuredTitle || opts.announcementText || opts.testimonialsTitle || opts.newsletterTitle || (selectedSection.id === 'header' ? (opts.storeName || '') : '')}
                   onChange={(e) => {
                     if (selectedSection.id === 'announcement') handleOptionChange({ announcementText: e.target.value });
                     else if (selectedSection.id === 'featured_products') handleOptionChange({ featuredTitle: e.target.value, heading: e.target.value });
                     else if (selectedSection.id === 'testimonials') handleOptionChange({ testimonialsTitle: e.target.value, heading: e.target.value });
                     else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterTitle: e.target.value, heading: e.target.value });
+                    else if (selectedSection.id === 'header') {
+                      handleOptionChange({ heading: e.target.value, storeName: e.target.value, title: e.target.value });
+                      useCmsStore.getState().updateStoreInfo({ name: e.target.value });
+                      if (onUpdateStore) onUpdateStore({ name: e.target.value });
+                    }
                     else handleOptionChange({ heading: e.target.value });
                   }}
-                  placeholder={selectedSection.title || 'Teks Judul...'}
+                  placeholder={selectedSection.id === 'header' ? (store.name || (isEn ? 'Store Name / Header Title' : 'Nama Toko / Judul Header')) : (selectedSection.title || (isEn ? 'Title text...' : 'Teks Judul...'))}
                   className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB] focus:ring-1 focus:ring-[#2C6ECB]"
                 />
               </div>
@@ -405,34 +890,39 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
               {selectedSection.id !== 'announcement' && selectedSection.id !== 'search_category' && (
                 <div className="space-y-1">
                   <label className="text-[12px] font-bold text-[#202223]">
-                    {selectedSection.id === 'footer'
-                      ? 'Teks Footer / Hak Cipta'
-                      : selectedSection.id === 'brand_philosophy'
-                      ? 'Isi Teks Filosofi'
-                      : 'Deskripsi / Subjudul'}
+                    {selectedSection.id === 'brand_philosophy'
+                      ? (isEn ? 'Philosophy Text' : 'Isi Teks Filosofi')
+                      : (isEn ? 'Description / Subtitle' : 'Deskripsi / Subjudul')}
                   </label>
                   <textarea
                     rows={selectedSection.id === 'brand_philosophy' ? 4 : 3}
                     value={
-                      selectedSection.id === 'footer'
-                        ? opts.copyrightText || ''
+                      selectedSection.id === 'header'
+                        ? ((opts as any).headerSubtitle ?? opts.subheading ?? opts.subtitle ?? '')
+                        : selectedSection.id === 'hero_banner'
+                        ? ((opts as any).heroSubtitle ?? opts.description ?? opts.subheading ?? '')
                         : opts.description || opts.subheading || opts.featuredSubtitle || opts.newsletterSubtitle || (opts as any).content || ''
                     }
                     onChange={(e) => {
-                      if (selectedSection.id === 'featured_products') handleOptionChange({ featuredSubtitle: e.target.value, subheading: e.target.value });
-                      else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterSubtitle: e.target.value });
-                      else if (selectedSection.id === 'footer') handleOptionChange({ copyrightText: e.target.value });
+                      if (selectedSection.id === 'featured_products') handleOptionChange({ featuredSubtitle: e.target.value, subheading: e.target.value, description: e.target.value });
+                      else if (selectedSection.id === 'newsletter') handleOptionChange({ newsletterSubtitle: e.target.value, description: e.target.value });
+                      else if (selectedSection.id === 'header') {
+                        handleOptionChange({ headerSubtitle: e.target.value, subheading: e.target.value, subtitle: e.target.value });
+                      }
+                      else if (selectedSection.id === 'hero_banner') {
+                        handleOptionChange({ heroSubtitle: e.target.value, subheading: e.target.value, description: e.target.value });
+                      }
                       else handleOptionChange({ subheading: e.target.value, description: e.target.value, content: e.target.value });
                     }}
-                    placeholder={selectedSection.id === 'brand_philosophy' ? 'Tuliskan filosofi, visi atau kisah brand Anda...' : 'Deskripsi konten bagian ini...'}
+                    placeholder={selectedSection.id === 'brand_philosophy' ? (isEn ? 'Write your brand philosophy, vision or story...' : 'Tuliskan filosofi, visi atau kisah brand Anda...') : (isEn ? 'Describe this section\'s content...' : 'Deskripsi konten bagian ini...')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB] focus:ring-1 focus:ring-[#2C6ECB]"
                   />
                 </div>
               )}
 
-              {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter') && (
+              {BADGE_SECTION_IDS.includes(selectedSection.id) && (
                 <div className="space-y-1">
-                  <label className="text-[12px] font-bold text-[#202223]">Label Badge</label>
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Badge Label' : 'Label Badge'}</label>
                   <input
                     type="text"
                     value={opts.badgeText || opts.discountBadge || opts.incentiveBadge || ''}
@@ -441,18 +931,54 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       else if (selectedSection.id === 'newsletter') handleOptionChange({ incentiveBadge: e.target.value });
                       else handleOptionChange({ badgeText: e.target.value });
                     }}
-                    placeholder="Contoh: PROMO SPESIAL"
+                    placeholder={selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' ? (isEn ? 'Example: SPECIAL PROMO' : 'Contoh: PROMO SPESIAL') : (isEn ? 'Leave empty for the theme\'s default label' : 'Kosongkan untuk label bawaan tema')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                   />
                 </div>
               )}
+
+              {EYEBROW_SECTION_DEFAULTS[selectedSection.id] && (
+                <div className="space-y-1">
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Small Label Above Title' : 'Label Kecil di Atas Judul'}</label>
+                  <input
+                    type="text"
+                    maxLength={60}
+                    value={(opts as any).eyebrowText ?? (opts as any).eyebrow ?? ''}
+                    onChange={(e) => handleOptionChange({ eyebrowText: e.target.value, eyebrow: e.target.value } as any)}
+                    placeholder={isEn ? EYEBROW_SECTION_DEFAULTS[selectedSection.id].en : EYEBROW_SECTION_DEFAULTS[selectedSection.id].id}
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                  />
+                  <p className="text-[11px] text-[#8C9196]">{isEn ? 'Leave empty to use the theme\'s default label.' : 'Kosongkan untuk memakai label bawaan tema.'}</p>
+                </div>
+              )}
             </div>
+            )}
+
+            {themeExtraField && (
+              <div className="space-y-1 pt-4 border-t border-[#E1E3E5]">
+                <label className="text-[12px] font-bold text-[#202223]">{themeExtraField.label}</label>
+                <input
+                  type="text"
+                  maxLength={80}
+                  value={typeof (opts as any)[themeExtraField.key] === 'string' ? (opts as any)[themeExtraField.key] : ''}
+                  onChange={(e) => handleOptionChange({ [themeExtraField.key]: e.target.value } as any)}
+                  placeholder={themeExtraField.placeholder}
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
+                />
+                <p className="text-[11px] text-[#8C9196]">{themeExtraField.hint}</p>
+              </div>
+            )}
+
+            {/* Sub-bagian halaman (mis. checkout_address) memakai id store_info tetapi bukan blok Info Toko. */}
+            {sectionKey.startsWith(selectedSection.id) && (
+              <SectionContentFields sectionId={selectedSection.id} opts={opts} onChange={handleOptionChange} themeId={themeId} />
+            )}
 
             {/* ── COLLECTION GRID SPECIFIC SETTINGS ── */}
             {selectedSection.id === 'collection_grid' && (
               <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-[#202223]">Jumlah Kolom Tampilan</label>
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Number of Display Columns' : 'Jumlah Kolom Tampilan'}</label>
                   <div className="grid grid-cols-3 gap-2">
                     {[2, 3, 4].map((cols) => (
                       <button
@@ -465,7 +991,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                             : 'border-[#E1E3E5] bg-white text-[#202223] hover:bg-[#F6F6F7]'
                         }`}
                       >
-                        {cols} Kolom
+                        {isEn ? `${cols} Columns` : `${cols} Kolom`}
                       </button>
                     ))}
                   </div>
@@ -474,41 +1000,41 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             )}
 
             {/* ── BUTTONS / CTA ── */}
-            {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' || selectedSection.id === 'signature_collection' || selectedSection.id === 'craftsmanship_story' || selectedSection.id === 'private_collection' || selectedSection.id === 'innovation_cta' || selectedSection.id === 'limited_release' || selectedSection.id === 'community_board' || selectedSection.id === 'latest_drop' || selectedSection.id === 'asymmetric_showcase' || selectedSection.id === 'collection_grid' || selectedSection.id === 'lookbook' || selectedSection.id === 'tech_features' || selectedSection.id === 'floating_showcase') && (
+            {(selectedSection.id === 'hero_banner' || selectedSection.id === 'promo_banner' || selectedSection.id === 'newsletter' || selectedSection.id === 'signature_collection' || selectedSection.id === 'craftsmanship_story' || selectedSection.id === 'private_collection' || selectedSection.id === 'innovation_cta' || selectedSection.id === 'limited_release' || selectedSection.id === 'community_board' || selectedSection.id === 'latest_drop' || selectedSection.id === 'asymmetric_showcase' || selectedSection.id === 'collection_grid' || selectedSection.id === 'lookbook' || selectedSection.id === 'tech_features' || selectedSection.id === 'floating_showcase' || selectedSection.id === 'editorial_campaign' || selectedSection.id === 'brand_story' || selectedSection.id === 'journal' || ((selectedSection.id === 'featured_products' || selectedSection.id === 'product_grid') && !['editorial', 'futuristic', 'bold'].includes(themeId))) && (
               <div className="space-y-2 pt-4 border-t border-[#E1E3E5]">
-                <label className="text-[12px] font-bold text-[#202223]">Tombol Utama / Aksi</label>
+                <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Main / Action Button' : 'Tombol Utama / Aksi'}</label>
                 <div className="space-y-2">
                   <input
                     type="text"
                     value={opts.buttonLabel || opts.buttonText || ''}
                     onChange={(e) => handleOptionChange({ buttonLabel: e.target.value, buttonText: e.target.value })}
-                    placeholder="Teks Tombol"
+                    placeholder={isEn ? 'Button Text' : 'Teks Tombol'}
                     className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                   />
                   <input
                     type="text"
                     value={opts.buttonLink || '#'}
                     onChange={(e) => handleOptionChange({ buttonLink: e.target.value })}
-                    placeholder="Link Tujuan (URL atau #id)"
+                    placeholder={isEn ? 'Target Link (URL or #id)' : 'Link Tujuan (URL atau #id)'}
                     className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                   />
                 </div>
 
-                {selectedSection.id === 'hero_banner' && (
+                {(selectedSection.id === 'hero_banner' || selectedSection.id === 'latest_drop' || selectedSection.id === 'limited_release' || (selectedSection.id === 'floating_showcase' && (themeId === 'futuristic' || themeId === 'creative'))) && (
                   <div className="pt-3 space-y-2">
-                    <label className="text-[12px] font-bold text-[#202223]">Tombol Sekunder</label>
+                    <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Secondary Button' : 'Tombol Sekunder'}</label>
                     <input
                       type="text"
                       value={opts.secondaryButtonLabel || ''}
                       onChange={(e) => handleOptionChange({ secondaryButtonLabel: e.target.value })}
-                      placeholder="Teks Tombol Kedua"
+                      placeholder={isEn ? 'Second Button Text' : 'Teks Tombol Kedua'}
                       className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                     />
                     <input
                       type="text"
                       value={opts.secondaryButtonLink || '#'}
                       onChange={(e) => handleOptionChange({ secondaryButtonLink: e.target.value })}
-                      placeholder="Link Tujuan (URL atau #id)"
+                      placeholder={isEn ? 'Target Link (URL or #id)' : 'Link Tujuan (URL atau #id)'}
                       className="w-full px-3 py-1.5 rounded-lg border border-[#E1E3E5] text-[13px]"
                     />
                   </div>
@@ -520,9 +1046,9 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
             {selectedSection.id === 'header' && (
               <div className="space-y-4 pt-4 border-t border-[#E1E3E5]">
                 <div className="space-y-2">
-                  <label className="text-[12px] font-bold text-[#202223]">Pengaturan Header & Logo</label>
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Header & Logo Settings' : 'Pengaturan Header & Logo'}</label>
                   <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
-                    <span className="text-[12px] text-[#202223]">Tampilkan Logo</span>
+                    <span className="text-[12px] text-[#202223]">{isEn ? 'Show Logo' : 'Tampilkan Logo'}</span>
                     <input
                       type="checkbox"
                       checked={opts.showLogo !== false}
@@ -530,8 +1056,93 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                       className="w-4 h-4 rounded text-[#202223]"
                     />
                   </label>
+                  {/* Logo gambar toko */}
+                  <div className="p-3 rounded-lg border border-[#E1E3E5] bg-white space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] font-semibold text-[#202223]">{isEn ? 'Image Logo' : 'Logo Gambar'}</span>
+                      <span className="text-[10px] text-[#6D7175]">{isEn ? 'PNG/JPG/WEBP/SVG, max. 2 MB' : 'PNG/JPG/WEBP/SVG, maks. 2 MB'}</span>
+                    </div>
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = '';
+                        if (!file) return;
+                        setLogoError('');
+                        if (!file.type.startsWith('image/')) {
+                          setLogoError((isEn ? 'File must be an image.' : 'File harus berupa gambar.'));
+                          return;
+                        }
+                        if (file.size > 2 * 1024 * 1024) {
+                          setLogoError((isEn ? 'Logo size must be at most 2 MB.' : 'Ukuran logo maksimal 2 MB.'));
+                          return;
+                        }
+                        if (!store?.id) {
+                          setLogoError((isEn ? 'Store is not ready yet, please try again.' : 'Toko belum siap, coba lagi.'));
+                          return;
+                        }
+                        setIsUploadingLogo(true);
+                        try {
+                          const url = await storeService.uploadStoreImage(store.id, file, 'logo');
+                          handleOptionChange({ logoUrl: url } as any);
+                          useCmsStore.getState().updateStoreInfo({ logoUrl: url });
+                          if (onUpdateStore) onUpdateStore({ logoUrl: url });
+                        } catch (err: any) {
+                          setLogoError(err?.message || (isEn ? 'Failed to upload logo.' : 'Gagal mengupload logo.'));
+                        } finally {
+                          setIsUploadingLogo(false);
+                        }
+                      }}
+                    />
+                    {(opts as any).logoUrl || store.logoUrl ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-24 h-14 rounded-md border border-[#E1E3E5] bg-[repeating-conic-gradient(#F1F2F3_0%_25%,#FFFFFF_0%_50%)] [background-size:12px_12px] flex items-center justify-center overflow-hidden">
+                          <img src={(opts as any).logoUrl || store.logoUrl} alt={isEn ? 'Store logo' : 'Logo toko'} className="max-w-full max-h-full object-contain" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <button
+                            type="button"
+                            disabled={isUploadingLogo}
+                            onClick={() => logoInputRef.current?.click()}
+                            className="px-2.5 py-1 rounded-md border border-[#E1E3E5] text-[11px] font-semibold text-[#202223] hover:bg-[#F6F6F7] disabled:opacity-60 cursor-pointer"
+                          >
+                            {isUploadingLogo ? (isEn ? 'Uploading...' : 'Mengupload...') : (isEn ? 'Change Logo' : 'Ganti Logo')}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isUploadingLogo}
+                            onClick={() => {
+                              handleOptionChange({ logoUrl: '' } as any);
+                              useCmsStore.getState().updateStoreInfo({ logoUrl: '' });
+                              if (onUpdateStore) onUpdateStore({ logoUrl: '' });
+                            }}
+                            className="px-2.5 py-1 rounded-md border border-red-200 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60 cursor-pointer"
+                          >
+                            {isEn ? 'Remove Logo' : 'Hapus Logo'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isUploadingLogo}
+                        onClick={() => logoInputRef.current?.click()}
+                        className="w-full py-3 rounded-md border-2 border-dashed border-[#C9CCCF] text-[12px] font-semibold text-[#2C6ECB] hover:border-[#2C6ECB] hover:bg-[#F1F8FF] disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{isUploadingLogo ? (isEn ? 'Uploading logo...' : 'Mengupload logo...') : 'Upload Logo'}</span>
+                      </button>
+                    )}
+                    <p className="text-[11px] text-[#6D7175]">
+                      {isEn ? 'If an image logo is uploaded, it replaces the store name in the header. Without a logo, the header shows the store name.' : 'Jika logo gambar diupload, nama toko di header diganti dengan logo. Tanpa logo, header menampilkan nama toko.'}
+                    </p>
+                    {logoError && <p className="text-[11px] font-semibold text-red-600">{logoError}</p>}
+                  </div>
                   <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
-                    <span className="text-[12px] text-[#202223]">Header Sticky / Melayang</span>
+                    <span className="text-[12px] text-[#202223]">{isEn ? 'Sticky / Floating Header' : 'Header Sticky / Melayang'}</span>
                     <input
                       type="checkbox"
                       checked={opts.stickyHeader !== false}
@@ -540,7 +1151,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     />
                   </label>
                   <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
-                    <span className="text-[12px] text-[#202223]">Bar Pencarian Produk</span>
+                    <span className="text-[12px] text-[#202223]">{isEn ? 'Product Search Bar' : 'Bar Pencarian Produk'}</span>
                     <input
                       type="checkbox"
                       checked={opts.showSearchBar !== false}
@@ -549,20 +1160,11 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     />
                   </label>
                   <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
-                    <span className="text-[12px] text-[#202223]">Icon Keranjang Belanja</span>
+                    <span className="text-[12px] text-[#202223]">{isEn ? 'Shopping Cart Icon' : 'Icon Keranjang Belanja'}</span>
                     <input
                       type="checkbox"
                       checked={opts.showCartBadge !== false}
                       onChange={(e) => handleOptionChange({ showCartBadge: e.target.checked })}
-                      className="w-4 h-4 rounded text-[#202223]"
-                    />
-                  </label>
-                  <label className="flex items-center justify-between cursor-pointer p-2 rounded bg-[#F6F6F7] hover:bg-[#EAEAEA]">
-                    <span className="text-[12px] text-[#202223]">Tombol Kontak WhatsApp</span>
-                    <input
-                      type="checkbox"
-                      checked={opts.showWhatsAppButton !== false}
-                      onChange={(e) => handleOptionChange({ showWhatsAppButton: e.target.checked })}
                       className="w-4 h-4 rounded text-[#202223]"
                     />
                   </label>
@@ -571,13 +1173,13 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                 {/* Navigation Menu Editor */}
                 <div className="space-y-2 pt-3 border-t border-[#E1E3E5]">
                   <div className="flex items-center justify-between">
-                    <label className="text-[12px] font-bold text-[#202223]">Menu Navigasi</label>
+                    <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Navigation Menu' : 'Menu Navigasi'}</label>
                     <button
                       type="button"
                       onClick={() => setShowAddMenuForm(!showAddMenuForm)}
                       className="text-[11px] font-bold text-[#2C6ECB] hover:underline flex items-center gap-1 cursor-pointer"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Tambah Menu
+                      <Plus className="w-3.5 h-3.5" /> {isEn ? 'Add Menu' : 'Tambah Menu'}
                     </button>
                   </div>
 
@@ -585,14 +1187,14 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                     <div className="p-2.5 bg-[#F1F8FF] border border-[#BAE0FF] rounded-lg space-y-2">
                       <input
                         type="text"
-                        placeholder="Nama Menu (mis: Katalog)"
+                        placeholder={isEn ? 'Menu Name (e.g. Catalog)' : 'Nama Menu (mis: Katalog)'}
                         value={newMenuLabel}
                         onChange={(e) => setNewMenuLabel(e.target.value)}
                         className="w-full px-2.5 py-1 text-[12px] bg-white border border-[#E1E3E5] rounded"
                       />
                       <input
                         type="text"
-                        placeholder="Link Tujuan (mis: #katalog atau /produk)"
+                        placeholder={isEn ? 'Target Link (e.g. #catalog or /products)' : 'Link Tujuan (mis: #katalog atau /produk)'}
                         value={newMenuHref}
                         onChange={(e) => setNewMenuHref(e.target.value)}
                         className="w-full px-2.5 py-1 text-[12px] bg-white border border-[#E1E3E5] rounded"
@@ -603,7 +1205,7 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                           onClick={() => setShowAddMenuForm(false)}
                           className="px-2.5 py-1 text-[11px] border border-[#E1E3E5] bg-white rounded"
                         >
-                          Batal
+                          {isEn ? 'Cancel' : 'Batal'}
                         </button>
                         <button
                           type="button"
@@ -622,209 +1224,336 @@ export const RightPanelSettings: React.FC<RightPanelSettingsProps> = ({
                           }}
                           className="px-2.5 py-1 text-[11px] font-bold bg-[#202223] text-white rounded"
                         >
-                          Simpan
+                          {isEn ? 'Save' : 'Simpan'}
                         </button>
                       </div>
                     </div>
                   )}
 
                   <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
-                    {(opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS).map((item: any, idx: number) => (
-                      <div key={item.id || idx} className="flex items-center justify-between p-2 rounded border border-[#E1E3E5] bg-white text-[12px]">
-                        <span className="font-semibold text-[#202223] truncate">{item.label}</span>
-                        <span className="text-[10px] text-[#8C9196] truncate max-w-[80px]">{item.href}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const currentItems = opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS;
-                            const updatedItems = currentItems.filter((_: any, i: number) => i !== idx);
-                            handleOptionChange({ navMenuItems: updatedItems });
-                          }}
-                          className="text-red-500 hover:text-red-700 p-0.5"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
+                    {(opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS).map((item: any, idx: number) => {
+                      const updateNavItem = (patch: Record<string, string>) => {
+                        const currentItems = opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS;
+                        const updatedItems = currentItems.map((navItem: any, i: number) =>
+                          i === idx ? { ...navItem, ...patch } : navItem
+                        );
+                        handleOptionChange({ navMenuItems: updatedItems });
+                      };
+                      return (
+                        <div key={item.id || idx} className="flex items-center gap-1.5 p-1.5 rounded border border-[#E1E3E5] bg-white text-[12px]">
+                          <input
+                            type="text"
+                            value={item.label || ''}
+                            onChange={(e) => updateNavItem({ label: e.target.value })}
+                            aria-label={isEn ? 'Menu name' : 'Nama menu'}
+                            placeholder={isEn ? 'Menu name' : 'Nama menu'}
+                            className="flex-1 min-w-0 px-1.5 py-1 font-semibold text-[#202223] border border-transparent hover:border-[#E1E3E5] focus:border-[#2C6ECB] rounded outline-none"
+                          />
+                          <input
+                            type="text"
+                            value={item.href || ''}
+                            onChange={(e) => updateNavItem({ href: e.target.value })}
+                            aria-label={isEn ? 'Menu target link' : 'Link tujuan menu'}
+                            placeholder="/katalog"
+                            className="w-[90px] px-1.5 py-1 text-[10px] text-[#6D7175] border border-transparent hover:border-[#E1E3E5] focus:border-[#2C6ECB] rounded outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentItems = opts.navMenuItems || DEFAULT_LANDING_NAV_ITEMS;
+                              const updatedItems = currentItems.filter((_: any, i: number) => i !== idx);
+                              handleOptionChange({ navMenuItems: updatedItems });
+                            }}
+                            aria-label={isEn ? 'Remove menu' : 'Hapus menu'}
+                            className="text-red-500 hover:text-red-700 p-0.5 shrink-0"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             )}
 
             {/* ── KATALOG PRODUK / FEATURED PRODUCTS SPECIFIC SETTINGS (TAB KONTEN) ── */}
-            {(selectedSection.id === 'featured_products' || selectedSection.id === 'product_grid') && (
+            {(PRODUCT_SECTION_IDS.includes(selectedSection.id) || selectedSection.id.includes('product')) && (() => {
+              const isSingleProduct = SINGLE_PRODUCT_SECTION_IDS.includes(selectedSection.id);
+              const countMax = PRODUCT_COUNT_MAX[selectedSection.id] || 20;
+              const shownCount = Math.min(
+                countMax,
+                Number(opts.productCount) || defaultSectionProductCount(selectedSection.id, normalizeThemeId(activeThemeId), opts),
+              );
+              return (
               <div className="space-y-4 pt-4 border-t border-[#E1E3E5]">
                 {/* Filter Kategori */}
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-[#202223]">Filter Kategori Produk</label>
-                  <select
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Product Category Filter' : 'Filter Kategori Produk'}</label>
+                  <SearchableSelect
                     value={opts.selectedCategoryId || 'all'}
                     onChange={(e) => handleOptionChange({ selectedCategoryId: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                   >
-                    <option value="all">Semua Kategori Produk</option>
-                    {Array.from(new Set(cmsProducts.map(p => (p as any).category || p.categoryName).filter(Boolean))).map(cat => (
+                    <option value="all">{isEn ? 'All Product Categories' : 'Semua Kategori Produk'}</option>
+                    {Array.from(new Set(effectiveProducts.map((p: any) => p.category || p.categoryName).filter(Boolean))).map((cat: any) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
-                  </select>
+                  </SearchableSelect>
                 </div>
 
-                {/* Jumlah Produk Slider */}
+                {/* Jumlah Produk Slider (section satu produk tidak memakai jumlah) */}
+                {isSingleProduct ? (
+                  <p className="text-[11px] text-[#6D7175] bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg px-3 py-2">
+                    {isEn
+                      ? 'This section shows one product: the first product you select below, or your featured product if none is selected.'
+                      : 'Bagian ini menampilkan satu produk: produk pertama yang Anda pilih di bawah, atau produk unggulan bila belum ada yang dipilih.'}
+                  </p>
+                ) : (
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <label className="text-[12px] font-bold text-[#202223]">Jumlah Produk Ditampilkan</label>
+                    <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Number of Products Shown' : 'Jumlah Produk Ditampilkan'}</label>
                     <span className="text-[11px] font-bold text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded">
-                      {opts.productCount || 4} Produk
+                      {isEn ? `${shownCount} Products` : `${shownCount} Produk`}
                     </span>
                   </div>
                   <input
                     type="range"
                     min="1"
-                    max="20"
+                    max={countMax}
                     step="1"
-                    value={opts.productCount || 4}
-                    onChange={(e) => handleOptionChange({ productCount: parseInt(e.target.value) })}
+                    value={shownCount}
+                    onChange={(e) => handleOptionChange({ productCount: parseInt(e.target.value, 10) })}
                     className="w-full h-1.5 bg-[#E1E3E5] rounded-lg appearance-none cursor-pointer"
                   />
+                  <p className="text-[10px] text-[#8C9196]">
+                    {isEn
+                      ? 'Products without a photo are skipped in gallery sections; fewer products appear if the store has fewer.'
+                      : 'Pada bagian galeri, produk tanpa foto dilewati; produk tampil lebih sedikit bila jumlah produk toko kurang.'}
+                  </p>
                 </div>
+                )}
 
                 {/* Urutan Produk */}
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-[#202223]">Urutan Produk</label>
-                  <select
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Product Order' : 'Urutan Produk'}</label>
+                  <SearchableSelect
                     value={opts.sortOrder || 'default'}
                     onChange={(e) => handleOptionChange({ sortOrder: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-[#E1E3E5] text-[13px] text-[#202223] focus:border-[#2C6ECB]"
                   >
-                    <option value="default">Default (Sesuai Urutan Store)</option>
-                    <option value="price-asc">Harga: Termurah ke Termahal</option>
-                    <option value="price-desc">Harga: Termahal ke Termurah</option>
-                    <option value="name-asc">Nama Produk: A - Z</option>
-                    <option value="newest">Produk Terbaru</option>
-                  </select>
+                    <option value="default">{isEn ? 'Default (Store Order)' : 'Default (Sesuai Urutan Store)'}</option>
+                    <option value="price-asc">{isEn ? 'Price: Low to High' : 'Harga: Termurah ke Termahal'}</option>
+                    <option value="price-desc">{isEn ? 'Price: High to Low' : 'Harga: Termahal ke Termurah'}</option>
+                    <option value="name-asc">{isEn ? 'Product Name: A - Z' : 'Nama Produk: A - Z'}</option>
+                    <option value="newest">{isEn ? 'Newest Products' : 'Produk Terbaru'}</option>
+                  </SearchableSelect>
                 </div>
 
                 {/* Manual Product Selection (Pick Specific Products) */}
                 <div className="space-y-2 pt-3 border-t border-[#E1E3E5]">
-                  <label className="text-[12px] font-bold text-[#202223]">Pilih Produk Spesifik (Manual)</label>
-                  <p className="text-[10px] text-[#8C9196]">Centang produk yang ingin ditampilkan khusus pada section ini:</p>
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar p-2 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg">
-                    {cmsProducts.map(product => {
+                  <label className="text-[12px] font-bold text-[#202223]">{isEn ? 'Select Specific Products (Manual)' : 'Pilih Produk Spesifik (Manual)'}</label>
+                  <p className="text-[10px] text-[#8C9196]">{isEn ? 'Check the products to show specifically in this section:' : 'Centang produk yang ingin ditampilkan khusus pada section ini:'}</p>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar p-2 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg">
+                    {effectiveProducts.map((product: any) => {
                       const selectedIds = opts.selectedProductIds || [];
-                      const isChecked = selectedIds.length === 0 || selectedIds.includes(product.id);
+                      // Pastikan jika ada selectedIds lama yang tidak cocok dengan produk saat ini, jangan auto-uncheck semua produk baru
+                      const hasMatchingProduct = effectiveProducts.some((p: any) => selectedIds.includes(p.id));
+                      const isChecked = selectedIds.length === 0 || !hasMatchingProduct || selectedIds.includes(product.id);
                       return (
                         <label key={product.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-white transition cursor-pointer text-[11px] text-[#202223]">
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={(e) => {
-                              let newIds = [...(opts.selectedProductIds || cmsProducts.map(p => p.id))];
+                              const allProds = effectiveProducts;
+                              let newIds = hasMatchingProduct ? [...selectedIds] : allProds.map((p: any) => p.id);
                               if (e.target.checked) {
                                 if (!newIds.includes(product.id)) newIds.push(product.id);
                               } else {
-                                newIds = newIds.filter(id => id !== product.id);
+                                newIds = newIds.filter((id: any) => id !== product.id);
                               }
                               handleOptionChange({ selectedProductIds: newIds });
                             }}
                             className="w-3.5 h-3.5 rounded text-[#202223]"
                           />
                           <span className="truncate flex-1 font-medium">{product.name}</span>
-                          <span className="text-[#8C9196] font-mono shrink-0">Rp {product.price.toLocaleString('id-ID')}</span>
+                          <span className="text-[#8C9196] font-mono shrink-0">Rp {Number(product.price || 0).toLocaleString('id-ID')}</span>
                         </label>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Data Produk Direct Editor */}
+                {/* Data Produk Direct Editor (Full controls: name, description, price, stock, category, image) */}
                 <div className="space-y-3 pt-4 border-t border-[#E1E3E5]">
                   <div className="flex items-center justify-between">
-                    <label className="text-[12px] font-bold text-[#202223]">Data Produk (Edit Teks & Gambar)</label>
-                    <span className="text-[10px] text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded font-semibold">Real-time CMS</span>
+                    <div>
+                      <label className="text-[12px] font-bold text-[#202223] block">{isEn ? 'Product Detail Editor' : 'Editor Detail Produk'}</label>
+                      <span className="text-[10px] text-[#8C9196]">{isEn ? 'Click a product to edit its full details' : 'Klik produk untuk mengedit data lengkap'}</span>
+                    </div>
+                    <span className="text-[10px] text-[#2C6ECB] bg-[#F1F8FF] px-2 py-0.5 rounded font-semibold shrink-0">Real-time CMS</span>
                   </div>
-                  <div className="space-y-3 max-h-[260px] overflow-y-auto custom-scrollbar pr-1">
-                    {cmsProducts.map(product => (
-                      <div key={product.id} className="p-3 bg-[#F6F6F7] border border-[#E1E3E5] rounded-lg space-y-2">
-                        <div className="flex gap-2">
-                          <div className="relative group w-12 h-12 shrink-0 cursor-pointer">
-                            <img
-                              src={product.image || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=300'}
-                              alt={product.name}
-                              className="w-full h-full object-cover rounded-md border border-[#E1E3E5]"
-                              referrerPolicy="no-referrer"
-                            />
-                            <label
-                              htmlFor={`product-img-upload-${product.id}`}
-                              className="absolute inset-0 bg-black/50 text-white rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
-                              title="Ganti Foto dari Perangkat"
-                            >
-                              <Upload className="w-4 h-4" />
-                            </label>
-                          </div>
 
-                          <div className="flex-1 space-y-1.5 min-w-0">
-                            <input
-                              type="text"
-                              value={product.name}
-                              onChange={(e) => updateProduct({ ...product, name: e.target.value })}
-                              className="w-full px-2 py-1 text-[12px] font-semibold text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
-                              placeholder="Nama Produk"
-                            />
-                            <input
-                              type="number"
-                              value={product.price}
-                              onChange={(e) => updateProduct({ ...product, price: Number(e.target.value) })}
-                              className="w-full px-2 py-1 text-[12px] text-[#202223] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
-                              placeholder="Harga"
-                            />
-                          </div>
-                        </div>
+                  <div className="space-y-2.5 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
+                    {effectiveProducts.map((product: any) => {
+                      const isExpanded = expandedProductId === product.id;
 
-                        {/* Upload Button + URL Input Combo */}
-                        <div className="flex items-center gap-1.5">
-                          <label
-                            htmlFor={`product-img-upload-${product.id}`}
-                            className="py-1 px-2 rounded border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center gap-1 shrink-0"
-                            title="Upload foto dari galeri HP atau komputer"
+
+                      return (
+                        <div key={product.id} className="bg-[#FAF7F7] border border-[#E1E3E5] rounded-xl overflow-hidden shadow-2xs transition">
+                          {/* Collapsible Header */}
+                          <div
+                            onClick={() => setExpandedProductId(isExpanded ? null : product.id)}
+                            className="p-2.5 bg-white hover:bg-gray-50 flex items-center justify-between gap-2.5 cursor-pointer border-b border-[#E1E3E5]"
                           >
-                            <Upload className="w-3 h-3" />
-                            <span>Upload Foto</span>
-                          </label>
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <img
+                                src={product.image || product.imageUrl || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=300'}
+                                alt={product.name}
+                                className="w-9 h-9 object-cover rounded-lg border border-[#E1E3E5] shrink-0"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="min-w-0">
+                                <h4 className="text-[12px] font-bold text-[#202223] truncate">{product.name}</h4>
+                                <div className="flex items-center gap-2 text-[10px] text-[#8C9196]">
+                                  <span>Rp {Number(product.price || 0).toLocaleString('id-ID')}</span>
+                                  <span>•</span>
+                                  <span>{isEn ? 'Stock' : 'Stok'}: {product.stock ?? 10}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-gray-400 p-1 shrink-0">
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </div>
+                          </div>
 
-                          <input
-                            type="file"
-                            id={`product-img-upload-${product.id}`}
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  const dataUrl = event.target?.result as string;
-                                  if (dataUrl) {
-                                    updateProduct({ ...product, image: dataUrl } as any);
-                                  }
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
+                          {/* Expanded Full Edit Form */}
+                          {isExpanded && (
+                            <div className="p-3 space-y-3 bg-[#FAF7F7]">
+                              {/* 1. Nama Produk */}
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Product Name' : 'Nama Produk'}</label>
+                                <input
+                                  type="text"
+                                  value={product.name || ''}
+                                  onChange={(e) => editProduct(product, { name: e.target.value })}
+                                  onBlur={() => flushProductSave(product.id)}
+                                  placeholder={isEn ? 'Product Name' : 'Nama Produk'}
+                                  className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                />
+                              </div>
 
-                          <input
-                            type="text"
-                            value={product.image || ''}
-                            onChange={(e) => updateProduct({ ...product, image: e.target.value } as any)}
-                            className="flex-1 min-w-0 px-2 py-1 text-[11px] text-[#6D7175] bg-white border border-[#E1E3E5] rounded-md focus:border-[#2C6ECB]"
-                            placeholder="Atau Tempel URL Gambar"
-                          />
+                              {/* 2. Deskripsi Produk */}
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Product Description' : 'Deskripsi Produk'}</label>
+                                <textarea
+                                  rows={2}
+                                  value={product.description || ''}
+                                  onChange={(e) => editProduct(product, { description: e.target.value })}
+                                  onBlur={() => flushProductSave(product.id)}
+                                  placeholder={isEn ? 'Short product description...' : 'Deskripsi singkat produk...'}
+                                  className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                />
+                              </div>
+
+                              {/* 3. Harga & Stok */}
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Price (Rp)' : 'Harga (Rp)'}</label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={product.price ?? ''}
+                                    onChange={(e) => editProduct(product, { price: e.target.value })}
+                                    onBlur={() => flushProductSave(product.id)}
+                                    className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Stock' : 'Stok'}</label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    step={1}
+                                    value={product.stock ?? ''}
+                                    onChange={(e) => editProduct(product, { stock: e.target.value })}
+                                    onBlur={() => flushProductSave(product.id)}
+                                    className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* 4. Kategori */}
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Category' : 'Kategori'}</label>
+                                <input
+                                  type="text"
+                                  value={product.category ?? product.categoryName ?? ''}
+                                  onChange={(e) => editProduct(product, { category: e.target.value, categoryName: e.target.value })}
+                                  onBlur={() => flushProductSave(product.id)}
+                                  placeholder={isEn ? 'Category (e.g. Clothing, Art, Food)' : 'Kategori (mis: Pakaian, Seni, Makanan)'}
+                                  className="w-full px-2.5 py-1.5 text-[12px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                />
+                              </div>
+
+                              {/* 5. Gambar Produk (Upload + URL) */}
+                              <div className="space-y-1.5 pt-1">
+                                <label className="text-[11px] font-bold text-gray-700">{isEn ? 'Product Photo' : 'Foto Produk'}</label>
+                                <div className="flex items-center gap-2">
+                                  <label
+                                    htmlFor={`full-product-upload-${product.id}`}
+                                    className="py-1 px-2.5 rounded-lg border border-[#2C6ECB] bg-[#F1F8FF] text-[11px] font-bold text-[#2C6ECB] hover:bg-[#BAE0FF]/40 transition cursor-pointer flex items-center gap-1.5 shrink-0"
+                                  >
+                                    <Upload className="w-3.5 h-3.5" />
+                                    <span>{uploadingProductId === product.id ? (isEn ? 'Uploading...' : 'Mengupload...') : 'Upload'}</span>
+                                  </label>
+                                  <input
+                                    type="file"
+                                    id={`full-product-upload-${product.id}`}
+                                    accept="image/*"
+                                    className="hidden"
+                                    disabled={uploadingProductId === product.id}
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      e.target.value = '';
+                                      if (!file) return;
+                                      setProductUploadError(null);
+                                      setUploadingProductId(product.id);
+                                      try {
+                                        const url = await mediaService.uploadImage(file, 'product', store.id);
+                                        editProduct(product, { image: url, imageUrl: url });
+                                        flushProductSave(product.id);
+                                      } catch (err: any) {
+                                        setProductUploadError({ id: product.id, message: err?.message || (isEn ? 'Failed to upload photo.' : 'Gagal mengupload foto.') });
+                                      } finally {
+                                        setUploadingProductId(null);
+                                      }
+                                    }}
+                                  />
+                                  <input
+                                    type="text"
+                                    value={product.image || product.imageUrl || ''}
+                                    onChange={(e) => editProduct(product, { image: e.target.value, imageUrl: e.target.value })}
+                                    onBlur={() => flushProductSave(product.id)}
+                                    className="flex-1 min-w-0 px-2.5 py-1.5 text-[11px] bg-white border border-[#E1E3E5] rounded-lg focus:border-[#2C6ECB]"
+                                    placeholder={isEn ? 'Or enter a Photo URL' : 'Atau masukkan URL Foto'}
+                                  />
+                                </div>
+                                {productUploadError?.id === product.id && (
+                                  <p className="text-[11px] text-red-600">{productUploadError.message}</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
-            )}
+              );
+            })()}
         </div>
       </div>
     </aside>

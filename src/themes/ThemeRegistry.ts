@@ -1,7 +1,8 @@
 import { MinimalistNavbar, MinimalistHero, MinimalistFeaturedProducts, MinimalistFooter, MinimalistBrandPhilosophy, MinimalistCollectionGrid } from './minimalist';
 import { FuturisticNavbar, FuturisticHero, FuturisticFeaturedProducts, FuturisticFooter, FuturisticTechFeatures, FuturisticProductComparison, FuturisticFloatingShowcase, FuturisticInnovationCta } from './futuristic';
-import { EditorialNavbar, EditorialHero, EditorialLookbook, EditorialCampaign, EditorialAsymmetricShowcase, EditorialBrandStory, EditorialJournal, EditorialFooter } from './editorial';
-import { NatureNavbar, NatureHero, NatureIngredientStory, NatureSustainability, NatureFooter } from './nature';
+import { ModernNavbar, ModernHero, ModernFeaturedProducts, ModernFooter, ModernPromoBanner } from './modern';
+import { EditorialNavbar, EditorialHero, EditorialLookbook, EditorialCampaign, EditorialAsymmetricShowcase, EditorialBrandStory, EditorialJournal, EditorialFooter, EditorialProductGrid } from './editorial';
+import { NatureNavbar, NatureHero, NatureIngredientStory, NatureSustainability, NatureFooter, NatureFeaturedProducts, NatureProductCard } from './nature';
 import { LuxuryNavbar, LuxuryHero, LuxurySignatureCollection, LuxuryCraftsmanship, LuxuryPrivateCollection, LuxuryFooter } from './luxury';
 import { BoldNavbar, BoldHero, BoldLatestDrop, BoldCategoryTiles, BoldLookbook, BoldLimitedRelease, BoldCommunityBoard, BoldFooter } from './bold';
 import { CuteNavbar, CuteHero, CuteFeaturedProducts, CuteFooter } from './cute';
@@ -13,9 +14,9 @@ import { FashionNavbar, FashionHero, FashionLookbook, FashionFeaturedProducts, F
 export type ThemeId = 'minimalist' | 'futuristic' | 'editorial' | 'nature' | 'luxury' | 'bold' | 'cute' | 'elegant' | 'modern' | 'creative' | 'professional' | 'fashion';
 
 export interface ThemeComponents {
-  Navbar: React.FC;
-  Hero: React.FC;
-  Footer: React.FC;
+  Navbar: React.FC<any>;
+  Hero: React.FC<any>;
+  Footer: React.FC<any>;
   ProductCard?: React.FC<any>; // Allow custom product cards per theme
   [key: string]: React.FC<any> | undefined; // Generic mapping for other sections
 }
@@ -39,8 +40,8 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     AsymmetricShowcase: EditorialAsymmetricShowcase,
     BrandStory: EditorialBrandStory,
     Journal: EditorialJournal,
-    FeaturedProducts: CuteFeaturedProducts,
-    ProductGrid: CuteFeaturedProducts,
+    FeaturedProducts: EditorialProductGrid,
+    ProductGrid: EditorialProductGrid,
   },
   futuristic: {
     Navbar: FuturisticNavbar,
@@ -59,8 +60,9 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     Footer: NatureFooter,
     IngredientStory: NatureIngredientStory,
     Sustainability: NatureSustainability,
-    FeaturedProducts: CuteFeaturedProducts,
-    ProductGrid: CuteFeaturedProducts,
+    FeaturedProducts: NatureFeaturedProducts,
+    ProductGrid: NatureFeaturedProducts,
+    ProductCard: NatureProductCard,
   },
   luxury: {
     Navbar: LuxuryNavbar,
@@ -69,8 +71,8 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
     SignatureCollection: LuxurySignatureCollection,
     CraftsmanshipStory: LuxuryCraftsmanship,
     PrivateCollection: LuxuryPrivateCollection,
-    FeaturedProducts: CuteFeaturedProducts,
-    ProductGrid: CuteFeaturedProducts,
+    FeaturedProducts: LuxurySignatureCollection,
+    ProductGrid: LuxurySignatureCollection,
   },
   bold: {
     Navbar: BoldNavbar,
@@ -87,12 +89,12 @@ export const ThemeRegistry: Record<ThemeId, ThemeComponents> = {
   cute: { Navbar: CuteNavbar, Hero: CuteHero, Footer: CuteFooter, FeaturedProducts: CuteFeaturedProducts, ProductGrid: CuteFeaturedProducts },
   elegant: { Navbar: ElegantNavbar, Hero: ElegantHero, Footer: ElegantFooter, FeaturedProducts: ElegantFeaturedProducts, ProductGrid: ElegantFeaturedProducts },
   modern: { 
-    Navbar: FuturisticNavbar, 
-    Hero: FuturisticHero, 
-    Footer: FuturisticFooter,
-    FeaturedProducts: FuturisticFeaturedProducts,
-    ProductGrid: FuturisticFeaturedProducts,
-    PromoBanner: FuturisticInnovationCta
+    Navbar: ModernNavbar, 
+    Hero: ModernHero, 
+    Footer: ModernFooter,
+    FeaturedProducts: ModernFeaturedProducts,
+    ProductGrid: ModernFeaturedProducts,
+    PromoBanner: ModernPromoBanner
   },
   creative: { 
     Navbar: CreativeNavbar, 
@@ -133,12 +135,12 @@ export const normalizeThemeId = (id?: string): ThemeId => {
   if (cleanId === 'futuristic' || cleanId === 'futuristic_dark' || cleanId === 'future_shop' || cleanId.includes('futur')) return 'futuristic';
   if (cleanId === 'luxury' || cleanId === 'editorial_luxury' || cleanId === 'maison' || cleanId.includes('luxury')) return 'luxury';
   if (cleanId === 'editorial' || cleanId === 'editorial_commerce' || cleanId.includes('editorial')) return 'editorial';
-  if (cleanId === 'nature' || cleanId === 'nature_organic' || cleanId === 'green_market' || cleanId.includes('nature')) return 'nature';
+  if (cleanId === 'nature' || cleanId === 'nature_organic' || cleanId === 'green_market' || cleanId.includes('nature') || cleanId.includes('green')) return 'nature';
   if (cleanId === 'creative' || cleanId === 'creative_studio' || cleanId.includes('creative')) return 'creative';
   if (cleanId === 'professional' || cleanId === 'pro_corporate' || cleanId === 'pro_commerce' || cleanId.includes('pro')) return 'professional';
   if (cleanId === 'cute' || cleanId === 'cute_store' || cleanId.includes('cute')) return 'cute';
   if (cleanId === 'fashion' || cleanId === 'fashion_store' || cleanId === 'chic_fashion' || cleanId.includes('fashion')) return 'fashion';
-  if (cleanId === 'elegant' || cleanId === 'elegant_store' || cleanId.includes('elegant')) return 'elegant';
+  if (cleanId === 'elegant' || cleanId === 'elegant_store' || cleanId.includes('elegant')) return 'luxury';
 
   return 'minimalist';
 };
@@ -156,5 +158,6 @@ export const normalizeThemeId = (id?: string): ThemeId => {
 (ThemeRegistry as any)['chic_fashion'] = ThemeRegistry['fashion'];
 (ThemeRegistry as any)['cute_store'] = ThemeRegistry['cute'];
 (ThemeRegistry as any)['fashion_store'] = ThemeRegistry['fashion'];
-(ThemeRegistry as any)['elegant_store'] = ThemeRegistry['elegant'];
+(ThemeRegistry as any)['elegant_store'] = ThemeRegistry['luxury'];
+(ThemeRegistry as any)['elegant'] = ThemeRegistry['luxury'];
 

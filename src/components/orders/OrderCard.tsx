@@ -9,16 +9,22 @@ import {
   CheckCircle2,
   Package,
   Eye,
+  Clock,
+  Loader2,
+  XCircle,
 } from 'lucide-react';
 import { Order } from '../../types';
+import { getMerchantOrderAction } from '../../utils/orderFlow';
 import { formatRupiah, formatDateIndo, generateTrackingLink } from '../../utils/formatters';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { buyerNote, displayAddress } from './receipt/receiptData';
 
 interface OrderCardProps {
   order: Order;
   onProcessShipping: (order: Order) => void;
   onPrintReceipt: (order: Order) => void;
   onMarkCompleted?: (orderId: string) => void;
+  onConfirmCodOrder?: (orderId: string) => Promise<void>;
   onSelectOrder?: (order: Order) => void;
   onShowNotification: (msg: string) => void;
 }
@@ -28,17 +34,39 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   onProcessShipping,
   onPrintReceipt,
   onMarkCompleted,
+  onConfirmCodOrder,
   onSelectOrder,
   onShowNotification,
 }) => {
-  const { t, language } = useLanguage();
+  const { t, language, isEn } = useLanguage();
   const [copiedResi, setCopiedResi] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const nextAction = getMerchantOrderAction(order);
+  const isCancelled = order.shippingStatus === 'Dibatalkan';
+  const note = buyerNote(order);
+  const address = displayAddress(order.customerAddress);
+  const courierLabel = [order.courier, order.courierService?.split('•')[0].trim()].filter(Boolean).join(' · ');
+
+  const handleConfirmCod = async () => {
+    if (!onConfirmCodOrder) return;
+    setIsConfirming(true);
+    try {
+      await onConfirmCodOrder(order.id);
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  const isAwaitingPaymentCheck = order.paymentStatus !== 'Sudah Dibayar' && Boolean(order.paymentConfirmedAt);
+  const paymentBadgeClass = isAwaitingPaymentCheck
+    ? 'text-amber-800 bg-amber-50 border-amber-300'
+    : 'text-[#027A48] bg-[#ECFDF3] border-[#ABEFC6]';
 
   const handleCopyResi = () => {
     if (!order.resiNumber) return;
     navigator.clipboard.writeText(order.resiNumber);
     setCopiedResi(true);
-    onShowNotification(`Nomor Resi ${order.resiNumber} berhasil disalin!`);
+    onShowNotification(isEn ? `Tracking number ${order.resiNumber} copied!` : `Nomor Resi ${order.resiNumber} berhasil disalin!`);
     setTimeout(() => setCopiedResi(false), 2000);
   };
 
@@ -59,6 +87,14 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       default:
         return status;
     }
+  };
+
+  const getPaymentStatusLabel = (status: string) => {
+    if (!isEn) return status;
+    if (status === 'Belum Dibayar') return 'Unpaid';
+    if (status === 'Sudah Dibayar') return 'Paid';
+    if (status === 'Gagal') return 'Failed';
+    return status;
   };
 
   const getStatusBadge = (status: string) => {
@@ -89,7 +125,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         <div
           onClick={() => onSelectOrder && onSelectOrder(order)}
           className={`flex items-center gap-1.5 sm:gap-2 min-w-0 ${onSelectOrder ? 'cursor-pointer group' : ''}`}
-          title={onSelectOrder ? 'Klik untuk melihat detail lengkap & tracking pesanan' : undefined}
+          title={onSelectOrder ? (isEn ? 'Click to view full order details & tracking' : 'Klik untuk melihat detail lengkap & tracking pesanan') : undefined}
         >
           <span className="font-bold text-xs sm:text-base text-[#241A1A] tracking-tight group-hover:text-[#66000E] transition shrink-0">
             #{order.orderNumber}
@@ -98,12 +134,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           <span className="font-semibold text-xs sm:text-sm text-[#706866] group-hover:text-[#241A1A] transition truncate">
             {order.customerName}
           </span>
-          {onSelectOrder && (
-            <span className="text-[10px] text-[#706866] bg-[#FAF7F7] px-2 py-0.5 rounded-lg border border-[#E5E0DD] group-hover:border-[#E8DDDE] group-hover:text-[#66000E] group-hover:bg-[#F5E8EA] transition hidden sm:inline-flex items-center gap-1 shrink-0">
-              <Eye className="w-3 h-3" />
-              <span>{t('detail_short', 'Detail')}</span>
-            </span>
-          )}
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
@@ -122,13 +152,17 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         <div className="md:col-span-2 space-y-2">
           {order.items.map((item, idx) => (
             <div key={idx} className="flex items-center gap-2.5 sm:gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white border border-[#EAEAEA] overflow-hidden shrink-0">
-                <img
-                  src={item.productImage || 'https://images.unsplash.com/photo-1589310243389-96a5483213a8?w=100'}
-                  alt={item.productName}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#FAF7F7] border border-[#EAEAEA] overflow-hidden shrink-0 flex items-center justify-center">
+                {item.productImage ? (
+                  <img
+                    src={item.productImage}
+                    alt={item.productName}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <Package className="w-4 h-4 text-[#B5ABA8]" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <h5 className="font-semibold text-xs sm:text-sm text-[#1F1F1F] truncate">
@@ -152,10 +186,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             </div>
           ))}
 
-          {order.notes && (
+          {note && (
             <div className="text-[11px] sm:text-xs text-[#555555] bg-[#F9F9F9] px-2.5 py-1.5 rounded-lg border border-[#EAEAEA] mt-1 flex items-start gap-1.5">
               <span className="font-semibold text-[#1F1F1F] shrink-0">{t('buyer_note', 'Catatan:')}</span>
-              <span className="line-clamp-2">{order.notes}</span>
+              <span className="line-clamp-2">{note}</span>
             </div>
           )}
         </div>
@@ -167,25 +201,49 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <div className="flex items-center gap-1.5 font-semibold text-[#1F1F1F] text-[11px] sm:text-xs truncate">
                 <MapPin className="w-3.5 h-3.5 text-[#66000E] shrink-0" />
                 <span className="truncate">{order.customerCity}</span>
-                <span className="text-[#CCCCCC] hidden sm:inline">•</span>
-                <span className="text-[#555555] font-normal hidden sm:inline">{order.courier}</span>
               </div>
-              <span className="font-semibold text-[#027A48] bg-[#ECFDF3] border border-[#ABEFC6] px-1.5 sm:px-2 py-0.5 rounded text-[10px] shrink-0 sm:hidden">
-                {order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Lunas') : order.paymentStatus}
+              <span className={`font-semibold border px-1.5 sm:px-2 py-0.5 rounded text-[10px] shrink-0 sm:hidden ${paymentBadgeClass}`}>
+                {isAwaitingPaymentCheck ? (isEn ? 'Needs Check' : 'Perlu Dicek') : order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Lunas') : getPaymentStatusLabel(order.paymentStatus)}
               </span>
             </div>
-            <p className="text-[11px] text-[#555555] mt-0.5 line-clamp-1 sm:line-clamp-2">{order.customerAddress}</p>
-            <p className="text-[11px] text-[#777777] font-mono mt-0.5 hidden sm:block">WA: {order.customerPhone}</p>
+            {address && (
+              <p className="text-[11px] text-[#555555] mt-0.5 line-clamp-1 sm:line-clamp-2" title={address}>{address}</p>
+            )}
+            <p className="text-[11px] text-[#777777] font-mono mt-0.5 hidden sm:block">{order.customerPhone}</p>
           </div>
 
-          <div className="pt-2 border-t border-[#E5E0DD] hidden sm:flex items-center justify-between">
-            <span className="font-semibold text-[#1F1F1F]">{t('courier_colon', 'Kurir:')} {order.courier}</span>
-            <span className="font-semibold text-[#027A48] bg-[#ECFDF3] border border-[#ABEFC6] px-2 py-0.5 rounded-md text-[10px]">
-              {order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Sudah Dibayar') : (order.paymentStatus === 'Belum Dibayar' ? t('order_unpaid', 'Belum Dibayar') : order.paymentStatus)}
+          <div className="pt-2 border-t border-[#E5E0DD] hidden sm:flex items-center justify-between gap-2">
+            <span className="flex items-center gap-1.5 min-w-0 text-[11px] font-semibold text-[#1F1F1F]">
+              <Package className="w-3.5 h-3.5 text-[#706866] shrink-0" />
+              <span className="truncate">{courierLabel || '-'}</span>
+            </span>
+            <span className={`font-semibold border px-2 py-0.5 rounded-md text-[10px] shrink-0 ${paymentBadgeClass}`}>
+              {isAwaitingPaymentCheck ? (isEn ? 'Awaiting Payment Check' : 'Menunggu Pengecekan Bayar') : order.paymentStatus === 'Sudah Dibayar' ? t('order_paid', 'Sudah Dibayar') : (order.paymentStatus === 'Belum Dibayar' ? t('order_unpaid', 'Belum Dibayar') : getPaymentStatusLabel(order.paymentStatus))}
             </span>
           </div>
         </div>
       </div>
+
+      {/* Penanda pesanan dibatalkan */}
+      {isCancelled && (
+        <div className="p-2 sm:p-3 bg-[#FEF3F2] rounded-xl border border-[#FECDCA] flex items-start gap-2 text-xs">
+          <XCircle className="w-4 h-4 shrink-0 text-[#B42318]" />
+          <p className="text-[#B42318] leading-relaxed">
+            <span className="font-semibold">
+              {order.cancelledBy === 'buyer'
+                ? (isEn ? 'Cancelled by the buyer' : 'Dibatalkan oleh pembeli')
+                : order.cancelledBy === 'merchant'
+                ? (isEn ? 'Cancelled by your store' : 'Dibatalkan oleh toko Anda')
+                : order.cancelledBy === 'system'
+                ? (isEn ? 'Cancelled automatically (not paid within 24 hours)' : 'Dibatalkan otomatis (tidak dibayar dalam 24 jam)')
+                : (isEn ? 'Order cancelled' : 'Pesanan dibatalkan')}
+            </span>
+            {order.cancelledBy !== 'system' && order.cancelReason && (
+              <span className="text-[#706866]">{` · ${isEn ? 'Reason' : 'Alasan'}: ${order.cancelReason}`}</span>
+            )}
+          </p>
+        </div>
+      )}
 
       {/* Resi Box if shipped */}
       {order.resiNumber && (
@@ -241,7 +299,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-xl border border-[#E8DDDE] bg-[#F5E8EA] text-[#66000E] hover:bg-[#F9EDEF] transition cursor-pointer"
-                title="Cetak Label Pengiriman"
+                title={isEn ? 'Print Shipping Label' : 'Cetak Label Pengiriman'}
               >
                 <Printer className="w-4 h-4" />
               </a>
@@ -249,7 +307,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <button
                 onClick={() => onPrintReceipt(order)}
                 className="p-2 rounded-xl border border-[#E5E0DD] bg-white text-[#706866] hover:bg-[#FAF7F7] transition cursor-pointer"
-                title="Cetak Struk"
+                title={isEn ? 'Print Receipt' : 'Cetak Struk'}
               >
                 <Printer className="w-4 h-4" />
               </button>
@@ -271,7 +329,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 px-3 py-2 min-h-[38px] rounded-xl border border-[#E8DDDE] bg-[#F5E8EA] text-[#66000E] hover:bg-[#F9EDEF] font-semibold text-xs transition cursor-pointer"
-                title="Cetak Label Pengiriman PDF (Biteship)"
+                title={isEn ? 'Print Shipping Label PDF (Biteship)' : 'Cetak Label Pengiriman PDF (Biteship)'}
               >
                 <Printer className="w-4 h-4" />
                 <span>{t('label_pdf', 'Label PDF')}</span>
@@ -280,7 +338,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <button
                 onClick={() => onPrintReceipt(order)}
                 className="p-2.5 rounded-xl border border-[#E5E0DD] text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer"
-                title="Cetak Struk Thermal / Label"
+                title={isEn ? 'Print Thermal Receipt / Label' : 'Cetak Struk Thermal / Label'}
               >
                 <Printer className="w-4 h-4" />
               </button>
@@ -292,7 +350,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             <button
               onClick={() => onSelectOrder(order)}
               className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-white hover:bg-[#FAF7F7] text-[#241A1A] font-semibold text-xs border border-[#E5E0DD] transition cursor-pointer shadow-2xs"
-              title="Lihat Detail Lengkap & Tracking"
+              title={isEn ? 'View Full Details & Tracking' : 'Lihat Detail Lengkap & Tracking'}
             >
               <Eye className="w-3.5 h-3.5 text-[#706866]" />
               <span>{t('detail_and_track', 'Detail & Lacak')}</span>
@@ -300,7 +358,25 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           )}
 
           {/* Primary Action Button */}
-          {order.shippingStatus === 'Baru' || order.shippingStatus === 'Diproses' ? (
+          {nextAction === 'verify_payment' ? (
+            <button
+              onClick={() => onSelectOrder?.(order)}
+              title={isEn ? 'Mark as paid before arranging shipping' : 'Tandai lunas dulu sebelum mengatur pengiriman'}
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold text-xs transition cursor-pointer active:scale-98"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>{t('check_payment', 'Cek Pembayaran')}</span>
+            </button>
+          ) : nextAction === 'confirm_cod' && onConfirmCodOrder ? (
+            <button
+              onClick={handleConfirmCod}
+              disabled={isConfirming}
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98 disabled:opacity-70"
+            >
+              {isConfirming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+              <span>{t('confirm_order', 'Konfirmasi Pesanan')}</span>
+            </button>
+          ) : nextAction === 'ship' ? (
             <button
               onClick={() => onProcessShipping(order)}
               className="flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98"
@@ -308,7 +384,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <Send className="w-3.5 h-3.5" />
               <span>{t('arrange_shipping', 'Atur Pengiriman')}</span>
             </button>
-          ) : (order.shippingStatus === 'Dikirim' || order.shippingStatus === 'ready_to_ship') && onMarkCompleted ? (
+          ) : nextAction === 'complete' && onMarkCompleted ? (
             <button
               onClick={() => onMarkCompleted(order.id)}
               className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl bg-[#027A48] hover:bg-[#026038] text-white font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-98"
@@ -316,6 +392,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{t('mark_completed', 'Tandai Selesai')}</span>
             </button>
+          ) : isCancelled ? (
+            <span className="inline-flex items-center justify-center gap-1 text-xs font-semibold text-[#B42318] bg-[#FEF3F2] px-2.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl border border-[#FECDCA]">
+              <XCircle className="w-3.5 h-3.5" />
+              <span>{t('filter_cancelled', 'Dibatalkan')}</span>
+            </span>
           ) : (
             <span className="inline-flex items-center justify-center gap-1 text-xs font-semibold text-[#027A48] bg-[#ECFDF3] px-2.5 py-2 min-h-[36px] sm:min-h-[38px] rounded-xl border border-[#ABEFC6]">
               <CheckCircle2 className="w-3.5 h-3.5" />

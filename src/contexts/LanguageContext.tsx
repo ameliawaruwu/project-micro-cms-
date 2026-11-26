@@ -21,6 +21,10 @@ export const translations: Translations = {
   nav_billing: { id: 'Paket Langganan', en: 'Billing Plan' },
   nav_template_website: { id: 'Template Website', en: 'Website Templates' },
   nav_settings: { id: 'Pengaturan Toko', en: 'Store Settings' },
+  nav_tickets: { id: 'Tiket Bantuan', en: 'Support Tickets' },
+  nav_messages: { id: 'Pesan Masuk', en: 'Messages' },
+  nav_vouchers: { id: 'Voucher Promo', en: 'Promo Vouchers' },
+  nav_community: { id: 'Komunitas', en: 'Community' },
   integrations_title: { id: 'Integrasi', en: 'Integrations' },
   payment_title: { id: 'Pembayaran', en: 'Payment' },
   nav_logout: { id: 'Keluar', en: 'Logout' },
@@ -330,6 +334,7 @@ export const translations: Translations = {
   landing_nav_how_it_works: { id: 'Cara Kerja', en: 'How It Works' },
   landing_nav_features: { id: 'Fitur', en: 'Features' },
   landing_nav_faq: { id: 'FAQ', en: 'FAQ' },
+  landing_mobile_nav_label: { id: 'Navigasi menu', en: 'Menu navigation' },
   landing_view_demo: { id: 'Lihat Demo', en: 'View Demo' },
   landing_start_free: { id: 'Mulai Gratis', en: 'Start for Free' },
   landing_login: { id: 'Masuk Akun', en: 'Log In' },
@@ -345,7 +350,10 @@ export const translations: Translations = {
   hero_cta_primary: { id: 'Mulai Gratis', en: 'Start for Free' },
   hero_cta_how: { id: 'Lihat Cara Kerja', en: 'See How It Works' },
   hero_cta_demo: { id: 'Coba Demo', en: 'Try Demo' },
-  hero_trust_easy: { id: 'Mudah digunakan', en: 'Easy to use' },
+  hero_chip_qris: { id: 'Bayar QRIS', en: 'QRIS payments' },
+  hero_chip_shipping: { id: 'Ongkir otomatis', en: 'Auto shipping rates' },
+  hero_chip_tracking: { id: 'Lacak resi', en: 'Order tracking' },
+  hero_trust_easy:{ id: 'Mudah digunakan', en: 'Easy to use' },
   hero_trust_hasslefree: { id: 'Tanpa ribet', en: 'No complexity' },
   hero_trust_umkm: { id: 'Siap untuk UMKM', en: 'Ready for MSMEs' },
   hero_active_stores: { id: '10.000+ Toko Aktif', en: '10,000+ Active Stores' },
@@ -354,7 +362,17 @@ export const translations: Translations = {
   hero_badge_ready_process: { id: 'Siap diproses', en: 'Ready to ship' },
   hero_badge_payment_success: { id: 'Pembayaran Berhasil', en: 'Payment Confirmed' },
   hero_badge_qris_bank: { id: 'QRIS & Bank', en: 'QRIS & Bank' },
-  hero_dash_title: { id: 'Kroomify Dashboard', en: 'Kroomify Dashboard' },
+  hero_claim_title_p1: { id: 'Daftarkan', en: 'Register' },
+  hero_claim_title_highlight: { id: 'nama tokomu', en: 'your store name' },
+  hero_claim_title_p2: { id: 'sekarang!', en: 'now!' },
+  hero_claim_subtitle: { id: 'Dengan LapakQ, siapa pun bisa punya toko online sendiri. Ketik nama usahamu dan lihat alamat tokomu langsung jadi.', en: 'With LapakQ, anyone can own an online store. Type your business name and watch your store address come to life.' },
+  hero_store_input_label: { id: 'Nama toko', en: 'Store name' },
+  hero_store_input_placeholder: { id: 'Contoh: Toko Sari Jaya', en: 'e.g. Sari Jaya Store' },
+  hero_store_submit: { id: 'Buat Toko', en: 'Create Store' },
+  hero_store_submit_short: { id: 'Mulai', en: 'Start' },
+  hero_store_hint: { id: 'Daftar gratis. Alamat tokomu nanti:', en: 'Sign up free. Your store address:' },
+  hero_store_slug_example: { id: 'tokomu', en: 'yourstore' },
+  hero_dash_title: { id: 'LapakQ Dashboard', en: 'LapakQ Dashboard' },
   hero_dash_status_online: { id: 'Online', en: 'Online' },
   hero_dash_tab_overview: { id: 'Ringkasan', en: 'Summary' },
   hero_dash_tab_orders: { id: 'Pesanan', en: 'Orders' },
@@ -380,6 +398,10 @@ export const translations: Translations = {
   product_bullet_3: { id: 'Stok otomatis berkurang saat pesanan dibayar', en: 'Inventory auto-updates immediately when orders are paid' },
   product_cta_add: { id: 'Mulai Tambah Produk', en: 'Start Adding Products' },
   product_cta_simulate: { id: 'Simulasi Produk', en: 'Simulate Product' },
+  product_card_title: { id: 'Etalase siap jual dalam hitungan menit', en: 'A ready-to-sell storefront in minutes' },
+  product_point_photo: { id: 'Foto produk langsung dari kamera HP', en: 'Shoot product photos straight from your phone' },
+  product_point_price: { id: 'Atur harga, varian, dan stok sekali klik', en: 'Set prices, variants, and stock in one click' },
+  product_point_sync: { id: 'Otomatis tampil di link toko Anda', en: 'Shows up on your store link automatically' },
   product_catalog_card_title: { id: 'Katalog Produk Anda', en: 'Your Product Catalog' },
   product_catalog_card_active: { id: 'produk aktif di etalase', en: 'active items on display' },
   product_status_available: { id: 'Tersedia', en: 'In Stock' },
@@ -454,17 +476,23 @@ export const translations: Translations = {
   // FAQ Section
   faq_section_badge: { id: 'Tanya Jawab', en: 'Q & A' },
   faq_section_title: { id: 'Pertanyaan Umum', en: 'Frequently Asked Questions' },
-  faq_section_desc: { id: 'Jawaban untuk hal-hal yang sering ditanyakan seputar Kroomify.', en: 'Clear answers to common questions about Kroomify.' },
+  faq_section_desc: { id: 'Jawaban untuk hal-hal yang sering ditanyakan seputar LapakQ.', en: 'Clear answers to common questions about LapakQ.' },
   faq_need_more_help: { id: 'Butuh bantuan lebih lanjut?', en: 'Need further assistance?' },
   faq_contact_cs: { id: 'Hubungi CS WhatsApp', en: 'Contact WhatsApp Support' },
   faq_q1: { id: 'Apakah saya perlu keahlian teknis atau bisa coding?', en: 'Do I need coding skills or technical background?' },
-  faq_a1: { id: 'Tidak sama sekali. Kroomify dirancang sangat sederhana sehingga siapa pun bisa membuat katalog produk dan melayani pesanan langsung lewat layar smartphone tanpa pengetahuan teknis.', en: 'Not at all. Kroomify is built simply so anyone can create a product catalog and process incoming orders straight from their smartphone.' },
+  faq_a1: { id: 'Tidak sama sekali. LapakQ dirancang sangat sederhana sehingga siapa pun bisa membuat katalog produk dan melayani pesanan langsung lewat layar smartphone tanpa pengetahuan teknis.', en: 'Not at all. LapakQ is built simply so anyone can create a product catalog and process incoming orders straight from their smartphone.' },
   faq_q2: { id: 'Berapa lama proses pembuatan toko online?', en: 'How long does it take to create an online store?' },
-  faq_a2: { id: 'Kurang dari 5 menit. Cukup daftarkan nama usaha Anda, masukkan foto produk pertama, dan tautan toko online (kroomify.id/toko-anda) langsung aktif dan siap disebarkan ke WhatsApp atau media sosial.', en: 'Less than 5 minutes. Simply register your store name, add your first product photo, and your store link is instantly live and ready to share.' },
+  faq_a2: { id: 'Kurang dari 5 menit. Cukup daftarkan nama usaha Anda, masukkan foto produk pertama, dan tautan toko online (toko-anda.lapakq.com) langsung aktif dan siap disebarkan ke WhatsApp atau media sosial.', en: 'Less than 5 minutes. Simply register your store name, add your first product photo, and your store link is instantly live and ready to share.' },
   faq_q3: { id: 'Bagaimana cara pembeli membayar pesanan?', en: 'How do customers pay for orders?' },
   faq_a3: { id: 'Tersedia pembayaran otomatis menggunakan QRIS Instan (bisa di-scan dari GoPay, OVO, Dana, ShopeePay, serta seluruh mobile banking) dan Transfer Virtual Account Bank resmi.', en: 'Automatic payment methods include instant QRIS (scannable from GoPay, OVO, Dana, ShopeePay, and all banking apps) as well as bank Virtual Accounts.' },
   faq_q4: { id: 'Apakah uang dan saldo hasil jualan saya aman?', en: 'Is my store revenue and wallet balance safe?' },
   faq_a4: { id: 'Sangat aman. Seluruh dana transaksi diproses melalui jalur perbankan terverifikasi dan saldo dompet dapat ditarik langsung ke rekening bank lokal Anda kapan saja tanpa potongan tersembunyi.', en: 'Completely safe. All transaction funds are processed through verified banking channels and can be withdrawn to your bank account anytime without hidden deductions.' },
+  faq_q5: { id: 'Bisakah toko saya memakai domain sendiri?', en: 'Can my store use its own domain?' },
+  faq_a5: { id: 'Bisa. Setiap toko langsung mendapat alamat namatoko.lapakq.com, dan Anda dapat menghubungkan domain milik sendiri dari menu pengaturan toko kapan saja.', en: 'Yes. Every store gets a storename.lapakq.com address right away, and you can connect your own domain from the store settings at any time.' },
+  faq_q6: { id: 'Apakah toko bisa dikelola sepenuhnya dari HP?', en: 'Can I run my store entirely from my phone?' },
+  faq_a6: { id: 'Ya. Dashboard LapakQ ringan dan responsif, jadi menambah produk, memproses pesanan, hingga mengatur tampilan toko bisa dilakukan dari browser HP tanpa install aplikasi.', en: 'Yes. The LapakQ dashboard is light and responsive, so adding products, processing orders, and styling your store all work from your phone browser with no app to install.' },
+  faq_help_title: { id: 'Masih bingung harus mulai dari mana?', en: 'Not sure where to start?' },
+  faq_help_desc: { id: 'Lihat alur singkat membuat toko sampai menerima pesanan pertama.', en: 'See the quick flow from creating a store to your first order.' },
 
   // Final CTA Section
   cta_badge: { id: 'Daftar Gratis', en: 'Free Registration' },
@@ -481,31 +509,15 @@ export const translations: Translations = {
 
   // Footer Section
   footer_brand_desc: { id: 'Kelola produk, pesanan, dan pembayaran tanpa ribet.', en: 'Manage products, orders, and payments without the hassle.' },
-  footer_tag_indonesia: { id: '🇮🇩 100% Karya Anak Bangsa', en: '🇮🇩 Empowering Local Businesses' },
-  footer_col_product: { id: 'Produk', en: 'Products' },
-  footer_link_storefront: { id: 'Beranda Toko', en: 'Storefront' },
-  footer_link_catalog: { id: 'Katalog Produk', en: 'Product Catalog' },
-  footer_link_orders: { id: 'Manajemen Pesanan', en: 'Order Management' },
-  footer_link_courier: { id: 'Integrasi Kurir & QRIS', en: 'Courier & QRIS Integration' },
-  footer_col_company: { id: 'Perusahaan', en: 'Company' },
-  footer_link_about: { id: 'Tentang Kami', en: 'About Us' },
-  footer_link_blog: { id: 'Blog & Edukasi UMKM', en: 'Blog & MSME Tips' },
-  footer_link_contact: { id: 'Kontak Kemitraan', en: 'Partnership Contact' },
-  footer_link_career: { id: 'Karier', en: 'Careers' },
-  footer_col_help: { id: 'Bantuan', en: 'Support' },
-  footer_link_faq: { id: 'FAQ & Tanya Jawab', en: 'FAQ & Help' },
-  footer_link_helpdesk: { id: 'Pusat Bantuan', en: 'Help Center' },
-  footer_link_whatsapp: { id: 'WhatsApp CS 24/7', en: 'WhatsApp CS 24/7' },
-  footer_col_legal: { id: 'Legal', en: 'Legal' },
-  footer_link_privacy: { id: 'Kebijakan Privasi', en: 'Privacy Policy' },
-  footer_link_terms: { id: 'Syarat & Ketentuan', en: 'Terms & Conditions' },
-  footer_link_security: { id: 'Keamanan Data', en: 'Data Security' },
-  footer_copyright: { id: '© 2026 Kroomify. Dibuat untuk UMKM Indonesia.', en: '© 2026 Kroomify. Crafted for Entrepreneurs.' },
-  footer_privacy_safe: { id: 'Privasi Terjaga', en: 'Privacy Protected' },
-  footer_server_secure: { id: 'Server Cepat & Aman', en: 'Fast & Secure Servers' },
+  footer_col_menu: { id: 'Menu', en: 'Menu' },
+  footer_col_contact: { id: 'Kontak', en: 'Contact' },
+  footer_contact_desc: { id: 'Ada pertanyaan? Kirim email ke kami.', en: 'Questions? Send us an email.' },
+  footer_email_subject: { id: 'Bantuan LapakQ', en: 'LapakQ Support' },
+  footer_back_to_top: { id: 'Kembali ke atas halaman LapakQ', en: 'Back to top of LapakQ page' },
+  footer_copyright: { id: '© 2026 LapakQ. Dibuat untuk UMKM Indonesia.', en: '© 2026 LapakQ. Crafted for Entrepreneurs.' },
 
   // Demo Modal & Preview
-  demo_modal_title: { id: 'Demo Interaktif Kroomify', en: 'Kroomify Interactive Demo' },
+  demo_modal_title: { id: 'Demo Interaktif LapakQ', en: 'LapakQ Interactive Demo' },
   demo_modal_subtitle: { id: 'Jelajahi fitur dashboard toko online dalam mode uji coba', en: 'Explore online store dashboard features in trial mode' },
   demo_modal_launch_btn: { id: 'Masuk ke Live Demo Dashboard', en: 'Enter Live Dashboard Demo' },
   demo_modal_register_btn: { id: 'Daftar Akun Toko Baru', en: 'Register New Store Account' },
@@ -513,7 +525,7 @@ export const translations: Translations = {
   // Authentication (Login / Register / Forgot Password)
   auth_login_title: { id: 'Masuk ke Akun Toko', en: 'Log In to Store Account' },
   auth_login_subtitle: { id: 'Kelola toko online dan pesanan Anda', en: 'Manage your online store and orders' },
-  auth_email_label: { id: 'Email atau Username', en: 'Email or Username' },
+  auth_email_label: { id: 'Alamat Email', en: 'Email Address' },
   auth_password_label: { id: 'Kata Sandi', en: 'Password' },
   auth_forgot_password: { id: 'Lupa Kata Sandi?', en: 'Forgot Password?' },
   auth_login_button: { id: 'Masuk', en: 'Log In' },
@@ -608,33 +620,33 @@ export const translations: Translations = {
   branch_delete: { id: 'Hapus Cabang', en: 'Delete Branch' },
   branch_modal_add_title: { id: 'Tambah Cabang / Gudang Asal', en: 'Add Origin Branch / Warehouse' },
   branch_modal_edit_title: { id: 'Edit Cabang / Gudang', en: 'Edit Branch / Warehouse' },
-  branch_form_name: { id: 'Nama Cabang / Gudang', en: 'Branch / Warehouse Name' },
+  branch_form_name: { id: 'Nama Cabang', en: 'Branch Name' },
   branch_form_name_placeholder: {
-    id: 'Contoh: Gudang Pusat Jakarta, Cabang Bandung',
-    en: 'Example: Jakarta Central Warehouse, Bandung Branch'
+    id: 'Contoh: Gudang Bandung',
+    en: 'Example: Bandung Warehouse'
   },
-  branch_form_pic: { id: 'Nama Penanggung Jawab (PIC)', en: 'Person in Charge (PIC) Name' },
-  branch_form_pic_placeholder: { id: 'Nama PIC penyerahan paket', en: 'PIC name for parcel handover' },
-  branch_form_phone: { id: 'No. Handphone PIC', en: 'PIC Phone Number' },
-  branch_form_phone_placeholder: { id: '0812xxxxxxxx (untuk kurir)', en: '0812xxxxxxxx (for courier)' },
-  branch_form_address: { id: 'Alamat Lengkap Gudang', en: 'Full Warehouse Address' },
+  branch_form_pic: { id: 'Nama PIC', en: 'PIC Name' },
+  branch_form_pic_placeholder: { id: 'Penanggung jawab', en: 'Person in charge' },
+  branch_form_phone: { id: 'No. HP PIC', en: 'PIC Phone' },
+  branch_form_phone_placeholder: { id: '0812xxxxxxxx', en: '0812xxxxxxxx' },
+  branch_form_address: { id: 'Alamat', en: 'Address' },
   branch_form_address_placeholder: {
-    id: 'Nama jalan, nomor gudang/ruko, RT/RW, patokan lokasi...',
-    en: 'Street name, unit number, district, landmarks...'
+    id: 'Jalan, nomor, RT/RW',
+    en: 'Street, number, area'
   },
   branch_form_subdistrict: { id: 'Kecamatan', en: 'Subdistrict' },
   branch_form_city: { id: 'Kota / Kab', en: 'City / Regency' },
   branch_form_postal_code: { id: 'Kode Pos', en: 'Postal Code' },
   branch_form_province: { id: 'Provinsi', en: 'Province' },
-  branch_form_default_checkbox: { id: 'Jadikan Cabang Utama', en: 'Set as Primary Branch' },
+  branch_form_default_checkbox: { id: 'Cabang utama', en: 'Primary branch' },
   branch_form_default_hint: {
-    id: 'Cabang utama otomatis terpilih sebagai origin saat checkout dan perhitungan ongkir pembeli.',
-    en: 'Primary branch is automatically selected as origin during checkout and shipping calculation.'
+    id: 'Asal pengiriman default saat checkout',
+    en: 'Default shipping origin at checkout'
   },
-  branch_form_active_checkbox: { id: 'Status Aktif', en: 'Active Status' },
+  branch_form_active_checkbox: { id: 'Aktif', en: 'Active' },
   branch_form_active_hint: {
-    id: 'Cabang aktif dapat digunakan untuk proses booking pengiriman dan penjemputan paket.',
-    en: 'Active branches can be used for shipping bookings and parcel pickups.'
+    id: 'Bisa dipakai untuk pengiriman & pickup',
+    en: 'Available for shipping & pickup'
   },
   branch_form_cancel: { id: 'Batal', en: 'Cancel' },
   branch_form_saving: { id: 'Menyimpan...', en: 'Saving...' },
@@ -691,13 +703,17 @@ export const translations: Translations = {
   bottomnav_payment_methods: { id: 'Metode Pembayaran', en: 'Payment Methods' },
   bottomnav_payment_methods_desc: { id: 'Kelola QRIS, VA, dan rekening pencairan', en: 'Manage QRIS, VA, and payout accounts' },
   bottomnav_store_settings: { id: 'Pengaturan Toko', en: 'Store Settings' },
+  bottomnav_community_desc: { id: 'Keanggotaan & permintaan gabung', en: 'Membership & join requests' },
+  bottomnav_tickets_desc: { id: 'Ajukan & pantau tiket', en: 'Submit & track tickets' },
+  bottomnav_vouchers_desc: { id: 'Kode diskon untuk checkout', en: 'Discount codes for checkout' },
+  bottomnav_messages_desc: { id: 'Pesan dari halaman Hubungi Kami', en: 'Messages from your Contact page' },
   bottomnav_store_settings_desc: { id: 'Nama toko, logo, kontak WA, & profil', en: 'Store name, logo, WhatsApp, & profile' },
 
   // Domain Management Page
   domain_page_title: { id: 'Domain Toko', en: 'Store Domain' },
   domain_page_subtitle: { id: 'Atur alamat web toko online Anda agar profesional dan mudah diingat pelanggan', en: 'Configure your online store web address for a professional and memorable customer experience' },
   domain_type_random: { id: 'Subdomain Acak', en: 'Random Subdomain' },
-  domain_type_random_desc: { id: 'Gratis selamanya dari sistem Kroomify', en: 'Free forever from Kroomify system' },
+  domain_type_random_desc: { id: 'Gratis selamanya dari sistem LapakQ', en: 'Free forever from LapakQ system' },
   domain_type_custom: { id: 'Custom Domain', en: 'Custom Domain' },
   domain_type_custom_desc: { id: 'Gunakan nama domain brand sendiri (.com, .id, dll)', en: 'Use your own custom brand domain (.com, .id, etc.)' },
   domain_available: { id: 'Tersedia', en: 'Available' },
@@ -715,7 +731,7 @@ export const translations: Translations = {
   domain_btn_check: { id: 'Cek Ketersediaan', en: 'Check Availability' },
   domain_btn_checking: { id: 'Memeriksa...', en: 'Checking...' },
   domain_dns_setup_title: { id: 'Panduan Pengaturan DNS Manual', en: 'Manual DNS Configuration Guide' },
-  domain_dns_setup_desc: { id: 'Jika Anda sudah memiliki domain sendiri dari registrar luar, arahkan DNS records berikut ke server Kroomify:', en: 'If you already own a domain from an external registrar, point the following DNS records to Kroomify:' },
+  domain_dns_setup_desc: { id: 'Jika Anda sudah memiliki domain sendiri dari registrar luar, arahkan DNS records berikut ke server LapakQ:', en: 'If you already own a domain from an external registrar, point the following DNS records to LapakQ:' },
   domain_col_type: { id: 'Tipe Record', en: 'Record Type' },
   domain_col_host: { id: 'Nama Host', en: 'Host Name' },
   domain_col_target: { id: 'Nilai Target', en: 'Target Value' },
@@ -918,6 +934,18 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 const LANGUAGE_STORAGE_KEY = 'kroomify_language_preference';
 
+/**
+ * Bahasa aktif untuk kode di luar komponen React atau di luar LanguageProvider
+ * (mis. AuthContext, ErrorBoundary, service). Komponen tetap memakai useLanguage().
+ */
+export const isEnglishPreferred = (): boolean => {
+  try {
+    return localStorage.getItem(LANGUAGE_STORAGE_KEY) === 'en';
+  } catch {
+    return false;
+  }
+};
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     try {
@@ -972,14 +1000,14 @@ export const useLanguage = (): LanguageContextType => {
  * Crisp SVG Vector Flags to fix Windows/cross-platform emoji rendering issues
  */
 const IndonesiaFlagSvg = () => (
-  <svg className="w-3.5 h-3.5 rounded-full overflow-hidden border border-black/10 shrink-0 shadow-2xs" viewBox="0 0 24 24">
-    <rect width="24" height="12" fill="#E11D48" />
-    <rect y="12" width="24" height="12" fill="#FFFFFF" />
+  <svg className="w-4 h-2.5 rounded-[2px] overflow-hidden border border-black/10 shrink-0 shadow-2xs" viewBox="0 0 24 16">
+    <rect width="24" height="8" fill="#E11D48" />
+    <rect y="8" width="24" height="8" fill="#FFFFFF" />
   </svg>
 );
 
 const UkFlagSvg = () => (
-  <svg className="w-3.5 h-3.5 rounded-full overflow-hidden border border-black/10 shrink-0 shadow-2xs" viewBox="0 0 60 30">
+  <svg className="w-4 h-2.5 rounded-[2px] overflow-hidden border border-black/10 shrink-0 shadow-2xs" viewBox="0 0 60 30">
     <clipPath id="lang_uk_clip">
       <path d="M0,0 v30 h60 v-30 z"/>
     </clipPath>
@@ -1010,115 +1038,39 @@ export const LanguageSwitchButton: React.FC<{
 }) => {
   const { language, setLanguage } = useLanguage();
 
+  const toggleLanguage = () => {
+    setLanguage(language === 'id' ? 'en' : 'id');
+  };
+
   if (variant === 'dark') {
     return (
-      <div
-        className={`inline-flex items-center p-0.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/15 shadow-md font-sans select-none ${className}`}
-        role="group"
+      <button
+        type="button"
+        onClick={toggleLanguage}
+        className={`inline-flex items-center gap-1.5 px-2 py-1 text-[13px] font-semibold text-white/90 hover:text-white transition-colors cursor-pointer select-none bg-transparent border-0 focus:outline-none shrink-0 ${className}`}
+        title={language === 'id' ? 'Ganti ke English (EN)' : 'Switch to Bahasa Indonesia (ID)'}
         aria-label="Switch Language / Ganti Bahasa"
       >
-        <button
-          type="button"
-          onClick={() => setLanguage('id')}
-          className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-            language === 'id'
-              ? 'bg-white text-[#66000E] shadow-sm font-bold'
-              : 'text-white/80 hover:text-white hover:bg-white/10'
-          }`}
-          title="Bahasa Indonesia"
-        >
-          <IndonesiaFlagSvg />
-          <span className={compact ? 'text-[11px]' : 'text-xs'}>ID</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setLanguage('en')}
-          className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-            language === 'en'
-              ? 'bg-white text-[#66000E] shadow-sm font-bold'
-              : 'text-white/80 hover:text-white hover:bg-white/10'
-          }`}
-          title="English"
-        >
-          <UkFlagSvg />
-          <span className={compact ? 'text-[11px]' : 'text-xs'}>EN</span>
-        </button>
-      </div>
-    );
-  }
-
-  if (variant === 'glass') {
-    return (
-      <div
-        className={`inline-flex items-center p-0.5 rounded-xl bg-white/70 backdrop-blur-md border border-[#E5E0DD] shadow-2xs font-sans select-none ${className}`}
-        role="group"
-        aria-label="Switch Language / Ganti Bahasa"
-      >
-        <button
-          type="button"
-          onClick={() => setLanguage('id')}
-          className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-            language === 'id'
-              ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]/80 font-bold'
-              : 'text-[#706866] hover:text-[#241A1A] hover:bg-white/50'
-          }`}
-          title="Bahasa Indonesia"
-        >
-          <IndonesiaFlagSvg />
-          <span className={compact ? 'text-[11px]' : 'text-xs'}>ID</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setLanguage('en')}
-          className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-            language === 'en'
-              ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]/80 font-bold'
-              : 'text-[#706866] hover:text-[#241A1A] hover:bg-white/50'
-          }`}
-          title="English"
-        >
-          <UkFlagSvg />
-          <span className={compact ? 'text-[11px]' : 'text-xs'}>EN</span>
-        </button>
-      </div>
+        {language === 'id' ? <IndonesiaFlagSvg /> : <UkFlagSvg />}
+        <span className="text-[12px] font-bold uppercase tracking-wide">
+          {language}
+        </span>
+      </button>
     );
   }
 
   return (
-    <div
-      className={`inline-flex items-center p-0.5 rounded-xl bg-[#FAF7F7] border border-[#E5E0DD] shadow-2xs font-sans select-none ${className}`}
-      role="group"
+    <button
+      type="button"
+      onClick={toggleLanguage}
+      className={`inline-flex items-center gap-1.5 px-2 py-1 text-[13px] font-semibold text-[#706866] hover:text-[#66000E] transition-colors cursor-pointer select-none bg-transparent border-0 focus:outline-none shrink-0 ${className}`}
+      title={language === 'id' ? 'Ganti ke English (EN)' : 'Switch to Bahasa Indonesia (ID)'}
       aria-label="Switch Language / Ganti Bahasa"
     >
-      <button
-        type="button"
-        onClick={() => setLanguage('id')}
-        className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-          language === 'id'
-            ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]/80 font-bold'
-            : 'text-[#706866] hover:text-[#241A1A] hover:bg-white/50'
-        }`}
-        title="Bahasa Indonesia"
-      >
-        <IndonesiaFlagSvg />
-        <span className={compact ? 'text-[11px]' : 'text-xs'}>ID</span>
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setLanguage('en')}
-        className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer ${
-          language === 'en'
-            ? 'bg-white text-[#66000E] shadow-2xs border border-[#E5E0DD]/80 font-bold'
-            : 'text-[#706866] hover:text-[#241A1A] hover:bg-white/50'
-        }`}
-        title="English"
-      >
-        <UkFlagSvg />
-        <span className={compact ? 'text-[11px]' : 'text-xs'}>EN</span>
-      </button>
-    </div>
+      {language === 'id' ? <IndonesiaFlagSvg /> : <UkFlagSvg />}
+      <span className="text-[12px] font-bold uppercase tracking-wide">
+        {language}
+      </span>
+    </button>
   );
 };

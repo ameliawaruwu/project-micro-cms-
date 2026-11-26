@@ -170,7 +170,7 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
 
       {/* 3. Interactive Sales Chart Area */}
       <div className="pt-4">
-        <div className="flex items-center justify-between text-xs text-[#706866] font-normal mb-3">
+        <div className="flex items-center justify-between text-xs text-[#706866] font-normal mb-6 pb-1.5 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <span className="font-medium text-slate-800">{t('chart_revenue_title', 'Grafik Omset Transaksi')}</span>
             <span className="text-[11px] text-[#706866]">({getPeriodLabel(selectedPeriod)})</span>
@@ -184,10 +184,10 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
         </div>
 
         {/* Chart Container with Axis & Interactive Bars */}
-        <div className="relative h-56 sm:h-64 flex flex-col justify-between pt-4 pb-2 px-1">
+        <div className="relative h-56 sm:h-64 flex flex-col justify-between pt-6 pb-2 px-1">
           
           {/* Horizontal Grid Lines */}
-          <div className="absolute inset-0 pt-4 pb-8 flex flex-col justify-between pointer-events-none">
+          <div className="absolute inset-0 pt-6 pb-8 flex flex-col justify-between pointer-events-none">
             {yAxisTicks.map((val, idx) => (
               <div key={idx} className="flex items-center w-full">
                 <span className="w-14 sm:w-16 text-[10px] text-[#706866] font-mono text-right pr-2 shrink-0">
@@ -216,9 +216,13 @@ export const SalesAnalyticsSection: React.FC<SalesAnalyticsSectionProps> = ({
                   onMouseLeave={() => setHoveredBarIndex(null)}
                   onClick={() => setSelectedBarIndex(index)}
                 >
-                  {/* Tooltip on active/hovered bar */}
+                  {/* Tooltip on active/hovered bar (smart positioned so it never overlaps the header text) */}
                   {isPrimary && (
-                    <div className="absolute -top-12 z-30 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-[11px] font-normal shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 pointer-events-none border border-white/10">
+                    <div
+                      className={`absolute z-30 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-[11px] font-normal shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 pointer-events-none border border-white/10 ${
+                        heightPercent > 65 ? 'top-3' : '-top-11'
+                      }`}
+                    >
                       <div className="flex items-center gap-1.5">
                         <span className="text-white/70">{d.label}:</span>
                         <span className="font-semibold">{formatRupiah(d.sales)}</span>

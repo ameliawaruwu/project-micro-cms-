@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { HeaderSettings, ThemeSettings } from '../schema';
 import { Search, ShoppingBag, Menu, User, Phone, MapPin, ChevronDown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { sanitizeLinkHref } from '../navMenu';
+import { STORE_ROUTES } from '../storefrontLinks';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface Props {
   settings: HeaderSettings;
@@ -10,18 +13,19 @@ interface Props {
 }
 
 export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeId }) => {
+  const { isEn } = useLanguage();
   const isTransparent = settings.style === 'transparent';
   const isSticky = settings.style === 'sticky';
   const navigate = useNavigate();
   
-  const navLinks = settings.navLinks && settings.navLinks.length > 0 
-    ? settings.navLinks 
+  // Tautan menu merchant disanitasi; bawaan mengikuti rute toko yang sama dengan navbar tema.
+  const navLinks = settings.navLinks && settings.navLinks.length > 0
+    ? settings.navLinks.map((link) => ({ ...link, url: sanitizeLinkHref(link.url) || STORE_ROUTES.home }))
     : [
-        { label: 'Beranda', url: '#' },
-        { label: 'Katalog Produk', url: '#katalog' },
-        { label: 'Promo Spesial', url: '#promo' },
-        { label: 'Tentang Kami', url: '#tentang' },
-        { label: 'Kontak', url: '#kontak' },
+        { label: isEn ? 'Home' : 'Beranda', url: STORE_ROUTES.home },
+        { label: isEn ? 'Product Catalog' : 'Katalog Produk', url: STORE_ROUTES.catalog },
+        { label: isEn ? 'Special Promo' : 'Promo Spesial', url: STORE_ROUTES.promo },
+        { label: isEn ? 'Contact' : 'Kontak', url: STORE_ROUTES.contact },
       ];
 
   const [scrolled, setScrolled] = useState(false);
@@ -43,12 +47,12 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
         {/* Topbar */}
         <div className="hidden md:flex items-center justify-between px-6 py-2 bg-gradient-to-r from-gray-900 to-black text-white/80 text-[11px] font-medium tracking-wide">
           <div className="flex items-center gap-6">
-            <span className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"><Phone className="w-3.5 h-3.5" /> 0800-1234-567</span>
-            <span className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"><MapPin className="w-3.5 h-3.5" /> Lacak Pesanan</span>
+            <a href={STORE_ROUTES.contact} className="flex items-center gap-1.5 hover:text-white transition-colors"><Phone className="w-3.5 h-3.5" /> {isEn ? 'Contact Us' : 'Hubungi Kami'}</a>
+            <a href={STORE_ROUTES.promo} className="flex items-center gap-1.5 hover:text-white transition-colors"><MapPin className="w-3.5 h-3.5" /> Promo</a>
           </div>
           <div className="flex items-center gap-6">
-            <span className="hover:text-white transition-colors cursor-pointer">Bantuan</span>
-            <span className="hover:text-white transition-colors cursor-pointer">Syarat & Ketentuan</span>
+            <a href={STORE_ROUTES.contact} className="hover:text-white transition-colors">{isEn ? 'Help' : 'Bantuan'}</a>
+            <a href={STORE_ROUTES.catalog} className="hover:text-white transition-colors">{isEn ? 'Catalog' : 'Katalog'}</a>
           </div>
         </div>
         
@@ -68,7 +72,7 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
           </div>
 
           <div className="hidden lg:flex flex-1 max-w-2xl relative group">
-            <input type="text" placeholder="Cari ribuan produk unggulan..." className="w-full bg-gray-50/50 border border-gray-200 focus:border-[#0055FF] focus:bg-white px-5 py-3 rounded-xl text-sm outline-none transition-all duration-300 shadow-inner group-hover:shadow-md" />
+            <input type="text" placeholder={isEn ? 'Search thousands of featured products...' : 'Cari ribuan produk unggulan...'} className="w-full bg-gray-50/50 border border-gray-200 focus:border-[#0055FF] focus:bg-white px-5 py-3 rounded-xl text-sm outline-none transition-all duration-300 shadow-inner group-hover:shadow-md" />
             <button className="absolute right-1.5 top-1.5 bottom-1.5 px-4 bg-[#0055FF] text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md shadow-blue-500/20 flex items-center gap-2">
               <Search className="w-4 h-4" /> <span className="text-xs font-bold hidden xl:block">CARI</span>
             </button>
@@ -77,7 +81,7 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
           <div className="flex items-center gap-2 sm:gap-4">
             <button className="hidden md:flex flex-col items-center gap-1 text-gray-500 hover:text-[#0055FF] transition-all hover:-translate-y-0.5 p-2 rounded-lg hover:bg-blue-50/50">
               <User className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Masuk</span>
+              <span className="text-[10px] font-bold">{isEn ? 'Sign In' : 'Masuk'}</span>
             </button>
             <div className="w-px h-8 bg-gray-200 hidden md:block mx-1"></div>
             <button onClick={() => navigate('/cart')} className="relative flex flex-col items-center gap-1 text-gray-500 hover:text-[#0055FF] transition-all hover:-translate-y-0.5 p-2 rounded-lg hover:bg-blue-50/50">
@@ -87,7 +91,6 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
                   0
                 </span>
               </div>
-              <span className="hidden md:block text-[10px] font-bold">Keranjang</span>
             </button>
             <button className="lg:hidden text-gray-900 p-2 bg-gray-50 rounded-lg active:scale-95 transition-transform">
               <Menu className="w-5 h-5" />
@@ -299,7 +302,7 @@ export const HeaderSection: React.FC<Props> = ({ settings, themeSettings, themeI
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden opacity-60 hover:opacity-100 transition-opacity p-1.5 rounded-lg focus:outline-none cursor-pointer"
-              aria-label="Menu Navigasi"
+              aria-label={isEn ? 'Navigation Menu' : 'Menu Navigasi'}
             >
               <Menu className="w-5 h-5 stroke-[1.2]" />
             </button>

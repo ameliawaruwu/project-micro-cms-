@@ -1,15 +1,16 @@
 {
-  "name": "kroomify-micro-cms",
+  "name": "lapakq-cms",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build",
+    "dev": "node scripts/gen-responsive-safelist.mjs && vite --port=3000 --host=0.0.0.0",
+    "build": "node scripts/gen-responsive-safelist.mjs && vite build && esbuild server.ts --bundle --platform=node --packages=external --outfile=dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "server": "tsx server.ts"
+    "server": "node dist/server.cjs",
+    "start": "node dist/server.cjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -24,6 +25,8 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
@@ -43,6 +46,7 @@
     "@types/react-dom": "^19.2.5",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",

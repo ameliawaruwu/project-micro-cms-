@@ -1,94 +1,202 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useSectionProducts } from '../../useSectionProducts';
+import { sanitizeLinkHref } from '../../navMenu';
+import { STORE_ROUTES, formatRupiah, productHref, resolveSecondaryCta, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { defaultFeatureItems, resolveFeatureItems } from '../../sectionContent';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
-export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const { products } = useCmsStore();
-  const product = products[0]; // Just showing first product for showcase
+/** Sorotan produk unggulan toko; tidak dirender bila toko belum punya produk. */
+export const FuturisticFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
+  // Produk pertama dari pilihan editor (bila ada), selain itu produk unggulan / produk pertama.
+  const product = useSectionProducts('futuristic', sectionOptions, { defaultCount: 1, preferFeatured: true })[0];
+  const flexDirClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col',
+    tablet: 'flex-col',
+    desktop: 'flex-row',
+    fallback: 'flex-col md:flex-row',
+  });
+  const halfWidthClass = isMobile || isTablet ? 'w-full' : 'w-full md:w-1/2';
+  const prClass = isMobile || isTablet ? '' : 'md:pr-12';
+  const mtClass = isMobile || isTablet ? 'mt-12' : 'mt-12 md:mt-0';
   if (!product) return null;
 
+  // Teks, gambar & tombol dari editor; bila kosong memakai data produk yang disorot.
+  const heading = sectionOptions.heading || product.name;
+  const description = sectionOptions.description || product.description;
+  const image = resolveSectionImage(sectionOptions) || product.image;
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View Details' : 'Lihat Detail', productHref(product));
+  const secondaryCta = resolveSecondaryCta(sectionOptions, isEn ? 'View Catalog' : 'Lihat Katalog', STORE_ROUTES.catalog);
+
   return (
-    <section className="py-32 px-6 md:px-12 bg-[#050505] text-white overflow-hidden relative border-t border-gray-900">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center">
-        <div className="w-full md:w-1/2 relative z-20 md:pr-12">
+    <section className="py-16 sm:py-24 md:py-32 px-4 sm:px-6 md:px-12 bg-[#050505] text-white overflow-hidden relative border-t border-gray-900">
+      <div className={`max-w-6xl mx-auto flex ${flexDirClass} items-center`}>
+        <div className={`${halfWidthClass} relative z-20 min-w-0 ${prClass}`}>
           <div className="inline-block px-3 py-1 bg-purple-900/40 border border-purple-500/50 text-purple-400 text-xs font-mono mb-6 uppercase tracking-widest backdrop-blur-sm">
-            {sectionOptions.badgeText || "New Arrival"}
+            {sectionOptions.badgeText || (isEn ? 'Featured Products' : 'Produk Unggulan')}
           </div>
-          <h2 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter mb-6 text-white drop-shadow-lg">{product.name}</h2>
-          <p className="text-gray-400 mb-10 font-mono leading-relaxed text-sm lg:text-base">{product.description}</p>
-          <button className="px-8 py-4 bg-transparent border border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white font-bold uppercase tracking-widest transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
-            Analyze Spec
-          </button>
+          <h2 className="text-3xl sm:text-5xl lg:text-7xl font-black uppercase tracking-tighter mb-4 sm:mb-6 text-white drop-shadow-lg break-words">
+            {heading}
+          </h2>
+          <p className="text-xl sm:text-2xl font-mono font-bold text-purple-300 mb-4 sm:mb-6">{formatRupiah(product.price)}</p>
+          {description && (
+            <p className="text-gray-400 mb-8 sm:mb-10 font-mono leading-relaxed text-sm lg:text-base line-clamp-4">{description}</p>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <a
+              href={cta.href}
+              className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 bg-transparent border border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white text-sm sm:text-base font-bold uppercase tracking-widest transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+            >
+              {cta.label}
+            </a>
+            <a
+              href={secondaryCta.href}
+              className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 border border-gray-700 text-gray-300 hover:text-white hover:border-white text-sm sm:text-base font-bold uppercase tracking-widest transition-all duration-300"
+            >
+              {secondaryCta.label}
+            </a>
+          </div>
         </div>
-        <div className="w-full md:w-1/2 relative mt-20 md:mt-0">
-          <div className="absolute w-[400px] h-[400px] bg-purple-600/20 rounded-full blur-[100px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
-          <img src={product.image} alt={product.name} className="w-full h-[500px] object-contain relative z-20 mix-blend-screen drop-shadow-[0_0_40px_rgba(168,85,247,0.4)] animate-[float_6s_ease-in-out_infinite]" />
-        </div>
+        {image && (
+          <a href={productHref(product)} className={`${halfWidthClass} relative block ${mtClass}`}>
+            <div className="absolute w-64 h-64 sm:w-[400px] sm:h-[400px] bg-purple-600/20 rounded-full blur-[100px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+            <img
+              src={image}
+              alt={heading}
+              className="w-full h-72 sm:h-[500px] object-contain relative z-20 mix-blend-screen drop-shadow-[0_0_40px_rgba(168,85,247,0.4)] animate-[float_6s_ease-in-out_infinite]"
+            />
+          </a>
+        )}
       </div>
     </section>
   );
 };
 
-export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => (
-  <section className="py-24 px-6 md:px-12 bg-[#080808] text-white border-y border-gray-900 relative">
-    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/10 via-[#080808] to-[#080808]"></div>
-    <div className="max-w-6xl mx-auto relative z-10">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
-        {[
-          { title: "Quantum Processing", desc: "Unparalleled speed for real-time rendering." },
-          { title: "Neural Cooling", desc: "AI-driven temperature management system." },
-          { title: "Holo Interface", desc: "True 3D projection for immersive control." }
-        ].map((feature, i) => (
-          <div key={i} className="border-l-2 border-purple-600 pl-8 py-2 relative group hover:-translate-y-2 transition-transform duration-300">
-            <div className="absolute -left-[9px] top-0 w-4 h-4 bg-[#080808] border-2 border-purple-600 group-hover:bg-purple-600 transition-colors shadow-[0_0_10px_#A855F7]"></div>
-            <h3 className="text-xl font-black uppercase tracking-widest mb-3 text-white">{feature.title}</h3>
-            <p className="text-gray-500 font-mono text-sm leading-relaxed">{feature.desc}</p>
+/** Keunggulan belanja di toko (teks umum, dapat diganti lewat judul/deskripsi section). */
+export const FuturisticTechFeatures: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-3',
+    fallback: 'grid-cols-1 md:grid-cols-3',
+  });
+  // Poin keunggulan diisi di panel kanan ("Poin Keunggulan"); bawaan bila belum diubah.
+  const features = resolveFeatureItems(sectionOptions.features, defaultFeatureItems('tech_features', 'futuristic', isEn) || []);
+  const description = sectionOptions.description || sectionOptions.subheading;
+  const image = resolveSectionImage(sectionOptions);
+  // Tombol hanya tampil bila merchant mengisi teks tombol di editor.
+  const hasCta = Boolean(sectionOptions.buttonLabel || sectionOptions.buttonText);
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'Shop Now' : 'Belanja Sekarang', STORE_ROUTES.catalog);
+  return (
+    <section className="py-16 sm:py-24 px-4 sm:px-6 md:px-12 bg-[#080808] text-white border-y border-gray-900 relative">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/10 via-[#080808] to-[#080808]"></div>
+      <div className="max-w-6xl mx-auto relative z-10">
+        {sectionOptions.heading && (
+          <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-widest mb-10 sm:mb-14 text-center break-words">{sectionOptions.heading}</h2>
+        )}
+        {description && (
+          <p className="max-w-2xl mx-auto -mt-6 sm:-mt-8 mb-10 sm:mb-14 text-center text-gray-400 font-mono text-sm leading-relaxed">{description}</p>
+        )}
+        {image && (
+          <img src={image} alt={sectionOptions.heading || ''} className="w-full max-h-[420px] object-cover mb-10 sm:mb-14 border border-gray-900" />
+        )}
+        <div className={`grid ${gridColsClass} gap-10 sm:gap-16`}>
+          {features.map((feature, index) => (
+            <div key={index} className="border-l-2 border-purple-600 pl-6 sm:pl-8 py-2 relative group hover:-translate-y-2 transition-transform duration-300">
+              <div className="absolute -left-[9px] top-0 w-4 h-4 bg-[#080808] border-2 border-purple-600 group-hover:bg-purple-600 transition-colors shadow-[0_0_10px_#A855F7]"></div>
+              <h3 className="text-lg sm:text-xl font-black uppercase tracking-widest mb-3 text-white">{feature.title}</h3>
+              <p className="text-gray-500 font-mono text-sm leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+        {hasCta && (
+          <div className="mt-12 text-center">
+            <a
+              href={cta.href}
+              className="inline-block px-8 py-4 border border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white text-sm font-bold uppercase tracking-widest transition-all duration-300"
+            >
+              {cta.label}
+            </a>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
+/** Perbandingan produk toko (kategori & harga); butuh minimal dua produk. */
+export const FuturisticProductComparison: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+  const { isEn } = useLanguage();
+  // Maksimal 4 produk agar tabel tetap terbaca; jumlah & pilihan dari panel kanan editor.
+  const products = useSectionProducts('futuristic', sectionOptions, { defaultCount: 3, maxCount: 4 });
+  if (products.length < 2) return null;
+
+  const colsClass = ({ 2: 'grid-cols-3', 3: 'grid-cols-4', 4: 'grid-cols-5' } as Record<number, string>)[products.length];
+  const rows: { label: string; value: (p: (typeof products)[number]) => string }[] = [
+    { label: isEn ? 'Category' : 'Kategori', value: (p) => p.categoryName || '-' },
+    { label: isEn ? 'Price' : 'Harga', value: (p) => formatRupiah(p.price) },
+  ];
+
+  return (
+    <section className="py-16 sm:py-24 px-4 sm:px-6 md:px-12 bg-[#050505] text-white text-center">
+      <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-widest mb-4 break-words">
+        {sectionOptions.heading || (isEn ? 'Compare Products' : 'Bandingkan Produk')}
+      </h2>
+      <p className="text-purple-500 font-mono mb-10 sm:mb-16 tracking-widest text-xs sm:text-sm">
+        {sectionOptions.subheading || (isEn ? 'Choose the product that suits you best' : 'Pilih produk yang paling sesuai untuk Anda')}
+      </p>
+      <div className="max-w-4xl mx-auto bg-[#0a0a0a] border border-gray-800 rounded-lg p-4 sm:p-8 shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-x-auto">
+        <div className={`grid ${colsClass} gap-2 sm:gap-4 font-mono text-[11px] sm:text-sm uppercase text-purple-400 mb-4 sm:mb-6 border-b border-gray-800 pb-4 tracking-wider min-w-[320px]`}>
+          <div className="text-left">{isEn ? 'Product' : 'Produk'}</div>
+          {products.map((p) => (
+            <a key={p.id} href={productHref(p)} className="min-w-0 line-clamp-2 break-words hover:text-white transition-colors">
+              {p.name}
+            </a>
+          ))}
+        </div>
+        {rows.map((row) => (
+          <div key={row.label} className={`grid ${colsClass} gap-2 sm:gap-4 font-mono text-xs sm:text-sm text-gray-400 py-4 sm:py-6 border-b border-gray-800/50 last:border-0 hover:bg-white/[0.02] transition-colors min-w-[320px]`}>
+            <div className="text-left text-gray-300">{row.label}</div>
+            {products.map((p) => (
+              <div key={p.id} className="min-w-0 break-words">{row.value(p)}</div>
+            ))}
           </div>
         ))}
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
-export const FuturisticProductComparison: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => (
-  <section className="py-24 px-6 md:px-12 bg-[#050505] text-white text-center">
-    <h2 className="text-3xl font-black uppercase tracking-widest mb-4">Spec Comparison</h2>
-    <p className="text-purple-500 font-mono mb-16 tracking-widest text-sm">[ Data analysis complete ]</p>
-    <div className="max-w-4xl mx-auto bg-[#0a0a0a] border border-gray-800 rounded-lg p-8 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-       <div className="grid grid-cols-3 gap-4 font-mono text-xs md:text-sm uppercase text-purple-400 mb-6 border-b border-gray-800 pb-4 tracking-wider">
-         <div className="text-left">Feature</div>
-         <div>Model X</div>
-         <div>Model Y</div>
-       </div>
-       {[
-         { f: "Processing", x: "12 Cores", y: "16 Cores" },
-         { f: "Memory", x: "32 GB DDR5", y: "64 GB DDR5" },
-         { f: "Cooling", x: "Liquid", y: "Quantum" }
-       ].map((row, i) => (
-         <div key={i} className="grid grid-cols-3 gap-4 font-mono text-sm text-gray-400 py-6 border-b border-gray-800/50 last:border-0 hover:bg-white/[0.02] transition-colors">
-           <div className="text-left text-gray-300">{row.f}</div>
-           <div>{row.x}</div>
-           <div>{row.y}</div>
-         </div>
-       ))}
-    </div>
-  </section>
-);
-
+/** Ajakan belanja; tombol membuka katalog (atau tautan yang diisi merchant). */
 export const FuturisticInnovationCta: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const heading = sectionOptions.heading || "Upgrade Reality";
-  const desc = sectionOptions.description || "Join the elite network of early adopters.";
-  const buttonLabel = sectionOptions.buttonLabel || "Access Portal";
-  
+  const { isEn } = useLanguage();
+  const storeInfo = useCmsStore((state) => state.storeInfo);
+  const heading = sectionOptions.heading || (isEn ? 'Ready to Upgrade Your Style?' : 'Siap Upgrade Gaya Anda?');
+  const desc = sectionOptions.description ||
+    (isEn
+      ? `Explore the full collection of ${storeInfo?.name || 'our store'} now.`
+      : `Jelajahi koleksi lengkap ${storeInfo?.name || 'kami'} sekarang.`);
+  const buttonLabel = sectionOptions.buttonLabel || (isEn ? 'Shop Now' : 'Belanja Sekarang');
+  const customHref = sanitizeLinkHref(sectionOptions.buttonLink);
+  const buttonHref = customHref && customHref !== '#' ? customHref : STORE_ROUTES.catalog;
+  const bgImage = sectionOptions.imageUrl || sectionOptions.bannerUrl || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1600&q=80';
+
   return (
-    <section className="py-40 px-6 md:px-12 bg-purple-600 text-white text-center relative overflow-hidden group">
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1600&q=80')] mix-blend-overlay opacity-30 object-cover group-hover:scale-105 transition-transform duration-1000"></div>
+    <section className="py-20 sm:py-32 md:py-40 px-4 sm:px-6 md:px-12 bg-purple-600 text-white text-center relative overflow-hidden group">
+      <img src={bgImage} alt="" className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-30 group-hover:scale-105 transition-transform duration-1000" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#050505] to-transparent opacity-80"></div>
-      <div className="relative z-10 max-w-3xl mx-auto">
-        <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-8 drop-shadow-2xl">{heading}</h2>
-        <p className="font-mono mb-12 text-gray-300 tracking-widest">{desc}</p>
-        <button className="px-10 py-5 bg-white text-purple-900 font-bold uppercase tracking-widest hover:bg-gray-200 transition shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+      <div className="relative z-10 max-w-3xl mx-auto min-w-0">
+        <h2 className="text-3xl sm:text-5xl md:text-7xl font-black uppercase tracking-tighter mb-6 sm:mb-8 drop-shadow-2xl break-words">{heading}</h2>
+        <p className="font-mono mb-10 sm:mb-12 text-gray-300 tracking-wider sm:tracking-widest text-sm sm:text-base">{desc}</p>
+        <a
+          href={buttonHref}
+          className="inline-block px-8 sm:px-10 py-4 sm:py-5 bg-white text-purple-900 text-sm sm:text-base font-bold uppercase tracking-widest hover:bg-gray-200 transition shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+        >
           {buttonLabel}
-        </button>
+        </a>
       </div>
     </section>
   );

@@ -1,3 +1,4 @@
+import SearchableSelect from '../../../components/common/SearchableSelect';
 import React from 'react';
 import {
   Truck,
@@ -197,7 +198,7 @@ export const AdminOrdersShippingTab: React.FC<AdminOrdersShippingTabProps> = ({
         {/* Filter Controls Group */}
         <div className="flex items-center flex-wrap gap-2">
           {/* Status Kirim Filter */}
-          <select
+          <SearchableSelect
             value={orderFilterStatus}
             onChange={(e) => setOrderFilterStatus(e.target.value)}
             className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600 cursor-pointer"
@@ -208,10 +209,10 @@ export const AdminOrdersShippingTab: React.FC<AdminOrdersShippingTabProps> = ({
             <option value="Dikirim">{isEn ? 'In Shipping' : 'Dalam Pengiriman'}</option>
             <option value="Selesai">{isEn ? 'Delivered / Completed' : 'Terkirim / Selesai'}</option>
             <option value="Dibatalkan">{isEn ? 'Cancelled' : 'Dibatalkan'}</option>
-          </select>
+          </SearchableSelect>
 
           {/* Kurir Filter */}
-          <select
+          <SearchableSelect
             value={orderFilterCourier}
             onChange={(e) => setOrderFilterCourier(e.target.value)}
             className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600 cursor-pointer"
@@ -221,10 +222,10 @@ export const AdminOrdersShippingTab: React.FC<AdminOrdersShippingTabProps> = ({
             <option value="SiCepat">SiCepat</option>
             <option value="JNE">JNE</option>
             <option value="GoSend">GoSend</option>
-          </select>
+          </SearchableSelect>
 
           {/* Toko Filter */}
-          <select
+          <SearchableSelect
             value={orderFilterStore}
             onChange={(e) => setOrderFilterStore(e.target.value)}
             className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-red-600 max-w-[150px] truncate cursor-pointer"
@@ -235,7 +236,7 @@ export const AdminOrdersShippingTab: React.FC<AdminOrdersShippingTabProps> = ({
                 {s.name}
               </option>
             ))}
-          </select>
+          </SearchableSelect>
 
           {/* Reset Filter Button */}
           {(orderSearchQuery || orderFilterStatus !== 'all' || orderFilterCourier !== 'all' || orderFilterStore !== 'all') && (

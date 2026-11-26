@@ -25,7 +25,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
   onNavigateLanding,
 }) => {
   const { forgotPassword, verifyResetToken, resetPassword } = useAuth();
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   
   const [step, setStep] = useState<'email' | 'token' | 'password' | 'success'>('email');
   const [email, setEmail] = useState('');
@@ -45,16 +45,16 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
     }
   }, [resendCooldown]);
 
-  const isInputValid = email.trim().length >= 2;
-  const isPasswordValid = newPassword.length >= 6;
+  const isInputValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  const isPasswordValid = newPassword.length >= 8;
   const isPasswordMatch = newPassword === confirmPassword;
 
   const handleRequestToken = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!email.trim() || email.trim().length < 2) {
-      setError('Mohon masukkan alamat email atau username yang valid.');
+    if (!isInputValid) {
+      setError(isEn ? 'Please enter a valid email address.' : 'Mohon masukkan alamat email yang valid.');
       return;
     }
 
@@ -64,7 +64,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
       setResendCooldown(30);
       setStep('token');
     } catch (err: any) {
-      setError(err?.message || 'Gagal mengirim token atur ulang. Silakan periksa kembali email/username Anda.');
+      setError(err?.message || (isEn ? 'Failed to send the reset token. Please check your email address.' : 'Gagal mengirim token atur ulang. Silakan periksa kembali alamat email Anda.'));
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +79,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
       await forgotPassword(email.trim());
       setResendCooldown(30);
     } catch (err: any) {
-      setError(err?.message || 'Gagal mengirim ulang token. Periksa kembali email/username Anda.');
+      setError(err?.message || (isEn ? 'Failed to resend the token. Please check your email address.' : 'Gagal mengirim ulang token. Periksa kembali alamat email Anda.'));
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +90,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
     setError(null);
 
     if (token.trim().length !== 6) {
-      setError('Mohon masukkan 6 digit token dengan benar.');
+      setError(isEn ? 'Please enter the 6-digit token correctly.' : 'Mohon masukkan 6 digit token dengan benar.');
       return;
     }
 
@@ -99,7 +99,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
       await verifyResetToken(email.trim(), token.trim());
       setStep('password');
     } catch (err: any) {
-      setError(err?.message || 'Token tidak valid. Silakan periksa kembali.');
+      setError(err?.message || (isEn ? 'Invalid token. Please check again.' : 'Token tidak valid. Silakan periksa kembali.'));
     } finally {
       setIsLoading(false);
     }
@@ -110,11 +110,11 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
     setError(null);
 
     if (!isPasswordValid) {
-      setError('Kata sandi baru minimal 6 karakter.');
+      setError(isEn ? 'New password must be at least 8 characters.' : 'Kata sandi baru minimal 8 karakter.');
       return;
     }
     if (!isPasswordMatch) {
-      setError('Konfirmasi kata sandi tidak cocok.');
+      setError(isEn ? 'Password confirmation does not match.' : 'Konfirmasi kata sandi tidak cocok.');
       return;
     }
 
@@ -123,7 +123,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
       await resetPassword(email.trim(), token.trim(), newPassword);
       setStep('success');
     } catch (err: any) {
-      setError(err?.message || 'Gagal mengatur ulang kata sandi.');
+      setError(err?.message || (isEn ? 'Failed to reset password.' : 'Gagal mengatur ulang kata sandi.'));
     } finally {
       setIsLoading(false);
     }
@@ -198,10 +198,10 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
 
               <div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1A1110] tracking-tight">
-                  Kata Sandi Berhasil Diubah
+                  {isEn ? 'Password Changed Successfully' : 'Kata Sandi Berhasil Diubah'}
                 </h2>
                 <p className="text-xs sm:text-sm text-[#6B6260] mt-1.5 leading-relaxed">
-                  Kata sandi untuk akun <strong className="text-[#1A1110] font-semibold">{email}</strong> telah berhasil diperbarui. Anda sekarang dapat masuk menggunakan kata sandi baru Anda.
+                  {isEn ? 'The password for account ' : 'Kata sandi untuk akun '}<strong className="text-[#1A1110] font-semibold">{email}</strong>{isEn ? ' has been updated. You can now log in with your new password.' : ' telah berhasil diperbarui. Anda sekarang dapat masuk menggunakan kata sandi baru Anda.'}
                 </p>
               </div>
 
@@ -226,17 +226,17 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                   className="text-2xl sm:text-3xl font-extrabold text-[#1A1110] tracking-tight"
                 >
                   {step === 'email'
-                    ? t('auth_forgot_password_title', 'Lupa Kata Sandi?')
+                    ? (isEn ? 'Forgot Password?' : 'Lupa Kata Sandi?')
                     : step === 'token'
-                    ? 'Verifikasi Kode Token'
-                    : 'Buat Kata Sandi Baru'}
+                    ? (isEn ? 'Verify Token Code' : 'Verifikasi Kode Token')
+                    : (isEn ? 'Create New Password' : 'Buat Kata Sandi Baru')}
                 </h1>
                 <p className="text-xs sm:text-sm text-[#6B6260] mt-1.5 leading-relaxed">
                   {step === 'email'
-                    ? t('auth_forgot_password_desc', 'Masukkan email atau username terdaftar Anda untuk menerima token atur ulang kata sandi.')
+                    ? (isEn ? 'Enter your registered email address to receive a password reset token.' : 'Masukkan alamat email terdaftar Anda untuk menerima token atur ulang kata sandi.')
                     : step === 'token'
-                    ? `Masukkan 6-digit token yang telah dikirim untuk akun ${email}.`
-                    : 'Silakan atur kata sandi baru untuk akun Anda.'}
+                    ? (isEn ? `Enter the 6-digit token sent for account ${email}.` : `Masukkan 6-digit token yang telah dikirim untuk akun ${email}.`)
+                    : (isEn ? 'Please set a new password for your account.' : 'Silakan atur kata sandi baru untuk akun Anda.')}
                 </p>
               </div>
 
@@ -258,12 +258,12 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                         htmlFor="forgot-email"
                         className="block text-xs sm:text-sm font-medium text-[#1A1110]"
                       >
-                        Email atau Username
+                        {isEn ? 'Email Address' : 'Alamat Email'}
                       </label>
                       {isInputValid && (
                         <span className="inline-flex items-center gap-0.5 text-[10px] text-[#16845B] font-semibold">
                           <Check className="w-3 h-3 stroke-[2.5]" />
-                          {t('auth_format_valid', 'Format Sesuai')}
+                          {isEn ? 'Valid Format' : 'Format Sesuai'}
                         </span>
                       )}
                     </div>
@@ -271,10 +271,12 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                     <div className="relative">
                       <input
                         id="forgot-email"
-                        type="text"
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="nama@email.com"
+                        placeholder={isEn ? 'name@email.com' : 'nama@email.com'}
                         required
                         className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
                       />
@@ -290,11 +292,11 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                       {isLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin text-white" />
-                          <span>{t('auth_sending_link', 'Mengirim Tautan...')}</span>
+                          <span>{isEn ? 'Sending Link...' : 'Mengirim Tautan...'}</span>
                         </>
                       ) : (
                         <>
-                          <span>Kirim Token Verifikasi</span>
+                          <span>{isEn ? 'Send Verification Token' : 'Kirim Token Verifikasi'}</span>
                           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </>
                       )}
@@ -310,8 +312,8 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                       <Mail className="w-4 h-4 text-[#66000E]" />
                     </div>
                     <div>
-                      <p className="font-semibold text-[#1A1110]">Kode verifikasi telah dikirim ke email</p>
-                      <p className="text-[11px] text-[#6B6260] mt-0.5">Silakan periksa kotak masuk (Inbox) atau folder Spam pada email <strong>{email}</strong>.</p>
+                      <p className="font-semibold text-[#1A1110]">{isEn ? 'A verification code has been sent to your email' : 'Kode verifikasi telah dikirim ke email'}</p>
+                      <p className="text-[11px] text-[#6B6260] mt-0.5">{isEn ? 'Please check the Inbox or Spam folder of ' : 'Silakan periksa kotak masuk (Inbox) atau folder Spam pada email '}<strong>{email}</strong>.</p>
                     </div>
                   </div>
 
@@ -320,7 +322,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                       htmlFor="forgot-token"
                       className="block text-xs sm:text-sm font-medium text-[#1A1110]"
                     >
-                      Token Verifikasi (6 Digit)
+                      {isEn ? 'Verification Token (6 Digits)' : 'Token Verifikasi (6 Digit)'}
                     </label>
                     <input
                       id="forgot-token"
@@ -343,11 +345,11 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                       {isLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin text-white" />
-                          <span>Memverifikasi Token...</span>
+                          <span>{isEn ? 'Verifying Token...' : 'Memverifikasi Token...'}</span>
                         </>
                       ) : (
                         <>
-                          <span>Verifikasi Token</span>
+                          <span>{isEn ? 'Verify Token' : 'Verifikasi Token'}</span>
                           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </>
                       )}
@@ -361,7 +363,9 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                       disabled={resendCooldown > 0 || isLoading}
                       className="text-[#66000E] hover:underline disabled:text-gray-400 disabled:no-underline cursor-pointer transition-colors"
                     >
-                      {resendCooldown > 0 ? `Kirim Ulang Token (${resendCooldown}s)` : '⚡ Kirim Ulang Token'}
+                      {resendCooldown > 0
+                        ? (isEn ? `Resend Token (${resendCooldown}s)` : `Kirim Ulang Token (${resendCooldown}s)`)
+                        : (isEn ? '⚡ Resend Token' : '⚡ Kirim Ulang Token')}
                     </button>
 
                     <button
@@ -373,7 +377,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                       }}
                       className="text-[#6B6260] hover:text-[#1A1110] cursor-pointer transition-colors"
                     >
-                      Ganti Alamat Email
+                      {isEn ? 'Change Email Address' : 'Ganti Alamat Email'}
                     </button>
                   </div>
                 </form>
@@ -386,7 +390,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                       htmlFor="reset-password"
                       className="block text-xs sm:text-sm font-medium text-[#1A1110]"
                     >
-                      Kata Sandi Baru
+                      {isEn ? 'New Password' : 'Kata Sandi Baru'}
                     </label>
                     <div className="relative flex items-center">
                       <input
@@ -394,7 +398,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                         type={showPassword ? 'text' : 'password'}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Minimal 6 karakter"
+                        placeholder={isEn ? 'At least 8 characters' : 'Minimal 8 karakter'}
                         required
                         className="w-full h-12 pl-5 pr-12 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7] tracking-wider"
                       />
@@ -413,7 +417,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                       htmlFor="reset-confirm-password"
                       className="block text-xs sm:text-sm font-medium text-[#1A1110]"
                     >
-                      Konfirmasi Kata Sandi Baru
+                      {isEn ? 'Confirm New Password' : 'Konfirmasi Kata Sandi Baru'}
                     </label>
                     <div className="relative flex items-center">
                       <input
@@ -421,7 +425,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                         type={showPassword ? 'text' : 'password'}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Masukkan ulang kata sandi baru"
+                        placeholder={isEn ? 'Re-enter new password' : 'Masukkan ulang kata sandi baru'}
                         required
                         className={`w-full h-12 pl-5 pr-12 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border focus:bg-white focus:ring-2 focus:outline-none transition-all placeholder:text-[#9E9EA7] tracking-wider ${
                           confirmPassword && !isPasswordMatch
@@ -443,12 +447,12 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                       {isLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin text-white" />
-                          <span>Menyimpan...</span>
+                          <span>{isEn ? 'Saving...' : 'Menyimpan...'}</span>
                         </>
                       ) : (
                         <>
                           <Check className="w-4 h-4" />
-                          <span>Simpan Kata Sandi Baru</span>
+                          <span>{isEn ? 'Save New Password' : 'Simpan Kata Sandi Baru'}</span>
                         </>
                       )}
                     </button>
@@ -458,7 +462,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
 
               {/* NAVIGATION FOOTER */}
               <div className="pt-3 text-center text-xs sm:text-sm text-[#6B6260]">
-                <span>Ingat kata sandi Anda? </span>
+                <span>{isEn ? 'Remember your password? ' : 'Ingat kata sandi Anda? '}</span>
                 <button
                   type="button"
                   id="forgot-login-link"
@@ -474,7 +478,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
           {/* BOTTOM TRUST SIGNAL */}
           <div className="mt-6 pt-4 border-t border-[#E6DDDA]/60 flex items-center justify-center gap-1.5 text-[11px] text-[#6B6260]">
             <Lock className="w-3.5 h-3.5 text-[#16845B]" />
-            <span>{t('auth_secure_notice', 'Data toko Anda tetap aman & terlindungi.')}</span>
+            <span>{isEn ? 'Your store data stays safe & protected.' : 'Data toko Anda tetap aman & terlindungi.'}</span>
           </div>
 
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   Store,
   StoreLayoutSettings,
@@ -10,6 +10,7 @@ import {
   DEFAULT_STORE_LAYOUT,
   LAYOUT_PRESETS,
   getStoreSections,
+  SHARED_CHROME_SECTION_IDS,
   SectionTemplateDef,
   STORE_TEMPLATES,
 } from '../../utils/layoutConstants';
@@ -23,9 +24,18 @@ import { ThemeLibraryView, TemplateGalleryItem, SavedThemeItem, TEMPLATE_GALLERY
 import { PublishStoreModal } from '../../components/layout-editor/PublishStoreModal';
 import { ArrowLeft, ArrowRight, Monitor, Tablet, Smartphone, Palette, Loader2, EyeOff, Eye } from 'lucide-react';
 import { useCmsStore } from '../../cms/useCmsStore';
+import { filterRealProducts } from '../../utils/demoProducts';
+import { THEME_DATA_MAP } from '../../themes/themeData';
 import { normalizeThemeId } from '../../themes/ThemeRegistry';
+import { resolveThemeForSections, HIDDEN_SECTION_IDS } from '../../themes/sectionResolver';
 import { storeService } from '../../services/storeService';
+import { loadThemeDrafts, saveThemeDrafts } from '../../services/themeDraftService';
+import { fetchStoreBaseDomain } from '../../utils/storeDomain';
+import { fitDeviceModeToViewport, getViewportDeviceMode, type PreviewDeviceMode } from '../../utils/responsivePreview';
+import { ScaledDeviceFrame, DEVICE_DESIGN_WIDTH } from '../../components/layout-editor/ScaledDeviceFrame';
 import { useAuth } from '../../contexts/AuthContext';
+import { sessionHeaders } from '../../services/supabaseClient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface LayoutPageProps {
   store: Store;
@@ -58,6 +68,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 }) => {
   const [currentStore, setCurrentStore] = useState<Store>(store);
   const { user } = useAuth();
+  const { isEn } = useLanguage();
   const cmsProducts = useCmsStore(state => state.products);
 
   const initialSections = useMemo(
@@ -69,7 +80,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const [selectedSectionKey, setSelectedSectionKey] = useState<string | null>(
     initialSections.length > 0 ? (initialSections[0].key || `${initialSections[0].id}-0`) : null
   );
-  const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  // Device preview awal mengikuti lebar layar: di HP langsung "Ponsel", bukan "Desktop".
+  const [deviceMode, setDeviceMode] = useState<PreviewDeviceMode>(getViewportDeviceMode);
   const [activePreset, setActivePreset] = useState<string>('standard');
   const [hasChanges, setHasChanges] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -96,7 +108,17 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   });
 
   const [previewTemplate, setPreviewTemplate] = useState<TemplateGalleryItem | null>(null);
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [previewDevice, setPreviewDevice] = useState<PreviewDeviceMode>(getViewportDeviceMode);
+
+  // Saat layar menyempit (HP diputar, jendela diperkecil), turunkan device preview yang tidak lagi muat.
+  useEffect(() => {
+    const fitToViewport = () => {
+      setDeviceMode(fitDeviceModeToViewport);
+      setPreviewDevice(fitDeviceModeToViewport);
+    };
+    window.addEventListener('resize', fitToViewport);
+    return () => window.removeEventListener('resize', fitToViewport);
+  }, []);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingTemplateName, setLoadingTemplateName] = useState('');
   const [activePage, setActivePage] = useState('homepage');
@@ -105,6 +127,16 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     const raw = (store.layoutSettings as any)?.activeThemeId || store.layoutSettings?.themeStyle || 'minimalist';
     return normalizeThemeId(raw);
   });
+
+  // Tema aktif harus cocok dengan bagian-bagian layout. Bila layout berisi bagian khas template
+  // lain (mis. "Koleksi Privat" milik Luxury), pakai tema pemilik bagian itu agar tidak ada
+  // bagian kosong dan yang tersimpan ke toko juga benar.
+  useEffect(() => {
+    const resolved = resolveThemeForSections(activeThemeId, sections.map((s) => s.id));
+    if (resolved !== normalizeThemeId(activeThemeId)) {
+      setActiveThemeId(resolved);
+    }
+  }, [sections, activeThemeId]);
 
   // Sync template from URL parameter if opened via new tab (?mode=editor&editTheme=...)
   useEffect(() => {
@@ -134,29 +166,85 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   }, []);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
-  const [globalSettings, setGlobalSettings] = useState<any>(
-    store.layoutSettings?.globalThemeSettings || {
+  const [globalSettings, setGlobalSettings] = useState<any>(() => {
+    const defaultSettings = {
       colors: { primary: '#2C6ECB', secondary: '#1E40AF', background: '#FFFFFF', surface: '#F6F6F7', text: '#202223', mutedText: '#6D7175', border: '#E1E3E5' },
-      typography: { headingFont: 'Inter', bodyFont: 'Inter', headingSize: 'md', bodySize: 'md' },
+      typography: { headingFont: store.layoutSettings?.fontFamily || 'Inter', bodyFont: store.layoutSettings?.fontFamily || 'Inter', headingSize: 'md', bodySize: 'md' },
       buttons: { radius: 'md', style: 'solid' },
       cards: { radius: 'lg', shadow: 'sm', border: true },
       layout: { contentWidth: 'normal', sectionSpacing: 'normal' }
-    }
-  );
+    };
+    const incoming = store.layoutSettings?.globalThemeSettings;
+    if (!incoming) return defaultSettings;
+    return {
+      ...defaultSettings,
+      ...incoming,
+      colors: { ...defaultSettings.colors, ...(incoming.colors || {}) },
+      typography: { ...defaultSettings.typography, ...(incoming.typography || {}) },
+      buttons: { ...defaultSettings.buttons, ...(incoming.buttons || {}) },
+      cards: { ...defaultSettings.cards, ...(incoming.cards || {}) },
+      layout: { ...defaultSettings.layout, ...(incoming.layout || {}) },
+    };
+  });
 
   // Keep useCmsStore synchronized when merchant products are updated
   useEffect(() => {
     useCmsStore.getState().setProductsFromMerchant(products || []);
   }, [products]);
 
-  const displayProducts = cmsProducts.length > 0 ? cmsProducts : (products || []);
+  // Sync store info to useCmsStore whenever activeThemeId or store name changes
+  useEffect(() => {
+    if (activeThemeId) {
+      const themeData = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['editorial'];
+      const activeName = (currentStore.name && currentStore.name !== 'Toko Sayur' && currentStore.name !== 'Green Market Indonesia')
+        ? currentStore.name
+        : (activeThemeId === 'editorial' ? 'LOOKSEE' : themeData.storeInfo.name);
+
+      useCmsStore.getState().updateStoreInfo({
+        name: activeName,
+        description: currentStore.description || themeData.storeInfo.description,
+        address: currentStore.address || '',
+        email: (currentStore as any).email || user?.email || '',
+        phone: '',
+        logoUrl: currentStore.logoUrl || '',
+      });
+    }
+  }, [activeThemeId, currentStore.name, currentStore.logoUrl, user?.email]);
+
+  // 1. Cek apakah merchant memiliki produk nyata di Daftar Produk
+  const hasMerchantProducts = Boolean(products && products.length > 0);
+
+  // 2. Jika ada produk merchant, tampilkan produk merchant. Jika kosong, tampilkan mock template bawaan.
+  const displayProducts = useMemo(() => {
+    if (hasMerchantProducts) {
+      return products;
+    }
+    if (cmsProducts && cmsProducts.length > 0) {
+      return cmsProducts;
+    }
+    const themeData = THEME_DATA_MAP[activeThemeId] || THEME_DATA_MAP['minimalist'];
+    return themeData?.products || [];
+  }, [hasMerchantProducts, products, cmsProducts, activeThemeId]);
 
   // Multi-page sections map state
   const [pageSectionsMap, setPageSectionsMap] = useState<Record<string, StoreSectionConfig[]>>(() => {
+    const brandName = (currentStore.name && currentStore.name !== 'Toko Sayur' && currentStore.name !== 'Green Market Indonesia')
+      ? currentStore.name
+      : (activeThemeId === 'editorial' ? 'LOOKSEE' : currentStore.name || 'Toko Saya');
+
     const defaultMap: Record<string, StoreSectionConfig[]> = {
       homepage: initialSections,
       catalog: [
-        { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
+        { 
+          key: 'header-0', 
+          id: 'header', 
+          title: 'Header & Navbar Toko', 
+          isVisible: true,
+          options: {
+            heading: brandName,
+            storeName: brandName,
+          }
+        },
         { key: 'search_category-0', id: 'search_category', title: 'Bilah Pencarian & Kategori', isVisible: true },
         {
           key: 'product_grid-0',
@@ -164,9 +252,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           title: 'Katalog Produk Lengkap',
           isVisible: true,
           options: {
-            heading: 'Katalog Produk Lengkap',
-            subheading: 'Temukan produk pilihan Anda dengan kualitas terbaik',
-            gridColumns: 4,
+            heading: 'The Catalogue',
+            subheading: 'Curated Collection',
+            gridColumns: 3,
             productCount: 12,
             showPrice: true,
             showCategory: true,
@@ -178,7 +266,16 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
           }
         },
         { key: 'store_benefits-0', id: 'store_benefits', title: 'Keunggulan Toko', isVisible: true },
-        { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
+        { 
+          key: 'footer-0', 
+          id: 'footer', 
+          title: 'Footer Toko', 
+          isVisible: true,
+          options: {
+            heading: brandName,
+            storeName: brandName,
+          }
+        }
       ],
       product: [
         { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
@@ -255,6 +352,26 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     return defaultMap;
   });
 
+  // Email kontak footer: default ke email akun merchant agar ikut tersimpan saat Simpan/Publikasikan.
+  useEffect(() => {
+    const ownerEmail = (currentStore as any).email || user?.email;
+    if (!ownerEmail) return;
+    setPageSectionsMap((prev) => {
+      let changed = false;
+      const next: Record<string, StoreSectionConfig[]> = {};
+      for (const [page, sections] of Object.entries(prev)) {
+        next[page] = sections.map((section) => {
+          if (section.id === 'footer' && !(section.options as any)?.email) {
+            changed = true;
+            return { ...section, options: { ...(section.options || {}), email: ownerEmail } as any };
+          }
+          return section;
+        });
+      }
+      return changed ? next : prev;
+    });
+  }, [user?.email]);
+
   useEffect(() => {
     setCurrentStore(store);
   }, [store]);
@@ -271,7 +388,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         useCmsStore.getState().loadThemeData(mappedThemeId);
         setActiveThemeId(mappedThemeId);
         
-        setPreviewDevice('desktop');
+        setPreviewDevice(getViewportDeviceMode());
         setPageMode('preview');
         // Clean up URL so it doesn't get stuck in preview mode on reload
         const newUrl = window.location.pathname + (currentStore.slug ? `?toko=${currentStore.slug}` : '');
@@ -287,17 +404,42 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       const aliasKey = newPageId === 'catalog' ? 'catalog' : newPageId === 'katalog' ? 'catalog' : newPageId;
       const targetSections = updatedMap[aliasKey] || updatedMap[newPageId] || [
         { key: 'header-0', id: 'header', title: 'Header & Navbar Toko', isVisible: true },
-        { key: 'product_grid-0', id: 'product_grid', title: 'Katalog Produk', isVisible: true, options: { gridColumns: 4, productCount: 8, showPrice: true, showAddToCart: true } },
+        { key: 'product_grid-0', id: 'product_grid', title: 'Katalog Produk', isVisible: true, options: { gridColumns: 3, productCount: 12, showPrice: true, showAddToCart: true } },
         { key: 'footer-0', id: 'footer', title: 'Footer Toko', isVisible: true }
       ];
-      setSections(targetSections);
-      setSelectedSectionKey(targetSections.length > 0 ? (targetSections[0].key || `${targetSections[0].id}-0`) : null);
-      return updatedMap;
+
+      // Preserve header & footer branding options from homepage
+      const hpHeader = updatedMap['homepage']?.find((s) => s.id === 'header');
+      const hpFooter = updatedMap['homepage']?.find((s) => s.id === 'footer');
+
+      const brandFallback = (currentStore.name && currentStore.name !== 'Toko Sayur' && currentStore.name !== 'Green Market Indonesia')
+        ? currentStore.name
+        : (activeThemeId === 'editorial' ? 'LOOKSEE' : currentStore.name || 'Toko Saya');
+
+      // Header & footer sama di semua halaman: seluruh pengaturan beranda (menu navigasi,
+      // toggle, sosial media, tautan legal, dll.) disalin ke halaman tujuan.
+      const syncSharedSection = (sec: StoreSectionConfig, homeSection?: StoreSectionConfig) => {
+        const merged: any = { ...sec.options, ...homeSection?.options };
+        merged.heading = merged.heading || brandFallback;
+        merged.storeName = merged.storeName || brandFallback;
+        return { ...sec, options: merged };
+      };
+
+      const syncedSections = targetSections.map((sec) => {
+        if (sec.id === 'header') return syncSharedSection(sec, hpHeader);
+        if (sec.id === 'footer') return syncSharedSection(sec, hpFooter);
+        return sec;
+      });
+
+      setSections(syncedSections);
+      setSelectedSectionKey(syncedSections.length > 0 ? (syncedSections[0].key || `${syncedSections[0].id}-0`) : null);
+      return { ...updatedMap, [aliasKey]: syncedSections };
     });
     setActivePage(newPageId);
   };
 
   // Auto-sync current editor draft state to sessionStorage & localStorage for preview tab
+  const lastDraftJsonRef = useRef<string>('');
   useEffect(() => {
     // If merchant does not have a store yet, NEVER auto-save any draft
     if (!currentStore.id) {
@@ -316,7 +458,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       sections: secs,
     }));
 
-    const cmsProducts = useCmsStore.getState().products;
+    const finalProducts = (products && products.length > 0)
+      ? products
+      : (cmsProducts || []).filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
 
     const draftStore = {
       ...currentStore,
@@ -324,27 +468,37 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         ...currentStore.layoutSettings,
         sections: updatedMap['homepage'] || sections,
         primaryAccent,
+        fontFamily: globalSettings?.typography?.headingFont || globalSettings?.typography?.bodyFont || currentStore.layoutSettings?.fontFamily || 'Inter',
         globalThemeSettings: globalSettings,
         activeThemeId,
         themeStyle: activeThemeId,
         pages: pagesConfig,
         activePage,
       },
-      products: cmsProducts,
+      products: finalProducts,
     };
 
+    const draftJson = JSON.stringify(draftStore);
+    if (lastDraftJsonRef.current === draftJson) {
+      return; // Skip identical updates to eliminate flickering / infinite re-render loops
+    }
+    lastDraftJsonRef.current = draftJson;
+
     try {
-      sessionStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
-      localStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
-      if (cmsProducts && cmsProducts.length > 0) {
-        sessionStorage.setItem('microcms_cms_products', JSON.stringify(cmsProducts));
-        localStorage.setItem('microcms_cms_products', JSON.stringify(cmsProducts));
+      sessionStorage.setItem('microcms_preview_draft', draftJson);
+      localStorage.setItem('microcms_preview_draft', draftJson);
+      if (finalProducts && finalProducts.length > 0) {
+        sessionStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
+        localStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
+      } else {
+        sessionStorage.removeItem('microcms_cms_products');
+        localStorage.removeItem('microcms_cms_products');
       }
       window.dispatchEvent(new Event('cms_draft_updated'));
     } catch (e) {
       console.error('Failed to sync preview draft:', e);
     }
-  }, [sections, pageSectionsMap, activePage, primaryAccent, globalSettings, activeThemeId, currentStore]);
+  }, [sections, pageSectionsMap, activePage, primaryAccent, globalSettings, activeThemeId, currentStore, products, cmsProducts]);
 
   const handleOpenPreviewTab = () => {
     const updatedMap = { ...pageSectionsMap, [activePage]: sections };
@@ -355,33 +509,43 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       sections: secs,
     }));
 
-    const cmsProducts = useCmsStore.getState().products;
+    const finalProducts = (products && products.length > 0)
+      ? products
+      : (cmsProducts || []).filter((p: any) => !p.id?.startsWith('pro_p') && !p.id?.startsWith('mock-'));
 
     const previewSlug = currentStore.slug || (user ? `toko-${user.id.replace(/[^a-z0-9]/g, '').slice(0, 10)}` : 'toko-preview');
 
     const draftStore = {
       ...currentStore,
+      id: currentStore.id || 'preview-store-id',
       slug: previewSlug,
+      isPublished: Boolean(currentStore.isPublished),
       layoutSettings: {
         ...currentStore.layoutSettings,
         sections: updatedMap['homepage'] || sections,
         primaryAccent,
+        fontFamily: globalSettings?.typography?.headingFont || globalSettings?.typography?.bodyFont || currentStore.layoutSettings?.fontFamily || 'Inter',
         globalThemeSettings: globalSettings,
         activeThemeId,
         themeStyle: activeThemeId,
         pages: pagesConfig,
         activePage,
       },
-      products: (cmsProducts && cmsProducts.length > 0) ? cmsProducts : products,
+      products: finalProducts,
     };
 
+    const draftJson = JSON.stringify(draftStore);
+    lastDraftJsonRef.current = draftJson;
+
     try {
-      sessionStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
-      localStorage.setItem('microcms_preview_draft', JSON.stringify(draftStore));
-      const finalProds = draftStore.products;
-      if (finalProds && finalProds.length > 0) {
-        sessionStorage.setItem('microcms_cms_products', JSON.stringify(finalProds));
-        localStorage.setItem('microcms_cms_products', JSON.stringify(finalProds));
+      sessionStorage.setItem('microcms_preview_draft', draftJson);
+      localStorage.setItem('microcms_preview_draft', draftJson);
+      if (finalProducts && finalProducts.length > 0) {
+        sessionStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
+        localStorage.setItem('microcms_cms_products', JSON.stringify(finalProducts));
+      } else {
+        sessionStorage.removeItem('microcms_cms_products');
+        localStorage.removeItem('microcms_cms_products');
       }
       window.dispatchEvent(new Event('cms_draft_updated'));
     } catch (e) {
@@ -469,6 +633,29 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     return savedThemes[0]?.id || '';
   });
 
+  // Draf yang sedang tayang di website live. Hanya draf ini yang boleh menimpa layout toko
+  // (Perbarui Website) atau di-unpublish; draf lain cukup disimpan ke Pustaka tema.
+  const liveDraftId = useMemo(() => {
+    const live = currentStore.layoutSettings || {};
+    if (live.activeDraftId && savedThemes.some((t) => t.id === live.activeDraftId)) return live.activeDraftId as string;
+    if (live.activeTemplateId) {
+      const byTemplate = savedThemes.find(
+        (t) => t.id === live.activeTemplateId || t.storeTemplate?.id === live.activeTemplateId
+      );
+      if (byTemplate) return byTemplate.id;
+    }
+    if (live.activeThemeId) {
+      const liveTheme = normalizeThemeId(live.activeThemeId);
+      const byTheme = savedThemes.find(
+        (t) => normalizeThemeId(t.customLayoutSettings?.activeThemeId || t.storeTemplate?.id || t.id) === liveTheme
+      );
+      if (byTheme) return byTheme.id;
+    }
+    return '';
+  }, [currentStore.layoutSettings, savedThemes]);
+  // Tanpa penanda live (data lama) → perilaku lama: draf yang diedit dianggap live.
+  const isEditingLive = !liveDraftId || editingDraftId === liveDraftId;
+
   // Re-sync savedThemes whenever currentStore or user changes
   useEffect(() => {
     if (!currentStore.id || !user) {
@@ -518,9 +705,93 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
   }, [savedThemes, savedThemesStorageKey]);
 
+  // Sinkronisasi Pustaka tema dengan database (store_theme_drafts) agar daftar draf & statusnya
+  // sama di semua perangkat. DB = sumber kebenaran; localStorage hanya cache per perangkat.
+  // Penulisan ke DB baru diizinkan setelah DB toko ini berhasil dibaca (themeDraftsSyncedStoreId),
+  // supaya cache lama di perangkat lain tidak menimpa draf terbaru.
+  const [themeDraftsSyncedStoreId, setThemeDraftsSyncedStoreId] = useState('');
+  const savedThemesRef = useRef(savedThemes);
+  savedThemesRef.current = savedThemes;
+  const activeTemplateIdRef = useRef<string | undefined>(currentStore.layoutSettings?.activeTemplateId);
+  activeTemplateIdRef.current = currentStore.layoutSettings?.activeTemplateId;
+  const lastDraftStoreIdRef = useRef('');
+  const lastPushedDraftsRef = useRef('');
+
+  useEffect(() => {
+    setThemeDraftsSyncedStoreId('');
+    const storeId = currentStore.id;
+    const userId = user?.id;
+    const previousStoreId = lastDraftStoreIdRef.current;
+    lastDraftStoreIdRef.current = storeId || '';
+    if (!storeId || !userId) return;
+
+    const listKey = `microcms_saved_themes_${userId}_${storeId}`;
+    const choseKey = `microcms_user_chose_theme_${userId}_${storeId}`;
+    const isValidDraft = (t: any) => Boolean(t && t.id && t.storeTemplate && t.storeTemplate.id);
+    let cancelled = false;
+
+    loadThemeDrafts(storeId).then((res) => {
+      if (cancelled) return;
+      if (res.status === 'error') return; // gagal baca → jangan menimpa DB dengan cache lokal
+
+      let drafts: SavedThemeItem[];
+      if (res.status === 'ok') {
+        drafts = res.drafts.filter(isValidDraft) as SavedThemeItem[];
+        lastPushedDraftsRef.current = JSON.stringify(drafts);
+      } else {
+        // Belum ada di DB: unggah draf perangkat ini (cache lokal toko ini, draf yang baru dibuat
+        // saat toko dibuat, atau template yang sedang terbit).
+        let local: SavedThemeItem[] = [];
+        try {
+          const parsed = JSON.parse(localStorage.getItem(listKey) || '[]');
+          if (Array.isArray(parsed)) local = parsed.filter(isValidDraft);
+        } catch {}
+        if (local.length === 0 && !previousStoreId) local = savedThemesRef.current.filter(isValidDraft);
+        if (local.length === 0 && activeTemplateIdRef.current) {
+          const tmpl = TEMPLATE_GALLERY_ITEMS.find(
+            (t) => t.id === activeTemplateIdRef.current || t.storeTemplate.id === activeTemplateIdRef.current
+          );
+          if (tmpl) local = [{ ...tmpl, updatedAt: new Date().toISOString() }];
+        }
+        drafts = local;
+        lastPushedDraftsRef.current = '';
+      }
+
+      try {
+        if (drafts.length > 0) {
+          localStorage.setItem(choseKey, 'true');
+          localStorage.setItem(listKey, JSON.stringify(drafts));
+        } else {
+          localStorage.removeItem(listKey);
+        }
+      } catch {}
+      setSavedThemes(drafts);
+      setEditingDraftId((prev) => (drafts.some((t) => t.id === prev) ? prev : drafts[0]?.id || ''));
+      setThemeDraftsSyncedStoreId(storeId);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentStore.id, user?.id]);
+
+  // Simpan perubahan Pustaka tema ke DB (debounce agar ketikan/geser slider tidak membanjiri request).
+  useEffect(() => {
+    const storeId = currentStore.id;
+    if (!storeId || themeDraftsSyncedStoreId !== storeId) return;
+    const serialized = JSON.stringify(savedThemes);
+    if (serialized === lastPushedDraftsRef.current) return;
+    const timer = window.setTimeout(() => {
+      saveThemeDrafts(storeId, savedThemes).then((ok) => {
+        if (ok) lastPushedDraftsRef.current = serialized;
+      });
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [savedThemes, currentStore.id, themeDraftsSyncedStoreId]);
+
   // Helper: Trigger store creation ONLY when merchant explicitly picks or creates a template
   const ensureStoreExistsForTemplate = async (template: TemplateGalleryItem): Promise<Store> => {
-    if (!user) throw new Error('User tidak terautentikasi.');
+    if (!user) throw new Error(isEn ? 'User is not authenticated.' : 'User tidak terautentikasi.');
 
     const mappedThemeId = normalizeThemeId(template.storeTemplate?.id || template.id);
     const newSections = (template.storeTemplate?.sections || []).map((s, idx) => ({
@@ -611,13 +882,18 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     useCmsStore.getState().loadThemeData(mappedThemeId);
 
     // Set as active theme layout
+    const custom = theme.customLayoutSettings || {};
     onSaveLayout({
       ...store.layoutSettings,
+      ...(custom.pages ? { pages: custom.pages } : {}),
+      ...(custom.globalThemeSettings ? { globalThemeSettings: custom.globalThemeSettings } : {}),
+      ...(custom.fontFamily ? { fontFamily: custom.fontFamily } : {}),
       activeTemplateId: storeTemplateId,
+      activeDraftId: theme.id,
       activeThemeId: mappedThemeId,
       themeStyle: mappedThemeId,
-      primaryAccent: theme.primaryAccent,
-      sections: theme.customLayoutSettings?.sections || theme.storeTemplate.sections,
+      primaryAccent: custom.primaryAccent || theme.primaryAccent,
+      sections: custom.sections || theme.storeTemplate.sections,
     });
     
     setSavedThemes((prev) =>
@@ -632,42 +908,48 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       } : t))
     );
     setEditingDraftId(theme.id);
-    onShowNotification(`🎉 Tema "${theme.name}" berhasil dipublikasikan sebagai Tema Utama toko!`);
+    onShowNotification(isEn ? `🎉 Theme "${theme.name}" published as the store's main theme!` : `🎉 Tema "${theme.name}" berhasil dipublikasikan sebagai Tema Utama toko!`);
   };
 
   const handleDuplicateTheme = (theme: SavedThemeItem) => {
     const duplicated: SavedThemeItem = {
       ...theme,
       id: `${theme.id}_copy_${Date.now()}`,
-      name: `${theme.name} (Salinan)`,
+      name: isEn ? `${theme.name} (Copy)` : `${theme.name} (Salinan)`,
       updatedAt: new Date().toISOString(),
     };
     setSavedThemes((prev) => [duplicated, ...prev]);
-    onShowNotification(`Draf tema "${theme.name}" berhasil diduplikasi.`);
+    onShowNotification(isEn ? `Theme draft "${theme.name}" duplicated.` : `Draf tema "${theme.name}" berhasil diduplikasi.`);
   };
 
   const handleRenameTheme = (theme: SavedThemeItem, newName: string) => {
     setSavedThemes((prev) =>
       prev.map((t) => (t.id === theme.id ? { ...t, name: newName, updatedAt: new Date().toISOString() } : t))
     );
-    onShowNotification(`Nama draf diubah menjadi "${newName}".`);
+    onShowNotification(isEn ? `Draft renamed to "${newName}".` : `Nama draf diubah menjadi "${newName}".`);
   };
 
   const handleDeleteTheme = (themeId: string) => {
     setSavedThemes((prev) => prev.filter((t) => t.id !== themeId));
-    onShowNotification('Draf tema berhasil dihapus dari Pustaka Tema.');
+    onShowNotification(isEn ? 'Theme draft removed from the Theme Library.' : 'Draf tema berhasil dihapus dari Pustaka Tema.');
   };
 
-  // Handle clicking a template card → redirect to new tab like Canva
+  // Handle clicking a template card → open template in editor directly without redirecting to a new tab
   const handlePreviewTemplate = (template: TemplateGalleryItem) => {
-    const mappedThemeId = normalizeThemeId(template.storeTemplate?.id || template.id);
-    window.open(`/?previewTheme=${mappedThemeId}&toko=${currentStore.slug}`, '_blank');
+    const existingDraft = savedThemes.find(
+      (t) => t.id === template.id || t.storeTemplate?.id === template.storeTemplate?.id
+    );
+    if (existingDraft) {
+      handleApplyAndEdit(existingDraft);
+      return;
+    }
+    handleApplyAndEdit(template as SavedThemeItem);
   };
 
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
     if (!isFullscreen) {
-      onShowNotification('Mode Layar Penuh aktif. Tekan Esc atau tombol Layar Penuh untuk keluar.');
+      onShowNotification(isEn ? 'Fullscreen mode on. Press Esc or the Fullscreen button to exit.' : 'Mode Layar Penuh aktif. Tekan Esc atau tombol Layar Penuh untuk keluar.');
     }
   };
 
@@ -676,13 +958,10 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setHasChanges(true);
   };
 
-  // Handle "Sesuaikan Draf" / "Coba tema" → restore customized sections or template defaults
+  // Handle "Sesuaikan Draf" / "Pilih Template" → restore customized sections or template defaults directly
   const handleApplyAndEdit = (template: SavedThemeItem) => {
     setEditingDraftId(template.id);
     handleAddSavedTheme(template);
-    setLoadingTemplateName(template.name);
-    setLoadingProgress(0);
-    setPageMode('loading');
 
     const rawId = template.customLayoutSettings?.activeThemeId || 
                   template.storeTemplate?.id || 
@@ -747,22 +1026,8 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     }
 
     useCmsStore.getState().loadThemeData(mappedThemeId);
-    // Animate progress bar over ~1.5 seconds, then switch to editor
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 25 + 15;
-      if (progress >= 100) {
-        progress = 100;
-        setLoadingProgress(100);
-        clearInterval(interval);
-        setTimeout(() => {
-          setPageMode('editor');
-          setPreviewTemplate(null);
-        }, 300);
-      } else {
-        setLoadingProgress(Math.min(progress, 95));
-      }
-    }, 200);
+    setPageMode('editor');
+    setPreviewTemplate(null);
   };
 
   // Keyboard shortcut listener for Esc to exit fullscreen
@@ -795,7 +1060,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
     // Persist layout
     onSaveLayout(data.layoutSettings);
-    onShowNotification(`🎉 Website toko "${updated.name}" berhasil di-generate!`);
+    onShowNotification(isEn ? `🎉 Store website "${updated.name}" generated!` : `🎉 Website toko "${updated.name}" berhasil di-generate!`);
   };
 
   // Undo / Redo History Stack
@@ -826,7 +1091,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setHistoryIndex(newIdx);
     const targetSections = history[newIdx];
     setSections(targetSections);
-    onShowNotification('Perubahan diurungkan (Undo).');
+    onShowNotification(isEn ? 'Change undone.' : 'Perubahan diurungkan (Undo).');
   };
 
   const handleRedo = () => {
@@ -835,7 +1100,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setHistoryIndex(newIdx);
     const targetSections = history[newIdx];
     setSections(targetSections);
-    onShowNotification('Perubahan diulangi (Redo).');
+    onShowNotification(isEn ? 'Change redone.' : 'Perubahan diulangi (Redo).');
   };
 
   // Selected section object
@@ -900,7 +1165,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     const duplicated: StoreSectionConfig = {
       ...target,
       key: newKey,
-      title: `${target.title} (Salinan)`,
+      title: isEn ? `${target.title} (Copy)` : `${target.title} (Salinan)`,
       order: targetIdx + 1,
       options: target.options ? JSON.parse(JSON.stringify(target.options)) : {},
     };
@@ -913,7 +1178,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setSelectedSectionKey(newKey);
     pushToHistory(reordered);
     setActivePreset('custom');
-    onShowNotification(`Bagian "${target.title}" berhasil diduplikasi.`);
+    onShowNotification(isEn ? `Section "${target.title}" duplicated.` : `Bagian "${target.title}" berhasil diduplikasi.`);
   };
 
   // Rename a section
@@ -927,13 +1192,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     });
     setSections(updated);
     pushToHistory(updated);
-    onShowNotification('Nama bagian berhasil diubah.');
+    onShowNotification(isEn ? 'Section renamed.' : 'Nama bagian berhasil diubah.');
   };
 
   // Delete a section
   const handleDeleteSection = (key: string) => {
     if (sections.length <= 1) {
-      onShowNotification('Minimal harus ada 1 bagian pada toko.');
+      onShowNotification(isEn ? 'The store must have at least 1 section.' : 'Minimal harus ada 1 bagian pada toko.');
       return;
     }
 
@@ -951,7 +1216,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
 
     pushToHistory(reordered);
     setActivePreset('custom');
-    onShowNotification('Bagian berhasil dihapus dari etalase toko.');
+    onShowNotification(isEn ? 'Section removed from the storefront.' : 'Bagian berhasil dihapus dari etalase toko.');
   };
 
   // Add section from template
@@ -972,7 +1237,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setSelectedSectionKey(newKey);
     pushToHistory(updated);
     setActivePreset('custom');
-    onShowNotification(`Bagian "${template.title}" berhasil ditambahkan ke tata letak.`);
+    onShowNotification(isEn ? `Section "${template.title}" added to the layout.` : `Bagian "${template.title}" berhasil ditambahkan ke tata letak.`);
   };
 
   // Update specific section options
@@ -980,6 +1245,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     key: string,
     newOptions: Partial<StoreSectionOptions>
   ) => {
+    const targetSection = sections.find((sec, idx) => (sec.key || `${sec.id}-${idx}`) === key);
     const updated = sections.map((sec, idx) => {
       const currentKey = sec.key || `${sec.id}-${idx}`;
       if (currentKey === key) {
@@ -994,6 +1260,30 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       return sec;
     });
     setSections(updated);
+
+    // Header & footer dipakai bersama oleh semua halaman toko: terapkan perubahan yang sama
+    // ke header/footer halaman lain agar menu, logo, dan tautan konsisten di seluruh toko.
+    if (targetSection && SHARED_CHROME_SECTION_IDS.includes(targetSection.id)) {
+      setPageSectionsMap((prev) => {
+        const next: Record<string, StoreSectionConfig[]> = {};
+        for (const [page, pageSections] of Object.entries(prev)) {
+          next[page] = pageSections.map((sec) =>
+            sec.id === targetSection.id ? { ...sec, options: { ...sec.options, ...newOptions } } : sec
+          );
+        }
+        return next;
+      });
+    }
+
+    // Hanya NAMA toko di header yang disinkronkan ke identitas toko. Subjudul header TIDAK
+    // disinkronkan: Hero & Footer memakai deskripsi toko sebagai teks bawaan, sehingga
+    // menyinkronkannya membuat subjudul ketiga komponen ikut berubah.
+    if (targetSection?.id === 'header' && (newOptions.heading || (newOptions as any).storeName)) {
+      const newName = newOptions.heading || (newOptions as any).storeName;
+      useCmsStore.getState().updateStoreInfo({ name: newName });
+      setCurrentStore((prev) => ({ ...prev, name: newName }));
+    }
+
     pushToHistory(updated);
     setActivePreset('custom');
   };
@@ -1016,7 +1306,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       setSelectedSectionKey(cloned[0].key || `${cloned[0].id}-0`);
       setActivePreset(presetId);
       pushToHistory(cloned);
-      onShowNotification(`Preset "${preset.name}" berhasil diterapkan!`);
+      onShowNotification(isEn ? `Preset "${preset.name}" applied!` : `Preset "${preset.name}" berhasil diterapkan!`);
     }
   };
 
@@ -1032,12 +1322,16 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
     setActivePreset('standard');
     setPrimaryAccent('#66000E');
     pushToHistory(defaults);
-    onShowNotification('Pengaturan tata letak dikembalikan ke bawaan.');
+    onShowNotification(isEn ? 'Layout settings reset to default.' : 'Pengaturan tata letak dikembalikan ke bawaan.');
   };
 
   // Save layout
-  const handleSave = () => {
+  // forceLive: jadikan draf yang sedang diedit sebagai tampilan website live.
+  const handleSave = (forceLive = false) => {
     setIsSaving(true);
+    const editingDraft = savedThemes.find((t) => t.id === editingDraftId);
+    // Toko belum terbit: simpan tetap memperbarui layout toko seperti sebelumnya.
+    const writesLive = !currentStore.isPublished || isEditingLive || forceLive;
     const nowIso = new Date().toISOString();
     const updatedMap = {
       ...pageSectionsMap,
@@ -1056,6 +1350,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       themeStyle: activeThemeId,
       primaryAccent,
       activeThemeId,
+      fontFamily: globalSettings?.typography?.headingFont || globalSettings?.typography?.bodyFont || currentStore.layoutSettings?.fontFamily || 'Inter',
       globalThemeSettings: globalSettings,
       pages: pagesConfig,
       activePage,
@@ -1087,24 +1382,63 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
       return prev;
     });
 
-    onSaveLayout(layoutSettings);
+    if (writesLive) {
+      onSaveLayout({
+        ...layoutSettings,
+        ...(editingDraft
+          ? { activeTemplateId: editingDraft.storeTemplate?.id || editingDraft.id, activeDraftId: editingDraft.id }
+          : {}),
+      });
+    }
     setHasChanges(false);
     setTimeout(() => {
       setIsSaving(false);
-      const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
-      onShowNotification(`Draf tema & tata letak berhasil disimpan pada pukul ${timeStr}! Jam pembaruan draf diperbarui.`);
+      const timeStr = isEn
+        ? new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        : new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+      onShowNotification(
+        !writesLive
+          ? (isEn ? `Draft saved at ${timeStr}. The live website is unchanged.` : `Draf disimpan pada pukul ${timeStr}. Website live tidak berubah.`)
+          : forceLive
+          ? (isEn ? `🎉 "${editingDraft?.name || 'Theme'}" is now live on your website.` : `🎉 "${editingDraft?.name || 'Tema'}" kini tayang di website live.`)
+          : store.isPublished
+          ? (isEn ? `Live website updated at ${timeStr}.` : `Website live diperbarui pada pukul ${timeStr}.`)
+          : (isEn ? `Theme draft & layout saved at ${timeStr}! Draft update time refreshed.` : `Draf tema & tata letak berhasil disimpan pada pukul ${timeStr}! Jam pembaruan draf diperbarui.`)
+      );
     }, 200);
   };
 
   const handlePublish = () => {
     setIsSaving(true);
+    const updatedMap = {
+      ...pageSectionsMap,
+      [activePage]: sections,
+    };
+    const pagesConfig = Object.entries(updatedMap).map(([slug, secs]) => ({
+      id: slug,
+      title: slug === 'homepage' ? 'Halaman Utama' : slug.charAt(0).toUpperCase() + slug.slice(1),
+      slug,
+      sections: secs,
+    }));
+
     const layoutSettings: StoreLayoutSettings = {
-      sections,
-      themeStyle: store.layoutSettings?.themeStyle || 'minimal',
+      sections: updatedMap['homepage'] || sections,
+      themeStyle: activeThemeId || store.layoutSettings?.themeStyle || 'minimal',
       primaryAccent,
+      activeThemeId,
+      fontFamily: globalSettings?.typography?.headingFont || globalSettings?.typography?.bodyFont || currentStore.layoutSettings?.fontFamily || 'Inter',
+      globalThemeSettings: globalSettings,
+      pages: pagesConfig,
+      activePage,
     };
 
-    onSaveLayout(layoutSettings);
+    const editingDraft = savedThemes.find((t) => t.id === editingDraftId);
+    onSaveLayout({
+      ...layoutSettings,
+      ...(editingDraft
+        ? { activeTemplateId: editingDraft.storeTemplate?.id || editingDraft.id, activeDraftId: editingDraft.id }
+        : {}),
+    });
     setHasChanges(false);
     setTimeout(() => {
       setIsSaving(false);
@@ -1122,28 +1456,30 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
   const confirmUnpublish = async () => {
     setIsUnpublishing(true);
     try {
-      // Panggil backend API unpublish jika aktif
-      try {
-        await fetch('/api/deploy/unpublish', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug: currentStore.slug, customDomain: currentStore.customDomain }),
-        });
-      } catch (e) {
-        // Non-fatal jika serverless / remote API
-      }
-
       if (onUnpublishStore) {
         await onUnpublishStore();
       } else {
         await storeService.setPublishedStatus(currentStore.id, false, user?.id);
       }
 
+      // WHY: the server only releases a store's hosts once the store is saved as a draft.
+      try {
+        const { domain: baseDomain } = await fetchStoreBaseDomain(currentStore);
+        const releaseRes = await fetch('/api/deploy/unpublish', {
+          method: 'POST',
+          headers: sessionHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ storeId: currentStore.id, baseDomain }),
+        });
+        if (!releaseRes.ok) console.warn('Release store hosts notice:', releaseRes.status);
+      } catch (e) {
+        console.warn('Release store hosts notice:', e);
+      }
+
       setCurrentStore((prev) => ({ ...prev, isPublished: false }));
-      onShowNotification('Toko online berhasil di-unpublish (kembali menjadi draf).');
+      onShowNotification(isEn ? 'Online store unpublished (back to draft).' : 'Toko online berhasil di-unpublish (kembali menjadi draf).');
     } catch (err: any) {
       console.error('Error unpublishing store:', err);
-      onShowNotification('Gagal membatalkan publikasi toko.');
+      onShowNotification(isEn ? 'Failed to unpublish the store.' : 'Gagal membatalkan publikasi toko.');
     } finally {
       setIsUnpublishing(false);
       setIsUnpublishModalOpen(false);
@@ -1198,7 +1534,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                 setHistory([newSections]);
                 setHistoryIndex(0);
                 useCmsStore.getState().loadThemeData(mappedThemeId);
-                onShowNotification(`Template "${storeTemplate.name}" berhasil diterapkan!`);
+                onShowNotification(isEn ? `Template "${storeTemplate.name}" applied!` : `Template "${storeTemplate.name}" berhasil diterapkan!`);
               }
             }}
             onPreviewTheme={(themeId) => {
@@ -1210,6 +1546,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             }}
             savedThemes={savedThemes}
             editingDraftId={editingDraftId}
+            liveDraftId={liveDraftId}
             onAddSavedTheme={handleAddSavedTheme}
             onPublishTheme={handlePublishTheme}
             onDuplicateTheme={handleDuplicateTheme}
@@ -1224,33 +1561,33 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
         <div className="fixed inset-0 z-[60] bg-white flex flex-col font-sans animate-in fade-in duration-200">
           {/* Shopify Theme Store Top Bar */}
           {/* Preview Modal Header Bar */}
-          <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0 z-50">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-white border-b border-gray-200 shrink-0 z-50">
+            <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={() => { setPageMode('library'); setPreviewTemplate(null); }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer text-gray-500 hover:text-gray-900"
-                title="Kembali"
+                title={isEn ? 'Back' : 'Kembali'}
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="w-px h-6 bg-gray-200"></div>
-              <div>
-                <h2 className="text-base font-bold text-gray-900 leading-none">{previewTemplate.name}</h2>
-                <span className="text-xs text-gray-500 font-medium">Gratis • Multi-Page</span>
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-gray-900 leading-none truncate">{previewTemplate.name}</h2>
+                <span className="text-xs text-gray-500 font-medium">{isEn ? 'Free • Multi-Page' : 'Gratis • Multi-Page'}</span>
               </div>
             </div>
 
-            {/* Device Switcher */}
-            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+            {/* Device Switcher: di HP hanya "Ponsel" yang muat, jadi pengalihnya disembunyikan. */}
+            <div className="hidden sm:flex items-center gap-1 bg-gray-100 p-1 rounded-lg shrink-0">
               {([
-                { mode: 'desktop' as const, icon: Monitor },
-                { mode: 'tablet' as const, icon: Tablet },
-                { mode: 'mobile' as const, icon: Smartphone },
-              ]).map(({ mode, icon: Icon }) => (
+                { mode: 'desktop' as const, icon: Monitor, visibility: 'hidden lg:block' },
+                { mode: 'tablet' as const, icon: Tablet, visibility: 'block' },
+                { mode: 'mobile' as const, icon: Smartphone, visibility: 'block' },
+              ]).map(({ mode, icon: Icon, visibility }) => (
                 <button
                   key={mode}
                   onClick={() => setPreviewDevice(mode)}
-                  className={`p-2 rounded-md transition cursor-pointer ${
+                  className={`${visibility} p-2 rounded-md transition cursor-pointer ${
                     previewDevice === mode
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-400 hover:text-gray-600'
@@ -1262,22 +1599,20 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             </div>
 
             {/* Empty right placeholder for balance */}
-            <div className="w-16"></div>
+            <div className="hidden sm:block w-16"></div>
           </div>
 
           {/* Preview Canvas */}
           <div className="flex-1 overflow-y-auto bg-gray-100 flex justify-center py-4 sm:py-8 px-4 relative">
-            <div
-              className={`transition-all duration-300 pb-20 ${
-                previewDevice === 'desktop'
-                  ? 'w-full max-w-6xl'
-                  : 'max-w-[390px] w-full'
-              }`}
-            >
-              <div
+            <div className={`w-full pb-20 ${previewDevice === 'desktop' ? 'max-w-6xl' : ''}`}>
+              <ScaledDeviceFrame
+                designWidth={DEVICE_DESIGN_WIDTH[previewDevice]}
+                fillWhenWider={previewDevice === 'desktop'}
                 className={`bg-white overflow-hidden shadow-2xl ${
                   previewDevice === 'mobile'
                     ? 'rounded-[40px] border-[6px] border-gray-800'
+                    : previewDevice === 'tablet'
+                    ? 'rounded-[28px] border-[8px] border-gray-800'
                     : 'rounded-t-xl border border-gray-300'
                 }`}
               >
@@ -1326,15 +1661,15 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     <div className="w-28 h-1 bg-white/40 rounded-full"></div>
                   </div>
                 )}
-              </div>
+              </ScaledDeviceFrame>
             </div>
 
             {/* Floating Compact Action Bar at Bottom */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 sm:gap-4 bg-white/95 backdrop-blur-xl px-5 py-2 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.15)] border border-gray-200/80 animate-in fade-in slide-in-from-bottom-4 max-w-fit">
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 sm:gap-4 bg-white/95 backdrop-blur-xl px-5 py-2 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.15)] border border-gray-200/80 animate-in fade-in slide-in-from-bottom-4 w-max max-w-[calc(100vw-2rem)]">
               {/* Template Title & Badge */}
-              <div className="flex items-center gap-2 px-1 shrink-0">
-                <span className="font-extrabold text-gray-900 text-sm tracking-tight">{previewTemplate.name}</span>
-                <span className="text-xs text-gray-500 font-medium">Gratis</span>
+              <div className="flex items-center gap-2 px-1 min-w-0">
+                <span className="font-extrabold text-gray-900 text-sm tracking-tight truncate">{previewTemplate.name}</span>
+                <span className="text-xs text-gray-500 font-medium">{isEn ? 'Free' : 'Gratis'}</span>
               </div>
 
               <div className="w-px h-5 bg-gray-200 shrink-0 mx-1"></div>
@@ -1345,13 +1680,13 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                   onClick={() => { setPageMode('library'); setPreviewTemplate(null); }}
                   className="px-4 py-1.5 rounded-full border border-gray-300 text-xs font-bold text-gray-800 bg-white hover:bg-gray-50 transition cursor-pointer"
                 >
-                  Batal
+                  {isEn ? 'Cancel' : 'Batal'}
                 </button>
                 <button
                   onClick={() => handleApplyAndEdit(previewTemplate)}
                   className="px-5 py-2 rounded-full text-xs font-extrabold text-white bg-[#E60023] hover:bg-red-700 transition-all shadow-sm active:scale-95 cursor-pointer"
                 >
-                  Coba tema
+                  {isEn ? 'Try theme' : 'Coba tema'}
                 </button>
               </div>
             </div>
@@ -1377,7 +1712,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             <div className="max-w-xl w-full text-center space-y-6">
               <Loader2 className="w-8 h-8 text-red-600 animate-spin mx-auto" />
               <p className="text-lg font-semibold text-gray-700">
-                Menambahkan "{loadingTemplateName}" ke tema toko online Anda...
+                {isEn ? `Adding "${loadingTemplateName}" to your online store themes...` : `Menambahkan "${loadingTemplateName}" ke tema toko online Anda...`}
               </p>
 
               {/* Progress Bar */}
@@ -1398,22 +1733,22 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6">
               <div>
                 <h4 className="font-bold text-white mb-2">MicroCMS</h4>
-                <p className="text-xs">Platform toko online #1 Indonesia</p>
+                <p className="text-xs">{isEn ? "Indonesia's #1 online store platform" : 'Platform toko online #1 Indonesia'}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-white/90 mb-2">Bantuan</h4>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer">Pusat Bantuan</p>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Dokumentasi API</p>
+                <h4 className="font-semibold text-white/90 mb-2">{isEn ? 'Help' : 'Bantuan'}</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">{isEn ? 'Help Center' : 'Pusat Bantuan'}</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">{isEn ? 'API Documentation' : 'Dokumentasi API'}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-white/90 mb-2">Kategori</h4>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer">Semua Tema</p>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Tema Gratis</p>
+                <h4 className="font-semibold text-white/90 mb-2">{isEn ? 'Categories' : 'Kategori'}</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">{isEn ? 'All Themes' : 'Semua Tema'}</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">{isEn ? 'Free Themes' : 'Tema Gratis'}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-white/90 mb-2">Tentang</h4>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer">Tim Kami</p>
-                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">Syarat Layanan</p>
+                <h4 className="font-semibold text-white/90 mb-2">{isEn ? 'About' : 'Tentang'}</h4>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer">{isEn ? 'Our Team' : 'Tim Kami'}</p>
+                <p className="text-xs hover:text-white transition-colors cursor-pointer mt-1">{isEn ? 'Terms of Service' : 'Syarat Layanan'}</p>
               </div>
             </div>
           </div>
@@ -1433,7 +1768,9 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             hasChanges={hasChanges}
             deviceMode={deviceMode}
             onDeviceModeChange={setDeviceMode}
-            onSave={handleSave}
+            onSave={() => handleSave()}
+            isLiveDraft={isEditingLive}
+            onPublishDraft={() => handleSave(true)}
             onReset={handleReset}
             onOpenStorefront={handleOpenPreviewTab}
             onBack={() => {
@@ -1511,8 +1848,11 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             <div className={`${editorMobileTab === 'settings' ? 'flex' : 'hidden'} lg:${(selectedSectionKey || showGlobalSettings) && !isFullscreen ? 'flex' : 'hidden'} w-full lg:w-[320px] h-full shrink-0 z-20 bg-white border-l border-[#E1E3E5] overflow-hidden`}>
               <RightPanelSettings
                 store={currentStore}
+                products={displayProducts}
+                activeThemeId={activeThemeId}
                 selectedSection={selectedSection}
                 onUpdateSectionOptions={handleUpdateSectionOptions}
+                onUpdateStore={handleUpdateStore}
                 onUpdateSectionTitle={handleRenameSection}
                 onToggleVisibility={handleToggleVisibility}
                 onDuplicateSection={handleDuplicateSection}
@@ -1556,7 +1896,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               }`}
             >
               <Eye className="w-4 h-4" />
-              <span className="text-[10px]">Pratinjau</span>
+              <span className="text-[10px]">{isEn ? 'Preview' : 'Pratinjau'}</span>
             </button>
             <button
               type="button"
@@ -1568,7 +1908,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               }`}
             >
               <ArrowRight className="w-4 h-4 rotate-90" />
-              <span className="text-[10px]">Struktur</span>
+              <span className="text-[10px]">{isEn ? 'Structure' : 'Struktur'}</span>
             </button>
             <button
               type="button"
@@ -1585,7 +1925,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
               }`}
             >
               <Palette className="w-4 h-4" />
-              <span className="text-[10px]">Pengaturan</span>
+              <span className="text-[10px]">{isEn ? 'Settings' : 'Pengaturan'}</span>
             </button>
           </div>
 
@@ -1610,7 +1950,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
             isOpen={isPublishModalOpen}
             onClose={() => setIsPublishModalOpen(false)}
             store={currentStore}
-            products={displayProducts}
+            products={filterRealProducts(products)}
             onNavigateBilling={onNavigateBilling}
             onNavigateDomain={onNavigateDomain}
             onPublish={() => {
@@ -1629,13 +1969,17 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     <EyeOff className="w-5 h-5 text-rose-600" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-[#241A1A]">Tarik Publikasi Toko?</h3>
-                    <p className="text-xs text-[#706866]">Kembalikan website toko ke status Draf</p>
+                    <h3 className="text-base font-bold text-[#241A1A]">{isEn ? 'Unpublish Store?' : 'Tarik Publikasi Toko?'}</h3>
+                    <p className="text-xs text-[#706866]">{isEn ? 'Return the store website to Draft status' : 'Kembalikan website toko ke status Draf'}</p>
                   </div>
                 </div>
 
                 <p className="text-xs text-[#555] leading-relaxed">
-                  Setelah di-unpublish, website toko <strong>{currentStore.name}</strong> tidak dapat diakses secara publik oleh pembeli dan statusnya kembali menjadi draf. Anda dapat mempublikasikannya kembali kapan saja.
+                  {isEn ? (
+                    <>Once unpublished, the <strong>{currentStore.name}</strong> store website can no longer be accessed publicly by buyers and its status returns to draft. You can publish it again at any time.</>
+                  ) : (
+                    <>Setelah di-unpublish, website toko <strong>{currentStore.name}</strong> tidak dapat diakses secara publik oleh pembeli dan statusnya kembali menjadi draf. Anda dapat mempublikasikannya kembali kapan saja.</>
+                  )}
                 </p>
 
                 <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100">
@@ -1645,7 +1989,7 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     disabled={isUnpublishing}
                     className="px-4 py-2 text-xs font-semibold text-[#706866] hover:bg-gray-100 rounded-xl transition cursor-pointer"
                   >
-                    Batal
+                    {isEn ? 'Cancel' : 'Batal'}
                   </button>
                   <button
                     type="button"
@@ -1656,12 +2000,12 @@ export const LayoutPage: React.FC<LayoutPageProps> = ({
                     {isUnpublishing ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Memproses...</span>
+                        <span>{isEn ? 'Processing...' : 'Memproses...'}</span>
                       </>
                     ) : (
                       <>
                         <EyeOff className="w-3.5 h-3.5" />
-                        <span>Ya, Unpublish Toko</span>
+                        <span>{isEn ? 'Yes, Unpublish Store' : 'Ya, Unpublish Toko'}</span>
                       </>
                     )}
                   </button>

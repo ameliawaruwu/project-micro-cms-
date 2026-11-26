@@ -1,53 +1,109 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
-import { Search, ShoppingBag, Menu } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
+import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems, getHeaderDisplay, getHeaderSubtitle } from '../../navMenu';
+import { NavSearchButton } from '../../NavSearchButton';
+import { NavTrackOrderButton } from '../../NavTrackOrderButton';
+import { StoreLogo } from '../../StoreLogo';
+import { CartCount } from '../../storefrontCart';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
-export const ElegantNavbar: React.FC = () => {
+export const ElegantNavbar: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore((state) => state.storeInfo);
-  const navigation = useCmsStore((state) => state.navigation);
+  const header = getHeaderDisplay(sectionOptions);
+  const storeTitle = sectionOptions.heading || sectionOptions.storeName || sectionOptions.title || storeInfo?.name;
+  const storeSubtitle = getHeaderSubtitle(sectionOptions, storeInfo?.description);
+  // Pengaturan header merchant: sembunyikan logo/nama toko atau menu navigasi bila dimatikan.
+  const showLogo = sectionOptions.showLogo ?? true;
+  const navItems = (sectionOptions.showNavMenu ?? true) ? getNavMenuItems(sectionOptions) : [];
+  const showDesktopSearch = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
+  const showDesktopNav = getDeviceClass(isMobile, isTablet, {
+    mobile: 'hidden',
+    tablet: 'hidden',
+    desktop: 'flex',
+    fallback: 'hidden md:flex',
+  });
+
+  const showMobileNav = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex',
+    tablet: 'flex',
+    desktop: 'hidden',
+    fallback: 'flex md:hidden',
+  });
 
   return (
-    <header className="w-full bg-[#FAF9F6]/90 backdrop-blur-sm border-b border-[#E8E6E1] py-5 px-8 md:px-16 sticky top-0 z-50 font-['Cormorant_Garamond',serif]">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <header className={`w-full bg-[#FAF9F6]/90 backdrop-blur-sm border-b border-[#E8E6E1] py-4 sm:py-5 px-4 sm:px-8 md:px-16 ${header.positionClass} font-['Cormorant_Garamond',serif]`}>
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
         
-        {/* Left: Mobile Menu & Search */}
-        <div className="flex-1 flex items-center gap-6">
-          <button className="md:hidden text-[#2C2A29]">
-            <Menu className="w-5 h-5" />
-          </button>
-          <button className="hidden md:flex items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors">
-            <Search className="w-4 h-4" />
-            <span className="text-xs tracking-[0.15em] uppercase font-sans">Search</span>
-          </button>
+        {/* Left: Search */}
+        <div className="flex-none md:flex-1 flex items-center gap-3 sm:gap-6">
+          {header.showSearch && (
+            <NavSearchButton
+              className="flex items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors"
+              label={<span className={`${showDesktopSearch} text-xs tracking-[0.15em] uppercase font-sans`}>{isEn ? 'Search' : 'Cari'}</span>}
+            />
+          )}
+          <NavTrackOrderButton
+            className="flex items-center gap-2 text-[#6B6865] hover:text-[#2C2A29] transition-colors"
+            label={<span className={`${showDesktopSearch} text-xs tracking-[0.15em] uppercase font-sans`}>{isEn ? 'Track' : 'Lacak'}</span>}
+          />
         </div>
 
-        {/* Center: Logo */}
-        <div className="flex-1 text-center flex flex-col items-center">
-          <a href="/" className="text-3xl md:text-4xl font-normal tracking-wide text-[#2C2A29]">
-            {storeInfo.name}
-          </a>
+        {/* Logo: di sudut kiri pada HP, di tengah pada desktop */}
+        <div className="order-first md:order-none flex-1 min-w-0 text-left md:text-center flex flex-col items-start md:items-center">
+          {showLogo && (
+            <a href="/" className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-wide text-[#2C2A29] max-w-full truncate">
+              <StoreLogo sectionOptions={sectionOptions} name={storeTitle} imgClassName="h-9 sm:h-11">{storeTitle}</StoreLogo>
+            </a>
+          )}
+          {storeSubtitle && (
+            <span className="text-[10px] sm:text-[11px] tracking-[0.2em] uppercase text-[#6B6865] mt-1 font-sans max-w-full truncate">
+              {storeSubtitle}
+            </span>
+          )}
         </div>
 
         {/* Right: Actions */}
-        <div className="flex-1 flex items-center justify-end gap-6">
-          <button className="text-[#6B6865] hover:text-[#2C2A29] transition-colors flex items-center gap-2">
-            <span className="text-xs tracking-[0.15em] uppercase hidden md:inline font-sans">Cart</span>
-            <div className="relative">
-              <ShoppingBag className="w-4 h-4" />
-              <span className="absolute -bottom-2 -right-2 text-[#2C2A29] text-[9px] font-sans">0</span>
-            </div>
-          </button>
+        <div className="flex-none md:flex-1 flex items-center justify-end gap-6">
+          {header.showCart && (
+            <button data-href="/keranjang" aria-label={isEn ? 'Open shopping cart' : 'Buka keranjang belanja'} className="text-[#6B6865] hover:text-[#2C2A29] transition-colors flex items-center gap-2 cursor-pointer">
+              <div className="relative">
+                <ShoppingBag className="w-4 h-4" />
+                <span className="absolute -bottom-2 -right-2 text-[#2C2A29] text-[9px] font-sans"><CartCount /></span>
+              </div>
+            </button>
+          )}
         </div>
 
       </div>
 
       {/* Second row: Desktop Navigation */}
-      <nav className="hidden md:flex items-center justify-center gap-12 mt-6">
-        {navigation.filter(n => n.isActive).map((nav) => (
+      <nav className={`${showDesktopNav} items-center justify-center gap-12 mt-6`}>
+        {navItems.map((nav) => (
           <a
             key={nav.id}
             href={nav.route}
             className="text-xs tracking-[0.2em] uppercase text-[#6B6865] hover:text-[#2C2A29] transition-colors font-sans relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-[1px] after:bottom-0 after:left-0 after:bg-[#2C2A29] after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left pb-1"
+          >
+            {nav.label}
+          </a>
+        ))}
+      </nav>
+
+      {/* Baris menu mobile/tablet: menu navbar tetap bisa diakses di layar kecil */}
+      <nav data-sf-mobile-nav="" className={`${showMobileNav} items-center justify-center flex-wrap gap-x-5 gap-y-2 mt-4`}>
+        {navItems.map((nav) => (
+          <a
+            key={nav.id}
+            href={nav.route}
+            className="text-[11px] tracking-[0.18em] uppercase text-[#6B6865] hover:text-[#2C2A29] transition-colors font-sans py-1"
           >
             {nav.label}
           </a>

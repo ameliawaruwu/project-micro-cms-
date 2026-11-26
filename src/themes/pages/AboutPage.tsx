@@ -3,17 +3,38 @@ import { ThemeSchema } from '../schema';
 import { HeaderSection } from '../sections/HeaderSection';
 import { FooterSection } from '../sections/FooterSection';
 import { ThemeRegistry } from '../ThemeRegistry';
+import { useStoreChromeOptions } from './storeChrome';
 import { Award, ShieldCheck, Heart, Sparkles, Compass } from 'lucide-react';
+import { useCmsStore } from '../../cms/useCmsStore';
+import { getDeviceClass } from '../../utils/responsivePreview';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface AboutPageProps {
   themeData?: ThemeSchema;
   themeId?: string;
   store?: any;
   onNavigate?: (pageId: string) => void;
+  deviceMode?: 'desktop' | 'tablet' | 'mobile';
 }
 
-export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propThemeId, store, onNavigate }) => {
+export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propThemeId, store, onNavigate, deviceMode }) => {
   const activeThemeId = propThemeId || themeData?.themeId || store?.layoutSettings?.activeThemeId || 'minimalist';
+  const { isEn } = useLanguage();
+  const isMobile = deviceMode ? deviceMode === 'mobile' : undefined;
+  const isTablet = deviceMode ? deviceMode === 'tablet' : undefined;
+  const gridCols3Class = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-3',
+    fallback: 'grid-cols-1 md:grid-cols-3',
+  });
+  const gridCols2Class = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-2',
+    fallback: 'grid-cols-1 md:grid-cols-2',
+  });
+  const liveStoreInfo = useCmsStore((state) => state.storeInfo);
   const settings = themeData?.settings || {
     backgroundColor: '#FFFFFF',
     textColor: '#1A1A1A',
@@ -21,12 +42,30 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
     fontFamily: 'sans-serif'
   };
 
-  const storeName = store?.name || 'Toko Kami';
-  const storeDesc = store?.description || 'Kami hadir dengan dedikasi tinggi untuk menghadirkan produk-produk berkualitas prima dan pelayanan terbaik bagi Anda.';
+  const storeName = liveStoreInfo?.name || store?.name || 'Toko Kami';
+  const storeDesc = liveStoreInfo?.description || store?.description || 'Kami hadir dengan dedikasi tinggi untuk menghadirkan produk-produk berkualitas prima dan pelayanan terbaik bagi Anda.';
 
   const sections = themeData?.sections || {};
   const headerSection = Object.values(sections).find(s => s.type === 'Header');
   const footerSection = Object.values(sections).find(s => s.type === 'Footer');
+
+  const navbarBase = {
+    heading: storeName,
+    subheading: storeDesc,
+    description: storeDesc,
+    subtitle: storeDesc,
+    tagline: storeDesc,
+    ...((headerSection as any)?.options || (headerSection as any)?.settings)
+  };
+
+  const footerBase = {
+    heading: storeName,
+    subheading: storeDesc,
+    description: storeDesc,
+    subtitle: storeDesc,
+    ...((footerSection as any)?.options || (footerSection as any)?.settings)
+  };
+  const { navbarOptions, footerOptions, isStickyHeader } = useStoreChromeOptions(navbarBase, footerBase);
 
   const CustomNavbar = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Navbar;
   const CustomFooter = ThemeRegistry[activeThemeId as keyof typeof ThemeRegistry]?.Footer;
@@ -39,22 +78,29 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
           <div className="max-w-6xl mx-auto px-6">
             <div className="bg-black text-white p-12 border-8 border-black shadow-[16px_16px_0px_rgba(255,0,0,1)] mb-16">
               <span className="px-4 py-2 bg-[#FF0000] font-black text-white uppercase text-sm border-2 border-white inline-block mb-4">
-                VISI & MISI KAMI
+                {isEn ? 'OUR VISION & MISSION' : 'VISI & MISI KAMI'}
               </span>
               <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-6">
-                TENTANG {storeName}
+                {isEn ? 'ABOUT' : 'TENTANG'} {storeName}
               </h1>
               <p className="text-2xl font-bold uppercase tracking-widest text-yellow-300 leading-relaxed">
                 {storeDesc}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                { title: 'KUALITAS UNGGUL', text: 'Produk dijamin menggunakan bahan terbaik tanpa kompromi.' },
-                { title: 'DESAIN ORISINIL', text: 'Karakter desain kuat dan penuh percaya diri.' },
-                { title: 'GARANSI 100%', text: 'Kepuasan Anda adalah komitmen utama kami.' },
-              ].map((item, i) => (
+            <div className={`grid ${gridCols3Class} gap-8`}>
+              {(isEn
+                ? [
+                    { title: 'SUPERIOR QUALITY', text: 'Products are guaranteed to use the best materials without compromise.' },
+                    { title: 'ORIGINAL DESIGN', text: 'Strong and confident design character.' },
+                    { title: '100% GUARANTEE', text: 'Your satisfaction is our main commitment.' },
+                  ]
+                : [
+                    { title: 'KUALITAS UNGGUL', text: 'Produk dijamin menggunakan bahan terbaik tanpa kompromi.' },
+                    { title: 'DESAIN ORISINIL', text: 'Karakter desain kuat dan penuh percaya diri.' },
+                    { title: 'GARANSI 100%', text: 'Kepuasan Anda adalah komitmen utama kami.' },
+                  ]
+              ).map((item, i) => (
                 <div key={i} className="bg-yellow-300 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,1)]">
                   <h3 className="font-black text-2xl uppercase mb-2">{item.title}</h3>
                   <p className="font-bold text-sm uppercase">{item.text}</p>
@@ -77,17 +123,21 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
             <p className="text-xl md:text-2xl font-serif italic leading-relaxed text-[#706866] mb-16">
               "{storeDesc}"
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left border-t border-[#241A1A]/10 pt-16">
+            <div className={`grid ${gridCols2Class} gap-12 text-left border-t border-[#241A1A]/10 pt-16`}>
               <div>
-                <h3 className="font-serif text-2xl mb-4">Filosofi Desain</h3>
+                <h3 className="font-serif text-2xl mb-4">{isEn ? 'Design Philosophy' : 'Filosofi Desain'}</h3>
                 <p className="font-serif text-sm leading-loose text-[#706866]">
-                  Setiap karya yang lahir dibuat dengan mengedepankan estetika klasik yang tak lekang oleh waktu, keahlian tangan tinggi, dan detail yang sempurna.
+                  {isEn
+                    ? 'Every piece is made with timeless classic aesthetics, fine craftsmanship, and perfect detail.'
+                    : 'Setiap karya yang lahir dibuat dengan mengedepankan estetika klasik yang tak lekang oleh waktu, keahlian tangan tinggi, dan detail yang sempurna.'}
                 </p>
               </div>
               <div>
-                <h3 className="font-serif text-2xl mb-4">Komitmen Berkelanjutan</h3>
+                <h3 className="font-serif text-2xl mb-4">{isEn ? 'Sustainable Commitment' : 'Komitmen Berkelanjutan'}</h3>
                 <p className="font-serif text-sm leading-loose text-[#706866]">
-                  Kami berjanji untuk senantiasa menjaga standar etika produksi dan bahan berkualitas demi kepuasan pelanggan dalam setiap helai dan bentuk produk.
+                  {isEn
+                    ? 'We promise to always uphold ethical production standards and quality materials for customer satisfaction in every product.'
+                    : 'Kami berjanji untuk senantiasa menjaga standar etika produksi dan bahan berkualitas demi kepuasan pelanggan dalam setiap helai dan bentuk produk.'}
                 </p>
               </div>
             </div>
@@ -97,18 +147,18 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
     }
 
     // 3. FUTURISTIC / MODERN THEME
-    if (activeThemeId === 'futuristic' || activeThemeId === 'modern') {
+    if (activeThemeId === 'futuristic') {
       return (
         <div className="pt-28 pb-24 bg-[#0B0F19] text-white min-h-screen font-mono">
           <div className="max-w-5xl mx-auto px-6">
-            <div className="border-b border-cyan-500/20 pb-8 mb-12 text-center">
-              <span className="text-xs text-cyan-400 uppercase tracking-widest">[ENTITY_PROFILE_SYS]</span>
-              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent mt-2">
+            <div className="border-b border-[var(--sf-primary-border)] pb-8 mb-12 text-center">
+              <span className="text-xs text-[var(--sf-primary)] uppercase tracking-widest">[ENTITY_PROFILE_SYS]</span>
+              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-[var(--sf-primary)] to-[color-mix(in_srgb,var(--sf-primary)_55%,white)] bg-clip-text text-transparent mt-2">
                 ABOUT {storeName.toUpperCase()}
               </h1>
             </div>
-            <div className="bg-slate-900/60 border border-cyan-500/30 rounded-3xl p-8 backdrop-blur-md mb-12">
-              <p className="text-cyan-300 text-lg leading-relaxed">{storeDesc}</p>
+            <div className="bg-slate-900/60 border border-[var(--sf-primary-border)] rounded-3xl p-8 backdrop-blur-md mb-12">
+              <p className="text-[var(--sf-primary)] text-lg leading-relaxed">{storeDesc}</p>
             </div>
           </div>
         </div>
@@ -121,7 +171,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
         <div className="pt-28 pb-24 bg-[#F4F7F4] text-[#1B3B2B] min-h-screen">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <span className="px-4 py-1.5 bg-[#2D5A27]/10 text-[#2D5A27] rounded-full text-xs font-bold uppercase tracking-wider inline-block mb-3">
-              🌿 Tentang Toko
+              🌿 {isEn ? 'About the Store' : 'Tentang Toko'}
             </span>
             <h1 className="text-4xl md:text-5xl font-extrabold mb-6 text-[#1B3B2B]">{storeName}</h1>
             <p className="text-xl text-[#1B3B2B]/80 leading-relaxed mb-12">{storeDesc}</p>
@@ -136,9 +186,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
         <div className="pt-28 pb-24 bg-[#FFF5F8] text-[#4A154B] min-h-screen">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <span className="px-4 py-2 bg-pink-200 text-pink-700 rounded-full text-xs font-bold uppercase tracking-wider inline-block mb-3">
-              💖 Cerita Kita
+              💖 {isEn ? 'Our Story' : 'Cerita Kita'}
             </span>
-            <h1 className="text-4xl md:text-5xl font-black mb-6 text-[#4A154B]">Tentang {storeName} ✨</h1>
+            <h1 className="text-4xl md:text-5xl font-black mb-6 text-[#4A154B]">{isEn ? 'About' : 'Tentang'} {storeName} ✨</h1>
             <div className="bg-white rounded-3xl p-8 shadow-lg shadow-pink-100 border border-pink-100">
               <p className="text-lg text-[#4A154B] leading-relaxed">{storeDesc}</p>
             </div>
@@ -149,25 +199,31 @@ export const AboutPage: React.FC<AboutPageProps> = ({ themeData, themeId: propTh
 
     // 6. DEFAULT / MINIMALIST / LUXURY / CREATIVE / PROFESSIONAL / ELEGANT / FASHION
     return (
-      <div className="pt-32 pb-24 bg-white text-[#1A1A1A] min-h-screen">
+      <div className="pt-32 pb-24 bg-[var(--sf-card)] text-[var(--sf-text)] min-h-screen">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
-          <h1 className="text-4xl md:text-5xl font-light tracking-tight">Tentang {storeName}</h1>
-          <div className="w-12 h-0.5 bg-black mx-auto"></div>
-          <p className="text-gray-600 text-lg leading-relaxed max-w-2xl mx-auto">{storeDesc}</p>
+          <h1 className="text-4xl md:text-5xl font-light tracking-tight">{isEn ? 'About' : 'Tentang'} {storeName}</h1>
+          <div className="w-12 h-0.5 bg-[var(--sf-primary)] mx-auto"></div>
+          <p className="text-[var(--sf-text-soft)] text-lg leading-relaxed max-w-2xl mx-auto">{storeDesc}</p>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="flex flex-col w-full min-h-screen">
-      {CustomNavbar ? <CustomNavbar /> : headerSection && (
+    <div className="flex flex-col w-full min-h-screen bg-[var(--sf-page)] text-[var(--sf-text)]">
+      {CustomNavbar ? (
+        <div className={isStickyHeader ? 'sticky top-0 z-50' : undefined}>
+          <CustomNavbar sectionOptions={navbarOptions} />
+        </div>
+      ) : headerSection && (
         <HeaderSection settings={headerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
       
       <div className="flex-1">{renderAboutContent()}</div>
 
-      {CustomFooter ? <CustomFooter /> : footerSection && (
+      {CustomFooter ? (
+        <CustomFooter sectionOptions={footerOptions} />
+      ) : footerSection && (
         <FooterSection settings={footerSection.settings} themeSettings={settings} themeId={activeThemeId} />
       )}
     </div>

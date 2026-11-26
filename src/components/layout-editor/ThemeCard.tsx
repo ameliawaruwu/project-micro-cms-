@@ -1,6 +1,7 @@
 import React from 'react';
 import { THEME_DATA_MAP } from '../../themes/themeData';
 import { TemplateGalleryItem } from './themeGalleryData';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 // ─── Mini Template Preview ─────────────────────────────────────────────
 export const MiniTemplatePreview: React.FC<{
@@ -163,6 +164,7 @@ export const TemplateCard: React.FC<{
   onPreview: () => void;
   onUse: () => void;
 }> = ({ template, isActive, onPreview, onUse }) => {
+  const { isEn } = useLanguage();
   const themeData = THEME_DATA_MAP[template.storeTemplate.id] || THEME_DATA_MAP['minimalist'];
 
   return (
@@ -185,7 +187,7 @@ export const TemplateCard: React.FC<{
             {template.name}
           </h3>
           <p className="text-xs text-[#777777] mt-0.5 truncate">
-            oleh MicroCMS • {template.sectionCount} Seksi
+            {template.sectionCount} {isEn ? 'Sections' : 'Seksi'}
           </p>
         </div>
         <button
@@ -199,7 +201,7 @@ export const TemplateCard: React.FC<{
               : 'bg-white border-[#E5E0DD] text-[#1F1F1F] hover:bg-[#F5E8EA] hover:text-[#66000E] hover:border-[#E8DDDE]'
           }`}
         >
-          {isActive ? 'Aktif' : 'Tambahkan'}
+          {isActive ? (isEn ? 'Active' : 'Aktif') : (isEn ? 'Add' : 'Tambahkan')}
         </button>
       </div>
     </div>

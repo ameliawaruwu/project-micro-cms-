@@ -1,36 +1,90 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
+import { getNavMenuItems } from '../../navMenu';
+import { FooterLegalLinks } from '../../FooterLegalLinks';
+import { FooterBrand } from '../../FooterBrand';
+import { FooterSocialLinks } from '../../FooterSocialLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
-export const MinimalistFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
+export const MinimalistFooter: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
   const storeInfo = useCmsStore(state => state.storeInfo);
   const navigation = useCmsStore(state => state.navigation);
   
-  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeInfo.name}. All rights reserved.`;
+  const storeName = sectionOptions.storeName || sectionOptions.heading || sectionOptions.title || storeInfo.name;
+  const storeDesc = sectionOptions.description !== undefined ? sectionOptions.description : (sectionOptions.tagline || storeInfo.description);
+  const address = sectionOptions.address !== undefined ? sectionOptions.address : storeInfo.address;
+  const email = sectionOptions.email !== undefined ? sectionOptions.email : storeInfo.email;
+  const phone = sectionOptions.phone !== undefined ? sectionOptions.phone : (sectionOptions.phoneWhatsApp || storeInfo.phone);
+  const copyrightText = sectionOptions.copyrightText || `© ${new Date().getFullYear()} ${storeName}. ${isEn ? 'All rights reserved.' : 'Hak cipta dilindungi.'}`;
 
-  const navList = (sectionOptions.navMenuItems && sectionOptions.navMenuItems.length > 0)
-    ? sectionOptions.navMenuItems.map((item: any, i: number) => ({
-        id: item.id || `nav-${i}`,
-        label: item.label || item.name,
-        route: item.href || item.route || '#',
-        isActive: true,
-      }))
-    : navigation.filter(n => n.isActive);
+  // Ponsel & tablet: nama toko selebar penuh di atas, lalu Navigasi dan Kontak berdampingan
+  // (bukan Kontak sendirian di baris bawah). Desktop tetap 12 kolom 5/3/4.
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-2 gap-x-5 gap-y-7',
+    tablet: 'grid-cols-2 gap-x-10 gap-y-8',
+    desktop: 'grid-cols-12 gap-12',
+    fallback: 'grid-cols-2 gap-x-5 gap-y-7 sm:gap-x-10 sm:gap-y-8 md:grid-cols-12 md:gap-12',
+  });
+  const brandColClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'col-span-2',
+    tablet: 'col-span-2',
+    desktop: 'col-span-5',
+    fallback: 'col-span-2 md:col-span-5',
+  });
+  const navColClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'min-w-0',
+    tablet: 'min-w-0',
+    desktop: 'min-w-0 col-span-3',
+    fallback: 'min-w-0 md:col-span-3',
+  });
+  const contactColClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'min-w-0',
+    tablet: 'min-w-0',
+    desktop: 'min-w-0 col-span-4',
+    fallback: 'min-w-0 md:col-span-4',
+  });
+  const bottomFlexClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'flex-col text-center',
+    tablet: 'flex-col text-center',
+    desktop: 'flex-row text-left',
+    fallback: 'flex-col text-center md:flex-row md:text-left',
+  });
+  const footerPaddingClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'pt-10 pb-6 px-5',
+    tablet: 'pt-14 pb-8 px-8',
+    desktop: 'pt-28 pb-12 px-12',
+    fallback: 'pt-10 pb-6 px-5 sm:pt-14 sm:pb-8 sm:px-8 md:pt-28 md:pb-12 md:px-12',
+  });
+  const gridMarginClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'mb-8',
+    tablet: 'mb-10',
+    desktop: 'mb-20',
+    fallback: 'mb-8 sm:mb-10 md:mb-20',
+  });
+
+  const navList = getNavMenuItems(sectionOptions);
 
   return (
-    <footer className="w-full max-w-full bg-white pt-10 sm:pt-16 md:pt-28 pb-8 sm:pb-12 px-3.5 sm:px-6 md:px-12 font-sans box-border overflow-hidden border-t border-gray-100">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 md:gap-12 mb-10 sm:mb-16 md:mb-20">
-        
-        <div className="sm:col-span-2 md:col-span-5">
-          <h3 className="text-xl sm:text-2xl font-light tracking-tight text-gray-900 mb-3 sm:mb-5">
-            {storeInfo.name}
-          </h3>
-          <p className="text-gray-500 text-xs sm:text-sm max-w-sm leading-relaxed mb-6 font-light break-words">
-            {storeInfo.description}
-          </p>
+    <footer className={`w-full max-w-full bg-white ${footerPaddingClass} font-sans box-border overflow-hidden border-t border-gray-100`}>
+      <div className={`max-w-7xl mx-auto grid ${gridColsClass} ${gridMarginClass}`}>
+
+        <div className={brandColClass}>
+          <FooterBrand sectionOptions={sectionOptions} name={storeName} imgClassName="h-10 sm:h-12 mb-2 sm:mb-4">
+            <h3 className="text-xl sm:text-2xl font-light tracking-tight text-gray-900 mb-2 sm:mb-4 break-words">
+              {storeName}
+            </h3>
+          </FooterBrand>
+          {storeDesc && (
+            <p className="text-gray-500 text-xs sm:text-sm max-w-sm leading-relaxed font-light break-words">
+              {storeDesc}
+            </p>
+          )}
         </div>
 
-        <div className="md:col-span-3">
-          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">Navigation</h4>
+        <div className={navColClass}>
+          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">{isEn ? 'Navigation' : 'Navigasi'}</h4>
           <ul className="space-y-2.5 sm:space-y-3">
             {navList.map((nav: any) => (
               <li key={nav.id}>
@@ -42,32 +96,20 @@ export const MinimalistFooter: React.FC<{ sectionOptions?: any }> = ({ sectionOp
           </ul>
         </div>
 
-        <div className="md:col-span-4">
-          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">Connect</h4>
-          <ul className="space-y-2 text-xs sm:text-sm text-gray-600 font-light mb-6">
-            <li className="break-words">{storeInfo.address}</li>
-            <li className="break-words">{storeInfo.email}</li>
-            <li className="break-words">{storeInfo.phone}</li>
+        <div className={contactColClass}>
+          <h4 className="text-[11px] sm:text-xs font-semibold text-gray-900 mb-3 sm:mb-5 uppercase tracking-[0.15em]">{isEn ? 'Contact' : 'Kontak'}</h4>
+          <ul className="space-y-2 text-xs sm:text-sm text-gray-600 font-light mb-4">
+            {address && <li className="break-words">{address}</li>}
+            {email && <li className="break-all"><a href={`mailto:${email}`} className="hover:text-black transition-colors">{email}</a></li>}
           </ul>
-          <div className="flex items-center gap-5">
-            {storeInfo.socials?.instagram && (
-              <a href="#" className="text-xs uppercase tracking-widest text-gray-900 hover:text-gray-500 transition-colors">Instagram</a>
-            )}
-            {storeInfo.socials?.twitter && (
-              <a href="#" className="text-xs uppercase tracking-widest text-gray-900 hover:text-gray-500 transition-colors">Twitter</a>
-            )}
-          </div>
+          <FooterSocialLinks sectionOptions={sectionOptions} itemClassName="rounded-none border border-gray-200 text-gray-900 hover:border-gray-900" />
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 pt-6 border-t border-gray-100 text-center sm:text-left">
+      <div className={`max-w-7xl mx-auto flex ${bottomFlexClass} items-center justify-between gap-3 sm:gap-4 pt-6 border-t border-gray-100`}>
         <p className="text-[11px] sm:text-xs text-gray-400 font-light">
-          {copyrightText}
+          {copyrightText}<FooterLegalLinks sectionOptions={sectionOptions} />
         </p>
-        <div className="flex gap-4 sm:gap-6 text-[11px] sm:text-xs text-gray-400 font-light">
-          <a href="#" className="hover:text-gray-900 transition-colors">Privacy Policy</a>
-          <a href="#" className="hover:text-gray-900 transition-colors">Terms of Service</a>
-        </div>
       </div>
     </footer>
   );

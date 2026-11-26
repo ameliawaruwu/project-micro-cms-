@@ -1,4 +1,5 @@
 export { EditorialNavbar, EditorialHero, EditorialFooter } from './components/Basic';
+export { EditorialProductGrid } from './components/ProductGrid';
 export { 
   EditorialLookbook, 
   EditorialCampaign, 

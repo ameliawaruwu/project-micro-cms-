@@ -1,80 +1,155 @@
 import React from 'react';
 import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useSectionProducts, useThemeProductsSource } from '../../useSectionProducts';
+import { AddToCartButton } from '../../storefrontCart';
+import { STORE_ROUTES, formatRupiah, productHref, resolveExtraText, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
+import { StoreVoucherList } from '../../sections/StoreVoucherList';
 
-export const FashionLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const heading = sectionOptions.heading || "The Lookbook";
-  
+/** Lookbook dari foto produk toko; tidak dirender bila belum ada produk bergambar. */
+export const FashionLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
+  const { storeInfo } = useCmsStore();
+  // Jumlah & pilihan produk mengikuti panel kanan editor (bawaan 2 produk bergambar).
+  const items = useSectionProducts('fashion', sectionOptions, { defaultCount: 2, requireImage: true });
+  if (items.length === 0) return null;
+
+  const heading = sectionOptions.heading || 'Lookbook';
+  const eyebrow = sectionOptions.eyebrowText || (isEn ? 'Style Inspiration' : 'Inspirasi Gaya');
+  const [main, second, ...rest] = items;
+  const mainImage = resolveSectionImage(sectionOptions) || main.image;
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View All Products' : 'Lihat Semua Produk', STORE_ROUTES.catalog);
+  const stackCols = isMobile || isTablet;
+  const mainGridClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-12',
+    fallback: 'grid-cols-1 md:grid-cols-12',
+  });
+  const col7Class = stackCols ? '' : 'md:col-span-7';
+  const col5Class = stackCols ? '' : 'md:col-span-5';
+  const restGridClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
+    desktop: 'grid-cols-4',
+    fallback: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4',
+  });
+
   return (
-    <section className="py-24 md:py-32 bg-white text-[#18181B]">
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-        <div className="text-center mb-16">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-4">Volume 01</p>
-          <h2 className="text-4xl md:text-5xl font-serif italic">{heading}</h2>
+    <section className="py-16 sm:py-24 md:py-32 bg-white text-[#18181B]">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12">
+        <div className="text-center mb-10 sm:mb-16">
+          {eyebrow && <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-4">{eyebrow}</p>}
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif italic break-words">{heading}</h2>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8">
-          <div className="md:col-span-7">
-            <div className="relative group overflow-hidden h-[60vh] md:h-[80vh]">
-              <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1550614000-4b95d415d183?w=1200&q=80"} alt="Lookbook 1" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500"></div>
-              <div className="absolute bottom-8 left-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                <p className="text-xs uppercase tracking-widest mb-2">Look 01</p>
-                <a href="#" className="text-sm border-b border-white pb-1">Shop The Look</a>
+
+        <div className={`grid ${mainGridClass} gap-4 md:gap-8`}>
+          <div className={col7Class}>
+            <a href={productHref(main)} className={`relative group overflow-hidden block ${stackCols ? 'aspect-[4/5] sm:aspect-[4/3]' : 'aspect-[4/5] sm:aspect-[4/3] md:aspect-auto md:h-full md:min-h-[420px]'}`}>
+              <img src={mainImage} alt={main.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+              <div className="absolute bottom-6 left-6 right-6 sm:bottom-8 sm:left-8 text-white min-w-0">
+                <p className="text-xs uppercase tracking-widest mb-2 line-clamp-1">{main.name}</p>
+                <span className="text-sm border-b border-white pb-1">{isEn ? 'View Product' : 'Lihat Produk'}</span>
               </div>
+            </a>
+          </div>
+          <div className={`${col5Class} flex flex-col gap-4 md:gap-8`}>
+            {second && (
+              <a href={productHref(second)} className="relative group overflow-hidden aspect-[4/3] block">
+                <img src={second.image} alt={second.name} className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-1000" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                <div className="absolute bottom-6 left-6 right-6 sm:bottom-8 sm:left-8 text-white min-w-0">
+                  <p className="text-xs uppercase tracking-widest mb-2 line-clamp-1">{second.name}</p>
+                  <span className="text-sm border-b border-white pb-1">{isEn ? 'View Product' : 'Lihat Produk'}</span>
+                </div>
+              </a>
+            )}
+            <div className="relative overflow-hidden min-h-[220px] flex-1 bg-gray-100 p-6 sm:p-8 flex flex-col justify-center items-center text-center">
+              <h3 className="text-2xl sm:text-3xl font-serif italic mb-4 sm:mb-6 text-gray-900 break-words">
+                {resolveExtraText(sectionOptions, 'cardTitle', '') || storeInfo?.name || (isEn ? 'Our Collection' : 'Koleksi Kami')}
+              </h3>
+              <p className="text-sm text-gray-600 leading-relaxed mb-6 sm:mb-8 max-w-xs line-clamp-4">
+                {sectionOptions.description || storeInfo?.description || (isEn ? 'Discover the best products designed for your lifestyle.' : 'Temukan pilihan produk terbaik yang dirancang untuk gaya hidup Anda.')}
+              </p>
+              <a
+                href={cta.href}
+                className="inline-block text-[10px] uppercase tracking-[0.2em] font-medium border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors"
+              >
+                {cta.label}
+              </a>
             </div>
           </div>
-          <div className="md:col-span-5 flex flex-col gap-4 md:gap-8">
-            <div className="relative group overflow-hidden h-[30vh] md:h-[40vh]">
-              <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&q=80" alt="Lookbook 2" className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-1000" />
-              <div className="absolute bottom-8 left-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                <p className="text-xs uppercase tracking-widest mb-2">Look 02</p>
-                <a href="#" className="text-sm border-b border-white pb-1">Shop The Look</a>
-              </div>
-            </div>
-            <div className="relative group overflow-hidden h-[30vh] md:h-[40vh] bg-gray-100 p-8 flex flex-col justify-center items-center text-center">
-               <h3 className="text-3xl font-serif italic mb-6 text-gray-900">Modern Elegance</h3>
-               <p className="text-sm text-gray-600 leading-relaxed mb-8 max-w-xs">
-                 Embrace the new season with textures and silhouettes designed for the contemporary lifestyle.
-               </p>
-               <button className="text-[10px] uppercase tracking-[0.2em] font-medium border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
-                 View Full Gallery
-               </button>
-            </div>
-          </div>
         </div>
+
+        {rest.length > 0 && (
+          <div className={`grid ${restGridClass} gap-4 md:gap-8 mt-4 md:mt-8`}>
+            {rest.map((product) => (
+              <a key={product.id} href={productHref(product)} className="relative group overflow-hidden aspect-[4/5] block">
+                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                <div className="absolute bottom-4 left-4 right-4 text-white min-w-0">
+                  <p className="text-xs uppercase tracking-widest mb-1 line-clamp-1">{product.name}</p>
+                  <span className="text-xs border-b border-white pb-0.5">{isEn ? 'View Product' : 'Lihat Produk'}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
 };
 
-export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const { products } = useCmsStore();
-  const heading = sectionOptions.heading || "Trending Now";
+/** Produk unggulan dari toko; tidak dirender bila toko belum punya produk. */
+export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
+  const products = useSectionProducts('fashion', sectionOptions, { defaultCount: 4 });
+  const heading = sectionOptions.heading || (isEn ? 'Best Sellers' : 'Produk Terlaris');
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View All' : 'Lihat Semua', STORE_ROUTES.catalog);
+
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-2',
+    tablet: 'grid-cols-3',
+    desktop: 'grid-cols-4',
+    fallback: 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-4',
+  });
+
+  if (products.length === 0) return null;
 
   return (
-    <section className="py-24 md:py-32 bg-[#F9F9F9] text-[#18181B]">
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-        <div className="flex justify-between items-end mb-16">
-          <h2 className="text-4xl font-serif italic">{heading}</h2>
-          <a href="#" className="text-[10px] uppercase tracking-[0.2em] border-b border-black pb-1 hidden md:block hover:text-gray-500 transition-colors">
-            Shop All Arrivals
+    <section className="py-16 sm:py-24 md:py-32 bg-[#F9F9F9] text-[#18181B]">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12">
+        <div className="flex justify-between items-end gap-4 mb-10 sm:mb-16">
+          <h2 className="min-w-0 break-words text-2xl sm:text-3xl md:text-4xl font-serif italic storefront-heading-section">{heading}</h2>
+          <a
+            href={cta.href}
+            className="shrink-0 whitespace-nowrap text-[10px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 transition-colors"
+          >
+            {cta.label}
           </a>
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-16">
-          {products.slice(0, 4).map((p, i) => (
-            <div key={p.id} className={`group cursor-pointer ${i % 2 !== 0 ? 'md:mt-16' : ''}`}>
-              <div className="relative overflow-hidden mb-6 aspect-[3/4]">
-                <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s]" />
-                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
-                <button className="absolute bottom-0 left-0 w-full bg-white text-black text-[10px] uppercase tracking-[0.2em] py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 font-medium">
-                  Quick Add
-                </button>
+
+        <div className={`grid ${gridColsClass} gap-4 sm:gap-8 md:gap-x-8 md:gap-y-16`}>
+          {products.map((p, i) => (
+            <div key={p.id} className={`group min-w-0 ${i % 2 !== 0 ? 'md:mt-12 lg:mt-16' : ''}`}>
+              <div className="relative overflow-hidden mb-4 sm:mb-6 aspect-[3/4] bg-gray-100">
+                <a href={productHref(p)} className="block w-full h-full">
+                  {p.image && (
+                    <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s]" />
+                  )}
+                </a>
+                <AddToCartButton product={p} className="absolute bottom-0 left-0 w-full bg-white text-black text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] py-3 sm:py-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 font-medium whitespace-nowrap">
+                  {isEn ? '+ Cart' : '+ Keranjang'}
+                </AddToCartButton>
               </div>
-              <div className="text-center">
-                <h3 className="text-sm font-medium mb-2 group-hover:text-gray-500 transition-colors">{p.name}</h3>
-                <p className="text-xs text-gray-500 tracking-widest">Rp {p.price.toLocaleString('id-ID')}</p>
-              </div>
+              <a href={productHref(p)} className="block text-center min-w-0">
+                <h3 className="text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 group-hover:text-gray-500 transition-colors storefront-card-title line-clamp-2 break-words">
+                  {p.name}
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-500 tracking-wider sm:tracking-widest storefront-card-price">{formatRupiah(p.price)}</p>
+              </a>
             </div>
           ))}
         </div>
@@ -83,23 +158,40 @@ export const FashionFeaturedProducts: React.FC<{ sectionOptions?: any }> = ({ se
   );
 };
 
+/** Banner promo; tombol membuka halaman Promo (sama dengan menu navbar). */
 export const FashionPromoBanner: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const heading = sectionOptions.heading || "End of Season Sale";
-  const desc = sectionOptions.description || "Up to 50% off selected styles.";
-  
+  const { isEn } = useLanguage();
+  const products = useThemeProductsSource('fashion');
+  const heading = sectionOptions.heading || (isEn ? 'Special Promo' : 'Promo Spesial');
+  const desc = sectionOptions.description || (isEn ? 'Get the best deals on our selected products.' : 'Dapatkan penawaran terbaik untuk produk pilihan kami.');
+  // Gambar latar dekoratif: unggahan merchant → foto produk toko → gambar bawaan.
+  const bgImage =
+    resolveSectionImage(sectionOptions) ||
+    products.find((p) => p.image)?.image ||
+    'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1600&q=80';
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View Promo' : 'Lihat Promo', STORE_ROUTES.promo);
+  const badge = sectionOptions.discountBadge || sectionOptions.badgeText;
+
   return (
-    <section className="w-full h-[60vh] relative flex items-center justify-center bg-[#18181B] text-white">
+    <section className="w-full min-h-[50vh] sm:min-h-[60vh] relative flex items-center justify-center bg-[#18181B] text-white px-4 py-16">
       <div className="absolute inset-0 z-0">
-        <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1600&q=80"} alt="Sale" className="w-full h-full object-cover opacity-40 grayscale" />
+        <img src={bgImage} alt="" className="w-full h-full object-cover opacity-40 grayscale" />
       </div>
-      <div className="relative z-10 text-center p-8 bg-black/40 backdrop-blur-sm border border-white/20">
-        <h2 className="text-5xl md:text-7xl font-serif italic mb-6">{heading}</h2>
-        <p className="text-sm md:text-base uppercase tracking-[0.3em] mb-10 text-gray-300">
+      <div className="relative z-10 text-center p-6 sm:p-8 bg-black/40 backdrop-blur-sm border border-white/20 max-w-3xl min-w-0">
+        {badge && (
+          <span className="inline-block mb-4 sm:mb-6 px-4 py-1.5 border border-white/40 text-[10px] uppercase tracking-[0.3em]">{badge}</span>
+        )}
+        <h2 className="text-3xl sm:text-5xl md:text-7xl font-serif italic mb-4 sm:mb-6 break-words">{heading}</h2>
+        <p className="text-xs sm:text-sm md:text-base uppercase tracking-[0.2em] sm:tracking-[0.3em] mb-8 sm:mb-10 text-gray-300">
           {desc}
         </p>
-        <button className="px-12 py-4 bg-white text-black text-[10px] uppercase tracking-[0.2em] hover:bg-transparent hover:text-white hover:border-white border border-transparent transition-all duration-300">
-          Shop The Sale
-        </button>
+        <a
+          href={cta.href}
+          className="inline-block px-8 sm:px-12 py-4 bg-white text-black text-[10px] uppercase tracking-[0.2em] hover:bg-transparent hover:text-white hover:border-white border border-transparent transition-all duration-300"
+        >
+          {cta.label}
+        </a>
+        <StoreVoucherList variant="onDark" className="mt-8" />
       </div>
     </section>
   );

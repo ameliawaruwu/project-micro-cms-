@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { ChevronDown, HelpCircle, MessageCircle } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { ArrowRight, Plus } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { scrollToLandingSection } from '../../utils/scroll';
+import { EASE_SMOOTH, Reveal, RevealGroup, RevealItem } from './landingMotion';
 
 export const FAQSection: React.FC = () => {
   const { t } = useLanguage();
@@ -9,11 +12,11 @@ export const FAQSection: React.FC = () => {
   const faqs = [
     {
       q: t('faq_q1', 'Apakah saya perlu keahlian teknis atau bisa coding?'),
-      a: t('faq_a1', 'Tidak sama sekali. Kroomify dirancang sangat sederhana sehingga siapa pun bisa membuat katalog produk dan melayani pesanan langsung lewat layar smartphone tanpa pengetahuan teknis.'),
+      a: t('faq_a1', 'Tidak sama sekali. LapakQ dirancang sangat sederhana sehingga siapa pun bisa membuat katalog produk dan melayani pesanan langsung lewat layar smartphone tanpa pengetahuan teknis.'),
     },
     {
       q: t('faq_q2', 'Berapa lama proses pembuatan toko online?'),
-      a: t('faq_a2', 'Kurang dari 5 menit. Cukup daftarkan nama usaha Anda, masukkan foto produk pertama, dan tautan toko online (kroomify.id/toko-anda) langsung aktif dan siap disebarkan ke WhatsApp atau media sosial.'),
+      a: t('faq_a2', 'Kurang dari 5 menit. Cukup daftarkan nama usaha Anda, masukkan foto produk pertama, dan tautan toko online (toko-anda.lapakq.com) langsung aktif dan siap disebarkan ke WhatsApp atau media sosial.'),
     },
     {
       q: t('faq_q3', 'Bagaimana cara pembeli membayar pesanan?'),
@@ -23,103 +26,129 @@ export const FAQSection: React.FC = () => {
       q: t('faq_q4', 'Apakah uang dan saldo hasil jualan saya aman?'),
       a: t('faq_a4', 'Sangat aman. Seluruh dana transaksi diproses melalui jalur perbankan terverifikasi dan saldo dompet dapat ditarik langsung ke rekening bank lokal Anda kapan saja tanpa potongan tersembunyi.'),
     },
+    {
+      q: t('faq_q5', 'Bisakah toko saya memakai domain sendiri?'),
+      a: t('faq_a5', 'Bisa. Setiap toko langsung mendapat alamat namatoko.lapakq.com, dan Anda dapat menghubungkan domain milik sendiri dari menu pengaturan toko kapan saja.'),
+    },
+    {
+      q: t('faq_q6', 'Apakah toko bisa dikelola sepenuhnya dari HP?'),
+      a: t('faq_a6', 'Ya. Dashboard LapakQ ringan dan responsif, jadi menambah produk, memproses pesanan, hingga mengatur tampilan toko bisa dilakukan dari browser HP tanpa install aplikasi.'),
+    },
   ];
 
-  const toggle = (idx: number) => {
-    setOpenIdx(openIdx === idx ? null : idx);
-  };
-
   return (
-    <section 
-      id="faq" 
-      className="min-h-[calc(100svh-124px)] min-h-[calc(100dvh-124px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center py-6 sm:py-8 lg:py-4 xl:py-8 bg-white border-b border-[#E8DDDE] scroll-mt-16 sm:scroll-mt-20 font-sans relative"
+    <section
+      id="faq"
+      className="relative bg-white py-16 sm:py-20 lg:py-24 scroll-mt-16 sm:scroll-mt-20 font-sans"
     >
-      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start max-w-[1100px] xl:max-w-6xl mx-auto">
-          
-          {/* Left Column: Title, Subtitle, & WhatsApp Support Card */}
-          <div className="lg:col-span-5 space-y-3 sm:space-y-4 text-center lg:text-left">
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-medium shadow-2xs">
-              <HelpCircle className="w-3.5 h-3.5 text-[#66000E]" />
-              <span>{t('faq_section_badge', 'Tanya Jawab')}</span>
-            </div>
-
-            <h2 className="text-lg sm:text-2xl lg:text-2xl font-semibold text-[#241A1A] tracking-tight leading-snug">
-              {t('faq_section_title', 'Pertanyaan Umum')}
-            </h2>
-
-            <p className="text-[#5F5652] text-xs sm:text-sm leading-relaxed font-normal max-w-md mx-auto lg:mx-0">
-              {t('faq_section_desc', 'Jawaban untuk hal-hal yang sering ditanyakan seputar Kroomify.')}
-            </p>
-
-            {/* WhatsApp Quick Help Card */}
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF7F7] border border-[#E8DDDE] text-left space-y-2 mt-2">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#241A1A]">
-                <MessageCircle className="w-4 h-4 text-emerald-600" />
-                <span>{t('faq_more_help', 'Butuh bantuan lebih lanjut?')}</span>
-              </div>
-              <p className="text-[11px] sm:text-xs text-[#5F5652] leading-relaxed">
-                Tim CS Kroomify siap membantu panduan setting toko dan pertanyaan teknis Anda.
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
+        {/* Kolom kiri: judul & kartu bantuan (menempel saat digulir di desktop) */}
+        <div className="lg:col-span-5">
+          <div className="lg:sticky lg:top-28 space-y-8">
+            <Reveal className="text-center lg:text-left">
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#800C19]">
+                {t('faq_section_badge', 'Tanya Jawab')}
+              </span>
+              <h2 className="mt-3 text-2xl sm:text-4xl lg:text-[44px] font-medium tracking-tight leading-[1.1] text-[#1A1414]">
+                {t('faq_section_title', 'Pertanyaan Umum')}
+              </h2>
+              <p className="mt-3 text-sm sm:text-base text-[#5F5652] max-w-md mx-auto lg:mx-0">
+                {t('faq_section_desc', 'Jawaban untuk hal-hal yang sering ditanyakan seputar LapakQ.')}
               </p>
-              <a
-                href="https://wa.me/6281234567890?text=Halo%20Admin%20Kroomify,%20saya%20ingin%20tanya%20seputar%20pembuatan%20toko%20online"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 w-full h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition cursor-pointer active:scale-[0.98] shadow-xs"
-              >
-                <MessageCircle className="w-4 h-4 text-white" />
-                <span>{t('faq_cs_whatsapp', 'Hubungi CS WhatsApp')}</span>
-              </a>
-            </div>
-          </div>
+            </Reveal>
 
-          {/* Right Column: 4 Accordions */}
-          <div className="lg:col-span-7 space-y-2">
-            {faqs.map((faq, idx) => {
-              const isOpen = openIdx === idx;
-              return (
-                <div
-                  key={idx}
-                  className={`rounded-xl sm:rounded-2xl border transition-all duration-200 overflow-hidden ${
-                    isOpen
-                      ? 'bg-[#FAF7F7] border-[#66000E]/30 shadow-xs'
-                      : 'bg-white border-[#E8DDDE] hover:border-[#66000E]/20'
-                  }`}
+            <Reveal delay={0.1} className="hidden lg:block">
+              <div className="relative overflow-hidden rounded-[28px] bg-[#FFC2D1] p-7 text-[#1A1414]">
+                <motion.img
+                  src="/assets/3d/clean/green_mug.webp"
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  animate={{ y: [0, -6, 0], rotate: [0, 4, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                  className="pointer-events-none absolute right-4 top-4 w-24 drop-shadow-[0_14px_18px_rgba(0,0,0,0.2)]"
+                />
+                <p className="relative max-w-[65%] text-xl font-medium tracking-tight leading-snug">
+                  {t('faq_help_title', 'Masih bingung harus mulai dari mana?')}
+                </p>
+                <p className="relative mt-2 max-w-[75%] text-sm text-[#1A1414]/70">
+                  {t('faq_help_desc', 'Lihat alur singkat membuat toko sampai menerima pesanan pertama.')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => scrollToLandingSection('cara-kerja', 0)}
+                  className="group relative mt-6 inline-flex items-center gap-2 h-11 px-5 rounded-lg bg-[#66000E] hover:bg-[#800C19] text-white text-sm font-medium transition-colors cursor-pointer"
                 >
-                  <button
-                    type="button"
-                    onClick={() => toggle(idx)}
-                    className="w-full p-3 sm:p-3.5 text-left flex items-center justify-between gap-3 cursor-pointer min-h-[42px]"
-                    aria-expanded={isOpen}
-                  >
-                    <span className="font-semibold text-xs sm:text-sm text-[#241A1A] leading-snug">
-                      {faq.q}
-                    </span>
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 ${
-                        isOpen ? 'rotate-180 bg-[#F5E8EA] text-[#66000E]' : 'bg-[#FAF7F7] text-[#857C76]'
-                      }`}
-                    >
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    </div>
-                  </button>
-
-                  {isOpen && (
-                    <div className="px-3 pb-3 sm:px-3.5 sm:pb-3.5 text-[11px] sm:text-xs text-[#5F5652] leading-relaxed font-normal border-t border-[#E8DDDE] pt-2 animate-in fade-in duration-150">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                  {t('hero_cta_how', 'Lihat Cara Kerja')}
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </button>
+              </div>
+            </Reveal>
           </div>
-
         </div>
 
+        {/* Kolom kanan: daftar pertanyaan bernomor */}
+        <RevealGroup className="lg:col-span-7 space-y-3">
+          {faqs.map((faq, idx) => {
+            const isOpen = openIdx === idx;
+            const buttonId = `faq-question-${idx}`;
+            const answerId = `faq-answer-${idx}`;
+            return (
+              <RevealItem
+                key={idx}
+                className={`rounded-2xl border transition-colors duration-300 ${
+                  isOpen ? 'border-transparent bg-[#FAF7F7]' : 'border-[#E4DCDC] bg-white hover:border-[#D9C9CB]'
+                }`}
+              >
+                <button
+                  id={buttonId}
+                  type="button"
+                  onClick={() => setOpenIdx(isOpen ? null : idx)}
+                  aria-expanded={isOpen}
+                  aria-controls={answerId}
+                  className="w-full px-4 sm:px-5 py-4 sm:py-5 text-left flex items-center gap-3 sm:gap-4 cursor-pointer group"
+                >
+                  <span
+                    className={`shrink-0 text-xs font-semibold tabular-nums transition-colors ${
+                      isOpen ? 'text-[#800C19]' : 'text-[#B5A9A6]'
+                    }`}
+                  >
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
+                  <span className="flex-1 text-sm sm:text-base font-medium text-[#1A1414] leading-snug group-hover:text-[#800C19] transition-colors">
+                    {faq.q}
+                  </span>
+                  <span
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
+                      isOpen ? 'rotate-45 bg-[#66000E] text-white' : 'bg-[#F5E8EA] text-[#800C19]'
+                    }`}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </span>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      id={answerId}
+                      role="region"
+                      aria-labelledby={buttonId}
+                      key="answer"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: EASE_SMOOTH }}
+                      className="overflow-hidden"
+                    >
+                      <p className="pl-11 sm:pl-[52px] pr-5 sm:pr-14 pb-5 text-sm text-[#5F5652] leading-relaxed">{faq.a}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </RevealItem>
+            );
+          })}
+        </RevealGroup>
       </div>
     </section>
   );
 };
-
-

@@ -12,43 +12,77 @@ import {
   Store as StoreIcon,
   Tag,
   CreditCard,
+  Globe,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Store } from '../../../types';
 import { formatRupiah } from '../../../utils/formatters';
 
 import { Breadcrumb } from '../../../components/common/Breadcrumb';
+import { StoreDomainPanel } from '../../../components/admin/StoreDomainPanel';
+import { buildStoreLiveUrl, useStoreBaseDomain } from '../../../utils/storeDomain';
+import { AdminStoreLinkSearch } from '../components/AdminStoreLinkSearch';
+
+type PublishFilter = 'all' | 'published' | 'draft';
 
 interface AdminStoresTabProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  filterPlan: string;
-  setFilterPlan: (plan: string) => void;
   filteredStores: Store[];
   suspendedIds: string[];
-  handleChangePlan: (storeId: string, plan: 'free' | 'starter' | 'premium') => void;
   handleToggleSuspend: (storeId: string, storeName: string) => void;
-  onOpenStorefront?: (slug: string) => void;
   language: string;
   isEn: boolean;
   onNavigateOverview?: () => void;
+  isSubAdmin?: boolean;
+  communityName?: string;
+  /** false = hanya lihat (Sub-Admin Produk): tanpa Suspend/Aktifkan. */
+  canManage?: boolean;
+  /** Sub-admin: tombol Detail membuka halaman detail toko (rute /admin/toko/:id), bukan modal. */
+  onOpenStoreDetail?: (storeId: string) => void;
+  /** Sub-Admin Utama: tampilkan pencarian untuk menautkan toko ke komunitas. */
+  canAddMembers?: boolean;
+  onMembersChanged?: () => void | Promise<void>;
+  onShowToast?: (msg: string) => void;
 }
 
 export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
   searchQuery,
   setSearchQuery,
-  filterPlan,
-  setFilterPlan,
   filteredStores,
   suspendedIds,
-  handleChangePlan,
   handleToggleSuspend,
-  onOpenStorefront,
   language,
   isEn,
   onNavigateOverview,
+  isSubAdmin = false,
+  communityName,
+  canManage = true,
+  onOpenStoreDetail,
+  canAddMembers = false,
+  onMembersChanged,
+  onShowToast,
 }) => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [copied, setCopied] = useState(false);
+  // Toko yang baris pengaturan domainnya sedang terbuka di tabel.
+  const [domainStoreId, setDomainStoreId] = useState<string | null>(null);
+  // WHY: daftar toko datang dari props; hasil penetapan domain disimpan lokal sampai data dimuat ulang.
+  const [domainOverrides, setDomainOverrides] = useState<Record<string, string | null>>({});
+  const domainOf = (s: Store) => (s.id in domainOverrides ? domainOverrides[s.id] : s.customDomain || null);
+
+  // Status website toko: terbit (storefront live) atau masih draf.
+  const [publishFilter, setPublishFilter] = useState<PublishFilter>('all');
+  const publishedCount = filteredStores.filter((s) => s.isPublished).length;
+  const publishFilterOptions: { id: PublishFilter; label: string; count: number }[] = [
+    { id: 'all', label: isEn ? 'All' : 'Semua', count: filteredStores.length },
+    { id: 'published', label: isEn ? 'Published' : 'Terbit', count: publishedCount },
+    { id: 'draft', label: isEn ? 'Draft' : 'Draf', count: filteredStores.length - publishedCount },
+  ];
+  const visibleStores = publishFilter === 'all'
+    ? filteredStores
+    : filteredStores.filter((s) => (publishFilter === 'published') === Boolean(s.isPublished));
 
   const getFullFormattedAddress = (s: Store) => {
     const parts = [
@@ -61,7 +95,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
       s.province,
       s.postalCode ? `Kode Pos ${s.postalCode}` : null,
     ].filter(Boolean);
-    return parts.length > 0 ? parts.join(', ') : 'Belum ada alamat toko tersimpan';
+    return parts.length > 0 ? parts.join(', ') : (isEn ? 'No store address saved yet' : 'Belum ada alamat toko tersimpan');
   };
 
   const handleCopyAddress = (s: Store) => {
@@ -85,17 +119,39 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
         <div>
           <h1 className="text-lg sm:text-xl font-semibold text-[#1F1F1F] tracking-tight flex items-center gap-2.5">
             <StoreIcon className="w-5 h-5 text-[#66000E]" />
-            <span>{isEn ? 'Manage Stores' : 'Kelola Toko'}</span>
+            <span>
+              {isSubAdmin
+                ? (canManage
+                  ? (communityName ? (isEn ? `Manage Member Stores — ${communityName}` : `Kelola Lapak Binaan — ${communityName}`) : (isEn ? 'Manage Member Stores' : 'Kelola Toko Binaan'))
+                  : (communityName ? (isEn ? `Member Stores — ${communityName}` : `Data Lapak Binaan — ${communityName}`) : (isEn ? 'Member Stores' : 'Data Toko Binaan')))
+                : (isEn ? 'Manage Stores' : 'Kelola Toko')}
+            </span>
           </h1>
+          {!canManage && (
+            <p className="text-xs text-gray-500 mt-1">
+              {isEn
+                ? 'View only. Store suspension is handled by the main sub-admin.'
+                : 'Hanya lihat. Suspend toko dikelola oleh sub admin utama.'}
+            </p>
+          )}
         </div>
         <span className="text-xs font-medium text-gray-600 px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 self-start sm:self-auto">
           {filteredStores.length} {isEn ? 'Stores' : 'Toko Terdaftar'}
         </span>
       </div>
 
-      {/* Search & Filter Bar */}
+      {canAddMembers && (
+        <AdminStoreLinkSearch
+          isEn={isEn}
+          linkedStoreIds={filteredStores.map((s) => s.id)}
+          onLinked={onMembersChanged}
+          onShowToast={onShowToast}
+        />
+      )}
+
+      {/* Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="relative flex-1 w-full max-w-sm">
+        <div className="relative flex-1 w-full max-w-md">
           <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -105,23 +161,22 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
             className="w-full pl-8 pr-3 py-1.5 rounded-md bg-white border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-red-500"
           />
         </div>
-
-        <div className="flex items-center gap-1">
-          {['all', 'free', 'premium'].map((p) => (
+        <div
+          className="flex items-center gap-1 p-0.5 rounded-md bg-gray-100 border border-gray-200 self-start sm:self-auto"
+          role="group"
+          aria-label={isEn ? 'Filter by website status' : 'Saring status website'}
+        >
+          {publishFilterOptions.map((option) => (
             <button
-              key={p}
-              onClick={() => setFilterPlan(p)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium capitalize transition cursor-pointer ${
-                filterPlan === p
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+              key={option.id}
+              type="button"
+              onClick={() => setPublishFilter(option.id)}
+              aria-pressed={publishFilter === option.id}
+              className={`px-2.5 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
+                publishFilter === option.id ? 'bg-white text-[#66000E] shadow-xs' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              {p === 'all'
-                ? (language === 'en' ? 'All' : 'Semua')
-                : p === 'premium'
-                ? 'Pro'
-                : (language === 'en' ? 'Free' : 'Gratis')}
+              {option.label} <span className="text-gray-400 font-medium">{option.count}</span>
             </button>
           ))}
         </div>
@@ -134,14 +189,14 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
             <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-600 font-semibold">
               <tr>
                 <th className="py-2.5 px-3.5">{language === 'en' ? 'Store' : 'Toko'}</th>
-                <th className="py-2.5 px-3.5">{language === 'en' ? 'Plan' : 'Paket'}</th>
                 <th className="py-2.5 px-3.5">{language === 'en' ? 'Wallet Balance' : 'Saldo Dompet'}</th>
+                <th className="py-2.5 px-3.5">Website</th>
                 <th className="py-2.5 px-3.5">Status</th>
                 <th className="py-2.5 px-3.5 text-right">{language === 'en' ? 'Action' : 'Aksi'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredStores.length === 0 ? (
+              {visibleStores.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-gray-400">
                     <StoreIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
@@ -152,41 +207,46 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredStores.map((store) => {
+                visibleStores.map((store) => {
                 const isSuspended = suspendedIds.includes(store.id);
+                const isDomainOpen = domainStoreId === store.id;
                 return (
-                  <tr key={store.id} className="hover:bg-gray-50/60 transition">
+                  <React.Fragment key={store.id}>
+                  <tr className={`transition ${isDomainOpen ? 'bg-[#FBF7F7]' : 'hover:bg-gray-50/60'}`}>
                     {/* Store details */}
                     <td className="py-2.5 px-3.5">
                       <div className="flex items-center gap-2.5">
-                        <img
-                          src={store.logoUrl || 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=100'}
-                          alt={store.name}
-                          className="w-7 h-7 rounded object-cover border border-gray-200"
-                        />
+                        {store.logoUrl && !store.logoUrl.includes('unsplash.com') ? (
+                          <img
+                            src={store.logoUrl}
+                            alt={store.name}
+                            className="w-7 h-7 rounded object-cover border border-gray-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-7 h-7 rounded bg-[#F5E8EA] border border-[#E8DDDE] flex items-center justify-center text-[#66000E] shrink-0 font-bold text-[10px]">
+                            <StoreIcon className="w-3.5 h-3.5" />
+                          </div>
+                        )}
                         <div>
                           <p className="font-semibold text-gray-900 leading-tight">{store.name}</p>
                           <span className="text-[11px] text-gray-400">/{store.slug} • {store.city}</span>
+                          {domainOf(store) && (
+                            <span className="flex items-center gap-1 text-[11px] text-[#66000E] font-mono">
+                              <Globe className="w-3 h-3" /> {domainOf(store)}
+                            </span>
+                          )}
                         </div>
                       </div>
-                    </td>
-
-                    {/* Plan Selector */}
-                    <td className="py-2.5 px-3.5">
-                      <select
-                        value={store.plan || 'free'}
-                        onChange={(e) => handleChangePlan(store.id, e.target.value as any)}
-                        className="bg-gray-50 border border-gray-200 rounded px-2 py-0.5 text-[11px] font-medium text-gray-800 focus:outline-none focus:border-red-500 cursor-pointer"
-                      >
-                        <option value="free">FREE</option>
-                        <option value="starter">STARTER</option>
-                        <option value="premium">PRO</option>
-                      </select>
                     </td>
 
                     {/* Balance */}
                     <td className="py-2.5 px-3.5 font-semibold text-gray-900">
                       {formatRupiah(store.balance || 0)}
+                    </td>
+
+                    {/* Website */}
+                    <td className="py-2.5 px-3.5">
+                      <PublishStatusBadge isPublished={Boolean(store.isPublished)} isEn={isEn} />
                     </td>
 
                     {/* Status */}
@@ -206,7 +266,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                     <td className="py-2.5 px-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
-                          onClick={() => setSelectedStore(store)}
+                          onClick={() => (onOpenStoreDetail ? onOpenStoreDetail(store.id) : setSelectedStore(store))}
                           className="px-2 py-1 rounded bg-[#F5E8EA] hover:bg-[#E8DDDE] text-[#66000E] border border-[#E8DDDE] text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
                           title={isEn ? 'View Store & Address Details' : 'Lihat Detail Toko & Alamat'}
                         >
@@ -214,15 +274,34 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                           <span>{isEn ? 'Detail' : 'Detail'}</span>
                         </button>
 
-                        {onOpenStorefront && (
+                        {!isSubAdmin && (
                           <button
-                            onClick={() => onOpenStorefront(store.slug)}
-                            className="p-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-600 transition cursor-pointer"
-                            title={isEn ? 'View Storefront' : 'Lihat Storefront'}
+                            onClick={() => setDomainStoreId(isDomainOpen ? null : store.id)}
+                            aria-expanded={isDomainOpen}
+                            className={`px-2 py-1 rounded border text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer ${
+                              isDomainOpen ? 'border-[#E8DDDE] bg-[#F5E8EA] text-[#66000E]' : 'border-gray-200 hover:bg-gray-100 text-gray-700'
+                            }`}
+                            title={isEn ? 'Assign custom domain' : 'Tetapkan domain kustom'}
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
+                            <Globe className="w-3.5 h-3.5" />
+                            <span>Domain</span>
+                            {isDomainOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                           </button>
                         )}
+
+                        <LiveStoreLink
+                          store={store}
+                          customDomain={domainOf(store)}
+                          title={
+                            store.isPublished
+                              ? (isEn ? 'Open live website' : 'Buka website live')
+                              : (isEn ? 'Open website (not published yet)' : 'Buka website (belum terbit)')
+                          }
+                          className="p-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-600 transition"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </LiveStoreLink>
+                        {canManage && (
                         <button
                           onClick={() => handleToggleSuspend(store.id, store.name)}
                           className={`px-2 py-1 rounded font-medium text-[11px] transition cursor-pointer ${
@@ -233,9 +312,24 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                         >
                           {isSuspended ? (isEn ? 'Activate' : 'Aktifkan') : (isEn ? 'Suspend' : 'Suspend')}
                         </button>
+                        )}
                       </div>
                     </td>
                   </tr>
+                  {isDomainOpen && (
+                    <tr>
+                      <td colSpan={5} className="p-0">
+                        <StoreDomainPanel
+                          store={store}
+                          currentDomain={domainOf(store)}
+                          isEn={isEn}
+                          onClose={() => setDomainStoreId(null)}
+                          onSaved={(storeId, hostname) => setDomainOverrides((prev) => ({ ...prev, [storeId]: hostname }))}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 );
               }))}
             </tbody>
@@ -250,17 +344,20 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
             {/* Header Modal */}
             <div className="px-6 py-4 bg-gradient-to-r from-[#66000E] to-[#9B1C1C] text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img
-                  src={selectedStore.logoUrl || 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=100'}
-                  alt={selectedStore.name}
-                  className="w-11 h-11 rounded-xl object-cover border-2 border-white/40 bg-white"
-                />
+                {selectedStore.logoUrl && !selectedStore.logoUrl.includes('unsplash.com') ? (
+                  <img
+                    src={selectedStore.logoUrl}
+                    alt={selectedStore.name}
+                    className="w-11 h-11 rounded-xl object-cover border-2 border-white/40 bg-white shrink-0"
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-xl bg-white/20 border-2 border-white/40 flex items-center justify-center text-white shrink-0 shadow-xs">
+                    <StoreIcon className="w-6 h-6 text-white" />
+                  </div>
+                )}
                 <div>
-                  <h3 className="font-bold text-base text-white tracking-tight flex items-center gap-2">
-                    <span>{selectedStore.name}</span>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-white/20 text-white">
-                      {selectedStore.plan || 'FREE'}
-                    </span>
+                  <h3 className="font-bold text-base text-white tracking-tight">
+                    {selectedStore.name}
                   </h3>
                   <p className="text-xs text-white/80">
                     /{selectedStore.slug} • Merchant ID: {selectedStore.merchantId || '-'}
@@ -277,34 +374,40 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
             <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
               {/* Ringkasan Profil & Status */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-xs">
                 <div>
-                  <span className="text-[11px] text-gray-500 block">Nomor WhatsApp</span>
+                  <span className="text-[11px] text-gray-500 block">{isEn ? 'WhatsApp Number' : 'Nomor WhatsApp'}</span>
                   <div className="font-semibold text-gray-900 flex items-center gap-1 mt-0.5">
                     <Phone className="w-3.5 h-3.5 text-emerald-600" />
                     <span>{selectedStore.phoneWhatsApp || '-'}</span>
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-gray-500 block">Saldo Aktif</span>
+                  <span className="text-[11px] text-gray-500 block">{isEn ? 'Active Balance' : 'Saldo Aktif'}</span>
                   <div className="font-bold text-[#66000E] mt-0.5">
                     {formatRupiah(selectedStore.balance || 0)}
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-gray-500 block">Status Operasional</span>
+                  <span className="text-[11px] text-gray-500 block">{isEn ? 'Operational Status' : 'Status Operasional'}</span>
                   <div className="font-semibold mt-0.5">
                     {suspendedIds.includes(selectedStore.id) ? (
-                      <span className="text-red-600 font-medium">Disuspend</span>
+                      <span className="text-red-600 font-medium">{isEn ? 'Suspended' : 'Disuspend'}</span>
                     ) : (
-                      <span className="text-emerald-600 font-medium">Aktif / Normal</span>
+                      <span className="text-emerald-600 font-medium">{isEn ? 'Active / Normal' : 'Aktif / Normal'}</span>
                     )}
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-gray-500 block">Kategori</span>
+                  <span className="text-[11px] text-gray-500 block">{isEn ? 'Website Status' : 'Status Website'}</span>
+                  <div className="mt-0.5">
+                    <PublishStatusBadge isPublished={Boolean(selectedStore.isPublished)} isEn={isEn} />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[11px] text-gray-500 block">{isEn ? 'Category' : 'Kategori'}</span>
                   <div className="font-medium text-gray-800 mt-0.5 truncate">
-                    {selectedStore.category || 'UMKM'}
+                    {selectedStore.category || (isEn ? 'MSME' : 'UMKM')}
                   </div>
                 </div>
               </div>
@@ -326,7 +429,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
                     <MapPin className="w-4 h-4 text-[#66000E]" />
-                    <span>Hierarki Alamat Lengkap Toko</span>
+                    <span>{isEn ? 'Full Store Address Hierarchy' : 'Hierarki Alamat Lengkap Toko'}</span>
                   </h4>
                   <button
                     onClick={() => handleCopyAddress(selectedStore)}
@@ -335,12 +438,12 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                     {copied ? (
                       <>
                         <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-emerald-600">Tersalin!</span>
+                        <span className="text-emerald-600">{isEn ? 'Copied!' : 'Tersalin!'}</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-3.5 h-3.5" />
-                        <span>Salin Alamat</span>
+                        <span>{isEn ? 'Copy Address' : 'Salin Alamat'}</span>
                       </>
                     )}
                   </button>
@@ -349,25 +452,25 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200 col-span-1 sm:col-span-2">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Alamat Jalan / No. Bangunan / RT-RW
+                      {isEn ? 'Street Address / Building No. / RT-RW' : 'Alamat Jalan / No. Bangunan / RT-RW'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
-                      {selectedStore.address || <span className="text-gray-400 italic">Belum diisi</span>}
+                      {selectedStore.address || <span className="text-gray-400 italic">{isEn ? 'Not filled in' : 'Belum diisi'}</span>}
                     </p>
                   </div>
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200 col-span-1 sm:col-span-2">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Detail Alamat (Patokan / Blok / Unit)
+                      {isEn ? 'Address Details (Landmark / Block / Unit)' : 'Detail Alamat (Patokan / Blok / Unit)'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
-                      {selectedStore.addressDetail || <span className="text-gray-400 italic">Belum diisi</span>}
+                      {selectedStore.addressDetail || <span className="text-gray-400 italic">{isEn ? 'Not filled in' : 'Belum diisi'}</span>}
                     </p>
                   </div>
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Desa
+                      {isEn ? 'Village' : 'Desa'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.village || <span className="text-gray-400 italic">-</span>}
@@ -376,7 +479,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Kelurahan
+                      {isEn ? 'Urban Village' : 'Kelurahan'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.subdistrict || <span className="text-gray-400 italic">-</span>}
@@ -385,7 +488,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Kecamatan
+                      {isEn ? 'District' : 'Kecamatan'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.district || <span className="text-gray-400 italic">-</span>}
@@ -394,7 +497,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Kabupaten / Kota
+                      {isEn ? 'Regency / City' : 'Kabupaten / Kota'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.city || <span className="text-gray-400 italic">-</span>}
@@ -403,7 +506,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Provinsi
+                      {isEn ? 'Province' : 'Provinsi'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.province || <span className="text-gray-400 italic">-</span>}
@@ -412,7 +515,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="p-3 bg-gray-50/80 rounded-xl border border-gray-200">
                     <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Kode Pos
+                      {isEn ? 'Postal Code' : 'Kode Pos'}
                     </span>
                     <p className="font-medium text-gray-900 mt-0.5">
                       {selectedStore.postalCode || <span className="text-gray-400 italic">-</span>}
@@ -423,7 +526,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                 {/* Format Alamat Gabungan Pengiriman */}
                 <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-200/60 text-xs">
                   <span className="text-[10px] font-bold text-[#66000E] uppercase tracking-wider block">
-                    Alamat Lengkap Terformat (Standar Ekspedisi & Kurir)
+                    {isEn ? 'Formatted Full Address (Courier Standard)' : 'Alamat Lengkap Terformat (Standar Ekspedisi & Kurir)'}
                   </span>
                   <p className="text-gray-800 mt-1 font-medium leading-relaxed">
                     {getFullFormattedAddress(selectedStore)}
@@ -435,7 +538,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-gray-900 flex items-center gap-1.5 uppercase text-[11px]">
                       <MapPin className="w-3.5 h-3.5 text-[#66000E]" />
-                      <span>Titik Lokasi Toko (Maps & Koordinat)</span>
+                      <span>{isEn ? 'Store Location Pin (Maps & Coordinates)' : 'Titik Lokasi Toko (Maps & Koordinat)'}</span>
                     </span>
                     <a
                       href={
@@ -448,7 +551,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
                       className="text-[11px] font-semibold text-[#66000E] hover:underline flex items-center gap-1"
                     >
                       <ExternalLink className="w-3 h-3" />
-                      <span>Buka Google Maps</span>
+                      <span>{isEn ? 'Open Google Maps' : 'Buka Google Maps'}</span>
                     </a>
                   </div>
 
@@ -463,7 +566,7 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
                   <div className="h-40 w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
                     <iframe
-                      title="Lokasi Toko"
+                      title={isEn ? 'Store Location' : 'Lokasi Toko'}
                       src={`https://maps.google.com/maps?q=${
                         selectedStore.latitude && selectedStore.longitude
                           ? `${selectedStore.latitude},${selectedStore.longitude}`
@@ -479,29 +582,67 @@ export const AdminStoresTab: React.FC<AdminStoresTabProps> = ({
 
             {/* Footer Modal */}
             <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-              {onOpenStorefront ? (
-                <button
-                  onClick={() => {
-                    onOpenStorefront(selectedStore.slug);
-                    setSelectedStore(null);
-                  }}
-                  className="px-3.5 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              {selectedStore.isPublished ? (
+                <LiveStoreLink
+                  store={selectedStore}
+                  customDomain={domainOf(selectedStore)}
+                  className="px-3.5 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 text-xs font-semibold flex items-center gap-1.5 transition"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Buka Halaman Toko</span>
-                </button>
+                  <span>{isEn ? 'Open Live Website' : 'Buka Website Live'}</span>
+                </LiveStoreLink>
               ) : <div />}
 
               <button
                 onClick={() => setSelectedStore(null)}
                 className="px-5 py-1.5 rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold transition cursor-pointer"
               >
-                Tutup
+                {isEn ? 'Close' : 'Tutup'}
               </button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };
+
+/** Tautan ke website toko yang sudah live (domain kustom atau subdomain toko), dibuka di tab baru. */
+const LiveStoreLink: React.FC<{
+  store: Store;
+  customDomain: string | null;
+  className: string;
+  title?: string;
+  children: React.ReactNode;
+}> = ({ store, customDomain, className, title, children }) => {
+  const { domain } = useStoreBaseDomain(store);
+  // Toko draf belum punya subdomain aktif; buka lewat alamat toko di domain platform.
+  const href = store.isPublished
+    ? buildStoreLiveUrl(store.slug, domain, customDomain)
+    : `${window.location.origin}/?toko=${encodeURIComponent(store.slug)}`;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={title}
+      aria-label={title}
+      className={className}
+    >
+      {children}
+    </a>
+  );
+};
+
+/** Lencana status website toko: Terbit (storefront live) atau Draf (belum dipublikasikan). */
+const PublishStatusBadge: React.FC<{ isPublished: boolean; isEn: boolean }> = ({ isPublished, isEn }) =>
+  isPublished ? (
+    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100 whitespace-nowrap">
+      <Globe className="w-3 h-3" /> {isEn ? 'Published' : 'Terbit'}
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 whitespace-nowrap">
+      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> {isEn ? 'Draft' : 'Draf'}
+    </span>
+  );

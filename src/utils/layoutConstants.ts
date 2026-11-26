@@ -145,7 +145,7 @@ export const SECTION_TEMPLATES: SectionTemplateDef[] = [
     badge: 'Rekomendasi',
     defaultOptions: {
       featuredTitle: '⭐ Produk Pilihan & Terlaris',
-      featuredSubtitle: 'Rekomendasi terbaik dengan rating dan ulasan tertinggi pelanggan',
+      featuredSubtitle: 'Pilihan produk terbaik dari toko kami',
       productCount: 4,
       gridColumns: 4,
       tabletColumns: 2,
@@ -684,7 +684,7 @@ export const STORE_TEMPLATES: StoreTemplate[] = [
   {
     id: "editorial_luxury", name: "Maison", category: "Luxury", primaryAccent: "#92400E",
     bannerUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d",
-    tagline: "Elegansi Klasik",
+    tagline: "Timeless Elegance",
     sections: [
       { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
       { id: "hero_banner", isVisible: true, options: { bannerStyle: "full" } },
@@ -759,25 +759,106 @@ export const STORE_TEMPLATES: StoreTemplate[] = [
     ]
   },
   {
-    id: "pro_corporate", name: "Pro Commerce", category: "Korporat", primaryAccent: "#1E40AF",
+    id: "pro_corporate", name: "Pro Commerce", category: "Korporat", primaryAccent: "#0F766E",
     bannerUrl: "https://images.unsplash.com/photo-1497215728101-856f4ea42174",
     tagline: "Solusi B2B",
     sections: [
-      { id: "header", isVisible: true, options: { headerStyle: "brand" } },
-      { id: "hero_banner", isVisible: true, options: { bannerStyle: "split" } },
+      { id: "header", isVisible: true, options: { headerStyle: "minimal" } },
+      { id: "hero_banner", isVisible: true, options: { bannerStyle: "typographic", textAlignment: "left" } },
       { id: "store_benefits", isVisible: true, options: {} },
-      { id: "product_grid", isVisible: true, options: { gridColumns: 4 } },
-      { id: "testimonials", isVisible: true, options: {} },
+      { id: "featured_products", isVisible: true, options: { layout: "asymmetric" } },
       { id: "footer", isVisible: true, options: {} }
     ]
   }
 ];
+
+/** Section yang tampil sama di semua halaman toko (header/navbar & footer). */
+export const SHARED_CHROME_SECTION_IDS = ['header', 'footer'];
+
+/**
+ * Header & footer setiap halaman mengikuti pengaturan beranda, sehingga menu navigasi,
+ * logo, toggle, sosial media, dan tautan legal konsisten di seluruh halaman toko.
+ * Visibilitas & urutan section halaman itu sendiri tetap dipertahankan.
+ */
+const withSharedChrome = (
+  pageSections: StoreSectionConfig[],
+  homeSections: StoreSectionConfig[] = []
+): StoreSectionConfig[] =>
+  pageSections.map((sec) => {
+    if (!SHARED_CHROME_SECTION_IDS.includes(sec.id)) return sec;
+    const homeSection = homeSections.find((h) => h.id === sec.id);
+    if (!homeSection?.options) return sec;
+    return { ...sec, options: { ...sec.options, ...homeSection.options } };
+  });
+
+/**
+ * Logo gambar yang diunggah merchant lewat pengaturan header. Logo adalah identitas toko,
+ * jadi berlaku untuk semua halaman: header beranda didahulukan, lalu header halaman lain.
+ * Data lama bisa menyimpan logo hanya di header sebagian halaman (mis. beranda kosong),
+ * sehingga tanpa ini logo tampil di Katalog tetapi hilang di Beranda.
+ */
+export const getLayoutLogoUrl = (layoutSettings?: StoreLayoutSettings): string => {
+  if (!layoutSettings) return '';
+  const headerLogo = (sections?: StoreSectionConfig[]) => {
+    const header = sections?.find((s) => s.id === 'header');
+    const url = (header?.options as any)?.logoUrl;
+    return typeof url === 'string' ? url.trim() : '';
+  };
+  const pages = Array.isArray(layoutSettings.pages) ? layoutSettings.pages : [];
+  const home = pages.find((p) => p.id === 'homepage' || p.slug === 'homepage');
+  const ordered = [home, ...pages.filter((p) => p !== home)];
+  for (const page of ordered) {
+    const url = headerLogo(page?.sections);
+    if (url) return url;
+  }
+  return headerLogo(layoutSettings.sections);
+};
+
+/** Kunci identitas toko di header (nama, logo, tulisan di bawah logo). */
+const HEADER_BRAND_KEYS = ['title', 'heading', 'storeName', 'logoUrl', 'headerSubtitle', 'subheading', 'subtitle', 'tagline'];
+
+/**
+ * Identitas toko di header berlaku untuk semua halaman. Data lama bisa menyimpannya hanya di
+ * header sebagian halaman (mis. header beranda hanya berisi headerStyle), sehingga tulisan di
+ * bawah logo tampil di Katalog tetapi hilang di Beranda. Kunci yang belum ada diisi dari header
+ * beranda lebih dulu, lalu header halaman lain. Nilai yang sengaja dikosongkan ('') tetap dihormati.
+ */
+const withHeaderBrandIdentity = (
+  sections: StoreSectionConfig[],
+  layoutSettings: StoreLayoutSettings
+): StoreSectionConfig[] => {
+  const pages = Array.isArray(layoutSettings.pages) ? layoutSettings.pages : [];
+  const home = pages.find((p) => p.id === 'homepage' || p.slug === 'homepage');
+  const sources = [layoutSettings.sections, home?.sections, ...pages.filter((p) => p !== home).map((p) => p.sections)]
+    .map((secs) => (secs?.find((s) => s.id === 'header')?.options || {}) as Record<string, unknown>);
+  return sections.map((sec) => {
+    if (sec.id !== 'header') return sec;
+    const options = { ...(sec.options || {}) } as Record<string, unknown>;
+    let changed = false;
+    for (const key of HEADER_BRAND_KEYS) {
+      if (options[key] !== undefined) continue;
+      const src = sources.find((o) => typeof o[key] === 'string' && (o[key] as string).trim() !== '');
+      if (src) {
+        options[key] = src[key];
+        changed = true;
+      }
+    }
+    return changed ? { ...sec, options } : sec;
+  });
+};
 
 export const getStoreSectionsForPage = (
   layoutSettings?: StoreLayoutSettings,
   pageId: string = 'homepage'
 ): StoreSectionConfig[] => {
   if (!layoutSettings) return DEFAULT_STORE_SECTIONS;
+  return withHeaderBrandIdentity(resolveStoreSectionsForPage(layoutSettings, pageId), layoutSettings);
+};
+
+const resolveStoreSectionsForPage = (
+  layoutSettings: StoreLayoutSettings,
+  pageId: string
+): StoreSectionConfig[] => {
 
   const pageAliasMap: Record<string, string> = {
     'catalog': 'katalog',
@@ -801,7 +882,8 @@ export const getStoreSectionsForPage = (
       return pSlug === normalizedPageId || p.id === pageId || p.slug === pageId;
     });
     if (pageConfig && pageConfig.sections && pageConfig.sections.length > 0) {
-      return getStoreSections({ ...layoutSettings, sections: pageConfig.sections });
+      const pageSections = withSharedChrome(pageConfig.sections, layoutSettings.sections);
+      return getStoreSections({ ...layoutSettings, sections: pageSections });
     }
   }
 

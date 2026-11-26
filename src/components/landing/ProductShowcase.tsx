@@ -1,30 +1,17 @@
-import React, { useState } from 'react';
-import {
-  TrendingUp,
-  Package,
-  ShoppingBag,
-  Truck,
-  CheckCircle2,
-  Printer,
-  Share2,
-  Tag,
-  ArrowRight,
-  Sparkles,
-  Smartphone,
-  ExternalLink,
-  LayoutDashboard,
-  ClipboardList,
-  Plus,
-  X,
-  Image as ImageIcon,
-  Check,
-} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Package, ArrowRight, Plus, X, Image as ImageIcon, Check, Camera, Tag, Link2 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { EASE_SMOOTH, Reveal } from './landingMotion';
 
 interface ProductShowcaseProps {
   onNavigateRegister: () => void;
   onLaunchDemo: () => void;
 }
+
+const DEMO_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+const DEMO_PLACEHOLDER_IMAGE =
+  'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=120&auto=format&fit=crop&q=80';
 
 interface DemoProduct {
   id: string;
@@ -39,7 +26,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   onNavigateRegister,
   onLaunchDemo,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [products, setProducts] = useState<DemoProduct[]>([
     {
       id: '1',
@@ -72,201 +59,289 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const [newProductPrice, setNewProductPrice] = useState('');
   const [newProductStock, setNewProductStock] = useState('10');
   const [justAddedAlert, setJustAddedAlert] = useState(false);
+  const [newProductImage, setNewProductImage] = useState<string | null>(null);
+  const [formError, setFormError] = useState('');
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  // URL objek foto simulasi; dilepas saat komponen dilepas agar tidak bocor memori.
+  const objectUrlsRef = useRef<string[]>([]);
 
-  const handleAddProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProductName.trim()) return;
+  useEffect(() => () => objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
-    const parsedPrice = parseInt(newProductPrice.replace(/\D/g, ''), 10) || 120000;
-    const parsedStock = parseInt(newProductStock, 10) || 10;
-
-    const newProd: DemoProduct = {
-      id: Date.now().toString(),
-      name: newProductName.trim(),
-      price: parsedPrice,
-      stock: parsedStock,
-      image: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=120&auto=format&fit=crop&q=80',
-      status: parsedStock <= 3 ? 'Stok Menipis' : 'Tersedia',
+  // Modal simulasi bisa ditutup dengan tombol Esc.
+  useEffect(() => {
+    if (!isAddModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModal();
     };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // closeModal hanya memakai setter state yang stabil.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAddModalOpen]);
 
-    setProducts([newProd, ...products]);
+  const handlePickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setFormError(isEn ? 'File must be an image (JPG, PNG, or WEBP).' : 'File harus berupa gambar (JPG, PNG, atau WEBP).');
+      return;
+    }
+    if (file.size > DEMO_PHOTO_MAX_BYTES) {
+      setFormError(isEn ? 'Maximum photo size is 5 MB.' : 'Ukuran foto maksimal 5 MB.');
+      return;
+    }
+    // Simulasi saja: foto hanya ditampilkan lokal di browser, tidak diunggah ke server.
+    const url = URL.createObjectURL(file);
+    objectUrlsRef.current.push(url);
+    setNewProductImage(url);
+    setFormError('');
+  };
+
+  const resetForm = () => {
     setNewProductName('');
     setNewProductPrice('');
     setNewProductStock('10');
+    setNewProductImage(null);
+    setFormError('');
+  };
+
+  const closeModal = () => {
+    resetForm();
+    setIsAddModalOpen(false);
+  };
+
+  const handleAddProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newProductName.trim();
+    const price = parseInt(newProductPrice.replace(/\D/g, ''), 10);
+    const stock = parseInt(newProductStock.replace(/\D/g, ''), 10);
+
+    if (!name) {
+      setFormError(isEn ? 'Product name is required.' : 'Nama produk wajib diisi.');
+      return;
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      setFormError(isEn ? 'Price must be greater than 0.' : 'Harga harus lebih dari 0.');
+      return;
+    }
+    if (!Number.isFinite(stock) || stock < 0) {
+      setFormError(isEn ? 'Invalid stock quantity.' : 'Jumlah stok tidak valid.');
+      return;
+    }
+
+    const newProd: DemoProduct = {
+      id: Date.now().toString(),
+      name,
+      price,
+      stock,
+      image: newProductImage || DEMO_PLACEHOLDER_IMAGE,
+      status: stock <= 3 ? 'Stok Menipis' : 'Tersedia',
+    };
+
+    setProducts((prev) => [newProd, ...prev]);
+    resetForm();
     setIsAddModalOpen(false);
     setJustAddedAlert(true);
     setTimeout(() => setJustAddedAlert(false), 3000);
   };
 
+  const points = [
+    { icon: Camera, text: t('product_point_photo', 'Foto produk langsung dari kamera HP') },
+    { icon: Tag, text: t('product_point_price', 'Atur harga, varian, dan stok sekali klik') },
+    { icon: Link2, text: t('product_point_sync', 'Otomatis tampil di link toko Anda') },
+  ];
+
   return (
-    <section 
-      id="produk" 
-      className="min-h-[calc(100svh-124px)] min-h-[calc(100dvh-124px)] lg:min-h-[calc(100vh-68px)] flex flex-col justify-center items-center py-6 sm:py-8 lg:py-4 xl:py-8 bg-[#FAF7F7] scroll-mt-16 sm:scroll-mt-20 border-b border-[#E8DDDE] font-sans relative"
+    <section
+      id="produk"
+      className="relative bg-[#FAF7F7] py-16 sm:py-20 lg:py-24 scroll-mt-16 sm:scroll-mt-20 font-sans"
     >
-      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 xl:gap-12 items-center">
-          
-          {/* Left Column: Heading, Description, Bullets & CTA */}
-          <div className="lg:col-span-5 space-y-3 sm:space-y-4 lg:space-y-5 text-center lg:text-left">
-            
-            {/* Small Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] text-xs font-medium shadow-2xs">
-              <Package className="w-3.5 h-3.5 text-[#66000E]" />
-              <span>{t('product_section_badge', 'Manajemen Produk')}</span>
-            </div>
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+        <Reveal className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#800C19]">
+            {t('product_section_badge', 'Manajemen Produk')}
+          </span>
+          <h2 className="mt-3 text-2xl sm:text-4xl lg:text-[44px] font-medium tracking-tight leading-[1.1] text-[#1A1414]">
+            {t('product_section_title', 'Kelola Produk Tanpa Ribet')}
+          </h2>
+          <p className="mt-3 text-sm sm:text-base text-[#5F5652]">
+            {t('product_section_desc', 'Upload foto produk, tentukan harga, dan atur stok barang langsung dari HP.')}
+          </p>
+        </Reveal>
 
-            {/* Main Section Heading */}
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-[#241A1A] tracking-tight leading-snug">
-              {t('product_section_title', 'Kelola Produk Tanpa Ribet')}
-            </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
+          {/* Kartu merah: poin utama & tombol aksi */}
+          <Reveal className="lg:col-span-5">
+            <div className="relative h-full overflow-hidden rounded-[28px] bg-[#800C19] p-6 sm:p-8 text-white flex flex-col">
+              <motion.img
+                src="/assets/3d/clean/kraft_pouch.webp"
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                animate={{ y: [0, -8, 0], rotate: [0, -4, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                className="pointer-events-none absolute right-3 top-4 w-24 sm:w-32 drop-shadow-[0_18px_22px_rgba(0,0,0,0.25)]"
+              />
 
-            {/* Concise UMKM description */}
-            <p className="text-xs sm:text-sm text-[#5F5652] leading-relaxed font-normal max-w-lg mx-auto lg:mx-0">
-              {t('product_section_desc', 'Upload foto produk, tentukan harga, dan atur stok barang langsung dari HP.')}
-            </p>
+              <span className="relative inline-flex w-10 h-10 items-center justify-center rounded-xl bg-white/15 text-white">
+                <Package className="w-5 h-5" />
+              </span>
+              <h3 className="relative mt-4 max-w-[65%] text-xl sm:text-2xl font-medium tracking-tight leading-snug">
+                {t('product_card_title', 'Etalase siap jual dalam hitungan menit')}
+              </h3>
 
-            {/* Feature Bullets */}
-            <ul className="space-y-2 text-xs sm:text-sm font-normal text-[#4A423F] text-left pt-0.5 max-w-md mx-auto lg:mx-0">
-              <li className="flex items-center gap-2.5">
-                <div className="w-4 h-4 rounded-full bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 text-[11px] font-medium border border-[#E8DDDE]">
-                  ✓
-                </div>
-                <span>{t('product_bullet_1', 'Upload foto produk langsung dari kamera HP')}</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <div className="w-4 h-4 rounded-full bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 text-[11px] font-medium border border-[#E8DDDE]">
-                  ✓
-                </div>
-                <span>{t('product_bullet_2', 'Atur varian warna, ukuran, dan harga promo')}</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <div className="w-4 h-4 rounded-full bg-[#F5E8EA] text-[#66000E] flex items-center justify-center shrink-0 text-[11px] font-medium border border-[#E8DDDE]">
-                  ✓
-                </div>
-                <span>{t('product_bullet_3', 'Stok otomatis berkurang saat pesanan dibayar')}</span>
-              </li>
-            </ul>
+              <ul className="relative mt-5 space-y-2.5">
+                {points.map(({ icon: Icon, text }) => (
+                  <li key={text} className="flex items-center gap-3 text-sm text-white/85">
+                    <span className="flex w-7 h-7 shrink-0 items-center justify-center rounded-full bg-white text-[#800C19]">
+                      <Icon className="w-3.5 h-3.5" />
+                    </span>
+                    <span>{text}</span>
+                  </li>
+                ))}
+              </ul>
 
-            {/* Action Buttons */}
-            <div className="pt-1 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-2 sm:gap-2.5">
-              <button
-                onClick={onNavigateRegister}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 h-11 rounded-xl bg-[#66000E] hover:bg-[#801010] text-white font-medium text-xs sm:text-sm shadow-xs transition-all cursor-pointer active:scale-[0.98]"
-              >
-                <span>{t('product_cta_add', 'Mulai Tambah Produk')}</span>
-                <ArrowRight className="w-3.5 h-3.5 text-white" />
-              </button>
-
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4.5 h-11 rounded-xl bg-white hover:bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] font-medium text-xs sm:text-sm transition-all cursor-pointer shadow-xs active:scale-[0.98]"
-              >
-                <Plus className="w-3.5 h-3.5 text-[#66000E]" />
-                <span>{t('product_cta_simulate', 'Simulasi Produk')}</span>
-              </button>
-            </div>
-
-            {/* Success toast alert */}
-            {justAddedAlert && (
-              <div className="p-2.5 sm:p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{t('product_modal_success', 'Produk baru berhasil ditambahkan ke etalase!')}</span>
-              </div>
-            )}
-
-          </div>
-
-          {/* Right Column: Interactive Product Catalog Card */}
-          <div className="lg:col-span-7">
-            <div className="p-3.5 sm:p-5 lg:p-6 rounded-2xl bg-white border border-[#E8DDDE] shadow-lg text-[#241A1A] relative">
-              
-              {/* Card Header with Add Button */}
-              <div className="flex items-center justify-between pb-2.5 sm:pb-3.5 mb-3 sm:mb-4 border-b border-[#E8DDDE]">
-                <div className="flex items-center gap-2 sm:gap-2.5">
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#66000E] text-white flex items-center justify-center font-bold text-xs">
-                    K
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-xs sm:text-sm text-[#241A1A]">{t('product_catalog_card_title', 'Katalog Produk Anda')}</h3>
-                    <p className="text-[10px] sm:text-[11px] text-[#857C76]">{t('filter_all', 'Total')} {products.length} {t('product_catalog_card_active', 'produk aktif di etalase')}</p>
-                  </div>
-                </div>
-
-                <button
+              <div className="relative mt-auto pt-7 flex flex-col sm:flex-row gap-2.5">
+                <motion.button
+                  type="button"
+                  onClick={onNavigateRegister}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="group inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-white hover:bg-[#FDF6F7] text-[#800C19] font-medium text-sm transition-colors cursor-pointer"
+                >
+                  <span>{t('product_cta_add', 'Mulai Tambah Produk')}</span>
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </motion.button>
+                <motion.button
+                  type="button"
                   onClick={() => setIsAddModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[#66000E] hover:bg-[#801010] text-white text-[11px] sm:text-xs font-semibold transition cursor-pointer shadow-2xs active:scale-95"
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="inline-flex items-center justify-center gap-1.5 h-11 px-5 rounded-lg border border-white/40 hover:bg-white/10 text-white font-medium text-sm transition-colors cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{t('product_cta_simulate', 'Simulasi Produk')}</span>
+                </motion.button>
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Kartu putih: katalog produk interaktif */}
+          <Reveal className="lg:col-span-7" delay={0.12}>
+            <div className="h-full rounded-[28px] border border-[#E4DCDC] bg-white p-5 sm:p-6 flex flex-col">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-medium tracking-tight text-[#1A1414]">
+                    {t('product_catalog_card_title', 'Katalog Produk Anda')}
+                  </h3>
+                  <p className="text-xs text-[#5F5652]">
+                    {products.length} {t('product_catalog_card_active', 'produk aktif di etalase')}
+                  </p>
+                </div>
+                <motion.button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(true)}
+                  whileTap={{ scale: 0.95 }}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-[#66000E] hover:bg-[#800C19] text-white text-xs font-medium transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>{t('add_product', 'Tambah Produk')}</span>
-                </button>
+                </motion.button>
               </div>
 
-              {/* Product List Items */}
-              <div className="space-y-2 sm:space-y-2.5">
-                {products.slice(0, 3).map((prod, idx) => (
-                  <div
-                    key={prod.id}
-                    className={`p-2.5 sm:p-3 rounded-xl bg-[#FAF7F7] border border-[#E8DDDE] items-center justify-between gap-3 hover:border-[#66000E]/40 transition-colors ${
-                      idx === 2 ? 'hidden sm:flex' : 'flex'
-                    }`}
+              {/* Notifikasi produk berhasil ditambahkan */}
+              <AnimatePresence>
+                {justAddedAlert && (
+                  <motion.div
+                    role="status"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
                   >
-                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                      <img
-                        src={prod.image}
-                        alt={prod.name}
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-[#E8DDDE] shrink-0 bg-white"
-                      />
-                      <div className="min-w-0">
-                        <p className="font-bold text-xs sm:text-sm text-[#241A1A] truncate">{prod.name}</p>
-                        <p className="text-[#66000E] font-bold text-xs mt-0.5">
-                          Rp {prod.price.toLocaleString('id-ID')}
-                        </p>
-                      </div>
-                    </div>
+                    <p className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
+                      <Check className="w-4 h-4 shrink-0 text-emerald-600" />
+                      {t('product_modal_success', 'Produk baru berhasil ditambahkan ke etalase!')}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                    <div className="text-right shrink-0">
-                      <span
-                        className={`inline-block px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border ${
-                          prod.status === 'Tersedia'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-amber-50 text-amber-800 border-amber-200'
-                        }`}
+              {/* Kartu produk: baris di HP, grid 3 kolom di layar lebar */}
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* initial={false}: hanya produk yang baru ditambahkan yang beranimasi masuk */}
+                <AnimatePresence initial={false} mode="popLayout">
+                  {products.slice(0, 3).map((prod) => {
+                    const isLow = prod.status === 'Stok Menipis';
+                    return (
+                      <motion.article
+                        key={prod.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.35, ease: EASE_SMOOTH }}
+                        className="group flex sm:flex-col items-center sm:items-stretch gap-3 rounded-2xl bg-[#FAF7F7] p-2.5 sm:p-3"
                       >
-                        {t('stock', 'Stok')}: {prod.stock} pcs
-                      </span>
-                      <p className="text-[9px] sm:text-[10px] text-[#857C76] mt-0.5">
-                        {prod.status === 'Tersedia' ? t('product_status_available', 'Tersedia') : t('product_status_low', 'Stok Menipis')}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                        <div className="relative w-16 h-16 sm:w-full sm:h-auto sm:aspect-square shrink-0 overflow-hidden rounded-xl bg-white">
+                          <img
+                            src={prod.image}
+                            alt={prod.name}
+                            loading="lazy"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <span
+                            className={`absolute left-2 top-2 hidden sm:inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                              isLow ? 'bg-[#FFC2D1] text-[#66000E]' : 'bg-white/90 text-emerald-700'
+                            }`}
+                          >
+                            {isLow ? t('product_status_low', 'Stok Menipis') : t('product_status_available', 'Tersedia')}
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1 sm:px-0.5">
+                          <p className="text-sm font-medium text-[#1A1414] truncate">{prod.name}</p>
+                          <div className="mt-1 flex items-center justify-between gap-2">
+                            <span className="text-sm font-semibold text-[#800C19]">
+                              Rp {prod.price.toLocaleString('id-ID')}
+                            </span>
+                            <span className={`text-[11px] ${isLow ? 'font-semibold text-[#800C19]' : 'text-[#5F5652]'}`}>
+                              {prod.stock} pcs
+                            </span>
+                          </div>
+                        </div>
+                      </motion.article>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
 
-              {/* Bottom Card Summary */}
-              <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-[#E8DDDE] flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs text-[#5F5652]">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span>{t('product_storefront_online', 'Etalase Toko Otomatis Online')}</span>
-                </div>
-                <span className="text-[#66000E] font-semibold">{t('product_synced_link', 'Tersinkronisasi ke Link Toko')}</span>
+              <div className="mt-auto pt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#5F5652]">
+                <span className="inline-flex items-center gap-2">
+                  <span className="relative flex w-2 h-2">
+                    <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-60" />
+                    <span className="relative w-2 h-2 rounded-full bg-emerald-500" />
+                  </span>
+                  {t('product_storefront_online', 'Etalase Toko Otomatis Online')}
+                </span>
+                <span className="font-medium text-[#800C19]">{t('product_synced_link', 'Tersinkronisasi ke Link Toko')}</span>
               </div>
-
             </div>
-          </div>
-
+          </Reveal>
         </div>
-
       </div>
 
       {/* Interactive Modal: Tambah Produk */}
       {isAddModalOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#241A1A]/50 backdrop-blur-xs animate-in fade-in duration-150"
-          onClick={() => setIsAddModalOpen(false)}
+          onClick={closeModal}
         >
-          <div 
-            className="relative w-full max-w-md bg-white rounded-2xl p-5 sm:p-6 shadow-2xl border border-[#E8DDDE] space-y-4 animate-in zoom-in-95 duration-150 text-left"
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="product-sim-title"
+            className="relative w-full max-w-md bg-white rounded-[24px] p-5 sm:p-6 shadow-2xl border border-[#E8DDDE] space-y-4 animate-in zoom-in-95 duration-150 text-left"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -275,10 +350,12 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <div className="w-8 h-8 rounded-lg bg-[#66000E] text-white flex items-center justify-center">
                   <Plus className="w-4 h-4" />
                 </div>
-                <h3 className="font-bold text-base text-[#241A1A]">{t('product_modal_title', 'Simulasi Tambah Produk')}</h3>
+                <h3 id="product-sim-title" className="font-bold text-base text-[#241A1A]">{t('product_modal_title', 'Simulasi Tambah Produk')}</h3>
               </div>
               <button
-                onClick={() => setIsAddModalOpen(false)}
+                type="button"
+                onClick={closeModal}
+                aria-label={t('product_modal_cancel', 'Batal')}
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-[#5F5652] hover:bg-[#FAF7F7] hover:text-[#241A1A] transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
@@ -291,10 +368,30 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <label className="block text-xs font-bold text-[#241A1A] mb-1">
                   {t('product_modal_photo', 'Foto Produk')}
                 </label>
-                <div className="p-3 border-2 border-dashed border-[#E8DDDE] rounded-xl bg-[#FAF7F7] text-center flex flex-col items-center justify-center gap-1 text-xs text-[#5F5652]">
-                  <ImageIcon className="w-5 h-5 text-[#66000E]" />
-                  <span>{t('product_modal_photo_hint', 'Foto terisi otomatis dari galeri/kamera')}</span>
-                </div>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePickPhoto}
+                />
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="w-full p-3 border-2 border-dashed border-[#E8DDDE] hover:border-[#66000E]/50 rounded-xl bg-[#FAF7F7] text-center flex flex-col items-center justify-center gap-1 text-xs text-[#5F5652] transition cursor-pointer"
+                >
+                  {newProductImage ? (
+                    <>
+                      <img src={newProductImage} alt="" className="w-16 h-16 rounded-lg object-cover border border-[#E8DDDE]" />
+                      <span>{isEn ? 'Change photo' : 'Ganti foto'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-5 h-5 text-[#66000E]" />
+                      <span>{t('product_modal_photo_hint', 'Pilih foto dari galeri/kamera')}</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               <div>
@@ -304,7 +401,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Sambal Bawang Bu Rudy"
+                  placeholder={isEn ? 'e.g. Sambal Bawang Bu Rudy' : 'Contoh: Sambal Bawang Bu Rudy'}
                   value={newProductName}
                   onChange={(e) => setNewProductName(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DDDE] text-xs sm:text-sm text-[#241A1A] focus:outline-none focus:border-[#66000E] focus:ring-1 focus:ring-[#66000E]"
@@ -318,6 +415,8 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </label>
                   <input
                     type="number"
+                    required
+                    min={1}
                     placeholder="120000"
                     value={newProductPrice}
                     onChange={(e) => setNewProductPrice(e.target.value)}
@@ -330,6 +429,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </label>
                   <input
                     type="number"
+                    min={0}
                     placeholder="10"
                     value={newProductStock}
                     onChange={(e) => setNewProductStock(e.target.value)}
@@ -338,10 +438,16 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 </div>
               </div>
 
+              {formError && (
+                <p role="alert" className="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {formError}
+                </p>
+              )}
+
               <div className="pt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={closeModal}
                   className="px-4 py-2 rounded-xl border border-[#E8DDDE] text-xs font-semibold text-[#5F5652] hover:bg-[#FAF7F7]"
                 >
                   {t('product_modal_cancel', 'Batal')}
@@ -361,6 +467,3 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     </section>
   );
 };
-
-
-

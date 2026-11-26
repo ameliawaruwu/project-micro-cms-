@@ -30,6 +30,15 @@ interface StoreLayoutSetupWizardProps {
   onCancel?: () => void;
 }
 
+// Label English untuk kategori gaya template (nilai Indonesia tetap dari STORE_TEMPLATES).
+const TEMPLATE_CATEGORY_EN: Record<string, string> = {
+  Minimalis: 'Minimalist',
+  Futuristik: 'Futuristic',
+  Alam: 'Nature',
+  Kreatif: 'Creative',
+  Korporat: 'Corporate',
+};
+
 const BUSINESS_CATEGORIES = [
   { id: 'Kuliner & Minuman', key: 'cat_culinary', defaultLabel: 'Kuliner & Minuman', icon: '🥘' },
   { id: 'Fashion & Pakaian', key: 'cat_fashion', defaultLabel: 'Fashion & Pakaian', icon: '👗' },
@@ -46,7 +55,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
   onComplete,
   onCancel,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   // Step State: 1 = Identity, 2 = Template, 3 = Generating
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
@@ -231,13 +240,13 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                 </label>
                 <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 overflow-hidden text-xs">
                   <span className="px-3 py-2.5 text-gray-500 bg-gray-100/80 border-r border-gray-200 font-mono font-medium select-none">
-                    kroomify.id/
+                    lapakq.com/
                   </span>
                   <input
                     type="text"
                     value={storeSlug}
                     onChange={(e) => setStoreSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                    placeholder="nama-toko-anda"
+                    placeholder={isEn ? 'your-store-name' : 'nama-toko-anda'}
                     className="flex-1 px-3 py-2.5 bg-transparent text-sm font-mono text-gray-900 font-semibold focus:outline-none"
                   />
                 </div>
@@ -388,7 +397,7 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                             className="w-3 h-3 rounded-full border border-white shadow-xs"
                             style={{ backgroundColor: tmpl.primaryAccent }}
                           />
-                          <span className="drop-shadow-xs">{tmpl.category}</span>
+                          <span className="drop-shadow-xs">{isEn ? TEMPLATE_CATEGORY_EN[tmpl.category] ?? tmpl.category : tmpl.category}</span>
                         </div>
                       </div>
 
@@ -448,7 +457,11 @@ export const StoreLayoutSetupWizard: React.FC<StoreLayoutSetupWizardProps> = ({
                     : t('wizard_gen_progress_title', 'Sedang Membuat Website Toko Anda...')}
                 </h3>
                 <p className="text-xs text-gray-500 mt-1">
-                  Template <span className="font-semibold text-gray-800">{selectedTemplate.name}</span> siap dipasang untuk <span className="font-semibold text-gray-800">{storeName || 'Toko Anda'}</span>.
+                  {isEn ? (
+                    <>The <span className="font-semibold text-gray-800">{selectedTemplate.name}</span> template is ready to be applied to <span className="font-semibold text-gray-800">{storeName || 'Your Store'}</span>.</>
+                  ) : (
+                    <>Template <span className="font-semibold text-gray-800">{selectedTemplate.name}</span> siap dipasang untuk <span className="font-semibold text-gray-800">{storeName || 'Toko Anda'}</span>.</>
+                  )}
                 </p>
               </div>
 

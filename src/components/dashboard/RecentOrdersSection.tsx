@@ -37,7 +37,7 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E5E0DD] p-4 sm:p-5 lg:p-6 shadow-2xs font-sans text-left">
+    <div className="h-full bg-white rounded-2xl border border-[#E5E0DD] p-4 sm:p-5 lg:p-6 shadow-2xs font-sans text-left">
       <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-[#E5E0DD]">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-[#FAF7F7] text-[#66000E] border border-[#E6DDDA] flex items-center justify-center shrink-0">
@@ -91,17 +91,17 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
                       className="hover:bg-[#FAF7F7] transition-colors cursor-pointer group"
                     >
                       <td className="py-3 px-3">
-                        <span className="font-mono font-medium text-[#241A1A] group-hover:text-[#66000E]">
+                        <span className="font-mono font-medium text-[#241A1A] group-hover:text-[#66000E] whitespace-nowrap">
                           {order.orderNumber}
                         </span>
-                        <span className="block text-[10px] text-[#706866] font-normal">
+                        <span className="block text-[10px] text-[#706866] font-normal whitespace-nowrap">
                           {formatOrderDate(order.createdAt)}
                         </span>
                       </td>
 
-                      <td className="py-3 px-3">
-                        <p className="font-medium text-[#241A1A]">{order.customerName}</p>
-                        <p className="text-[10px] text-[#706866] font-normal">{order.customerCity}</p>
+                      <td className="py-3 px-3 max-w-[150px]">
+                        <p className="font-medium text-[#241A1A] truncate" title={order.customerName}>{order.customerName}</p>
+                        <p className="text-[10px] text-[#706866] font-normal truncate" title={order.customerCity}>{order.customerCity}</p>
                       </td>
 
                       <td className="py-3 px-3 max-w-[180px]">
@@ -128,19 +128,22 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
                       </td>
 
                       <td className="py-3 px-3">
-                        <span className="font-medium text-[#241A1A]">
+                        <span className="font-medium text-[#241A1A] whitespace-nowrap">
                           {formatRupiah(order.grandTotal)}
                         </span>
                       </td>
 
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded-md bg-[#FAF7F7] border border-[#E5E0DD] text-[#706866] text-[10px] font-medium">
+                      <td className="py-3 px-3 max-w-[140px]">
+                        <span
+                          title={order.paymentMethod}
+                          className="inline-block max-w-full truncate align-middle px-2 py-0.5 rounded-md bg-[#FAF7F7] border border-[#E5E0DD] text-[#706866] text-[10px] font-medium"
+                        >
                           {order.paymentMethod}
                         </span>
                       </td>
 
                       <td className="py-3 px-3">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium border ${badge.bg}`}>
+                        <span className={`whitespace-nowrap px-2.5 py-0.5 rounded-full text-[10px] font-medium border ${badge.bg}`}>
                           {getShippingStatusLabel(order.shippingStatus)}
                         </span>
                       </td>
@@ -151,7 +154,7 @@ export const RecentOrdersSection: React.FC<RecentOrdersSectionProps> = ({
                             e.stopPropagation();
                             onSelectOrder(order);
                           }}
-                          className="px-2.5 py-1.5 rounded-lg bg-[#FAF7F7] hover:bg-white hover:border-[#66000E] hover:text-[#66000E] text-[#241A1A] font-medium text-xs border border-[#E5E0DD] transition inline-flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-lg bg-[#FAF7F7] hover:bg-white hover:border-[#66000E] hover:text-[#66000E] text-[#241A1A] font-medium text-xs border border-[#E5E0DD] transition inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
                         >
                           <span>{t('details', 'Rincian')}</span>
                           <ChevronRight className="w-3.5 h-3.5" />

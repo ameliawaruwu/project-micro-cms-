@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Inbox,
   LayoutDashboard,
   Package,
   ShoppingBag,
@@ -11,29 +12,41 @@ import {
   X,
   Store,
   ChevronRight,
+  Users,
+  Globe,
+  ExternalLink,
+  TicketPercent,
 } from 'lucide-react';
+import { SupportAgentIcon } from '../common/icons/SupportAgentIcon';
 import { MerchantTab } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface BottomNavProps {
   activeTab: MerchantTab;
   pendingOrdersCount: number;
+  /** Tampilkan menu Komunitas (hanya toko yang tergabung di komunitas). */
+  showCommunityMenu?: boolean;
+  /** URL publik toko bila sudah terbit. */
+  liveStoreUrl?: string;
   onTabChange: (tab: MerchantTab) => void;
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab,
   pendingOrdersCount,
+  showCommunityMenu = false,
+  liveStoreUrl,
   onTabChange,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   // 4 Menu Utama Paling Penting untuk Operasional Sehari-hari
   const primaryItems = [
-    { id: 'beranda' as MerchantTab, label: t('nav_dashboard', 'Beranda'), icon: LayoutDashboard },
-    { id: 'pesanan' as MerchantTab, label: t('nav_orders', 'Pesanan'), icon: ShoppingBag, badge: pendingOrdersCount },
+    // Label & urutan mengikuti Sidebar desktop agar nama fitur sama di semua ukuran layar.
+    { id: 'beranda' as MerchantTab, label: t('nav_dashboard', 'Dashboard'), icon: LayoutDashboard },
     { id: 'produk' as MerchantTab, label: t('nav_products', 'Produk'), icon: Package },
+    { id: 'pesanan' as MerchantTab, label: t('nav_orders', 'Pesanan'), icon: ShoppingBag, badge: pendingOrdersCount },
     { id: 'pengiriman' as MerchantTab, label: t('nav_shipping', 'Pengiriman'), icon: Truck },
   ];
 
@@ -41,25 +54,59 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const secondaryItems = [
     {
       id: 'layout' as MerchantTab,
-      label: t('bottomnav_store_design', 'Desain & Layout Toko'),
+      label: t('nav_layout', 'Layout Toko'),
       desc: t('bottomnav_store_design_desc', 'Atur banner, hero, & tampilan toko'),
       icon: LayoutTemplate,
     },
     {
+      id: 'voucher' as MerchantTab,
+      label: t('nav_vouchers', 'Voucher Promo'),
+      desc: t('bottomnav_vouchers_desc', 'Kode diskon untuk checkout'),
+      icon: TicketPercent,
+    },
+    {
+      id: 'domain' as MerchantTab,
+      label: 'Domain',
+      desc: isEn ? 'Connect a custom domain to your store' : 'Hubungkan domain sendiri ke toko',
+      icon: Globe,
+    },
+    {
       id: 'pembayaran' as MerchantTab,
-      label: t('bottomnav_payment_methods', 'Metode Pembayaran'),
+      label: t('nav_payment', 'Pembayaran'),
       desc: t('bottomnav_payment_methods_desc', 'Kelola QRIS, VA, dan rekening pencairan'),
       icon: CreditCard,
     },
+    ...(showCommunityMenu
+      ? [
+          {
+            id: 'komunitas' as MerchantTab,
+            label: t('nav_community', 'Komunitas'),
+            desc: t('bottomnav_community_desc', 'Keanggotaan & permintaan gabung'),
+            icon: Users,
+          },
+        ]
+      : []),
+    {
+      id: 'pesan' as MerchantTab,
+      label: t('nav_messages', 'Pesan Masuk'),
+      desc: t('bottomnav_messages_desc', 'Pesan dari halaman Hubungi Kami'),
+      icon: Inbox,
+    },
+    {
+      id: 'tiket' as MerchantTab,
+      label: t('nav_tickets', 'Tiket Bantuan'),
+      desc: t('bottomnav_tickets_desc', 'Ajukan & pantau tiket'),
+      icon: SupportAgentIcon,
+    },
     {
       id: 'pengaturan' as MerchantTab,
-      label: t('bottomnav_store_settings', 'Pengaturan Toko'),
+      label: t('nav_settings', 'Pengaturan'),
       desc: t('bottomnav_store_settings_desc', 'Nama toko, logo, kontak WA, & profil'),
       icon: Settings,
     },
   ];
 
-  const isSecondaryActive = ['layout', 'pembayaran', 'pengaturan'].includes(activeTab);
+  const isSecondaryActive = ['layout', 'voucher', 'domain', 'pembayaran', 'komunitas', 'pesan', 'tiket', 'pengaturan'].includes(activeTab);
 
   const handleSelectTab = (tab: MerchantTab) => {
     onTabChange(tab);
@@ -82,7 +129,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-[#E5E0DD]">
               <div className="flex items-center gap-2 text-[#241A1A]">
                 <Store className="w-5 h-5 text-[#66000E]" />
-                <h4 className="font-semibold text-sm">{t('bottomnav_more', 'Fitur & Pengaturan Toko')}</h4>
+                <h4 className="font-semibold text-sm">{isEn ? 'Store Features & Settings' : 'Fitur & Pengaturan Toko'}</h4>
               </div>
               <button
                 onClick={() => setIsMoreMenuOpen(false)}
@@ -94,6 +141,26 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
             {/* List Menu Pendukung */}
             <div className="mt-3 space-y-2 font-poppins">
+              {liveStoreUrl && (
+                <a
+                  href={liveStoreUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMoreMenuOpen(false)}
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl transition text-left border bg-white hover:bg-[#FAF7F7] border-[#E5E0DD] text-[#241A1A]"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#FAF7F7] text-[#706866] shrink-0">
+                      <Globe className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-[#241A1A]">{isEn ? 'View Website' : 'Lihat Website'}</p>
+                      <p className="text-[11px] text-[#706866] truncate font-normal">{liveStoreUrl.replace(/^https:\/\//, '')}</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-[#CCCCCC] shrink-0" />
+                </a>
+              )}
               {secondaryItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;

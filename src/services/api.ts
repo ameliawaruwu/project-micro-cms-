@@ -1,10 +1,10 @@
-// Central Data Service & Supabase Connector for Kroomify Frontend
+// Central Data Service & Supabase Connector for LapakQ Frontend
 import { supabase } from './supabaseClient';
 
 export { supabase };
 
 /**
- * Kroomify Client-Side Architecture
+ * LapakQ Client-Side Architecture
  * - Database & Auth: Supabase (BaaS)
  * - Local Caching: LocalStorage Fallback & Realtime Sync
  */

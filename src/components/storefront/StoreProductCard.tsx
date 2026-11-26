@@ -2,6 +2,7 @@ import React from 'react';
 import { ShoppingBag, Zap, Eye } from 'lucide-react';
 import { Product } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface StoreProductCardProps {
   product: Product;
@@ -16,6 +17,7 @@ export const StoreProductCard: React.FC<StoreProductCardProps> = ({
   onAddToCart,
   onBuyNow,
 }) => {
+  const { isEn } = useLanguage();
   const isOutOfStock = product.stock <= 0;
   const hasDiscount = Boolean(product.originalPrice && product.originalPrice > product.price);
   const discountPercent = hasDiscount
@@ -39,7 +41,7 @@ export const StoreProductCard: React.FC<StoreProductCardProps> = ({
         {/* Discount Badge */}
         {hasDiscount && (
           <div className="absolute top-2.5 left-2.5 bg-[#66000E] text-white font-bold text-[10px] px-2 py-0.5 rounded-full shadow-xs">
-            Diskon {discountPercent}%
+            {isEn ? 'Discount' : 'Diskon'} {discountPercent}%
           </div>
         )}
 
@@ -47,7 +49,7 @@ export const StoreProductCard: React.FC<StoreProductCardProps> = ({
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-2">
             <span className="bg-[#66000E] text-white text-xs font-bold px-3 py-1 rounded-full shadow-xs">
-              Stok Habis
+              {isEn ? 'Out of Stock' : 'Stok Habis'}
             </span>
           </div>
         )}
@@ -56,7 +58,7 @@ export const StoreProductCard: React.FC<StoreProductCardProps> = ({
         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
           <span className="bg-white text-[#1F1F1F] font-semibold text-xs px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1.5">
             <Eye className="w-3.5 h-3.5 text-[#66000E]" />
-            <span>Lihat Detail</span>
+            <span>{isEn ? 'View Details' : 'Lihat Detail'}</span>
           </span>
         </div>
       </div>
@@ -81,7 +83,7 @@ export const StoreProductCard: React.FC<StoreProductCardProps> = ({
             </span>
             {hasDiscount && (
               <span className="text-[10px] font-bold text-[#66000E] bg-[#F5E8EA] px-2 py-0.5 rounded-md">
-                Diskon {discountPercent}%
+                {isEn ? 'Discount' : 'Diskon'} {discountPercent}%
               </span>
             )}
           </div>
@@ -93,10 +95,10 @@ export const StoreProductCard: React.FC<StoreProductCardProps> = ({
             onClick={() => onAddToCart(product)}
             disabled={isOutOfStock}
             className="w-full py-2.5 px-2 min-h-[40px] rounded-xl bg-[#F7F7F7] hover:bg-[#EAEAEA] border border-[#E5E0DD] text-[#1F1F1F] font-semibold text-xs flex items-center justify-center gap-1 transition disabled:opacity-40 cursor-pointer"
-            title="Tambah ke Keranjang"
+            title={isEn ? 'Add to Cart' : 'Tambah ke Keranjang'}
           >
             <ShoppingBag className="w-3.5 h-3.5" />
-            <span>+ Keranjang</span>
+            <span>{isEn ? '+ Cart' : '+ Keranjang'}</span>
           </button>
 
           <button
@@ -105,7 +107,7 @@ export const StoreProductCard: React.FC<StoreProductCardProps> = ({
             className="w-full py-2.5 px-2 min-h-[40px] rounded-xl bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-xs flex items-center justify-center gap-1 transition shadow-xs disabled:opacity-40 cursor-pointer"
           >
             <Zap className="w-3.5 h-3.5 fill-white" />
-            <span>Beli</span>
+            <span>{isEn ? 'Buy' : 'Beli'}</span>
           </button>
         </div>
       </div>

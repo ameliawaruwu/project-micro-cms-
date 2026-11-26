@@ -1,69 +1,145 @@
 import React from 'react';
-import { useCmsStore } from '../../../cms/useCmsStore';
+import { getDeviceClass } from '../../../utils/responsivePreview';
+import { useSectionProducts } from '../../useSectionProducts';
+import { STORE_ROUTES, formatRupiah, productHref, resolveExtraText, resolveSecondaryCta, resolveSectionCta, resolveSectionImage } from '../../storefrontLinks';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
-export const CreativeLookbook: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const { products } = useCmsStore();
-  const heading = sectionOptions.heading || "Visual Diary";
-  
+/** Galeri foto produk toko bergaya masonry; tidak dirender bila belum ada foto produk. */
+export const CreativeLookbook: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
+  const items = useSectionProducts('creative', sectionOptions, { defaultCount: 9, requireImage: true });
+  if (items.length === 0) return null;
+
+  const heading = sectionOptions.heading || (isEn ? 'Product Gallery' : 'Galeri Produk');
+  const description = sectionOptions.description || sectionOptions.subheading;
+  const coverImage = resolveSectionImage(sectionOptions);
+  // Tombol hanya tampil bila merchant mengisi teks tombol di editor.
+  const hasCta = Boolean(sectionOptions.buttonLabel || sectionOptions.buttonText);
+  const cta = resolveSectionCta(sectionOptions, isEn ? 'View Collection' : 'Lihat Koleksi', STORE_ROUTES.catalog);
+  const columnsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'columns-2',
+    tablet: 'columns-3',
+    desktop: 'columns-3',
+    fallback: 'columns-2 md:columns-3',
+  });
+
   return (
-    <section className="py-32 px-6 md:px-12 bg-white relative">
-      <div className="absolute top-0 left-0 w-32 h-32 bg-yellow-300 rounded-br-[100px] z-0"></div>
-      <div className="relative z-10 max-w-7xl mx-auto">
-        <div className="flex items-center gap-8 mb-20">
-          <h2 className="text-5xl md:text-7xl font-black text-black tracking-tighter">{heading}</h2>
-          <div className="h-2 flex-1 bg-black rounded-full"></div>
+    <section className="py-12 sm:py-20 md:py-24 px-4 sm:px-6 md:px-12 bg-white relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-20 h-20 sm:w-32 sm:h-32 bg-yellow-300 rounded-br-[100px] z-0"></div>
+      <div className="relative z-10 max-w-5xl mx-auto">
+        {sectionOptions.eyebrowText && (
+          <p className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-gray-500 mb-3">{sectionOptions.eyebrowText}</p>
+        )}
+        <div className="flex items-center gap-4 sm:gap-8 mb-8 sm:mb-14">
+          <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-black tracking-tighter break-words min-w-0">{heading}</h2>
+          <div className="h-2 flex-1 min-w-[2rem] bg-black rounded-full"></div>
         </div>
-        
-        <div className="columns-1 md:columns-3 gap-8 space-y-8">
-          {products.map((p, i) => (
-            <div key={p.id} className="break-inside-avoid group cursor-pointer">
-              <div className="relative overflow-hidden rounded-3xl mb-4">
-                <div className={`absolute inset-0 bg-gradient-to-br from-black/0 to-black/60 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
-                <img 
-                  src={p.image} 
-                  alt={p.name} 
-                  className={`w-full ${i % 2 === 0 ? 'aspect-square' : 'aspect-[3/4]'} object-cover transform group-hover:scale-110 transition-transform duration-700`} 
+        {description && (
+          <p className="max-w-2xl -mt-6 sm:-mt-12 mb-10 sm:mb-16 text-base sm:text-lg text-gray-600 font-medium leading-relaxed">{description}</p>
+        )}
+        {coverImage && (
+          <img src={coverImage} alt={heading} className="w-full aspect-[16/9] max-h-[360px] object-cover rounded-2xl sm:rounded-3xl mb-6 sm:mb-10" />
+        )}
+
+        <div className={`${columnsClass} gap-3 sm:gap-5 space-y-3 sm:space-y-5`}>
+          {items.map((p, i) => (
+            <a key={p.id} href={productHref(p)} className="block break-inside-avoid group">
+              <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-black/0 to-black/60 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <img
+                  src={p.image}
+                  alt={p.name}
+                  className={`w-full ${i % 2 === 0 ? 'aspect-square' : 'aspect-[3/4]'} object-cover transform group-hover:scale-110 transition-transform duration-700`}
                 />
-                <div className="absolute bottom-6 left-6 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 text-white">
-                  <p className="font-bold text-xl mb-1">{p.name}</p>
-                  <p className="text-yellow-300 font-bold">Rp {p.price.toLocaleString('id-ID')}</p>
+                <div className="absolute bottom-3 sm:bottom-5 left-3 sm:left-5 right-3 sm:right-5 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 text-white">
+                  <p className="font-bold text-sm sm:text-lg mb-1 line-clamp-2 break-words">{p.name}</p>
+                  <p className="text-yellow-300 font-bold text-xs sm:text-base">{formatRupiah(p.price)}</p>
                 </div>
               </div>
-            </div>
+            </a>
           ))}
         </div>
+        {hasCta && (
+          <div className="mt-10 sm:mt-16 text-center">
+            <a
+              href={cta.href}
+              className="inline-block px-8 py-4 bg-black text-white rounded-full font-bold uppercase tracking-wider text-sm hover:bg-blue-600 transition-colors"
+            >
+              {cta.label}
+            </a>
+          </div>
+        )}
       </div>
     </section>
   );
 };
 
-export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any }> = ({ sectionOptions = {} }) => {
-  const heading = sectionOptions.heading || "Interactive Showcase";
-  
+/** Sorotan satu produk toko dengan gaya kartu miring; tidak dirender tanpa gambar. */
+export const CreativeFloatingShowcase: React.FC<{ sectionOptions?: any; isMobile?: boolean; isTablet?: boolean }> = ({ sectionOptions = {}, isMobile, isTablet }) => {
+  const { isEn } = useLanguage();
+  // Produk pertama dari pilihan editor (bila ada), selain itu produk unggulan bergambar.
+  const candidates = useSectionProducts('creative', sectionOptions, { defaultCount: 50, preferFeatured: true });
+  const product = candidates.find((p) => p.image) || candidates[0];
+  const image = resolveSectionImage(sectionOptions) || product?.image;
+  if (!image && !product) return null;
+
+  const heading = sectionOptions.heading || (isEn ? 'Product Spotlight' : 'Sorotan Produk');
+  // Judul kartu: isian "Judul Kartu" di panel → nama produk → teks bawaan.
+  const customTitle = resolveExtraText(sectionOptions, 'cardTitle', '');
+  const title = customTitle || product?.name || (isEn ? 'Our Featured Pick' : 'Karya Pilihan Kami');
+  const secondaryCta = resolveSecondaryCta(sectionOptions, isEn ? 'All Products' : 'Semua Produk', STORE_ROUTES.catalog);
+  const description =
+    sectionOptions.description ||
+    product?.description ||
+    (isEn
+      ? 'Every product is carefully chosen to stand out and leave a lasting impression.'
+      : 'Setiap produk kami pilih dengan teliti agar tampil beda dan berkesan untuk Anda.');
+  const cta = resolveSectionCta(
+    sectionOptions,
+    product ? (isEn ? 'View Product' : 'Lihat Produk') : (isEn ? 'View Catalog' : 'Lihat Katalog'),
+    product ? productHref(product) : STORE_ROUTES.catalog,
+  );
+  const gridColsClass = getDeviceClass(isMobile, isTablet, {
+    mobile: 'grid-cols-1',
+    tablet: 'grid-cols-1',
+    desktop: 'grid-cols-2',
+    fallback: 'grid-cols-1 md:grid-cols-2',
+  });
+
   return (
-    <section className="py-32 bg-blue-600 text-white overflow-hidden relative">
+    <section className="py-16 sm:py-32 bg-blue-600 text-white overflow-hidden relative">
       <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_white_1px,_transparent_1px)] bg-[size:24px_24px]"></div>
-      <h2 className="text-6xl md:text-9xl font-black text-center opacity-20 whitespace-nowrap overflow-hidden leading-none absolute top-10 left-0 right-0 pointer-events-none select-none">
-        DESIGN IN MOTION DESIGN IN MOTION
-      </h2>
-      
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center mt-20">
-        <h2 className="text-4xl md:text-6xl font-black mb-12">{heading}</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div className="h-[400px] bg-white rounded-[40px] transform -rotate-3 hover:rotate-0 transition-transform duration-500 p-2 shadow-2xl relative">
-            <div className="absolute -top-6 -right-6 w-16 h-16 bg-yellow-300 rounded-full z-20 animate-bounce"></div>
-            <img src={sectionOptions.imageUrl || sectionOptions.bannerUrl || "https://images.unsplash.com/photo-1549490349-8643362247b5?w=800&q=80"} className="w-full h-full object-cover rounded-[32px]" alt="Showcase" />
-          </div>
-          <div className="text-left">
-            <h3 className="text-3xl font-bold mb-6 text-yellow-300">Pushing Boundaries</h3>
-            <p className="text-lg leading-relaxed font-medium opacity-90 mb-8">
-              We believe in creating digital experiences that challenge the status quo. 
-              By blending vibrant aesthetics with seamless functionality, we build platforms that leave a lasting impression.
-            </p>
-            <button className="px-8 py-4 border-2 border-white rounded-full font-bold uppercase tracking-wider hover:bg-white hover:text-blue-600 transition-colors">
-              Read Manifesto
-            </button>
+
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center">
+        <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-10 sm:mb-12 break-words">{heading}</h2>
+
+        <div className={`grid ${gridColsClass} gap-10 sm:gap-12 items-center`}>
+          {image && (
+            <div className="h-[300px] sm:h-[400px] bg-white rounded-[40px] transform -rotate-3 hover:rotate-0 transition-transform duration-500 p-2 shadow-2xl relative">
+              <div className="absolute -top-4 -right-4 sm:-top-6 sm:-right-6 w-12 h-12 sm:w-16 sm:h-16 bg-yellow-300 rounded-full z-20 animate-bounce"></div>
+              <img src={image} className="w-full h-full object-cover rounded-[32px]" alt={product?.name || heading} />
+            </div>
+          )}
+          <div className="text-left min-w-0">
+            <h3 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-yellow-300 break-words">{title}</h3>
+            {product && !customTitle && (
+              <p className="text-xl font-black mb-4">{formatRupiah(product.price)}</p>
+            )}
+            <p className="text-base sm:text-lg leading-relaxed font-medium opacity-90 mb-8 line-clamp-5">{description}</p>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={cta.href}
+                className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 bg-yellow-300 text-black rounded-full font-bold uppercase tracking-wider text-sm hover:bg-white transition-colors"
+              >
+                {cta.label}
+              </a>
+              <a
+                href={secondaryCta.href}
+                className="inline-block px-6 sm:px-8 py-3.5 sm:py-4 border-2 border-white rounded-full font-bold uppercase tracking-wider text-sm hover:bg-white hover:text-blue-600 transition-colors"
+              >
+                {secondaryCta.label}
+              </a>
+            </div>
           </div>
         </div>
       </div>

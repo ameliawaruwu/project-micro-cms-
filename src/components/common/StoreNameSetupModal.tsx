@@ -123,7 +123,7 @@ export const StoreNameSetupModal: React.FC<StoreNameSetupModalProps> = ({
             <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-200 flex items-center gap-2 text-xs">
               <span className="text-gray-500 font-medium shrink-0">Link toko Anda:</span>
               <span className="text-[#66000E] font-bold font-mono truncate">
-                kroomify.id/<span className="text-gray-800">{storeSlug || 'toko-saya'}</span>
+                lapakq.com/<span className="text-gray-800">{storeSlug || 'toko-saya'}</span>
               </span>
             </div>
           )}

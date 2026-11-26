@@ -6,8 +6,43 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 };
 
-const MIDTRANS_SERVER_KEY = Deno.env.get('MIDTRANS_SERVER_KEY') || 'SB-Mid-server-n197M_KyR7is6x0Ag4cZEIAj';
-const MIDTRANS_ENV = Deno.env.get('VITE_MIDTRANS_ENV') || 'sandbox';
+async function getMidtransConfig() {
+  let serverKey = (Deno.env.get('MIDTRANS_SERVER_KEY') || '').trim();
+  let env = (Deno.env.get('VITE_MIDTRANS_ENV') || 'sandbox').trim().toLowerCase();
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY');
+
+  if (supabaseUrl && serviceKey) {
+    try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/platform_settings?select=midtrans_environment,midtrans_server_key&limit=1`, {
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`,
+        },
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows[0]) {
+          if (!serverKey && rows[0].midtrans_server_key) {
+            serverKey = rows[0].midtrans_server_key.trim();
+          }
+          if (rows[0].midtrans_environment) {
+            env = rows[0].midtrans_environment.trim().toLowerCase();
+          }
+        }
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  if (!serverKey) {
+    serverKey = '';
+  }
+
+  return { serverKey, env };
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -15,15 +50,16 @@ Deno.serve(async (req: Request) => {
   }
 
   const url = new URL(req.url);
+  const { serverKey, env } = await getMidtransConfig();
 
   // 1. Check transaction status: GET ?orderId=...
   if (req.method === 'GET' && url.searchParams.get('orderId')) {
     const orderId = url.searchParams.get('orderId') || '';
-    const apiUrl = MIDTRANS_ENV === 'production'
+    const apiUrl = env === 'production'
       ? `https://api.midtrans.com/v2/${encodeURIComponent(orderId)}/status`
       : `https://api.sandbox.midtrans.com/v2/${encodeURIComponent(orderId)}/status`;
 
-    const basicAuth = btoa(`${MIDTRANS_SERVER_KEY}:`);
+    const basicAuth = btoa(`${serverKey}:`);
     const statusRes = await fetch(apiUrl, {
       method: 'GET',
       headers: {
@@ -58,7 +94,7 @@ Deno.serve(async (req: Request) => {
       const sanitizedPhone = String(data.customerPhone || '08123456789').replace(/[^0-9+]/g, '').slice(0, 20);
       const sanitizedEmail = String(data.customerEmail || 'customer@example.com').trim().slice(0, 100);
 
-      const apiUrl = MIDTRANS_ENV === 'production'
+      const apiUrl = env === 'production'
         ? 'https://app.midtrans.com/snap/v1/transactions'
         : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
 
@@ -87,7 +123,7 @@ Deno.serve(async (req: Request) => {
         }));
       }
 
-      const basicAuth = btoa(`${MIDTRANS_SERVER_KEY}:`);
+      const basicAuth = btoa(`${serverKey}:`);
       const midtransRes = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -100,10 +136,23 @@ Deno.serve(async (req: Request) => {
 
       const midtransData = await midtransRes.json();
       if (!midtransRes.ok) {
+        let errorMsg = 'Midtrans API Error';
+        if (Array.isArray(midtransData?.error_messages) && midtransData.error_messages.length > 0) {
+          errorMsg = midtransData.error_messages.join(', ');
+        } else if (midtransData?.status_message) {
+          errorMsg = midtransData.status_message;
+        } else if (midtransData?.error === 'Unauthorized' || midtransRes.status === 401) {
+          errorMsg = 'Kunci MIDTRANS_SERVER_KEY tidak valid atau belum diotorisasi di Midtrans (401 Unauthorized)';
+        } else if (typeof midtransData?.error === 'string') {
+          errorMsg = midtransData.error;
+        } else if (typeof midtransData?.message === 'string') {
+          errorMsg = midtransData.message;
+        }
+
         return new Response(
           JSON.stringify({
             error: true,
-            message: midtransData.error_messages ? midtransData.error_messages.join(', ') : 'Midtrans API Error',
+            message: errorMsg,
             details: midtransData,
           }),
           { status: midtransRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

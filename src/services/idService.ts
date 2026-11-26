@@ -16,7 +16,9 @@ export type TableEntity =
   | 'wallet_transactions'
   | 'withdrawals'
   | 'shipping_branches'
-  | 'platform_settings';
+  | 'platform_settings'
+  | 'communities'
+  | 'support_tickets';
 
 export const TABLE_PREFIXES: Record<TableEntity, string> = {
   users: 'USR',
@@ -35,6 +37,8 @@ export const TABLE_PREFIXES: Record<TableEntity, string> = {
   withdrawals: 'WDR',
   shipping_branches: 'SHP',
   platform_settings: 'SET',
+  communities: 'COM',
+  support_tickets: 'TKT',
 };
 
 export class IdService {

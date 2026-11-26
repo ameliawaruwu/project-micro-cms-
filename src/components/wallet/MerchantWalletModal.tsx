@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -17,6 +18,7 @@ import {
 import { Store as StoreType, WalletTransaction, WithdrawalRequest } from '../../types';
 import { walletService } from '../../services/walletService';
 import { formatRupiah } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface MerchantWalletModalProps {
   isOpen: boolean;
@@ -47,6 +49,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
   store,
   onBalanceUpdated,
 }) => {
+  const { isEn } = useLanguage();
   const [activeTab, setActiveTab] = useState<'withdraw' | 'history'>('withdraw');
   const [bankName, setBankName] = useState('BCA');
   const [accountNumber, setAccountNumber] = useState('8820 1928 34');
@@ -83,12 +86,12 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
 
     const amountNum = parseInt(withdrawAmount.replace(/\D/g, ''), 10);
     if (isNaN(amountNum) || amountNum < 50000) {
-      setFeedback({ type: 'error', message: 'Minimal penarikan dana adalah Rp 50.000' });
+      setFeedback({ type: 'error', message: isEn ? 'The minimum withdrawal is Rp 50.000' : 'Minimal penarikan dana adalah Rp 50.000' });
       return;
     }
 
     if (amountNum > availableBalance) {
-      setFeedback({ type: 'error', message: 'Saldo aktif tidak mencukupi untuk nominal penarikan ini.' });
+      setFeedback({ type: 'error', message: isEn ? 'Your active balance is not enough for this withdrawal amount.' : 'Saldo aktif tidak mencukupi untuk nominal penarikan ini.' });
       return;
     }
 
@@ -113,7 +116,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
         setFeedback({ type: 'error', message: res.message });
       }
     } catch {
-      setFeedback({ type: 'error', message: 'Terjadi kesalahan saat mengajukan penarikan dana.' });
+      setFeedback({ type: 'error', message: isEn ? 'Something went wrong while requesting the withdrawal.' : 'Terjadi kesalahan saat mengajukan penarikan dana.' });
     } finally {
       setLoading(false);
     }
@@ -134,7 +137,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
               <Wallet className="w-3.5 h-3.5" />
             </div>
             <div>
-              <h2 className="font-bold text-sm text-gray-900">Dompet Toko & Tarik Saldo</h2>
+              <h2 className="font-bold text-sm text-gray-900">{isEn ? 'Store Wallet & Withdrawals' : 'Dompet Toko & Tarik Saldo'}</h2>
               <p className="text-[11px] text-gray-500">{store.name}</p>
             </div>
           </div>
@@ -151,20 +154,20 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
         <div className="p-4 bg-gray-900 text-white">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <span className="text-[11px] text-gray-400 font-medium block mb-0.5">Saldo Aktif Tersedia</span>
+              <span className="text-[11px] text-gray-400 font-medium block mb-0.5">{isEn ? 'Available Active Balance' : 'Saldo Aktif Tersedia'}</span>
               <p className="text-xl sm:text-2xl font-bold tracking-tight text-white">{formatRupiah(availableBalance)}</p>
               <div className="mt-1 flex items-center gap-1 text-[10px] text-emerald-400">
                 <ShieldCheck className="w-3 h-3" />
-                <span>Siap dicairkan</span>
+                <span>{isEn ? 'Ready to withdraw' : 'Siap dicairkan'}</span>
               </div>
             </div>
 
             <div className="border-l border-gray-800 pl-3 flex flex-col justify-center">
-              <span className="text-[11px] text-gray-400 font-medium block mb-0.5">Dalam Proses</span>
+              <span className="text-[11px] text-gray-400 font-medium block mb-0.5">{isEn ? 'In Process' : 'Dalam Proses'}</span>
               <p className="text-base sm:text-lg font-bold text-amber-300">{formatRupiah(pendingWithdrawalsAmount)}</p>
               <div className="mt-1 flex items-center gap-1 text-[10px] text-gray-400">
                 <Clock className="w-3 h-3" />
-                <span>Menunggu persetujuan</span>
+                <span>{isEn ? 'Awaiting approval' : 'Menunggu persetujuan'}</span>
               </div>
             </div>
           </div>
@@ -182,7 +185,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
             }`}
           >
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>Form Penarikan</span>
+            <span>{isEn ? 'Withdrawal Form' : 'Form Penarikan'}</span>
           </button>
 
           <button
@@ -195,7 +198,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
             }`}
           >
             <ArrowDownLeft className="w-3.5 h-3.5" />
-            <span>Riwayat ({transactions.length})</span>
+            <span>{isEn ? 'History' : 'Riwayat'} ({transactions.length})</span>
           </button>
         </div>
 
@@ -224,22 +227,22 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
               
               {/* Bank Selection */}
               <div>
-                <label className="block text-xs font-semibold text-gray-800 mb-1">Pilih Bank Tujuan</label>
+                <label className="block text-xs font-semibold text-gray-800 mb-1">{isEn ? 'Choose Destination Bank' : 'Pilih Bank Tujuan'}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                     <Building2 className="w-3.5 h-3.5" />
                   </div>
-                  <select
+                  <SearchableSelect
                     value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
                     className="w-full pl-8.5 pr-8 py-2 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 appearance-none transition cursor-pointer shadow-2xs"
                   >
                     {POPULAR_BANKS.map((b) => (
                       <option key={b.id} value={b.id}>
-                        {b.name}
+                        {isEn && b.id === 'Bank Lainnya' ? 'Other Bank' : b.name}
                       </option>
                     ))}
-                  </select>
+                  </SearchableSelect>
                   <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
                     <ChevronDown className="w-3.5 h-3.5" />
                   </div>
@@ -249,11 +252,11 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
               {/* Account Number & Name */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Nomor Rekening</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{isEn ? 'Account Number' : 'Nomor Rekening'}</label>
                   <input
                     type="text"
                     required
-                    placeholder="Contoh: 8820 1928 34"
+                    placeholder={isEn ? 'e.g. 8820 1928 34' : 'Contoh: 8820 1928 34'}
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
                     className="w-full px-3 py-1.5 rounded-md border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-red-500 font-mono"
@@ -261,11 +264,11 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Nama Pemilik Rekening</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">{isEn ? 'Account Holder Name' : 'Nama Pemilik Rekening'}</label>
                   <input
                     type="text"
                     required
-                    placeholder="Sesuai buku tabungan"
+                    placeholder={isEn ? 'As shown on your bank book' : 'Sesuai buku tabungan'}
                     value={accountHolder}
                     onChange={(e) => setAccountHolder(e.target.value)}
                     className="w-full px-3 py-1.5 rounded-md border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-red-500"
@@ -276,7 +279,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
               {/* Amount Input */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-medium text-gray-700">Nominal Penarikan (Rp)</label>
+                  <label className="text-xs font-medium text-gray-700">{isEn ? 'Withdrawal Amount (Rp)' : 'Nominal Penarikan (Rp)'}</label>
                   <span className="text-[10px] text-gray-400">Min. Rp 50.000</span>
                 </div>
                 
@@ -300,7 +303,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
                       onClick={() => handleQuickAmount(val)}
                       className="px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200 border border-gray-200 text-[10px] font-medium text-gray-600 transition cursor-pointer"
                     >
-                      {val === availableBalance ? 'Tarik Semua' : formatRupiah(val)}
+                      {val === availableBalance ? (isEn ? 'Withdraw All' : 'Tarik Semua') : formatRupiah(val)}
                     </button>
                   ))}
                 </div>
@@ -314,10 +317,10 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
                   className="w-full py-2.5 rounded-md bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <ArrowUpRight className="w-3.5 h-3.5" />
-                  <span>{loading ? 'Mengajukan...' : 'Ajukan Penarikan Dana'}</span>
+                  <span>{loading ? (isEn ? 'Submitting...' : 'Mengajukan...') : (isEn ? 'Request Withdrawal' : 'Ajukan Penarikan Dana')}</span>
                 </button>
                 <p className="text-[10px] text-center text-gray-400 mt-1.5">
-                  Ditransfer ke rekening Anda dalam waktu 1x24 jam kerja setelah persetujuan admin.
+                  {isEn ? 'Transferred to your account within 1x24 business hours after admin approval.' : 'Ditransfer ke rekening Anda dalam waktu 1x24 jam kerja setelah persetujuan admin.'}
                 </p>
               </div>
 
@@ -329,7 +332,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
             <div className="space-y-2">
               {transactions.length === 0 ? (
                 <div className="text-center py-6 text-gray-400 text-xs">
-                  Belum ada riwayat transaksi dompet.
+                  {isEn ? 'No wallet transactions yet.' : 'Belum ada riwayat transaksi dompet.'}
                 </div>
               ) : (
                 transactions.map((tx) => (
@@ -352,7 +355,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
                       <div>
                         <p className="font-semibold text-xs text-gray-900 leading-tight">{tx.title}</p>
                         <span className="text-[10px] text-gray-400">
-                          {new Date(tx.createdAt).toLocaleDateString('id-ID', {
+                          {new Date(tx.createdAt).toLocaleDateString(isEn ? 'en-US' : 'id-ID', {
                             day: 'numeric',
                             month: 'short',
                             year: 'numeric',
@@ -376,7 +379,7 @@ export const MerchantWalletModal: React.FC<MerchantWalletModalProps> = ({
                           ? 'bg-amber-50 text-amber-700 border border-amber-100'
                           : 'bg-red-50 text-red-700 border border-red-100'
                       }`}>
-                        {tx.status === 'completed' ? 'Selesai' : tx.status === 'pending' ? 'Menunggu' : 'Ditolak'}
+                        {tx.status === 'completed' ? (isEn ? 'Completed' : 'Selesai') : tx.status === 'pending' ? (isEn ? 'Pending' : 'Menunggu') : (isEn ? 'Rejected' : 'Ditolak')}
                       </span>
                     </div>
                   </div>

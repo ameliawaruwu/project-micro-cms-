@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ChevronDown,
   Menu,
   User as UserIcon,
+  UserPen,
 } from 'lucide-react';
 import { Store as StoreType, ViewMode, User } from '../../types';
 import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { ProfileSettingsModal } from '../common/ProfileSettingsModal';
+import { NotificationBell } from '../common/NotificationBell';
 
 interface TopBarProps {
   stores?: StoreType[];
@@ -20,56 +25,86 @@ interface TopBarProps {
   onCreateNewStore?: () => void;
   onLogout?: () => void;
   onNavigateAuth?: () => void;
+  onShowToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  /** Klik notifikasi: tab tujuan & toko terkait. */
+  onNotificationNavigate?: (link: string, storeId: string | null) => void;
 }
+
+/** Foto profil bila ada, selain itu ikon pengguna bawaan. */
+const UserAvatar: React.FC<{ user: User | null; className: string; iconClassName: string }> = ({
+  user,
+  className,
+  iconClassName,
+}) =>
+  user?.avatarUrl ? (
+    <img src={user.avatarUrl} alt="" className={`${className} object-cover`} />
+  ) : (
+    <div className={`${className} bg-[#66000E] text-white flex items-center justify-center`}>
+      <UserIcon className={`${iconClassName} text-white`} />
+    </div>
+  );
 
 export const TopBar: React.FC<TopBarProps> = ({
   user,
   onToggleSidebar,
+  onShowToast,
+  onNotificationNavigate,
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const { t } = useLanguage();
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const { t, isEn } = useLanguage();
+  const { updateUser } = useAuth();
+
+  const openProfileModal = () => {
+    setUserDropdownOpen(false);
+    setProfileModalOpen(true);
+  };
 
   return (
-    <header 
-      id="topbar-main" 
-      className="sticky top-0 z-30 bg-white border-b border-[#E5E0DD] px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between shadow-2xs font-poppins transition-all w-full max-w-full"
+    <header
+      id="topbar-main"
+      className="sticky top-0 z-30 bg-white border-b border-[#E5E0DD] px-3.5 sm:px-6 py-2 flex items-center justify-between shadow-2xs font-poppins transition-all w-full max-w-full min-h-[48px]"
     >
       {/* Left side: Mobile Hamburger Toggle */}
       <div className="flex items-center gap-2">
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
-            className="lg:hidden p-2 rounded-xl text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer min-h-[38px] min-w-[38px] flex items-center justify-center shrink-0 border border-[#E5E0DD]"
+            className="lg:hidden p-1.5 rounded-lg text-[#706866] hover:text-[#241A1A] hover:bg-[#FAF7F7] transition cursor-pointer min-h-[34px] min-w-[34px] flex items-center justify-center shrink-0 border border-[#E5E0DD]"
             aria-label={t('open_menu', 'Buka Menu')}
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-4.5 h-4.5" />
           </button>
         )}
       </div>
 
       {/* Right side: Language Switcher & User Profile (Pemilik Toko) */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
         {/* Language Switch Button (ID / EN) */}
         <LanguageSwitchButton />
+
+        {user && <NotificationBell onNavigate={onNotificationNavigate} />}
 
         <div className="relative shrink-0">
           <button
             onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] hover:bg-white hover:border-[#66000E]/40 transition text-left cursor-pointer min-h-[36px] shadow-2xs"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-xl border border-[#E5E0DD] bg-[#FAF7F7] hover:bg-white hover:border-[#66000E]/40 transition text-left cursor-pointer min-h-[32px] shadow-2xs"
             aria-label={t('store_owner', 'Pemilik Toko')}
           >
-            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#66000E] text-white flex items-center justify-center font-medium text-xs shrink-0 shadow-2xs">
-              <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-            </div>
+            <UserAvatar
+              user={user}
+              className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-md shrink-0 shadow-2xs"
+              iconClassName="w-3 h-3 sm:w-3.5 sm:h-3.5"
+            />
             <div className="hidden sm:flex flex-col text-left min-w-0 max-w-[120px]">
               <span className="font-medium text-[#241A1A] text-xs truncate leading-tight">
                 {user?.name || t('store_owner', 'Pemilik Toko')}
               </span>
-              <span className="text-[10px] text-[#706866] font-normal leading-tight truncate">
+              <span className="text-[9.5px] text-[#706866] font-normal leading-tight truncate">
                 {t('store_owner', 'Pemilik Toko')}
               </span>
             </div>
-            <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#706866] ml-0.5" />
+            <ChevronDown className="w-3 h-3 text-[#706866] ml-0.5" />
           </button>
 
           {userDropdownOpen && (
@@ -77,9 +112,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               <div className="fixed inset-0 z-40" onClick={() => setUserDropdownOpen(false)} />
               <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-[#E5E0DD] p-3 z-50 animate-in fade-in zoom-in-95 duration-150 text-left">
                 <div className="flex items-center gap-2.5 pb-2.5 border-b border-[#E5E0DD]">
-                  <div className="w-9 h-9 rounded-full bg-[#66000E] text-white flex items-center justify-center font-semibold text-xs shrink-0">
-                    <UserIcon className="w-4 h-4 text-white" />
-                  </div>
+                  <UserAvatar user={user} className="w-9 h-9 rounded-full shrink-0" iconClassName="w-4 h-4" />
                   <div className="truncate flex-1">
                     <div className="flex items-center justify-between gap-1">
                       <span className="font-medium text-xs text-[#241A1A] truncate">
@@ -89,25 +122,51 @@ export const TopBar: React.FC<TopBarProps> = ({
                         UMKM
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#706866] truncate font-normal mt-0.5">{user?.email || 'merchant@kroomify.id'}</p>
+                    <p className="text-[11px] text-[#706866] truncate font-normal mt-0.5">{user?.email || 'merchant@lapakq.com'}</p>
                   </div>
                 </div>
 
                 <div className="pt-2.5 px-1 text-[11px] text-[#706866] space-y-1">
                   <div className="flex items-center justify-between">
                     <span>{t('account_role', 'Peran Akun:')}</span>
-                    <span className="font-medium text-[#241A1A]">{user?.role === 'admin' ? 'Super Admin' : t('store_owner', 'Pemilik Toko')}</span>
+                    <span className="font-medium text-[#241A1A]">{user?.role === 'admin' ? 'Super Admin' : user?.role === 'sub_admin_umum' ? (isEn ? 'Community General Admin' : 'Admin Umum Komunitas') : (user?.role === 'community_admin' || user?.role === 'sub_admin_produk') ? (isEn ? 'Community Product Admin' : 'Admin Produk Komunitas') : user?.role === 'sub_admin' ? 'Sub Admin' : t('store_owner', 'Pemilik Toko')}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>{t('account_status', 'Status Akun:')}</span>
                     <span className="font-medium text-emerald-700">{t('verified', 'Terverifikasi')}</span>
                   </div>
                 </div>
+
+                {user && (
+                  <button
+                    type="button"
+                    onClick={openProfileModal}
+                    className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E0DD] text-xs font-medium text-[#241A1A] hover:border-[#66000E]/40 hover:text-[#66000E] hover:bg-[#FAF7F7] transition cursor-pointer"
+                  >
+                    <UserPen className="w-3.5 h-3.5" />
+                    <span>{isEn ? 'Edit Profile' : 'Edit Profil'}</span>
+                  </button>
+                )}
               </div>
             </>
           )}
         </div>
       </div>
+
+      {/* Dipasang hanya saat dibuka agar isian selalu berangkat dari data akun terbaru. */}
+      {/* Portal ke body: header sticky membuat stacking context sendiri (z-30). */}
+      {profileModalOpen &&
+        createPortal(
+          <ProfileSettingsModal
+            variant="merchant"
+            isOpen
+            onClose={() => setProfileModalOpen(false)}
+            currentUser={user}
+            onProfileUpdated={updateUser}
+            onShowToast={(msg, type) => onShowToast?.(msg, type)}
+          />,
+          document.body
+        )}
     </header>
   );
 };

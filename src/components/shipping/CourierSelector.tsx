@@ -1,3 +1,4 @@
+import SearchableSelect from '../common/SearchableSelect';
 import React, { useState, useEffect } from 'react';
 import {
   Truck,
@@ -13,6 +14,7 @@ import { ShippingBranch, BiteshipRateOption, CourierType } from '../../types';
 import { branchService } from '../../services/branchService';
 import { shippingService } from '../../services/shippingService';
 import { formatRupiah } from '../../utils/formatters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CourierSelectorProps {
   storeId?: string;
@@ -37,6 +39,7 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
   onBranchChange,
   showBranchDropdown = true,
 }) => {
+  const { isEn } = useLanguage();
   const [branches, setBranches] = useState<ShippingBranch[]>([]);
   const [currentBranch, setCurrentBranch] = useState<ShippingBranch | null>(null);
   const [rates, setRates] = useState<BiteshipRateOption[]>([]);
@@ -103,7 +106,7 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
           onRateSelect(match, currentBranch);
         }
       } catch (err: any) {
-        setRateError('Gagal memuat tarif kurir otomatis.');
+        setRateError(isEn ? 'Failed to load courier rates automatically.' : 'Gagal memuat tarif kurir otomatis.');
       } finally {
         setIsLoadingRates(false);
       }
@@ -150,27 +153,27 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
           <div className="flex items-center justify-between text-xs">
             <label className="font-semibold text-[#1F1F1F] flex items-center gap-1.5">
               <Building2 className="w-3.5 h-3.5 text-[#66000E]" />
-              <span>Cabang / Gudang Asal Pengiriman</span>
+              <span>{isEn ? 'Origin Branch / Warehouse' : 'Cabang / Gudang Asal Pengiriman'}</span>
             </label>
             {currentBranch?.isDefault && (
               <span className="text-[10px] font-semibold text-[#66000E] bg-[#F5E8EA] px-2 py-0.5 rounded-full border border-[#E8DDDE]">
-                Cabang Utama
+                {isEn ? 'Main Branch' : 'Cabang Utama'}
               </span>
             )}
           </div>
 
           <div className="relative">
-            <select
+            <SearchableSelect
               value={currentBranch?.id || ''}
               onChange={(e) => handleBranchSelect(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-[#E5E0DD] bg-white text-xs font-semibold text-[#1F1F1F] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] cursor-pointer"
             >
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.branchName} — {b.city} (Kode Pos: {b.postalCode}) {b.isDefault ? '★ Utama' : ''}
+                  {b.branchName} — {b.city} ({isEn ? 'Postal Code' : 'Kode Pos'}: {b.postalCode}) {b.isDefault ? (isEn ? '★ Main' : '★ Utama') : ''}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           {currentBranch && (
@@ -189,11 +192,11 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
         <div className="flex items-center justify-between text-xs">
           <span className="font-semibold text-[#1F1F1F] flex items-center gap-1.5">
             <Truck className="w-3.5 h-3.5 text-[#66000E]" />
-            <span>Pilihan Kurir & Layanan Pengiriman</span>
+            <span>{isEn ? 'Courier & Shipping Service Options' : 'Pilihan Kurir & Layanan Pengiriman'}</span>
           </span>
           {isLoadingRates && (
             <span className="flex items-center gap-1 text-[11px] text-[#66000E] font-medium">
-              <Loader2 className="w-3 h-3 animate-spin" /> Menghitung ongkir...
+              <Loader2 className="w-3 h-3 animate-spin" /> {isEn ? 'Calculating shipping...' : 'Menghitung ongkir...'}
             </span>
           )}
         </div>
@@ -279,7 +282,7 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
                     </div>
                     <div className="flex items-center gap-1 text-[11px] text-[#777777] mt-0.5">
                       <Clock className="w-3 h-3" />
-                      <span>Estimasi: {rate.etd}</span>
+                      <span>{isEn ? 'Estimate' : 'Estimasi'}: {rate.etd}</span>
                     </div>
                   </div>
                 </div>
@@ -290,7 +293,7 @@ export const CourierSelector: React.FC<CourierSelectorProps> = ({
                     {formatRupiah(rate.price)}
                   </span>
                   <span className="block text-[10px] text-[#777777]">
-                    {rate.tier === 'express' ? 'Kilat' : 'Reguler'}
+                    {rate.tier === 'express' ? (isEn ? 'Express' : 'Kilat') : (isEn ? 'Regular' : 'Reguler')}
                   </span>
                 </div>
               </div>

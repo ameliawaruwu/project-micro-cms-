@@ -14,8 +14,10 @@ import {
   mockPages
 } from './mockCmsData';
 import { THEME_DATA_MAP } from '../themes/themeData';
+import { normalizeThemeId } from '../themes/ThemeRegistry';
 import { Product } from '../types';
 import { productService } from '../services/productService';
+import { isDemoProductId } from '../utils/demoProducts';
 
 export function productToCmsProduct(p: Product): CmsProduct {
   let cmsStatus: 'active' | 'draft' | 'archived' = 'active';
@@ -80,6 +82,7 @@ interface CmsState {
 
   // Actions
   loadThemeData: (themeId: string) => void;
+  updateStoreInfo: (info: Partial<CmsStoreInfo>) => void;
   updateProduct: (product: CmsProduct, storeId?: string) => void;
   addProduct: (product: CmsProduct, storeId?: string) => void;
   deleteProduct: (id: string) => void;
@@ -92,31 +95,77 @@ interface CmsState {
   getPageBySlug: (slug: string) => CmsPage | undefined;
 }
 
+/** Alamat/email/telepon milik data contoh template (THEME_DATA_MAP). */
+const DEMO_CONTACTS = new Set(
+  Object.values(THEME_DATA_MAP).flatMap((t) => [t?.storeInfo?.address, t?.storeInfo?.email, t?.storeInfo?.phone]).filter(Boolean) as string[]
+);
+const isDemoContact = (value?: string) => !value || DEMO_CONTACTS.has(value);
+
+const DEMO_CONTACT_OPTION_KEYS = ['email', 'phone', 'phoneWhatsApp', 'address'] as const;
+
+/**
+ * Buang email/telepon/alamat contoh template yang ikut tersimpan di opsi section, agar section
+ * (mis. footer) jatuh ke kontak asli toko. Nilai yang diisi merchant sendiri tidak disentuh.
+ */
+export function stripDemoContactOptions<T extends Record<string, any>>(options: T): T {
+  let cleaned: T | null = null;
+  for (const key of DEMO_CONTACT_OPTION_KEYS) {
+    const value = options[key];
+    if (typeof value === 'string' && value && DEMO_CONTACTS.has(value)) {
+      cleaned = cleaned || { ...options };
+      delete (cleaned as Record<string, any>)[key];
+    }
+  }
+  return cleaned || options;
+}
+
 const getInitialProducts = () => {
   if (typeof window !== 'undefined') {
     try {
       const saved = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
       if (saved) {
         const parsed = JSON.parse(saved);
-        // If cached data contains old fashion products, clear cache and return new hardware mock products
-        const hasFashion = Array.isArray(parsed) && parsed.some(p => 
-          /dress|blouse|cardigan|pants|skirt|fashion|amaryllis|knit/i.test(p.name || '') ||
-          /dress|atasan|outerwear|bawahan/i.test(p.categoryName || '')
-        );
-        if (hasFashion) {
-          sessionStorage.removeItem('microcms_cms_products');
-          localStorage.removeItem('microcms_cms_products');
-          return mockProducts;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const filtered = parsed.filter((p: any) => p?.id && !isDemoProductId(p.id));
+          if (filtered.length > 0) return filtered;
         }
-        return parsed;
       }
     } catch (e) {}
   }
-  return mockProducts;
+  return [];
+};
+
+const getInitialStoreInfo = (): CmsStoreInfo => {
+  if (typeof window !== 'undefined') {
+    try {
+      const draftStr = sessionStorage.getItem('microcms_preview_draft') || localStorage.getItem('microcms_preview_draft');
+      if (draftStr) {
+        const draft = JSON.parse(draftStr);
+        const themeId = normalizeThemeId(draft.layoutSettings?.activeThemeId || draft.layoutSettings?.themeStyle || 'editorial');
+        const themeData = THEME_DATA_MAP[themeId] || THEME_DATA_MAP['editorial'];
+        return {
+          name: draft.name || themeData.storeInfo.name || 'LOOKSEE',
+          description: draft.description || themeData.storeInfo.description,
+          address: draft.address || themeData.storeInfo.address,
+          email: draft.email || themeData.storeInfo.email,
+          phone: draft.phoneWhatsApp || themeData.storeInfo.phone,
+          socials: themeData.storeInfo.socials,
+        };
+      }
+    } catch (e) {}
+  }
+  return THEME_DATA_MAP['editorial']?.storeInfo || {
+    name: "LOOKSEE",
+    description: "Autumn / Winter Collection. High fashion editorial, tailoring & sophisticated silhouettes.",
+    address: "Jakarta, Indonesia",
+    email: "contact@looksee.id",
+    phone: "+62 812 3456 7890",
+    socials: { instagram: "@looksee.archive" }
+  };
 };
 
 export const useCmsStore = create<CmsState>((set, get) => ({
-  storeInfo: mockStoreInfo,
+  storeInfo: getInitialStoreInfo(),
   products: getInitialProducts(),
   categories: mockCategories,
   news: mockNews,
@@ -128,6 +177,15 @@ export const useCmsStore = create<CmsState>((set, get) => ({
   getNewsBySlug: (slug: string) => get().news.find(n => n.slug === slug),
   getPageBySlug: (slug: string) => get().pages.find(p => p.slug === slug),
 
+  updateStoreInfo: (info: Partial<CmsStoreInfo>) => {
+    set(state => ({
+      storeInfo: {
+        ...state.storeInfo,
+        ...info,
+      }
+    }));
+  },
+
   setProductsFromMerchant: (merchantProducts: Product[]) => {
     if (!merchantProducts || merchantProducts.length === 0) {
       set({ products: [] });
@@ -135,7 +193,6 @@ export const useCmsStore = create<CmsState>((set, get) => ({
         try {
           sessionStorage.removeItem('microcms_cms_products');
           localStorage.removeItem('microcms_cms_products');
-          window.dispatchEvent(new Event('cms_draft_updated'));
         } catch (e) {}
       }
       return;
@@ -146,7 +203,6 @@ export const useCmsStore = create<CmsState>((set, get) => ({
       try {
         sessionStorage.setItem('microcms_cms_products', JSON.stringify(cmsList));
         localStorage.setItem('microcms_cms_products', JSON.stringify(cmsList));
-        window.dispatchEvent(new Event('cms_draft_updated'));
       } catch (e) {}
     }
   },
@@ -165,20 +221,20 @@ export const useCmsStore = create<CmsState>((set, get) => ({
       return { products: newProducts };
     });
 
-    // Bidirectional sync to merchant ProductService
+    // Sinkron ke database hanya untuk produk toko yang sudah ada. Produk contoh template
+    // (preview editor) cukup diubah di layar: dulu update yang gagal membuat produk baru,
+    // sehingga produk contoh (mis. "Signature Calfskin Tote Bag") ikut tersimpan ke toko.
+    if (isDemoProductId(updatedProduct.id)) return;
     try {
       productService.updateProduct(updatedProduct.id, {
+        ...(storeId ? { storeId } : {}),
         name: updatedProduct.name,
         price: updatedProduct.price,
         imageUrl: updatedProduct.image,
         category: updatedProduct.categoryName,
         description: updatedProduct.description,
         stock: updatedProduct.stock,
-      }).catch(() => {
-        // If product didn't exist in productService yet, create it
-        const newMerchantProd = cmsProductToProduct(updatedProduct, storeId);
-        productService.createProduct(storeId, newMerchantProd).catch(() => {});
-      });
+      }).catch(err => console.warn('[useCmsStore] updateProduct sync error:', err));
     } catch (e) {}
   },
 
@@ -199,7 +255,8 @@ export const useCmsStore = create<CmsState>((set, get) => ({
       return { products: newProducts };
     });
 
-    // Bidirectional sync to merchant ProductService
+    // Produk contoh template dan toko tanpa ID tidak pernah disimpan ke database.
+    if (!storeId || isDemoProductId(newProduct.id)) return;
     try {
       const merchantProduct = cmsProductToProduct(newProduct, storeId);
       productService.createProduct(storeId, merchantProduct)
@@ -229,6 +286,8 @@ export const useCmsStore = create<CmsState>((set, get) => ({
   },
 
   loadThemeData: (themeId: string) => {
+    const cleanThemeId = normalizeThemeId(themeId);
+
     // Check if user has saved custom edited products in session
     let activeProds: CmsProduct[] = [];
     if (typeof window !== 'undefined') {
@@ -236,25 +295,55 @@ export const useCmsStore = create<CmsState>((set, get) => ({
         const saved = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
         if (saved) {
           const parsed = JSON.parse(saved);
-          const hasFashion = Array.isArray(parsed) && parsed.some(p => 
-            /dress|blouse|cardigan|pants|skirt|fashion|amaryllis|knit/i.test(p.name || '')
-          );
-          if (!hasFashion) {
+          if (Array.isArray(parsed) && parsed.length > 0) {
             activeProds = parsed;
           }
         }
       } catch (e) {}
     }
 
-    const cleanThemeId = themeId === 'future_shop' || themeId === 'futuristic_dark' ? 'futuristic' : themeId;
-    const themeData = THEME_DATA_MAP[cleanThemeId as keyof typeof THEME_DATA_MAP] || THEME_DATA_MAP['futuristic'];
+    const isMockId = isDemoProductId;
+    const themeData = THEME_DATA_MAP[cleanThemeId] || THEME_DATA_MAP['minimalist'];
     if (themeData) {
-      const finalProducts = activeProds.length > 0 ? activeProds : themeData.products;
-      set({
-        storeInfo: themeData.storeInfo,
-        products: finalProducts,
-        categories: themeData.categories,
-        navigation: themeData.navigation.sort((a, b) => a.order - b.order),
+      set((state) => {
+        // Cek apakah ada produk merchant nyata (bukan ID mock template)
+        const currentReal = state.products.filter(p => !isMockId(p.id));
+        const storedReal = activeProds.filter(p => !isMockId(p.id));
+        const effectiveReal = currentReal.length > 0 ? currentReal : storedReal;
+
+        // ALWAYS resolve to the current logged-in merchant's store name
+        let merchantStoreName = '';
+        if (typeof window !== 'undefined') {
+          try {
+            const rawAuth = localStorage.getItem('microcms_auth_store');
+            if (rawAuth) {
+              const parsed = JSON.parse(rawAuth);
+              if (parsed?.name && parsed.name.trim()) merchantStoreName = parsed.name.trim();
+            }
+          } catch {}
+        }
+
+        const currentName = state.storeInfo.name;
+        const isGenericOldName = !currentName || currentName === 'Green Market Indonesia' || currentName === 'Toko Sayur' || currentName === 'NOIRÉ ARCHIVE';
+        const finalName = merchantStoreName || (!isGenericOldName ? currentName : (themeData.storeInfo.name || 'Toko Saya'));
+
+        return {
+          storeInfo: {
+            ...themeData.storeInfo,
+            name: finalName,
+            // Kontak contoh template tidak boleh tampil di toko: pakai data toko (atau kosong).
+            address: isDemoContact(state.storeInfo.address) ? '' : state.storeInfo.address,
+            email: isDemoContact(state.storeInfo.email) ? '' : state.storeInfo.email,
+            phone: '',
+            socials: {},
+            logoUrl: state.storeInfo.logoUrl || '',
+          },
+          // Hanya produk asli toko. Produk contoh template ditampilkan oleh section tema
+          // khusus di Editor Layout (lihat useThemeProductsSource), tidak di toko publik.
+          products: effectiveReal,
+          categories: themeData.categories || [],
+          navigation: (themeData.navigation || []).sort((a: any, b: any) => a.order - b.order),
+        };
       });
     }
   },

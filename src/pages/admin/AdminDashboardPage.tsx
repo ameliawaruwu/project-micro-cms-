@@ -9,7 +9,11 @@ import {
   Settings as SettingsIcon,
   LayoutDashboard,
   Globe,
+  Users,
+  Package,
+  UserCog,
 } from 'lucide-react';
+import { SupportAgentIcon } from '../../components/common/icons/SupportAgentIcon';
 import { Store, WithdrawalRequest, AdminPlatformStats, Order, BillingPlan, BillingSubscription, User } from '../../types';
 import { adminService } from '../../services/adminService';
 import { billingPlanService } from '../../services/billingPlanService';
@@ -19,20 +23,35 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { AdminTab, AdminNavItem, PlanFormState } from './types';
 import { AdminSidebar } from './components/AdminSidebar';
 import { AdminHeader } from './components/AdminHeader';
+import { DashboardFooter } from '../../components/layout/DashboardFooter';
+import { ProfileSettingsModal } from '../../components/common/ProfileSettingsModal';
 import { AdminOrderDetailModal } from './components/AdminOrderDetailModal';
 import { AdminOverviewTab } from './tabs/AdminOverviewTab';
 import { AdminStoresTab } from './tabs/AdminStoresTab';
 import { AdminDomainRequestsTab } from './tabs/AdminDomainRequestsTab';
 import { AdminWithdrawalsTab } from './tabs/AdminWithdrawalsTab';
+import { WALLET_ENABLED } from '../../config/features';
 import { AdminPlansTab } from './tabs/AdminPlansTab';
 import { AdminOrdersShippingTab } from './tabs/AdminOrdersShippingTab';
 import { AdminTransactionsTab } from './tabs/AdminTransactionsTab';
 import { AdminSettingsTab } from './tabs/AdminSettingsTab';
+import { AdminCommunitiesTab } from './tabs/AdminCommunitiesTab';
+import { storeInCommunity } from '../../utils/communityMembership';
+import { AdminProductsTab } from './tabs/AdminProductsTab';
+import { AdminUsersTab } from './tabs/AdminUsersTab';
+import { AdminTicketsTab } from './tabs/AdminTicketsTab';
+import { AdminCommunityMembersTab } from './tabs/AdminCommunityMembersTab';
+import { TicketRequesterPanel } from '../../components/tickets/TicketRequesterPanel';
+import { ticketService } from '../../services/ticketService';
 import {
   getShippingStatusBadgeStyle,
   getShippingStatusLabel,
   getPaymentStatusLabel,
 } from './utils';
+import { sessionHeaders } from '../../services/supabaseClient';
+import { AdminStoreDetailPage } from './tabs/AdminStoreDetailPage';
+import { adminRoutePath, isAdminPath, parseAdminPath } from '../../utils/appRoutes';
+import { isPlatformHost, getStoreSlugFromHost } from '../../utils/domainRouting';
 
 interface AdminDashboardPageProps {
   currentUser?: User | null;
@@ -55,18 +74,132 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [domainRequests, setDomainRequests] = useState<DomainRequest[]>([]);
   const [suspendedIds, setSuspendedIds] = useState<string[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const [adminUser, setAdminUser] = useState<User | null>(() => currentUser || authService.getCurrentUser().user || null);
+  const loggedInUser = adminUser || currentUser || authService.getCurrentUser().user;
+  
+  // Sub-Admin Utama (sub_admin / sub_admin_umum): halaman komunitas & menambah toko binaan.
+  const isSubAdminUmum =
+    loggedInUser?.role === 'sub_admin_umum' ||
+    loggedInUser?.role === 'sub_admin' ||
+    loggedInUser?.email === 'admin1@gmps.com' ||
+    loggedInUser?.email === 'admin1@gmail.com';
+
+  const isSubAdminProduk =
+    loggedInUser?.role === 'community_admin' ||
+    loggedInUser?.role === 'sub_admin_produk' ||
+    loggedInUser?.email === 'admin2@gmail.com' ||
+    loggedInUser?.email === 'admin2@gmps.com' ||
+    loggedInUser?.email === 'subadmin2@gmail.com' ||
+    loggedInUser?.email === 'subadmin2@gmps.com';
+
+  const isSubAdmin = isSubAdminUmum || isSubAdminProduk || loggedInUser?.role === 'sub_admin';
+
+  // URL routing panel admin: /admin/<halaman>, /admin/toko/<storeId> (hanya host platform).
+  const onPlatformPanelHost = () =>
+    typeof window !== 'undefined' && isPlatformHost(window.location.hostname) && !getStoreSlugFromHost(window.location.hostname);
+  const initialRoute = React.useMemo(() => (onPlatformPanelHost() ? parseAdminPath(window.location.pathname) : null), []);
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialRoute?.tab || 'overview');
+  /** Halaman detail toko binaan (sub-admin) yang sedang dibuka; null = daftar toko. */
+  const [detailStoreId, setDetailStoreId] = useState<string | null>(initialRoute?.storeId || null);
+  const selectTab = React.useCallback((tab: AdminTab) => {
+    setDetailStoreId(null);
+    setActiveTab(tab);
+  }, []);
+  const openStoreDetail = React.useCallback((storeId: string) => {
+    setActiveTab('stores');
+    setDetailStoreId(storeId);
+  }, []);
+  // Perubahan otomatis sesaat setelah muat / Back-Forward memakai replace agar riwayat tidak terjebak.
+  const urlReplaceUntilRef = React.useRef(Date.now() + 1500);
+  const routeRef = React.useRef({ tab: activeTab, storeId: detailStoreId });
+  routeRef.current = { tab: activeTab, storeId: detailStoreId };
+
+  useEffect(() => {
+    if (!onPlatformPanelHost()) return;
+    const { pathname, search, hash } = window.location;
+    const target = adminRoutePath(activeTab, detailStoreId);
+    if (pathname === target) return;
+    const replace = !isAdminPath(pathname) || Date.now() < urlReplaceUntilRef.current;
+    if (replace) window.history.replaceState(window.history.state, '', `${target}${search}${hash}`);
+    else window.history.pushState({ lapakqAdminTab: activeTab }, '', target);
+  }, [activeTab, detailStoreId]);
+
+  useEffect(() => {
+    if (!onPlatformPanelHost()) return;
+    const onPop = () => {
+      urlReplaceUntilRef.current = Date.now() + 600;
+      const route = parseAdminPath(window.location.pathname);
+      if (route) {
+        setActiveTab(route.tab);
+        setDetailStoreId(route.storeId);
+      } else {
+        const cur = routeRef.current;
+        window.history.replaceState(window.history.state, '', adminRoutePath(cur.tab, cur.storeId));
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  // Halaman detail toko hanya untuk sub-admin; super admin tetap memakai modal detail.
+  useEffect(() => {
+    if (detailStoreId && (!isSubAdmin || activeTab !== 'stores')) setDetailStoreId(null);
+  }, [detailStoreId, isSubAdmin, activeTab]);
+
+  // Hak akses ketat berdasarkan peran sub-admin:
+  // - Sub Admin Utama: Dashboard, Kelola Toko Binaan (suspend/aktifkan), Halaman Komunitas, Anggota Komunitas
+  // - Sub Admin Produk: Dashboard, Data Toko Binaan (lihat saja), Produk (tambah & nonaktifkan), Anggota Komunitas (lihat saja)
+  useEffect(() => {
+    if (isSubAdminUmum) {
+      if (activeTab !== 'overview' && activeTab !== 'stores' && activeTab !== 'communities' && activeTab !== 'my-tickets' && activeTab !== 'community-members') {
+        setActiveTab('overview');
+      }
+    } else if (isSubAdminProduk) {
+      if (activeTab !== 'overview' && activeTab !== 'stores' && activeTab !== 'products' && activeTab !== 'my-tickets' && activeTab !== 'community-members') {
+        setActiveTab('overview');
+      }
+    } else if (isSubAdmin) {
+      if (
+        activeTab !== 'overview' &&
+        activeTab !== 'communities' &&
+        activeTab !== 'stores' &&
+        activeTab !== 'products' &&
+        activeTab !== 'my-tickets' && activeTab !== 'community-members'
+      ) {
+        setActiveTab('overview');
+      }
+    } else if (activeTab === 'my-tickets' || activeTab === 'community-members') {
+      setActiveTab('overview');
+    }
+  }, [isSubAdminUmum, isSubAdminProduk, isSubAdmin, activeTab]);
+
+  const subAdminTitle = isSubAdminUmum
+    ? (isEn ? 'GENERAL ADMIN' : 'ADMIN UMUM')
+    : isSubAdminProduk
+    ? (isEn ? 'PRODUCT ADMIN' : 'ADMIN PRODUK')
+    : isSubAdmin
+    ? 'SUB-ADMIN'
+    : 'SUPER ADMIN';
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const loggedInUser = currentUser || authService.getCurrentUser().user;
-  const activeAdminName = loggedInUser?.name || 'Super Admin Kroomify';
-  const activeAdminEmail = loggedInUser?.email || 'admin@kroomify.id';
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const activeAdminName =
+    loggedInUser?.name?.replace(/Kroomify/g, 'LapakQ') ||
+    (isSubAdminUmum
+      ? (isEn ? 'Community General Admin' : 'Admin Umum Komunitas')
+      : isSubAdminProduk
+      ? (isEn ? 'Community Product Admin' : 'Admin Produk Komunitas')
+      : isSubAdmin
+      ? 'Sub Admin'
+      : 'Super Admin LapakQ');
+  const activeAdminEmail = loggedInUser?.email?.replace('kroomify.id', 'lapakq.com') || (isSubAdmin ? 'koordinator@lapakq.com' : 'admin@lapakq.com');
   const activeAdminAvatar = loggedInUser?.avatarUrl;
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterPlan, setFilterPlan] = useState<string>('all');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // System Settings state
   const [platformSettings, setPlatformSettings] = useState(adminService.getPlatformSettings());
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [testingService, setTestingService] = useState<string | null>(null);
 
   // Billing Plans CRUD state
@@ -95,6 +228,17 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [orderFilterStore, setOrderFilterStore] = useState<string>('all');
   const [selectedAdminOrder, setSelectedAdminOrder] = useState<Order | null>(null);
 
+  // Jumlah tiket pending (badge menu Kelola Tiket, khusus super admin)
+  const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
+  const refreshPendingTickets = React.useCallback(async () => {
+    if (isSubAdmin) return;
+    setPendingTicketsCount(await ticketService.countPending());
+  }, [isSubAdmin]);
+
+  useEffect(() => {
+    refreshPendingTickets();
+  }, [refreshPendingTickets]);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
@@ -102,23 +246,56 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   const handleCopyResi = (resi: string) => {
     navigator.clipboard.writeText(resi);
-    showToast(`No. Resi ${resi} disalin ke clipboard`);
+    showToast(isEn ? `Tracking No. ${resi} copied to clipboard` : `No. Resi ${resi} disalin ke clipboard`);
   };
 
-  const handleTestApi = (service: 'midtrans' | 'biteship' | 'wa') => {
+  const handleTestApi = async (service: 'midtrans' | 'duitku' | 'biteship' | 'wa') => {
     setTestingService(service);
+    if (service === 'duitku') {
+      try {
+        const res = await fetch('/api/duitku/test-connection', { method: 'POST', headers: sessionHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          showToast(isEn ? `✅ ${data.message} (${data.channelCount} active payment channels)` : `✅ ${data.message} (${data.channelCount} saluran pembayaran aktif)`);
+        } else {
+          showToast(`❌ ${data.message || (isEn ? 'Duitku credentials rejected or not configured' : 'Kredensial Duitku ditolak atau belum diatur')}`);
+        }
+      } catch (err: any) {
+        showToast(isEn ? `❌ Failed to reach the Duitku endpoint: ${err?.message || err}` : `❌ Gagal menghubungi endpoint Duitku: ${err?.message || err}`);
+      } finally {
+        setTestingService(null);
+      }
+      return;
+    }
+
+    if (service === 'midtrans') {
+      try {
+        const res = await fetch('/api/midtrans/test-ping', { headers: sessionHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          showToast(`✅ ${data.message}`);
+        } else {
+          showToast(`❌ ${data.message || (isEn ? 'Invalid Midtrans Server Key (401 Unauthorized)' : 'Server Key Midtrans tidak valid (401 Unauthorized)')}`);
+        }
+      } catch (err: any) {
+        showToast(isEn ? `❌ Failed to reach the server: ${err?.message || err}` : `❌ Gagal menghubungi server: ${err?.message || err}`);
+      } finally {
+        setTestingService(null);
+      }
+      return;
+    }
+
     setTimeout(() => {
       setTestingService(null);
-      if (service === 'midtrans') {
-        showToast('Koneksi Midtrans Gateway (.env): Berhasil (200 OK)');
-      } else if (service === 'biteship') {
-        showToast('Koneksi Biteship Shipping API (.env): Aktif');
+      if (service === 'biteship') {
+        showToast(isEn ? 'Biteship Shipping API connection (.env): Active' : 'Koneksi Biteship Shipping API (.env): Aktif');
       } else {
         showToast('WhatsApp Gateway API Token (.env): Valid');
       }
     }, 800);
   };
 
+  const [storesLoaded, setStoresLoaded] = useState(false);
   const loadData = async () => {
     try {
       const [
@@ -147,18 +324,21 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       if (fetchedReqs) setDomainRequests(fetchedReqs);
       if (fetchedSettings) setPlatformSettings(fetchedSettings);
 
-      const suspended = fetchedStores.filter((s) => s.isSuspended).map((s) => s.id);
-      setSuspendedIds(suspended.length > 0 ? suspended : adminService.getSuspendedStoreIds());
+      setSuspendedIds(fetchedStores.filter((s) => s.isSuspended).map((s) => s.id));
 
       setStats(adminService.getPlatformStats(fetchedStores, fetchedWithdrawals, fetchedOrders));
     } catch (err) {
       console.warn('Error loading admin data from database:', err);
+    } finally {
+      setStoresLoaded(true);
     }
   };
 
   useEffect(() => {
     // Initial sync from local caches
-    setStores(adminService.getAllStores());
+    const cachedStores = adminService.getAllStores();
+    setStores(cachedStores);
+    setSuspendedIds(cachedStores.filter((s) => s.isSuspended).map((s) => s.id));
     setWithdrawals(adminService.getWithdrawals());
     setOrders(adminService.getAllOrders());
     setBillingPlans(billingPlanService.getPlans());
@@ -171,29 +351,52 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   }, []);
 
   const handleToggleSuspend = async (storeId: string, storeName: string) => {
-    const isNowActive = await adminService.toggleStoreSuspension(storeId);
+    // Suspend toko hanya untuk admin platform & Sub-Admin Utama; Sub-Admin Produk hanya melihat.
+    if (isSubAdminProduk && !isSubAdminUmum) return;
+    const suspend = !suspendedIds.includes(storeId);
+    try {
+      await adminService.setStoreSuspension(storeId, suspend);
+      showToast(
+        isEn
+          ? (suspend ? `${storeName} suspended successfully` : `${storeName} reactivated`)
+          : (suspend ? `${storeName} berhasil disuspend` : `${storeName} diaktifkan kembali`)
+      );
+    } catch (err: any) {
+      showToast(err?.message || (isEn ? 'Failed to update store status.' : 'Gagal memperbarui status toko.'));
+    }
     await loadData();
-    showToast(isNowActive ? `${storeName} diaktifkan kembali` : `${storeName} berhasil disuspend`);
   };
 
   const handleApproveWithdrawal = async (id: string, storeName?: string) => {
-    await adminService.approveWithdrawal(id);
+    try {
+      await adminService.approveWithdrawal(id);
+      showToast(
+        isEn
+          ? (storeName ? `Payout for ${storeName} approved & moved to Paid` : 'Payout approved & moved to Paid')
+          : (storeName ? `Pencairan dana ${storeName} berhasil disetujui & dipindahkan ke Paid` : 'Pencairan dana berhasil disetujui & dipindahkan ke Paid')
+      );
+    } catch (err: any) {
+      showToast(err?.message || (isEn ? 'Failed to approve payout.' : 'Gagal menyetujui pencairan dana.'));
+    }
     await loadData();
-    showToast(storeName ? `Pencairan dana ${storeName} berhasil disetujui & dipindahkan ke Paid` : 'Pencairan dana berhasil disetujui & dipindahkan ke Paid');
   };
 
   const handleRejectWithdrawal = async (id: string, storeName?: string) => {
-    if (window.confirm(`Tolak pengajuan penarikan dana ${storeName || ''}? Saldo akan dikembalikan ke dompet toko.`)) {
-      await adminService.rejectWithdrawal(id);
+    if (window.confirm(isEn ? `Reject the payout request ${storeName || ''}? The balance will be returned to the store wallet.` : `Tolak pengajuan penarikan dana ${storeName || ''}? Saldo akan dikembalikan ke dompet toko.`)) {
+      try {
+        await adminService.rejectWithdrawal(id);
+        showToast(isEn ? 'Payout rejected & store balance returned' : 'Pencairan dana ditolak & saldo toko dikembalikan');
+      } catch (err: any) {
+        showToast(err?.message || (isEn ? 'Failed to reject payout.' : 'Gagal menolak pencairan dana.'));
+      }
       await loadData();
-      showToast('Pencairan dana ditolak & saldo toko dikembalikan');
     }
   };
 
   const handleChangePlan = async (storeId: string, plan: 'free' | 'starter' | 'premium') => {
     await adminService.updateStorePlan(storeId, plan);
     await loadData();
-    showToast(`Paket toko diperbarui ke ${plan.toUpperCase()}`);
+    showToast(isEn ? `Store plan updated to ${plan.toUpperCase()}` : `Paket toko diperbarui ke ${plan.toUpperCase()}`);
   };
 
   // Plan CRUD Handlers
@@ -230,7 +433,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const handleSavePlan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!planForm.name.trim() || !planForm.slug.trim()) {
-      showToast('Nama paket dan slug kode wajib diisi!');
+      showToast(isEn ? 'Plan name and slug code are required!' : 'Nama paket dan slug kode wajib diisi!');
       return;
     }
 
@@ -251,7 +454,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           sortOrder: Number(planForm.sortOrder),
           isActive: planForm.isActive,
         });
-        showToast(`Paket "${planForm.name}" berhasil diperbarui`);
+        showToast(isEn ? `Plan "${planForm.name}" updated successfully` : `Paket "${planForm.name}" berhasil diperbarui`);
       } else {
         await billingPlanService.createPlan({
           name: planForm.name.trim(),
@@ -263,26 +466,26 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           sortOrder: Number(planForm.sortOrder),
           isActive: planForm.isActive,
         });
-        showToast(`Paket baru "${planForm.name}" berhasil ditambahkan`);
+        showToast(isEn ? `New plan "${planForm.name}" added successfully` : `Paket baru "${planForm.name}" berhasil ditambahkan`);
       }
 
       await loadData();
       setIsPlanModalOpen(false);
     } catch (err: any) {
       console.error('Error saving plan:', err);
-      showToast(`Gagal menyimpan paket: ${err?.message || err}`);
+      showToast(isEn ? `Failed to save plan: ${err?.message || err}` : `Gagal menyimpan paket: ${err?.message || err}`);
     }
   };
 
   const handleDeletePlan = async (id: string, name: string) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus paket "${name}"?`)) {
+    if (window.confirm(isEn ? `Are you sure you want to delete the plan "${name}"?` : `Apakah Anda yakin ingin menghapus paket "${name}"?`)) {
       try {
         await billingPlanService.deletePlan(id);
         await loadData();
-        showToast(`Paket "${name}" berhasil dihapus`);
+        showToast(isEn ? `Plan "${name}" deleted successfully` : `Paket "${name}" berhasil dihapus`);
       } catch (err: any) {
         console.error('Error deleting plan:', err);
-        showToast(`Gagal menghapus paket: ${err?.message || err}`);
+        showToast(isEn ? `Failed to delete plan: ${err?.message || err}` : `Gagal menghapus paket: ${err?.message || err}`);
       }
     }
   };
@@ -292,45 +495,87 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       const updated = await billingPlanService.togglePlanStatus(id);
       if (updated) {
         await loadData();
-        showToast(`Status paket ${updated.name} diubah menjadi ${updated.isActive ? 'Aktif' : 'Nonaktif'}`);
+        showToast(
+          isEn
+            ? `Plan ${updated.name} status changed to ${updated.isActive ? 'Active' : 'Inactive'}`
+            : `Status paket ${updated.name} diubah menjadi ${updated.isActive ? 'Aktif' : 'Nonaktif'}`
+        );
       }
     } catch (err: any) {
       console.error('Error toggling plan:', err);
-      showToast(`Gagal mengubah status paket: ${err?.message || err}`);
+      showToast(isEn ? `Failed to change plan status: ${err?.message || err}` : `Gagal mengubah status paket: ${err?.message || err}`);
     }
   };
 
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await adminService.savePlatformSettings(platformSettings);
-    await loadData();
-    showToast('Pengaturan sistem berhasil disimpan ke database');
+  const handleSaveSettings = async (e?: React.FormEvent) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setIsSavingSettings(true);
+    try {
+      await adminService.savePlatformSettings(platformSettings);
+      await loadData();
+      showToast(isEn ? 'System settings saved to database successfully' : 'Pengaturan sistem berhasil disimpan ke database');
+    } catch (err: any) {
+      console.error('Error saving platform settings:', err);
+      showToast(isEn ? `Failed to save: ${err?.message || err}` : `Gagal menyimpan: ${err?.message || err}`);
+    } finally {
+      setIsSavingSettings(false);
+    }
   };
 
-  const filteredStores = stores.filter((s) => {
-    const matchSearch =
+  // Isolasi Multi-Tenant: Sub-Admin hanya mengakses toko, pesanan, dan pencairan dana anggotanya
+  const subAdminStores = React.useMemo(() => {
+    if (!isSubAdmin) return stores;
+    const targetId = loggedInUser?.communityId;
+    const targetName = (loggedInUser?.communityName || '').trim().toLowerCase();
+    if (!targetId && !targetName) return stores;
+    return stores.filter((s) => storeInCommunity(s, targetId, targetName));
+  }, [stores, isSubAdmin, loggedInUser?.communityId, loggedInUser?.communityName]);
+
+  const subAdminStoreIds = React.useMemo(() => new Set(subAdminStores.map((s) => s.id)), [subAdminStores]);
+
+  const subAdminOrders = React.useMemo(() => {
+    if (!isSubAdmin || !loggedInUser?.communityId) return orders;
+    return orders.filter((o) => subAdminStoreIds.has(o.storeId));
+  }, [orders, isSubAdmin, subAdminStoreIds]);
+
+  const subAdminWithdrawals = React.useMemo(() => {
+    if (!isSubAdmin || !loggedInUser?.communityId) return withdrawals;
+    return withdrawals.filter((w) => subAdminStoreIds.has(w.storeId));
+  }, [withdrawals, isSubAdmin, subAdminStoreIds]);
+
+  const activeStoresForAdmin = isSubAdmin ? subAdminStores : stores;
+  const activeOrdersForAdmin = isSubAdmin ? subAdminOrders : orders;
+  const activeWithdrawalsForAdmin = isSubAdmin ? subAdminWithdrawals : withdrawals;
+
+  const activeStatsForAdmin = React.useMemo(() => {
+    if (!isSubAdmin) return stats;
+    return adminService.getPlatformStats(activeStoresForAdmin, activeWithdrawalsForAdmin, activeOrdersForAdmin);
+  }, [isSubAdmin, stats, activeStoresForAdmin, activeWithdrawalsForAdmin, activeOrdersForAdmin]);
+
+  const filteredStores = activeStoresForAdmin.filter((s) => {
+    return (
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.city.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (filterPlan === 'all') return matchSearch;
-    return matchSearch && s.plan === filterPlan;
+      s.city.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   });
 
   const pendingWithdrawals = withdrawals.filter((w) => w.status === 'pending');
+  const pendingSubAdminWithdrawals = subAdminWithdrawals.filter((w) => w.status === 'pending');
+  const activePendingWithdrawals = isSubAdmin ? pendingSubAdminWithdrawals : pendingWithdrawals;
   const pendingDomainRequests = domainRequests.filter((d) => d.status === 'pending');
 
   // Orders & Shipping filtering and metrics
-  const totalOrdersCount = orders.length;
-  const processingOrdersCount = orders.filter(
+  const totalOrdersCount = activeOrdersForAdmin.length;
+  const processingOrdersCount = activeOrdersForAdmin.filter(
     (o) => o.shippingStatus === 'Diproses' || o.shippingStatus === 'ready_to_ship' || o.shippingStatus === 'Baru'
   ).length;
-  const shippedOrdersCount = orders.filter((o) => o.shippingStatus === 'Dikirim').length;
-  const completedOrdersCount = orders.filter((o) => o.shippingStatus === 'Selesai').length;
-  const totalShippingFeePlatform = orders.reduce((acc, o) => acc + (o.shippingCost || 0), 0);
+  const shippedOrdersCount = activeOrdersForAdmin.filter((o) => o.shippingStatus === 'Dikirim').length;
+  const completedOrdersCount = activeOrdersForAdmin.filter((o) => o.shippingStatus === 'Selesai').length;
+  const totalShippingFeePlatform = activeOrdersForAdmin.reduce((acc, o) => acc + (o.shippingCost || 0), 0);
 
-  const filteredAdminOrders = orders.filter((ord) => {
-    const store = stores.find((s) => s.id === ord.storeId);
+  const filteredAdminOrders = activeOrdersForAdmin.filter((ord) => {
+    const store = activeStoresForAdmin.find((s) => s.id === ord.storeId);
     const storeName = store ? store.name.toLowerCase() : '';
     const q = orderSearchQuery.toLowerCase().trim();
 
@@ -360,31 +605,136 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     return matchesSearch && matchesStatus && matchesCourier && matchesStore;
   });
 
-  const navItems: AdminNavItem[] = [
-    { id: 'overview', label: language === 'en' ? 'Overview' : 'Ringkasan', icon: LayoutDashboard },
-    { id: 'stores', label: language === 'en' ? 'Manage Stores' : 'Kelola Toko', icon: StoreIcon, count: stores.length },
-    {
-      id: 'domain-requests',
-      label: language === 'en' ? 'Domain Requests' : 'Permintaan Domain',
-      icon: Globe,
-      badge: pendingDomainRequests.length > 0 ? pendingDomainRequests.length : undefined,
-    },
-    {
-      id: 'withdrawals',
-      label: language === 'en' ? 'Payouts' : 'Pencairan Dana',
-      icon: Wallet,
-      badge: pendingWithdrawals.length > 0 ? pendingWithdrawals.length : undefined,
-    },
-    { id: 'plans', label: language === 'en' ? 'Billing Plans' : 'Paket Langganan', icon: Crown },
-    {
-      id: 'orders-shipping',
-      label: language === 'en' ? 'Orders & Shipping' : 'Pesanan & Pengiriman',
-      icon: Truck,
-      badge: processingOrdersCount > 0 ? processingOrdersCount : undefined,
-    },
-    { id: 'transactions', label: language === 'en' ? 'Transaction Logs' : 'Log Transaksi', icon: Receipt },
-    { id: 'settings', label: language === 'en' ? 'System Settings' : 'Pengaturan Sistem', icon: SettingsIcon },
-  ];
+  const navItems: AdminNavItem[] = isSubAdminUmum
+    ? [
+        {
+          id: 'overview',
+          label: language === 'en' ? 'Dashboard' : 'Dashboard',
+          icon: LayoutDashboard,
+        },
+        {
+          id: 'stores',
+          label: language === 'en' ? 'Managed Stores' : 'Kelola Toko Binaan',
+          icon: StoreIcon,
+          count: subAdminStores.length,
+        },
+        {
+          id: 'communities',
+          label: language === 'en' ? 'Community Page' : 'Halaman Komunitas',
+          icon: Users,
+        },
+        {
+          id: 'community-members',
+          label: language === 'en' ? 'Community Merchant Members' : 'Anggota Merchant Komunitas',
+          icon: Users,
+        },
+        {
+          id: 'my-tickets',
+          label: language === 'en' ? 'Support Tickets' : 'Tiket Bantuan',
+          icon: SupportAgentIcon,
+        },
+      ]
+    : isSubAdminProduk
+    ? [
+        {
+          id: 'overview',
+          label: language === 'en' ? 'Dashboard' : 'Dashboard',
+          icon: LayoutDashboard,
+        },
+        {
+          id: 'stores',
+          label: language === 'en' ? 'Member Stores' : 'Data Toko Binaan',
+          icon: StoreIcon,
+          count: subAdminStores.length,
+        },
+        {
+          id: 'products',
+          label: language === 'en' ? 'Store Products' : 'Produk Toko Binaan',
+          icon: Package,
+        },
+        {
+          id: 'community-members',
+          label: language === 'en' ? 'Community Merchant Members' : 'Anggota Merchant Komunitas',
+          icon: Users,
+        },
+        {
+          id: 'my-tickets',
+          label: language === 'en' ? 'Support Tickets' : 'Tiket Bantuan',
+          icon: SupportAgentIcon,
+        },
+      ]
+    : isSubAdmin
+    ? [
+        {
+          id: 'overview',
+          label: language === 'en' ? 'Dashboard' : 'Dashboard',
+          icon: LayoutDashboard,
+        },
+        {
+          id: 'stores',
+          label: language === 'en' ? 'Managed Stores' : 'Kelola Toko Binaan',
+          icon: StoreIcon,
+          count: subAdminStores.length,
+        },
+        {
+          id: 'products',
+          label: language === 'en' ? 'Store Products' : 'Produk Toko Binaan',
+          icon: Package,
+        },
+        {
+          id: 'communities',
+          label: language === 'en' ? 'Communities' : 'Komunitas',
+          icon: Users,
+        },
+        {
+          id: 'community-members',
+          label: language === 'en' ? 'Community Merchant Members' : 'Anggota Merchant Komunitas',
+          icon: Users,
+        },
+        {
+          id: 'my-tickets',
+          label: language === 'en' ? 'Support Tickets' : 'Tiket Bantuan',
+          icon: SupportAgentIcon,
+        },
+      ]
+    : [
+        { id: 'overview', label: language === 'en' ? 'Dashboard' : 'Dashboard', icon: LayoutDashboard },
+        { id: 'stores', label: language === 'en' ? 'Manage Stores' : 'Kelola Toko', icon: StoreIcon, count: stores.length },
+        { id: 'products', label: language === 'en' ? 'Products' : 'Produk', icon: Package },
+        { id: 'communities', label: language === 'en' ? 'Communities' : 'Komunitas', icon: Users },
+        { id: 'users', label: language === 'en' ? 'Manage Users' : 'Kelola User', icon: UserCog },
+        {
+          id: 'tickets',
+          label: language === 'en' ? 'Manage Tickets' : 'Kelola Tiket',
+          icon: SupportAgentIcon,
+          badge: pendingTicketsCount > 0 ? pendingTicketsCount : undefined,
+        },
+        {
+          id: 'domain-requests',
+          label: language === 'en' ? 'Domain Requests' : 'Permintaan Domain',
+          icon: Globe,
+          badge: pendingDomainRequests.length > 0 ? pendingDomainRequests.length : undefined,
+        },
+        // Pencairan Dana disembunyikan selama Dompet toko nonaktif (config/features.ts).
+        ...(WALLET_ENABLED
+          ? [
+              {
+                id: 'withdrawals' as const,
+                label: language === 'en' ? 'Payouts' : 'Pencairan Dana',
+                icon: Wallet,
+                badge: pendingWithdrawals.length > 0 ? pendingWithdrawals.length : undefined,
+              },
+            ]
+          : []),
+        {
+          id: 'orders-shipping',
+          label: language === 'en' ? 'Orders & Shipping' : 'Pesanan & Pengiriman',
+          icon: Truck,
+          badge: processingOrdersCount > 0 ? processingOrdersCount : undefined,
+        },
+        { id: 'transactions', label: language === 'en' ? 'Transaction Logs' : 'Log Transaksi', icon: Receipt },
+        { id: 'settings', label: language === 'en' ? 'System Settings' : 'Pengaturan Sistem', icon: SettingsIcon },
+      ];
 
   return (
     <div className="h-screen w-full bg-gray-50/60 text-gray-900 font-sans flex overflow-hidden">
@@ -401,11 +751,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={selectTab}
         navItems={navItems}
         onBackToMerchant={onBackToMerchant}
         onLogout={onLogout}
         language={language}
+        isSubAdmin={isSubAdmin}
+        subAdminTitle={subAdminTitle}
       />
 
       {/* MAIN CONTENT WRAPPER */}
@@ -418,36 +770,119 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           activeAdminName={activeAdminName}
           activeAdminEmail={activeAdminEmail}
           activeAdminAvatar={activeAdminAvatar}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
+          onNotificationNavigate={(link) => {
+            const target = navItems.find((item) => item.id === link);
+            if (target) selectTab(target.id);
+          }}
         />
 
         {/* Dynamic Content (Scrollable) */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 w-full">
+        <main className="flex-1 flex flex-col *:shrink-0 overflow-y-auto p-4 sm:p-6 space-y-4 w-full">
           {activeTab === 'overview' && (
             <AdminOverviewTab
-              stats={stats}
+              stats={isSubAdmin ? activeStatsForAdmin : stats}
               platformSettings={platformSettings}
-              withdrawals={withdrawals}
-              stores={stores}
-              pendingDomainRequestsCount={pendingDomainRequests.length}
-              setActiveTab={setActiveTab}
+              withdrawals={activeWithdrawalsForAdmin}
+              stores={activeStoresForAdmin}
+              pendingDomainRequestsCount={isSubAdmin ? 0 : pendingDomainRequests.length}
+              setActiveTab={selectTab}
               language={language}
+              isSubAdmin={isSubAdmin}
+              isSubAdminUmum={isSubAdminUmum}
+              isSubAdminProduk={isSubAdminProduk}
+              communityName={loggedInUser?.communityName}
             />
           )}
 
-          {activeTab === 'stores' && (
+          {activeTab === 'products' && (
+            <AdminProductsTab
+              currentUser={loggedInUser}
+              onShowToast={showToast}
+              language={language}
+              isSubAdmin={isSubAdmin}
+              canAddProduct={isSubAdminProduk && !!loggedInUser?.communityId}
+              canToggleStatus={isSubAdminProduk || !isSubAdmin}
+            />
+          )}
+
+          {activeTab === 'users' && !isSubAdmin && (
+            <AdminUsersTab
+              currentUser={loggedInUser}
+              language={language}
+              onShowToast={showToast}
+              onNavigateOverview={() => selectTab('overview')}
+            />
+          )}
+
+          {activeTab === 'tickets' && !isSubAdmin && (
+            <AdminTicketsTab
+              currentUser={loggedInUser}
+              language={language}
+              onShowToast={showToast}
+              onTicketsChanged={refreshPendingTickets}
+              onNavigateOverview={() => selectTab('overview')}
+            />
+          )}
+
+          {activeTab === 'community-members' && isSubAdmin && (
+            <AdminCommunityMembersTab
+              language={language}
+              onShowToast={(msg) => showToast(msg)}
+              onNavigateOverview={() => selectTab('overview')}
+              canManage={isSubAdminUmum}
+            />
+          )}
+
+          {activeTab === 'my-tickets' && isSubAdmin && (
+            <TicketRequesterPanel
+              user={loggedInUser}
+              requesterRole={loggedInUser?.role === 'sub_admin' ? 'sub_admin' : isSubAdminUmum ? 'sub_admin_umum' : isSubAdminProduk ? 'community_admin' : 'sub_admin'}
+              language={language}
+              onShowToast={(msg) => showToast(msg)}
+              onNavigateDashboard={() => selectTab('overview')}
+            />
+          )}
+
+          {activeTab === 'communities' && (
+            <AdminCommunitiesTab
+              currentUser={loggedInUser}
+              onOpenStorefront={onOpenStorefront}
+              onShowToast={showToast}
+            />
+          )}
+
+          {activeTab === 'stores' && isSubAdmin && detailStoreId && (
+            <AdminStoreDetailPage
+              storeId={detailStoreId}
+              store={subAdminStores.find((s) => s.id === detailStoreId) || null}
+              storesLoaded={storesLoaded}
+              isSuspended={suspendedIds.includes(detailStoreId)}
+              isEn={isEn}
+              communityName={loggedInUser?.communityName}
+              canSeeOwnerEmail={isSubAdminUmum}
+              onBack={() => selectTab('stores')}
+              onNavigateOverview={() => selectTab('overview')}
+            />
+          )}
+
+          {activeTab === 'stores' && !(isSubAdmin && detailStoreId) && (
             <AdminStoresTab
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
-              filterPlan={filterPlan}
-              setFilterPlan={setFilterPlan}
               filteredStores={filteredStores}
               suspendedIds={suspendedIds}
-              handleChangePlan={handleChangePlan}
               handleToggleSuspend={handleToggleSuspend}
-              onOpenStorefront={onOpenStorefront}
               language={language}
               isEn={isEn}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
+              isSubAdmin={isSubAdmin}
+              communityName={loggedInUser?.communityName}
+              canManage={!isSubAdminProduk || isSubAdminUmum}
+              onOpenStoreDetail={isSubAdmin ? openStoreDetail : undefined}
+              canAddMembers={isSubAdminUmum}
+              onMembersChanged={loadData}
+              onShowToast={showToast}
             />
           )}
 
@@ -456,13 +891,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               language={language}
               onShowToast={(msg) => setToastMessage(msg)}
               onRequestUpdated={loadData}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
-          {activeTab === 'withdrawals' && (
+          {WALLET_ENABLED && activeTab === 'withdrawals' && (
             <AdminWithdrawalsTab
-              withdrawals={withdrawals}
+              withdrawals={activeWithdrawalsForAdmin}
               withdrawalTab={withdrawalTab}
               setWithdrawalTab={setWithdrawalTab}
               withdrawalPage={withdrawalPage}
@@ -470,7 +905,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               handleApproveWithdrawal={handleApproveWithdrawal}
               handleRejectWithdrawal={handleRejectWithdrawal}
               isEn={isEn}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -492,7 +927,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               planForm={planForm}
               setPlanForm={setPlanForm}
               handleSavePlan={handleSavePlan}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -515,18 +950,18 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               orderFilterStore={orderFilterStore}
               setOrderFilterStore={setOrderFilterStore}
               filteredAdminOrders={filteredAdminOrders}
-              stores={stores}
+              stores={activeStoresForAdmin}
               handleCopyResi={handleCopyResi}
               setSelectedAdminOrder={setSelectedAdminOrder}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
           {activeTab === 'transactions' && (
             <AdminTransactionsTab
-              orders={orders}
+              orders={activeOrdersForAdmin}
               isEn={isEn}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
             />
           )}
 
@@ -538,17 +973,41 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               handleSaveSettings={handleSaveSettings}
               handleTestApi={handleTestApi}
               testingService={testingService}
-              onNavigateOverview={() => setActiveTab('overview')}
+              onNavigateOverview={() => selectTab(isSubAdminProduk ? 'stores' : 'overview')}
+              isSaving={isSavingSettings}
             />
           )}
+
+          <DashboardFooter
+            language={language}
+            panelLabel={
+              isSubAdminUmum
+                ? (isEn ? 'General Admin Panel' : 'Panel Admin Umum')
+                : isSubAdminProduk
+                ? (isEn ? 'Product Admin Panel' : 'Panel Admin Produk')
+                : isSubAdmin
+                ? (isEn ? 'Sub Admin Panel' : 'Panel Sub Admin')
+                : (isEn ? 'Super Admin Panel' : 'Panel Super Admin')
+            }
+          />
         </main>
       </div>
+
+      {/* MODAL PENGATURAN PROFIL ADMIN */}
+      <ProfileSettingsModal
+        variant="admin"
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        currentUser={loggedInUser}
+        onProfileUpdated={(updated) => setAdminUser(updated)}
+        onShowToast={(msg) => setToastMessage(msg)}
+      />
 
       {/* MODAL DETAIL PESANAN & PENGIRIMAN (SUPER ADMIN) */}
       <AdminOrderDetailModal
         selectedAdminOrder={selectedAdminOrder}
         onClose={() => setSelectedAdminOrder(null)}
-        stores={stores}
+        stores={activeStoresForAdmin}
         handleCopyResi={handleCopyResi}
         getShippingStatusBadgeStyle={getShippingStatusBadgeStyle}
         getShippingStatusLabel={(s) => getShippingStatusLabel(s, isEn)}

@@ -1,27 +1,29 @@
 import React from 'react';
 import { HeartHandshake, Smartphone, Code2, Sparkles } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export const TrustSection: React.FC = () => {
+  const { isEn } = useLanguage();
   const trustItems = [
     {
       icon: HeartHandshake,
-      title: 'Ramah UMKM',
-      desc: 'Bahasa Indonesia dan alur praktis ramah pengusaha lokal',
+      title: isEn ? 'SME Friendly' : 'Ramah UMKM',
+      desc: isEn ? 'Indonesian language and practical flows built for local businesses' : 'Bahasa Indonesia dan alur praktis ramah pengusaha lokal',
     },
     {
       icon: Smartphone,
       title: 'Mobile First',
-      desc: 'Kelola penuh toko langsung dari layar HP Anda',
+      desc: isEn ? 'Run your whole store right from your phone' : 'Kelola penuh toko langsung dari layar HP Anda',
     },
     {
       icon: Code2,
-      title: 'Tanpa Coding',
-      desc: 'Siap jualan instan tanpa perlu skill teknis',
+      title: isEn ? 'No Coding' : 'Tanpa Coding',
+      desc: isEn ? 'Start selling instantly, no technical skills needed' : 'Siap jualan instan tanpa perlu skill teknis',
     },
     {
       icon: Sparkles,
-      title: 'Mudah Digunakan',
-      desc: 'Desain bersih dan fokus meningkatkan transaksi',
+      title: isEn ? 'Easy to Use' : 'Mudah Digunakan',
+      desc: isEn ? 'Clean design focused on growing your sales' : 'Desain bersih dan fokus meningkatkan transaksi',
     },
   ];
 
@@ -30,7 +32,7 @@ export const TrustSection: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8">
           <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#66000E]">
-            Dibuat untuk membantu UMKM Indonesia tumbuh lebih mudah
+            {isEn ? 'Built to help Indonesian SMEs grow more easily' : 'Dibuat untuk membantu UMKM Indonesia tumbuh lebih mudah'}
           </p>
         </div>
 

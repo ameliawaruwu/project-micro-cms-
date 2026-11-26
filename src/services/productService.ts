@@ -1,7 +1,8 @@
-import { Product } from '../types';
+import { Product, ProductStatus } from '../types';
 import { calculateProductStatus } from '../utils/formatters';
 import { supabase } from './supabaseClient';
 import { idService } from './idService';
+import { isDataImageUrl, mediaService } from './mediaService';
 
 // ============================================================
 // MERCHANT DATA ISOLATION: localStorage di-partisi per storeId
@@ -70,7 +71,10 @@ class ProductService {
       if (!data) return [];
       try {
         const parsed: Product[] = JSON.parse(data);
-        return Array.isArray(parsed) ? parsed : [];
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter(
+          (p) => p && p.id && !p.id.startsWith('pro_p') && !p.id.startsWith('mock-')
+        );
       } catch {
         return [];
       }
@@ -79,22 +83,17 @@ class ProductService {
   }
 
   private saveProducts(storeId: string, productsToSave: Product[]) {
-    const existing = this.getStoredProducts(storeId);
-    const uniqueMap = new Map<string, Product>();
-    existing.forEach((p) => {
-      if (p && p.id) uniqueMap.set(p.id, p);
-    });
-    productsToSave.forEach((p) => {
-      if (p && p.id) uniqueMap.set(p.id, p);
-    });
-    const finalProducts = Array.from(uniqueMap.values());
+    // Sanitize to remove any mock/dummy items
+    const cleanProductsToSave = productsToSave.filter(
+      (p) => p && p.id && !p.id.startsWith('pro_p') && !p.id.startsWith('mock-')
+    );
     
     try {
-      localStorage.setItem(this.storeKey(storeId), JSON.stringify(finalProducts));
+      localStorage.setItem(this.storeKey(storeId), JSON.stringify(cleanProductsToSave));
     } catch (quotaError: any) {
       console.warn('[productService] LocalStorage quota exceeded, optimizing image payloads...');
       // Strip heavy data:image base64 for local storage caching so UI never breaks
-      const cleanProducts = finalProducts.map((p) => {
+      const cleanProducts = cleanProductsToSave.map((p) => {
         const isDataUrl = p.imageUrl?.startsWith('data:');
         return {
           ...p,
@@ -109,57 +108,20 @@ class ProductService {
       }
     }
 
+    const finalProducts = cleanProductsToSave;
+
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: finalProducts }));
       window.dispatchEvent(new Event('cms_draft_updated'));
     }
   }
 
-  async uploadImageToStorage(storeId: string, dataUrlOrUrl: string, index: number = 0): Promise<string> {
-    if (!dataUrlOrUrl || !dataUrlOrUrl.startsWith('data:image')) {
+  /** Foto produk baru (data URL) diunggah ke CDN; URL yang sudah ada dibiarkan apa adanya. */
+  async uploadImageToStorage(storeId: string, dataUrlOrUrl: string): Promise<string> {
+    if (!isDataImageUrl(dataUrlOrUrl)) {
       return dataUrlOrUrl;
     }
-
-    const [header, base64Data] = dataUrlOrUrl.split(',');
-    if (!base64Data) {
-      throw new Error('Format gambar tidak valid.');
-    }
-
-    const mime = header.match(/:(.*?);/)?.[1] || 'image/webp';
-    const binary = atob(base64Data);
-    const array = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      array[i] = binary.charCodeAt(i);
-    }
-    const blob = new Blob([array], { type: mime });
-    const extension = mime.includes('png') ? 'png' : mime.includes('jpeg') ? 'jpg' : 'webp';
-    const fileName = `${storeId}/prod_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 6)}.${extension}`;
-
-    const { data: uploadData, error: uploadErr } = await supabase.storage
-      .from('product-images')
-      .upload(fileName, blob, {
-        contentType: mime,
-        upsert: true,
-      });
-
-    if (uploadErr) {
-      console.error('[productService] Storage upload error:', uploadErr);
-      throw new Error(`Gagal mengupload foto ke server: ${uploadErr.message}`);
-    }
-
-    if (!uploadData?.path) {
-      throw new Error('Upload gambar tidak menghasilkan path yang valid.');
-    }
-
-    const { data: pubData } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(uploadData.path);
-
-    if (!pubData?.publicUrl) {
-      throw new Error('Gagal mendapatkan URL publik gambar yang diupload.');
-    }
-
-    return pubData.publicUrl;
+    return mediaService.uploadImage(dataUrlOrUrl, 'product', storeId);
   }
 
   async getProductsByStore(storeId: string): Promise<Product[]> {
@@ -174,36 +136,19 @@ class ProductService {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        const dbProducts = data.map(mapSupabaseRowToProduct);
+        const dbProducts = data
+          .map(mapSupabaseRowToProduct)
+          .filter((p) => !p.id.startsWith('pro_p') && !p.id.startsWith('mock-'));
 
-        if (dbProducts.length > 0) {
-          // Merge db products with any local-only products and preserve local originalPrice
-          const map = new Map<string, Product>();
-          dbProducts.forEach((p) => {
-            const local = localProducts.find((lp) => lp.id === p.id);
-            if (local && local.originalPrice && !p.originalPrice) {
-              p.originalPrice = local.originalPrice;
-            }
-            map.set(p.id, p);
-          });
-          localProducts.forEach((p) => {
-            if (!map.has(p.id)) map.set(p.id, p);
-          });
-          const merged = Array.from(map.values());
-          this.saveProducts(storeId, merged);
-          return merged;
-        } else if (localProducts.length > 0) {
-          // Supabase kosong, gunakan local
-          return localProducts;
-        }
-
-        return [];
+        // If Supabase query succeeded, database is source of truth for this store
+        this.saveProducts(storeId, dbProducts);
+        return dbProducts;
       }
     } catch (err: any) {
       console.warn('[Supabase Database] Offline fallback for products:', err?.message || err);
     }
 
-    // 2. Fallback ke LocalStorage
+    // 2. Fallback ke LocalStorage (only when network/offline error)
     return localProducts;
   }
 
@@ -243,12 +188,12 @@ class ProductService {
     const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-    // Upload images to Supabase Storage bucket for permanent CDN URLs
+    // Foto baru (data URL) diunggah ke CDNKroombox; URL yang sudah ada dipakai apa adanya
     let rawImages = data.images && data.images.length > 0 ? data.images : (data.imageUrl ? [data.imageUrl] : []);
     let finalImages: string[] = [];
     if (rawImages.length > 0) {
       finalImages = await Promise.all(
-        rawImages.map((img, idx) => this.uploadImageToStorage(storeId, img, idx))
+        rawImages.map((img) => this.uploadImageToStorage(storeId, img))
       );
     }
     const finalImageUrl = finalImages[0] || '';
@@ -319,11 +264,11 @@ class ProductService {
 
     if (updates.images && updates.images.length > 0) {
       updates.images = await Promise.all(
-        updates.images.map((img, idx) => this.uploadImageToStorage(storeId, img, idx))
+        updates.images.map((img) => this.uploadImageToStorage(storeId, img))
       );
       updates.imageUrl = updates.images[0];
     } else if (updates.imageUrl && updates.imageUrl.startsWith('data:image')) {
-      updates.imageUrl = await this.uploadImageToStorage(storeId, updates.imageUrl, 0);
+      updates.imageUrl = await this.uploadImageToStorage(storeId, updates.imageUrl);
       updates.images = [updates.imageUrl];
     }
 
@@ -379,6 +324,42 @@ class ProductService {
     return updatedProduct;
   }
 
+  /**
+   * Nonaktifkan / aktifkan kembali produk langsung di database (dipakai panel admin).
+   * Hak akses dijaga RLS products_update_manager (pemilik, admin, atau Sub-Admin Produk komunitasnya).
+   * Saat diaktifkan, status dihitung ulang dari stok di database, bukan dari browser.
+   */
+  async setProductActive(id: string, storeId: string, active: boolean): Promise<ProductStatus> {
+    let status: ProductStatus = 'Nonaktif';
+    if (active) {
+      const { data: row, error: readError } = await supabase
+        .from('products')
+        .select('stock')
+        .eq('id', id)
+        .eq('store_id', storeId)
+        .maybeSingle();
+      if (readError || !row) throw new Error(readError?.message || 'Produk tidak ditemukan');
+      status = calculateProductStatus(Number(row.stock) || 0);
+    }
+    const { data, error } = await supabase
+      .from('products')
+      .update({ status })
+      .eq('id', id)
+      .eq('store_id', storeId)
+      .select('id');
+    if (error) throw new Error(error.message);
+    // RLS menolak tanpa error: 0 baris berarti tidak berhak.
+    if (!data || data.length === 0) throw new Error('Tidak berhak mengubah produk ini');
+
+    const products = this.getStoredProducts(storeId);
+    const idx = products.findIndex((p) => p.id === id);
+    if (idx !== -1) {
+      products[idx] = { ...products[idx], status };
+      this.saveProducts(storeId, products);
+    }
+    return status;
+  }
+
   /** Helper: cari storeId dari produk di localStorage (semua partisi) */
   private _findStoreIdForProduct(productId: string): string {
     // Cari di semua partisi yang ada
@@ -402,33 +383,58 @@ class ProductService {
     });
   }
 
-  async deleteProduct(id: string, storeId?: string): Promise<void> {
+  /**
+   * Menghapus produk dari database lalu dari cache lokal.
+   * `requireDatabase: true` (dipakai panel admin) membuat penghapusan gagal dengan error
+   * bila database menolak atau tidak ada baris yang terhapus, sehingga produk tidak
+   * "hilang" di layar padahal masih ada di database.
+   */
+  async deleteProduct(id: string, storeId?: string, options: { requireDatabase?: boolean } = {}): Promise<void> {
     // Temukan storeId yang tepat untuk isolasi
     const resolvedStoreId = storeId || this._findStoreIdForProduct(id);
 
-    // 1. Delete from localStorage (partisi per toko)
-    if (resolvedStoreId) {
-      let products = this.getStoredProducts(resolvedStoreId);
-      products = products.filter((p) => p.id !== id);
-      localStorage.setItem(this.storeKey(resolvedStoreId), JSON.stringify(products));
-    }
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: [] }));
-      window.dispatchEvent(new Event('cms_draft_updated'));
-    }
-
-    // 2. Sync delete ke Supabase — validasi ownership dengan store_id
+    // 1. Sync delete ke Supabase terlebih dahulu — validasi ownership dengan store_id
     try {
       let query = supabase.from('products').delete().eq('id', id);
       if (resolvedStoreId) {
         query = query.eq('store_id', resolvedStoreId); // <- ownership check
       }
-      const { error } = await query;
+      const { data, error } = await query.select('id');
       if (error) {
-        console.warn('[Supabase Database Delete]:', error.message);
+        throw new Error(error.message || 'Gagal menghapus produk dari database.');
+      }
+      if (options.requireDatabase && (!data || data.length === 0)) {
+        throw new Error('Produk tidak dapat dihapus. Produk tidak ditemukan atau Anda tidak berwenang.');
       }
     } catch (err: any) {
+      if (options.requireDatabase) throw err;
       console.warn('[Supabase Database] Gagal hapus dari cloud:', err);
+    }
+
+    // 2. Delete from localStorage (partisi per toko)
+    let remaining: Product[] = [];
+    if (resolvedStoreId) {
+      const current = this.getStoredProducts(resolvedStoreId);
+      remaining = current.filter((p) => p.id !== id);
+      this.saveProducts(resolvedStoreId, remaining);
+    }
+
+    // 3. Bersihkan dari CMS storage dan beri tahu subscriber
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = sessionStorage.getItem('microcms_cms_products') || localStorage.getItem('microcms_cms_products');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            const next = parsed.filter((p: any) => p.id !== id);
+            sessionStorage.setItem('microcms_cms_products', JSON.stringify(next));
+            localStorage.setItem('microcms_cms_products', JSON.stringify(next));
+          }
+        }
+      } catch (e) {}
+
+      window.dispatchEvent(new CustomEvent('microcms_products_updated', { detail: remaining }));
+      window.dispatchEvent(new Event('cms_draft_updated'));
     }
   }
 
@@ -482,6 +488,46 @@ class ProductService {
     }
 
     return { success: true, count: syncedCount };
+  }
+
+  /**
+   * Mengambil semua produk lintas toko untuk Admin dan Sub Admin Umum.
+   */
+  async getAllProducts(): Promise<Product[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        return data.map(mapSupabaseRowToProduct);
+      }
+    } catch (err: any) {
+      console.warn('[productService] Error fetching all products from Supabase:', err);
+    }
+
+    // Fallback: pindai seluruh partisi produk di localStorage
+    const allProducts: Product[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(PRODUCTS_KEY_PREFIX)) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const parsed: Product[] = JSON.parse(raw);
+              if (Array.isArray(parsed)) {
+                allProducts.push(...parsed.filter((p) => p && p.id));
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[productService] Error parsing local products:', e);
+      }
+    }
+    return allProducts;
   }
 }
 

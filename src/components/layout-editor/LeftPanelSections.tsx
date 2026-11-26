@@ -31,7 +31,72 @@ import {
   Minus,
   AlignLeft,
 } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { StoreSectionConfig, StoreSectionType } from '../../types';
+import { HIDDEN_SECTION_IDS } from '../../themes/sectionResolver';
+
+// Teks English untuk label grup & item PAGE_SECTION_GROUPS (data Indonesia tetap).
+const PAGE_SECTION_TEXT_EN: Record<string, string> = {
+  'Bantuan & Pendaftaran': 'Help & Sign Up',
+  'Daftar Pesanan': 'Order List',
+  'Daftar Produk': 'Product List',
+  'Detail Produk': 'Product Details',
+  'Formulir Kontak': 'Contact Form',
+  'Formulir Masuk': 'Sign-In Form',
+  'Informasi Akun': 'Account Information',
+  'Katalog Produk': 'Product Catalog',
+  'Kisah Toko': 'Store Story',
+  'Konfirmasi Pesanan': 'Order Confirmation',
+  'Kontak': 'Contact',
+  'Lacak Pengiriman': 'Track Shipment',
+  'Masuk (Akun Pelanggan)': 'Sign In (Customer Account)',
+  'Pencarian & Filter': 'Search & Filter',
+  'Pesanan Pelanggan': 'Customer Orders',
+  'Profil Pelanggan': 'Customer Profile',
+  'Rincian Pembayaran': 'Payment Details',
+  'Ringkasan Pesanan': 'Order Summary',
+  'Status Pesanan': 'Order Status',
+  'Tentang Toko': 'About the Store',
+  'Terima Kasih': 'Thank You',
+  'Utama': 'Main',
+  'Alamat Penagihan': 'Billing Address',
+  'Alamat, Email & Telepon': 'Address, Email & Phone',
+  'Banner Tentang Kami': 'About Us Banner',
+  'Bayar Sekarang': 'Pay Now',
+  'Daftar Alamat Pengiriman': 'Shipping Address List',
+  'Deskripsi & Spesifikasi': 'Description & Specifications',
+  'Filter Status Pesanan': 'Order Status Filter',
+  'Footer Toko': 'Store Footer',
+  'Formulir Kirim Pesan': 'Send Message Form',
+  'Galeri Foto Produk': 'Product Photo Gallery',
+  'Header & Navigasi': 'Header & Navigation',
+  'Header Toko': 'Store Header',
+  'Input Email & Kata Sandi': 'Email & Password Input',
+  'Item di Keranjang': 'Cart Items',
+  'Katalog Grid Produk': 'Product Grid Catalog',
+  'Kembali ke Toko': 'Back to Store',
+  'Kontak (Email / No HP)': 'Contact (Email / Phone)',
+  'Kurir & Nomor Resi': 'Courier & Tracking Number',
+  'Logo & Brand': 'Logo & Brand',
+  'Logo Toko': 'Store Logo',
+  'Metode & Rekening Bank': 'Method & Bank Account',
+  'Nama, Email & No HP': 'Name, Email & Phone',
+  'Nama, Harga & Varian': 'Name, Price & Variants',
+  'Nomor Pesanan': 'Order Number',
+  'Opsi Pembayaran': 'Payment Options',
+  'Pencarian & Filter Kategori': 'Search & Category Filter',
+  'Pengumuman': 'Announcement',
+  'Ringkasan Produk': 'Product Summary',
+  'Riwayat Pesanan Pelanggan': 'Customer Order History',
+  'Status Pesanan Sukses': 'Order Success Status',
+  'Tautan Keranjang': 'Cart Link',
+  'Tautan Lupa Sandi & Buat Akun': 'Forgot Password & Create Account Links',
+  'Timeline Pengiriman': 'Shipping Timeline',
+  'Tombol Beli / Keranjang': 'Buy / Cart Button',
+  'Tombol Masuk': 'Sign In Button',
+  'Total & Rincian': 'Total & Breakdown',
+  'Visi & Misi Toko': 'Store Vision & Mission',
+};
 
 interface LeftPanelSectionsProps {
   sections: StoreSectionConfig[];
@@ -60,6 +125,7 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
   onOpenThemeSettings,
   activePage = 'homepage',
 }) => {
+  const { isEn } = useLanguage();
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
@@ -108,32 +174,56 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
   };
 
   const getSectionLabel = (sec: StoreSectionConfig) => {
-    if (sec.title) return sec.title;
-    const labelMap: Record<string, string> = {
-      'announcement': 'Pengumuman',
-      'header': 'Header & Navbar',
-      'hero_banner': 'Hero Banner',
-      'search_category': 'Pencarian & Kategori',
-      'featured_products': 'Produk Unggulan',
-      'product_grid': 'Katalog Produk',
-      'promo_banner': 'Banner Promo',
-      'store_benefits': 'Keunggulan Toko',
-      'testimonials': 'Ulasan Pelanggan',
-      'newsletter': 'Newsletter',
-      'store_info': 'Info Toko',
-      'footer': 'Footer',
-      'rich_text': 'Teks Kaya',
-      'image_with_text': 'Gambar & Teks',
-      'gallery': 'Galeri',
-      'video': 'Video',
-      'cta': 'Call to Action',
-      'countdown': 'Countdown',
-      'spacer': 'Spacer',
-      'divider': 'Divider',
-      'columns': 'Kolom',
-      'contact': 'Kontak',
+    const labelMap: Record<string, { id: string; en: string }> = {
+      'announcement': { id: 'Pengumuman', en: 'Announcement Bar' },
+      'header': { id: 'Header & Navbar', en: 'Header & Navbar' },
+      'hero_banner': { id: 'Hero Banner', en: 'Hero Banner' },
+      'search_category': { id: 'Pencarian & Kategori', en: 'Search & Categories' },
+      'featured_products': { id: 'Produk Unggulan', en: 'Featured Products' },
+      'product_grid': { id: 'Katalog Produk', en: 'Product Catalog' },
+      'promo_banner': { id: 'Banner Promo', en: 'Promo Banner' },
+      'store_benefits': { id: 'Keunggulan Toko', en: 'Store Benefits' },
+      'testimonials': { id: 'Ulasan Pelanggan', en: 'Testimonials' },
+      'newsletter': { id: 'Newsletter', en: 'Newsletter' },
+      'store_info': { id: 'Info Toko', en: 'Store Information' },
+      'footer': { id: 'Footer', en: 'Footer' },
+      'rich_text': { id: 'Teks Kaya', en: 'Rich Text' },
+      'image_with_text': { id: 'Gambar & Teks', en: 'Image with Text' },
+      'gallery': { id: 'Galeri', en: 'Gallery' },
+      'video': { id: 'Video', en: 'Video' },
+      'cta': { id: 'Call to Action', en: 'Call to Action' },
+      'countdown': { id: 'Hitung Mundur', en: 'Countdown' },
+      'spacer': { id: 'Pemisah / Jarak', en: 'Spacer' },
+      'divider': { id: 'Garis Pembatas', en: 'Divider' },
+      'columns': { id: 'Kolom Konten', en: 'Columns' },
+      'contact': { id: 'Kontak Toko', en: 'Contact' },
+      'craftsmanship_story': { id: 'Kisah Keahlian', en: 'Craftsmanship Story' },
+      'signature_collection': { id: 'Koleksi Utama', en: 'Signature Collection' },
+      'private_collection': { id: 'Koleksi Privat', en: 'Private Collection' },
+      'brand_philosophy': { id: 'Filosofi Brand', en: 'Brand Philosophy' },
+      'collection_grid': { id: 'Grid Koleksi', en: 'Collection Grid' },
+      'tech_features': { id: 'Fitur Teknologi', en: 'Tech Features' },
+      'floating_showcase': { id: 'Showcase Mengambang', en: 'Floating Showcase' },
+      'innovation_cta': { id: 'Inovasi CTA', en: 'Innovation CTA' },
+      'lookbook': { id: 'Lookbook', en: 'Lookbook' },
+      'brand_story': { id: 'Kisah Brand', en: 'Brand Story' },
+      'journal': { id: 'Jurnal / Berita', en: 'Journal' },
+      'asymmetric_showcase': { id: 'Showcase Asimetris', en: 'Asymmetric Showcase' },
+      'ingredient_story': { id: 'Bahan Baku Alami', en: 'Ingredient Story' },
+      'sustainability': { id: 'Keberlanjutan', en: 'Sustainability' },
+      'latest_drop': { id: 'Rilisan Terbaru', en: 'Latest Drop' },
+      'community_board': { id: 'Papan Komunitas', en: 'Community Board' },
     };
-    return labelMap[sec.id] || sec.id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+    if (sec.title) {
+      const isDefaultTitle = Object.values(labelMap).some(entry => entry.id === sec.title || entry.en === sec.title);
+      if (!isDefaultTitle) return sec.title;
+    }
+
+    if (labelMap[sec.id]) {
+      return isEn ? labelMap[sec.id].en : labelMap[sec.id].id;
+    }
+    return sec.id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   // Drag & drop handlers
@@ -172,8 +262,9 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
   const footerSectionIds = ['store_info', 'footer'];
 
   const headerSections = sections.filter((s) => headerSectionIds.includes(s.id));
+  // Ulasan pelanggan & newsletter tidak ditampilkan di toko, jadi tidak perlu muncul di daftar.
   const contentSections = sections.filter(
-    (s) => !headerSectionIds.includes(s.id) && !footerSectionIds.includes(s.id)
+    (s) => !headerSectionIds.includes(s.id) && !footerSectionIds.includes(s.id) && !HIDDEN_SECTION_IDS.has(s.id)
   );
   const footerSections = sections.filter((s) => footerSectionIds.includes(s.id));
 
@@ -257,7 +348,7 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
                 ? 'text-[#C9CCCF] hover:text-[#202223] opacity-0 group-hover:opacity-100'
                 : 'text-amber-600 opacity-100'
             }`}
-            title={sec.isVisible ? 'Sembunyikan' : 'Tampilkan'}
+            title={sec.isVisible ? (isEn ? 'Hide' : 'Sembunyikan') : (isEn ? 'Show' : 'Tampilkan')}
           >
             {sec.isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
           </button>
@@ -280,14 +371,14 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
                   onClick={() => { setTempTitle(sec.title || getSectionLabel(sec)); setEditingTitleKey(sectionKey); setOpenMenuKey(null); }}
                   className="w-full px-3 py-2 text-left flex items-center gap-2.5 hover:bg-[#F6F6F7]"
                 >
-                  <Edit2 className="w-3.5 h-3.5 text-[#8C9196]" /> Ubah Nama
+                  <Edit2 className="w-3.5 h-3.5 text-[#8C9196]" /> {isEn ? 'Rename' : 'Ubah Nama'}
                 </button>
                 {globalIndex > 0 && (
                   <button
                     onClick={() => { onMoveSection(globalIndex, globalIndex - 1); setOpenMenuKey(null); }}
                     className="w-full px-3 py-2 text-left flex items-center gap-2.5 hover:bg-[#F6F6F7]"
                   >
-                    <ArrowUp className="w-3.5 h-3.5 text-[#8C9196]" /> Pindah ke Atas
+                    <ArrowUp className="w-3.5 h-3.5 text-[#8C9196]" /> {isEn ? 'Move Up' : 'Pindah ke Atas'}
                   </button>
                 )}
                 {globalIndex < sections.length - 1 && (
@@ -295,21 +386,21 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
                     onClick={() => { onMoveSection(globalIndex, globalIndex + 1); setOpenMenuKey(null); }}
                     className="w-full px-3 py-2 text-left flex items-center gap-2.5 hover:bg-[#F6F6F7]"
                   >
-                    <ArrowDown className="w-3.5 h-3.5 text-[#8C9196]" /> Pindah ke Bawah
+                    <ArrowDown className="w-3.5 h-3.5 text-[#8C9196]" /> {isEn ? 'Move Down' : 'Pindah ke Bawah'}
                   </button>
                 )}
                 <button
                   onClick={() => { onDuplicateSection(sectionKey); setOpenMenuKey(null); }}
                   className="w-full px-3 py-2 text-left flex items-center gap-2.5 hover:bg-[#F6F6F7]"
                 >
-                  <Copy className="w-3.5 h-3.5 text-[#8C9196]" /> Duplikasi
+                  <Copy className="w-3.5 h-3.5 text-[#8C9196]" /> {isEn ? 'Duplicate' : 'Duplikasi'}
                 </button>
                 <div className="border-t border-[#E1E3E5] my-1" />
                 <button
                   onClick={() => { onDeleteSection(sectionKey); setOpenMenuKey(null); }}
                   className="w-full px-3 py-2 text-left flex items-center gap-2.5 hover:bg-red-50 text-red-600"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Hapus
+                  <Trash2 className="w-3.5 h-3.5" /> {isEn ? 'Delete' : 'Hapus'}
                 </button>
               </div>
             )}
@@ -347,20 +438,20 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
   };
 
   const pageLabels: Record<string, string> = {
-    homepage: 'Halaman Utama',
-    catalog: 'Katalog Produk',
-    product: 'Detail Produk',
-    about: 'Tentang Toko',
-    contact: 'Kontak',
-    checkout: 'Checkout',
-    thank_you: 'Terima kasih',
-    login: 'Masuk',
-    orders: 'Pesanan',
-    order_status: 'Status pesanan',
-    profile: 'Profil',
+    homepage: isEn ? 'Homepage' : 'Halaman Utama',
+    catalog: isEn ? 'Product Catalog' : 'Katalog Produk',
+    product: isEn ? 'Product Detail' : 'Detail Produk',
+    about: isEn ? 'About Us' : 'Tentang Toko',
+    contact: isEn ? 'Contact' : 'Kontak',
+    checkout: isEn ? 'Checkout' : 'Checkout',
+    thank_you: isEn ? 'Thank You' : 'Terima Kasih',
+    login: isEn ? 'Sign In' : 'Masuk',
+    orders: isEn ? 'Orders' : 'Pesanan',
+    order_status: isEn ? 'Order Status' : 'Status Pesanan',
+    profile: isEn ? 'Profile' : 'Profil',
   };
 
-  const pageLabel = pageLabels[activePage] || 'Halaman Utama';
+  const pageLabel = pageLabels[activePage] || (isEn ? 'Homepage' : 'Halaman Utama');
 
   // Custom pages hierarchy configuration
   const customPageConfig = PAGE_SECTION_GROUPS[activePage];
@@ -375,14 +466,14 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
               <span>{pageLabel}</span>
             </h2>
             <p className="text-[11px] text-[#8C9196] mt-0.5">
-              Edit bagian halaman secara khusus
+              {isEn ? 'Customize page sections' : 'Edit bagian halaman secara khusus'}
             </p>
           </div>
           {onOpenThemeSettings && (
             <button
               onClick={onOpenThemeSettings}
               className="p-1.5 rounded-lg text-[#8C9196] hover:text-[#202223] hover:bg-[#F6F6F7] transition cursor-pointer"
-              title="Pengaturan Tema"
+              title={isEn ? 'Theme Settings' : 'Pengaturan Tema'}
             >
               <Settings className="w-4 h-4" />
             </button>
@@ -402,7 +493,7 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
                   onClick={() => toggleGroup(group.id)}
                   className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-bold text-[#8C9196] uppercase tracking-wider hover:text-[#202223] transition cursor-pointer"
                 >
-                  <span>{group.label}</span>
+                  <span>{isEn ? PAGE_SECTION_TEXT_EN[group.label] ?? group.label : group.label}</span>
                   <ChevronDown className={`w-3 h-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
                 </button>
 
@@ -438,7 +529,7 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
                           </div>
 
                           <span className="flex-1 truncate text-[13px]">
-                            {item.title}
+                            {isEn ? PAGE_SECTION_TEXT_EN[item.title] ?? item.title : item.title}
                           </span>
 
                           <Edit2 className="w-3.5 h-3.5 text-[#8C9196] opacity-0 group-hover:opacity-100 transition shrink-0" />
@@ -453,9 +544,9 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
         ) : (
           // Default Homepage Sections List
           <>
-            {renderGroup('header', 'Header', headerSections)}
-            {renderGroup('content', 'Konten', contentSections)}
-            {renderGroup('footer', 'Footer', footerSections)}
+            {renderGroup('header', isEn ? 'Header' : 'Header', headerSections)}
+            {renderGroup('content', isEn ? 'Content' : 'Konten', contentSections)}
+            {renderGroup('footer', isEn ? 'Footer' : 'Footer', footerSections)}
           </>
         )}
       </div>
@@ -468,7 +559,7 @@ export const LeftPanelSections: React.FC<LeftPanelSectionsProps> = ({
           className="w-full py-2.5 rounded-lg border border-dashed border-[#C9CCCF] hover:border-[#2C6ECB] text-[#2C6ECB] hover:bg-[#F1F8FF] text-[13px] font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          Tambah Bagian
+          {isEn ? 'Add Section' : 'Tambah Bagian'}
         </button>
       </div>
     </aside>

@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Inbox,
   LayoutDashboard,
   Package,
   ShoppingBag,
@@ -14,16 +15,25 @@ import {
   X,
   LogOut,
   Crown,
+  Users,
+  ExternalLink,
+  TicketPercent,
 } from 'lucide-react';
+import { SupportAgentIcon } from '../common/icons/SupportAgentIcon';
 import { MerchantTab, Store as StoreType } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
 import { KroomifyLogo } from '../common/KroomifyLogo';
+import { domainRequestService } from '../../services/domainRequestService';
 
 interface SidebarProps {
   activeTab: MerchantTab;
   pendingOrdersCount: number;
   activeStore?: StoreType;
+  /** Tampilkan menu Komunitas (hanya toko yang tergabung di komunitas). */
+  showCommunityMenu?: boolean;
+  /** URL publik toko bila sudah terbit; kosong = toko masih draf. */
+  liveStoreUrl?: string;
   userName?: string;
   isCollapsed: boolean;
   isOpenMobile?: boolean;
@@ -39,6 +49,9 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   pendingOrdersCount,
+  activeStore,
+  showCommunityMenu = false,
+  liveStoreUrl,
   isCollapsed,
   isOpenMobile = false,
   onCloseMobile,
@@ -46,12 +59,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
   onLogout,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
+
+  const [unreadDomainCount, setUnreadDomainCount] = useState<number>(0);
+
+  useEffect(() => {
+    const updateCount = () => {
+      if (activeStore?.id) {
+        setUnreadDomainCount(domainRequestService.getUnreadApprovedDomainCount(activeStore.id));
+      } else {
+        setUnreadDomainCount(0);
+      }
+    };
+
+    updateCount();
+    window.addEventListener('domain_approval_updated', updateCount);
+    window.addEventListener('domain_approval_read', updateCount);
+    window.addEventListener('storage', updateCount);
+    return () => {
+      window.removeEventListener('domain_approval_updated', updateCount);
+      window.removeEventListener('domain_approval_read', updateCount);
+      window.removeEventListener('storage', updateCount);
+    };
+  }, [activeStore?.id]);
+
+  useEffect(() => {
+    if (activeTab === 'domain' && activeStore?.id) {
+      domainRequestService.markApprovedDomainAsRead(activeStore.id);
+      setUnreadDomainCount(0);
+    }
+  }, [activeTab, activeStore?.id]);
 
   const navItems = [
     { id: 'beranda' as MerchantTab, label: t('nav_dashboard', 'Dashboard'), icon: LayoutDashboard },
     { id: 'produk' as MerchantTab, label: t('nav_products', 'Produk'), icon: Package },
     { id: 'pesanan' as MerchantTab, label: t('nav_orders', 'Pesanan'), icon: ShoppingBag, badge: pendingOrdersCount },
+    { id: 'voucher' as MerchantTab, label: t('nav_vouchers', 'Voucher Promo'), icon: TicketPercent },
     { 
       id: 'website', 
       label: 'Website', 
@@ -59,12 +102,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       isParent: true,
       children: [
         { id: 'layout' as MerchantTab, label: t('nav_layout', 'Layout Toko') },
-        { id: 'domain' as MerchantTab, label: 'Domain' }
+        { 
+          id: 'domain' as MerchantTab, 
+          label: unreadDomainCount > 0 ? `Domain (${unreadDomainCount})` : 'Domain' 
+        }
       ]
     },
     { id: 'pembayaran' as MerchantTab, label: t('nav_payment', 'Pembayaran'), icon: CreditCard },
     { id: 'pengiriman' as MerchantTab, label: t('nav_shipping', 'Pengiriman'), icon: Truck },
-    { id: 'billing' as MerchantTab, label: t('nav_billing', 'Billing Plan'), icon: Crown },
+    ...(showCommunityMenu
+      ? [{ id: 'komunitas' as MerchantTab, label: t('nav_community', 'Komunitas'), icon: Users }]
+      : []),
+    { id: 'pesan' as MerchantTab, label: t('nav_messages', 'Pesan Masuk'), icon: Inbox },
+    { id: 'tiket' as MerchantTab, label: t('nav_tickets', 'Tiket Bantuan'), icon: SupportAgentIcon },
     { id: 'pengaturan' as MerchantTab, label: t('nav_settings', 'Pengaturan'), icon: Settings },
   ];
 
@@ -88,12 +138,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const sidebarContent = (
     <div className="h-full flex flex-col justify-between bg-white text-gray-900 font-poppins">
       {/* Top Header Logo */}
-      <div className="p-3.5 flex items-center justify-between border-b border-gray-100 shrink-0">
+      <div className="p-2.5 sm:p-3 flex items-center justify-between border-b border-gray-100 shrink-0">
         <button
           type="button"
           onClick={() => handleItemClick('beranda')}
-          className="flex items-center gap-2.5 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none"
-          title="Kroomify"
+          className="flex items-center gap-2 text-left cursor-pointer group bg-transparent border-0 p-0 focus:outline-none"
+          title="LapakQ"
         >
           <KroomifyLogo
             size="sm"
@@ -105,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {isOpenMobile && onCloseMobile && (
           <button
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+            className="lg:hidden p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
             aria-label={t('open_menu', 'Tutup Menu')}
           >
             <X className="w-4 h-4" />
@@ -114,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto font-poppins">
+      <nav className="flex-1 px-2 py-2 space-y-1 overflow-y-auto font-poppins">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.isParent 
@@ -127,7 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div key={item.id} className="space-y-0.5">
                 <button
                   onClick={() => setIsWebsiteMenuExpanded(!isWebsiteMenuExpanded)}
-                  className={`w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
+                  className={`w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg text-sm font-medium font-poppins transition-colors group relative cursor-pointer ${
                     isActive
                       ? 'bg-[#F5E8EA] text-[#66000E] font-semibold'
                       : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
@@ -136,7 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     <Icon
-                      className={`w-4 h-4 shrink-0 transition-colors ${
+                      className={`w-[18px] h-[18px] shrink-0 transition-colors ${
                         isActive ? 'text-[#66000E]' : 'text-gray-400 group-hover:text-[#66000E]'
                       }`}
                     />
@@ -144,9 +194,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                   {showLabel && (
                     isWebsiteMenuExpanded ? (
-                      <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-[#66000E] opacity-70' : 'text-gray-400 group-hover:text-[#66000E] opacity-50'}`} />
+                      <ChevronDown className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[#66000E] opacity-70' : 'text-gray-400 group-hover:text-[#66000E] opacity-50'}`} />
                     ) : (
-                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? 'text-[#66000E] opacity-70' : 'text-gray-400 group-hover:text-[#66000E] opacity-50'}`} />
+                      <ChevronRight className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[#66000E] opacity-70' : 'text-gray-400 group-hover:text-[#66000E] opacity-50'}`} />
                     )
                   )}
                 </button>
@@ -159,7 +209,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <button
                           key={child.id}
                           onClick={() => handleItemClick(child.id)}
-                          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium font-poppins transition-colors cursor-pointer ${
+                          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[0.8125rem] font-medium font-poppins transition-colors cursor-pointer ${
                             isChildActive
                               ? 'text-[#66000E] font-semibold bg-[#F5E8EA]'
                               : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
@@ -169,6 +219,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </button>
                       );
                     })}
+                    {liveStoreUrl ? (
+                      <a
+                        href={liveStoreUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => onCloseMobile?.()}
+                        title={liveStoreUrl.replace(/^https:\/\//, '')}
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[0.8125rem] font-medium font-poppins transition-colors text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]"
+                      >
+                        <span className="flex-1 text-left truncate">{isEn ? 'View Website' : 'Lihat Website'}</span>
+                        <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-60" />
+                      </a>
+                    ) : (
+                      <div
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[0.8125rem] font-poppins text-gray-400 cursor-not-allowed"
+                        title={isEn ? 'Publish your store from Store Layout to make the website accessible' : 'Terbitkan toko dari Layout Toko agar website bisa diakses'}
+                      >
+                        <span className="flex-1 text-left truncate">{isEn ? 'View Website' : 'Lihat Website'}</span>
+                        <span className="text-[10px] uppercase tracking-wide shrink-0">{isEn ? 'Draft' : 'Draf'}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -179,7 +250,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => handleItemClick(item.id as MerchantTab)}
-              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium font-poppins transition-colors group relative cursor-pointer ${
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm font-medium font-poppins transition-colors group relative cursor-pointer ${
                 isActive
                   ? 'bg-[#F5E8EA] text-[#66000E] font-semibold'
                   : 'text-gray-600 hover:bg-[#FAF7F7] hover:text-[#66000E]'
@@ -187,7 +258,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title={isCollapsed && !isOpenMobile ? item.label : undefined}
             >
               <Icon
-                className={`w-4 h-4 shrink-0 transition-colors ${
+                className={`w-[18px] h-[18px] shrink-0 transition-colors ${
                   isActive ? 'text-[#66000E]' : 'text-gray-400 group-hover:text-[#66000E]'
                 }`}
               />
@@ -196,7 +267,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               {item.badge !== undefined && item.badge > 0 && (
                 <span
-                  className={`text-[10px] font-medium px-1.5 py-0.2 rounded shrink-0 ${
+                  className={`text-[11px] font-medium px-1.5 py-0.5 rounded shrink-0 ${
                     isActive ? 'bg-[#66000E] text-white' : 'bg-[#F5E8EA] text-[#66000E]'
                   } ${isCollapsed && !isOpenMobile ? 'absolute -top-1 -right-1' : ''}`}
                 >
@@ -211,7 +282,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
 
       {/* Logout Bottom Action */}
-      <div className="p-2.5 border-t border-gray-100 shrink-0 font-poppins">
+      <div className="p-2 border-t border-gray-100 shrink-0 font-poppins">
         {(!isCollapsed || isOpenMobile) ? (
           <button
             type="button"
@@ -219,10 +290,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               if (onLogout) onLogout();
               if (onCloseMobile) onCloseMobile();
             }}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-xl text-xs font-medium text-gray-600 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 transition cursor-pointer"
+            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 transition cursor-pointer"
             title={t('nav_logout', 'Keluar')}
           >
-            <LogOut className="w-3.5 h-3.5 text-gray-400" />
+            <LogOut className="w-[18px] h-[18px] text-gray-400" />
             <span className="truncate">{t('nav_logout', 'Keluar')}</span>
           </button>
         ) : (
@@ -230,10 +301,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={onLogout}
-              className="w-8 h-8 rounded-xl text-gray-400 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 flex items-center justify-center transition cursor-pointer"
+              className="w-9 h-9 rounded-lg text-gray-400 hover:text-[#66000E] hover:bg-[#F5E8EA]/60 flex items-center justify-center transition cursor-pointer"
               title={t('nav_logout', 'Keluar')}
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-[18px] h-[18px]" />
             </button>
           </div>
         )}
@@ -247,7 +318,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside
         id="sidebar-navigation-desktop"
         className={`hidden lg:flex relative h-full flex-col justify-between z-30 transition-all duration-200 border-r border-gray-200 shrink-0 bg-white ${
-          isCollapsed ? 'w-16' : 'w-56'
+          isCollapsed ? 'w-16' : 'w-60'
         }`}
       >
         {sidebarContent}
@@ -256,8 +327,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 shadow-xs hover:shadow-sm flex items-center justify-center transition-all cursor-pointer z-40 focus:outline-none hover:scale-105"
-          title={isCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
+          className="absolute -right-3 top-1/2 -translate-y-1/2 w-5.5 h-5.5 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 shadow-xs hover:shadow-sm flex items-center justify-center transition-all cursor-pointer z-40 focus:outline-none hover:scale-105"
+          title={isCollapsed ? (isEn ? 'Expand Sidebar' : 'Perluas Sidebar') : (isEn ? 'Collapse Sidebar' : 'Ciutkan Sidebar')}
         >
           {isCollapsed ? (
             <ChevronRight className="w-3 h-3" />
@@ -278,7 +349,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <aside
             id="sidebar-navigation-mobile"
-            className="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] h-full shadow-xl z-50 animate-in slide-in-from-left duration-200 border-r border-gray-200 bg-white"
+            className="fixed top-0 left-0 bottom-0 w-64 max-w-[85vw] h-full shadow-xl z-50 animate-in slide-in-from-left duration-200 border-r border-gray-200 bg-white"
           >
             {sidebarContent}
           </aside>

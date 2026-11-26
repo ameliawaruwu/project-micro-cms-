@@ -1,4 +1,4 @@
-// Kroomify Global Design System Tokens
+// LapakQ Global Design System Tokens
 export const theme = {
   colors: {
     primary: '#66000E',

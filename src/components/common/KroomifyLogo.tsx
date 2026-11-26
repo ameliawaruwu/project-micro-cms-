@@ -1,4 +1,5 @@
 import React from 'react';
+import { DEFAULT_LOGO_ICON_URL, DEFAULT_LOGO_URL, usePlatformLogo } from '../../services/platformLogoService';
 
 interface KroomifyLogoProps {
   className?: string;
@@ -36,6 +37,11 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
     xl: { box: 'w-12 h-12' },
   };
 
+  // Logo dari pengaturan super admin; berkas bawaan bila belum diatur.
+  const platformLogo = usePlatformLogo();
+  const logoSrc = platformLogo.logoUrl || DEFAULT_LOGO_URL;
+  const iconSrc = platformLogo.logoIconUrl || DEFAULT_LOGO_ICON_URL;
+
   const currentFull = fullDimensions[size] || fullDimensions.md;
   const currentIcon = iconDimensions[size] || iconDimensions.md;
 
@@ -44,11 +50,11 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
     return (
       <div
         className={`${currentIcon.box} overflow-hidden rounded-lg shrink-0 flex items-center justify-center select-none ${className}`}
-        title="Kroomify"
+        title="LapakQ"
       >
         <img
-          src="/Logo-Icon.png"
-          alt="Kroomify"
+          src={iconSrc}
+          alt="LapakQ"
           className="w-full h-full object-contain pointer-events-none select-none drop-shadow-2xs"
           loading="eager"
         />
@@ -59,20 +65,20 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
   if (imgOnly) {
     return (
       <img
-        src="/Logo.png"
-        alt="Kroomify"
+        src={logoSrc}
+        alt="LapakQ"
         className={`${currentFull.h} w-auto max-w-full object-contain shrink-0 ${className}`}
         loading="eager"
       />
     );
   }
 
-  // Full Logo display: Red Logo contains the red store awning K and official red Kroomify wordmark
+  // Full Logo display: Red Logo contains the red store awning L and official red LapakQ wordmark
   return (
     <div className={`inline-flex items-center gap-2 sm:gap-2.5 select-none shrink-0 ${className}`}>
       <img
-        src="/Logo.png"
-        alt="Kroomify"
+        src={logoSrc}
+        alt="LapakQ"
         className={`${currentFull.h} w-auto max-w-full object-contain shrink-0 drop-shadow-2xs`}
         loading="eager"
       />
@@ -86,3 +92,5 @@ export const KroomifyLogo: React.FC<KroomifyLogoProps> = ({
     </div>
   );
 };
+
+export const LapakQLogo = KroomifyLogo;

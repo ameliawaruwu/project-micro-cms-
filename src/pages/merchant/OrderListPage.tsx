@@ -1,3 +1,4 @@
+import SearchableSelect from '../../components/common/SearchableSelect';
 import React, { useState, useMemo } from 'react';
 import { Search, ShoppingBag } from 'lucide-react';
 import { Order, ShippingStatus } from '../../types';
@@ -11,6 +12,7 @@ interface OrderListPageProps {
   onProcessShipping: (order: Order) => void;
   onPrintReceipt: (order: Order) => void;
   onMarkCompleted: (orderId: string) => void;
+  onConfirmCodOrder?: (orderId: string) => Promise<void>;
   onSelectOrder: (order: Order) => void;
   onShowNotification: (msg: string) => void;
   onNavigateDashboard?: () => void;
@@ -21,11 +23,12 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
   onProcessShipping,
   onPrintReceipt,
   onMarkCompleted,
+  onConfirmCodOrder,
   onSelectOrder,
   onShowNotification,
   onNavigateDashboard,
 }) => {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [activeStatus, setActiveStatus] = useState<ShippingStatus | 'Semua'>('Semua');
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('all');
@@ -110,23 +113,23 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
 
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
           {/* Payment Method Filter */}
-          <select
+          <SearchableSelect
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
-            aria-label="Filter metode pembayaran"
+            aria-label={isEn ? 'Filter payment method' : 'Filter metode pembayaran'}
             className="w-full sm:w-auto py-2 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs font-medium text-[#241A1A] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] truncate cursor-pointer"
           >
             <option value="all">{t('all_payments', 'Semua Bayar')}</option>
             <option value="QRIS">QRIS Instant</option>
             <option value="VA">Virtual Account</option>
-            <option value="Transfer">Transfer Bank</option>
-          </select>
+            <option value="Transfer">{isEn ? 'Bank Transfer' : 'Transfer Bank'}</option>
+          </SearchableSelect>
 
           {/* Courier Filter */}
-          <select
+          <SearchableSelect
             value={courierFilter}
             onChange={(e) => setCourierFilter(e.target.value)}
-            aria-label="Filter kurir ekspedisi"
+            aria-label={isEn ? 'Filter courier' : 'Filter kurir ekspedisi'}
             className="w-full sm:w-auto py-2 px-3 rounded-xl border border-[#E5E0DD] bg-white text-xs font-medium text-[#241A1A] focus:outline-none focus:ring-2 focus:ring-[#66000E]/20 focus:border-[#66000E] truncate cursor-pointer"
           >
             <option value="all">{t('all_couriers', 'Semua Kurir')}</option>
@@ -134,7 +137,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
             <option value="JNE">JNE</option>
             <option value="SiCepat">SiCepat</option>
             <option value="GoSend">GoSend</option>
-          </select>
+          </SearchableSelect>
         </div>
       </div>
 
@@ -156,6 +159,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
               onProcessShipping={onProcessShipping}
               onPrintReceipt={onPrintReceipt}
               onMarkCompleted={onMarkCompleted}
+              onConfirmCodOrder={onConfirmCodOrder}
               onSelectOrder={onSelectOrder}
               onShowNotification={onShowNotification}
             />

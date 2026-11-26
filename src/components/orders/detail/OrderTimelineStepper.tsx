@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Order } from '../../../types';
 import { formatRupiah, formatDateIndo } from '../../../utils/formatters';
+import { isCodMethod, MerchantOrderAction } from '../../../utils/orderFlow';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 export interface TimelineStepItem {
@@ -46,6 +47,9 @@ interface OrderTimelineStepperProps {
   biteshipTrackingUrl: string;
   onProcessShipping: (order: Order) => void;
   onMarkCompleted?: (orderId: string) => void;
+  nextAction: MerchantOrderAction;
+  isConfirmingCod?: boolean;
+  onConfirmCod?: () => void;
   onPrintReceipt: (order: Order) => void;
 }
 
@@ -63,43 +67,56 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
   biteshipTrackingUrl,
   onProcessShipping,
   onMarkCompleted,
+  nextAction,
+  isConfirmingCod = false,
+  onConfirmCod,
   onPrintReceipt,
 }) => {
   const { t, language } = useLanguage();
   const isPaid = order.paymentStatus === 'Sudah Dibayar';
+  // COD dibayar saat barang tiba; tampilkan sebagai "bayar di tempat", bukan menunggu verifikasi.
+  const isCodUnpaid = !isPaid && isCodMethod(order.paymentMethod);
   const isProcessed = order.shippingStatus !== 'Baru';
 
   const steps: TimelineStepItem[] = [
     {
       id: 1,
       title: language === 'en' ? 'Order Placed' : 'Pesanan Dibuat',
-      subtitle: formatDateIndo(order.createdAt),
+      subtitle: language === 'en'
+        ? new Date(order.createdAt).toLocaleString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : formatDateIndo(order.createdAt),
       icon: ShoppingBag,
       completed: true,
       active: !isPaid,
       statusLabel: language === 'en' ? 'Created' : 'Selesai Dibuat',
       badgeColor: 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]',
-      description: language === 'en' 
-        ? `Order #${order.orderNumber} successfully created by ${order.customerName}. Data of ${order.items?.length || 1} products and destination address are securely stored.`
-        : `Pesanan #${order.orderNumber} berhasil dibuat oleh ${order.customerName}. Data belanja ${order.items?.length || 1} produk dan alamat pengiriman telah tersimpan aman di database toko.`,
+      description: language === 'en'
+        ? `${order.items?.length || 1} product(s) ordered by ${order.customerName}.`
+        : `${order.items?.length || 1} produk dipesan oleh ${order.customerName}.`,
       actionType: 'none',
     },
     {
       id: 2,
       title: language === 'en' ? 'Payment Received' : 'Pembayaran Diterima',
-      subtitle: isPaid ? `${order.paymentMethod} (${language === 'en' ? 'Paid' : 'Lunas'})` : (language === 'en' ? 'Awaiting Payment' : 'Menunggu Bayar'),
+      subtitle: isPaid
+        ? order.paymentMethod
+        : isCodUnpaid
+        ? (language === 'en' ? 'Pay on Delivery' : 'Bayar di Tempat')
+        : (language === 'en' ? 'Awaiting Payment' : 'Menunggu Bayar'),
       icon: CreditCard,
       completed: isPaid,
       active: isPaid && !isProcessed,
-      statusLabel: isPaid ? (language === 'en' ? 'Payment Completed' : 'Pembayaran Lunas') : (language === 'en' ? 'Awaiting Verification' : 'Menunggu Verifikasi'),
+      statusLabel: isPaid
+        ? (language === 'en' ? 'Payment Completed' : 'Pembayaran Lunas')
+        : isCodUnpaid
+        ? (language === 'en' ? 'Paid on Arrival' : 'Dibayar Saat Tiba')
+        : (language === 'en' ? 'Awaiting Verification' : 'Menunggu Verifikasi'),
       badgeColor: isPaid ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]' : 'bg-[#FEFCE8] text-[#A16207] border-[#FEF08A]',
       description: isPaid
-        ? (language === 'en'
-            ? `Order bill of ${formatRupiah(order.grandTotal)} has been verified via ${order.paymentMethod}.`
-            : `Tagihan pesanan sebesar ${formatRupiah(order.grandTotal)} telah diverifikasi lunas melalui metode pembayaran ${order.paymentMethod}.`)
-        : (language === 'en'
-            ? `Waiting for payment of ${formatRupiah(order.grandTotal)} from customer via ${order.paymentMethod}.`
-            : `Menunggu penyelesaian pembayaran sebesar ${formatRupiah(order.grandTotal)} dari pelanggan via ${order.paymentMethod}.`),
+        ? (language === 'en' ? `Total ${formatRupiah(order.grandTotal)} paid.` : `Total ${formatRupiah(order.grandTotal)} sudah lunas.`)
+        : isCodUnpaid
+        ? (language === 'en' ? `Cash ${formatRupiah(order.grandTotal)} on delivery.` : `Tunai ${formatRupiah(order.grandTotal)} saat paket tiba.`)
+        : (language === 'en' ? `Awaiting ${formatRupiah(order.grandTotal)}.` : `Menunggu ${formatRupiah(order.grandTotal)}.`),
       actionType: 'receipt',
     },
     {
@@ -112,12 +129,8 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
       statusLabel: isProcessed ? (language === 'en' ? 'Packed' : 'Selesai Dikemas') : (language === 'en' ? 'Needs Processing' : 'Perlu Diproses'),
       badgeColor: isProcessed ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]' : 'bg-[#F5E8EA] text-[#66000E] border-[#E8DDDE]',
       description: isProcessed
-        ? (language === 'en'
-            ? `Order is packed neatly by seller, shipping label printed and ready for ${order.courier} courier hand-over.`
-            : `Pesanan telah selesai dipacking rapi oleh penjual, label pengiriman telah tercetak dan siap diserahkan ke gerai kurir ${order.courier}.`)
-        : (language === 'en'
-            ? `Order has not been processed yet. Please click "Process Shipping" to print label and prepare package.`
-            : `Pesanan belum diproses. Silakan klik tombol "Proses Pengiriman" untuk mencetak resi dan menyiapkan paket.`),
+        ? (language === 'en' ? `Ready for ${order.courier}.` : `Siap diserahkan ke ${order.courier}.`)
+        : (language === 'en' ? 'Package not prepared yet.' : 'Paket belum disiapkan.'),
       actionType: isProcessed ? 'receipt' : 'process',
     },
     {
@@ -131,11 +144,9 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
       badgeColor: isShipped ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]' : 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]',
       description: isShipped
         ? (language === 'en'
-            ? `Package has been handed over and is being delivered by ${order.courier} (${order.courierService || 'Reguler'}). Official tracking: ${order.resiNumber || '-'}.`
-            : `Paket telah diserahterimakan dan sedang diantar oleh kurir ${order.courier} (${order.courierService || 'Reguler'}). Nomor resi resmi: ${order.resiNumber || '-'}.`)
-        : (language === 'en'
-            ? `Package is waiting for pickup or handover to courier ${order.courier}. Tracking number will be generated upon processing.`
-            : `Paket menunggu penjemputan atau serah terima kepada kurir ${order.courier}. Nomor resi akan terbit otomatis saat diproses.`),
+            ? `Delivered by ${order.courier} (${order.courierService || 'Regular'}).`
+            : `Diantar ${order.courier} (${order.courierService || 'Reguler'}).`)
+        : (language === 'en' ? `Waiting for ${order.courier}.` : `Menunggu kurir ${order.courier}.`),
       actionType: isShipped ? 'tracking' : 'none',
     },
     {
@@ -148,12 +159,8 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
       statusLabel: isCompleted ? (language === 'en' ? 'Successful' : 'Pesanan Berhasil') : (language === 'en' ? 'Awaiting Confirmation' : 'Menunggu Konfirmasi'),
       badgeColor: isCompleted ? 'bg-[#ECFDF3] text-[#027A48] border-[#ABEFC6]' : 'bg-[#F4F4F5] text-[#71717A] border-[#E4E4E7]',
       description: isCompleted
-        ? (language === 'en'
-            ? `Package has been received by ${order.customerName} in ${order.customerCity}. The transaction is complete.`
-            : `Paket telah berhasil diterima oleh ${order.customerName} di ${order.customerCity}. Seluruh proses transaksi jual-beli telah selesai sempurna.`)
-        : (language === 'en'
-            ? `Package will be handed over to ${order.customerAddress}, ${order.customerCity}. Once received, order can be marked completed.`
-            : `Paket akan diserahterimakan ke alamat ${order.customerAddress}, ${order.customerCity}. Setelah diterima, penjual atau pembeli dapat menyelesaikan pesanan.`),
+        ? (language === 'en' ? `Received by ${order.customerName}.` : `Diterima ${order.customerName}.`)
+        : (language === 'en' ? `Heading to ${order.customerCity}.` : `Menuju ${order.customerCity}.`),
       actionType: !isCompleted && isShipped ? 'complete' : 'none',
     },
   ];
@@ -172,9 +179,6 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#1F1F1F]">
               {language === 'en' ? 'Order Journey Status' : 'Status Perjalanan Pesanan'}
             </h4>
-            <p className="text-[10px] text-[#777777]">
-              {language === 'en' ? 'Click stages below to view details and quick actions' : 'Klik tahapan di bawah untuk melihat rincian aktivitas & aksi cepat'}
-            </p>
           </div>
         </div>
 
@@ -183,25 +187,30 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
           {/* Progress Pill Indicator */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#E5E0DD] shadow-2xs text-[11px] font-bold text-[#1F1F1F]">
             <span className="w-2 h-2 rounded-full bg-[#66000E]" />
-            <span>{language === 'en' ? `Step ${currentStepIndex + 1} of 5` : `Tahap ${currentStepIndex + 1} dari 5`}</span>
-            <span className="text-[#777777] font-normal font-mono">• {progressPercentage}%</span>
+            <span>{language === 'en' ? `Step ${currentStepIndex + 1}/5` : `Tahap ${currentStepIndex + 1}/5`}</span>
           </div>
 
           {/* Dynamic Live Status Badge */}
           {isShipped && !isCompleted ? (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#ECFDF3] text-[#027A48] border border-[#ABEFC6]">
               <span className="w-2 h-2 rounded-full bg-[#12B76A] animate-ping" />
-              <span>{vehicleType === 'motor' ? 'Kurir Motor Mengantar' : 'Mobil Box Mengantar'}</span>
+              <span>{language === 'en' ? 'Being Shipped' : 'Sedang Dikirim'}</span>
             </span>
           ) : isCompleted ? (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#ECFDF3] text-[#027A48] border border-[#ABEFC6]">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Pesanan Selesai</span>
+              <span>{language === 'en' ? 'Order Completed' : 'Pesanan Selesai'}</span>
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white text-[#555555] border border-[#EAEAEA]">
               <Clock className="w-3.5 h-3.5 text-[#777777]" />
-              <span>Dalam Proses Penjual</span>
+              <span>{order.shippingStatus === 'Dibatalkan'
+                ? (language === 'en' ? 'Order Cancelled' : 'Pesanan Dibatalkan')
+                : !isPaid && !isCodUnpaid && !order.paymentConfirmedAt
+                ? (language === 'en' ? 'Awaiting Payment' : 'Menunggu Pembayaran')
+                : !isPaid && !isCodUnpaid
+                ? (language === 'en' ? 'Awaiting Payment Check' : 'Menunggu Cek Pembayaran')
+                : (language === 'en' ? 'Being Processed by Seller' : 'Dalam Proses Penjual')}</span>
             </span>
           )}
         </div>
@@ -234,7 +243,7 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
                 key={step.id}
                 type="button"
                 onClick={() => setSelectedStepId(step.id)}
-                title={`Detail: ${step.title}`}
+                aria-label={step.title}
                 className="group flex flex-col items-center text-center relative z-10 px-1 cursor-pointer select-none transition-transform duration-200 focus:outline-none"
               >
                 {/* Node Circle */}
@@ -315,19 +324,16 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
               disabled={currentSelectedStep.id === 1}
               onClick={() => setSelectedStepId((prev) => Math.max(1, prev - 1))}
               className="p-1.5 rounded-lg border border-[#E5E0DD] text-[#777777] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
-              title="Tahap Sebelumnya"
+              title={language === 'en' ? 'Previous Step' : 'Tahap Sebelumnya'}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="text-[10px] font-mono text-[#777777] px-1 font-semibold">
-              {language === 'en' ? `Step ${currentSelectedStep.id} / 5` : `Tahap ${currentSelectedStep.id} / 5`}
-            </span>
             <button
               type="button"
               disabled={currentSelectedStep.id === 5}
               onClick={() => setSelectedStepId((prev) => Math.min(5, prev + 1))}
               className="p-1.5 rounded-lg border border-[#E5E0DD] text-[#777777] hover:text-[#1F1F1F] hover:bg-[#F7F7F7] disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
-              title="Tahap Selanjutnya"
+              title={language === 'en' ? 'Next Step' : 'Tahap Selanjutnya'}
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -363,7 +369,26 @@ export const OrderTimelineStepper: React.FC<OrderTimelineStepperProps> = ({
             </div>
           )}
 
-          {currentSelectedStep.id === 3 && !isShipped && (
+          {currentSelectedStep.id === 3 && nextAction === 'verify_payment' && (
+            <span className="px-2.5 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 font-semibold text-[11px] flex items-center gap-1 shrink-0 self-start sm:self-center">
+              <Clock className="w-3 h-3" />
+              <span>{language === 'en' ? 'Mark as paid first' : 'Tandai lunas dulu'}</span>
+            </span>
+          )}
+
+          {currentSelectedStep.id === 3 && nextAction === 'confirm_cod' && onConfirmCod && (
+            <button
+              type="button"
+              disabled={isConfirmingCod}
+              onClick={onConfirmCod}
+              className="px-3 py-1.5 rounded-lg bg-[#66000E] hover:bg-[#52000B] text-white font-semibold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 self-start sm:self-center disabled:opacity-70"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>{language === 'en' ? 'Confirm Order' : 'Konfirmasi Pesanan'}</span>
+            </button>
+          )}
+
+          {currentSelectedStep.id === 3 && nextAction === 'ship' && (
             <button
               type="button"
               onClick={() => onProcessShipping(order)}

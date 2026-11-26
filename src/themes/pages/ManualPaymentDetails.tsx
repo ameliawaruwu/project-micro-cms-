@@ -1,0 +1,139 @@
+import React, { useEffect, useState } from 'react';
+import { QrCode } from 'lucide-react';
+import type { StorePaymentConfig } from '../../types';
+import { DEFAULT_MANUAL_INSTRUCTIONS, resolveManualInstructions } from '../../utils/manualPayment';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { storeService } from '../../services/storeService';
+
+interface ManualPaymentDetailsProps {
+  paymentConfig: StorePaymentConfig;
+  total: number;
+  /** Bila diisi, QRIS & rekening diambil ulang dari database agar perubahan merchant langsung terlihat. */
+  storeId?: string;
+}
+
+/**
+ * QRIS & rekening toko untuk pesanan "QRIS & Transfer" langsung ke penjual.
+ * Dipakai di halaman checkout selesai dan halaman Lacak Pesanan.
+ */
+export const ManualPaymentDetails: React.FC<ManualPaymentDetailsProps> = ({ paymentConfig: initialConfig, total, storeId }) => {
+  const { isEn } = useLanguage();
+  // Data toko di storefront dimuat sekali saat halaman dibuka. Ambil ulang QRIS & rekening
+  // saat kotak ini tampil dan saat tab kembali aktif, supaya pembeli tidak membayar ke QRIS lama.
+  const [freshConfig, setFreshConfig] = useState<StorePaymentConfig | null>(null);
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    const refresh = () => {
+      storeService
+        .getStoreBySlug(storeId)
+        .then((fresh) => {
+          if (!cancelled && fresh?.id === storeId && fresh.paymentConfig) setFreshConfig(fresh.paymentConfig);
+        })
+        .catch(() => {
+          // Gagal memuat ulang: tetap tampilkan data yang sudah ada.
+        });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    refresh();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [storeId]);
+  const paymentConfig = freshConfig || initialConfig;
+  const [copiedField, setCopiedField] = useState<'account' | 'amount' | null>(null);
+  const instructions = resolveManualInstructions(paymentConfig.manualInstructions);
+  // Petunjuk bawaan (bukan tulisan merchant) ikut bahasa aktif.
+  const instructionsText =
+    isEn && instructions === DEFAULT_MANUAL_INSTRUCTIONS
+      ? 'Scan the QRIS or transfer to the account above for the total amount, then click the "I Have Paid" button. The seller will check your payment.'
+      : instructions;
+
+  const handleCopy = (text: string, field: 'account' | 'amount') => {
+    navigator.clipboard
+      ?.writeText(text)
+      .then(() => {
+        setCopiedField(field);
+        setTimeout(() => setCopiedField(null), 2000);
+      })
+      .catch(() => {
+        // Clipboard tidak tersedia (mis. bukan HTTPS); pembeli masih bisa menyalin manual.
+      });
+  };
+
+  const copyButtonClass =
+    'px-2 py-0.5 bg-[var(--sf-primary-soft)] hover:bg-[var(--sf-primary-soft)] text-[var(--sf-primary)] rounded text-[10px] font-bold border border-[var(--sf-primary-border)] transition cursor-pointer';
+
+  return (
+    <div className="p-5 rounded-[var(--sf-radius)] bg-[var(--sf-primary-soft)] border border-[var(--sf-primary-border)] text-left text-xs text-[var(--sf-primary-strong)] space-y-4">
+      <div className="flex items-center justify-between pb-2 border-b border-[var(--sf-primary-border)]">
+        <div className="flex items-center gap-2 font-bold text-[var(--sf-primary-strong)] text-sm">
+          <QrCode className="w-4 h-4 text-[var(--sf-primary)]" />
+          <span>{isEn ? 'Store Bank Account & Payment QRIS' : 'Rekening & QRIS Pembayaran Toko'}</span>
+        </div>
+        <span className="px-2 py-0.5 rounded-full bg-[var(--sf-primary-soft)] text-[var(--sf-primary-strong)] font-bold text-[10px]">
+          Direct Transfer
+        </span>
+      </div>
+
+      {paymentConfig.manualQrisImageUrl && (
+        <div className="text-center py-2 bg-[var(--sf-card)] p-3 rounded-[var(--sf-radius)] border border-[var(--sf-primary-border)] space-y-2">
+          <p className="text-[11px] font-bold text-[var(--sf-text-soft)]">{isEn ? 'Scan the QR Code Below:' : 'Scan QR Code Barcode di Bawah Ini:'}</p>
+          <img
+            src={paymentConfig.manualQrisImageUrl}
+            alt={isEn ? 'Store QRIS code' : 'Barcode QRIS Toko'}
+            className="w-48 h-48 mx-auto object-contain rounded-[var(--sf-radius)] border border-[var(--sf-border)] shadow-2xs"
+          />
+          <p className="text-[10px] text-[var(--sf-muted)]">{isEn ? 'Supports BCA, Mandiri, BRI, BNI, GoPay, OVO, DANA, ShopeePay' : 'Mendukung BCA, Mandiri, BRI, BNI, GoPay, OVO, DANA, ShopeePay'}</p>
+        </div>
+      )}
+
+      <div className="bg-[var(--sf-card)] p-3.5 rounded-[var(--sf-radius)] border border-[var(--sf-primary-border)] space-y-2">
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-[var(--sf-muted)] font-medium">{isEn ? 'Destination Bank:' : 'Bank Tujuan:'}</span>
+          <span className="font-bold text-[var(--sf-text)]">{paymentConfig.manualBankName || (isEn ? 'Bank Transfer' : 'Transfer Bank')}</span>
+        </div>
+        {paymentConfig.manualBankAccountNumber && (
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-[var(--sf-muted)] font-medium">{isEn ? 'Account Number:' : 'Nomor Rekening:'}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-extrabold text-[var(--sf-primary-strong)] text-sm">
+                {paymentConfig.manualBankAccountNumber}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleCopy(paymentConfig.manualBankAccountNumber!, 'account')}
+                className={copyButtonClass}
+              >
+                {copiedField === 'account' ? (isEn ? 'Copied!' : 'Tersalin!') : (isEn ? 'Copy' : 'Salin')}
+              </button>
+            </div>
+          </div>
+        )}
+        {paymentConfig.manualBankAccountHolder && (
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-[var(--sf-muted)] font-medium">{isEn ? 'Account Holder:' : 'Atas Nama:'}</span>
+            <span className="font-bold text-[var(--sf-text)]">{paymentConfig.manualBankAccountHolder}</span>
+          </div>
+        )}
+        <div className="flex justify-between items-center text-xs pt-2 border-t border-[var(--sf-border)]">
+          <span className="text-[var(--sf-muted)] font-medium">{isEn ? 'Total Transfer Amount:' : 'Total Nominal Transfer:'}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-extrabold text-[var(--sf-primary)] text-base">Rp {total.toLocaleString('id-ID')}</span>
+            <button type="button" onClick={() => handleCopy(String(total), 'amount')} className={copyButtonClass}>
+              {copiedField === 'amount' ? (isEn ? 'Copied!' : 'Tersalin!') : (isEn ? 'Copy' : 'Salin')}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p className="text-[11px] text-[var(--sf-primary-strong)] leading-relaxed">
+        {instructionsText}
+      </p>
+    </div>
+  );
+};

@@ -1,7 +1,13 @@
 import { Store } from '../types';
 import { supabase } from './supabaseClient';
+import { withExtraMemberships } from '../utils/communityMembership';
 import { getWibIsoString } from '../utils/formatters';
 import { idService } from './idService';
+import { mediaService } from './mediaService';
+import { billingPlanService } from './billingPlanService';
+import { DEFAULT_MANUAL_INSTRUCTIONS } from '../utils/manualPayment';
+import { pgrstValue, pgrstLikeValue } from '../utils/postgrestFilter';
+import { getLayoutLogoUrl } from '../utils/layoutConstants';
 
 const STORE_KEY = 'microcms_stores_v2';
 const ACTIVE_STORE_KEY = 'microcms_active_store_id';
@@ -36,6 +42,18 @@ class StoreService {
             }
             return;
           }
+          if (!s.paymentConfig) {
+            s.paymentConfig = {
+              enableCod: true,
+              codInstructions: 'Siapkan uang pas saat barang diantar.',
+              enableManualTransfer: true,
+              manualBankName: 'BCA',
+              manualBankAccountNumber: '',
+              manualBankAccountHolder: '',
+              manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
+              enablePaymentGateway: false,
+            };
+          }
           storeMap.set(s.id, s);
         }
       });
@@ -64,7 +82,7 @@ class StoreService {
     try {
       const { data, error } = await supabase.from('stores').select('*').order('created_at', { ascending: false });
       if (!error && data && data.length > 0) {
-        return data.map((row) => ({
+        return withExtraMemberships(data.map((row): Store => ({
           id: row.id,
           merchantId: row.user_id,
           name: row.name,
@@ -85,15 +103,28 @@ class StoreService {
           category: row.category || 'General',
           currency: row.currency || 'IDR',
           balance: Number(row.balance || 0),
-          isPublished: row.is_published !== false,
-          layoutSettings: row.layout_settings,
+          communityId: row.community_id || row.theme_settings?.communityId || undefined,
+          communityName: row.community_name || row.theme_settings?.communityName || undefined,
+          isPublished: Boolean(row.is_published),
+          isSuspended: Boolean(row.is_suspended),
+          layoutSettings: row.theme_settings || row.layout_settings,
+          paymentConfig: row.theme_settings?.paymentConfig || row.layout_settings?.paymentConfig || {
+            enableCod: true,
+            codInstructions: 'Siapkan uang pas saat barang diantar.',
+            enableManualTransfer: true,
+            manualBankName: 'BCA',
+            manualBankAccountNumber: '',
+            manualBankAccountHolder: '',
+            manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
+            enablePaymentGateway: false,
+          },
           onboarding: row.onboarding || {
             storeNameSet: true,
             productUploaded: false,
             paymentConnected: false,
           },
           createdAt: row.created_at || new Date().toISOString(),
-        }));
+        })));
       }
     } catch {
       // ignore
@@ -125,56 +156,116 @@ class StoreService {
           return [];
         }
 
-        const mappedStores: Store[] = data.map((row) => ({
-          id: row.id,
-          merchantId: row.user_id,
-          name: row.name,
-          slug: row.slug,
-          tagline: row.tagline || '',
-          description: row.description || '',
-          logoUrl: row.logo_url || '',
-          bannerUrl: row.banner_url || '',
-          phoneWhatsApp: row.phone_whatsapp || '',
-          city: row.city || 'Indonesia',
-          province: row.province || '',
-          district: row.district || '',
-          subdistrict: row.subdistrict || '',
-          village: row.village || '',
-          addressDetail: row.address_detail || '',
-          postalCode: row.postal_code || '',
-          address: row.address || '',
-          latitude: row.latitude ? Number(row.latitude) : undefined,
-          longitude: row.longitude ? Number(row.longitude) : undefined,
-          category: row.category || 'Bisnis UMKM',
-          currency: 'IDR',
-          balance: Number(row.balance || 0),
-          plan: row.plan || 'free',
-          planExpiresAt: row.plan_expires_at || row.theme_settings?.planExpiresAt || undefined,
-          planSubscribedAt: row.plan_subscribed_at || row.theme_settings?.planSubscribedAt || undefined,
-          isPublished: row.is_published !== undefined && row.is_published !== null
-            ? Boolean(row.is_published)
-            : ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id),
-          layoutSettings: row.theme_settings,
-          customDomain: row.custom_domain,
-          onboarding: {
-            storeNameSet: !row.name.startsWith('Toko usr_'),
-            productUploaded: false,
-            paymentConnected: row.plan !== 'free',
-          },
-          createdAt: row.created_at || new Date().toISOString(),
-        }));
+        const mappedStores: Store[] = data.map((row) => {
+          const isPresetDemo = ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id);
+          const hasExplicitOnboarding = row.theme_settings?.onboarding?.storeNameSet !== undefined;
+          const isStoreConfigured = isPresetDemo || (hasExplicitOnboarding
+            ? Boolean(row.theme_settings.onboarding.storeNameSet)
+            : (Boolean(row.category && row.category !== 'Bisnis UMKM') || Boolean(row.tagline)));
+
+          return {
+            id: row.id,
+            merchantId: row.user_id,
+            name: row.name,
+            slug: row.slug,
+            tagline: row.tagline || '',
+            description: row.description || '',
+            logoUrl: row.logo_url || '',
+            bannerUrl: row.banner_url || '',
+            phoneWhatsApp: row.phone_whatsapp || '',
+            city: row.city || 'Indonesia',
+            province: row.province || '',
+            district: row.district || '',
+            subdistrict: row.subdistrict || '',
+            village: row.village || '',
+            addressDetail: row.address_detail || '',
+            postalCode: row.postal_code || '',
+            address: row.address || '',
+            latitude: row.latitude ? Number(row.latitude) : undefined,
+            longitude: row.longitude ? Number(row.longitude) : undefined,
+            category: row.category || 'Bisnis UMKM',
+            currency: 'IDR',
+            balance: Number(row.balance || 0),
+            plan: row.plan || 'free',
+            planExpiresAt: row.plan_expires_at || row.theme_settings?.planExpiresAt || undefined,
+            planSubscribedAt: row.plan_subscribed_at || row.theme_settings?.planSubscribedAt || undefined,
+            communityId: row.community_id || row.theme_settings?.communityId || undefined,
+            communityName: row.community_name || row.theme_settings?.communityName || undefined,
+            isPublished: row.is_published !== undefined && row.is_published !== null
+              ? Boolean(row.is_published)
+              : ['store-1', 'store-2', 'store-3', 'store-4'].includes(row.id),
+            isSuspended: Boolean(row.is_suspended),
+            layoutSettings: row.theme_settings,
+            paymentConfig: row.theme_settings?.paymentConfig || {
+              enableCod: true,
+              codInstructions: 'Siapkan uang pas saat barang diantar.',
+              enableManualTransfer: true,
+              manualBankName: 'BCA',
+              manualBankAccountNumber: '',
+              manualBankAccountHolder: '',
+              manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
+              enablePaymentGateway: false,
+            },
+            customDomain: row.custom_domain,
+            onboarding: {
+              storeNameSet: isStoreConfigured,
+              productUploaded: Boolean(row.theme_settings?.onboarding?.productUploaded),
+              paymentConnected: Boolean(row.theme_settings?.onboarding?.paymentConnected) || row.plan !== 'free',
+            },
+            createdAt: row.created_at || new Date().toISOString(),
+          };
+        });
+
+        // Hydrate each store's real active subscription from store_subscriptions database table
+        const hydratedStores: Store[] = await Promise.all(
+          mappedStores.map(async (st) => {
+            try {
+              const subInfo = await billingPlanService.getActiveSubscriptionForStore(st.id);
+              if (subInfo.hasActivePaidPlan) {
+                st.plan = subInfo.planSlug;
+                st.planExpiresAt = subInfo.expiresAt;
+                st.planSubscribedAt = subInfo.subscribedAt;
+                if (st.onboarding) st.onboarding.paymentConnected = true;
+                // Auto-heal stores table if it was desynced
+                if (st.plan !== subInfo.planSlug) {
+                  await supabase.from('stores').update({ plan: subInfo.planSlug }).eq('id', st.id);
+                }
+              } else if (subInfo.isExpired) {
+                st.plan = 'free';
+              }
+            } catch (subErr) {
+              console.warn('[storeService] Sub hydration error for store', st.id, subErr);
+            }
+            return st;
+          })
+        );
 
         // Cache synced cloud stores locally
         const allOther = this.getStoredStores().filter((s) => s.merchantId !== userId);
-        this.saveStores([...allOther, ...mappedStores]);
-        return mappedStores;
+        this.saveStores([...allOther, ...hydratedStores]);
+        return hydratedStores;
       }
     } catch (e) {
       console.warn('Supabase fetch stores error:', e);
     }
 
-    // In case of network error/offline, return local stores only for this user
-    return localStores;
+    // In case of network error/offline, hydrate local stores with cached subscriptions
+    const localHydrated = await Promise.all(
+      localStores.map(async (st) => {
+        try {
+          const subInfo = await billingPlanService.getActiveSubscriptionForStore(st.id);
+          if (subInfo.hasActivePaidPlan) {
+            st.plan = subInfo.planSlug;
+            st.planExpiresAt = subInfo.expiresAt;
+            st.planSubscribedAt = subInfo.subscribedAt;
+          } else if (subInfo.isExpired) {
+            st.plan = 'free';
+          }
+        } catch { /* ignore */ }
+        return st;
+      })
+    );
+    return localHydrated;
   }
 
   async getStoreById(id: string, ownerUserId?: string): Promise<Store | undefined> {
@@ -227,12 +318,39 @@ class StoreService {
           currency: 'IDR',
           balance: Number(data.balance || 0),
           plan: data.plan || 'free',
+          planExpiresAt: data.theme_settings?.planExpiresAt,
+          planSubscribedAt: data.theme_settings?.planSubscribedAt,
+          communityId: data.community_id || data.theme_settings?.communityId || undefined,
+          communityName: data.community_name || data.theme_settings?.communityName || undefined,
           isPublished: isPub,
+          isSuspended: Boolean(data.is_suspended),
           layoutSettings: data.theme_settings,
+          paymentConfig: data.theme_settings?.paymentConfig || {
+            enableCod: true,
+            codInstructions: 'Siapkan uang pas saat barang diantar.',
+            enableManualTransfer: true,
+            manualBankName: 'BCA',
+            manualBankAccountNumber: '',
+            manualBankAccountHolder: '',
+            manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
+            enablePaymentGateway: false,
+          },
           customDomain: data.custom_domain,
           createdAt: data.created_at || new Date().toISOString(),
           onboarding: data.theme_settings?.onboarding || {},
         };
+
+        // Hydrate from active subscription
+        try {
+          const subInfo = await billingPlanService.getActiveSubscriptionForStore(mapped.id);
+          if (subInfo.hasActivePaidPlan) {
+            mapped.plan = subInfo.planSlug;
+            mapped.planExpiresAt = subInfo.expiresAt;
+            mapped.planSubscribedAt = subInfo.subscribedAt;
+          } else if (subInfo.isExpired) {
+            mapped.plan = 'free';
+          }
+        } catch { /* ignore */ }
 
         const currentStored = this.getStoredStores();
         this.saveStores([...currentStored.filter((s) => s.id !== mapped.id), mapped]);
@@ -250,21 +368,32 @@ class StoreService {
       return undefined;
     }
 
-    const clean = slug.toLowerCase().trim();
+    const clean = slug.toLowerCase().trim().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+    const cleanNoWww = clean.replace(/^www\./, '');
+    const cleanWithWww = clean.startsWith('www.') ? clean : `www.${clean}`;
 
     // 1. Fetch live from Supabase cloud so status is 100% synchronized across devices/browsers
     try {
+      const orConditions = [
+        `slug.ilike.${pgrstLikeValue(clean)}`,
+        `slug.ilike.${pgrstLikeValue(cleanNoWww)}`,
+        `custom_domain.ilike.${pgrstLikeValue(clean)}`,
+        `custom_domain.ilike.${pgrstLikeValue(cleanNoWww)}`,
+        `custom_domain.ilike.${pgrstLikeValue(cleanWithWww)}`,
+        `id.eq.${pgrstValue(clean)}`,
+      ].join(',');
+
       let { data, error } = await supabase
         .from('stores')
         .select('*')
-        .or(`slug.ilike.${clean},id.eq.${clean},custom_domain.ilike.${clean}`)
+        .or(orConditions)
         .limit(1);
 
       if (error) {
         const fallback = await supabase
           .from('stores')
           .select('*')
-          .or(`slug.ilike.${clean},id.eq.${clean}`)
+          .or(`slug.ilike.${pgrstLikeValue(clean)},slug.ilike.${pgrstLikeValue(cleanNoWww)},id.eq.${pgrstValue(clean)}`)
           .limit(1);
         data = fallback.data;
         error = fallback.error;
@@ -299,9 +428,23 @@ class StoreService {
           category: row.category || 'Bisnis UMKM',
           currency: 'IDR',
           balance: Number(row.balance || 0),
+          communityId: row.community_id || row.theme_settings?.communityId || undefined,
+          communityName: row.community_name || row.theme_settings?.communityName || undefined,
           plan: row.plan || 'free',
           isPublished: isPub,
+          isSuspended: Boolean(row.is_suspended),
           layoutSettings: row.theme_settings,
+          paymentConfig: row.theme_settings?.paymentConfig || {
+            enableCod: true,
+            codInstructions: 'Siapkan uang pas saat barang diantar.',
+            enableManualTransfer: true,
+            manualBankName: 'BCA',
+            manualBankAccountNumber: '',
+            manualBankAccountHolder: '',
+            manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
+            enablePaymentGateway: false,
+          },
+
           customDomain: row.custom_domain,
           createdAt: row.created_at || new Date().toISOString(),
           onboarding: row.theme_settings?.onboarding || {},
@@ -323,7 +466,29 @@ class StoreService {
 
     // 2. Search local stored stores
     const stores = this.getStoredStores();
-    const exact = stores.find((s) => s.slug?.toLowerCase() === clean || s.id?.toLowerCase() === clean);
+    const exact = stores.find((s) => {
+      const sSlug = s.slug?.toLowerCase();
+      const sId = s.id?.toLowerCase();
+      const sDomain = s.customDomain?.toLowerCase().trim().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+      const sDomainNoWww = sDomain?.replace(/^www\./, '');
+      const sDomainWww = sDomain ? (sDomain.startsWith('www.') ? sDomain : `www.${sDomain}`) : '';
+      const reqDomain = (s.layoutSettings as any)?.domainRequest?.fullDomain?.toLowerCase().trim().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+      const reqDomainNoWww = reqDomain?.replace(/^www\./, '');
+
+      return (
+        sSlug === clean ||
+        sSlug === cleanNoWww ||
+        sId === clean ||
+        sDomain === clean ||
+        sDomain === cleanNoWww ||
+        sDomain === cleanWithWww ||
+        sDomainNoWww === cleanNoWww ||
+        sDomainWww === clean ||
+        reqDomain === clean ||
+        reqDomain === cleanNoWww ||
+        reqDomainNoWww === cleanNoWww
+      );
+    });
     if (exact) return exact;
 
     const fuzzy = stores.find((s) => {
@@ -364,6 +529,20 @@ class StoreService {
   }
 
   /**
+   * Upload foto barcode QRIS toko ke Supabase Storage dan kembalikan URL publiknya.
+   */
+  async uploadQrisImage(storeId: string, file: File): Promise<string> {
+    return this.uploadStoreImage(storeId, file, 'qris');
+  }
+
+  /**
+   * Upload gambar milik toko (QRIS, logo) ke CDN dan kembalikan URL-nya.
+   */
+  async uploadStoreImage(storeId: string, file: File, kind: 'qris' | 'logo'): Promise<string> {
+    return mediaService.uploadImage(file, kind, storeId);
+  }
+
+  /**
    * Update toko.
    * ownerUserId WAJIB untuk memastikan hanya pemilik toko yang dapat mengubah data.
    * Supabase query dikombinasikan .eq('id', storeId) + .eq('user_id', ownerUserId)
@@ -393,6 +572,7 @@ class StoreService {
       if (updates.slug !== undefined) dbUpdates.slug = updates.slug;
       if (updates.tagline !== undefined) dbUpdates.tagline = updates.tagline;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.phoneWhatsApp !== undefined) dbUpdates.phone_whatsapp = updates.phoneWhatsApp;
       if (updates.city !== undefined) dbUpdates.city = updates.city;
       if (updates.province !== undefined) dbUpdates.province = updates.province;
       if (updates.district !== undefined) dbUpdates.district = updates.district;
@@ -410,19 +590,44 @@ class StoreService {
       if (updates.balance !== undefined) dbUpdates.balance = updates.balance;
       if (updates.customDomain !== undefined) dbUpdates.custom_domain = updates.customDomain;
       if (updates.isPublished !== undefined) dbUpdates.is_published = updates.isPublished;
+      if (updates.communityId !== undefined) dbUpdates.community_id = updates.communityId || null;
+      if (updates.communityName !== undefined) dbUpdates.community_name = updates.communityName || null;
 
       // Only include theme_settings when layout is explicitly being changed
       // (avoids oversized payload on publish-only or metadata-only updates)
-      if (updates.layoutSettings !== undefined || updates.planExpiresAt !== undefined || updates.planSubscribedAt !== undefined) {
+      if (
+        updates.layoutSettings !== undefined ||
+        updates.paymentConfig !== undefined ||
+        updates.planExpiresAt !== undefined ||
+        updates.planSubscribedAt !== undefined ||
+        updates.onboarding !== undefined
+      ) {
         const combinedThemeSettings = {
           ...(stores[index].layoutSettings || {}),
           ...(updates.layoutSettings || {}),
+          ...(updates.paymentConfig !== undefined
+            ? { paymentConfig: updates.paymentConfig }
+            : stores[index].paymentConfig
+            ? { paymentConfig: stores[index].paymentConfig }
+            : {}),
           ...(updates.planExpiresAt ? { planExpiresAt: updates.planExpiresAt } : {}),
           ...(updates.planSubscribedAt ? { planSubscribedAt: updates.planSubscribedAt } : {}),
+          ...(updates.onboarding ? { onboarding: updates.onboarding } : {}),
         };
         delete (combinedThemeSettings as any).isPublished;
         dbUpdates.theme_settings = combinedThemeSettings;
         stores[index].layoutSettings = combinedThemeSettings;
+
+        // WHY: logo yang diunggah di header layout adalah logo toko. Katalog komunitas, API publik, dan
+        // daftar toko membaca stores.logo_url, jadi tanpa sinkron ini mereka menampilkan inisial nama.
+        // Logo header kosong tidak menghapus logo_url yang sudah ada.
+        if (updates.logoUrl === undefined && updates.layoutSettings !== undefined) {
+          const headerLogo = getLayoutLogoUrl(combinedThemeSettings as any);
+          if (headerLogo && headerLogo !== (stores[index].logoUrl || '')) {
+            dbUpdates.logo_url = headerLogo;
+            stores[index].logoUrl = headerLogo;
+          }
+        }
       }
 
       // Ownership-enforced Supabase update:
@@ -446,6 +651,13 @@ class StoreService {
         const parsed = JSON.parse(activeAuthStoreStr);
         if (parsed.id === storeId) {
           localStorage.setItem('microcms_auth_store', JSON.stringify(stores[index]));
+        }
+      }
+      const activeStoreStr = localStorage.getItem('microcms_active_store');
+      if (activeStoreStr) {
+        const parsed = JSON.parse(activeStoreStr);
+        if (parsed.id === storeId) {
+          localStorage.setItem('microcms_active_store', JSON.stringify(stores[index]));
         }
       }
     } catch (e) {}
@@ -479,6 +691,8 @@ class StoreService {
         throw new Error('Anda tidak memiliki akses untuk mengubah status toko ini.');
       }
     }
+
+    // Semua paket (termasuk Free) boleh publish. Penagihan dilakukan di akhir bulan berdasarkan omset toko.
 
     // 1. Supabase-first: update langsung di database dengan ownership check
     let supaQuery = supabase
@@ -543,6 +757,14 @@ class StoreService {
       const existing = stores.find((s) => s.id === data.id);
       if (existing) {
         return existing;
+      }
+    }
+
+    // Enforce 1 Account / Email = 1 Store
+    if (data.merchantId) {
+      const existingMerchantStore = stores.find((s) => s.merchantId === data.merchantId);
+      if (existingMerchantStore) {
+        return existingMerchantStore;
       }
     }
 
@@ -722,6 +944,7 @@ class StoreService {
                     name: row.name || stored[idx].name,
                     slug: row.slug || stored[idx].slug,
                     isPublished: isPub,
+                    isSuspended: Boolean(row.is_suspended),
                     customDomain: row.custom_domain !== undefined ? row.custom_domain : stored[idx].customDomain,
                   };
                   stored[idx] = merged;
@@ -750,6 +973,7 @@ class StoreService {
                     balance: Number(row.balance || 0),
                     plan: row.plan || 'free',
                     isPublished: isPub,
+                    isSuspended: Boolean(row.is_suspended),
                     onboarding: row.theme_settings?.onboarding || {},
                     createdAt: row.created_at || new Date().toISOString(),
                   };

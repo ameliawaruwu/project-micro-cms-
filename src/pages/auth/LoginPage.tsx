@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthIllustration } from '../../components/auth/AuthIllustration';
-import { useLanguage, LanguageSwitchButton } from '../../contexts/LanguageContext';
+import { useLanguage, LanguageSwitchButton, isEnglishPreferred } from '../../contexts/LanguageContext';
 import { KroomifyLogo } from '../../components/common/KroomifyLogo';
 
 interface LoginPageProps {
@@ -27,7 +27,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onSuccess,
 }) => {
   const { login, loginWithGoogle } = useAuth();
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [email, setEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -57,7 +57,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       sessionStorage.removeItem('auth_prefill_email');
     }
     const handleUnregistered = (e: any) => {
-      const msg = e.detail?.message || 'Akun Google ini belum terdaftar. Silakan registrasi terlebih dahulu.';
+      const msg = e.detail?.message || (isEnglishPreferred() ? 'This Google account is not registered yet. Please sign up first.' : 'Akun Google ini belum terdaftar. Silakan registrasi terlebih dahulu.');
       setError(msg);
       if (e.detail?.email) {
         setEmail(e.detail.email);
@@ -73,25 +73,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     e.preventDefault();
     setError(null);
 
-    if (!email.trim() || !password.trim()) {
-      setError('Silakan masukkan email dan kata sandi Anda.');
+    const cleanInputEmail = email.trim();
+    const cleanInputPassword = password.trim();
+
+    if (!cleanInputEmail || !cleanInputPassword) {
+      setError(isEn ? 'Please enter your email and password.' : 'Silakan masukkan email dan kata sandi Anda.');
       return;
     }
 
-    if (!email.includes('@')) {
-      setError('Silakan masukkan alamat email yang valid.');
+    if (!cleanInputEmail.includes('@') && cleanInputEmail.toLowerCase() !== 'admin') {
+      setError(isEn ? 'Please enter a valid email address.' : 'Silakan masukkan alamat email yang valid.');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      await login(email, password);
+      await login(cleanInputEmail, cleanInputPassword);
       setIsSuccess(true);
       setTimeout(() => {
         if (onSuccess) onSuccess();
       }, 350);
     } catch (err: any) {
-      setError(err?.message || 'Email atau kata sandi tidak sesuai. Silakan periksa kembali.');
+      setError(err?.message || (isEn ? 'Incorrect email or password. Please check again.' : 'Email atau kata sandi tidak sesuai. Silakan periksa kembali.'));
       setIsSubmitting(false);
     }
   };
@@ -103,7 +106,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       setSuccessMsg(null);
       await loginWithGoogle('login');
     } catch {
-      setError('Gagal menghubungkan ke Google. Pastikan Google Provider sudah diaktifkan di Supabase.');
+      setError(isEn ? 'Failed to connect to Google. Make sure the Google Provider is enabled in Supabase.' : 'Gagal menghubungkan ke Google. Pastikan Google Provider sudah diaktifkan di Supabase.');
     } finally {
       setGoogleLoading(false);
     }
@@ -206,21 +209,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           {/* PILL CAPSULE FORM */}
           <form onSubmit={handleSubmit} className="space-y-4 w-full" noValidate>
-            {/* Input: Username / Email */}
+            {/* Input: Email */}
             <div className="space-y-1.5 text-left">
               <label
                 htmlFor="login-email"
                 className="block text-xs sm:text-sm font-medium text-[#1A1110]"
               >
-                {t('auth_email_label', 'Email atau Username')}
+                {t('auth_email_label', 'Alamat Email')}
               </label>
               <div className="relative">
                 <input
                   id="login-email"
                   type="email"
+                  inputMode="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nama@email.com"
+                  placeholder={isEn ? 'name@email.com' : 'nama@email.com'}
                   required
                   autoComplete="email"
                   className="w-full h-12 px-5 rounded-full bg-[#F4F4F6] text-[#1A1110] text-sm sm:text-base border border-transparent focus:border-[#66000E] focus:bg-white focus:ring-2 focus:ring-[#66000E]/15 focus:outline-none transition-all placeholder:text-[#9E9EA7]"
@@ -251,7 +255,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7E7E88] hover:text-[#1A1110] transition-colors p-1.5 rounded-full hover:bg-black/5 cursor-pointer focus:outline-none"
-                  title={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                  title={showPassword ? (isEn ? 'Hide password' : 'Sembunyikan kata sandi') : (isEn ? 'Show password' : 'Tampilkan kata sandi')}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Wallet, ArrowUpRight, RefreshCw, LayoutDashboard, ExternalLink, Store as StoreIcon, Plus } from 'lucide-react';
-import { Store as StoreType, Order, Product, MerchantTab } from '../../types';
+import { Store as StoreType, Order, Product, MerchantTab, User } from '../../types';
 import { MetricCard } from '../../components/dashboard/MetricCard';
 import { SalesAnalyticsSection } from '../../components/dashboard/SalesAnalyticsSection';
 import { StockAlertCard } from '../../components/dashboard/StockAlertCard';
@@ -8,9 +8,16 @@ import { RecentOrdersSection } from '../../components/dashboard/RecentOrdersSect
 import { useLanguage } from '../../contexts/LanguageContext';
 import { formatRupiah } from '../../utils/formatters';
 import { useDashboardData } from '../../hooks/useDashboardData';
+import { useStoreBaseDomain } from '../../utils/storeDomain';
+import { WALLET_ENABLED } from '../../config/features';
+import { isStoreSetUp } from '../../utils/storeSetup';
 
 interface DashboardPageProps {
+  currentUser?: User | null;
+  onShowNotification?: (msg: string, type?: 'success' | 'error' | 'info') => void;
   store: StoreType;
+  /** true selama data toko masih dimuat (mis. setelah hard refresh). */
+  isStoreLoading?: boolean;
   orders: Order[];
   products: Product[];
   onNavigateTab: (tab: MerchantTab) => void;
@@ -24,7 +31,10 @@ interface DashboardPageProps {
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
+  currentUser,
+  onShowNotification,
   store,
+  isStoreLoading = false,
   orders,
   products,
   onNavigateTab,
@@ -36,6 +46,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 }) => {
   const { t, language } = useLanguage();
   const isEn = language === 'en';
+  const { domain: storeBaseDomain } = useStoreBaseDomain(store);
+  // Toko kosong saat data masih dimuat belum berarti merchant tidak punya toko.
+  const isLoadingStore = isStoreLoading && !store.id;
+  // Toko otomatis dari registrasi belum dihitung sampai merchant melengkapi Pengaturan Toko.
+  const hasNoStore = !isLoadingStore && !isStoreSetUp(store);
 
   // Coordinated Single Source of Truth Hook for Dashboard Metrics
   const {
@@ -70,7 +85,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <span>{t('dashboard_title', 'Dashboard')}</span>
             </h1>
             {/* Store Status Badge */}
-            {!store.id ? (
+            {isLoadingStore ? (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-500 text-[11px] font-medium shadow-2xs">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-300 animate-pulse"></span>
+                <span>{isEn ? 'Loading store...' : 'Memuat toko...'}</span>
+              </div>
+            ) : hasNoStore ? (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-medium shadow-2xs">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-400"></span>
                 <span>{isEn ? 'No Store Yet' : 'Belum Memiliki Toko'}</span>
@@ -96,7 +116,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           {store.slug && store.id && Boolean(store.isPublished) && (
             <a
-              href={store.customDomain ? `https://${store.customDomain}` : `https://${store.slug}.kroombox.com`}
+              href={store.customDomain ? `https://${store.customDomain}` : `https://${store.slug}.${storeBaseDomain}`}
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-1.5 rounded-xl bg-[#F5E8EA] hover:bg-[#F9EDEF] border border-[#E8DDDE] text-[#66000E] text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
@@ -118,7 +138,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       </div>
 
       {/* Onboarding Call-to-Action for new merchants without a store */}
-      {!store.id && (
+      {hasNoStore && (
         <div className="bg-gradient-to-r from-[#66000E] to-[#8A0013] rounded-2xl p-5 sm:p-6 text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
@@ -141,7 +161,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       )}
 
-      {/* QUICK STORE WALLET BANNER (Saldo Toko Aktif) */}
+      {/* QUICK STORE WALLET BANNER (Saldo Toko Aktif) — disembunyikan selama Dompet nonaktif */}
+      {WALLET_ENABLED && (
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E5E0DD] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#66000E]/30 transition min-h-[90px]">
         <div className="flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-2xl bg-[#F5E8EA] text-[#66000E] border border-[#E8DDDE] flex items-center justify-center font-semibold shadow-2xs shrink-0">
@@ -167,6 +188,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           )}
         </div>
       </div>
+      )}
 
       {/* 3. 4 Core Metric Cards (Unified Live Single Source of Truth) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
